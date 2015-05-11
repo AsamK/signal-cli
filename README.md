@@ -46,7 +46,7 @@ dependencies.
 
         ./gradlew installApp
 
-4. Create tar file:
+4. Create tar file in *build/distributions*:
 
         ./gradlew distTar
 
