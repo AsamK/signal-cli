@@ -117,12 +117,16 @@ public class Manager {
         return registered;
     }
 
-    public void register() throws IOException {
+    public void register(boolean voiceVerication) throws IOException {
         password = Util.getSecret(18);
 
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
 
-        accountManager.requestSmsVerificationCode();
+        if (voiceVerication)
+            accountManager.requestVoiceVerificationCode();
+        else
+            accountManager.requestSmsVerificationCode();
+
         registered = false;
     }
 
