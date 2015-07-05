@@ -115,18 +115,22 @@ public class Manager {
         return registered;
     }
 
-    public void register() throws IOException {
+    public void register(boolean voiceVerication) throws IOException {
         password = Util.getSecret(18);
+        signalingKey = Util.getSecret(52);
 
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
 
-        accountManager.requestSmsVerificationCode();
+        if (voiceVerication)
+            accountManager.requestVoiceVerificationCode();
+        else
+            accountManager.requestSmsVerificationCode();
+
         registered = false;
     }
 
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
-        signalingKey = Util.getSecret(52);
         accountManager.verifyAccount(verificationCode, signalingKey, false, axolotlStore.getLocalRegistrationId());
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
