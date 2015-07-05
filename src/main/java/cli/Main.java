@@ -17,6 +17,7 @@
 package cli;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
 import org.whispersystems.libaxolotl.InvalidVersionException;
@@ -43,9 +44,12 @@ public class Main {
                 .description("valid subcommands")
                 .help("additional help");
         Subparser parserRegister = subparsers.addParser("register");
+        parserRegister.addArgument("-v", "--voice")
+                    .help("The verification should be done over voice, not sms.")
+                    .action(Arguments.storeTrue());
         Subparser parserVerify = subparsers.addParser("verify");
         parserVerify.addArgument("verificationCode")
-                .help("The verification code you received via sms.");
+                .help("The verification code you received via sms or voice call.");
         Subparser parserSend = subparsers.addParser("send");
         parserSend.addArgument("recipient")
                 .help("Specify the recipients' phone number.")
@@ -80,7 +84,7 @@ public class Main {
                     m.createNewIdentity();
                 }
                 try {
-                    m.register();
+                    m.register(ns.getBoolean("voice"));
                 } catch (IOException e) {
                     System.out.println("Request verify error: " + e.getMessage());
                     System.exit(3);
