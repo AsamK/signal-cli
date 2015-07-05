@@ -117,6 +117,7 @@ public class Manager {
 
     public void register() throws IOException {
         password = Util.getSecret(18);
+        signalingKey = Util.getSecret(52);
 
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
 
@@ -126,7 +127,6 @@ public class Manager {
 
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
-        signalingKey = Util.getSecret(52);
         accountManager.verifyAccount(verificationCode, signalingKey, false, axolotlStore.getLocalRegistrationId());
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
