@@ -23,13 +23,22 @@ import org.apache.commons.io.IOUtils;
 import org.whispersystems.libaxolotl.InvalidVersionException;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
+import org.whispersystems.textsecure.api.messages.TextSecureAttachment;
+import org.whispersystems.textsecure.api.messages.TextSecureAttachmentStream;
 import org.whispersystems.textsecure.api.messages.TextSecureContent;
 import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
 
@@ -58,6 +67,9 @@ public class Main {
                 .nargs("*");
         parserSend.addArgument("-m", "--message")
                 .help("Specify the message, if missing standard input is used.");
+        parserSend.addArgument("-a", "--attachment")
+                .nargs("*")
+                .help("Add file as attachment");
         Subparser parserReceive = subparsers.addParser("receive");
         parser.addArgument("-u", "--username")
                 .required(true)
@@ -123,7 +135,25 @@ public class Main {
                         System.exit(1);
                     }
                 }
-                TextSecureDataMessage message = TextSecureDataMessage.newBuilder().withBody(messageText).build();
+                final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+                final List<String> attachments = ns.<String>getList("attachment");
+                if (attachments != null) {
+                    List<TextSecureAttachment> textSecureAttachments = new ArrayList<TextSecureAttachment>(attachments.size());
+                    for (String attachment : attachments) {
+                        try {
+                            File attachmentFile = new File(attachment);
+                            InputStream attachmentStream = new FileInputStream(attachmentFile);
+                            final long attachmentSize = attachmentFile.length();
+                            String mime = Files.probeContentType(Paths.get(attachment));
+                            textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
+                        } catch (IOException e) {
+                            System.out.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
+                            System.exit(1);
+                        }
+                    }
+                    messageBuilder.withAttachments(textSecureAttachments);
+                }
+                TextSecureDataMessage message = messageBuilder.build();
                 for (String recipient : ns.<String>getList("recipient")) {
                     try {
                         messageSender.sendMessage(new TextSecureAddress(recipient), message);
