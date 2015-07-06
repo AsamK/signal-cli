@@ -81,7 +81,9 @@ public class Manager {
         JSONObject in = new JSONObject(IOUtils.toString(new FileInputStream(getFileName())));
         username = in.getString("username");
         password = in.getString("password");
-        signalingKey = in.getString("signalingKey");
+        if (in.has("signalingKey")) {
+            signalingKey = in.getString("signalingKey");
+        }
         axolotlStore = new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
         registered = in.getBoolean("registered");
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
