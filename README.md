@@ -1,6 +1,6 @@
 # textsecure-cli
 
-textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently doesn't work, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS.
+textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently doesn't work, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
 It is primarily intented to be used on servers to notify admins of important events.
 
 ## Usage
@@ -10,6 +10,10 @@ usage: textsecure-cli [-h] -u USERNAME {register,verify,send,receive} ...
 * Register a number
 
         textsecure-cli -u USERNAME register
+
+* Register a number with voice verification
+
+        textsecure-cli -u USERNAME register -v
 
 * Verify the number using the code received via SMS
 

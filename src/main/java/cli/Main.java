@@ -47,8 +47,8 @@ public class Main {
                 .help("additional help");
         Subparser parserRegister = subparsers.addParser("register");
         parserRegister.addArgument("-v", "--voice")
-                    .help("The verification should be done over voice, not sms.")
-                    .action(Arguments.storeTrue());
+                .help("The verification should be done over voice, not sms.")
+                .action(Arguments.storeTrue());
         Subparser parserVerify = subparsers.addParser("verify");
         parserVerify.addArgument("verificationCode")
                 .help("The verification code you received via sms or voice call.");
