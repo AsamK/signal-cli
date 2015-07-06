@@ -30,12 +30,12 @@ import org.whispersystems.textsecure.api.TextSecureMessagePipe;
 import org.whispersystems.textsecure.api.TextSecureMessageReceiver;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.TextSecureCipher;
+import org.whispersystems.textsecure.api.messages.TextSecureContent;
 import org.whispersystems.textsecure.api.messages.TextSecureEnvelope;
-import org.whispersystems.textsecure.api.messages.TextSecureMessage;
+import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.TrustStore;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -151,7 +151,7 @@ public class Manager {
                 axolotlStore, Optional.<TextSecureMessageSender.EventListener>absent());
     }
 
-    public TextSecureMessage receiveMessage() throws IOException, InvalidVersionException {
+    public TextSecureContent receiveMessage() throws IOException, InvalidVersionException {
         TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
         TextSecureMessagePipe messagePipe = null;
 
@@ -164,8 +164,8 @@ public class Manager {
             } catch (TimeoutException e) {
                 return null;
             }
-            TextSecureCipher cipher = new TextSecureCipher(axolotlStore);
-            TextSecureMessage message = null;
+            TextSecureCipher cipher = new TextSecureCipher(new TextSecureAddress(username), axolotlStore);
+            TextSecureContent message = null;
             try {
                 message = cipher.decrypt(envelope);
             } catch (Exception e) {

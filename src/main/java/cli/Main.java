@@ -22,7 +22,9 @@ import org.apache.commons.io.IOUtils;
 import org.whispersystems.libaxolotl.InvalidVersionException;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
-import org.whispersystems.textsecure.api.messages.TextSecureMessage;
+import org.whispersystems.textsecure.api.messages.TextSecureContent;
+import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
+import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 
 import java.io.IOException;
@@ -117,7 +119,7 @@ public class Main {
                         System.exit(1);
                     }
                 }
-                TextSecureMessage message = TextSecureMessage.newBuilder().withBody(messageText).build();
+                TextSecureDataMessage message = TextSecureDataMessage.newBuilder().withBody(messageText).build();
                 for (String recipient : ns.<String>getList("recipient")) {
                     try {
                         messageSender.sendMessage(new TextSecureAddress(recipient), message);
@@ -132,11 +134,23 @@ public class Main {
                     System.exit(1);
                 }
                 try {
-                    message = m.receiveMessage();
-                    if (message == null) {
-                        System.exit(0);
-                    } else {
-                        System.out.println("Received message: " + message.getBody().get());
+                    TextSecureContent content = m.receiveMessage();
+                    if (content.getDataMessage().isPresent()) {
+                        message = content.getDataMessage().get();
+                        if (message == null) {
+                            System.exit(0);
+                        } else {
+                            System.out.println("Received message: " + message.getBody().get());
+                        }
+                    }
+                    if (content.getSyncMessage().isPresent()) {
+                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+
+                        if (syncMessage == null) {
+                            System.exit(0);
+                        } else {
+                            System.out.println("Received sync message");
+                        }
                     }
                 } catch (IOException | InvalidVersionException e) {
                     System.out.println("Receive message: " + e.getMessage());
