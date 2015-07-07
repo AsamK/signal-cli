@@ -21,9 +21,10 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
-import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
+import org.whispersystems.textsecure.api.push.TextSecureAddress;
+import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.textsecure.api.util.InvalidNumberException;
 
 import java.io.File;
@@ -150,12 +151,19 @@ public class Main {
                     messageBuilder.withAttachments(textSecureAttachments);
                 }
                 TextSecureDataMessage message = messageBuilder.build();
+
+                List<TextSecureAddress> recipients = new ArrayList<>(ns.<String>getList("recipient").size());
                 for (String recipient : ns.<String>getList("recipient")) {
                     try {
-                        messageSender.sendMessage(m.getPushAddress(recipient), message);
-                    } catch (UntrustedIdentityException | IOException | InvalidNumberException e) {
-                        System.out.println("Failed to send message  to \"" + recipient + "\": " + e.getMessage());
+                        recipients.add(m.getPushAddress(recipient));
+                    } catch (InvalidNumberException e) {
+                        System.out.println("Failed to send message to \"" + recipient + "\": " + e.getMessage());
                     }
+                }
+                try {
+                    messageSender.sendMessage(recipients, message);
+                } catch (IOException | EncapsulatedExceptions e) {
+                    System.out.println("Failed to send message: " + e.getMessage());
                 }
                 break;
             case "receive":
