@@ -34,7 +34,7 @@ public class JsonSignedPreKeyStore implements SignedPreKeyStore {
     public JSONArray getJson() {
         JSONArray result = new JSONArray();
         for (Integer id : store.keySet()) {
-            result.put(new JSONObject().put("id", id.toString()).put("record", store.get(id)));
+            result.put(new JSONObject().put("id", id.toString()).put("record", Base64.encodeBytes(store.get(id))));
         }
         return result;
     }

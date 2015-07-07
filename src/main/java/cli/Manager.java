@@ -24,6 +24,7 @@ import org.whispersystems.libaxolotl.InvalidVersionException;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 import org.whispersystems.libaxolotl.util.KeyHelper;
+import org.whispersystems.libaxolotl.util.Medium;
 import org.whispersystems.libaxolotl.util.guava.Optional;
 import org.whispersystems.textsecure.api.TextSecureAccountManager;
 import org.whispersystems.textsecure.api.TextSecureMessagePipe;
@@ -137,13 +138,21 @@ public class Manager {
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
+
         int start = 0;
         List<PreKeyRecord> oneTimePreKeys = KeyHelper.generatePreKeys(start, 100);
+        for (int i = start; i < oneTimePreKeys.size(); i++) {
+            axolotlStore.storePreKey(i, oneTimePreKeys.get(i));
+        }
+
         PreKeyRecord lastResortKey = KeyHelper.generateLastResortPreKey();
+        axolotlStore.storePreKey(Medium.MAX_VALUE, lastResortKey);
+
         int signedPreKeyId = 0;
         SignedPreKeyRecord signedPreKeyRecord;
         try {
             signedPreKeyRecord = KeyHelper.generateSignedPreKey(axolotlStore.getIdentityKeyPair(), signedPreKeyId);
+            axolotlStore.storeSignedPreKey(signedPreKeyId, signedPreKeyRecord);
         } catch (InvalidKeyException e) {
             // Should really not happen
             System.out.println("invalid key");
