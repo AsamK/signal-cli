@@ -24,7 +24,7 @@ import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
-import org.whispersystems.textsecure.api.push.TextSecureAddress;
+import org.whispersystems.textsecure.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -152,9 +152,9 @@ public class Main {
                 TextSecureDataMessage message = messageBuilder.build();
                 for (String recipient : ns.<String>getList("recipient")) {
                     try {
-                        messageSender.sendMessage(new TextSecureAddress(recipient), message);
-                    } catch (UntrustedIdentityException | IOException e) {
-                        System.out.println("Send message: " + e.getMessage());
+                        messageSender.sendMessage(m.getPushAddress(recipient), message);
+                    } catch (UntrustedIdentityException | IOException | InvalidNumberException e) {
+                        System.out.println("Failed to send message  to \"" + recipient + "\": " + e.getMessage());
                     }
                 }
                 break;

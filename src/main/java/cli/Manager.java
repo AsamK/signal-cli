@@ -206,4 +206,14 @@ public class Manager {
                 messagePipe.shutdown();
         }
     }
+
+    public String canonicalizeNumber(String number) throws InvalidNumberException {
+        String localNumber = username;
+        return PhoneNumberFormatter.formatNumber(number, localNumber);
+    }
+
+    protected TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
+        String e164number = canonicalizeNumber(number);
+        return new TextSecureAddress(e164number);
+    }
 }
