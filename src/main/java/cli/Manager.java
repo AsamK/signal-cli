@@ -179,6 +179,10 @@ public class Manager {
         }
     }
 
+    public void handleEndSession(String source) {
+        axolotlStore.deleteAllSessions(source);
+    }
+
     public interface ReceiveMessageHandler {
         void handleMessage(TextSecureEnvelope envelope);
     }

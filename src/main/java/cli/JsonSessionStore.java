@@ -7,10 +7,7 @@ import org.whispersystems.libaxolotl.state.SessionRecord;
 import org.whispersystems.libaxolotl.state.SessionStore;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JsonSessionStore implements SessionStore {
 
@@ -85,7 +82,7 @@ public class JsonSessionStore implements SessionStore {
 
     @Override
     public synchronized void deleteAllSessions(String name) {
-        for (AxolotlAddress key : sessions.keySet()) {
+        for (AxolotlAddress key : new ArrayList<>(sessions.keySet())) {
             if (key.getName().equals(name)) {
                 sessions.remove(key);
             }

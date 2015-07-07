@@ -188,9 +188,11 @@ public class Main {
                                 } else {
                                     if (content.getDataMessage().isPresent()) {
                                         TextSecureDataMessage message = content.getDataMessage().get();
-
                                         System.out.println("Body: " + message.getBody().get());
-                                        if (message.getAttachments().isPresent()) {
+
+                                        if (message.isEndSession()) {
+                                            m.handleEndSession(envelope.getSource());
+                                        } else if (message.getAttachments().isPresent()) {
                                             System.out.println("Attachments: ");
                                             for (TextSecureAttachment attachment : message.getAttachments().get()) {
                                                 System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
