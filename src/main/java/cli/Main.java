@@ -20,13 +20,9 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
-import org.whispersystems.libaxolotl.InvalidVersionException;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
-import org.whispersystems.textsecure.api.messages.TextSecureAttachment;
-import org.whispersystems.textsecure.api.messages.TextSecureAttachmentStream;
-import org.whispersystems.textsecure.api.messages.TextSecureContent;
-import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
+import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 
@@ -82,8 +78,8 @@ public class Main {
             System.exit(1);
         }
 
-        String username = ns.getString("username");
-        Manager m = new Manager(username);
+        final String username = ns.getString("username");
+        final Manager m = new Manager(username);
         if (m.userExists()) {
             try {
                 m.load();
@@ -168,26 +164,47 @@ public class Main {
                     System.exit(1);
                 }
                 try {
-                    TextSecureContent content = m.receiveMessage();
-                    if (content.getDataMessage().isPresent()) {
-                        message = content.getDataMessage().get();
-                        if (message == null) {
-                            System.exit(0);
-                        } else {
-                            System.out.println("Received message: " + message.getBody().get());
-                        }
-                    }
-                    if (content.getSyncMessage().isPresent()) {
-                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                    m.receiveMessages(new Manager.ReceiveMessageHandler() {
+                        @Override
+                        public void handleMessage(TextSecureEnvelope envelope) {
+                            System.out.println("Envelope from: " + envelope.getSource());
+                            System.out.println("Timestamp: " + envelope.getTimestamp());
 
-                        if (syncMessage == null) {
-                            System.exit(0);
-                        } else {
-                            System.out.println("Received sync message");
+                            if (envelope.isReceipt()) {
+                                System.out.println("Got receipt.");
+                            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
+                                TextSecureContent content = m.decryptMessage(envelope);
+
+                                if (content == null) {
+                                    System.out.println("Failed to decrypt message.");
+                                } else {
+                                    if (content.getDataMessage().isPresent()) {
+                                        TextSecureDataMessage message = content.getDataMessage().get();
+
+                                        System.out.println("Body: " + message.getBody().get());
+                                        if (message.getAttachments().isPresent()) {
+                                            System.out.println("Attachments: ");
+                                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                                                System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
+                                                if (attachment.isPointer()) {
+                                                    System.out.println("  Id: " + attachment.asPointer().getId() + " Key length: " + attachment.asPointer().getKey().length + (attachment.asPointer().getRelay().isPresent() ? " Relay: " + attachment.asPointer().getRelay().get() : ""));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (content.getSyncMessage().isPresent()) {
+                                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                                        System.out.println("Received sync message");
+                                    }
+                                }
+                            } else {
+                                System.out.println("Unknown message received.");
+                            }
+                            System.out.println();
                         }
-                    }
-                } catch (IOException | InvalidVersionException e) {
-                    System.out.println("Receive message: " + e.getMessage());
+                    });
+                } catch (IOException e) {
+                    System.out.println("Error while receiving message: " + e.getMessage());
                 }
                 break;
         }

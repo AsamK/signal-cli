@@ -35,6 +35,8 @@ import org.whispersystems.textsecure.api.messages.TextSecureContent;
 import org.whispersystems.textsecure.api.messages.TextSecureEnvelope;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.TrustStore;
+import org.whispersystems.textsecure.api.util.InvalidNumberException;
+import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.*;
 import java.util.List;
@@ -166,28 +168,39 @@ public class Manager {
                 axolotlStore, Optional.<TextSecureMessageSender.EventListener>absent());
     }
 
-    public TextSecureContent receiveMessage() throws IOException, InvalidVersionException {
+    public TextSecureContent decryptMessage(TextSecureEnvelope envelope) {
+        TextSecureCipher cipher = new TextSecureCipher(new TextSecureAddress(username), axolotlStore);
+        try {
+            return cipher.decrypt(envelope);
+        } catch (Exception e) {
+            // TODO handle all exceptions
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public interface ReceiveMessageHandler {
+        void handleMessage(TextSecureEnvelope envelope);
+    }
+
+    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
         TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
         TextSecureMessagePipe messagePipe = null;
 
         try {
             messagePipe = messageReceiver.createMessagePipe();
 
-            TextSecureEnvelope envelope;
-            try {
-                envelope = messagePipe.read(5, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                return null;
+            while (true) {
+                TextSecureEnvelope envelope;
+                try {
+                    envelope = messagePipe.read(1, TimeUnit.MINUTES);
+                    handler.handleMessage(envelope);
+                } catch (TimeoutException e) {
+                } catch (InvalidVersionException e) {
+                    System.out.println("Ignoring error: " + e.getMessage());
+                }
+                save();
             }
-            TextSecureCipher cipher = new TextSecureCipher(new TextSecureAddress(username), axolotlStore);
-            TextSecureContent message = null;
-            try {
-                message = cipher.decrypt(envelope);
-            } catch (Exception e) {
-                // TODO handle all exceptions
-                e.printStackTrace();
-            }
-            return message;
         } finally {
             if (messagePipe != null)
                 messagePipe.shutdown();
