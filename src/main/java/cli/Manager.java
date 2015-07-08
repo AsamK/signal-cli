@@ -20,7 +20,10 @@ import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.whispersystems.libaxolotl.IdentityKeyPair;
 import org.whispersystems.libaxolotl.InvalidKeyException;
+import org.whispersystems.libaxolotl.InvalidKeyIdException;
 import org.whispersystems.libaxolotl.InvalidVersionException;
+import org.whispersystems.libaxolotl.ecc.Curve;
+import org.whispersystems.libaxolotl.ecc.ECKeyPair;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 import org.whispersystems.libaxolotl.util.KeyHelper;
@@ -39,6 +42,7 @@ import org.whispersystems.textsecure.api.util.InvalidNumberException;
 import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.*;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -52,6 +56,8 @@ public class Manager {
     private String username;
     private String password;
     private String signalingKey;
+    private int preKeyIdOffset;
+    private int nextSignedPreKeyId;
 
     private boolean registered = false;
 
@@ -87,6 +93,16 @@ public class Manager {
         if (in.has("signalingKey")) {
             signalingKey = in.getString("signalingKey");
         }
+        if (in.has("preKeyIdOffset")) {
+            preKeyIdOffset = in.getInt("preKeyIdOffset");
+        } else {
+            preKeyIdOffset = 0;
+        }
+        if (in.has("nextSignedPreKeyId")) {
+            nextSignedPreKeyId = in.getInt("nextSignedPreKeyId");
+        } else {
+            nextSignedPreKeyId = 0;
+        }
         axolotlStore = new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
         registered = in.getBoolean("registered");
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
@@ -96,6 +112,8 @@ public class Manager {
         String out = new JSONObject().put("username", username)
                 .put("password", password)
                 .put("signalingKey", signalingKey)
+                .put("preKeyIdOffset", preKeyIdOffset)
+                .put("nextSignedPreKeyId", nextSignedPreKeyId)
                 .put("axolotlStore", axolotlStore.getJson())
                 .put("registered", registered).toString();
         try {
@@ -133,6 +151,56 @@ public class Manager {
         registered = false;
     }
 
+    private static final int BATCH_SIZE = 100;
+
+    private List<PreKeyRecord> generatePreKeys() {
+        List<PreKeyRecord> records = new LinkedList<>();
+
+        for (int i = 0; i < BATCH_SIZE; i++) {
+            int preKeyId = (preKeyIdOffset + i) % Medium.MAX_VALUE;
+            ECKeyPair keyPair = Curve.generateKeyPair();
+            PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
+
+            axolotlStore.storePreKey(preKeyId, record);
+            records.add(record);
+        }
+
+        preKeyIdOffset = (preKeyIdOffset + BATCH_SIZE + 1) % Medium.MAX_VALUE;
+        return records;
+    }
+
+    private PreKeyRecord generateLastResortPreKey() {
+        if (axolotlStore.containsPreKey(Medium.MAX_VALUE)) {
+            try {
+                return axolotlStore.loadPreKey(Medium.MAX_VALUE);
+            } catch (InvalidKeyIdException e) {
+                axolotlStore.removePreKey(Medium.MAX_VALUE);
+            }
+        }
+
+        ECKeyPair keyPair = Curve.generateKeyPair();
+        PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
+
+        axolotlStore.storePreKey(Medium.MAX_VALUE, record);
+
+        return record;
+    }
+
+    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
+        try {
+            ECKeyPair keyPair = Curve.generateKeyPair();
+            byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
+            SignedPreKeyRecord record = new SignedPreKeyRecord(nextSignedPreKeyId, System.currentTimeMillis(), keyPair, signature);
+
+            axolotlStore.storeSignedPreKey(nextSignedPreKeyId, record);
+            nextSignedPreKeyId = (nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
+
+            return record;
+        } catch (InvalidKeyException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
@@ -141,25 +209,12 @@ public class Manager {
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
 
-        int start = 0;
-        List<PreKeyRecord> oneTimePreKeys = KeyHelper.generatePreKeys(start, 100);
-        for (int i = start; i < oneTimePreKeys.size(); i++) {
-            axolotlStore.storePreKey(i, oneTimePreKeys.get(i));
-        }
+        List<PreKeyRecord> oneTimePreKeys = generatePreKeys();
 
-        PreKeyRecord lastResortKey = KeyHelper.generateLastResortPreKey();
-        axolotlStore.storePreKey(Medium.MAX_VALUE, lastResortKey);
+        PreKeyRecord lastResortKey = generateLastResortPreKey();
 
-        int signedPreKeyId = 0;
-        SignedPreKeyRecord signedPreKeyRecord;
-        try {
-            signedPreKeyRecord = KeyHelper.generateSignedPreKey(axolotlStore.getIdentityKeyPair(), signedPreKeyId);
-            axolotlStore.storeSignedPreKey(signedPreKeyId, signedPreKeyRecord);
-        } catch (InvalidKeyException e) {
-            // Should really not happen
-            System.out.println("invalid key");
-            return;
-        }
+        SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(axolotlStore.getIdentityKeyPair());
+
         accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
     }
 
