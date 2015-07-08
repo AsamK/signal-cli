@@ -19,7 +19,7 @@ dependencies {
 
 jar {
     baseName = 'textsecure-cli'
-    version = '0.0.1'
+    version = '0.0.2'
     manifest {
         attributes 'Main-Class': 'cli.Main'
     }
