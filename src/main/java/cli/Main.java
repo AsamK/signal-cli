@@ -186,7 +186,7 @@ public class Main {
                     System.exit(1);
                 }
                 try {
-                    m.receiveMessages(new Manager.ReceiveMessageHandler() {
+                    m.receiveMessages(5, true, new Manager.ReceiveMessageHandler() {
                         @Override
                         public void handleMessage(TextSecureEnvelope envelope) {
                             System.out.println("Envelope from: " + envelope.getSource());
@@ -233,5 +233,6 @@ public class Main {
                 break;
         }
         m.save();
+        System.exit(0);
     }
 }

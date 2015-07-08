@@ -187,7 +187,7 @@ public class Manager {
         void handleMessage(TextSecureEnvelope envelope);
     }
 
-    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
+    public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
         TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
         TextSecureMessagePipe messagePipe = null;
 
@@ -197,9 +197,11 @@ public class Manager {
             while (true) {
                 TextSecureEnvelope envelope;
                 try {
-                    envelope = messagePipe.read(1, TimeUnit.MINUTES);
+                    envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
                     handler.handleMessage(envelope);
                 } catch (TimeoutException e) {
+                    if (returnOnTimeout)
+                        return;
                 } catch (InvalidVersionException e) {
                     System.out.println("Ignoring error: " + e.getMessage());
                 }
