@@ -144,6 +144,12 @@ public class Main {
                     m.receiveMessages(5, true, new ReceiveMessageHandler(m));
                 } catch (IOException e) {
                     System.out.println("Error while receiving message: " + e.getMessage());
+                    System.exit(3);
+                } catch (AssertionError e) {
+                    System.out.println("Failed to receive message (Assertion): " + e.getMessage());
+                    System.out.println(e.getStackTrace());
+                    System.out.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+                    System.exit(1);
                 }
                 break;
         }
@@ -216,6 +222,11 @@ public class Main {
             for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
                 System.out.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
             }
+        } catch (AssertionError e) {
+            System.out.println("Failed to send message (Assertion): " + e.getMessage());
+            System.out.println(e.getStackTrace());
+            System.out.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+            System.exit(1);
         }
     }
 
