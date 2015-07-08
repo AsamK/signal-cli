@@ -54,6 +54,9 @@ dependencies.
 
         ./gradlew distTar
 
+## Troubleshooting
+If you use a version of the Oracle JRE and get an InvalidKeyException you need to enable unlimited strength crypto. See https://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters for instructions.
+
 ## License
 
 This project uses libtextsecure-java from Open Whisper Systems:
