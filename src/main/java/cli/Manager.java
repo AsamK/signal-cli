@@ -35,9 +35,11 @@ import org.whispersystems.textsecure.api.TextSecureMessageReceiver;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.TextSecureCipher;
 import org.whispersystems.textsecure.api.messages.TextSecureContent;
+import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
 import org.whispersystems.textsecure.api.messages.TextSecureEnvelope;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.TrustStore;
+import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.textsecure.api.util.InvalidNumberException;
 import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
@@ -68,7 +70,7 @@ public class Manager {
         this.username = username;
     }
 
-    private String getFileName() {
+    public String getFileName() {
         String path = settingsPath + "/data";
         new File(path).mkdirs();
         return path + "/" + username;
@@ -218,9 +220,11 @@ public class Manager {
         accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
     }
 
-    public TextSecureMessageSender getMessageSender() {
-        return new TextSecureMessageSender(URL, TRUST_STORE, username, password,
+    public void sendMessage(List<TextSecureAddress> recipients, TextSecureDataMessage message)
+            throws IOException, EncapsulatedExceptions {
+        TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
                 axolotlStore, Optional.<TextSecureMessageSender.EventListener>absent());
+        messageSender.sendMessage(recipients, message);
     }
 
     public TextSecureContent decryptMessage(TextSecureEnvelope envelope) {

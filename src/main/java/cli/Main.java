@@ -20,7 +20,6 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
-import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
@@ -46,39 +45,8 @@ public class Main {
         // Workaround for BKS truststore
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
 
-        ArgumentParser parser = ArgumentParsers.newArgumentParser("textsecure-cli")
-                .defaultHelp(true)
-                .description("Commandline interface for TextSecure.");
-        Subparsers subparsers = parser.addSubparsers()
-                .title("subcommands")
-                .dest("command")
-                .description("valid subcommands")
-                .help("additional help");
-        Subparser parserRegister = subparsers.addParser("register");
-        parserRegister.addArgument("-v", "--voice")
-                .help("The verification should be done over voice, not sms.")
-                .action(Arguments.storeTrue());
-        Subparser parserVerify = subparsers.addParser("verify");
-        parserVerify.addArgument("verificationCode")
-                .help("The verification code you received via sms or voice call.");
-        Subparser parserSend = subparsers.addParser("send");
-        parserSend.addArgument("recipient")
-                .help("Specify the recipients' phone number.")
-                .nargs("*");
-        parserSend.addArgument("-m", "--message")
-                .help("Specify the message, if missing standard input is used.");
-        parserSend.addArgument("-a", "--attachment")
-                .nargs("*")
-                .help("Add file as attachment");
-        Subparser parserReceive = subparsers.addParser("receive");
-        parser.addArgument("-u", "--username")
-                .required(true)
-                .help("Specify your phone number, that will be used for verification.");
-        Namespace ns = null;
-        try {
-            ns = parser.parseArgs(args);
-        } catch (ArgumentParserException e) {
-            parser.handleError(e);
+        Namespace ns = parseArgs(args);
+        if (ns == null) {
             System.exit(1);
         }
 
@@ -88,10 +56,11 @@ public class Main {
             try {
                 m.load();
             } catch (Exception e) {
-                System.out.println("Loading file error: " + e.getMessage());
+                System.out.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
                 System.exit(2);
             }
         }
+
         switch (ns.getString("command")) {
             case "register":
                 if (!m.userHasKeys()) {
@@ -125,7 +94,6 @@ public class Main {
                     System.out.println("User is not registered.");
                     System.exit(1);
                 }
-                TextSecureMessageSender messageSender = m.getMessageSender();
                 String messageText = ns.getString("message");
                 if (messageText == null) {
                     try {
@@ -135,10 +103,11 @@ public class Main {
                         System.exit(1);
                     }
                 }
-                final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+
                 final List<String> attachments = ns.<String>getList("attachment");
+                List<TextSecureAttachment> textSecureAttachments = null;
                 if (attachments != null) {
-                    List<TextSecureAttachment> textSecureAttachments = new ArrayList<TextSecureAttachment>(attachments.size());
+                    textSecureAttachments = new ArrayList<TextSecureAttachment>(attachments.size());
                     for (String attachment : attachments) {
                         try {
                             File attachmentFile = new File(attachment);
@@ -148,37 +117,23 @@ public class Main {
                             textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
                         } catch (IOException e) {
                             System.out.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
+                            System.out.println("Aborting sending.");
                             System.exit(1);
                         }
                     }
-                    messageBuilder.withAttachments(textSecureAttachments);
                 }
-                TextSecureDataMessage message = messageBuilder.build();
 
                 List<TextSecureAddress> recipients = new ArrayList<>(ns.<String>getList("recipient").size());
                 for (String recipient : ns.<String>getList("recipient")) {
                     try {
                         recipients.add(m.getPushAddress(recipient));
                     } catch (InvalidNumberException e) {
-                        System.out.println("Failed to send message to \"" + recipient + "\": " + e.getMessage());
+                        System.out.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                        System.out.println("Aborting sending.");
+                        System.exit(1);
                     }
                 }
-                try {
-                    messageSender.sendMessage(recipients, message);
-                } catch (IOException e) {
-                    System.out.println("Failed to send message: " + e.getMessage());
-                } catch (EncapsulatedExceptions e) {
-                    System.out.println("Failed to send (some) messages:");
-                    for (NetworkFailureException n : e.getNetworkExceptions()) {
-                        System.out.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
-                    }
-                    for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
-                        System.out.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
-                    }
-                    for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
-                        System.out.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
-                    }
-                }
+                sendMessage(m, messageText, textSecureAttachments, recipients);
                 break;
             case "receive":
                 if (!m.isRegistered()) {
@@ -186,47 +141,7 @@ public class Main {
                     System.exit(1);
                 }
                 try {
-                    m.receiveMessages(5, true, new Manager.ReceiveMessageHandler() {
-                        @Override
-                        public void handleMessage(TextSecureEnvelope envelope) {
-                            System.out.println("Envelope from: " + envelope.getSource());
-                            System.out.println("Timestamp: " + envelope.getTimestamp());
-
-                            if (envelope.isReceipt()) {
-                                System.out.println("Got receipt.");
-                            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
-                                TextSecureContent content = m.decryptMessage(envelope);
-
-                                if (content == null) {
-                                    System.out.println("Failed to decrypt message.");
-                                } else {
-                                    if (content.getDataMessage().isPresent()) {
-                                        TextSecureDataMessage message = content.getDataMessage().get();
-                                        System.out.println("Body: " + message.getBody().get());
-
-                                        if (message.isEndSession()) {
-                                            m.handleEndSession(envelope.getSource());
-                                        } else if (message.getAttachments().isPresent()) {
-                                            System.out.println("Attachments: ");
-                                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
-                                                System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
-                                                if (attachment.isPointer()) {
-                                                    System.out.println("  Id: " + attachment.asPointer().getId() + " Key length: " + attachment.asPointer().getKey().length + (attachment.asPointer().getRelay().isPresent() ? " Relay: " + attachment.asPointer().getRelay().get() : ""));
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (content.getSyncMessage().isPresent()) {
-                                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
-                                        System.out.println("Received sync message");
-                                    }
-                                }
-                            } else {
-                                System.out.println("Unknown message received.");
-                            }
-                            System.out.println();
-                        }
-                    });
+                    m.receiveMessages(5, true, new ReceiveMessageHandler(m));
                 } catch (IOException e) {
                     System.out.println("Error while receiving message: " + e.getMessage());
                 }
@@ -234,5 +149,121 @@ public class Main {
         }
         m.save();
         System.exit(0);
+    }
+
+    private static Namespace parseArgs(String[] args) {
+        ArgumentParser parser = ArgumentParsers.newArgumentParser("textsecure-cli")
+                .defaultHelp(true)
+                .description("Commandline interface for TextSecure.");
+        Subparsers subparsers = parser.addSubparsers()
+                .title("subcommands")
+                .dest("command")
+                .description("valid subcommands")
+                .help("additional help");
+
+        Subparser parserRegister = subparsers.addParser("register");
+        parserRegister.addArgument("-v", "--voice")
+                .help("The verification should be done over voice, not sms.")
+                .action(Arguments.storeTrue());
+
+        Subparser parserVerify = subparsers.addParser("verify");
+        parserVerify.addArgument("verificationCode")
+                .help("The verification code you received via sms or voice call.");
+
+        Subparser parserSend = subparsers.addParser("send");
+        parserSend.addArgument("recipient")
+                .help("Specify the recipients' phone number.")
+                .nargs("*");
+        parserSend.addArgument("-m", "--message")
+                .help("Specify the message, if missing standard input is used.");
+        parserSend.addArgument("-a", "--attachment")
+                .nargs("*")
+                .help("Add file as attachment");
+
+        Subparser parserReceive = subparsers.addParser("receive");
+        parser.addArgument("-u", "--username")
+                .required(true)
+                .help("Specify your phone number, that will be used for verification.");
+
+        try {
+            return parser.parseArgs(args);
+        } catch (ArgumentParserException e) {
+            parser.handleError(e);
+            return null;
+        }
+    }
+
+    private static void sendMessage(Manager m, String messageText, List<TextSecureAttachment> textSecureAttachments,
+                                    List<TextSecureAddress> recipients) {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+        if (textSecureAttachments != null) {
+            messageBuilder.withAttachments(textSecureAttachments);
+        }
+        TextSecureDataMessage message = messageBuilder.build();
+
+        try {
+            m.sendMessage(recipients, message);
+        } catch (IOException e) {
+            System.out.println("Failed to send message: " + e.getMessage());
+        } catch (EncapsulatedExceptions e) {
+            System.out.println("Failed to send (some) messages:");
+            for (NetworkFailureException n : e.getNetworkExceptions()) {
+                System.out.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
+            }
+            for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
+                System.out.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
+            }
+            for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
+                System.out.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
+            }
+        }
+    }
+
+    private static class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+        Manager m;
+
+        public ReceiveMessageHandler(Manager m) {
+            this.m = m;
+        }
+
+        @Override
+        public void handleMessage(TextSecureEnvelope envelope) {
+            System.out.println("Envelope from: " + envelope.getSource());
+            System.out.println("Timestamp: " + envelope.getTimestamp());
+
+            if (envelope.isReceipt()) {
+                System.out.println("Got receipt.");
+            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
+                TextSecureContent content = m.decryptMessage(envelope);
+
+                if (content == null) {
+                    System.out.println("Failed to decrypt message.");
+                } else {
+                    if (content.getDataMessage().isPresent()) {
+                        TextSecureDataMessage message = content.getDataMessage().get();
+                        System.out.println("Body: " + message.getBody().get());
+
+                        if (message.isEndSession()) {
+                            m.handleEndSession(envelope.getSource());
+                        } else if (message.getAttachments().isPresent()) {
+                            System.out.println("Attachments: ");
+                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                                System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
+                                if (attachment.isPointer()) {
+                                    System.out.println("  Id: " + attachment.asPointer().getId() + " Key length: " + attachment.asPointer().getKey().length + (attachment.asPointer().getRelay().isPresent() ? " Relay: " + attachment.asPointer().getRelay().get() : ""));
+                                }
+                            }
+                        }
+                    }
+                    if (content.getSyncMessage().isPresent()) {
+                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                        System.out.println("Received sync message");
+                    }
+                }
+            } else {
+                System.out.println("Unknown message received.");
+            }
+            System.out.println();
+        }
     }
 }
