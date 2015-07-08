@@ -21,10 +21,13 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
+import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.textsecure.api.push.exceptions.NetworkFailureException;
+import org.whispersystems.textsecure.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.textsecure.api.util.InvalidNumberException;
 
 import java.io.File;
@@ -162,8 +165,19 @@ public class Main {
                 }
                 try {
                     messageSender.sendMessage(recipients, message);
-                } catch (IOException | EncapsulatedExceptions e) {
+                } catch (IOException e) {
                     System.out.println("Failed to send message: " + e.getMessage());
+                } catch (EncapsulatedExceptions e) {
+                    System.out.println("Failed to send (some) messages:");
+                    for (NetworkFailureException n : e.getNetworkExceptions()) {
+                        System.out.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
+                    }
+                    for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
+                        System.out.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
+                    }
+                    for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
+                        System.out.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
+                    }
                 }
                 break;
             case "receive":
