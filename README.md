@@ -48,7 +48,7 @@ dependencies.
 
 3. Create shell wrapper in *build/install/textsecure-cli/bin*:
 
-        ./gradlew installApp
+        ./gradlew installDist
 
 4. Create tar file in *build/distributions*:
 
