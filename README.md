@@ -1,7 +1,7 @@
 # textsecure-cli
 
 textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently doesn't work, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
-It is primarily intented to be used on servers to notify admins of important events.
+It is primarily intended to be used on servers to notify admins of important events.
 
 ## Usage
 
@@ -38,7 +38,7 @@ The password and cryptographic keys are created when registering and stored in t
 This project uses [Gradle](http://gradle.org) for building and maintaining
 dependencies.
 
-1. Checkout the source somewhere on your filesystem wit
+1. Checkout the source somewhere on your filesystem with
 
         git clone https://github.com/AsamK/textsecure-cli.git
 
