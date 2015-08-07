@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JsonIdentityKeyStore implements IdentityKeyStore {
+class JsonIdentityKeyStore implements IdentityKeyStore {
 
     private final Map<String, IdentityKey> trustedKeys = new HashMap<>();
 

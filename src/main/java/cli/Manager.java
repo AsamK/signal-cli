@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class Manager {
+class Manager {
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
@@ -64,7 +64,7 @@ public class Manager {
     private boolean registered = false;
 
     private JsonAxolotlStore axolotlStore;
-    TextSecureAccountManager accountManager;
+    private TextSecureAccountManager accountManager;
 
     public Manager(String username) {
         this.username = username;
@@ -77,10 +77,7 @@ public class Manager {
 
     public boolean userExists() {
         File f = new File(getFileName());
-        if (!f.exists() || f.isDirectory()) {
-            return false;
-        }
-        return true;
+        return !(!f.exists() || f.isDirectory());
     }
 
     public boolean userHasKeys() {
@@ -124,7 +121,6 @@ public class Manager {
             writer.close();
         } catch (Exception e) {
             System.out.println("Saving file error: " + e.getMessage());
-            return;
         }
     }
 
@@ -300,12 +296,12 @@ public class Manager {
         return outputFile;
     }
 
-    public String canonicalizeNumber(String number) throws InvalidNumberException {
+    private String canonicalizeNumber(String number) throws InvalidNumberException {
         String localNumber = username;
         return PhoneNumberFormatter.formatNumber(number, localNumber);
     }
 
-    protected TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
+    TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
         String e164number = canonicalizeNumber(number);
         return new TextSecureAddress(e164number);
     }

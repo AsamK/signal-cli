@@ -10,7 +10,7 @@ import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 import java.io.IOException;
 import java.util.List;
 
-public class JsonAxolotlStore implements AxolotlStore {
+class JsonAxolotlStore implements AxolotlStore {
     private final JsonPreKeyStore preKeyStore;
     private final JsonSessionStore sessionStore;
     private final JsonSignedPreKeyStore signedPreKeyStore;

@@ -12,7 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class JsonSignedPreKeyStore implements SignedPreKeyStore {
+class JsonSignedPreKeyStore implements SignedPreKeyStore {
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 
@@ -20,7 +20,7 @@ public class JsonSignedPreKeyStore implements SignedPreKeyStore {
 
     }
 
-    public JsonSignedPreKeyStore(JSONArray list) throws IOException {
+    public JsonSignedPreKeyStore(JSONArray list) {
         for (int i = 0; i < list.length(); i++) {
             JSONObject k = list.getJSONObject(i);
             try {

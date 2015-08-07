@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JsonPreKeyStore implements PreKeyStore {
+class JsonPreKeyStore implements PreKeyStore {
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 
@@ -18,7 +18,7 @@ public class JsonPreKeyStore implements PreKeyStore {
 
     }
 
-    public JsonPreKeyStore(JSONArray list) throws IOException {
+    public JsonPreKeyStore(JSONArray list) {
         for (int i = 0; i < list.length(); i++) {
             JSONObject k = list.getJSONObject(i);
             try {

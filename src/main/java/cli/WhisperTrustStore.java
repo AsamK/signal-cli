@@ -4,7 +4,7 @@ import org.whispersystems.textsecure.api.push.TrustStore;
 
 import java.io.InputStream;
 
-public class WhisperTrustStore implements TrustStore {
+class WhisperTrustStore implements TrustStore {
 
     @Override
     public InputStream getKeyStoreInputStream() {

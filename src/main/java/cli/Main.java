@@ -232,7 +232,7 @@ public class Main {
     }
 
     private static class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
-        Manager m;
+        final Manager m;
 
         public ReceiveMessageHandler(Manager m) {
             this.m = m;

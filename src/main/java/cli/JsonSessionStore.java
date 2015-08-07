@@ -9,15 +9,15 @@ import org.whispersystems.libaxolotl.state.SessionStore;
 import java.io.IOException;
 import java.util.*;
 
-public class JsonSessionStore implements SessionStore {
+class JsonSessionStore implements SessionStore {
 
-    private Map<AxolotlAddress, byte[]> sessions = new HashMap<>();
+    private final Map<AxolotlAddress, byte[]> sessions = new HashMap<>();
 
     public JsonSessionStore() {
 
     }
 
-    public JsonSessionStore(JSONArray list) throws IOException {
+    public JsonSessionStore(JSONArray list) {
         for (int i = 0; i < list.length(); i++) {
             JSONObject k = list.getJSONObject(i);
             try {
