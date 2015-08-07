@@ -20,6 +20,7 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
+import org.whispersystems.libaxolotl.InvalidMessageException;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
@@ -262,6 +263,12 @@ public class Main {
                                 System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
                                 if (attachment.isPointer()) {
                                     System.out.println("  Id: " + attachment.asPointer().getId() + " Key length: " + attachment.asPointer().getKey().length + (attachment.asPointer().getRelay().isPresent() ? " Relay: " + attachment.asPointer().getRelay().get() : ""));
+                                    try {
+                                        File file = m.retrieveAttachment(attachment.asPointer());
+                                        System.out.println("  Stored plaintext in: " + file);
+                                    } catch (IOException | InvalidMessageException e) {
+                                        System.out.println("Failed to retrieve attachment: " + e.getMessage());
+                                    }
                                 }
                             }
                         }

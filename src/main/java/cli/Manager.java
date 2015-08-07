@@ -18,10 +18,7 @@ package cli;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
-import org.whispersystems.libaxolotl.IdentityKeyPair;
-import org.whispersystems.libaxolotl.InvalidKeyException;
-import org.whispersystems.libaxolotl.InvalidKeyIdException;
-import org.whispersystems.libaxolotl.InvalidVersionException;
+import org.whispersystems.libaxolotl.*;
 import org.whispersystems.libaxolotl.ecc.Curve;
 import org.whispersystems.libaxolotl.ecc.ECKeyPair;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;
@@ -34,6 +31,7 @@ import org.whispersystems.textsecure.api.TextSecureMessagePipe;
 import org.whispersystems.textsecure.api.TextSecureMessageReceiver;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.TextSecureCipher;
+import org.whispersystems.textsecure.api.messages.TextSecureAttachmentPointer;
 import org.whispersystems.textsecure.api.messages.TextSecureContent;
 import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
 import org.whispersystems.textsecure.api.messages.TextSecureEnvelope;
@@ -54,6 +52,8 @@ public class Manager {
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     private final static String settingsPath = System.getProperty("user.home") + "/.config/textsecure";
+    private final static String dataPath = settingsPath + "/data";
+    private final static String attachmentsPath = settingsPath + "/attachments";
 
     private String username;
     private String password;
@@ -71,9 +71,8 @@ public class Manager {
     }
 
     public String getFileName() {
-        String path = settingsPath + "/data";
-        new File(path).mkdirs();
-        return path + "/" + username;
+        new File(dataPath).mkdirs();
+        return dataPath + "/" + username;
     }
 
     public boolean userExists() {
@@ -247,7 +246,7 @@ public class Manager {
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
-        TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
+        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
         TextSecureMessagePipe messagePipe = null;
 
         try {
@@ -270,6 +269,35 @@ public class Manager {
             if (messagePipe != null)
                 messagePipe.shutdown();
         }
+    }
+
+    public File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
+        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
+
+        File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
+        InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
+
+        new File(attachmentsPath).mkdirs();
+        File outputFile = new File(attachmentsPath + "/" + pointer.getId());
+        OutputStream output = null;
+        try {
+            output = new FileOutputStream(outputFile);
+            byte[] buffer = new byte[4096];
+            int read;
+
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+            tmpFile.delete();
+        }
+        return outputFile;
     }
 
     public String canonicalizeNumber(String number) throws InvalidNumberException {
