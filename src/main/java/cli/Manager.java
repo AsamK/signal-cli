@@ -51,6 +51,8 @@ class Manager {
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
+    private final static String USER_AGENT = "textsecure-cli";
+
     private final static String settingsPath = System.getProperty("user.home") + "/.config/textsecure";
     private final static String dataPath = settingsPath + "/data";
     private final static String attachmentsPath = settingsPath + "/attachments";
@@ -103,7 +105,7 @@ class Manager {
         }
         axolotlStore = new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
         registered = in.getBoolean("registered");
-        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
+        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
     public void save() {
@@ -138,7 +140,7 @@ class Manager {
     public void register(boolean voiceVerication) throws IOException {
         password = Util.getSecret(18);
 
-        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password);
+        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
 
         if (voiceVerication)
             accountManager.requestVoiceVerificationCode();
@@ -201,7 +203,7 @@ class Manager {
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccount(verificationCode, signalingKey, false, axolotlStore.getLocalRegistrationId());
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, axolotlStore.getLocalRegistrationId());
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
@@ -218,7 +220,7 @@ class Manager {
     public void sendMessage(List<TextSecureAddress> recipients, TextSecureDataMessage message)
             throws IOException, EncapsulatedExceptions {
         TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
-                axolotlStore, Optional.<TextSecureMessageSender.EventListener>absent());
+                axolotlStore, USER_AGENT, Optional.<TextSecureMessageSender.EventListener>absent());
         messageSender.sendMessage(recipients, message);
     }
 
@@ -242,7 +244,7 @@ class Manager {
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
-        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
+        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
         TextSecureMessagePipe messagePipe = null;
 
         try {
@@ -268,7 +270,7 @@ class Manager {
     }
 
     public File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey);
+        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
 
         File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
         InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
