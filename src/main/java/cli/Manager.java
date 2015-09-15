@@ -293,7 +293,9 @@ class Manager {
             if (output != null) {
                 output.close();
             }
-            tmpFile.delete();
+            if (!tmpFile.delete()) {
+                System.err.println("Failed to delete temp file: " + tmpFile);
+            }
         }
         return outputFile;
     }
