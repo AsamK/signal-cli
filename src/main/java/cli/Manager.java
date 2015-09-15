@@ -122,7 +122,7 @@ class Manager {
             writer.flush();
             writer.close();
         } catch (Exception e) {
-            System.out.println("Saving file error: " + e.getMessage());
+            System.err.println("Saving file error: " + e.getMessage());
         }
     }
 
@@ -259,7 +259,7 @@ class Manager {
                     if (returnOnTimeout)
                         return;
                 } catch (InvalidVersionException e) {
-                    System.out.println("Ignoring error: " + e.getMessage());
+                    System.err.println("Ignoring error: " + e.getMessage());
                 }
                 save();
             }

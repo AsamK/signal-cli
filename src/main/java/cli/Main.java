@@ -57,7 +57,7 @@ public class Main {
             try {
                 m.load();
             } catch (Exception e) {
-                System.out.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
+                System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
                 System.exit(2);
             }
         }
@@ -70,29 +70,29 @@ public class Main {
                 try {
                     m.register(ns.getBoolean("voice"));
                 } catch (IOException e) {
-                    System.out.println("Request verify error: " + e.getMessage());
+                    System.err.println("Request verify error: " + e.getMessage());
                     System.exit(3);
                 }
                 break;
             case "verify":
                 if (!m.userHasKeys()) {
-                    System.out.println("User has no keys, first call register.");
+                    System.err.println("User has no keys, first call register.");
                     System.exit(1);
                 }
                 if (m.isRegistered()) {
-                    System.out.println("User registration is already verified");
+                    System.err.println("User registration is already verified");
                     System.exit(1);
                 }
                 try {
                     m.verifyAccount(ns.getString("verificationCode"));
                 } catch (IOException e) {
-                    System.out.println("Verify error: " + e.getMessage());
+                    System.err.println("Verify error: " + e.getMessage());
                     System.exit(3);
                 }
                 break;
             case "send":
                 if (!m.isRegistered()) {
-                    System.out.println("User is not registered.");
+                    System.err.println("User is not registered.");
                     System.exit(1);
                 }
                 String messageText = ns.getString("message");
@@ -100,7 +100,7 @@ public class Main {
                     try {
                         messageText = IOUtils.toString(System.in);
                     } catch (IOException e) {
-                        System.out.println("Failed to read message from stdin: " + e.getMessage());
+                        System.err.println("Failed to read message from stdin: " + e.getMessage());
                         System.exit(1);
                     }
                 }
@@ -117,8 +117,8 @@ public class Main {
                             String mime = Files.probeContentType(Paths.get(attachment));
                             textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
                         } catch (IOException e) {
-                            System.out.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
-                            System.out.println("Aborting sending.");
+                            System.err.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
+                            System.err.println("Aborting sending.");
                             System.exit(1);
                         }
                     }
@@ -129,8 +129,8 @@ public class Main {
                     try {
                         recipients.add(m.getPushAddress(recipient));
                     } catch (InvalidNumberException e) {
-                        System.out.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                        System.out.println("Aborting sending.");
+                        System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                        System.err.println("Aborting sending.");
                         System.exit(1);
                     }
                 }
@@ -138,18 +138,18 @@ public class Main {
                 break;
             case "receive":
                 if (!m.isRegistered()) {
-                    System.out.println("User is not registered.");
+                    System.err.println("User is not registered.");
                     System.exit(1);
                 }
                 try {
                     m.receiveMessages(5, true, new ReceiveMessageHandler(m));
                 } catch (IOException e) {
-                    System.out.println("Error while receiving message: " + e.getMessage());
+                    System.err.println("Error while receiving message: " + e.getMessage());
                     System.exit(3);
                 } catch (AssertionError e) {
-                    System.out.println("Failed to receive message (Assertion): " + e.getMessage());
-                    System.out.println(e.getStackTrace());
-                    System.out.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+                    System.err.println("Failed to receive message (Assertion): " + e.getMessage());
+                    System.err.println(e.getStackTrace());
+                    System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
                     System.exit(1);
                 }
                 break;
@@ -211,22 +211,22 @@ public class Main {
         try {
             m.sendMessage(recipients, message);
         } catch (IOException e) {
-            System.out.println("Failed to send message: " + e.getMessage());
+            System.err.println("Failed to send message: " + e.getMessage());
         } catch (EncapsulatedExceptions e) {
-            System.out.println("Failed to send (some) messages:");
+            System.err.println("Failed to send (some) messages:");
             for (NetworkFailureException n : e.getNetworkExceptions()) {
-                System.out.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
+                System.err.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
             }
             for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
-                System.out.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
+                System.err.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
             }
             for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
-                System.out.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
+                System.err.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
             }
         } catch (AssertionError e) {
-            System.out.println("Failed to send message (Assertion): " + e.getMessage());
-            System.out.println(e.getStackTrace());
-            System.out.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+            System.err.println("Failed to send message (Assertion): " + e.getMessage());
+            System.err.println(e.getStackTrace());
+            System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
             System.exit(1);
         }
     }
