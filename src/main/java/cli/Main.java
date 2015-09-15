@@ -105,10 +105,10 @@ public class Main {
                     }
                 }
 
-                final List<String> attachments = ns.<String>getList("attachment");
+                final List<String> attachments = ns.getList("attachment");
                 List<TextSecureAttachment> textSecureAttachments = null;
                 if (attachments != null) {
-                    textSecureAttachments = new ArrayList<TextSecureAttachment>(attachments.size());
+                    textSecureAttachments = new ArrayList<>(attachments.size());
                     for (String attachment : attachments) {
                         try {
                             File attachmentFile = new File(attachment);
