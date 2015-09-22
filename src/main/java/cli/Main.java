@@ -262,9 +262,11 @@ public class Main {
                             for (TextSecureAttachment attachment : message.getAttachments().get()) {
                                 System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
                                 if (attachment.isPointer()) {
-                                    System.out.println("  Id: " + attachment.asPointer().getId() + " Key length: " + attachment.asPointer().getKey().length + (attachment.asPointer().getRelay().isPresent() ? " Relay: " + attachment.asPointer().getRelay().get() : ""));
+                                    final TextSecureAttachmentPointer pointer = attachment.asPointer();
+                                    System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
+                                    System.out.println((pointer.getSize().isPresent() ? " Size: " + pointer.getSize().get() : " bytes") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                                     try {
-                                        File file = m.retrieveAttachment(attachment.asPointer());
+                                        File file = m.retrieveAttachment(pointer);
                                         System.out.println("  Stored plaintext in: " + file);
                                     } catch (IOException | InvalidMessageException e) {
                                         System.out.println("Failed to retrieve attachment: " + e.getMessage());

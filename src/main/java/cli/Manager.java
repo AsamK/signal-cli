@@ -292,9 +292,25 @@ class Manager {
         } finally {
             if (output != null) {
                 output.close();
+                output = null;
             }
             if (!tmpFile.delete()) {
                 System.err.println("Failed to delete temp file: " + tmpFile);
+            }
+        }
+        if (pointer.getPreview().isPresent()) {
+            File previewFile = new File(outputFile + ".preview");
+            try {
+                output = new FileOutputStream(previewFile);
+                byte[] preview = pointer.getPreview().get();
+                output.write(preview, 0, preview.length);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (output != null) {
+                    output.close();
+                }
             }
         }
         return outputFile;
