@@ -5,6 +5,8 @@ sourceCompatibility = "1.8";
 
 mainClassName = 'cli.Main'
 
+version = '0.0.2'
+
 repositories {
     mavenCentral()
 }
@@ -18,9 +20,11 @@ dependencies {
 }
 
 jar {
-    baseName = 'textsecure-cli'
-    version = '0.0.2'
     manifest {
-        attributes 'Main-Class': 'cli.Main'
+        attributes(
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Main-Class': project.mainClassName,
+        )
     }
 }
