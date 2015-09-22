@@ -161,7 +161,15 @@ public class Main {
     private static Namespace parseArgs(String[] args) {
         ArgumentParser parser = ArgumentParsers.newArgumentParser("textsecure-cli")
                 .defaultHelp(true)
-                .description("Commandline interface for TextSecure.");
+                .description("Commandline interface for TextSecure.")
+                .version(Manager.PROJECT_NAME + " " + Manager.PROJECT_VERSION);
+
+        parser.addArgument("-u", "--username")
+                .help("Specify your phone number, that will be used for verification.");
+        parser.addArgument("-v", "--version")
+                .help("Show package version.")
+                .action(Arguments.version());
+
         Subparsers subparsers = parser.addSubparsers()
                 .title("subcommands")
                 .dest("command")
@@ -188,12 +196,15 @@ public class Main {
                 .help("Add file as attachment");
 
         Subparser parserReceive = subparsers.addParser("receive");
-        parser.addArgument("-u", "--username")
-                .required(true)
-                .help("Specify your phone number, that will be used for verification.");
 
         try {
-            return parser.parseArgs(args);
+            Namespace ns = parser.parseArgs(args);
+            if (ns.getString("username") == null) {
+                parser.printUsage();
+                System.err.println("You need to specify a username (phone number)");
+                System.exit(2);
+            }
+            return ns;
         } catch (ArgumentParserException e) {
             parser.handleError(e);
             return null;
