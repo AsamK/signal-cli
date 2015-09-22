@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.whispersystems:textsecure-java:1.7.0'
+    compile 'org.whispersystems:textsecure-java:1.8.0'
     compile 'com.madgag.spongycastle:prov:1.52.0.0'
     compile 'org.json:json:20141113'
     compile 'commons-io:commons-io:2.4'
