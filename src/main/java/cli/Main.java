@@ -275,7 +275,7 @@ public class Main {
                                 if (attachment.isPointer()) {
                                     final TextSecureAttachmentPointer pointer = attachment.asPointer();
                                     System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
-                                    System.out.println((pointer.getSize().isPresent() ? " Size: " + pointer.getSize().get() : " bytes") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
+                                    System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                                     try {
                                         File file = m.retrieveAttachment(pointer);
                                         System.out.println("  Stored plaintext in: " + file);
