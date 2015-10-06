@@ -3,7 +3,6 @@ package cli;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.json.JSONObject;
 import org.whispersystems.libaxolotl.*;
 import org.whispersystems.libaxolotl.state.AxolotlStore;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;

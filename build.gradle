@@ -14,7 +14,6 @@ repositories {
 dependencies {
     compile 'org.whispersystems:textsecure-java:1.8.1'
     compile 'com.madgag.spongycastle:prov:1.52.0.0'
-    compile 'org.json:json:20150729'
     compile 'commons-io:commons-io:2.4'
     compile 'net.sourceforge.argparse4j:argparse4j:0.5.0'
 }
