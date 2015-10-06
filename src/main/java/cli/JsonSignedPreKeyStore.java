@@ -1,7 +1,9 @@
 package cli;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
 import org.whispersystems.libaxolotl.InvalidKeyIdException;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyStore;
@@ -20,23 +22,9 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
 
     }
 
-    public JsonSignedPreKeyStore(JSONArray list) {
-        for (int i = 0; i < list.length(); i++) {
-            JSONObject k = list.getJSONObject(i);
-            try {
-                store.put(k.getInt("id"), Base64.decode(k.getString("record")));
-            } catch (IOException e) {
-                System.out.println("Error while decoding prekey for: " + k.getString("name"));
-            }
-        }
-    }
 
-    public JSONArray getJson() {
-        JSONArray result = new JSONArray();
-        for (Integer id : store.keySet()) {
-            result.put(new JSONObject().put("id", id.toString()).put("record", Base64.encodeBytes(store.get(id))));
-        }
-        return result;
+    public void addSignedPreKeys(Map<Integer, byte[]> preKeys) {
+        store.putAll(preKeys);
     }
 
     @Override
@@ -80,5 +68,47 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
     @Override
     public void removeSignedPreKey(int signedPreKeyId) {
         store.remove(signedPreKeyId);
+    }
+
+    public static class JsonSignedPreKeyStoreDeserializer extends JsonDeserializer<JsonSignedPreKeyStore> {
+
+        @Override
+        public JsonSignedPreKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+
+
+            Map<Integer, byte[]> preKeyMap = new HashMap<>();
+            if (node.isArray()) {
+                for (JsonNode preKey : node) {
+                    Integer preKeyId = preKey.get("id").asInt();
+                    try {
+                        preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
+                    }  catch (IOException e) {
+                        System.out.println(String.format("Error while decoding prekey for: %s", preKeyId));
+                    }
+                }
+            }
+
+            JsonSignedPreKeyStore keyStore = new JsonSignedPreKeyStore();
+            keyStore.addSignedPreKeys(preKeyMap);
+
+            return keyStore;
+
+        }
+    }
+
+    public static class JsonSignedPreKeyStoreSerializer extends JsonSerializer<JsonSignedPreKeyStore> {
+
+        @Override
+        public void serialize(JsonSignedPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            json.writeStartArray();
+            for (Map.Entry<Integer, byte[]> signedPreKey : jsonPreKeyStore.store.entrySet()) {
+                json.writeStartObject();
+                json.writeNumberField("id", signedPreKey.getKey());
+                json.writeStringField("record", Base64.encodeBytes(signedPreKey.getValue()));
+                json.writeEndObject();
+            }
+            json.writeEndArray();
+        }
     }
 }
