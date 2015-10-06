@@ -1,5 +1,8 @@
 package cli;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.json.JSONObject;
 import org.whispersystems.libaxolotl.*;
 import org.whispersystems.libaxolotl.state.AxolotlStore;
@@ -11,17 +14,35 @@ import java.io.IOException;
 import java.util.List;
 
 class JsonAxolotlStore implements AxolotlStore {
-    private final JsonPreKeyStore preKeyStore;
-    private final JsonSessionStore sessionStore;
-    private final JsonSignedPreKeyStore signedPreKeyStore;
 
-    private final JsonIdentityKeyStore identityKeyStore;
+    @JsonProperty("preKeys")
+    @JsonDeserialize(using = JsonPreKeyStore.JsonPreKeyStoreDeserializer.class)
+    @JsonSerialize(using = JsonPreKeyStore.JsonPreKeyStoreSerializer.class)
+    protected JsonPreKeyStore preKeyStore;
 
-    public JsonAxolotlStore(JSONObject jsonAxolotl) throws IOException, InvalidKeyException {
-        this.preKeyStore = new JsonPreKeyStore(jsonAxolotl.getJSONArray("preKeys"));
-        this.sessionStore = new JsonSessionStore(jsonAxolotl.getJSONArray("sessionStore"));
-        this.signedPreKeyStore = new JsonSignedPreKeyStore(jsonAxolotl.getJSONArray("signedPreKeyStore"));
-        this.identityKeyStore = new JsonIdentityKeyStore(jsonAxolotl.getJSONObject("identityKeyStore"));
+    @JsonProperty("sessionStore")
+    @JsonDeserialize(using = JsonSessionStore.JsonSessionStoreDeserializer.class)
+    @JsonSerialize(using = JsonSessionStore.JsonPreKeyStoreSerializer.class)
+    protected JsonSessionStore sessionStore;
+
+    @JsonProperty("signedPreKeyStore")
+    @JsonDeserialize(using = JsonSignedPreKeyStore.JsonSignedPreKeyStoreDeserializer.class)
+    @JsonSerialize(using = JsonSignedPreKeyStore.JsonSignedPreKeyStoreSerializer.class)
+    protected JsonSignedPreKeyStore signedPreKeyStore;
+
+    @JsonProperty("identityKeyStore")
+    @JsonDeserialize(using = JsonIdentityKeyStore.JsonIdentityKeyStoreDeserializer.class)
+    @JsonSerialize(using = JsonIdentityKeyStore.JsonIdentityKeyStoreSerializer.class)
+    protected JsonIdentityKeyStore identityKeyStore;
+
+    public JsonAxolotlStore() {
+    }
+
+    public JsonAxolotlStore(JsonPreKeyStore preKeyStore, JsonSessionStore sessionStore, JsonSignedPreKeyStore signedPreKeyStore, JsonIdentityKeyStore identityKeyStore) {
+        this.preKeyStore = preKeyStore;
+        this.sessionStore = sessionStore;
+        this.signedPreKeyStore = signedPreKeyStore;
+        this.identityKeyStore = identityKeyStore;
     }
 
     public JsonAxolotlStore(IdentityKeyPair identityKeyPair, int registrationId) {
@@ -29,13 +50,6 @@ class JsonAxolotlStore implements AxolotlStore {
         sessionStore = new JsonSessionStore();
         signedPreKeyStore = new JsonSignedPreKeyStore();
         this.identityKeyStore = new JsonIdentityKeyStore(identityKeyPair, registrationId);
-    }
-
-    public JSONObject getJson() {
-        return new JSONObject().put("preKeys", preKeyStore.getJson())
-                .put("sessionStore", sessionStore.getJson())
-                .put("signedPreKeyStore", signedPreKeyStore.getJson())
-                .put("identityKeyStore", identityKeyStore.getJson());
     }
 
     @Override

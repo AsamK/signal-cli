@@ -16,8 +16,13 @@
  */
 package cli;
 
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.whispersystems.libaxolotl.*;
 import org.whispersystems.libaxolotl.ecc.Curve;
 import org.whispersystems.libaxolotl.ecc.ECKeyPair;
@@ -59,6 +64,7 @@ class Manager {
     private final static String dataPath = settingsPath + "/data";
     private final static String attachmentsPath = settingsPath + "/attachments";
 
+    private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
     private String password;
     private String signalingKey;
@@ -72,6 +78,10 @@ class Manager {
 
     public Manager(String username) {
         this.username = username;
+        jsonProcessot.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
+        jsonProcessot.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
+        jsonProcessot.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+        jsonProcessot.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     public String getFileName() {
@@ -88,43 +98,53 @@ class Manager {
         return axolotlStore != null;
     }
 
-    public void load() throws IOException, InvalidKeyException {
-        JSONObject in = new JSONObject(IOUtils.toString(new FileInputStream(getFileName())));
-        username = in.getString("username");
-        password = in.getString("password");
-        if (in.has("signalingKey")) {
-            signalingKey = in.getString("signalingKey");
+    private JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
+        JsonNode node = parent.get(name);
+        if (node == null) {
+            throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ", name));
         }
-        if (in.has("preKeyIdOffset")) {
-            preKeyIdOffset = in.getInt("preKeyIdOffset");
+
+        return node;
+    }
+
+
+    public void load() throws IOException, InvalidKeyException {
+        JsonNode rootNode = jsonProcessot.readTree(new File(getFileName()));
+
+        username = getNotNullNode(rootNode, "username").asText();
+        password = getNotNullNode(rootNode, "password").asText();
+        if (rootNode.has("signalingKey")) {
+            signalingKey = getNotNullNode(rootNode, "signalingKey").asText();
+        }
+        if (rootNode.has("preKeyIdOffset")) {
+            preKeyIdOffset = getNotNullNode(rootNode, "preKeyIdOffset").asInt(0);
         } else {
             preKeyIdOffset = 0;
         }
-        if (in.has("nextSignedPreKeyId")) {
-            nextSignedPreKeyId = in.getInt("nextSignedPreKeyId");
+        if (rootNode.has("nextSignedPreKeyId")) {
+            nextSignedPreKeyId = getNotNullNode(rootNode, "nextSignedPreKeyId").asInt();
         } else {
             nextSignedPreKeyId = 0;
         }
-        axolotlStore = new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
-        registered = in.getBoolean("registered");
+        axolotlStore = jsonProcessot.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonAxolotlStore.class); //new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
+        registered = getNotNullNode(rootNode, "registered").asBoolean();
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
     public void save() {
-        String out = new JSONObject().put("username", username)
+        ObjectNode rootNode = jsonProcessot.createObjectNode();
+        rootNode.put("username", username)
                 .put("password", password)
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
-                .put("axolotlStore", axolotlStore.getJson())
-                .put("registered", registered).toString();
+                .put("registered", registered)
+                .putPOJO("axolotlStore", axolotlStore)
+        ;
         try {
-            OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(getFileName()));
-            writer.write(out);
-            writer.flush();
-            writer.close();
+            jsonProcessot.writeValue(new File(getFileName()), rootNode);
         } catch (Exception e) {
-            System.err.println("Saving file error: " + e.getMessage());
+            System.err.println(String.format("Error saving file: %s", e.getMessage()));
         }
     }
 

@@ -1,7 +1,9 @@
 package cli;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
 import org.whispersystems.libaxolotl.AxolotlAddress;
 import org.whispersystems.libaxolotl.state.SessionRecord;
 import org.whispersystems.libaxolotl.state.SessionStore;
@@ -17,26 +19,10 @@ class JsonSessionStore implements SessionStore {
 
     }
 
-    public JsonSessionStore(JSONArray list) {
-        for (int i = 0; i < list.length(); i++) {
-            JSONObject k = list.getJSONObject(i);
-            try {
-                sessions.put(new AxolotlAddress(k.getString("name"), k.getInt("deviceId")), Base64.decode(k.getString("record")));
-            } catch (IOException e) {
-                System.out.println("Error while decoding prekey for: " + k.getString("name"));
-            }
-        }
+    public void addSessions(Map<AxolotlAddress, byte[]> sessions) {
+        this.sessions.putAll(sessions);
     }
 
-    public JSONArray getJson() {
-        JSONArray result = new JSONArray();
-        for (AxolotlAddress address : sessions.keySet()) {
-            result.put(new JSONObject().put("name", address.getName()).
-                    put("deviceId", address.getDeviceId()).
-                    put("record", Base64.encodeBytes(sessions.get(address))));
-        }
-        return result;
-    }
 
     @Override
     public synchronized SessionRecord loadSession(AxolotlAddress remoteAddress) {
@@ -86,6 +72,48 @@ class JsonSessionStore implements SessionStore {
             if (key.getName().equals(name)) {
                 sessions.remove(key);
             }
+        }
+    }
+
+    public static class JsonSessionStoreDeserializer extends JsonDeserializer<JsonSessionStore> {
+
+        @Override
+        public JsonSessionStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+
+            Map<AxolotlAddress, byte[]> sessionMap = new HashMap<>();
+            if (node.isArray()) {
+                for (JsonNode session : node) {
+                    String sessionName = session.get("name").asText();
+                    try {
+                        sessionMap.put(new AxolotlAddress(sessionName, session.get("deviceId").asInt()), Base64.decode(session.get("record").asText()));
+                    }  catch (IOException e) {
+                        System.out.println(String.format("Error while decoding session for: %s", sessionName));
+                    }
+                }
+            }
+
+            JsonSessionStore sessionStore = new JsonSessionStore();
+            sessionStore.addSessions(sessionMap);
+
+            return sessionStore;
+
+        }
+    }
+
+    public static class JsonPreKeyStoreSerializer extends JsonSerializer<JsonSessionStore> {
+
+        @Override
+        public void serialize(JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            json.writeStartArray();
+            for (Map.Entry<AxolotlAddress, byte[]> preKey : jsonSessionStore.sessions.entrySet()) {
+                json.writeStartObject();
+                json.writeStringField("name", preKey.getKey().getName());
+                json.writeNumberField("deviceId", preKey.getKey().getDeviceId());
+                json.writeStringField("record", Base64.encodeBytes(preKey.getValue()));
+                json.writeEndObject();
+            }
+            json.writeEndArray();
         }
     }
 }
