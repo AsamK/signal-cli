@@ -66,7 +66,7 @@ class JsonPreKeyStore implements PreKeyStore {
                     Integer preKeyId = preKey.get("id").asInt();
                     try {
                         preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
-                    }  catch (IOException e) {
+                    } catch (IOException e) {
                         System.out.println(String.format("Error while decoding prekey for: %s", preKeyId));
                     }
                 }

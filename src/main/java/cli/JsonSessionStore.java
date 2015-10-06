@@ -87,7 +87,7 @@ class JsonSessionStore implements SessionStore {
                     String sessionName = session.get("name").asText();
                     try {
                         sessionMap.put(new AxolotlAddress(sessionName, session.get("deviceId").asInt()), Base64.decode(session.get("record").asText()));
-                    }  catch (IOException e) {
+                    } catch (IOException e) {
                         System.out.println(String.format("Error while decoding session for: %s", sessionName));
                     }
                 }

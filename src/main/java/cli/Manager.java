@@ -56,8 +56,8 @@ class Manager {
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
-    public final static String PROJECT_NAME =  Manager.class.getPackage().getImplementationTitle();
-    public final static String PROJECT_VERSION =  Manager.class.getPackage().getImplementationVersion();
+    public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
+    public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
     private final static String USER_AGENT = PROJECT_NAME + " " + PROJECT_VERSION;
 
     private final static String settingsPath = System.getProperty("user.home") + "/.config/textsecure";

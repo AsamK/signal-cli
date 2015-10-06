@@ -69,7 +69,7 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                         String trustedKeyName = trustedKey.get("name").asText();
                         try {
                             trustedKeyMap.put(trustedKeyName, new IdentityKey(Base64.decode(trustedKey.get("identityKey").asText()), 0));
-                        }  catch (InvalidKeyException | IOException e) {
+                        } catch (InvalidKeyException | IOException e) {
                             System.out.println(String.format("Error while decoding key for: %s", trustedKeyName));
                         }
                     }

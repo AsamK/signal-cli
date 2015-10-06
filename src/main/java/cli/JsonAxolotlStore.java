@@ -3,13 +3,15 @@ package cli;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.whispersystems.libaxolotl.*;
+import org.whispersystems.libaxolotl.AxolotlAddress;
+import org.whispersystems.libaxolotl.IdentityKey;
+import org.whispersystems.libaxolotl.IdentityKeyPair;
+import org.whispersystems.libaxolotl.InvalidKeyIdException;
 import org.whispersystems.libaxolotl.state.AxolotlStore;
 import org.whispersystems.libaxolotl.state.PreKeyRecord;
 import org.whispersystems.libaxolotl.state.SessionRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 
-import java.io.IOException;
 import java.util.List;
 
 class JsonAxolotlStore implements AxolotlStore {
