@@ -273,25 +273,39 @@ public class Main {
                 } else {
                     if (content.getDataMessage().isPresent()) {
                         TextSecureDataMessage message = content.getDataMessage().get();
-                        System.out.println("Body: " + message.getBody().get());
 
+                        System.out.println("Message timestamp: " + message.getTimestamp());
+
+                        if (message.getBody().isPresent()) {
+                            System.out.println("Body: " + message.getBody().get());
+                        }
+                        if (message.getGroupInfo().isPresent()) {
+                            TextSecureGroup groupInfo = message.getGroupInfo().get();
+                            System.out.println("Group info:");
+                            System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
+                            if (groupInfo.getName().isPresent()) {
+                                System.out.println("  Name: " + groupInfo.getName().get());
+                            }
+                            System.out.println("  Type: " + groupInfo.getType());
+                            if (groupInfo.getMembers().isPresent()) {
+                                for (String member : groupInfo.getMembers().get()) {
+                                    System.out.println("  Member: " + member);
+                                }
+                            }
+                            if (groupInfo.getAvatar().isPresent()) {
+                                System.out.println("  Avatar:");
+                                printAttachment(groupInfo.getAvatar().get());
+                            }
+                        }
                         if (message.isEndSession()) {
+                            System.out.println("Is end session");
                             m.handleEndSession(envelope.getSource());
-                        } else if (message.getAttachments().isPresent()) {
+                        }
+
+                        if (message.getAttachments().isPresent()) {
                             System.out.println("Attachments: ");
                             for (TextSecureAttachment attachment : message.getAttachments().get()) {
-                                System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
-                                if (attachment.isPointer()) {
-                                    final TextSecureAttachmentPointer pointer = attachment.asPointer();
-                                    System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
-                                    System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
-                                    try {
-                                        File file = m.retrieveAttachment(pointer);
-                                        System.out.println("  Stored plaintext in: " + file);
-                                    } catch (IOException | InvalidMessageException e) {
-                                        System.out.println("Failed to retrieve attachment: " + e.getMessage());
-                                    }
-                                }
+                                printAttachment(attachment);
                             }
                         }
                     }
@@ -304,6 +318,21 @@ public class Main {
                 System.out.println("Unknown message received.");
             }
             System.out.println();
+        }
+
+        private void printAttachment(TextSecureAttachment attachment) {
+            System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
+            if (attachment.isPointer()) {
+                final TextSecureAttachmentPointer pointer = attachment.asPointer();
+                System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
+                System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
+                try {
+                    File file = m.retrieveAttachment(pointer);
+                    System.out.println("  Stored plaintext in: " + file);
+                } catch (IOException | InvalidMessageException e) {
+                    System.out.println("Failed to retrieve attachment: " + e.getMessage());
+                }
+            }
         }
     }
 }
