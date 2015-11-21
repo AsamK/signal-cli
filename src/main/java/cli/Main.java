@@ -141,8 +141,14 @@ public class Main {
                     System.err.println("User is not registered.");
                     System.exit(1);
                 }
+                int timeout = ns.getInt("timeout");
+                boolean returnOnTimeout = true;
+                if (timeout < 0) {
+                    returnOnTimeout = false;
+                    timeout = 5;
+                }
                 try {
-                    m.receiveMessages(5, true, new ReceiveMessageHandler(m));
+                    m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
                 } catch (IOException e) {
                     System.err.println("Error while receiving message: " + e.getMessage());
                     System.exit(3);
@@ -196,6 +202,9 @@ public class Main {
                 .help("Add file as attachment");
 
         Subparser parserReceive = subparsers.addParser("receive");
+        parserReceive.addArgument("-t", "--timeout")
+                .type(int.class)
+                .help("Number of seconds to wait for new messages (negative values disable timeout)");
 
         try {
             Namespace ns = parser.parseArgs(args);
