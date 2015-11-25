@@ -145,7 +145,7 @@ public class Main {
                 boolean returnOnTimeout = true;
                 if (timeout < 0) {
                     returnOnTimeout = false;
-                    timeout = 5;
+                    timeout = 3600;
                 }
                 try {
                     m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
