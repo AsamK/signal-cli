@@ -141,7 +141,10 @@ public class Main {
                     System.err.println("User is not registered.");
                     System.exit(1);
                 }
-                int timeout = ns.getInt("timeout");
+                int timeout = 5;
+                if (ns.getInt("timeout") != null) {
+                    timeout = ns.getInt("timeout");
+                }
                 boolean returnOnTimeout = true;
                 if (timeout < 0) {
                     returnOnTimeout = false;
