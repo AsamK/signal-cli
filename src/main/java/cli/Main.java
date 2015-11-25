@@ -262,15 +262,13 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(TextSecureEnvelope envelope) {
+        public void handleMessage(TextSecureEnvelope envelope, TextSecureContent content, GroupInfo group) {
             System.out.println("Envelope from: " + envelope.getSource());
             System.out.println("Timestamp: " + envelope.getTimestamp());
 
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
             } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
-                TextSecureContent content = m.decryptMessage(envelope);
-
                 if (content == null) {
                     System.out.println("Failed to decrypt message.");
                 } else {
@@ -288,6 +286,10 @@ public class Main {
                             System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
                             if (groupInfo.getName().isPresent()) {
                                 System.out.println("  Name: " + groupInfo.getName().get());
+                            } else if (group != null) {
+                                System.out.println("  Name: " + group.name);
+                            } else {
+                                System.out.println("  Name: <Unknown group>");
                             }
                             System.out.println("  Type: " + groupInfo.getType());
                             if (groupInfo.getMembers().isPresent()) {

@@ -36,10 +36,7 @@ import org.whispersystems.textsecure.api.TextSecureMessagePipe;
 import org.whispersystems.textsecure.api.TextSecureMessageReceiver;
 import org.whispersystems.textsecure.api.TextSecureMessageSender;
 import org.whispersystems.textsecure.api.crypto.TextSecureCipher;
-import org.whispersystems.textsecure.api.messages.TextSecureAttachmentPointer;
-import org.whispersystems.textsecure.api.messages.TextSecureContent;
-import org.whispersystems.textsecure.api.messages.TextSecureDataMessage;
-import org.whispersystems.textsecure.api.messages.TextSecureEnvelope;
+import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.TrustStore;
 import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
@@ -75,6 +72,7 @@ class Manager {
 
     private JsonAxolotlStore axolotlStore;
     private TextSecureAccountManager accountManager;
+    private JsonGroupStore groupStore;
 
     public Manager(String username) {
         this.username = username;
@@ -107,7 +105,6 @@ class Manager {
         return node;
     }
 
-
     public void load() throws IOException, InvalidKeyException {
         JsonNode rootNode = jsonProcessot.readTree(new File(getFileName()));
 
@@ -128,6 +125,10 @@ class Manager {
         }
         axolotlStore = jsonProcessot.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonAxolotlStore.class); //new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
         registered = getNotNullNode(rootNode, "registered").asBoolean();
+        JsonNode groupStoreNode = rootNode.get("groupStore");
+        if (groupStoreNode != null) {
+            groupStore = jsonProcessot.convertValue(groupStoreNode, JsonGroupStore.class);
+        }
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
@@ -140,6 +141,7 @@ class Manager {
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
                 .put("registered", registered)
                 .putPOJO("axolotlStore", axolotlStore)
+                .putPOJO("groupStore", groupStore)
         ;
         try {
             jsonProcessot.writeValue(new File(getFileName()), rootNode);
@@ -152,6 +154,7 @@ class Manager {
         IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
         int registrationId = KeyHelper.generateRegistrationId(false);
         axolotlStore = new JsonAxolotlStore(identityKey, registrationId);
+        groupStore = new JsonGroupStore();
         registered = false;
     }
 
@@ -262,7 +265,7 @@ class Manager {
     }
 
     public interface ReceiveMessageHandler {
-        void handleMessage(TextSecureEnvelope envelope);
+        void handleMessage(TextSecureEnvelope envelope, TextSecureContent decryptedContent, GroupInfo group);
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
@@ -274,9 +277,37 @@ class Manager {
 
             while (true) {
                 TextSecureEnvelope envelope;
+                TextSecureContent content = null;
+                GroupInfo group = null;
                 try {
                     envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
-                    handler.handleMessage(envelope);
+                    if (!envelope.isReceipt()) {
+                        content = decryptMessage(envelope);
+                        if (content != null) {
+                            if (content.getDataMessage().isPresent()) {
+                                TextSecureDataMessage message = content.getDataMessage().get();
+                                if (message.getGroupInfo().isPresent()) {
+                                    TextSecureGroup groupInfo = message.getGroupInfo().get();
+                                    switch (groupInfo.getType()) {
+                                        case UPDATE:
+                                            group = new GroupInfo(groupInfo.getGroupId(), groupInfo.getName().get(), groupInfo.getMembers().get(), groupInfo.getAvatar().get().asPointer().getId());
+                                            groupStore.updateGroup(group);
+                                            break;
+                                        case DELIVER:
+                                            group = groupStore.getGroup(groupInfo.getGroupId());
+                                            break;
+                                        case QUIT:
+                                            group = groupStore.getGroup(groupInfo.getGroupId());
+                                            if (group != null) {
+                                                group.members.remove(envelope.getSource());
+                                            }
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    handler.handleMessage(envelope, content, group);
                 } catch (TimeoutException e) {
                     if (returnOnTimeout)
                         return;
