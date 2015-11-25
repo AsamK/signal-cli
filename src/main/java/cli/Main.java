@@ -101,6 +101,7 @@ public class Main {
                         messageText = IOUtils.toString(System.in);
                     } catch (IOException e) {
                         System.err.println("Failed to read message from stdin: " + e.getMessage());
+                        System.err.println("Aborting sending.");
                         System.exit(1);
                     }
                 }
@@ -123,9 +124,29 @@ public class Main {
                         }
                     }
                 }
+                TextSecureGroup group = null;
+                List<String> recipientStrings = null;
+                if (ns.getString("group") != null) {
+                    try {
+                        GroupInfo g = m.getGroupInfo(Base64.decode(ns.getString("group")));
+                        if (g == null) {
+                            System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": Unknown group");
+                            System.err.println("Aborting sending.");
+                            System.exit(1);
+                        }
+                        group = new TextSecureGroup(g.groupId);
+                        recipientStrings = g.members;
+                    } catch (IOException e) {
+                        System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
+                        System.err.println("Aborting sending.");
+                        System.exit(1);
+                    }
+                } else {
+                    recipientStrings = ns.<String>getList("recipient");
+                }
 
                 List<TextSecureAddress> recipients = new ArrayList<>(ns.<String>getList("recipient").size());
-                for (String recipient : ns.<String>getList("recipient")) {
+                for (String recipient : recipientStrings) {
                     try {
                         recipients.add(m.getPushAddress(recipient));
                     } catch (InvalidNumberException e) {
@@ -134,7 +155,8 @@ public class Main {
                         System.exit(1);
                     }
                 }
-                sendMessage(m, messageText, textSecureAttachments, recipients);
+
+                sendMessage(m, messageText, textSecureAttachments, recipients, group);
                 break;
             case "receive":
                 if (!m.isRegistered()) {
@@ -195,6 +217,8 @@ public class Main {
                 .help("The verification code you received via sms or voice call.");
 
         Subparser parserSend = subparsers.addParser("send");
+        parserSend.addArgument("-g", "--group")
+                .help("Specify the recipient group ID.");
         parserSend.addArgument("recipient")
                 .help("Specify the recipients' phone number.")
                 .nargs("*");
@@ -216,6 +240,10 @@ public class Main {
                 System.err.println("You need to specify a username (phone number)");
                 System.exit(2);
             }
+            if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
+                System.err.println("You cannot specify recipients by phone number and groups a the same time");
+                System.exit(2);
+            }
             return ns;
         } catch (ArgumentParserException e) {
             parser.handleError(e);
@@ -224,10 +252,13 @@ public class Main {
     }
 
     private static void sendMessage(Manager m, String messageText, List<TextSecureAttachment> textSecureAttachments,
-                                    List<TextSecureAddress> recipients) {
+                                    List<TextSecureAddress> recipients, TextSecureGroup group) {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
         if (textSecureAttachments != null) {
             messageBuilder.withAttachments(textSecureAttachments);
+        }
+        if (group != null) {
+            messageBuilder.asGroupMessage(group);
         }
         TextSecureDataMessage message = messageBuilder.build();
 

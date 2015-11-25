@@ -378,4 +378,8 @@ class Manager {
         String e164number = canonicalizeNumber(number);
         return new TextSecureAddress(e164number);
     }
+
+    GroupInfo getGroupInfo(byte[] groupId) {
+        return groupStore.getGroup(groupId);
+    }
 }
