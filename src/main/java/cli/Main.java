@@ -20,15 +20,12 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
-import org.whispersystems.libaxolotl.InvalidMessageException;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
-import org.whispersystems.textsecure.api.push.TextSecureAddress;
 import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.textsecure.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.textsecure.api.push.exceptions.UnregisteredUserException;
-import org.whispersystems.textsecure.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -96,7 +93,7 @@ public class Main {
                     System.exit(1);
                 }
 
-                TextSecureGroup group = null;
+                byte[] groupId = null;
                 List<String> recipients = null;
                 if (ns.getString("group") != null) {
                     try {
@@ -106,7 +103,7 @@ public class Main {
                             System.err.println("Aborting sending.");
                             System.exit(1);
                         }
-                        group = new TextSecureGroup(g.groupId);
+                        groupId = g.groupId;
                         recipients = g.members;
                     } catch (IOException e) {
                         System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
@@ -150,7 +147,7 @@ public class Main {
                         }
                     }
 
-                    sendMessage(m, messageText, textSecureAttachments, recipients, group);
+                    sendMessage(m, messageText, textSecureAttachments, recipients, groupId);
                 }
 
                 break;
@@ -179,6 +176,28 @@ public class Main {
                     System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
                     System.exit(1);
                 }
+                break;
+            case "quitGroup":
+                if (!m.isRegistered()) {
+                    System.err.println("User is not registered.");
+                    System.exit(1);
+                }
+
+                try {
+                    GroupInfo g = m.getGroupInfo(Base64.decode(ns.getString("group")));
+                    if (g == null) {
+                        System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": Unknown group");
+                        System.err.println("Aborting sending.");
+                        System.exit(1);
+                    }
+
+                    sendQuitGroupMessage(m, g.members, g.groupId);
+                } catch (IOException e) {
+                    System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
+                    System.err.println("Aborting sending.");
+                    System.exit(1);
+                }
+
                 break;
         }
         m.save();
@@ -227,6 +246,11 @@ public class Main {
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
 
+        Subparser parserLeaveGroup = subparsers.addParser("quitGroup");
+        parserLeaveGroup.addArgument("-g", "--group")
+                .required(true)
+                .help("Specify the recipient group ID.");
+
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
                 .type(int.class)
@@ -251,13 +275,13 @@ public class Main {
     }
 
     private static void sendMessage(Manager m, String messageText, List<TextSecureAttachment> textSecureAttachments,
-                                    List<String> recipients, TextSecureGroup group) {
+                                    List<String> recipients, byte[] groupId) {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
         if (textSecureAttachments != null) {
             messageBuilder.withAttachments(textSecureAttachments);
         }
-        if (group != null) {
-            messageBuilder.asGroupMessage(group);
+        if (groupId != null) {
+            messageBuilder.asGroupMessage(new TextSecureGroup(groupId));
         }
         TextSecureDataMessage message = messageBuilder.build();
 
@@ -266,6 +290,16 @@ public class Main {
 
     private static void sendEndSessionMessage(Manager m, List<String> recipients) {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().asEndSessionMessage();
+
+        TextSecureDataMessage message = messageBuilder.build();
+
+        sendMessage(m, message, recipients);
+    }
+
+    private static void sendQuitGroupMessage(Manager m, List<String> recipients, byte[] groupId) {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder();
+        TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.QUIT).withId(groupId).build();
+        messageBuilder.asGroupMessage(group);
 
         TextSecureDataMessage message = messageBuilder.build();
 
