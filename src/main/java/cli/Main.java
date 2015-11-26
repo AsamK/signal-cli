@@ -125,7 +125,7 @@ public class Main {
                     }
                 }
                 TextSecureGroup group = null;
-                List<String> recipientStrings = null;
+                List<String> recipients = null;
                 if (ns.getString("group") != null) {
                     try {
                         GroupInfo g = m.getGroupInfo(Base64.decode(ns.getString("group")));
@@ -135,25 +135,14 @@ public class Main {
                             System.exit(1);
                         }
                         group = new TextSecureGroup(g.groupId);
-                        recipientStrings = g.members;
+                        recipients = g.members;
                     } catch (IOException e) {
                         System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
                         System.err.println("Aborting sending.");
                         System.exit(1);
                     }
                 } else {
-                    recipientStrings = ns.<String>getList("recipient");
-                }
-
-                List<TextSecureAddress> recipients = new ArrayList<>(ns.<String>getList("recipient").size());
-                for (String recipient : recipientStrings) {
-                    try {
-                        recipients.add(m.getPushAddress(recipient));
-                    } catch (InvalidNumberException e) {
-                        System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                        System.err.println("Aborting sending.");
-                        System.exit(1);
-                    }
+                    recipients = ns.<String>getList("recipient");
                 }
 
                 sendMessage(m, messageText, textSecureAttachments, recipients, group);
@@ -252,7 +241,7 @@ public class Main {
     }
 
     private static void sendMessage(Manager m, String messageText, List<TextSecureAttachment> textSecureAttachments,
-                                    List<TextSecureAddress> recipients, TextSecureGroup group) {
+                                    List<String> recipients, TextSecureGroup group) {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
         if (textSecureAttachments != null) {
             messageBuilder.withAttachments(textSecureAttachments);
@@ -335,7 +324,6 @@ public class Main {
                         }
                         if (message.isEndSession()) {
                             System.out.println("Is end session");
-                            m.handleEndSession(envelope.getSource());
                         }
 
                         if (message.getAttachments().isPresent()) {
@@ -362,11 +350,9 @@ public class Main {
                 final TextSecureAttachmentPointer pointer = attachment.asPointer();
                 System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
-                try {
-                    File file = m.retrieveAttachment(pointer);
+                File file = m.getAttachmentFile(pointer.getId());
+                if (file.exists()) {
                     System.out.println("  Stored plaintext in: " + file);
-                } catch (IOException | InvalidMessageException e) {
-                    System.out.println("Failed to retrieve attachment: " + e.getMessage());
                 }
             }
         }

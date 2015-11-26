@@ -44,6 +44,7 @@ import org.whispersystems.textsecure.api.util.InvalidNumberException;
 import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -242,14 +243,32 @@ class Manager {
         accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
     }
 
-    public void sendMessage(List<TextSecureAddress> recipients, TextSecureDataMessage message)
+    public void sendMessage(List<String> recipients, TextSecureDataMessage message)
             throws IOException, EncapsulatedExceptions {
         TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
                 axolotlStore, USER_AGENT, Optional.<TextSecureMessageSender.EventListener>absent());
-        messageSender.sendMessage(recipients, message);
+
+        List<TextSecureAddress> recipientsTS = new ArrayList<>(recipients.size());
+        for (String recipient : recipients) {
+            try {
+                recipientsTS.add(getPushAddress(recipient));
+            } catch (InvalidNumberException e) {
+                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                System.err.println("Aborting sending.");
+                return;
+            }
+        }
+
+        messageSender.sendMessage(recipientsTS, message);
+
+        if (message.isEndSession()) {
+            for (TextSecureAddress recipient : recipientsTS) {
+                handleEndSession(recipient.getNumber());
+            }
+        }
     }
 
-    public TextSecureContent decryptMessage(TextSecureEnvelope envelope) {
+    private TextSecureContent decryptMessage(TextSecureEnvelope envelope) {
         TextSecureCipher cipher = new TextSecureCipher(new TextSecureAddress(username), axolotlStore);
         try {
             return cipher.decrypt(envelope);
@@ -260,7 +279,7 @@ class Manager {
         }
     }
 
-    public void handleEndSession(String source) {
+    private void handleEndSession(String source) {
         axolotlStore.deleteAllSessions(source);
     }
 
@@ -290,7 +309,20 @@ class Manager {
                                     TextSecureGroup groupInfo = message.getGroupInfo().get();
                                     switch (groupInfo.getType()) {
                                         case UPDATE:
-                                            group = new GroupInfo(groupInfo.getGroupId(), groupInfo.getName().get(), groupInfo.getMembers().get(), groupInfo.getAvatar().get().asPointer().getId());
+                                            long avatarId = 0;
+                                            if (groupInfo.getAvatar().isPresent()) {
+                                                TextSecureAttachment avatar = groupInfo.getAvatar().get();
+                                                if (avatar.isPointer()) {
+                                                    avatarId = avatar.asPointer().getId();
+                                                    try {
+                                                        retrieveAttachment(avatar.asPointer());
+                                                    } catch (IOException | InvalidMessageException e) {
+                                                        System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
+                                                    }
+                                                }
+                                            }
+
+                                            group = new GroupInfo(groupInfo.getGroupId(), groupInfo.getName().get(), groupInfo.getMembers().get(), avatarId);
                                             groupStore.updateGroup(group);
                                             break;
                                         case DELIVER:
@@ -302,6 +334,20 @@ class Manager {
                                                 group.members.remove(envelope.getSource());
                                             }
                                             break;
+                                    }
+                                }
+                                if (message.isEndSession()) {
+                                    handleEndSession(envelope.getSource());
+                                }
+                                if (message.getAttachments().isPresent()) {
+                                    for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                                        if (attachment.isPointer()) {
+                                            try {
+                                                retrieveAttachment(attachment.asPointer());
+                                            } catch (IOException | InvalidMessageException e) {
+                                                System.err.println("Failed to retrieve attachment (" + attachment.asPointer().getId() + "): " + e.getMessage());
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -322,14 +368,18 @@ class Manager {
         }
     }
 
-    public File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
+    public File getAttachmentFile(long attachmentId) {
+        return new File(attachmentsPath + "/" + attachmentId);
+    }
+
+    private File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
         final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
 
         File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
         InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
 
         new File(attachmentsPath).mkdirs();
-        File outputFile = new File(attachmentsPath + "/" + pointer.getId());
+        File outputFile = getAttachmentFile(pointer.getId());
         OutputStream output = null;
         try {
             output = new FileOutputStream(outputFile);
@@ -374,12 +424,12 @@ class Manager {
         return PhoneNumberFormatter.formatNumber(number, localNumber);
     }
 
-    TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
+    private TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
         String e164number = canonicalizeNumber(number);
         return new TextSecureAddress(e164number);
     }
 
-    GroupInfo getGroupInfo(byte[] groupId) {
+    public GroupInfo getGroupInfo(byte[] groupId) {
         return groupStore.getGroup(groupId);
     }
 }
