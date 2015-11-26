@@ -95,35 +95,7 @@ public class Main {
                     System.err.println("User is not registered.");
                     System.exit(1);
                 }
-                String messageText = ns.getString("message");
-                if (messageText == null) {
-                    try {
-                        messageText = IOUtils.toString(System.in);
-                    } catch (IOException e) {
-                        System.err.println("Failed to read message from stdin: " + e.getMessage());
-                        System.err.println("Aborting sending.");
-                        System.exit(1);
-                    }
-                }
 
-                final List<String> attachments = ns.getList("attachment");
-                List<TextSecureAttachment> textSecureAttachments = null;
-                if (attachments != null) {
-                    textSecureAttachments = new ArrayList<>(attachments.size());
-                    for (String attachment : attachments) {
-                        try {
-                            File attachmentFile = new File(attachment);
-                            InputStream attachmentStream = new FileInputStream(attachmentFile);
-                            final long attachmentSize = attachmentFile.length();
-                            String mime = Files.probeContentType(Paths.get(attachment));
-                            textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
-                        } catch (IOException e) {
-                            System.err.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
-                            System.err.println("Aborting sending.");
-                            System.exit(1);
-                        }
-                    }
-                }
                 TextSecureGroup group = null;
                 List<String> recipients = null;
                 if (ns.getString("group") != null) {
@@ -145,7 +117,42 @@ public class Main {
                     recipients = ns.<String>getList("recipient");
                 }
 
-                sendMessage(m, messageText, textSecureAttachments, recipients, group);
+                if (ns.getBoolean("endsession")) {
+                    sendEndSessionMessage(m, recipients);
+                } else {
+                    final List<String> attachments = ns.getList("attachment");
+                    List<TextSecureAttachment> textSecureAttachments = null;
+                    if (attachments != null) {
+                        textSecureAttachments = new ArrayList<>(attachments.size());
+                        for (String attachment : attachments) {
+                            try {
+                                File attachmentFile = new File(attachment);
+                                InputStream attachmentStream = new FileInputStream(attachmentFile);
+                                final long attachmentSize = attachmentFile.length();
+                                String mime = Files.probeContentType(Paths.get(attachment));
+                                textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
+                            } catch (IOException e) {
+                                System.err.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
+                                System.err.println("Aborting sending.");
+                                System.exit(1);
+                            }
+                        }
+                    }
+
+                    String messageText = ns.getString("message");
+                    if (messageText == null) {
+                        try {
+                            messageText = IOUtils.toString(System.in);
+                        } catch (IOException e) {
+                            System.err.println("Failed to read message from stdin: " + e.getMessage());
+                            System.err.println("Aborting sending.");
+                            System.exit(1);
+                        }
+                    }
+
+                    sendMessage(m, messageText, textSecureAttachments, recipients, group);
+                }
+
                 break;
             case "receive":
                 if (!m.isRegistered()) {
@@ -216,6 +223,9 @@ public class Main {
         parserSend.addArgument("-a", "--attachment")
                 .nargs("*")
                 .help("Add file as attachment");
+        parserSend.addArgument("-e", "--endsession")
+                .help("Clear session state and send end session message.")
+                .action(Arguments.storeTrue());
 
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
@@ -251,6 +261,18 @@ public class Main {
         }
         TextSecureDataMessage message = messageBuilder.build();
 
+        sendMessage(m, message, recipients);
+    }
+
+    private static void sendEndSessionMessage(Manager m, List<String> recipients) {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().asEndSessionMessage();
+
+        TextSecureDataMessage message = messageBuilder.build();
+
+        sendMessage(m, message, recipients);
+    }
+
+    private static void sendMessage(Manager m, TextSecureDataMessage message, List<String> recipients) {
         try {
             m.sendMessage(recipients, message);
         } catch (IOException e) {
