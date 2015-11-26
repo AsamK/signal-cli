@@ -1,35 +1,49 @@
 # textsecure-cli
 
-textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently doesn't work, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
+textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently only works with a patched libtextsecure-java, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
 It is primarily intended to be used on servers to notify admins of important events.
 
 ## Usage
 
-usage: textsecure-cli [-h] -u USERNAME {register,verify,send,receive} ...
+usage: textsecure-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,updateGroup,receive} ...
 
-* Register a number
+* Register a number (with SMS verification)
 
         textsecure-cli -u USERNAME register
 
-* Register a number with voice verification
+* Register a number (with voice verification)
 
         textsecure-cli -u USERNAME register -v
 
-* Verify the number using the code received via SMS
+* Verify the number using the code received via SMS or voice
 
         textsecure-cli -u USERNAME verify CODE
 
 * Send a message to one or more recipients
 
-        textsecure-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]]
+        textsecure-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 * Pipe the message content from another process.
 
         uname -a | textsecure-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
 
+* Groups
+
+ * Create a group
+
+          textsecure-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+
+ * Update a group
+
+          textsecure-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name"
+
+ * Send a message to a group
+
+          textsecure-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+
 ## Storage
 
-The password and cryptographic keys are created when registering and stored in the current users home directory.
+The password and cryptographic keys are created when registering and stored in the current users home directory:
 
         $HOME/.config/textsecure/data/
 
