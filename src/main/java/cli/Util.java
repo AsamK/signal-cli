@@ -9,7 +9,7 @@ class Util {
         return Base64.encodeBytes(secret);
     }
 
-    private static byte[] getSecretBytes(int size) {
+    public static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
         getSecureRandom().nextBytes(secret);
         return secret;

@@ -26,6 +26,7 @@ import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMess
 import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.textsecure.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.textsecure.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.textsecure.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -99,14 +100,14 @@ public class Main {
                     try {
                         GroupInfo g = m.getGroupInfo(Base64.decode(ns.getString("group")));
                         if (g == null) {
-                            System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": Unknown group");
+                            System.err.println("Failed to send to group \"" + ns.getString("group") + "\": Unknown group");
                             System.err.println("Aborting sending.");
                             System.exit(1);
                         }
                         groupId = g.groupId;
-                        recipients = g.members;
+                        recipients = new ArrayList<>(g.members);
                     } catch (IOException e) {
-                        System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
+                        System.err.println("Failed to send to group \"" + ns.getString("group") + "\": " + e.getMessage());
                         System.err.println("Aborting sending.");
                         System.exit(1);
                     }
@@ -123,11 +124,7 @@ public class Main {
                         textSecureAttachments = new ArrayList<>(attachments.size());
                         for (String attachment : attachments) {
                             try {
-                                File attachmentFile = new File(attachment);
-                                InputStream attachmentStream = new FileInputStream(attachmentFile);
-                                final long attachmentSize = attachmentFile.length();
-                                String mime = Files.probeContentType(Paths.get(attachment));
-                                textSecureAttachments.add(new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null));
+                                textSecureAttachments.add(createAttachment(attachment));
                             } catch (IOException e) {
                                 System.err.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
                                 System.err.println("Aborting sending.");
@@ -186,14 +183,82 @@ public class Main {
                 try {
                     GroupInfo g = m.getGroupInfo(Base64.decode(ns.getString("group")));
                     if (g == null) {
-                        System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": Unknown group");
+                        System.err.println("Failed to send to group \"" + ns.getString("group") + "\": Unknown group");
                         System.err.println("Aborting sending.");
                         System.exit(1);
                     }
 
-                    sendQuitGroupMessage(m, g.members, g.groupId);
+                    sendQuitGroupMessage(m, new ArrayList<>(g.members), g.groupId);
                 } catch (IOException e) {
-                    System.err.println("Failed to send to grup \"" + ns.getString("group") + "\": " + e.getMessage());
+                    System.err.println("Failed to send to group \"" + ns.getString("group") + "\": " + e.getMessage());
+                    System.err.println("Aborting sending.");
+                    System.exit(1);
+                }
+                break;
+            case "updateGroup":
+                if (!m.isRegistered()) {
+                    System.err.println("User is not registered.");
+                    System.exit(1);
+                }
+
+                try {
+                    GroupInfo g;
+                    if (ns.getString("group") != null) {
+                        g = m.getGroupInfo(Base64.decode(ns.getString("group")));
+                        if (g == null) {
+                            System.err.println("Failed to send to group \"" + ns.getString("group") + "\": Unknown group");
+                            System.err.println("Aborting sending.");
+                            System.exit(1);
+                        }
+                    } else {
+                        // Create new group
+                        g = new GroupInfo(Util.getSecretBytes(16));
+                        g.members.add(m.getUsername());
+                        System.out.println("Creating new group \"" + Base64.encodeBytes(g.groupId) + "\" …");
+                    }
+
+                    String name = ns.getString("name");
+                    if (name != null) {
+                        g.name = name;
+                    }
+
+                    final List<String> members = ns.getList("member");
+
+                    if (members != null) {
+                        for (String member : members) {
+                            try {
+                                g.members.add(m.canonicalizeNumber(member));
+                            } catch (InvalidNumberException e) {
+                                System.err.println("Failed to add member \"" + member + "\" to group: " + e.getMessage());
+                                System.err.println("Aborting…");
+                                System.exit(1);
+                            }
+                        }
+                    }
+
+                    TextSecureGroup.Builder group = TextSecureGroup.newBuilder(TextSecureGroup.Type.UPDATE)
+                            .withId(g.groupId)
+                            .withName(g.name)
+                            .withMembers(new ArrayList<>(g.members));
+
+                    String avatar = ns.getString("avatar");
+                    if (avatar != null) {
+                        try {
+                            group.withAvatar(createAttachment(avatar));
+                            // TODO
+                            g.avatarId = 0;
+                        } catch (IOException e) {
+                            System.err.println("Failed to add attachment \"" + avatar + "\": " + e.getMessage());
+                            System.err.println("Aborting sending.");
+                            System.exit(1);
+                        }
+                    }
+
+                    m.setGroupInfo(g);
+
+                    sendUpdateGroupMessage(m, group.build());
+                } catch (IOException e) {
+                    System.err.println("Failed to send to group \"" + ns.getString("group") + "\": " + e.getMessage());
                     System.err.println("Aborting sending.");
                     System.exit(1);
                 }
@@ -202,6 +267,14 @@ public class Main {
         }
         m.save();
         System.exit(0);
+    }
+
+    private static TextSecureAttachmentStream createAttachment(String attachment) throws IOException {
+        File attachmentFile = new File(attachment);
+        InputStream attachmentStream = new FileInputStream(attachmentFile);
+        final long attachmentSize = attachmentFile.length();
+        String mime = Files.probeContentType(Paths.get(attachment));
+        return new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null);
     }
 
     private static Namespace parseArgs(String[] args) {
@@ -251,6 +324,17 @@ public class Main {
                 .required(true)
                 .help("Specify the recipient group ID.");
 
+        Subparser parserUpdateGroup = subparsers.addParser("updateGroup");
+        parserUpdateGroup.addArgument("-g", "--group")
+                .help("Specify the recipient group ID.");
+        parserUpdateGroup.addArgument("-n", "--name")
+                .help("Specify the new group name.");
+        parserUpdateGroup.addArgument("-a", "--avatar")
+                .help("Specify a new group avatar image file");
+        parserUpdateGroup.addArgument("-m", "--member")
+                .nargs("*")
+                .help("Specify one or more members to add to the group");
+
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
                 .type(int.class)
@@ -298,12 +382,25 @@ public class Main {
 
     private static void sendQuitGroupMessage(Manager m, List<String> recipients, byte[] groupId) {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder();
-        TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.QUIT).withId(groupId).build();
+        TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.QUIT)
+                .withId(groupId)
+                .build();
+
         messageBuilder.asGroupMessage(group);
 
         TextSecureDataMessage message = messageBuilder.build();
 
         sendMessage(m, message, recipients);
+    }
+
+    private static void sendUpdateGroupMessage(Manager m, TextSecureGroup g) {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder();
+
+        messageBuilder.asGroupMessage(g);
+
+        TextSecureDataMessage message = messageBuilder.build();
+
+        sendMessage(m, message, g.getMembers().get());
     }
 
     private static void sendMessage(Manager m, TextSecureDataMessage message, List<String> recipients) {

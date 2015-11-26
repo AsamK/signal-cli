@@ -44,9 +44,7 @@ import org.whispersystems.textsecure.api.util.InvalidNumberException;
 import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -248,7 +246,7 @@ class Manager {
         TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
                 axolotlStore, USER_AGENT, Optional.<TextSecureMessageSender.EventListener>absent());
 
-        List<TextSecureAddress> recipientsTS = new ArrayList<>(recipients.size());
+        Set<TextSecureAddress> recipientsTS = new HashSet<>(recipients.size());
         for (String recipient : recipients) {
             try {
                 recipientsTS.add(getPushAddress(recipient));
@@ -259,7 +257,7 @@ class Manager {
             }
         }
 
-        messageSender.sendMessage(recipientsTS, message);
+        messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
 
         if (message.isEndSession()) {
             for (TextSecureAddress recipient : recipientsTS) {
@@ -309,20 +307,32 @@ class Manager {
                                     TextSecureGroup groupInfo = message.getGroupInfo().get();
                                     switch (groupInfo.getType()) {
                                         case UPDATE:
-                                            long avatarId = 0;
+                                            group = groupStore.getGroup(groupInfo.getGroupId());
+                                            if (group == null) {
+                                                group = new GroupInfo(groupInfo.getGroupId());
+                                            }
+
                                             if (groupInfo.getAvatar().isPresent()) {
                                                 TextSecureAttachment avatar = groupInfo.getAvatar().get();
                                                 if (avatar.isPointer()) {
-                                                    avatarId = avatar.asPointer().getId();
+                                                    long avatarId = avatar.asPointer().getId();
                                                     try {
                                                         retrieveAttachment(avatar.asPointer());
+                                                        group.avatarId = avatarId;
                                                     } catch (IOException | InvalidMessageException e) {
                                                         System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
                                                     }
                                                 }
                                             }
 
-                                            group = new GroupInfo(groupInfo.getGroupId(), groupInfo.getName().get(), groupInfo.getMembers().get(), avatarId);
+                                            if (groupInfo.getName().isPresent()) {
+                                                group.name = groupInfo.getName().get();
+                                            }
+
+                                            if (groupInfo.getMembers().isPresent()) {
+                                                group.members.addAll(groupInfo.getMembers().get());
+                                            }
+
                                             groupStore.updateGroup(group);
                                             break;
                                         case DELIVER:
@@ -419,7 +429,7 @@ class Manager {
         return outputFile;
     }
 
-    private String canonicalizeNumber(String number) throws InvalidNumberException {
+    public String canonicalizeNumber(String number) throws InvalidNumberException {
         String localNumber = username;
         return PhoneNumberFormatter.formatNumber(number, localNumber);
     }
@@ -431,5 +441,13 @@ class Manager {
 
     public GroupInfo getGroupInfo(byte[] groupId) {
         return groupStore.getGroup(groupId);
+    }
+
+    public void setGroupInfo(GroupInfo group) {
+        groupStore.updateGroup(group);
+    }
+
+    public String getUsername() {
+        return username;
     }
 }
