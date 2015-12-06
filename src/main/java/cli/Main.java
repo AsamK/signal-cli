@@ -27,6 +27,7 @@ import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.textsecure.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.textsecure.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.textsecure.api.util.InvalidNumberException;
+import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -345,6 +346,10 @@ public class Main {
             if (ns.getString("username") == null) {
                 parser.printUsage();
                 System.err.println("You need to specify a username (phone number)");
+                System.exit(2);
+            }
+            if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"))) {
+                System.err.println("Invalid username (phone number), make sure you include the country code.");
                 System.exit(2);
             }
             if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
