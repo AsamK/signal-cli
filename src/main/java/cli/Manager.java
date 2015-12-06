@@ -128,6 +128,9 @@ class Manager {
         if (groupStoreNode != null) {
             groupStore = jsonProcessot.convertValue(groupStoreNode, JsonGroupStore.class);
         }
+        if (groupStore == null) {
+            groupStore = new JsonGroupStore();
+        }
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
