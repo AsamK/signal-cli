@@ -119,19 +119,13 @@ public class Main {
                 if (ns.getBoolean("endsession")) {
                     sendEndSessionMessage(m, recipients);
                 } else {
-                    final List<String> attachments = ns.getList("attachment");
                     List<TextSecureAttachment> textSecureAttachments = null;
-                    if (attachments != null) {
-                        textSecureAttachments = new ArrayList<>(attachments.size());
-                        for (String attachment : attachments) {
-                            try {
-                                textSecureAttachments.add(createAttachment(attachment));
-                            } catch (IOException e) {
-                                System.err.println("Failed to add attachment \"" + attachment + "\": " + e.getMessage());
-                                System.err.println("Aborting sending.");
-                                System.exit(1);
-                            }
-                        }
+                    try {
+                        textSecureAttachments = getTextSecureAttachments(ns.<String>getList("attachment"));
+                    } catch (IOException e) {
+                        System.err.println("Failed to add attachment: " + e.getMessage());
+                        System.err.println("Aborting sending.");
+                        System.exit(1);
                     }
 
                     String messageText = ns.getString("message");
@@ -268,6 +262,18 @@ public class Main {
         }
         m.save();
         System.exit(0);
+    }
+
+    private static List<TextSecureAttachment> getTextSecureAttachments(List<String> attachments) {
+    private static List<TextSecureAttachment> getTextSecureAttachments(List<String> attachments) throws IOException {
+        List<TextSecureAttachment> textSecureAttachments = null;
+        if (attachments != null) {
+            textSecureAttachments = new ArrayList<>(attachments.size());
+            for (String attachment : attachments) {
+                textSecureAttachments.add(createAttachment(attachment));
+             }
+        }
+        return textSecureAttachments;
     }
 
     private static TextSecureAttachmentStream createAttachment(String attachment) throws IOException {
