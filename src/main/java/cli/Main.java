@@ -20,6 +20,8 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
@@ -155,13 +157,10 @@ public class Main {
                 try {
                     m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
                 } catch (IOException e) {
-                    System.err.println("Error while receiving message: " + e.getMessage());
+                    System.err.println("Error while receiving messages: " + e.getMessage());
                     System.exit(3);
                 } catch (AssertionError e) {
-                    System.err.println("Failed to receive message (Assertion): " + e.getMessage());
-                    System.err.println(e.getStackTrace());
-                    System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
-                    System.exit(1);
+                    handleAssertionError(e);
                 }
                 break;
             case "quitGroup":
@@ -208,6 +207,35 @@ public class Main {
                     handleGroupNotFoundException(e);
                 } catch (EncapsulatedExceptions e) {
                     handleEncapsulatedExceptions(e);
+                }
+
+                break;
+            case "daemon":
+                if (!m.isRegistered()) {
+                    System.err.println("User is not registered.");
+                    System.exit(1);
+                }
+                try {
+                    int busType;
+                    if (ns.getBoolean("system")) {
+                        busType = DBusConnection.SYSTEM;
+                    } else {
+                        busType = DBusConnection.SESSION;
+                    }
+                    DBusConnection conn = DBusConnection.getConnection(busType);
+                    conn.requestBusName("org.asamk.TextSecure");
+                    conn.exportObject("/org/asamk/TextSecure", m);
+                } catch (DBusException e) {
+                    e.printStackTrace();
+                    System.exit(3);
+                }
+                try {
+                    m.receiveMessages(3600, false, new ReceiveMessageHandler(m));
+                } catch (IOException e) {
+                    System.err.println("Error while receiving messages: " + e.getMessage());
+                    System.exit(3);
+                } catch (AssertionError e) {
+                    handleAssertionError(e);
                 }
 
                 break;
@@ -296,6 +324,11 @@ public class Main {
                 .type(int.class)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
 
+        Subparser parserDaemon = subparsers.addParser("daemon");
+        parserDaemon.addArgument("--system")
+                .action(Arguments.storeTrue())
+                .help("Use DBus system bus instead of user bus.");
+
         try {
             Namespace ns = parser.parseArgs(args);
             if (ns.getString("username") == null) {
@@ -319,7 +352,7 @@ public class Main {
     }
 
     private static void handleAssertionError(AssertionError e) {
-        System.err.println("Failed to send message (Assertion): " + e.getMessage());
+        System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
         System.err.println(e.getStackTrace());
         System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
         System.exit(1);

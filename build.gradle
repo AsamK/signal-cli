@@ -9,6 +9,9 @@ mainClassName = 'cli.Main'
 version = '0.1.0'
 
 repositories {
+    maven {
+        url "https://raw.github.com/AsamK/maven/master/releases/"
+    }
     mavenCentral()
 }
 
@@ -17,6 +20,7 @@ dependencies {
     compile 'com.madgag.spongycastle:prov:1.53.0.0'
     compile 'commons-io:commons-io:2.4'
     compile 'net.sourceforge.argparse4j:argparse4j:0.5.0'
+    compile 'org.freedesktop.dbus:dbus-java:2.7.0'
 }
 
 jar {

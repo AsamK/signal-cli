@@ -50,7 +50,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class Manager {
+class Manager implements TextSecure {
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
@@ -270,6 +270,7 @@ class Manager {
         return new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null);
     }
 
+    @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
             throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
@@ -351,9 +352,17 @@ class Manager {
         return g.groupId;
     }
 
+    @Override
+    public void sendMessage(String message, List<String> attachments, String recipient)
+            throws EncapsulatedExceptions, AttachmentInvalidException, IOException {
+        List<String> recipients = new ArrayList<>(1);
+        recipients.add(recipient);
+        sendMessage(message, attachments, recipients);
+    }
+
     public void sendMessage(String messageText, List<String> attachments,
                             Collection<String> recipients)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(getTextSecureAttachments(attachments));
@@ -394,6 +403,7 @@ class Manager {
                 handleEndSession(recipient.getNumber());
             }
         }
+        save();
     }
 
     private TextSecureContent decryptMessage(TextSecureEnvelope envelope) {
@@ -498,6 +508,7 @@ class Manager {
                             }
                         }
                     }
+                    save();
                     handler.handleMessage(envelope, content, group);
                 } catch (TimeoutException e) {
                     if (returnOnTimeout)
@@ -505,7 +516,6 @@ class Manager {
                 } catch (InvalidVersionException e) {
                     System.err.println("Ignoring error: " + e.getMessage());
                 }
-                save();
             }
         } finally {
             if (messagePipe != null)
@@ -580,5 +590,10 @@ class Manager {
 
     private void setGroupInfo(GroupInfo group) {
         groupStore.updateGroup(group);
+    }
+
+    @Override
+    public boolean isRemote() {
+        return false;
     }
 }
