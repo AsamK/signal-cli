@@ -95,7 +95,7 @@ public class Main {
                         System.exit(1);
                     }
                     try {
-                        m.sendEndSessionMessage(ns.getList("recipient"));
+                        m.sendEndSessionMessage(ns.<String>getList("recipient"));
                     } catch (IOException e) {
                         handleIOException(e);
                     } catch (EncapsulatedExceptions e) {
@@ -120,7 +120,7 @@ public class Main {
                             byte[] groupId = decodeGroupId(ns.getString("group"));
                             m.sendGroupMessage(messageText, ns.<String>getList("attachment"), groupId);
                         } else {
-                            m.sendMessage(messageText, ns.<String>getList("attachment"), ns.getList("recipient"));
+                            m.sendMessage(messageText, ns.<String>getList("attachment"), ns.<String>getList("recipient"));
                         }
                     } catch (IOException e) {
                         handleIOException(e);
@@ -194,7 +194,7 @@ public class Main {
                     if (ns.getString("group") != null) {
                         groupId = decodeGroupId(ns.getString("group"));
                     }
-                    byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.getList("member"), ns.getString("avatar"));
+                    byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"));
                     if (groupId == null) {
                         System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
                     }
