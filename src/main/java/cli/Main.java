@@ -240,7 +240,6 @@ public class Main {
 
                 break;
         }
-        m.save();
         System.exit(0);
     }
 

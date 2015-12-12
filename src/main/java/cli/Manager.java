@@ -136,7 +136,7 @@ class Manager implements TextSecure {
         accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
-    public void save() {
+    private void save() {
         ObjectNode rootNode = jsonProcessot.createObjectNode();
         rootNode.put("username", username)
                 .put("password", password)
@@ -160,6 +160,7 @@ class Manager implements TextSecure {
         axolotlStore = new JsonAxolotlStore(identityKey, registrationId);
         groupStore = new JsonGroupStore();
         registered = false;
+        save();
     }
 
     public boolean isRegistered() {
@@ -177,6 +178,7 @@ class Manager implements TextSecure {
             accountManager.requestSmsVerificationCode();
 
         registered = false;
+        save();
     }
 
     private static final int BATCH_SIZE = 100;
@@ -194,6 +196,8 @@ class Manager implements TextSecure {
         }
 
         preKeyIdOffset = (preKeyIdOffset + BATCH_SIZE + 1) % Medium.MAX_VALUE;
+        save();
+
         return records;
     }
 
@@ -210,6 +214,7 @@ class Manager implements TextSecure {
         PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
 
         axolotlStore.storePreKey(Medium.MAX_VALUE, record);
+        save();
 
         return record;
     }
@@ -222,6 +227,7 @@ class Manager implements TextSecure {
 
             axolotlStore.storeSignedPreKey(nextSignedPreKeyId, record);
             nextSignedPreKeyId = (nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
+            save();
 
             return record;
         } catch (InvalidKeyException e) {
@@ -244,6 +250,7 @@ class Manager implements TextSecure {
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(axolotlStore.getIdentityKeyPair());
 
         accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
+        save();
     }
 
 
@@ -392,6 +399,7 @@ class Manager implements TextSecure {
             } catch (InvalidNumberException e) {
                 System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
                 System.err.println("Aborting sending.");
+                save();
                 return;
             }
         }
