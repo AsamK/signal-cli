@@ -305,7 +305,7 @@ class Manager {
         if (groupId == null) {
             // Create new group
             g = new GroupInfo(Util.getSecretBytes(16));
-            g.members.add(getUsername());
+            g.members.add(username);
         } else {
             g = getGroupInfo(groupId);
         }
@@ -564,7 +564,7 @@ class Manager {
         return outputFile;
     }
 
-    public String canonicalizeNumber(String number) throws InvalidNumberException {
+    private String canonicalizeNumber(String number) throws InvalidNumberException {
         String localNumber = username;
         return PhoneNumberFormatter.formatNumber(number, localNumber);
     }
@@ -574,15 +574,11 @@ class Manager {
         return new TextSecureAddress(e164number);
     }
 
-    public GroupInfo getGroupInfo(byte[] groupId) throws GroupNotFoundException {
+    private GroupInfo getGroupInfo(byte[] groupId) throws GroupNotFoundException {
         return groupStore.getGroup(groupId);
     }
 
-    public void setGroupInfo(GroupInfo group) {
+    private void setGroupInfo(GroupInfo group) {
         groupStore.updateGroup(group);
-    }
-
-    public String getUsername() {
-        return username;
     }
 }
