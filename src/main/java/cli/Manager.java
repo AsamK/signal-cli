@@ -367,8 +367,9 @@ class Manager implements TextSecure {
         sendMessage(message, attachments, recipients);
     }
 
+    @Override
     public void sendMessage(String messageText, List<String> attachments,
-                            Collection<String> recipients)
+                            List<String> recipients)
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
@@ -379,6 +380,7 @@ class Manager implements TextSecure {
         sendMessage(message, recipients);
     }
 
+    @Override
     public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
         TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
                 .asEndSessionMessage()

@@ -33,6 +33,8 @@ import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 import java.io.File;
 import java.io.IOException;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
 
@@ -46,84 +48,180 @@ public class Main {
         }
 
         final String username = ns.getString("username");
-        final Manager m = new Manager(username);
-        if (m.userExists()) {
-            try {
-                m.load();
-            } catch (Exception e) {
-                System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
-                System.exit(2);
+        Manager m;
+        TextSecure ts;
+        DBusConnection dBusConn = null;
+        try {
+            if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
+                try {
+                    m = null;
+                    int busType;
+                    if (ns.getBoolean("dbus_system")) {
+                        busType = DBusConnection.SYSTEM;
+                    } else {
+                        busType = DBusConnection.SESSION;
+                    }
+                    dBusConn = DBusConnection.getConnection(busType);
+                    ts = (TextSecure) dBusConn.getRemoteObject(
+                            "org.asamk.TextSecure", "/org/asamk/TextSecure",
+                            TextSecure.class);
+                } catch (DBusException e) {
+                    e.printStackTrace();
+                    if (dBusConn != null) {
+                        dBusConn.disconnect();
+                    }
+                    System.exit(3);
+                    return;
+                }
+            } else {
+                m = new Manager(username);
+                ts = m;
+                if (m.userExists()) {
+                    try {
+                        m.load();
+                    } catch (Exception e) {
+                        System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
+                        System.exit(2);
+                        return;
+                    }
+                }
             }
-        }
 
-        switch (ns.getString("command")) {
-            case "register":
-                if (!m.userHasKeys()) {
-                    m.createNewIdentity();
-                }
-                try {
-                    m.register(ns.getBoolean("voice"));
-                } catch (IOException e) {
-                    System.err.println("Request verify error: " + e.getMessage());
-                    System.exit(3);
-                }
-                break;
-            case "verify":
-                if (!m.userHasKeys()) {
-                    System.err.println("User has no keys, first call register.");
-                    System.exit(1);
-                }
-                if (m.isRegistered()) {
-                    System.err.println("User registration is already verified");
-                    System.exit(1);
-                }
-                try {
-                    m.verifyAccount(ns.getString("verificationCode"));
-                } catch (IOException e) {
-                    System.err.println("Verify error: " + e.getMessage());
-                    System.exit(3);
-                }
-                break;
-            case "send":
-                if (!m.isRegistered()) {
-                    System.err.println("User is not registered.");
-                    System.exit(1);
-                }
-
-                if (ns.getBoolean("endsession")) {
-                    if (ns.getList("recipient") == null) {
-                        System.err.println("No recipients given");
-                        System.err.println("Aborting sending.");
+            switch (ns.getString("command")) {
+                case "register":
+                    if (dBusConn != null) {
+                        System.err.println("register is not yet implementd via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.userHasKeys()) {
+                        m.createNewIdentity();
+                    }
+                    try {
+                        m.register(ns.getBoolean("voice"));
+                    } catch (IOException e) {
+                        System.err.println("Request verify error: " + e.getMessage());
+                        System.exit(3);
+                    }
+                    break;
+                case "verify":
+                    if (dBusConn != null) {
+                        System.err.println("verify is not yet implementd via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.userHasKeys()) {
+                        System.err.println("User has no keys, first call register.");
+                        System.exit(1);
+                    }
+                    if (m.isRegistered()) {
+                        System.err.println("User registration is already verified");
                         System.exit(1);
                     }
                     try {
-                        m.sendEndSessionMessage(ns.<String>getList("recipient"));
+                        m.verifyAccount(ns.getString("verificationCode"));
                     } catch (IOException e) {
-                        handleIOException(e);
-                    } catch (EncapsulatedExceptions e) {
-                        handleEncapsulatedExceptions(e);
-                    } catch (AssertionError e) {
-                        handleAssertionError(e);
+                        System.err.println("Verify error: " + e.getMessage());
+                        System.exit(3);
                     }
-                } else {
-                    String messageText = ns.getString("message");
-                    if (messageText == null) {
+                    break;
+                case "send":
+                    if (dBusConn == null && !m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+
+                    if (ns.getBoolean("endsession")) {
+                        if (ns.getList("recipient") == null) {
+                            System.err.println("No recipients given");
+                            System.err.println("Aborting sending.");
+                            System.exit(1);
+                        }
                         try {
-                            messageText = IOUtils.toString(System.in);
+                            ts.sendEndSessionMessage(ns.<String>getList("recipient"));
                         } catch (IOException e) {
-                            System.err.println("Failed to read message from stdin: " + e.getMessage());
+                            handleIOException(e);
+                        } catch (EncapsulatedExceptions e) {
+                            handleEncapsulatedExceptions(e);
+                        } catch (AssertionError e) {
+                            handleAssertionError(e);
+                        }
+                    } else {
+                        String messageText = ns.getString("message");
+                        if (messageText == null) {
+                            try {
+                                messageText = IOUtils.toString(System.in);
+                            } catch (IOException e) {
+                                System.err.println("Failed to read message from stdin: " + e.getMessage());
+                                System.err.println("Aborting sending.");
+                                System.exit(1);
+                            }
+                        }
+
+                        try {
+                            List<String> attachments = ns.getList("attachment");
+                            if (attachments == null) {
+                                attachments = new ArrayList<>();
+                            }
+                            if (ns.getString("group") != null) {
+                                byte[] groupId = decodeGroupId(ns.getString("group"));
+                                ts.sendGroupMessage(messageText, attachments, groupId);
+                            } else {
+                                ts.sendMessage(messageText, attachments, ns.<String>getList("recipient"));
+                            }
+                        } catch (IOException e) {
+                            handleIOException(e);
+                        } catch (EncapsulatedExceptions e) {
+                            handleEncapsulatedExceptions(e);
+                        } catch (AssertionError e) {
+                            handleAssertionError(e);
+                        } catch (GroupNotFoundException e) {
+                            handleGroupNotFoundException(e);
+                        } catch (AttachmentInvalidException e) {
+                            System.err.println("Failed to add attachment (\"" + e.getAttachment() + "\"): " + e.getMessage());
                             System.err.println("Aborting sending.");
                             System.exit(1);
                         }
                     }
 
+                    break;
+                case "receive":
+                    if (dBusConn != null) {
+                        System.err.println("receive is not yet implementd via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+                    int timeout = 5;
+                    if (ns.getInt("timeout") != null) {
+                        timeout = ns.getInt("timeout");
+                    }
+                    boolean returnOnTimeout = true;
+                    if (timeout < 0) {
+                        returnOnTimeout = false;
+                        timeout = 3600;
+                    }
                     try {
-                        if (ns.getString("group") != null) {
-                            byte[] groupId = decodeGroupId(ns.getString("group"));
-                            m.sendGroupMessage(messageText, ns.<String>getList("attachment"), groupId);
-                        } else {
-                            m.sendMessage(messageText, ns.<String>getList("attachment"), ns.<String>getList("recipient"));
-                        }
+                        m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
+                    } catch (IOException e) {
+                        System.err.println("Error while receiving messages: " + e.getMessage());
+                        System.exit(3);
+                    } catch (AssertionError e) {
+                        handleAssertionError(e);
+                    }
+                    break;
+                case "quitGroup":
+                    if (dBusConn != null) {
+                        System.err.println("quitGroup is not yet implementd via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+
+                    try {
+                        m.sendQuitGroupMessage(decodeGroupId(ns.getString("group")));
                     } catch (IOException e) {
                         handleIOException(e);
                     } catch (EncapsulatedExceptions e) {
@@ -132,115 +230,88 @@ public class Main {
                         handleAssertionError(e);
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
-                    } catch (AttachmentInvalidException e) {
-                        System.err.println("Failed to add attachment (\"" + e.getAttachment() + "\"): " + e.getMessage());
-                        System.err.println("Aborting sending.");
+                    }
+
+                    break;
+                case "updateGroup":
+                    if (dBusConn != null) {
+                        System.err.println("updateGroup is not yet implementd via dbus");
                         System.exit(1);
                     }
-                }
-
-                break;
-            case "receive":
-                if (!m.isRegistered()) {
-                    System.err.println("User is not registered.");
-                    System.exit(1);
-                }
-                int timeout = 5;
-                if (ns.getInt("timeout") != null) {
-                    timeout = ns.getInt("timeout");
-                }
-                boolean returnOnTimeout = true;
-                if (timeout < 0) {
-                    returnOnTimeout = false;
-                    timeout = 3600;
-                }
-                try {
-                    m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
-                } catch (IOException e) {
-                    System.err.println("Error while receiving messages: " + e.getMessage());
-                    System.exit(3);
-                } catch (AssertionError e) {
-                    handleAssertionError(e);
-                }
-                break;
-            case "quitGroup":
-                if (!m.isRegistered()) {
-                    System.err.println("User is not registered.");
-                    System.exit(1);
-                }
-
-                try {
-                    m.sendQuitGroupMessage(decodeGroupId(ns.getString("group")));
-                } catch (IOException e) {
-                    handleIOException(e);
-                } catch (EncapsulatedExceptions e) {
-                    handleEncapsulatedExceptions(e);
-                } catch (AssertionError e) {
-                    handleAssertionError(e);
-                } catch (GroupNotFoundException e) {
-                    handleGroupNotFoundException(e);
-                }
-
-                break;
-            case "updateGroup":
-                if (!m.isRegistered()) {
-                    System.err.println("User is not registered.");
-                    System.exit(1);
-                }
-
-                try {
-                    byte[] groupId = null;
-                    if (ns.getString("group") != null) {
-                        groupId = decodeGroupId(ns.getString("group"));
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
                     }
-                    byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"));
-                    if (groupId == null) {
-                        System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
-                    }
-                } catch (IOException e) {
-                    handleIOException(e);
-                } catch (AttachmentInvalidException e) {
-                    System.err.println("Failed to add avatar attachment (\"" + e.getAttachment() + ") for group\": " + e.getMessage());
-                    System.err.println("Aborting sending.");
-                    System.exit(1);
-                } catch (GroupNotFoundException e) {
-                    handleGroupNotFoundException(e);
-                } catch (EncapsulatedExceptions e) {
-                    handleEncapsulatedExceptions(e);
-                }
 
-                break;
-            case "daemon":
-                if (!m.isRegistered()) {
-                    System.err.println("User is not registered.");
-                    System.exit(1);
-                }
-                try {
-                    int busType;
-                    if (ns.getBoolean("system")) {
-                        busType = DBusConnection.SYSTEM;
-                    } else {
-                        busType = DBusConnection.SESSION;
+                    try {
+                        byte[] groupId = null;
+                        if (ns.getString("group") != null) {
+                            groupId = decodeGroupId(ns.getString("group"));
+                        }
+                        byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"));
+                        if (groupId == null) {
+                            System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
+                        }
+                    } catch (IOException e) {
+                        handleIOException(e);
+                    } catch (AttachmentInvalidException e) {
+                        System.err.println("Failed to add avatar attachment (\"" + e.getAttachment() + ") for group\": " + e.getMessage());
+                        System.err.println("Aborting sending.");
+                        System.exit(1);
+                    } catch (GroupNotFoundException e) {
+                        handleGroupNotFoundException(e);
+                    } catch (EncapsulatedExceptions e) {
+                        handleEncapsulatedExceptions(e);
                     }
-                    DBusConnection conn = DBusConnection.getConnection(busType);
-                    conn.requestBusName("org.asamk.TextSecure");
-                    conn.exportObject("/org/asamk/TextSecure", m);
-                } catch (DBusException e) {
-                    e.printStackTrace();
-                    System.exit(3);
-                }
-                try {
-                    m.receiveMessages(3600, false, new ReceiveMessageHandler(m));
-                } catch (IOException e) {
-                    System.err.println("Error while receiving messages: " + e.getMessage());
-                    System.exit(3);
-                } catch (AssertionError e) {
-                    handleAssertionError(e);
-                }
 
-                break;
+                    break;
+                case "daemon":
+                    if (dBusConn != null) {
+                        System.err.println("Stop it.");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+                    DBusConnection conn = null;
+                    try {
+                        try {
+                            int busType;
+                            if (ns.getBoolean("system")) {
+                                busType = DBusConnection.SYSTEM;
+                            } else {
+                                busType = DBusConnection.SESSION;
+                            }
+                            conn = DBusConnection.getConnection(busType);
+                            conn.requestBusName("org.asamk.TextSecure");
+                            conn.exportObject("/org/asamk/TextSecure", m);
+                        } catch (DBusException e) {
+                            e.printStackTrace();
+                            System.exit(3);
+                        }
+                        try {
+                            m.receiveMessages(3600, false, new ReceiveMessageHandler(m));
+                        } catch (IOException e) {
+                            System.err.println("Error while receiving messages: " + e.getMessage());
+                            System.exit(3);
+                        } catch (AssertionError e) {
+                            handleAssertionError(e);
+                        }
+                    } finally {
+                        if (conn != null) {
+                            conn.disconnect();
+                        }
+                    }
+
+                    break;
+            }
+            System.exit(0);
+        } finally {
+            if (dBusConn != null) {
+                dBusConn.disconnect();
+            }
         }
-        System.exit(0);
     }
 
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
@@ -266,11 +337,19 @@ public class Main {
                 .description("Commandline interface for TextSecure.")
                 .version(Manager.PROJECT_NAME + " " + Manager.PROJECT_VERSION);
 
-        parser.addArgument("-u", "--username")
-                .help("Specify your phone number, that will be used for verification.");
         parser.addArgument("-v", "--version")
                 .help("Show package version.")
                 .action(Arguments.version());
+
+        MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
+        mut.addArgument("-u", "--username")
+                .help("Specify your phone number, that will be used for verification.");
+        mut.addArgument("--dbus")
+                .help("Make request via user dbus.")
+                .action(Arguments.storeTrue());
+        mut.addArgument("--dbus-system")
+                .help("Make request via system dbus.")
+                .action(Arguments.storeTrue());
 
         Subparsers subparsers = parser.addSubparsers()
                 .title("subcommands")
@@ -330,14 +409,16 @@ public class Main {
 
         try {
             Namespace ns = parser.parseArgs(args);
-            if (ns.getString("username") == null) {
-                parser.printUsage();
-                System.err.println("You need to specify a username (phone number)");
-                System.exit(2);
-            }
-            if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"))) {
-                System.err.println("Invalid username (phone number), make sure you include the country code.");
-                System.exit(2);
+            if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system")) {
+                if (ns.getString("username") == null) {
+                    parser.printUsage();
+                    System.err.println("You need to specify a username (phone number)");
+                    System.exit(2);
+                }
+                if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"))) {
+                    System.err.println("Invalid username (phone number), make sure you include the country code.");
+                    System.exit(2);
+                }
             }
             if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
                 System.err.println("You cannot specify recipients by phone number and groups a the same time");
