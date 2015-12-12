@@ -293,7 +293,7 @@ class Manager implements TextSecure {
         }
         TextSecureDataMessage message = messageBuilder.build();
 
-        sendMessage(message, getGroupInfo(groupId).members);
+        sendMessage(message, groupStore.getGroup(groupId).members);
     }
 
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
@@ -305,7 +305,7 @@ class Manager implements TextSecure {
                 .asGroupMessage(group)
                 .build();
 
-        sendMessage(message, getGroupInfo(groupId).members);
+        sendMessage(message, groupStore.getGroup(groupId).members);
     }
 
     public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
@@ -315,7 +315,7 @@ class Manager implements TextSecure {
             g = new GroupInfo(Util.getSecretBytes(16));
             g.members.add(username);
         } else {
-            g = getGroupInfo(groupId);
+            g = groupStore.getGroup(groupId);
         }
 
         if (name != null) {
@@ -349,7 +349,7 @@ class Manager implements TextSecure {
             }
         }
 
-        setGroupInfo(g);
+        groupStore.updateGroup(g);
 
         TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
                 .asGroupMessage(group.build())
@@ -590,14 +590,6 @@ class Manager implements TextSecure {
     private TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
         String e164number = canonicalizeNumber(number);
         return new TextSecureAddress(e164number);
-    }
-
-    private GroupInfo getGroupInfo(byte[] groupId) throws GroupNotFoundException {
-        return groupStore.getGroup(groupId);
-    }
-
-    private void setGroupInfo(GroupInfo group) {
-        groupStore.updateGroup(group);
     }
 
     @Override
