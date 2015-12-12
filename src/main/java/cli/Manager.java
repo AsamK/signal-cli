@@ -44,6 +44,8 @@ import org.whispersystems.textsecure.api.util.InvalidNumberException;
 import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -244,7 +246,132 @@ class Manager {
         accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
     }
 
-    public void sendMessage(List<String> recipients, TextSecureDataMessage message)
+
+    private static List<TextSecureAttachment> getTextSecureAttachments(List<String> attachments) throws AttachmentInvalidException {
+        List<TextSecureAttachment> textSecureAttachments = null;
+        if (attachments != null) {
+            textSecureAttachments = new ArrayList<>(attachments.size());
+            for (String attachment : attachments) {
+                try {
+                    textSecureAttachments.add(createAttachment(attachment));
+                } catch (IOException e) {
+                    throw new AttachmentInvalidException(attachment, e);
+                }
+            }
+        }
+        return textSecureAttachments;
+    }
+
+    private static TextSecureAttachmentStream createAttachment(String attachment) throws IOException {
+        File attachmentFile = new File(attachment);
+        InputStream attachmentStream = new FileInputStream(attachmentFile);
+        final long attachmentSize = attachmentFile.length();
+        String mime = Files.probeContentType(Paths.get(attachment));
+        return new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null);
+    }
+
+    public void sendGroupMessage(String messageText, List<String> attachments,
+                                 byte[] groupId)
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+        if (attachments != null) {
+            messageBuilder.withAttachments(getTextSecureAttachments(attachments));
+        }
+        if (groupId != null) {
+            TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.DELIVER)
+                    .withId(groupId)
+                    .build();
+            messageBuilder.asGroupMessage(group);
+        }
+        TextSecureDataMessage message = messageBuilder.build();
+
+        sendMessage(message, getGroupInfo(groupId).members);
+    }
+
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
+        TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.QUIT)
+                .withId(groupId)
+                .build();
+
+        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+                .asGroupMessage(group)
+                .build();
+
+        sendMessage(message, getGroupInfo(groupId).members);
+    }
+
+    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        GroupInfo g;
+        if (groupId == null) {
+            // Create new group
+            g = new GroupInfo(Util.getSecretBytes(16));
+            g.members.add(getUsername());
+        } else {
+            g = getGroupInfo(groupId);
+        }
+
+        if (name != null) {
+            g.name = name;
+        }
+
+        if (members != null) {
+            for (String member : members) {
+                try {
+                    g.members.add(canonicalizeNumber(member));
+                } catch (InvalidNumberException e) {
+                    System.err.println("Failed to add member \"" + member + "\" to group: " + e.getMessage());
+                    System.err.println("Aborting…");
+                    System.exit(1);
+                }
+            }
+        }
+
+        TextSecureGroup.Builder group = TextSecureGroup.newBuilder(TextSecureGroup.Type.UPDATE)
+                .withId(g.groupId)
+                .withName(g.name)
+                .withMembers(new ArrayList<>(g.members));
+
+        if (avatarFile != null) {
+            try {
+                group.withAvatar(createAttachment(avatarFile));
+                // TODO
+                g.avatarId = 0;
+            } catch (IOException e) {
+                throw new AttachmentInvalidException(avatarFile, e);
+            }
+        }
+
+        setGroupInfo(g);
+
+        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+                .asGroupMessage(group.build())
+                .build();
+
+        sendMessage(message, g.members);
+        return g.groupId;
+    }
+
+    public void sendMessage(String messageText, List<String> attachments,
+                            Collection<String> recipients)
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+        if (attachments != null) {
+            messageBuilder.withAttachments(getTextSecureAttachments(attachments));
+        }
+        TextSecureDataMessage message = messageBuilder.build();
+
+        sendMessage(message, recipients);
+    }
+
+    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
+        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+                .asEndSessionMessage()
+                .build();
+
+        sendMessage(message, recipients);
+    }
+
+    private void sendMessage(TextSecureDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions {
         TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
                 axolotlStore, USER_AGENT, Optional.<TextSecureMessageSender.EventListener>absent());
@@ -310,8 +437,9 @@ class Manager {
                                     TextSecureGroup groupInfo = message.getGroupInfo().get();
                                     switch (groupInfo.getType()) {
                                         case UPDATE:
-                                            group = groupStore.getGroup(groupInfo.getGroupId());
-                                            if (group == null) {
+                                            try {
+                                                group = groupStore.getGroup(groupInfo.getGroupId());
+                                            } catch (GroupNotFoundException e) {
                                                 group = new GroupInfo(groupInfo.getGroupId());
                                             }
 
@@ -339,12 +467,16 @@ class Manager {
                                             groupStore.updateGroup(group);
                                             break;
                                         case DELIVER:
-                                            group = groupStore.getGroup(groupInfo.getGroupId());
+                                            try {
+                                                group = groupStore.getGroup(groupInfo.getGroupId());
+                                            } catch (GroupNotFoundException e) {
+                                            }
                                             break;
                                         case QUIT:
-                                            group = groupStore.getGroup(groupInfo.getGroupId());
-                                            if (group != null) {
+                                            try {
+                                                group = groupStore.getGroup(groupInfo.getGroupId());
                                                 group.members.remove(envelope.getSource());
+                                            } catch (GroupNotFoundException e) {
                                             }
                                             break;
                                     }
@@ -442,7 +574,7 @@ class Manager {
         return new TextSecureAddress(e164number);
     }
 
-    public GroupInfo getGroupInfo(byte[] groupId) {
+    public GroupInfo getGroupInfo(byte[] groupId) throws GroupNotFoundException {
         return groupStore.getGroup(groupId);
     }
 
