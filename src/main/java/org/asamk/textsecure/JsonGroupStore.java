@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;

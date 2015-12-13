@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

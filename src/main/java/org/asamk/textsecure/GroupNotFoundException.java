@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 public class GroupNotFoundException extends Exception {
     private final byte[] groupId;

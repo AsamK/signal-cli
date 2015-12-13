@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 public class AttachmentInvalidException extends Exception {
     private final String attachment;

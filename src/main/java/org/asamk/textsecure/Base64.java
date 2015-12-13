@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>

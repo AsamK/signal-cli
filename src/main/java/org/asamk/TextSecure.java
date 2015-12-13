@@ -1,5 +1,7 @@
-package cli;
+package org.asamk;
 
+import org.asamk.textsecure.AttachmentInvalidException;
+import org.asamk.textsecure.GroupNotFoundException;
 import org.freedesktop.dbus.DBusInterface;
 import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
 

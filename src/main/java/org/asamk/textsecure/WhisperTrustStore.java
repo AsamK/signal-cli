@@ -1,4 +1,4 @@
-package cli;
+package org.asamk.textsecure;
 
 import org.whispersystems.textsecure.api.push.TrustStore;
 
@@ -8,7 +8,7 @@ class WhisperTrustStore implements TrustStore {
 
     @Override
     public InputStream getKeyStoreInputStream() {
-        return cli.WhisperTrustStore.class.getResourceAsStream("whisper.store");
+        return WhisperTrustStore.class.getResourceAsStream("whisper.store");
     }
 
     @Override

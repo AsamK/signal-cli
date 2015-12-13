@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package cli;
+package org.asamk.textsecure;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
+import org.asamk.TextSecure;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
@@ -37,6 +38,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
+
+    public static final String TEXTSECURE_BUSNAME = "org.asamk.TextSecure";
+    public static final String TEXTSECURE_OBJECTPATH = "/org/asamk/TextSecure";
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
@@ -63,7 +67,7 @@ public class Main {
                     }
                     dBusConn = DBusConnection.getConnection(busType);
                     ts = (TextSecure) dBusConn.getRemoteObject(
-                            "org.asamk.TextSecure", "/org/asamk/TextSecure",
+                            TEXTSECURE_BUSNAME, TEXTSECURE_OBJECTPATH,
                             TextSecure.class);
                 } catch (DBusException e) {
                     e.printStackTrace();
@@ -284,8 +288,8 @@ public class Main {
                                 busType = DBusConnection.SESSION;
                             }
                             conn = DBusConnection.getConnection(busType);
-                            conn.requestBusName("org.asamk.TextSecure");
-                            conn.exportObject("/org/asamk/TextSecure", m);
+                            conn.requestBusName(TEXTSECURE_BUSNAME);
+                            conn.exportObject(TEXTSECURE_OBJECTPATH, m);
                         } catch (DBusException e) {
                             e.printStackTrace();
                             System.exit(3);
