@@ -41,6 +41,37 @@ usage: textsecure-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,up
 
           textsecure-cli -u USERNAME send -m "This is a message" -g GROUP_ID
 
+## DBus service
+
+textsecure-cli can run in daemon mode and provides an experimental dbus interface.
+For dbus support you need jni/unix-java.so installed on your system (Debian: libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
+
+* Run in daemon mode (dbus session bus)
+
+          textsecure-cli -u USERNAME daemon
+
+* Send a message via dbus
+
+          textsecure-cli --dbus send -m "Message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+
+### System bus
+
+To run on the system bus you need to take some additional steps.
+It’s advisable to run textsecure-cli as a separate unix user, the following steps assume you created a user named *textsecure*.
+These steps, executed as root, should work on all distributions using systemd.
+
+```bash
+cp data/org.asamk.TextSecure.config /etc/dbus-1/system.d/
+cp data/org.asamk.TextSecure.service /usr/share/dbus-1/system-services/
+cp data/textsecure.service /etc/systemd/system/
+sed -i -e "s|%dir%|<INSERT_INSTALL_PATH>|" -e "s|%number%|<INSERT_YOUR_NUMBER>|" /etc/systemd/system/textsecure.service
+systemctl daemon-reload
+systemctl enable textsecure.service
+systemctl reload dbus.service
+```
+
+Then just execute the send command from above, the service will be autostarted by dbus the first time it is requested.
+
 ## Storage
 
 The password and cryptographic keys are created when registering and stored in the current users home directory:
