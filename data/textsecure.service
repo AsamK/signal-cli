@@ -1,0 +1,11 @@
+[Unit]
+Description=Send secure messages to TextSecure/Signal clients
+
+[Service]
+Type=dbus
+ExecStart=%dir%/bin/textsecure-cli -u %number% daemon --system
+User=textsecure
+BusName=org.asamk.TextSecure
+
+[Install]
+Alias=dbus-org.asamk.TextSecure.service

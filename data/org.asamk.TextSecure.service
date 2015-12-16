@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.asamk.TextSecure
+Exec=/bin/false
+SystemdService=dbus-org.asamk.TextSecure.service
