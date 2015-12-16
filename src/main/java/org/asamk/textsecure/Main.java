@@ -288,8 +288,8 @@ public class Main {
                                 busType = DBusConnection.SESSION;
                             }
                             conn = DBusConnection.getConnection(busType);
-                            conn.requestBusName(TEXTSECURE_BUSNAME);
                             conn.exportObject(TEXTSECURE_OBJECTPATH, m);
+                            conn.requestBusName(TEXTSECURE_BUSNAME);
                         } catch (DBusException e) {
                             e.printStackTrace();
                             System.exit(3);
