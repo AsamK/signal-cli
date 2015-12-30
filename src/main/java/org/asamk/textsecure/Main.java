@@ -295,7 +295,7 @@ public class Main {
                             System.exit(3);
                         }
                         try {
-                            m.receiveMessages(3600, false, new ReceiveMessageHandler(m));
+                            m.receiveMessages(3600, false, new DbusReceiveMessageHandler(m, conn));
                         } catch (IOException e) {
                             System.err.println("Error while receiving messages: " + e.getMessage());
                             System.exit(3);
@@ -515,6 +515,110 @@ public class Main {
                             System.out.println("Attachments: ");
                             for (TextSecureAttachment attachment : message.getAttachments().get()) {
                                 printAttachment(attachment);
+                            }
+                        }
+                    }
+                    if (content.getSyncMessage().isPresent()) {
+                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                        System.out.println("Received sync message");
+                    }
+                }
+            } else {
+                System.out.println("Unknown message received.");
+            }
+            System.out.println();
+        }
+
+        private void printAttachment(TextSecureAttachment attachment) {
+            System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
+            if (attachment.isPointer()) {
+                final TextSecureAttachmentPointer pointer = attachment.asPointer();
+                System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
+                System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
+                File file = m.getAttachmentFile(pointer.getId());
+                if (file.exists()) {
+                    System.out.println("  Stored plaintext in: " + file);
+                }
+            }
+        }
+    }
+
+    private static class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+        final Manager m;
+        final DBusConnection conn;
+
+        public DbusReceiveMessageHandler(Manager m, DBusConnection conn) {
+            this.m = m;
+            this.conn = conn;
+        }
+
+        @Override
+        public void handleMessage(TextSecureEnvelope envelope, TextSecureContent content, GroupInfo group) {
+            System.out.println("Envelope from: " + envelope.getSource());
+            System.out.println("Timestamp: " + envelope.getTimestamp());
+
+            if (envelope.isReceipt()) {
+                System.out.println("Got receipt.");
+            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
+                if (content == null) {
+                    System.out.println("Failed to decrypt message.");
+                } else {
+                    if (content.getDataMessage().isPresent()) {
+                        TextSecureDataMessage message = content.getDataMessage().get();
+
+                        System.out.println("Message timestamp: " + message.getTimestamp());
+
+                        if (message.getBody().isPresent()) {
+                            System.out.println("Body: " + message.getBody().get());
+                        }
+
+                        if (message.getGroupInfo().isPresent()) {
+                            TextSecureGroup groupInfo = message.getGroupInfo().get();
+                            System.out.println("Group info:");
+                            System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
+                            if (groupInfo.getName().isPresent()) {
+                                System.out.println("  Name: " + groupInfo.getName().get());
+                            } else if (group != null) {
+                                System.out.println("  Name: " + group.name);
+                            } else {
+                                System.out.println("  Name: <Unknown group>");
+                            }
+                            System.out.println("  Type: " + groupInfo.getType());
+                            if (groupInfo.getMembers().isPresent()) {
+                                for (String member : groupInfo.getMembers().get()) {
+                                    System.out.println("  Member: " + member);
+                                }
+                            }
+                            if (groupInfo.getAvatar().isPresent()) {
+                                System.out.println("  Avatar:");
+                                printAttachment(groupInfo.getAvatar().get());
+                            }
+                        }
+                        if (message.isEndSession()) {
+                            System.out.println("Is end session");
+                        }
+
+                        List<String> attachments = new ArrayList<>();
+                        if (message.getAttachments().isPresent()) {
+                            System.out.println("Attachments: ");
+                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                                if (attachment.isPointer()) {
+                                    attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
+                                }
+                                printAttachment(attachment);
+                            }
+                        }
+                        if (!message.isEndSession() &&
+                                !(message.getGroupInfo().isPresent() && message.getGroupInfo().get().getType() != TextSecureGroup.Type.DELIVER)) {
+                            try {
+                                conn.sendSignal(new TextSecure.MessageReceived(
+                                        TEXTSECURE_OBJECTPATH,
+                                        envelope.getSource(),
+                                        message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
+                                        message.getBody().isPresent() ? message.getBody().get() : "",
+                                        attachments));
+                            } catch (DBusException e) {
+                                e.printStackTrace();
                             }
                         }
                     }
