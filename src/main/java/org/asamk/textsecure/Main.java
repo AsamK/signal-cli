@@ -180,7 +180,7 @@ public class Main {
                         } catch (GroupNotFoundException e) {
                             handleGroupNotFoundException(e);
                         } catch (AttachmentInvalidException e) {
-                            System.err.println("Failed to add attachment (\"" + e.getAttachment() + "\"): " + e.getMessage());
+                            System.err.println("Failed to add attachment: " + e.getMessage());
                             System.err.println("Aborting sending.");
                             System.exit(1);
                         }
@@ -259,7 +259,7 @@ public class Main {
                     } catch (IOException e) {
                         handleIOException(e);
                     } catch (AttachmentInvalidException e) {
-                        System.err.println("Failed to add avatar attachment (\"" + e.getAttachment() + ") for group\": " + e.getMessage());
+                        System.err.println("Failed to add avatar attachment for group\": " + e.getMessage());
                         System.err.println("Aborting sending.");
                         System.exit(1);
                     } catch (GroupNotFoundException e) {
@@ -319,7 +319,7 @@ public class Main {
     }
 
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
-        System.err.println("Failed to send to group \"" + Base64.encodeBytes(e.getGroupId()) + "\": Unknown group");
+        System.err.println("Failed to send to group: " + e.getMessage());
         System.err.println("Aborting sending.");
         System.exit(1);
     }

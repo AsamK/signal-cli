@@ -1,14 +1,14 @@
 package org.asamk.textsecure;
 
-public class GroupNotFoundException extends Exception {
-    private final byte[] groupId;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
-    public GroupNotFoundException(byte[] groupId) {
-        super();
-        this.groupId = groupId;
+public class GroupNotFoundException extends DBusExecutionException {
+
+    public GroupNotFoundException(String message) {
+        super(message);
     }
 
-    public byte[] getGroupId() {
-        return groupId;
+    public GroupNotFoundException(byte[] groupId) {
+        super("Group not found: " + Base64.encodeBytes(groupId));
     }
 }

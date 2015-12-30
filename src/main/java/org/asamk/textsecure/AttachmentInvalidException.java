@@ -1,14 +1,13 @@
 package org.asamk.textsecure;
 
-public class AttachmentInvalidException extends Exception {
-    private final String attachment;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
-    public AttachmentInvalidException(String attachment, Exception e) {
-        super(e);
-        this.attachment = attachment;
+public class AttachmentInvalidException extends DBusExecutionException {
+    public AttachmentInvalidException(String message) {
+        super(message);
     }
 
-    public String getAttachment() {
-        return attachment;
+    public AttachmentInvalidException(String attachment, Exception e) {
+        super(attachment + ": " + e.getMessage());
     }
 }
