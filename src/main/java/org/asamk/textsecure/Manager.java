@@ -535,7 +535,7 @@ class Manager implements TextSecure {
     }
 
     public File getAttachmentFile(long attachmentId) {
-        return new File(attachmentsPath + "/" + attachmentId);
+        return new File(attachmentsPath, attachmentId + "");
     }
 
     private File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
