@@ -239,7 +239,7 @@ class Manager implements TextSecure {
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccountWithCode(verificationCode, signalingKey, axolotlStore.getLocalRegistrationId(), false);
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, axolotlStore.getLocalRegistrationId(), false, true);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
