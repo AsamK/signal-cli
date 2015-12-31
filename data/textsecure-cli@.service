@@ -1,0 +1,15 @@
+[Unit]
+Description=Send secure messages to TextSecure/Signal clients
+Requires=dbus.socket
+After=dbus.socket
+Wants=network.target
+After=network.target
+
+[Service]
+Type=dbus
+ExecStart=%dir%/bin/textsecure-cli -u %I daemon --system
+User=textsecure-cli
+BusName=org.asamk.TextSecure
+
+[Install]
+WantedBy=multi-user.target
