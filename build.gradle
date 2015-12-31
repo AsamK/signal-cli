@@ -6,7 +6,7 @@ targetCompatibility = JavaVersion.VERSION_1_7
 
 mainClassName = 'org.asamk.textsecure.Main'
 
-version = '0.2.0'
+version = '0.2.1'
 
 repositories {
     maven {
