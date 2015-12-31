@@ -59,9 +59,9 @@ class Manager implements TextSecure {
     public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
     private final static String USER_AGENT = PROJECT_NAME + " " + PROJECT_VERSION;
 
-    private final static String settingsPath = System.getProperty("user.home") + "/.config/textsecure";
-    private final static String dataPath = settingsPath + "/data";
-    private final static String attachmentsPath = settingsPath + "/attachments";
+    private final String settingsPath;
+    private final String dataPath;
+    private final String attachmentsPath;
 
     private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
@@ -76,8 +76,12 @@ class Manager implements TextSecure {
     private TextSecureAccountManager accountManager;
     private JsonGroupStore groupStore;
 
-    public Manager(String username) {
+    public Manager(String username, String settingsPath) {
         this.username = username;
+        this.settingsPath = settingsPath;
+        this.dataPath = this.settingsPath + "/data";
+        this.attachmentsPath = this.settingsPath + "/attachments";
+
         jsonProcessot.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
         jsonProcessot.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
         jsonProcessot.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);

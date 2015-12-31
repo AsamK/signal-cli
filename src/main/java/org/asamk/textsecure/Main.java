@@ -20,6 +20,7 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.util.TextUtils;
 import org.asamk.TextSecure;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -79,7 +80,12 @@ public class Main {
                     return;
                 }
             } else {
-                m = new Manager(username);
+                String settingsPath = ns.getString("config");
+                if (TextUtils.isEmpty(settingsPath)) {
+                    settingsPath = System.getProperty("user.home") + "/.config/textsecure";
+                }
+
+                m = new Manager(username, settingsPath);
                 ts = m;
                 if (m.userExists()) {
                     try {
@@ -355,6 +361,8 @@ public class Main {
         parser.addArgument("-v", "--version")
                 .help("Show package version.")
                 .action(Arguments.version());
+        parser.addArgument("--config")
+                .help("Set the path, where to store the config (Default: $HOME/.config/textsecure-cli).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")

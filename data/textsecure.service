@@ -3,7 +3,7 @@ Description=Send secure messages to TextSecure/Signal clients
 
 [Service]
 Type=dbus
-ExecStart=%dir%/bin/textsecure-cli -u %number% daemon --system
+ExecStart=%dir%/bin/textsecure-cli -u %number% --config /var/lib/textsecure-cli daemon --system
 User=textsecure-cli
 BusName=org.asamk.TextSecure
 

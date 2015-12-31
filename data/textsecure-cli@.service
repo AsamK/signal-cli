@@ -7,7 +7,7 @@ After=network.target
 
 [Service]
 Type=dbus
-ExecStart=%dir%/bin/textsecure-cli -u %I daemon --system
+ExecStart=%dir%/bin/textsecure-cli -u %I --config /var/lib/textsecure-cli daemon --system
 User=textsecure-cli
 BusName=org.asamk.TextSecure
 
