@@ -23,6 +23,7 @@ import org.apache.commons.io.IOUtils;
 import org.asamk.TextSecure;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
 import org.whispersystems.textsecure.api.messages.*;
 import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
@@ -147,6 +148,8 @@ public class Main {
                             handleEncapsulatedExceptions(e);
                         } catch (AssertionError e) {
                             handleAssertionError(e);
+                        } catch (DBusExecutionException e) {
+                            handleDBusExecutionException(e);
                         }
                     } else {
                         String messageText = ns.getString("message");
@@ -183,6 +186,8 @@ public class Main {
                             System.err.println("Failed to add attachment: " + e.getMessage());
                             System.err.println("Aborting sending.");
                             System.exit(1);
+                        } catch (DBusExecutionException e) {
+                            handleDBusExecutionException(e);
                         }
                     }
 
@@ -321,6 +326,12 @@ public class Main {
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
         System.err.println("Failed to send to group: " + e.getMessage());
         System.err.println("Aborting sending.");
+        System.exit(1);
+    }
+
+    private static void handleDBusExecutionException(DBusExecutionException e) {
+        System.err.println("Cannot connect to dbus: " + e.getMessage());
+        System.err.println("Aborting.");
         System.exit(1);
     }
 
