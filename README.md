@@ -57,7 +57,7 @@ For dbus support you need jni/unix-java.so installed on your system (Debian: lib
 ### System bus
 
 To run on the system bus you need to take some additional steps.
-It’s advisable to run textsecure-cli as a separate unix user, the following steps assume you created a user named *textsecure*.
+It’s advisable to run textsecure-cli as a separate unix user, the following steps assume you created a user named *textsecure-cli*.
 These steps, executed as root, should work on all distributions using systemd.
 
 ```bash

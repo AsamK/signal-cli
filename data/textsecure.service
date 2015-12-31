@@ -4,7 +4,7 @@ Description=Send secure messages to TextSecure/Signal clients
 [Service]
 Type=dbus
 ExecStart=%dir%/bin/textsecure-cli -u %number% daemon --system
-User=textsecure
+User=textsecure-cli
 BusName=org.asamk.TextSecure
 
 [Install]
