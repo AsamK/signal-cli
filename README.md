@@ -61,7 +61,7 @@ It’s advisable to run textsecure-cli as a separate unix user, the following st
 These steps, executed as root, should work on all distributions using systemd.
 
 ```bash
-cp data/org.asamk.TextSecure.config /etc/dbus-1/system.d/
+cp data/org.asamk.TextSecure.conf /etc/dbus-1/system.d/
 cp data/org.asamk.TextSecure.service /usr/share/dbus-1/system-services/
 cp data/textsecure.service /etc/systemd/system/
 sed -i -e "s|%dir%|<INSERT_INSTALL_PATH>|" -e "s|%number%|<INSERT_YOUR_NUMBER>|" /etc/systemd/system/textsecure.service
