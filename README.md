@@ -1,7 +1,7 @@
 # textsecure-cli
 
-textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. However receiving messages currently only works with a patched libtextsecure-java, because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
-It is primarily intended to be used on servers to notify admins of important events.
+textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages textsecure-cli uses a [patched libtextsecure-java](https://github.com/AsamK/libtextsecure-java), because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
+It is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 ## Usage
 
