@@ -7,6 +7,7 @@ After=network.target
 
 [Service]
 Type=dbus
+Environment=TEXTSECURE_CLI_OPTS="-Xms2m"
 ExecStart=%dir%/bin/textsecure-cli -u %I --config /var/lib/textsecure-cli daemon --system
 User=textsecure-cli
 BusName=org.asamk.TextSecure
