@@ -3,18 +3,18 @@ package org.asamk.textsecure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.whispersystems.libaxolotl.AxolotlAddress;
-import org.whispersystems.libaxolotl.IdentityKey;
-import org.whispersystems.libaxolotl.IdentityKeyPair;
-import org.whispersystems.libaxolotl.InvalidKeyIdException;
-import org.whispersystems.libaxolotl.state.AxolotlStore;
-import org.whispersystems.libaxolotl.state.PreKeyRecord;
-import org.whispersystems.libaxolotl.state.SessionRecord;
-import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.IdentityKey;
+import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.InvalidKeyIdException;
+import org.whispersystems.libsignal.SignalProtocolAddress;
+import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SessionRecord;
+import org.whispersystems.libsignal.state.SignalProtocolStore;
+import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 
 import java.util.List;
 
-class JsonAxolotlStore implements AxolotlStore {
+class JsonAxolotlStore implements SignalProtocolStore {
 
     @JsonProperty("preKeys")
     @JsonDeserialize(using = JsonPreKeyStore.JsonPreKeyStoreDeserializer.class)
@@ -94,7 +94,7 @@ class JsonAxolotlStore implements AxolotlStore {
     }
 
     @Override
-    public SessionRecord loadSession(AxolotlAddress address) {
+    public SessionRecord loadSession(SignalProtocolAddress address) {
         return sessionStore.loadSession(address);
     }
 
@@ -104,17 +104,17 @@ class JsonAxolotlStore implements AxolotlStore {
     }
 
     @Override
-    public void storeSession(AxolotlAddress address, SessionRecord record) {
+    public void storeSession(SignalProtocolAddress address, SessionRecord record) {
         sessionStore.storeSession(address, record);
     }
 
     @Override
-    public boolean containsSession(AxolotlAddress address) {
+    public boolean containsSession(SignalProtocolAddress address) {
         return sessionStore.containsSession(address);
     }
 
     @Override
-    public void deleteSession(AxolotlAddress address) {
+    public void deleteSession(SignalProtocolAddress address) {
         sessionStore.deleteSession(address);
     }
 

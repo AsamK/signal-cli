@@ -1,6 +1,6 @@
 package org.asamk.textsecure;
 
-import org.whispersystems.textsecure.api.push.TrustStore;
+import org.whispersystems.signalservice.api.push.TrustStore;
 
 import java.io.InputStream;
 

@@ -24,25 +24,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.asamk.TextSecure;
-import org.whispersystems.libaxolotl.*;
-import org.whispersystems.libaxolotl.ecc.Curve;
-import org.whispersystems.libaxolotl.ecc.ECKeyPair;
-import org.whispersystems.libaxolotl.state.PreKeyRecord;
-import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
-import org.whispersystems.libaxolotl.util.KeyHelper;
-import org.whispersystems.libaxolotl.util.Medium;
-import org.whispersystems.libaxolotl.util.guava.Optional;
-import org.whispersystems.textsecure.api.TextSecureAccountManager;
-import org.whispersystems.textsecure.api.TextSecureMessagePipe;
-import org.whispersystems.textsecure.api.TextSecureMessageReceiver;
-import org.whispersystems.textsecure.api.TextSecureMessageSender;
-import org.whispersystems.textsecure.api.crypto.TextSecureCipher;
-import org.whispersystems.textsecure.api.messages.*;
-import org.whispersystems.textsecure.api.push.TextSecureAddress;
-import org.whispersystems.textsecure.api.push.TrustStore;
-import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.textsecure.api.util.InvalidNumberException;
-import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
+import org.whispersystems.libsignal.*;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECKeyPair;
+import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.util.KeyHelper;
+import org.whispersystems.libsignal.util.Medium;
+import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
+import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
+import org.whispersystems.signalservice.api.SignalServiceMessageSender;
+import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
+import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.TrustStore;
+import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class Manager implements TextSecure {
-    private final static String URL = "https://textsecure-service.whispersystems.org";
+    private final static String URL = "https://SignalService-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
@@ -73,7 +73,7 @@ class Manager implements TextSecure {
     private boolean registered = false;
 
     private JsonAxolotlStore axolotlStore;
-    private TextSecureAccountManager accountManager;
+    private SignalServiceAccountManager accountManager;
     private JsonGroupStore groupStore;
 
     public Manager(String username, String settingsPath) {
@@ -138,7 +138,7 @@ class Manager implements TextSecure {
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
         }
-        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
     }
 
     private void save() {
@@ -175,7 +175,7 @@ class Manager implements TextSecure {
     public void register(boolean voiceVerication) throws IOException {
         password = Util.getSecret(18);
 
-        accountManager = new TextSecureAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
 
         if (voiceVerication)
             accountManager.requestVoiceVerificationCode();
@@ -259,54 +259,54 @@ class Manager implements TextSecure {
     }
 
 
-    private static List<TextSecureAttachment> getTextSecureAttachments(List<String> attachments) throws AttachmentInvalidException {
-        List<TextSecureAttachment> textSecureAttachments = null;
+    private static List<SignalServiceAttachment> getSignalServiceAttachments(List<String> attachments) throws AttachmentInvalidException {
+        List<SignalServiceAttachment> SignalServiceAttachments = null;
         if (attachments != null) {
-            textSecureAttachments = new ArrayList<>(attachments.size());
+            SignalServiceAttachments = new ArrayList<>(attachments.size());
             for (String attachment : attachments) {
                 try {
-                    textSecureAttachments.add(createAttachment(attachment));
+                    SignalServiceAttachments.add(createAttachment(attachment));
                 } catch (IOException e) {
                     throw new AttachmentInvalidException(attachment, e);
                 }
             }
         }
-        return textSecureAttachments;
+        return SignalServiceAttachments;
     }
 
-    private static TextSecureAttachmentStream createAttachment(String attachment) throws IOException {
+    private static SignalServiceAttachmentStream createAttachment(String attachment) throws IOException {
         File attachmentFile = new File(attachment);
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
         String mime = Files.probeContentType(Paths.get(attachment));
-        return new TextSecureAttachmentStream(attachmentStream, mime, attachmentSize, null);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, null);
     }
 
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
             throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
-        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(getTextSecureAttachments(attachments));
+            messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
         }
         if (groupId != null) {
-            TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.DELIVER)
+            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
                     .withId(groupId)
                     .build();
             messageBuilder.asGroupMessage(group);
         }
-        TextSecureDataMessage message = messageBuilder.build();
+        SignalServiceDataMessage message = messageBuilder.build();
 
         sendMessage(message, groupStore.getGroup(groupId).members);
     }
 
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
-        TextSecureGroup group = TextSecureGroup.newBuilder(TextSecureGroup.Type.QUIT)
+        SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
 
-        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group)
                 .build();
 
@@ -339,7 +339,7 @@ class Manager implements TextSecure {
             }
         }
 
-        TextSecureGroup.Builder group = TextSecureGroup.newBuilder(TextSecureGroup.Type.UPDATE)
+        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.groupId)
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.members));
@@ -356,7 +356,7 @@ class Manager implements TextSecure {
 
         groupStore.updateGroup(g);
 
-        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
                 .build();
 
@@ -376,30 +376,30 @@ class Manager implements TextSecure {
     public void sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
-        final TextSecureDataMessage.Builder messageBuilder = TextSecureDataMessage.newBuilder().withBody(messageText);
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(getTextSecureAttachments(attachments));
+            messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
         }
-        TextSecureDataMessage message = messageBuilder.build();
+        SignalServiceDataMessage message = messageBuilder.build();
 
         sendMessage(message, recipients);
     }
 
     @Override
     public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
-        TextSecureDataMessage message = TextSecureDataMessage.newBuilder()
+        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage()
                 .build();
 
         sendMessage(message, recipients);
     }
 
-    private void sendMessage(TextSecureDataMessage message, Collection<String> recipients)
+    private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions {
-        TextSecureMessageSender messageSender = new TextSecureMessageSender(URL, TRUST_STORE, username, password,
-                axolotlStore, USER_AGENT, Optional.<TextSecureMessageSender.EventListener>absent());
+        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
+                axolotlStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
-        Set<TextSecureAddress> recipientsTS = new HashSet<>(recipients.size());
+        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
         for (String recipient : recipients) {
             try {
                 recipientsTS.add(getPushAddress(recipient));
@@ -414,15 +414,15 @@ class Manager implements TextSecure {
         messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
 
         if (message.isEndSession()) {
-            for (TextSecureAddress recipient : recipientsTS) {
+            for (SignalServiceAddress recipient : recipientsTS) {
                 handleEndSession(recipient.getNumber());
             }
         }
         save();
     }
 
-    private TextSecureContent decryptMessage(TextSecureEnvelope envelope) {
-        TextSecureCipher cipher = new TextSecureCipher(new TextSecureAddress(username), axolotlStore);
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) {
+        SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), axolotlStore);
         try {
             return cipher.decrypt(envelope);
         } catch (Exception e) {
@@ -437,19 +437,19 @@ class Manager implements TextSecure {
     }
 
     public interface ReceiveMessageHandler {
-        void handleMessage(TextSecureEnvelope envelope, TextSecureContent decryptedContent, GroupInfo group);
+        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, GroupInfo group);
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
-        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
-        TextSecureMessagePipe messagePipe = null;
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
+        SignalServiceMessagePipe messagePipe = null;
 
         try {
             messagePipe = messageReceiver.createMessagePipe();
 
             while (true) {
-                TextSecureEnvelope envelope;
-                TextSecureContent content = null;
+                SignalServiceEnvelope envelope;
+                SignalServiceContent content = null;
                 GroupInfo group = null;
                 try {
                     envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
@@ -457,9 +457,9 @@ class Manager implements TextSecure {
                         content = decryptMessage(envelope);
                         if (content != null) {
                             if (content.getDataMessage().isPresent()) {
-                                TextSecureDataMessage message = content.getDataMessage().get();
+                                SignalServiceDataMessage message = content.getDataMessage().get();
                                 if (message.getGroupInfo().isPresent()) {
-                                    TextSecureGroup groupInfo = message.getGroupInfo().get();
+                                    SignalServiceGroup groupInfo = message.getGroupInfo().get();
                                     switch (groupInfo.getType()) {
                                         case UPDATE:
                                             try {
@@ -469,7 +469,7 @@ class Manager implements TextSecure {
                                             }
 
                                             if (groupInfo.getAvatar().isPresent()) {
-                                                TextSecureAttachment avatar = groupInfo.getAvatar().get();
+                                                SignalServiceAttachment avatar = groupInfo.getAvatar().get();
                                                 if (avatar.isPointer()) {
                                                     long avatarId = avatar.asPointer().getId();
                                                     try {
@@ -510,7 +510,7 @@ class Manager implements TextSecure {
                                     handleEndSession(envelope.getSource());
                                 }
                                 if (message.getAttachments().isPresent()) {
-                                    for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                                    for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                                         if (attachment.isPointer()) {
                                             try {
                                                 retrieveAttachment(attachment.asPointer());
@@ -542,8 +542,8 @@ class Manager implements TextSecure {
         return new File(attachmentsPath, attachmentId + "");
     }
 
-    private File retrieveAttachment(TextSecureAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        final TextSecureMessageReceiver messageReceiver = new TextSecureMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
+    private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
 
         File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
         InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
@@ -594,9 +594,9 @@ class Manager implements TextSecure {
         return PhoneNumberFormatter.formatNumber(number, localNumber);
     }
 
-    private TextSecureAddress getPushAddress(String number) throws InvalidNumberException {
+    private SignalServiceAddress getPushAddress(String number) throws InvalidNumberException {
         String e164number = canonicalizeNumber(number);
-        return new TextSecureAddress(e164number);
+        return new SignalServiceAddress(e164number);
     }
 
     @Override

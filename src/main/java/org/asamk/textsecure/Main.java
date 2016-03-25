@@ -25,13 +25,13 @@ import org.asamk.TextSecure;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.textsecure.api.crypto.UntrustedIdentityException;
-import org.whispersystems.textsecure.api.messages.*;
-import org.whispersystems.textsecure.api.messages.multidevice.TextSecureSyncMessage;
-import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.textsecure.api.push.exceptions.NetworkFailureException;
-import org.whispersystems.textsecure.api.push.exceptions.UnregisteredUserException;
-import org.whispersystems.textsecure.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
+import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
+import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
@@ -486,18 +486,18 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(TextSecureEnvelope envelope, TextSecureContent content, GroupInfo group) {
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
             System.out.println("Envelope from: " + envelope.getSource());
             System.out.println("Timestamp: " + envelope.getTimestamp());
 
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
-            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
+            } else if (envelope.isSignalMessage() | envelope.isPreKeySignalMessage()) {
                 if (content == null) {
                     System.out.println("Failed to decrypt message.");
                 } else {
                     if (content.getDataMessage().isPresent()) {
-                        TextSecureDataMessage message = content.getDataMessage().get();
+                        SignalServiceDataMessage message = content.getDataMessage().get();
 
                         System.out.println("Message timestamp: " + message.getTimestamp());
 
@@ -505,7 +505,7 @@ public class Main {
                             System.out.println("Body: " + message.getBody().get());
                         }
                         if (message.getGroupInfo().isPresent()) {
-                            TextSecureGroup groupInfo = message.getGroupInfo().get();
+                            SignalServiceGroup groupInfo = message.getGroupInfo().get();
                             System.out.println("Group info:");
                             System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
                             if (groupInfo.getName().isPresent()) {
@@ -532,13 +532,13 @@ public class Main {
 
                         if (message.getAttachments().isPresent()) {
                             System.out.println("Attachments: ");
-                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                                 printAttachment(attachment);
                             }
                         }
                     }
                     if (content.getSyncMessage().isPresent()) {
-                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                        SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                         System.out.println("Received sync message");
                     }
                 }
@@ -548,10 +548,10 @@ public class Main {
             System.out.println();
         }
 
-        private void printAttachment(TextSecureAttachment attachment) {
+        private void printAttachment(SignalServiceAttachment attachment) {
             System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
             if (attachment.isPointer()) {
-                final TextSecureAttachmentPointer pointer = attachment.asPointer();
+                final SignalServiceAttachmentPointer pointer = attachment.asPointer();
                 System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                 File file = m.getAttachmentFile(pointer.getId());
@@ -572,18 +572,18 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(TextSecureEnvelope envelope, TextSecureContent content, GroupInfo group) {
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
             System.out.println("Envelope from: " + envelope.getSource());
             System.out.println("Timestamp: " + envelope.getTimestamp());
 
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
-            } else if (envelope.isWhisperMessage() | envelope.isPreKeyWhisperMessage()) {
+            } else if (envelope.isSignalMessage() | envelope.isPreKeySignalMessage()) {
                 if (content == null) {
                     System.out.println("Failed to decrypt message.");
                 } else {
                     if (content.getDataMessage().isPresent()) {
-                        TextSecureDataMessage message = content.getDataMessage().get();
+                        SignalServiceDataMessage message = content.getDataMessage().get();
 
                         System.out.println("Message timestamp: " + message.getTimestamp());
 
@@ -592,7 +592,7 @@ public class Main {
                         }
 
                         if (message.getGroupInfo().isPresent()) {
-                            TextSecureGroup groupInfo = message.getGroupInfo().get();
+                            SignalServiceGroup groupInfo = message.getGroupInfo().get();
                             System.out.println("Group info:");
                             System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
                             if (groupInfo.getName().isPresent()) {
@@ -620,7 +620,7 @@ public class Main {
                         List<String> attachments = new ArrayList<>();
                         if (message.getAttachments().isPresent()) {
                             System.out.println("Attachments: ");
-                            for (TextSecureAttachment attachment : message.getAttachments().get()) {
+                            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                                 if (attachment.isPointer()) {
                                     attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
                                 }
@@ -628,7 +628,7 @@ public class Main {
                             }
                         }
                         if (!message.isEndSession() &&
-                                !(message.getGroupInfo().isPresent() && message.getGroupInfo().get().getType() != TextSecureGroup.Type.DELIVER)) {
+                                !(message.getGroupInfo().isPresent() && message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
                             try {
                                 conn.sendSignal(new TextSecure.MessageReceived(
                                         TEXTSECURE_OBJECTPATH,
@@ -642,7 +642,7 @@ public class Main {
                         }
                     }
                     if (content.getSyncMessage().isPresent()) {
-                        TextSecureSyncMessage syncMessage = content.getSyncMessage().get();
+                        SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                         System.out.println("Received sync message");
                     }
                 }
@@ -652,10 +652,10 @@ public class Main {
             System.out.println();
         }
 
-        private void printAttachment(TextSecureAttachment attachment) {
+        private void printAttachment(SignalServiceAttachment attachment) {
             System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
             if (attachment.isPointer()) {
-                final TextSecureAttachmentPointer pointer = attachment.asPointer();
+                final SignalServiceAttachmentPointer pointer = attachment.asPointer();
                 System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                 File file = m.getAttachmentFile(pointer.getId());

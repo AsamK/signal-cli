@@ -5,7 +5,7 @@ import org.asamk.textsecure.GroupNotFoundException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.whispersystems.textsecure.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 
 import java.io.IOException;
 import java.util.List;

@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.whispersystems:textsecure-java:1.8.3fetchMessages'
+    compile 'org.whispersystems:signal-service-java:2.1.1fetchMessages'
     compile 'com.madgag.spongycastle:prov:1.54.0.0'
     compile 'commons-io:commons-io:2.4'
     compile 'net.sourceforge.argparse4j:argparse4j:0.7.0'
