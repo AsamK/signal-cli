@@ -14,7 +14,7 @@ import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 
 import java.util.List;
 
-class JsonAxolotlStore implements SignalProtocolStore {
+class JsonSignalProtocolStore implements SignalProtocolStore {
 
     @JsonProperty("preKeys")
     @JsonDeserialize(using = JsonPreKeyStore.JsonPreKeyStoreDeserializer.class)
@@ -36,17 +36,17 @@ class JsonAxolotlStore implements SignalProtocolStore {
     @JsonSerialize(using = JsonIdentityKeyStore.JsonIdentityKeyStoreSerializer.class)
     protected JsonIdentityKeyStore identityKeyStore;
 
-    public JsonAxolotlStore() {
+    public JsonSignalProtocolStore() {
     }
 
-    public JsonAxolotlStore(JsonPreKeyStore preKeyStore, JsonSessionStore sessionStore, JsonSignedPreKeyStore signedPreKeyStore, JsonIdentityKeyStore identityKeyStore) {
+    public JsonSignalProtocolStore(JsonPreKeyStore preKeyStore, JsonSessionStore sessionStore, JsonSignedPreKeyStore signedPreKeyStore, JsonIdentityKeyStore identityKeyStore) {
         this.preKeyStore = preKeyStore;
         this.sessionStore = sessionStore;
         this.signedPreKeyStore = signedPreKeyStore;
         this.identityKeyStore = identityKeyStore;
     }
 
-    public JsonAxolotlStore(IdentityKeyPair identityKeyPair, int registrationId) {
+    public JsonSignalProtocolStore(IdentityKeyPair identityKeyPair, int registrationId) {
         preKeyStore = new JsonPreKeyStore();
         sessionStore = new JsonSessionStore();
         signedPreKeyStore = new JsonSignedPreKeyStore();

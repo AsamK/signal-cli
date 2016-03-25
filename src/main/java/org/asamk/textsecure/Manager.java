@@ -28,6 +28,7 @@ import org.whispersystems.libsignal.*;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.Medium;
@@ -72,7 +73,7 @@ class Manager implements TextSecure {
 
     private boolean registered = false;
 
-    private JsonAxolotlStore axolotlStore;
+    private SignalProtocolStore signalProtocolStore;
     private SignalServiceAccountManager accountManager;
     private JsonGroupStore groupStore;
 
@@ -99,7 +100,7 @@ class Manager implements TextSecure {
     }
 
     public boolean userHasKeys() {
-        return axolotlStore != null;
+        return signalProtocolStore != null;
     }
 
     private JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
@@ -129,7 +130,7 @@ class Manager implements TextSecure {
         } else {
             nextSignedPreKeyId = 0;
         }
-        axolotlStore = jsonProcessot.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonAxolotlStore.class); //new JsonAxolotlStore(in.getJSONObject("axolotlStore"));
+        signalProtocolStore = jsonProcessot.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
         registered = getNotNullNode(rootNode, "registered").asBoolean();
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
@@ -149,7 +150,7 @@ class Manager implements TextSecure {
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
                 .put("registered", registered)
-                .putPOJO("axolotlStore", axolotlStore)
+                .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
         ;
         try {
@@ -162,7 +163,7 @@ class Manager implements TextSecure {
     public void createNewIdentity() {
         IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
         int registrationId = KeyHelper.generateRegistrationId(false);
-        axolotlStore = new JsonAxolotlStore(identityKey, registrationId);
+        signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         groupStore = new JsonGroupStore();
         registered = false;
         save();
@@ -196,7 +197,7 @@ class Manager implements TextSecure {
             ECKeyPair keyPair = Curve.generateKeyPair();
             PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
 
-            axolotlStore.storePreKey(preKeyId, record);
+            signalProtocolStore.storePreKey(preKeyId, record);
             records.add(record);
         }
 
@@ -207,18 +208,18 @@ class Manager implements TextSecure {
     }
 
     private PreKeyRecord generateLastResortPreKey() {
-        if (axolotlStore.containsPreKey(Medium.MAX_VALUE)) {
+        if (signalProtocolStore.containsPreKey(Medium.MAX_VALUE)) {
             try {
-                return axolotlStore.loadPreKey(Medium.MAX_VALUE);
+                return signalProtocolStore.loadPreKey(Medium.MAX_VALUE);
             } catch (InvalidKeyIdException e) {
-                axolotlStore.removePreKey(Medium.MAX_VALUE);
+                signalProtocolStore.removePreKey(Medium.MAX_VALUE);
             }
         }
 
         ECKeyPair keyPair = Curve.generateKeyPair();
         PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
 
-        axolotlStore.storePreKey(Medium.MAX_VALUE, record);
+        signalProtocolStore.storePreKey(Medium.MAX_VALUE, record);
         save();
 
         return record;
@@ -230,7 +231,7 @@ class Manager implements TextSecure {
             byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
             SignedPreKeyRecord record = new SignedPreKeyRecord(nextSignedPreKeyId, System.currentTimeMillis(), keyPair, signature);
 
-            axolotlStore.storeSignedPreKey(nextSignedPreKeyId, record);
+            signalProtocolStore.storeSignedPreKey(nextSignedPreKeyId, record);
             nextSignedPreKeyId = (nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
             save();
 
@@ -243,7 +244,7 @@ class Manager implements TextSecure {
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccountWithCode(verificationCode, signalingKey, axolotlStore.getLocalRegistrationId(), false, true);
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), false, true);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
@@ -252,9 +253,9 @@ class Manager implements TextSecure {
 
         PreKeyRecord lastResortKey = generateLastResortPreKey();
 
-        SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(axolotlStore.getIdentityKeyPair());
+        SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(signalProtocolStore.getIdentityKeyPair());
 
-        accountManager.setPreKeys(axolotlStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
+        accountManager.setPreKeys(signalProtocolStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
         save();
     }
 
@@ -397,7 +398,7 @@ class Manager implements TextSecure {
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
-                axolotlStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+                signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
         Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
         for (String recipient : recipients) {
@@ -422,7 +423,7 @@ class Manager implements TextSecure {
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) {
-        SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), axolotlStore);
+        SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), signalProtocolStore);
         try {
             return cipher.decrypt(envelope);
         } catch (Exception e) {
@@ -433,7 +434,7 @@ class Manager implements TextSecure {
     }
 
     private void handleEndSession(String source) {
-        axolotlStore.deleteAllSessions(source);
+        signalProtocolStore.deleteAllSessions(source);
     }
 
     public interface ReceiveMessageHandler {
