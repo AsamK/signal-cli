@@ -60,6 +60,9 @@ class Manager implements Signal {
     public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
     private final static String USER_AGENT = PROJECT_NAME + " " + PROJECT_VERSION;
 
+    private final static int PREKEY_MINIMUM_COUNT = 20;
+    private static final int PREKEY_BATCH_SIZE = 100;
+
     private final String settingsPath;
     private final String dataPath;
     private final String attachmentsPath;
@@ -140,6 +143,10 @@ class Manager implements Signal {
             groupStore = new JsonGroupStore();
         }
         accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
+        if (accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
+            refreshPreKeys();
+            save();
+        }
     }
 
     private void save() {
@@ -187,12 +194,10 @@ class Manager implements Signal {
         save();
     }
 
-    private static final int BATCH_SIZE = 100;
-
     private List<PreKeyRecord> generatePreKeys() {
         List<PreKeyRecord> records = new LinkedList<>();
 
-        for (int i = 0; i < BATCH_SIZE; i++) {
+        for (int i = 0; i < PREKEY_BATCH_SIZE; i++) {
             int preKeyId = (preKeyIdOffset + i) % Medium.MAX_VALUE;
             ECKeyPair keyPair = Curve.generateKeyPair();
             PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
@@ -201,13 +206,13 @@ class Manager implements Signal {
             records.add(record);
         }
 
-        preKeyIdOffset = (preKeyIdOffset + BATCH_SIZE + 1) % Medium.MAX_VALUE;
+        preKeyIdOffset = (preKeyIdOffset + PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
         save();
 
         return records;
     }
 
-    private PreKeyRecord generateLastResortPreKey() {
+    private PreKeyRecord getOrGenerateLastResortPreKey() {
         if (signalProtocolStore.containsPreKey(Medium.MAX_VALUE)) {
             try {
                 return signalProtocolStore.loadPreKey(Medium.MAX_VALUE);
@@ -249,14 +254,16 @@ class Manager implements Signal {
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
 
+        refreshPreKeys();
+        save();
+    }
+
+    private void refreshPreKeys() throws IOException {
         List<PreKeyRecord> oneTimePreKeys = generatePreKeys();
-
-        PreKeyRecord lastResortKey = generateLastResortPreKey();
-
+        PreKeyRecord lastResortKey = getOrGenerateLastResortPreKey();
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(signalProtocolStore.getIdentityKeyPair());
 
         accountManager.setPreKeys(signalProtocolStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
-        save();
     }
 
 
