@@ -78,6 +78,10 @@ The password and cryptographic keys are created when registering and stored in t
 
         $HOME/.config/signal/data/
 
+For legacy users, the old config directory is used as a fallback:
+
+        $HOME/.config/textsecure/data/
+
 ## Building
 
 This project uses [Gradle](http://gradle.org) for building and maintaining

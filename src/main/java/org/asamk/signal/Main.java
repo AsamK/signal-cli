@@ -83,6 +83,12 @@ public class Main {
                 String settingsPath = ns.getString("config");
                 if (TextUtils.isEmpty(settingsPath)) {
                     settingsPath = System.getProperty("user.home") + "/.config/signal";
+                    if (!new File(settingsPath).exists()) {
+                        String legacySettingsPath = System.getProperty("user.home") + "/.config/textsecure";
+                        if (new File(legacySettingsPath).exists()) {
+                            settingsPath = legacySettingsPath;
+                        }
+                    }
                 }
 
                 m = new Manager(username, settingsPath);
