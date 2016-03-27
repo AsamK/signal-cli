@@ -603,6 +603,7 @@ public class Main {
                     try {
                         conn.sendSignal(new Signal.MessageReceived(
                                 SIGNAL_OBJECTPATH,
+                                message.getTimestamp(),
                                 envelope.getSource(),
                                 message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
