@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class Manager implements TextSecure {
-    private final static String URL = "https://SignalService-service.whispersystems.org";
+    private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
