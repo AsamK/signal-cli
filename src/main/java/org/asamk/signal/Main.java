@@ -573,94 +573,45 @@ public class Main {
         }
     }
 
-    private static class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler {
-        final Manager m;
+    private static class DbusReceiveMessageHandler extends ReceiveMessageHandler {
         final DBusConnection conn;
 
         public DbusReceiveMessageHandler(Manager m, DBusConnection conn) {
-            this.m = m;
+            super(m);
             this.conn = conn;
         }
 
         @Override
         public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
-            System.out.println("Envelope from: " + envelope.getSource());
-            System.out.println("Timestamp: " + envelope.getTimestamp());
+            super.handleMessage(envelope, content, group);
 
-            if (envelope.isReceipt()) {
-                System.out.println("Got receipt.");
-            } else if (envelope.isSignalMessage() | envelope.isPreKeySignalMessage()) {
-                if (content == null) {
-                    System.out.println("Failed to decrypt message.");
-                } else {
-                    if (content.getDataMessage().isPresent()) {
-                        SignalServiceDataMessage message = content.getDataMessage().get();
+            if (!envelope.isReceipt() && content != null && content.getDataMessage().isPresent()) {
+                SignalServiceDataMessage message = content.getDataMessage().get();
 
-                        System.out.println("Message timestamp: " + message.getTimestamp());
-
-                        if (message.getBody().isPresent()) {
-                            System.out.println("Body: " + message.getBody().get());
-                        }
-
-                        if (message.getGroupInfo().isPresent()) {
-                            SignalServiceGroup groupInfo = message.getGroupInfo().get();
-                            System.out.println("Group info:");
-                            System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
-                            if (groupInfo.getName().isPresent()) {
-                                System.out.println("  Name: " + groupInfo.getName().get());
-                            } else if (group != null) {
-                                System.out.println("  Name: " + group.name);
-                            } else {
-                                System.out.println("  Name: <Unknown group>");
-                            }
-                            System.out.println("  Type: " + groupInfo.getType());
-                            if (groupInfo.getMembers().isPresent()) {
-                                for (String member : groupInfo.getMembers().get()) {
-                                    System.out.println("  Member: " + member);
-                                }
-                            }
-                            if (groupInfo.getAvatar().isPresent()) {
-                                System.out.println("  Avatar:");
-                                printAttachment(groupInfo.getAvatar().get());
-                            }
-                        }
-                        if (message.isEndSession()) {
-                            System.out.println("Is end session");
-                        }
-
-                        List<String> attachments = new ArrayList<>();
-                        if (message.getAttachments().isPresent()) {
-                            System.out.println("Attachments: ");
-                            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                                if (attachment.isPointer()) {
-                                    attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
-                                }
-                                printAttachment(attachment);
-                            }
-                        }
-                        if (!message.isEndSession() &&
-                                !(message.getGroupInfo().isPresent() && message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
-                            try {
-                                conn.sendSignal(new Signal.MessageReceived(
-                                        SIGNAL_OBJECTPATH,
-                                        envelope.getSource(),
-                                        message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
-                                        message.getBody().isPresent() ? message.getBody().get() : "",
-                                        attachments));
-                            } catch (DBusException e) {
-                                e.printStackTrace();
+                if (!message.isEndSession() &&
+                        !(message.getGroupInfo().isPresent() &&
+                                message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
+                    List<String> attachments = new ArrayList<>();
+                    if (message.getAttachments().isPresent()) {
+                        for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+                            if (attachment.isPointer()) {
+                                attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
                             }
                         }
                     }
-                    if (content.getSyncMessage().isPresent()) {
-                        SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
-                        System.out.println("Received sync message");
+
+                    try {
+                        conn.sendSignal(new Signal.MessageReceived(
+                                SIGNAL_OBJECTPATH,
+                                envelope.getSource(),
+                                message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
+                                message.getBody().isPresent() ? message.getBody().get() : "",
+                                attachments));
+                    } catch (DBusException e) {
+                        e.printStackTrace();
                     }
                 }
-            } else {
-                System.out.println("Unknown message received.");
             }
-            System.out.println();
         }
 
         private void printAttachment(SignalServiceAttachment attachment) {
