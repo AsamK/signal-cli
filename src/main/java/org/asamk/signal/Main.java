@@ -463,7 +463,7 @@ public class Main {
 
     private static void handleAssertionError(AssertionError e) {
         System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
-        System.err.println(e.getStackTrace());
+        e.printStackTrace();
         System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
         System.exit(1);
     }
