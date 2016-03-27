@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.asamk.Signal
+Exec=/bin/false
+SystemdService=dbus-org.asamk.Signal.service

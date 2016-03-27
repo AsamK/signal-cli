@@ -1,72 +1,72 @@
-# textsecure-cli
+# signal-cli
 
-textsecure-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages textsecure-cli uses a [patched libtextsecure-java](https://github.com/AsamK/libtextsecure-java), because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages signal-cli uses a [patched libtextsecure-java](https://github.com/AsamK/libtextsecure-java), because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
 It is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 ## Usage
 
-usage: textsecure-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,updateGroup,receive} ...
+usage: signal-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,updateGroup,receive} ...
 
 * Register a number (with SMS verification)
 
-        textsecure-cli -u USERNAME register
+        signal-cli -u USERNAME register
 
 * Register a number (with voice verification)
 
-        textsecure-cli -u USERNAME register -v
+        signal-cli -u USERNAME register -v
 
 * Verify the number using the code received via SMS or voice
 
-        textsecure-cli -u USERNAME verify CODE
+        signal-cli -u USERNAME verify CODE
 
 * Send a message to one or more recipients
 
-        textsecure-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+        signal-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 * Pipe the message content from another process.
 
-        uname -a | textsecure-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
+        uname -a | signal-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
 
 * Groups
 
  * Create a group
 
-          textsecure-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+          signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
 
  * Update a group
 
-          textsecure-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name"
+          signal-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name"
 
  * Send a message to a group
 
-          textsecure-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+          signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
 
 ## DBus service
 
-textsecure-cli can run in daemon mode and provides an experimental dbus interface.
+signal-cli can run in daemon mode and provides an experimental dbus interface.
 For dbus support you need jni/unix-java.so installed on your system (Debian: libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
 
 * Run in daemon mode (dbus session bus)
 
-          textsecure-cli -u USERNAME daemon
+          signal-cli -u USERNAME daemon
 
 * Send a message via dbus
 
-          textsecure-cli --dbus send -m "Message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+          signal-cli --dbus send -m "Message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 ### System bus
 
 To run on the system bus you need to take some additional steps.
-It’s advisable to run textsecure-cli as a separate unix user, the following steps assume you created a user named *textsecure-cli*.
+It’s advisable to run signal-cli as a separate unix user, the following steps assume you created a user named *signal-cli*.
 These steps, executed as root, should work on all distributions using systemd.
 
 ```bash
-cp data/org.asamk.TextSecure.conf /etc/dbus-1/system.d/
-cp data/org.asamk.TextSecure.service /usr/share/dbus-1/system-services/
-cp data/textsecure.service /etc/systemd/system/
-sed -i -e "s|%dir%|<INSERT_INSTALL_PATH>|" -e "s|%number%|<INSERT_YOUR_NUMBER>|" /etc/systemd/system/textsecure.service
+cp data/org.asamk.Signal.conf /etc/dbus-1/system.d/
+cp data/org.asamk.Signal.service /usr/share/dbus-1/system-services/
+cp data/signal.service /etc/systemd/system/
+sed -i -e "s|%dir%|<INSERT_INSTALL_PATH>|" -e "s|%number%|<INSERT_YOUR_NUMBER>|" /etc/systemd/system/signal.service
 systemctl daemon-reload
-systemctl enable textsecure.service
+systemctl enable signal.service
 systemctl reload dbus.service
 ```
 
@@ -76,7 +76,7 @@ Then just execute the send command from above, the service will be autostarted b
 
 The password and cryptographic keys are created when registering and stored in the current users home directory:
 
-        $HOME/.config/textsecure/data/
+        $HOME/.config/signal/data/
 
 ## Building
 
@@ -85,13 +85,13 @@ dependencies.
 
 1. Checkout the source somewhere on your filesystem with
 
-        git clone https://github.com/AsamK/textsecure-cli.git
+        git clone https://github.com/AsamK/signal-cli.git
 
 2. Execute Gradle:
 
         ./gradlew build
 
-3. Create shell wrapper in *build/install/textsecure-cli/bin*:
+3. Create shell wrapper in *build/install/signal-cli/bin*:
 
         ./gradlew installDist
 

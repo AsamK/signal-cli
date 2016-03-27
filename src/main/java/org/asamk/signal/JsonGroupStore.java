@@ -1,4 +1,4 @@
-package org.asamk.textsecure;
+package org.asamk.signal;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;

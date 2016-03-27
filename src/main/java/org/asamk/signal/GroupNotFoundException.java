@@ -1,4 +1,4 @@
-package org.asamk.textsecure;
+package org.asamk.signal;
 
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 

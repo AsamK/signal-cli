@@ -1,7 +1,7 @@
 package org.asamk;
 
-import org.asamk.textsecure.AttachmentInvalidException;
-import org.asamk.textsecure.GroupNotFoundException;
+import org.asamk.signal.AttachmentInvalidException;
+import org.asamk.signal.GroupNotFoundException;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -10,7 +10,7 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 import java.io.IOException;
 import java.util.List;
 
-public interface TextSecure extends DBusInterface {
+public interface Signal extends DBusInterface {
     void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
 
     void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;

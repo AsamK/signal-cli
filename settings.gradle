@@ -15,4 +15,4 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'textsecure-cli'
+rootProject.name = 'signal-cli'

@@ -1,4 +1,4 @@
-package org.asamk.textsecure;
+package org.asamk.signal;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

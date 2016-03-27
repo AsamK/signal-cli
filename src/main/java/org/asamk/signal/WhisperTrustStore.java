@@ -1,4 +1,4 @@
-package org.asamk.textsecure;
+package org.asamk.signal;
 
 import org.whispersystems.signalservice.api.push.TrustStore;
 

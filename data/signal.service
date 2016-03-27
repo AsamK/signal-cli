@@ -1,0 +1,12 @@
+[Unit]
+Description=Send secure messages to Signal clients
+
+[Service]
+Type=dbus
+Environment=SIGNAL_CLI_OPTS="-Xms2m"
+ExecStart=%dir%/bin/signal-cli -u %number% --config /var/lib/signal-cli daemon --system
+User=signal-cli
+BusName=org.asamk.Signal
+
+[Install]
+Alias=dbus-org.asamk.Signal.service

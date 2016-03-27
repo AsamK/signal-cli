@@ -14,14 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.asamk.textsecure;
+package org.asamk.signal;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.util.TextUtils;
-import org.asamk.TextSecure;
+import org.asamk.Signal;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -41,8 +41,8 @@ import java.util.List;
 
 public class Main {
 
-    public static final String TEXTSECURE_BUSNAME = "org.asamk.TextSecure";
-    public static final String TEXTSECURE_OBJECTPATH = "/org/asamk/TextSecure";
+    public static final String SIGNAL_BUSNAME = "org.asamk.Signal";
+    public static final String SIGNAL_OBJECTPATH = "/org/asamk/Signal";
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
@@ -55,7 +55,7 @@ public class Main {
 
         final String username = ns.getString("username");
         Manager m;
-        TextSecure ts;
+        Signal ts;
         DBusConnection dBusConn = null;
         try {
             if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
@@ -68,9 +68,9 @@ public class Main {
                         busType = DBusConnection.SESSION;
                     }
                     dBusConn = DBusConnection.getConnection(busType);
-                    ts = (TextSecure) dBusConn.getRemoteObject(
-                            TEXTSECURE_BUSNAME, TEXTSECURE_OBJECTPATH,
-                            TextSecure.class);
+                    ts = (Signal) dBusConn.getRemoteObject(
+                            SIGNAL_BUSNAME, SIGNAL_OBJECTPATH,
+                            Signal.class);
                 } catch (DBusException e) {
                     e.printStackTrace();
                     if (dBusConn != null) {
@@ -82,7 +82,7 @@ public class Main {
             } else {
                 String settingsPath = ns.getString("config");
                 if (TextUtils.isEmpty(settingsPath)) {
-                    settingsPath = System.getProperty("user.home") + "/.config/textsecure";
+                    settingsPath = System.getProperty("user.home") + "/.config/signal";
                 }
 
                 m = new Manager(username, settingsPath);
@@ -299,8 +299,8 @@ public class Main {
                                 busType = DBusConnection.SESSION;
                             }
                             conn = DBusConnection.getConnection(busType);
-                            conn.exportObject(TEXTSECURE_OBJECTPATH, m);
-                            conn.requestBusName(TEXTSECURE_BUSNAME);
+                            conn.exportObject(SIGNAL_OBJECTPATH, m);
+                            conn.requestBusName(SIGNAL_BUSNAME);
                         } catch (DBusException e) {
                             e.printStackTrace();
                             System.exit(3);
@@ -353,16 +353,16 @@ public class Main {
     }
 
     private static Namespace parseArgs(String[] args) {
-        ArgumentParser parser = ArgumentParsers.newArgumentParser("textsecure-cli")
+        ArgumentParser parser = ArgumentParsers.newArgumentParser("signal-cli")
                 .defaultHelp(true)
-                .description("Commandline interface for TextSecure.")
+                .description("Commandline interface for Signal.")
                 .version(Manager.PROJECT_NAME + " " + Manager.PROJECT_VERSION);
 
         parser.addArgument("-v", "--version")
                 .help("Show package version.")
                 .action(Arguments.version());
         parser.addArgument("--config")
-                .help("Set the path, where to store the config (Default: $HOME/.config/textsecure-cli).");
+                .help("Set the path, where to store the config (Default: $HOME/.config/signal-cli).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")
@@ -630,8 +630,8 @@ public class Main {
                         if (!message.isEndSession() &&
                                 !(message.getGroupInfo().isPresent() && message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
                             try {
-                                conn.sendSignal(new TextSecure.MessageReceived(
-                                        TEXTSECURE_OBJECTPATH,
+                                conn.sendSignal(new Signal.MessageReceived(
+                                        SIGNAL_OBJECTPATH,
                                         envelope.getSource(),
                                         message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
                                         message.getBody().isPresent() ? message.getBody().get() : "",
