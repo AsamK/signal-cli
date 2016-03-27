@@ -23,6 +23,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
 import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -207,8 +208,35 @@ public class Main {
                     break;
                 case "receive":
                     if (dBusConn != null) {
-                        System.err.println("receive is not yet implementd via dbus");
-                        System.exit(1);
+                        try {
+                            dBusConn.addSigHandler(Signal.MessageReceived.class, new DBusSigHandler<Signal.MessageReceived>() {
+                                @Override
+                                public void handle(Signal.MessageReceived s) {
+                                    System.out.print(String.format("Envelope from: %s\nTimestamp: %d\nBody: %s\n",
+                                            s.getSender(), s.getTimestamp(), s.getMessage()));
+                                    if (s.getGroupId().length > 0) {
+                                        System.out.println("Group info:");
+                                        System.out.println("  Id: " + Base64.encodeBytes(s.getGroupId()));
+                                    }
+                                    if (s.getAttachments().size() > 0) {
+                                        System.out.println("Attachments: ");
+                                        for (String attachment : s.getAttachments()) {
+                                            System.out.println("-  Stored plaintext in: " + attachment);
+                                        }
+                                    }
+                                    System.out.println();
+                                }
+                            });
+                        } catch (DBusException e) {
+                            e.printStackTrace();
+                        }
+                        while (true) {
+                            try {
+                                Thread.sleep(10000);
+                            } catch (InterruptedException e) {
+                                System.exit(0);
+                            }
+                        }
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
