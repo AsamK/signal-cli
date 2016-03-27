@@ -28,6 +28,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
@@ -493,7 +494,11 @@ public class Main {
 
         @Override
         public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
-            System.out.println("Envelope from: " + envelope.getSource());
+            SignalServiceAddress source = envelope.getSourceAddress();
+            System.out.println(String.format("Envelope from: %s (device: %d)", source.getNumber(), envelope.getSourceDevice()));
+            if (source.getRelay().isPresent()) {
+                System.out.println("Relayed by: " + source.getRelay().get());
+            }
             System.out.println("Timestamp: " + envelope.getTimestamp());
 
             if (envelope.isReceipt()) {
