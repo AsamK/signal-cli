@@ -1,6 +1,6 @@
 # signal-cli
 
-signal-cli is a commandline interface for [libtextsecure-java](https://github.com/WhisperSystems/libtextsecure-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages signal-cli uses a [patched libtextsecure-java](https://github.com/AsamK/libtextsecure-java), because libtextsecure-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libtextsecure-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libsignal-service-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
 It is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 ## Usage
@@ -108,8 +108,8 @@ If you use a version of the Oracle JRE and get an InvalidKeyException you need t
 
 ## License
 
-This project uses libtextsecure-java from Open Whisper Systems:
+This project uses libsignal-service-java from Open Whisper Systems:
 
-https://github.com/WhisperSystems/libtextsecure-java
+https://github.com/WhisperSystems/libsignal-service-java
 
 Licensed under the GPLv3: http://www.gnu.org/licenses/gpl-3.0.html
