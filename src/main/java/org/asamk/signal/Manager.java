@@ -58,7 +58,7 @@ class Manager implements Signal {
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
     public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
-    private final static String USER_AGENT = PROJECT_NAME + " " + PROJECT_VERSION;
+    private final static String USER_AGENT = PROJECT_NAME == null ? null : PROJECT_NAME + " " + PROJECT_VERSION;
 
     private final static int PREKEY_MINIMUM_COUNT = 20;
     private static final int PREKEY_BATCH_SIZE = 100;
