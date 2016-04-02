@@ -8,6 +8,8 @@ mainClassName = 'org.asamk.signal.Main'
 
 version = '0.3.0'
 
+compileJava.options.encoding = 'UTF-8'
+
 repositories {
     maven {
         url "https://raw.github.com/AsamK/maven/master/releases/"
