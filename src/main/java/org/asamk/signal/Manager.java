@@ -41,6 +41,7 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -143,9 +144,13 @@ class Manager implements Signal {
             groupStore = new JsonGroupStore();
         }
         accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
-        if (accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
-            refreshPreKeys();
-            save();
+        try {
+            if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
+                refreshPreKeys();
+                save();
+            }
+        } catch (AuthorizationFailedException e) {
+            System.err.println("Authorization failed, was the number registered elsewhere?");
         }
     }
 
