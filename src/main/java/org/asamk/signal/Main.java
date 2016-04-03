@@ -48,7 +48,7 @@ public class Main {
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
-        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
+        Security.insertProviderAt(new org.bouncycastle.jce.provider.BouncyCastleProvider(), 1);
 
         Namespace ns = parseArgs(args);
         if (ns == null) {
