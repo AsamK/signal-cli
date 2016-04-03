@@ -7,7 +7,7 @@ After=network.target
 
 [Service]
 Type=dbus
-Environment=SIGNAL_CLI_OPTS="-Xms2m"
+Environment="SIGNAL_CLI_OPTS=-Xms2m"
 ExecStart=%dir%/bin/signal-cli -u %I --config /var/lib/signal-cli daemon --system
 User=signal-cli
 BusName=org.asamk.Signal
