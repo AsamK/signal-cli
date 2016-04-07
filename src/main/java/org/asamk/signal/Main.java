@@ -28,6 +28,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
@@ -537,54 +539,88 @@ public class Main {
                 } else {
                     if (content.getDataMessage().isPresent()) {
                         SignalServiceDataMessage message = content.getDataMessage().get();
-
-                        System.out.println("Message timestamp: " + message.getTimestamp());
-
-                        if (message.getBody().isPresent()) {
-                            System.out.println("Body: " + message.getBody().get());
-                        }
-                        if (message.getGroupInfo().isPresent()) {
-                            SignalServiceGroup groupInfo = message.getGroupInfo().get();
-                            System.out.println("Group info:");
-                            System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
-                            if (groupInfo.getName().isPresent()) {
-                                System.out.println("  Name: " + groupInfo.getName().get());
-                            } else if (group != null) {
-                                System.out.println("  Name: " + group.name);
-                            } else {
-                                System.out.println("  Name: <Unknown group>");
-                            }
-                            System.out.println("  Type: " + groupInfo.getType());
-                            if (groupInfo.getMembers().isPresent()) {
-                                for (String member : groupInfo.getMembers().get()) {
-                                    System.out.println("  Member: " + member);
-                                }
-                            }
-                            if (groupInfo.getAvatar().isPresent()) {
-                                System.out.println("  Avatar:");
-                                printAttachment(groupInfo.getAvatar().get());
-                            }
-                        }
-                        if (message.isEndSession()) {
-                            System.out.println("Is end session");
-                        }
-
-                        if (message.getAttachments().isPresent()) {
-                            System.out.println("Attachments: ");
-                            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                                printAttachment(attachment);
-                            }
-                        }
+                        handleSignalServiceDataMessage(message, group);
                     }
                     if (content.getSyncMessage().isPresent()) {
                         SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
-                        System.out.println("Received sync message");
+
+                        if (syncMessage.getContacts().isPresent()) {
+                            System.out.println("Received sync contacts");
+                            printAttachment(syncMessage.getContacts().get());
+                        }
+                        if (syncMessage.getGroups().isPresent()) {
+                            System.out.println("Received sync groups");
+                            printAttachment(syncMessage.getGroups().get());
+                        }
+                        if (syncMessage.getRead().isPresent()) {
+                            System.out.println("Received sync read messages list");
+                            for (ReadMessage rm : syncMessage.getRead().get()) {
+                                System.out.println("From: " + rm.getSender() + " Message timestamp: " + rm.getTimestamp());
+                            }
+                        }
+                        if (syncMessage.getRequest().isPresent()) {
+                            System.out.println("Received sync request");
+                            if (syncMessage.getRequest().get().isContactsRequest()) {
+                                System.out.println(" - contacts request");
+                            }
+                            if (syncMessage.getRequest().get().isGroupsRequest()) {
+                                System.out.println(" - groups request");
+                            }
+                        }
+                        if (syncMessage.getSent().isPresent()) {
+                            System.out.println("Received sync sent message");
+                            final SentTranscriptMessage sentTranscriptMessage = syncMessage.getSent().get();
+                            System.out.println("To: " + (sentTranscriptMessage.getDestination().isPresent() ? sentTranscriptMessage.getDestination().get() : "Unknown") + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
+                            SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
+                            handleSignalServiceDataMessage(message, null);
+                        }
                     }
                 }
             } else {
                 System.out.println("Unknown message received.");
             }
             System.out.println();
+        }
+
+        // TODO remove group parameter
+        private void handleSignalServiceDataMessage(SignalServiceDataMessage message, GroupInfo group) {
+            System.out.println("Message timestamp: " + message.getTimestamp());
+
+            if (message.getBody().isPresent()) {
+                System.out.println("Body: " + message.getBody().get());
+            }
+            if (message.getGroupInfo().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+                System.out.println("Group info:");
+                System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
+                if (groupInfo.getName().isPresent()) {
+                    System.out.println("  Name: " + groupInfo.getName().get());
+                } else if (group != null) {
+                    System.out.println("  Name: " + group.name);
+                } else {
+                    System.out.println("  Name: <Unknown group>");
+                }
+                System.out.println("  Type: " + groupInfo.getType());
+                if (groupInfo.getMembers().isPresent()) {
+                    for (String member : groupInfo.getMembers().get()) {
+                        System.out.println("  Member: " + member);
+                    }
+                }
+                if (groupInfo.getAvatar().isPresent()) {
+                    System.out.println("  Avatar:");
+                    printAttachment(groupInfo.getAvatar().get());
+                }
+            }
+            if (message.isEndSession()) {
+                System.out.println("Is end session");
+            }
+
+            if (message.getAttachments().isPresent()) {
+                System.out.println("Attachments: ");
+                for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+                    printAttachment(attachment);
+                }
+            }
         }
 
         private void printAttachment(SignalServiceAttachment attachment) {

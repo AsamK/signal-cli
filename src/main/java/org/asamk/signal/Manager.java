@@ -37,8 +37,10 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
-import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
+import org.whispersystems.signalservice.api.crypto.*;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -453,6 +455,73 @@ class Manager implements Signal {
         void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, GroupInfo group);
     }
 
+    private GroupInfo handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
+        GroupInfo group = null;
+        if (message.getGroupInfo().isPresent()) {
+            SignalServiceGroup groupInfo = message.getGroupInfo().get();
+            switch (groupInfo.getType()) {
+                case UPDATE:
+                    try {
+                        group = groupStore.getGroup(groupInfo.getGroupId());
+                    } catch (GroupNotFoundException e) {
+                        group = new GroupInfo(groupInfo.getGroupId());
+                    }
+
+                    if (groupInfo.getAvatar().isPresent()) {
+                        SignalServiceAttachment avatar = groupInfo.getAvatar().get();
+                        if (avatar.isPointer()) {
+                            long avatarId = avatar.asPointer().getId();
+                            try {
+                                retrieveAttachment(avatar.asPointer());
+                                group.avatarId = avatarId;
+                            } catch (IOException | InvalidMessageException e) {
+                                System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
+                            }
+                        }
+                    }
+
+                    if (groupInfo.getName().isPresent()) {
+                        group.name = groupInfo.getName().get();
+                    }
+
+                    if (groupInfo.getMembers().isPresent()) {
+                        group.members.addAll(groupInfo.getMembers().get());
+                    }
+
+                    groupStore.updateGroup(group);
+                    break;
+                case DELIVER:
+                    try {
+                        group = groupStore.getGroup(groupInfo.getGroupId());
+                    } catch (GroupNotFoundException e) {
+                    }
+                    break;
+                case QUIT:
+                    try {
+                        group = groupStore.getGroup(groupInfo.getGroupId());
+                        group.members.remove(source);
+                    } catch (GroupNotFoundException e) {
+                    }
+                    break;
+            }
+        }
+        if (message.isEndSession()) {
+            handleEndSession(isSync ? destination : source);
+        }
+        if (message.getAttachments().isPresent()) {
+            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+                if (attachment.isPointer()) {
+                    try {
+                        retrieveAttachment(attachment.asPointer());
+                    } catch (IOException | InvalidMessageException e) {
+                        System.err.println("Failed to retrieve attachment (" + attachment.asPointer().getId() + "): " + e.getMessage());
+                    }
+                }
+            }
+        }
+        return group;
+    }
+
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
         SignalServiceMessagePipe messagePipe = null;
@@ -471,67 +540,19 @@ class Manager implements Signal {
                         if (content != null) {
                             if (content.getDataMessage().isPresent()) {
                                 SignalServiceDataMessage message = content.getDataMessage().get();
-                                if (message.getGroupInfo().isPresent()) {
-                                    SignalServiceGroup groupInfo = message.getGroupInfo().get();
-                                    switch (groupInfo.getType()) {
-                                        case UPDATE:
-                                            try {
-                                                group = groupStore.getGroup(groupInfo.getGroupId());
-                                            } catch (GroupNotFoundException e) {
-                                                group = new GroupInfo(groupInfo.getGroupId());
-                                            }
-
-                                            if (groupInfo.getAvatar().isPresent()) {
-                                                SignalServiceAttachment avatar = groupInfo.getAvatar().get();
-                                                if (avatar.isPointer()) {
-                                                    long avatarId = avatar.asPointer().getId();
-                                                    try {
-                                                        retrieveAttachment(avatar.asPointer());
-                                                        group.avatarId = avatarId;
-                                                    } catch (IOException | InvalidMessageException e) {
-                                                        System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
-                                                    }
-                                                }
-                                            }
-
-                                            if (groupInfo.getName().isPresent()) {
-                                                group.name = groupInfo.getName().get();
-                                            }
-
-                                            if (groupInfo.getMembers().isPresent()) {
-                                                group.members.addAll(groupInfo.getMembers().get());
-                                            }
-
-                                            groupStore.updateGroup(group);
-                                            break;
-                                        case DELIVER:
-                                            try {
-                                                group = groupStore.getGroup(groupInfo.getGroupId());
-                                            } catch (GroupNotFoundException e) {
-                                            }
-                                            break;
-                                        case QUIT:
-                                            try {
-                                                group = groupStore.getGroup(groupInfo.getGroupId());
-                                                group.members.remove(envelope.getSource());
-                                            } catch (GroupNotFoundException e) {
-                                            }
-                                            break;
-                                    }
+                                group = handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
+                            }
+                            if (content.getSyncMessage().isPresent()) {
+                                SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
+                                if (syncMessage.getSent().isPresent()) {
+                                    SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
+                                    group = handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
                                 }
-                                if (message.isEndSession()) {
-                                    handleEndSession(envelope.getSource());
+                                if (syncMessage.getRequest().isPresent()) {
+                                    // TODO
                                 }
-                                if (message.getAttachments().isPresent()) {
-                                    for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                                        if (attachment.isPointer()) {
-                                            try {
-                                                retrieveAttachment(attachment.asPointer());
-                                            } catch (IOException | InvalidMessageException e) {
-                                                System.err.println("Failed to retrieve attachment (" + attachment.asPointer().getId() + "): " + e.getMessage());
-                                            }
-                                        }
-                                    }
+                                if (syncMessage.getGroups().isPresent()) {
+                                    // TODO
                                 }
                             }
                         }
