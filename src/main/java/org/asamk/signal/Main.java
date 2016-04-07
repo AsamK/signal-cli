@@ -26,6 +26,7 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 public class Main {
 
@@ -141,6 +143,37 @@ public class Main {
                         m.verifyAccount(ns.getString("verificationCode"));
                     } catch (IOException e) {
                         System.err.println("Verify error: " + e.getMessage());
+                        System.exit(3);
+                    }
+                    break;
+                case "link":
+                    if (dBusConn != null) {
+                        System.err.println("link is not yet implemented via dbus");
+                        System.exit(1);
+                    }
+
+                    // When linking, username is null and we always have to create keys
+                    m.createNewIdentity();
+
+                    String deviceName = ns.getString("name");
+                    if (deviceName == null) {
+                        deviceName = "cli";
+                    }
+                    try {
+                        System.out.println(m.getDeviceLinkUri());
+                        m.finishDeviceLink(deviceName);
+                        System.out.println("Associated with: " + m.getUsername());
+                    } catch (TimeoutException e) {
+                        System.err.println("Link request timed out, please try again.");
+                        System.exit(3);
+                    } catch (IOException e) {
+                        System.err.println("Link request error: " + e.getMessage());
+                        System.exit(3);
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                        System.exit(3);
+                    } catch (UserAlreadyExists e) {
+                        System.err.println("The user " + e.getUsername() + " already exists\nDelete \"" + e.getFileName() + "\" before trying again.");
                         System.exit(3);
                     }
                     break;
@@ -425,6 +458,10 @@ public class Main {
                 .description("valid subcommands")
                 .help("additional help");
 
+        Subparser parserLink = subparsers.addParser("link");
+        parserLink.addArgument("-n", "--name")
+                .help("Specify a name to describe this new device.");
+
         Subparser parserRegister = subparsers.addParser("register");
         parserRegister.addArgument("-v", "--voice")
                 .help("The verification should be done over voice, not sms.")
@@ -477,7 +514,13 @@ public class Main {
 
         try {
             Namespace ns = parser.parseArgs(args);
-            if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system")) {
+            if ("link".equals(ns.getString("command"))) {
+                if (ns.getString("username") != null) {
+                    parser.printUsage();
+                    System.err.println("You cannot specify a username (phone number) when linking");
+                    System.exit(2);
+                }
+            } else if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system")) {
                 if (ns.getString("username") == null) {
                     parser.printUsage();
                     System.err.println("You need to specify a username (phone number)");

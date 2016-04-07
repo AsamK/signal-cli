@@ -49,6 +49,9 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -72,6 +75,7 @@ class Manager implements Signal {
 
     private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
+    int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private String password;
     private String signalingKey;
     private int preKeyIdOffset;
@@ -95,12 +99,19 @@ class Manager implements Signal {
         jsonProcessot.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
+    public String getUsername() {
+        return username;
+    }
+
     public String getFileName() {
         new File(dataPath).mkdirs();
         return dataPath + "/" + username;
     }
 
     public boolean userExists() {
+        if (username == null) {
+            return false;
+        }
         File f = new File(getFileName());
         return !(!f.exists() || f.isDirectory());
     }
@@ -121,6 +132,10 @@ class Manager implements Signal {
     public void load() throws IOException, InvalidKeyException {
         JsonNode rootNode = jsonProcessot.readTree(new File(getFileName()));
 
+        JsonNode node = rootNode.get("deviceId");
+        if (node != null) {
+            deviceId = node.asInt();
+        }
         username = getNotNullNode(rootNode, "username").asText();
         password = getNotNullNode(rootNode, "password").asText();
         if (rootNode.has("signalingKey")) {
@@ -145,7 +160,7 @@ class Manager implements Signal {
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
         }
-        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, deviceId, USER_AGENT);
         try {
             if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
                 refreshPreKeys();
@@ -159,6 +174,7 @@ class Manager implements Signal {
     private void save() {
         ObjectNode rootNode = jsonProcessot.createObjectNode();
         rootNode.put("username", username)
+                .put("deviceId", deviceId)
                 .put("password", password)
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
@@ -199,6 +215,36 @@ class Manager implements Signal {
 
         registered = false;
         save();
+    }
+
+    public URI getDeviceLinkUri() throws TimeoutException, IOException {
+        password = Util.getSecret(18);
+
+        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
+        String uuid = accountManager.getNewDeviceUuid();
+
+        registered = false;
+        try {
+            return new URI("tsdevice:/?uuid=" + URLEncoder.encode(uuid, "utf-8") + "&pub_key=" + URLEncoder.encode(Base64.encodeBytesWithoutPadding(signalProtocolStore.getIdentityKeyPair().getPublicKey().serialize()), "utf-8"));
+        } catch (URISyntaxException e) {
+            // Shouldn't happen
+            return null;
+        }
+    }
+
+    public void finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
+        signalingKey = Util.getSecret(52);
+        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(signalProtocolStore.getIdentityKeyPair(), signalingKey, false, true, signalProtocolStore.getLocalRegistrationId(), deviceName);
+        deviceId = ret.getDeviceId();
+        username = ret.getNumber();
+        // TODO do this check before actually registering
+        if (userExists()) {
+            throw new UserAlreadyExists(username, getFileName());
+        }
+        signalProtocolStore = new JsonSignalProtocolStore(ret.getIdentity(), signalProtocolStore.getLocalRegistrationId());
+
+        registered = true;
+        refreshPreKeys();
     }
 
     private List<PreKeyRecord> generatePreKeys() {
@@ -412,7 +458,7 @@ class Manager implements Signal {
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
-                signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+                deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
         Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
         for (String recipient : recipients) {
@@ -530,7 +576,7 @@ class Manager implements Signal {
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
         SignalServiceMessagePipe messagePipe = null;
 
         try {
@@ -584,7 +630,7 @@ class Manager implements Signal {
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
 
         File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
         InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
