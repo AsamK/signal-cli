@@ -109,7 +109,7 @@ public class Main {
             switch (ns.getString("command")) {
                 case "register":
                     if (dBusConn != null) {
-                        System.err.println("register is not yet implementd via dbus");
+                        System.err.println("register is not yet implemented via dbus");
                         System.exit(1);
                     }
                     if (!m.userHasKeys()) {
@@ -124,7 +124,7 @@ public class Main {
                     break;
                 case "verify":
                     if (dBusConn != null) {
-                        System.err.println("verify is not yet implementd via dbus");
+                        System.err.println("verify is not yet implemented via dbus");
                         System.exit(1);
                     }
                     if (!m.userHasKeys()) {
@@ -262,7 +262,7 @@ public class Main {
                     break;
                 case "quitGroup":
                     if (dBusConn != null) {
-                        System.err.println("quitGroup is not yet implementd via dbus");
+                        System.err.println("quitGroup is not yet implemented via dbus");
                         System.exit(1);
                     }
                     if (!m.isRegistered()) {
@@ -285,7 +285,7 @@ public class Main {
                     break;
                 case "updateGroup":
                     if (dBusConn != null) {
-                        System.err.println("updateGroup is not yet implementd via dbus");
+                        System.err.println("updateGroup is not yet implemented via dbus");
                         System.exit(1);
                     }
                     if (!m.isRegistered()) {
