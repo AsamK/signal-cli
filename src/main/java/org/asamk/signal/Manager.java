@@ -300,7 +300,7 @@ class Manager implements Signal {
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
@@ -316,7 +316,7 @@ class Manager implements Signal {
         sendMessage(message, groupStore.getGroup(groupId).members);
     }
 
-    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, UntrustedIdentityException {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
@@ -328,7 +328,7 @@ class Manager implements Signal {
         sendMessage(message, groupStore.getGroup(groupId).members);
     }
 
-    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -381,7 +381,7 @@ class Manager implements Signal {
 
     @Override
     public void sendMessage(String message, List<String> attachments, String recipient)
-            throws EncapsulatedExceptions, AttachmentInvalidException, IOException {
+            throws EncapsulatedExceptions, AttachmentInvalidException, IOException, UntrustedIdentityException {
         List<String> recipients = new ArrayList<>(1);
         recipients.add(recipient);
         sendMessage(message, attachments, recipients);
@@ -390,7 +390,7 @@ class Manager implements Signal {
     @Override
     public void sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, UntrustedIdentityException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
@@ -401,7 +401,7 @@ class Manager implements Signal {
     }
 
     @Override
-    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
+    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
         SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage()
                 .build();
@@ -410,7 +410,7 @@ class Manager implements Signal {
     }
 
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
-            throws IOException, EncapsulatedExceptions {
+            throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                 signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
@@ -426,7 +426,14 @@ class Manager implements Signal {
             }
         }
 
-        messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
+        if (message.getGroupInfo().isPresent()) {
+            messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
+        } else {
+            // Send to all individually, so sync messages are sent correctly
+            for (SignalServiceAddress address : recipientsTS) {
+                messageSender.sendMessage(address, message);
+            }
+        }
 
         if (message.isEndSession()) {
             for (SignalServiceAddress recipient : recipientsTS) {
