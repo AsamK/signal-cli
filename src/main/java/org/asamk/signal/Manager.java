@@ -23,10 +23,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
 import org.whispersystems.libsignal.*;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -40,6 +42,7 @@ import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.*;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
@@ -47,10 +50,12 @@ import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedE
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -245,6 +250,50 @@ class Manager implements Signal {
 
         registered = true;
         refreshPreKeys();
+        save();
+    }
+
+
+    public static Map<String, String> getQueryMap(String query) {
+        String[] params = query.split("&");
+        Map<String, String> map = new HashMap<>();
+        for (String param : params) {
+            String name = null;
+            try {
+                name = URLDecoder.decode(param.split("=")[0], "utf-8");
+            } catch (UnsupportedEncodingException e) {
+                // Impossible
+            }
+            String value = null;
+            try {
+                value = URLDecoder.decode(param.split("=")[1], "utf-8");
+            } catch (UnsupportedEncodingException e) {
+                // Impossible
+            }
+            map.put(name, value);
+        }
+        return map;
+    }
+
+    public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
+        Map<String, String> query = getQueryMap(linkUri.getQuery());
+        String deviceIdentifier = query.get("uuid");
+        String publicKeyEncoded = query.get("pub_key");
+
+        if (TextUtils.isEmpty(deviceIdentifier) || TextUtils.isEmpty(publicKeyEncoded)) {
+            throw new RuntimeException("Invalid device link uri");
+        }
+
+        ECPublicKey deviceKey = Curve.decodePoint(Base64.decode(publicKeyEncoded), 0);
+
+        addDeviceLink(deviceIdentifier, deviceKey);
+    }
+
+    private void addDeviceLink(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
+        IdentityKeyPair identityKeyPair = signalProtocolStore.getIdentityKeyPair();
+        String verificationCode = accountManager.getNewDeviceVerificationCode();
+
+        accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, verificationCode);
     }
 
     private List<PreKeyRecord> generatePreKeys() {

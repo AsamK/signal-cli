@@ -40,6 +40,8 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -175,6 +177,28 @@ public class Main {
                     } catch (UserAlreadyExists e) {
                         System.err.println("The user " + e.getUsername() + " already exists\nDelete \"" + e.getFileName() + "\" before trying again.");
                         System.exit(3);
+                    }
+                    break;
+                case "addDevice":
+                    if (dBusConn != null) {
+                        System.err.println("link is not yet implemented via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+                    try {
+                        m.addDeviceLink(new URI(ns.getString("uri")));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.exit(3);
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                        System.exit(2);
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                        System.exit(2);
                     }
                     break;
                 case "send":
@@ -461,6 +485,11 @@ public class Main {
         Subparser parserLink = subparsers.addParser("link");
         parserLink.addArgument("-n", "--name")
                 .help("Specify a name to describe this new device.");
+
+        Subparser parserAddDevice = subparsers.addParser("addDevice");
+        parserAddDevice.addArgument("--uri")
+                .required(true)
+                .help("Specify the uri contained in the QR code shown by the new device.");
 
         Subparser parserRegister = subparsers.addParser("register");
         parserRegister.addArgument("-v", "--voice")
