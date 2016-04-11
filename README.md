@@ -26,6 +26,10 @@ usage: signal-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,update
 * Pipe the message content from another process.
 
         uname -a | signal-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
+        
+* Receive messages
+
+        signal-cli -u USERNAME receive
 
 * Groups
 
