@@ -290,7 +290,7 @@ class Manager implements Signal {
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
-        Map<String, String> query = getQueryMap(linkUri.getQuery());
+        Map<String, String> query = getQueryMap(linkUri.getRawQuery());
         String deviceIdentifier = query.get("uuid");
         String publicKeyEncoded = query.get("pub_key");
 
@@ -300,10 +300,10 @@ class Manager implements Signal {
 
         ECPublicKey deviceKey = Curve.decodePoint(Base64.decode(publicKeyEncoded), 0);
 
-        addDeviceLink(deviceIdentifier, deviceKey);
+        addDevice(deviceIdentifier, deviceKey);
     }
 
-    private void addDeviceLink(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
+    private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
         IdentityKeyPair identityKeyPair = signalProtocolStore.getIdentityKeyPair();
         String verificationCode = accountManager.getNewDeviceVerificationCode();
 
