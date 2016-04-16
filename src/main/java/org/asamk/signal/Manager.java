@@ -411,7 +411,9 @@ class Manager implements Signal {
         }
         SignalServiceDataMessage message = messageBuilder.build();
 
-        sendMessage(message, groupStore.getGroup(groupId).members);
+        Set<String> members = groupStore.getGroup(groupId).members;
+        members.remove(this.username);
+        sendMessage(message, members);
     }
 
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, UntrustedIdentityException {
@@ -473,7 +475,9 @@ class Manager implements Signal {
                 .asGroupMessage(group.build())
                 .build();
 
-        sendMessage(message, g.members);
+        final Set<String> membersSend = g.members;
+        membersSend.remove(this.username);
+        sendMessage(message, membersSend);
         return g.groupId;
     }
 
