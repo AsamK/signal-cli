@@ -1,11 +1,11 @@
 # signal-cli
 
-signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libsignal-service-java/pull/5). For registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages. To be able to receiving messages signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java [does not yet support registering for the websocket support](https://github.com/WhisperSystems/libsignal-service-java/pull/5) nor [provisioning as a slave device](https://github.com/WhisperSystems/libsignal-service-java/pull/21). For registering you need a phone number where you can receive SMS or incoming calls.
 It is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 ## Usage
 
-usage: signal-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,updateGroup,receive} ...
+usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-system] {link,addDevice,listDevices,removeDevice,register,verify,send,quitGroup,updateGroup,receive,daemon} ...
 
 * Register a number (with SMS verification)
 
@@ -44,6 +44,27 @@ usage: signal-cli [-h] [-u USERNAME] [-v] {register,verify,send,quitGroup,update
  * Send a message to a group
 
           signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+
+* Linking other devices (Provisioning)
+
+ * Connect to another device
+
+          signal-cli link -n "optional device name"
+        
+        This shows a "tsdevice:/…" link, if you want to connect to another signal-cli instance, you can just use this link. If you want to link to and Android device, create a QR code with the link (e.g. with [qrencode](https://fukuchi.org/works/qrencode/)) and scan that in the Signal Android app.
+
+ * Add another device
+
+          signal-cli -u USERNAME addDevice --uri "tsdevice:/…"
+          
+        The "tsdevice:/…" link is the one shown by the new signal-cli instance or contained in the QR code shown in Signal-Desktop or similar apps.
+        Only the master device (that was registered directly, not linked) can add new devices.
+
+ * Manage linked devices
+
+          signal-cli -u USERNAME listDevices
+
+          signal-cli -u USERNAME removeDevice -d DEVICE_ID
 
 ## DBus service
 
