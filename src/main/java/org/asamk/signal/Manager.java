@@ -548,36 +548,39 @@ class Manager implements Signal {
 
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
-        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
-                deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+        try {
+            SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
+                    deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                save();
-                return;
+            Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
+            for (String recipient : recipients) {
+                try {
+                    recipientsTS.add(getPushAddress(recipient));
+                } catch (InvalidNumberException e) {
+                    System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                    System.err.println("Aborting sending.");
+                    save();
+                    return;
+                }
             }
-        }
 
-        if (message.getGroupInfo().isPresent()) {
-            messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
-        } else {
-            // Send to all individually, so sync messages are sent correctly
-            for (SignalServiceAddress address : recipientsTS) {
-                messageSender.sendMessage(address, message);
+            if (message.getGroupInfo().isPresent()) {
+                messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
+            } else {
+                // Send to all individually, so sync messages are sent correctly
+                for (SignalServiceAddress address : recipientsTS) {
+                    messageSender.sendMessage(address, message);
+                }
             }
-        }
 
-        if (message.isEndSession()) {
-            for (SignalServiceAddress recipient : recipientsTS) {
-                handleEndSession(recipient.getNumber());
+            if (message.isEndSession()) {
+                for (SignalServiceAddress recipient : recipientsTS) {
+                    handleEndSession(recipient.getNumber());
+                }
             }
+        } finally {
+            save();
         }
-        save();
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) {
