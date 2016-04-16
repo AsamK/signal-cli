@@ -180,6 +180,9 @@ class Manager implements Signal {
     }
 
     private void save() {
+        if (username == null) {
+            return;
+        }
         ObjectNode rootNode = jsonProcessot.createObjectNode();
         rootNode.put("username", username)
                 .put("deviceId", deviceId)
