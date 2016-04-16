@@ -79,7 +79,7 @@ class Manager implements Signal {
 
     private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
-    int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
+    private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private String password;
     private String signalingKey;
     private int preKeyIdOffset;
@@ -105,6 +105,10 @@ class Manager implements Signal {
 
     public String getUsername() {
         return username;
+    }
+
+    public int getDeviceId() {
+        return deviceId;
     }
 
     public String getFileName() {
@@ -256,6 +260,9 @@ class Manager implements Signal {
         save();
     }
 
+    public List<DeviceInfo> getLinkedDevices() throws IOException {
+        return accountManager.getDevices();
+    }
 
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");

@@ -29,6 +29,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
@@ -199,6 +200,28 @@ public class Main {
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                         System.exit(2);
+                    }
+                    break;
+                case "listDevices":
+                    if (dBusConn != null) {
+                        System.err.println("listDevices is not yet implemented via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+                    try {
+                        List<DeviceInfo> devices = m.getLinkedDevices();
+                        for (DeviceInfo d : devices) {
+                            System.out.println("Device " + d.getId() + (d.getId() == m.getDeviceId() ? " (this device)" : "") + ":");
+                            System.out.println(" Name: " + d.getName());
+                            System.out.println(" Created: " + d.getCreated());
+                            System.out.println(" Last seen: " + d.getLastSeen());
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.exit(3);
                     }
                     break;
                 case "send":
@@ -490,6 +513,8 @@ public class Main {
         parserAddDevice.addArgument("--uri")
                 .required(true)
                 .help("Specify the uri contained in the QR code shown by the new device.");
+
+        Subparser parserDevices = subparsers.addParser("listDevices");
 
         Subparser parserRegister = subparsers.addParser("register");
         parserRegister.addArgument("-v", "--voice")
