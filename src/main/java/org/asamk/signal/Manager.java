@@ -264,6 +264,10 @@ class Manager implements Signal {
         return accountManager.getDevices();
     }
 
+    public void removeLinkedDevices(int deviceId) throws IOException {
+        accountManager.removeDevice(deviceId);
+    }
+
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
         Map<String, String> map = new HashMap<>();

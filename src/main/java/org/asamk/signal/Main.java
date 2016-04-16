@@ -224,6 +224,23 @@ public class Main {
                         System.exit(3);
                     }
                     break;
+                case "removeDevice":
+                    if (dBusConn != null) {
+                        System.err.println("removeDevice is not yet implemented via dbus");
+                        System.exit(1);
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        System.exit(1);
+                    }
+                    try {
+                        int deviceId = ns.getInt("deviceId");
+                        m.removeLinkedDevices(deviceId);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.exit(3);
+                    }
+                    break;
                 case "send":
                     if (dBusConn == null && !m.isRegistered()) {
                         System.err.println("User is not registered.");
@@ -515,6 +532,12 @@ public class Main {
                 .help("Specify the uri contained in the QR code shown by the new device.");
 
         Subparser parserDevices = subparsers.addParser("listDevices");
+
+        Subparser parserRemoveDevice = subparsers.addParser("removeDevice");
+        parserRemoveDevice.addArgument("-d", "--deviceId")
+                .type(int.class)
+                .required(true)
+                .help("Specify the device you want to remove. Use listDevices to see the deviceIds.");
 
         Subparser parserRegister = subparsers.addParser("register");
         parserRegister.addArgument("-v", "--voice")
