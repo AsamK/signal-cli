@@ -425,7 +425,11 @@ class Manager implements Signal {
                 .asGroupMessage(group)
                 .build();
 
-        sendMessage(message, groupStore.getGroup(groupId).members);
+        final GroupInfo g = groupStore.getGroup(groupId);
+        g.members.remove(this.username);
+        groupStore.updateGroup(g);
+
+        sendMessage(message, g.members);
     }
 
     public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
@@ -641,6 +645,7 @@ class Manager implements Signal {
                     try {
                         group = groupStore.getGroup(groupInfo.getGroupId());
                         group.members.remove(source);
+                        groupStore.updateGroup(group);
                     } catch (GroupNotFoundException e) {
                     }
                     break;
