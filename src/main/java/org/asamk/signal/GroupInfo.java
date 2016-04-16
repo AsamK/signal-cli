@@ -19,6 +19,9 @@ public class GroupInfo {
     @JsonProperty
     public long avatarId;
 
+    @JsonProperty
+    public boolean active;
+
     public GroupInfo(byte[] groupId) {
         this.groupId = groupId;
     }

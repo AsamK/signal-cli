@@ -39,11 +39,10 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
-import org.whispersystems.signalservice.api.crypto.*;
+import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
-import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -250,6 +249,10 @@ class Manager implements Signal {
 
         registered = true;
         refreshPreKeys();
+
+        requestSyncGroups();
+        requestSyncContacts();
+
         save();
     }
 
@@ -384,7 +387,7 @@ class Manager implements Signal {
         return SignalServiceAttachments;
     }
 
-    private static SignalServiceAttachmentStream createAttachment(String attachment) throws IOException {
+    private static SignalServiceAttachment createAttachment(String attachment) throws IOException {
         File attachmentFile = new File(attachment);
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
@@ -504,6 +507,37 @@ class Manager implements Signal {
         sendMessage(message, recipients);
     }
 
+    private void requestSyncGroups() throws IOException {
+        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
+        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        try {
+            sendMessage(message);
+        } catch (EncapsulatedExceptions encapsulatedExceptions) {
+            encapsulatedExceptions.printStackTrace();
+        } catch (UntrustedIdentityException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void requestSyncContacts() throws IOException {
+        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS).build();
+        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        try {
+            sendMessage(message);
+        } catch (EncapsulatedExceptions encapsulatedExceptions) {
+            encapsulatedExceptions.printStackTrace();
+        } catch (UntrustedIdentityException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendMessage(SignalServiceSyncMessage message)
+            throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
+                deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+        messageSender.sendMessage(message);
+    }
+
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
             throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
@@ -575,6 +609,7 @@ class Manager implements Signal {
                             long avatarId = avatar.asPointer().getId();
                             try {
                                 retrieveAttachment(avatar.asPointer());
+                                // TODO store group avatar in /avatar/groups folder
                                 group.avatarId = avatarId;
                             } catch (IOException | InvalidMessageException e) {
                                 System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
@@ -651,10 +686,68 @@ class Manager implements Signal {
                                     group = handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
                                 }
                                 if (syncMessage.getRequest().isPresent()) {
-                                    // TODO
+                                    RequestMessage rm = syncMessage.getRequest().get();
+                                    if (rm.isContactsRequest()) {
+                                        // TODO implement when we have contacts
+                                    }
+                                    if (rm.isGroupsRequest()) {
+                                        try {
+                                            sendGroups();
+                                        } catch (EncapsulatedExceptions encapsulatedExceptions) {
+                                            encapsulatedExceptions.printStackTrace();
+                                        } catch (UntrustedIdentityException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
                                 }
                                 if (syncMessage.getGroups().isPresent()) {
-                                    // TODO
+                                    try {
+                                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer()));
+                                        DeviceGroup g;
+                                        while ((g = s.read()) != null) {
+                                            GroupInfo syncGroup;
+                                            try {
+                                                syncGroup = groupStore.getGroup(g.getId());
+                                            } catch (GroupNotFoundException e) {
+                                                syncGroup = new GroupInfo(g.getId());
+                                            }
+                                            if (g.getName().isPresent()) {
+                                                syncGroup.name = g.getName().get();
+                                            }
+                                            syncGroup.members.addAll(g.getMembers());
+                                            syncGroup.active = g.isActive();
+
+                                            if (g.getAvatar().isPresent()) {
+                                                byte[] ava = new byte[(int) g.getAvatar().get().getLength()];
+                                                org.whispersystems.signalservice.internal.util.Util.readFully(g.getAvatar().get().getInputStream(), ava);
+                                                // TODO store group avatar in /avatar/groups folder
+                                            }
+                                            groupStore.updateGroup(syncGroup);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                if (syncMessage.getContacts().isPresent()) {
+                                    try {
+                                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
+                                        DeviceContact c;
+                                        while ((c = s.read()) != null) {
+                                            // TODO implement when we have contact storage
+                                            if (c.getName().isPresent()) {
+                                                c.getName().get();
+                                            }
+                                            c.getNumber();
+
+                                            if (c.getAvatar().isPresent()) {
+                                                byte[] ava = new byte[(int) c.getAvatar().get().getLength()];
+                                                org.whispersystems.signalservice.internal.util.Util.readFully(c.getAvatar().get().getInputStream(), ava);
+                                                // TODO store contact avatar in /avatar/contacts folder
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
                         }
@@ -725,6 +818,14 @@ class Manager implements Signal {
         return outputFile;
     }
 
+    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
+        File file = File.createTempFile("ts_tmp", "tmp");
+        file.deleteOnExit();
+
+        return messageReceiver.retrieveAttachment(pointer, file);
+    }
+
     private String canonicalizeNumber(String number) throws InvalidNumberException {
         String localNumber = username;
         return PhoneNumberFormatter.formatNumber(number, localNumber);
@@ -738,5 +839,35 @@ class Manager implements Signal {
     @Override
     public boolean isRemote() {
         return false;
+    }
+
+    private void sendGroups() throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+        File contactsFile = File.createTempFile("multidevice-contact-update", ".tmp");
+
+        try {
+            DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(new FileOutputStream(contactsFile));
+            try {
+                for (GroupInfo record : groupStore.getGroups()) {
+                    out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
+                            new ArrayList<>(record.members), Optional.of(new SignalServiceAttachmentStream(new FileInputStream("/home/sebastian/Bilder/00026_150512_14-00-18.JPG"), "octet", new File("/home/sebastian/Bilder/00026_150512_14-00-18.JPG").length(), null)),
+                            record.active));
+                }
+            } finally {
+                out.close();
+            }
+
+            if (contactsFile.exists() && contactsFile.length() > 0) {
+                FileInputStream contactsFileStream = new FileInputStream(contactsFile);
+                SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                        .withStream(contactsFileStream)
+                        .withContentType("application/octet-stream")
+                        .withLength(contactsFile.length())
+                        .build();
+
+                sendMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+            }
+        } finally {
+            if (contactsFile != null) contactsFile.delete();
+        }
     }
 }

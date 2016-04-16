@@ -622,6 +622,7 @@ public class Main {
                         handleSignalServiceDataMessage(message, group);
                     }
                     if (content.getSyncMessage().isPresent()) {
+                        System.out.println("Received a sync message");
                         SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
 
                         if (syncMessage.getContacts().isPresent()) {

@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class JsonGroupStore {
@@ -29,6 +31,10 @@ public class JsonGroupStore {
             throw new GroupNotFoundException(groupId);
         }
         return g;
+    }
+
+    List<GroupInfo> getGroups() {
+        return new ArrayList<>(groups.values());
     }
 
     public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
