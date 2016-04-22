@@ -90,6 +90,7 @@ class Manager implements Signal {
     private SignalProtocolStore signalProtocolStore;
     private SignalServiceAccountManager accountManager;
     private JsonGroupStore groupStore;
+    private JsonContactsStore contactStore;
 
     public Manager(String username, String settingsPath) {
         this.username = username;
@@ -168,6 +169,14 @@ class Manager implements Signal {
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
         }
+        JsonNode contactStoreNode = rootNode.get("contactStore");
+        if (contactStoreNode != null) {
+            contactStore = jsonProcessot.convertValue(contactStoreNode, JsonContactsStore.class);
+        }
+        if (contactStore == null) {
+            contactStore = new JsonContactsStore();
+        }
+
         accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, deviceId, USER_AGENT);
         try {
             if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
@@ -193,6 +202,7 @@ class Manager implements Signal {
                 .put("registered", registered)
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
+                .putPOJO("contactStore", contactStore)
         ;
         try {
             jsonProcessot.writeValue(new File(getFileName()), rootNode);
@@ -714,7 +724,13 @@ class Manager implements Signal {
                                 if (syncMessage.getRequest().isPresent()) {
                                     RequestMessage rm = syncMessage.getRequest().get();
                                     if (rm.isContactsRequest()) {
-                                        // TODO implement when we have contacts
+                                        try {
+                                            sendContacts();
+                                        } catch (EncapsulatedExceptions encapsulatedExceptions) {
+                                            encapsulatedExceptions.printStackTrace();
+                                        } catch (UntrustedIdentityException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                     if (rm.isGroupsRequest()) {
                                         try {
@@ -759,11 +775,12 @@ class Manager implements Signal {
                                         DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
                                         DeviceContact c;
                                         while ((c = s.read()) != null) {
-                                            // TODO implement when we have contact storage
+                                            ContactInfo contact = new ContactInfo();
+                                            contact.number = c.getNumber();
                                             if (c.getName().isPresent()) {
-                                                c.getName().get();
+                                                contact.name = c.getName().get();
                                             }
-                                            c.getNumber();
+                                            contactStore.updateContact(contact);
 
                                             if (c.getAvatar().isPresent()) {
                                                 byte[] ava = new byte[(int) c.getAvatar().get().getLength()];
@@ -868,15 +885,44 @@ class Manager implements Signal {
     }
 
     private void sendGroups() throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
-        File contactsFile = File.createTempFile("multidevice-contact-update", ".tmp");
+        File groupsFile = File.createTempFile("multidevice-group-update", ".tmp");
 
         try {
-            DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(new FileOutputStream(contactsFile));
+            DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(new FileOutputStream(groupsFile));
             try {
                 for (GroupInfo record : groupStore.getGroups()) {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
-                            new ArrayList<>(record.members), Optional.of(new SignalServiceAttachmentStream(new FileInputStream("/home/sebastian/Bilder/00026_150512_14-00-18.JPG"), "octet", new File("/home/sebastian/Bilder/00026_150512_14-00-18.JPG").length(), null)),
+                            new ArrayList<>(record.members), Optional.<SignalServiceAttachmentStream>absent(), // TODO
                             record.active));
+                }
+            } finally {
+                out.close();
+            }
+
+            if (groupsFile.exists() && groupsFile.length() > 0) {
+                FileInputStream contactsFileStream = new FileInputStream(groupsFile);
+                SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                        .withStream(contactsFileStream)
+                        .withContentType("application/octet-stream")
+                        .withLength(groupsFile.length())
+                        .build();
+
+                sendMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+            }
+        } finally {
+            groupsFile.delete();
+        }
+    }
+
+    private void sendContacts() throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+        File contactsFile = File.createTempFile("multidevice-contact-update", ".tmp");
+
+        try {
+            DeviceContactsOutputStream out = new DeviceContactsOutputStream(new FileOutputStream(contactsFile));
+            try {
+                for (ContactInfo record : contactStore.getContacts()) {
+                    out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
+                            Optional.<SignalServiceAttachmentStream>absent())); // TODO
                 }
             } finally {
                 out.close();
@@ -890,10 +936,10 @@ class Manager implements Signal {
                         .withLength(contactsFile.length())
                         .build();
 
-                sendMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                sendMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
             }
         } finally {
-            if (contactsFile != null) contactsFile.delete();
+            contactsFile.delete();
         }
     }
 }
