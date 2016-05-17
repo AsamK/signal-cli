@@ -35,7 +35,7 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
  * Create a group
 
-          signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+          signal-cli -u USERNAME updateGroup -name "Group name" -member [MEMBER [MEMBER ...]]
 
  * Update a group
 
