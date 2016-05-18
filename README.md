@@ -44,6 +44,10 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
  * Send a message to a group
 
           signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+ 
+ * Leave a group
+ 
+         -u USERNAME updateGroup -g GROUP_ID  -q
 
 * Linking other devices (Provisioning)
 
