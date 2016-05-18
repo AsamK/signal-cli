@@ -47,7 +47,7 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
  
  * Leave a group
  
-    -u USERNAME updateGroup -g GROUP_ID  -q
+          signal-cli -u USERNAME updateGroup -g GROUP_ID  -q
 
 * Linking other devices (Provisioning)
 
