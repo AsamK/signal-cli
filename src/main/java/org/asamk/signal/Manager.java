@@ -63,8 +63,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class Manager implements Signal {
-    private final static String URL = "https://textsecure-service.whispersystems.org";
-    private final static TrustStore TRUST_STORE = new WhisperTrustStore();
+   // private final static String URL = "https://10.1.4.252:8080";
+   // private final static TrustStore TRUST_STORE = new TenOneFourTwohundredfiftyfourTrustStore();
+
+   // private final static String URL = "https://127.0.0.1:8080";
+   // private final static TrustStore TRUST_STORE = new LoopbackTrustStore();
+
+    private final static String URL = "https://signal.sinesy.it:8080";
+    private final static TrustStore TRUST_STORE = new SinesyTrustStore();
+    //private final static String URL = "https://textsecure-service.whispersystems.org";
+    //private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
     public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
@@ -456,7 +464,7 @@ class Manager implements Signal {
         sendMessage(message, g.members);
     }
 
-    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
+    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile, boolean quit) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -482,10 +490,11 @@ class Manager implements Signal {
             }
         }
 
-        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
+        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(quit?SignalServiceGroup.Type.QUIT:SignalServiceGroup.Type.UPDATE)
                 .withId(g.groupId)
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.members));
+
 
         if (avatarFile != null) {
             try {

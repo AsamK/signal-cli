@@ -403,7 +403,7 @@ public class Main {
                         if (ns.getString("group") != null) {
                             groupId = decodeGroupId(ns.getString("group"));
                         }
-                        byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"));
+                        byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"), ns.getString("quit")!=null);
                         if (groupId == null) {
                             System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
                         }
@@ -504,7 +504,7 @@ public class Main {
                 .help("Show package version.")
                 .action(Arguments.version());
         parser.addArgument("--config")
-                .help("Set the path, where to store the config (Default: $HOME/.config/signal-cli).");
+                .help("Set the path, where to store the config (Default: $HOME/.config/signal).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")
@@ -550,7 +550,7 @@ public class Main {
 
         Subparser parserSend = subparsers.addParser("send");
         parserSend.addArgument("-g", "--group")
-                .help("Specify the recipient group ID.");
+                .help("Specify the recipient group ID. If '-m' parameter is not present the messag is read from STDIN and yuo have to type <ENTER>CTRL+D<ENTER> (aka EOF) in order to stop reading and sending the content");
         parserSend.addArgument("recipient")
                 .help("Specify the recipients' phone number.")
                 .nargs("*");
@@ -575,6 +575,9 @@ public class Main {
                 .help("Specify the new group name.");
         parserUpdateGroup.addArgument("-a", "--avatar")
                 .help("Specify a new group avatar image file");
+        parserUpdateGroup.addArgument("-q", "--quit")
+                .help("Quit from the group")
+                .action(Arguments.storeTrue());
         parserUpdateGroup.addArgument("-m", "--member")
                 .nargs("*")
                 .help("Specify one or more members to add to the group");
