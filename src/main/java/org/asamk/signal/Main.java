@@ -550,7 +550,7 @@ public class Main {
 
         Subparser parserSend = subparsers.addParser("send");
         parserSend.addArgument("-g", "--group")
-                .help("Specify the recipient group ID. If '-m' parameter is not present the messag is read from STDIN and yuo have to type <ENTER>CTRL+D<ENTER> (aka EOF) in order to stop reading and sending the content");
+                .help("Specify the recipient group ID. If '-m' parameter is not  <CR>CTRL+D<CR> (aka EOF) in order to stop reading from STDIN and send the content");
         parserSend.addArgument("recipient")
                 .help("Specify the recipients' phone number.")
                 .nargs("*");
