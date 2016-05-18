@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class Manager implements Signal {
+
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
@@ -456,7 +457,7 @@ class Manager implements Signal {
         sendMessage(message, g.members);
     }
 
-    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
+    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile, boolean quit) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -482,10 +483,11 @@ class Manager implements Signal {
             }
         }
 
-        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
+        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(quit?SignalServiceGroup.Type.QUIT:SignalServiceGroup.Type.UPDATE)
                 .withId(g.groupId)
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.members));
+
 
         if (avatarFile != null) {
             try {
