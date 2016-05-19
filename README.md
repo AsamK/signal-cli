@@ -41,6 +41,10 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
           signal-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name"
 
+ * Leave a group
+
+          signal-cli -u USERNAME quitGroup -g GROUP_ID
+
  * Send a message to a group
 
           signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID

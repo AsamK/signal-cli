@@ -504,7 +504,7 @@ public class Main {
                 .help("Show package version.")
                 .action(Arguments.version());
         parser.addArgument("--config")
-                .help("Set the path, where to store the config (Default: $HOME/.config/signal-cli).");
+                .help("Set the path, where to store the config (Default: $HOME/.config/signal).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")
