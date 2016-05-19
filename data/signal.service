@@ -1,5 +1,9 @@
 [Unit]
 Description=Send secure messages to Signal clients
+Requires=dbus.socket
+After=dbus.socket
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=dbus
