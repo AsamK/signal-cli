@@ -942,4 +942,8 @@ class Manager implements Signal {
             contactsFile.delete();
         }
     }
+
+    public ContactInfo getContact(String number) {
+        return contactStore.getContact(number);
+    }
 }

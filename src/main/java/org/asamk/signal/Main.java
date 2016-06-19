@@ -667,7 +667,8 @@ public class Main {
         @Override
         public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
             SignalServiceAddress source = envelope.getSourceAddress();
-            System.out.println(String.format("Envelope from: %s (device: %d)", source.getNumber(), envelope.getSourceDevice()));
+            ContactInfo sourceContact = m.getContact(source.getNumber());
+            System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
@@ -698,7 +699,8 @@ public class Main {
                         if (syncMessage.getRead().isPresent()) {
                             System.out.println("Received sync read messages list");
                             for (ReadMessage rm : syncMessage.getRead().get()) {
-                                System.out.println("From: " + rm.getSender() + " Message timestamp: " + rm.getTimestamp());
+                                ContactInfo fromContact = m.getContact(rm.getSender());
+                                System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + rm.getTimestamp());
                             }
                         }
                         if (syncMessage.getRequest().isPresent()) {
@@ -713,7 +715,15 @@ public class Main {
                         if (syncMessage.getSent().isPresent()) {
                             System.out.println("Received sync sent message");
                             final SentTranscriptMessage sentTranscriptMessage = syncMessage.getSent().get();
-                            System.out.println("To: " + (sentTranscriptMessage.getDestination().isPresent() ? sentTranscriptMessage.getDestination().get() : "Unknown") + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
+                            String to;
+                            if (sentTranscriptMessage.getDestination().isPresent()) {
+                                String dest = sentTranscriptMessage.getDestination().get();
+                                ContactInfo destContact = m.getContact(dest);
+                                to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
+                            } else {
+                                to = "Unknown";
+                            }
+                            System.out.println("To: " + to + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
                             SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
                             handleSignalServiceDataMessage(message, null);
                         }
