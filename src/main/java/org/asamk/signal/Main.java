@@ -822,17 +822,5 @@ public class Main {
             }
         }
 
-        private void printAttachment(SignalServiceAttachment attachment) {
-            System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
-            if (attachment.isPointer()) {
-                final SignalServiceAttachmentPointer pointer = attachment.asPointer();
-                System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
-                System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
-                File file = m.getAttachmentFile(pointer.getId());
-                if (file.exists()) {
-                    System.out.println("  Stored plaintext in: " + file);
-                }
-            }
-        }
     }
 }
