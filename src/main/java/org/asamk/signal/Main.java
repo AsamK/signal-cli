@@ -665,7 +665,7 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
             SignalServiceAddress source = envelope.getSourceAddress();
             ContactInfo sourceContact = m.getContact(source.getNumber());
             System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
@@ -682,7 +682,7 @@ public class Main {
                 } else {
                     if (content.getDataMessage().isPresent()) {
                         SignalServiceDataMessage message = content.getDataMessage().get();
-                        handleSignalServiceDataMessage(message, group);
+                        handleSignalServiceDataMessage(message);
                     }
                     if (content.getSyncMessage().isPresent()) {
                         System.out.println("Received a sync message");
@@ -725,7 +725,7 @@ public class Main {
                             }
                             System.out.println("To: " + to + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
                             SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
-                            handleSignalServiceDataMessage(message, null);
+                            handleSignalServiceDataMessage(message);
                         }
                     }
                 }
@@ -735,8 +735,7 @@ public class Main {
             System.out.println();
         }
 
-        // TODO remove group parameter
-        private void handleSignalServiceDataMessage(SignalServiceDataMessage message, GroupInfo group) {
+        private void handleSignalServiceDataMessage(SignalServiceDataMessage message) {
             System.out.println("Message timestamp: " + message.getTimestamp());
 
             if (message.getBody().isPresent()) {
@@ -748,10 +747,13 @@ public class Main {
                 System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
                 if (groupInfo.getName().isPresent()) {
                     System.out.println("  Name: " + groupInfo.getName().get());
-                } else if (group != null) {
-                    System.out.println("  Name: " + group.name);
                 } else {
-                    System.out.println("  Name: <Unknown group>");
+                    GroupInfo group = m.getGroup(groupInfo.getGroupId());
+                    if (group != null) {
+                        System.out.println("  Name: " + group.name);
+                    } else {
+                        System.out.println("  Name: <Unknown group>");
+                    }
                 }
                 System.out.println("  Type: " + groupInfo.getType());
                 if (groupInfo.getMembers().isPresent()) {
@@ -799,8 +801,8 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, GroupInfo group) {
-            super.handleMessage(envelope, content, group);
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
+            super.handleMessage(envelope, content);
 
             if (!envelope.isReceipt() && content != null && content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();

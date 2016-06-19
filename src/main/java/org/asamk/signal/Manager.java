@@ -435,7 +435,11 @@ class Manager implements Signal {
         }
         SignalServiceDataMessage message = messageBuilder.build();
 
-        Set<String> members = groupStore.getGroup(groupId).members;
+        GroupInfo g = groupStore.getGroup(groupId);
+        if (g == null) {
+            throw new GroupNotFoundException(groupId);
+        }
+        Set<String> members = g.members;
         members.remove(this.username);
         sendMessage(message, members);
     }
@@ -450,6 +454,9 @@ class Manager implements Signal {
                 .build();
 
         final GroupInfo g = groupStore.getGroup(groupId);
+        if (g == null) {
+            throw new GroupNotFoundException(groupId);
+        }
         g.members.remove(this.username);
         groupStore.updateGroup(g);
 
@@ -464,6 +471,9 @@ class Manager implements Signal {
             g.members.add(username);
         } else {
             g = groupStore.getGroup(groupId);
+            if (g == null) {
+                throw new GroupNotFoundException(groupId);
+            }
         }
 
         if (name != null) {
@@ -623,18 +633,17 @@ class Manager implements Signal {
     }
 
     public interface ReceiveMessageHandler {
-        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, GroupInfo group);
+        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent);
     }
 
-    private GroupInfo handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
-        GroupInfo group = null;
+    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
             switch (groupInfo.getType()) {
                 case UPDATE:
-                    try {
-                        group = groupStore.getGroup(groupInfo.getGroupId());
-                    } catch (GroupNotFoundException e) {
+                    GroupInfo group;
+                    group = groupStore.getGroup(groupInfo.getGroupId());
+                    if (group == null) {
                         group = new GroupInfo(groupInfo.getGroupId());
                     }
 
@@ -663,17 +672,12 @@ class Manager implements Signal {
                     groupStore.updateGroup(group);
                     break;
                 case DELIVER:
-                    try {
-                        group = groupStore.getGroup(groupInfo.getGroupId());
-                    } catch (GroupNotFoundException e) {
-                    }
                     break;
                 case QUIT:
-                    try {
-                        group = groupStore.getGroup(groupInfo.getGroupId());
+                    group = groupStore.getGroup(groupInfo.getGroupId());
+                    if (group != null) {
                         group.members.remove(source);
                         groupStore.updateGroup(group);
-                    } catch (GroupNotFoundException e) {
                     }
                     break;
             }
@@ -692,7 +696,6 @@ class Manager implements Signal {
                 }
             }
         }
-        return group;
     }
 
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
@@ -705,7 +708,6 @@ class Manager implements Signal {
             while (true) {
                 SignalServiceEnvelope envelope;
                 SignalServiceContent content = null;
-                GroupInfo group = null;
                 try {
                     envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
                     if (!envelope.isReceipt()) {
@@ -713,13 +715,13 @@ class Manager implements Signal {
                         if (content != null) {
                             if (content.getDataMessage().isPresent()) {
                                 SignalServiceDataMessage message = content.getDataMessage().get();
-                                group = handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
+                                handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
                             }
                             if (content.getSyncMessage().isPresent()) {
                                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                                 if (syncMessage.getSent().isPresent()) {
                                     SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
-                                    group = handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
+                                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
                                 }
                                 if (syncMessage.getRequest().isPresent()) {
                                     RequestMessage rm = syncMessage.getRequest().get();
@@ -747,10 +749,8 @@ class Manager implements Signal {
                                         DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer()));
                                         DeviceGroup g;
                                         while ((g = s.read()) != null) {
-                                            GroupInfo syncGroup;
-                                            try {
-                                                syncGroup = groupStore.getGroup(g.getId());
-                                            } catch (GroupNotFoundException e) {
+                                            GroupInfo syncGroup = groupStore.getGroup(g.getId());
+                                            if (syncGroup == null) {
                                                 syncGroup = new GroupInfo(g.getId());
                                             }
                                             if (g.getName().isPresent()) {
@@ -796,7 +796,7 @@ class Manager implements Signal {
                         }
                     }
                     save();
-                    handler.handleMessage(envelope, content, group);
+                    handler.handleMessage(envelope, content);
                 } catch (TimeoutException e) {
                     if (returnOnTimeout)
                         return;
@@ -892,7 +892,7 @@ class Manager implements Signal {
             try {
                 for (GroupInfo record : groupStore.getGroups()) {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
-                            new ArrayList<>(record.members), Optional.<SignalServiceAttachmentStream>absent(), // TODO
+                            new ArrayList<>(record.members), Optional.<SignalServiceAttachmentStream>absent(), // TODO add avatar
                             record.active));
                 }
             } finally {
@@ -922,7 +922,7 @@ class Manager implements Signal {
             try {
                 for (ContactInfo record : contactStore.getContacts()) {
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
-                            Optional.<SignalServiceAttachmentStream>absent())); // TODO
+                            Optional.<SignalServiceAttachmentStream>absent())); // TODO add avatar
                 }
             } finally {
                 out.close();
@@ -945,5 +945,9 @@ class Manager implements Signal {
 
     public ContactInfo getContact(String number) {
         return contactStore.getContact(number);
+    }
+
+    public GroupInfo getGroup(byte[] groupId) {
+        return groupStore.getGroup(groupId);
     }
 }

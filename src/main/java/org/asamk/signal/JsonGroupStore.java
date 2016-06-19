@@ -25,11 +25,8 @@ public class JsonGroupStore {
         groups.put(Base64.encodeBytes(group.groupId), group);
     }
 
-    GroupInfo getGroup(byte[] groupId) throws GroupNotFoundException {
+    GroupInfo getGroup(byte[] groupId) {
         GroupInfo g = groups.get(Base64.encodeBytes(groupId));
-        if (g == null) {
-            throw new GroupNotFoundException(groupId);
-        }
         return g;
     }
 
