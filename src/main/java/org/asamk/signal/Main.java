@@ -19,7 +19,6 @@ package org.asamk.signal;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
 import org.freedesktop.dbus.DBusConnection;
@@ -41,8 +40,11 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -270,7 +272,7 @@ public class Main {
                         String messageText = ns.getString("message");
                         if (messageText == null) {
                             try {
-                                messageText = IOUtils.toString(System.in);
+                                messageText = readAll(System.in);
                             } catch (IOException e) {
                                 System.err.println("Failed to read message from stdin: " + e.getMessage());
                                 System.err.println("Aborting sending.");
@@ -641,6 +643,18 @@ public class Main {
 
     private static void handleIOException(IOException e) {
         System.err.println("Failed to send message: " + e.getMessage());
+    }
+
+    private static String readAll(InputStream in) throws IOException {
+        StringWriter output = new StringWriter();
+        byte[] buffer = new byte[4096];
+        long count = 0;
+        int n;
+        while (-1 != (n = System.in.read(buffer))) {
+            output.write(new String(buffer, 0, n, Charset.defaultCharset()));
+            count += n;
+        }
+        return output.toString();
     }
 
     private static class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
