@@ -58,6 +58,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -76,6 +77,7 @@ class Manager implements Signal {
     private final String settingsPath;
     private final String dataPath;
     private final String attachmentsPath;
+    private final String avatarsPath;
 
     private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
@@ -97,6 +99,7 @@ class Manager implements Signal {
         this.settingsPath = settingsPath;
         this.dataPath = this.settingsPath + "/data";
         this.attachmentsPath = this.settingsPath + "/attachments";
+        this.avatarsPath = this.settingsPath + "/avatars";
 
         jsonProcessot.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
         jsonProcessot.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
@@ -169,6 +172,25 @@ class Manager implements Signal {
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
         }
+        // Copy group avatars that were previously stored in the attachments folder
+        // to the new avatar folder
+        if (groupStore.groupsWithLegacyAvatarId.size() > 0) {
+            for (GroupInfo g : groupStore.groupsWithLegacyAvatarId) {
+                File avatarFile = getGroupAvatarFile(g.groupId);
+                File attachmentFile = getAttachmentFile(g.getAvatarId());
+                if (!avatarFile.exists() && attachmentFile.exists()) {
+                    try {
+                        new File(avatarsPath).mkdirs();
+                        Files.copy(attachmentFile.toPath(), avatarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    } catch (Exception e) {
+                        // Ignore
+                    }
+                }
+            }
+            groupStore.groupsWithLegacyAvatarId.clear();
+            save();
+        }
+
         JsonNode contactStoreNode = rootNode.get("contactStore");
         if (contactStoreNode != null) {
             contactStore = jsonProcessot.convertValue(contactStoreNode, JsonContactsStore.class);
@@ -402,7 +424,7 @@ class Manager implements Signal {
             SignalServiceAttachments = new ArrayList<>(attachments.size());
             for (String attachment : attachments) {
                 try {
-                    SignalServiceAttachments.add(createAttachment(attachment));
+                    SignalServiceAttachments.add(createAttachment(new File(attachment)));
                 } catch (IOException e) {
                     throw new AttachmentInvalidException(attachment, e);
                 }
@@ -411,12 +433,29 @@ class Manager implements Signal {
         return SignalServiceAttachments;
     }
 
-    private static SignalServiceAttachment createAttachment(String attachment) throws IOException {
-        File attachmentFile = new File(attachment);
+    private static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
-        String mime = Files.probeContentType(Paths.get(attachment));
+        String mime = Files.probeContentType(attachmentFile.toPath());
         return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, null);
+    }
+
+    private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
+        File file = getGroupAvatarFile(groupId);
+        if (!file.exists()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(createAttachment(file));
+    }
+
+    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(String number) throws IOException {
+        File file = getContactAvatarFile(number);
+        if (!file.exists()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(createAttachment(file));
     }
 
     @Override
@@ -497,11 +536,14 @@ class Manager implements Signal {
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.members));
 
+        File aFile = getGroupAvatarFile(g.groupId);
         if (avatarFile != null) {
+            new File(avatarsPath).mkdirs();
+            Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+        if (aFile.exists()) {
             try {
-                group.withAvatar(createAttachment(avatarFile));
-                // TODO
-                g.avatarId = 0;
+                group.withAvatar(createAttachment(aFile));
             } catch (IOException e) {
                 throw new AttachmentInvalidException(avatarFile, e);
             }
@@ -650,13 +692,10 @@ class Manager implements Signal {
                     if (groupInfo.getAvatar().isPresent()) {
                         SignalServiceAttachment avatar = groupInfo.getAvatar().get();
                         if (avatar.isPointer()) {
-                            long avatarId = avatar.asPointer().getId();
                             try {
-                                retrieveAttachment(avatar.asPointer());
-                                // TODO store group avatar in /avatar/groups folder
-                                group.avatarId = avatarId;
+                                retrieveGroupAvatarAttachment(avatar.asPointer(), group.groupId);
                             } catch (IOException | InvalidMessageException e) {
-                                System.err.println("Failed to retrieve group avatar (" + avatarId + "): " + e.getMessage());
+                                System.err.println("Failed to retrieve group avatar (" + avatar.asPointer().getId() + "): " + e.getMessage());
                             }
                         }
                     }
@@ -760,9 +799,7 @@ class Manager implements Signal {
                                             syncGroup.active = g.isActive();
 
                                             if (g.getAvatar().isPresent()) {
-                                                byte[] ava = new byte[(int) g.getAvatar().get().getLength()];
-                                                org.whispersystems.signalservice.internal.util.Util.readFully(g.getAvatar().get().getInputStream(), ava);
-                                                // TODO store group avatar in /avatar/groups folder
+                                                retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
                                             }
                                             groupStore.updateGroup(syncGroup);
                                         }
@@ -783,9 +820,7 @@ class Manager implements Signal {
                                             contactStore.updateContact(contact);
 
                                             if (c.getAvatar().isPresent()) {
-                                                byte[] ava = new byte[(int) c.getAvatar().get().getLength()];
-                                                org.whispersystems.signalservice.internal.util.Util.readFully(c.getAvatar().get().getInputStream(), ava);
-                                                // TODO store contact avatar in /avatar/contacts folder
+                                                retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
                                             }
                                         }
                                     } catch (Exception e) {
@@ -810,18 +845,48 @@ class Manager implements Signal {
         }
     }
 
+    public File getContactAvatarFile(String number) {
+        return new File(avatarsPath, "contact-" + number);
+    }
+
+    private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
+        new File(avatarsPath).mkdirs();
+        if (attachment.isPointer()) {
+            SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            return retrieveAttachment(pointer, getContactAvatarFile(number), false);
+        } else {
+            SignalServiceAttachmentStream stream = attachment.asStream();
+            return retrieveAttachment(stream, getContactAvatarFile(number));
+        }
+    }
+
+    public File getGroupAvatarFile(byte[] groupId) {
+        return new File(avatarsPath, "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
+    }
+
+    private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
+        new File(avatarsPath).mkdirs();
+        if (attachment.isPointer()) {
+            SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
+        } else {
+            SignalServiceAttachmentStream stream = attachment.asStream();
+            return retrieveAttachment(stream, getGroupAvatarFile(groupId));
+        }
+    }
+
     public File getAttachmentFile(long attachmentId) {
         return new File(attachmentsPath, attachmentId + "");
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
-
-        File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
-        InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
-
         new File(attachmentsPath).mkdirs();
-        File outputFile = getAttachmentFile(pointer.getId());
+        return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
+    }
+
+    private File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException, InvalidMessageException {
+        InputStream input = stream.getInputStream();
+
         OutputStream output = null;
         try {
             output = new FileOutputStream(outputFile);
@@ -837,14 +902,15 @@ class Manager implements Signal {
         } finally {
             if (output != null) {
                 output.close();
-                output = null;
-            }
-            if (!tmpFile.delete()) {
-                System.err.println("Failed to delete temp file: " + tmpFile);
             }
         }
-        if (pointer.getPreview().isPresent()) {
+        return outputFile;
+    }
+
+    private File retrieveAttachment(SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview) throws IOException, InvalidMessageException {
+        if (storePreview && pointer.getPreview().isPresent()) {
             File previewFile = new File(outputFile + ".preview");
+            OutputStream output = null;
             try {
                 output = new FileOutputStream(previewFile);
                 byte[] preview = pointer.getPreview().get();
@@ -856,6 +922,32 @@ class Manager implements Signal {
                 if (output != null) {
                     output.close();
                 }
+            }
+        }
+
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
+
+        File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
+        InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
+
+        OutputStream output = null;
+        try {
+            output = new FileOutputStream(outputFile);
+            byte[] buffer = new byte[4096];
+            int read;
+
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+            if (!tmpFile.delete()) {
+                System.err.println("Failed to delete temp file: " + tmpFile);
             }
         }
         return outputFile;
@@ -892,7 +984,7 @@ class Manager implements Signal {
             try {
                 for (GroupInfo record : groupStore.getGroups()) {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
-                            new ArrayList<>(record.members), Optional.<SignalServiceAttachmentStream>absent(), // TODO add avatar
+                            new ArrayList<>(record.members), createGroupAvatarAttachment(record.groupId),
                             record.active));
                 }
             } finally {
@@ -922,7 +1014,7 @@ class Manager implements Signal {
             try {
                 for (ContactInfo record : contactStore.getContacts()) {
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
-                            Optional.<SignalServiceAttachmentStream>absent())); // TODO add avatar
+                            createContactAvatarAttachment(record.number)));
                 }
             } finally {
                 out.close();

@@ -19,6 +19,8 @@ public class JsonGroupStore {
     @JsonDeserialize(using = JsonGroupStore.GroupsDeserializer.class)
     private Map<String, GroupInfo> groups = new HashMap<>();
 
+    public static List<GroupInfo> groupsWithLegacyAvatarId = new ArrayList<>();
+
     private static final ObjectMapper jsonProcessot = new ObjectMapper();
 
     void updateGroup(GroupInfo group) {
@@ -48,6 +50,10 @@ public class JsonGroupStore {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
                 GroupInfo g = jsonProcessot.treeToValue(n, GroupInfo.class);
+                // Check if a legacy avatarId exists
+                if (g.getAvatarId() != 0) {
+                    groupsWithLegacyAvatarId.add(g);
+                }
                 groups.put(Base64.encodeBytes(g.groupId), g);
             }
 

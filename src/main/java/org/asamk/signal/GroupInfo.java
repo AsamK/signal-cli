@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collection;
@@ -16,8 +17,12 @@ public class GroupInfo {
     @JsonProperty
     public Set<String> members = new HashSet<>();
 
-    @JsonProperty
-    public long avatarId;
+    private long avatarId;
+
+    @JsonIgnore
+    public long getAvatarId() {
+        return avatarId;
+    }
 
     @JsonProperty
     public boolean active;
