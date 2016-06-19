@@ -745,7 +745,7 @@ public class Main {
                 SignalServiceGroup groupInfo = message.getGroupInfo().get();
                 System.out.println("Group info:");
                 System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
-                if (groupInfo.getName().isPresent()) {
+                if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {
                     System.out.println("  Name: " + groupInfo.getName().get());
                 } else {
                     GroupInfo group = m.getGroup(groupInfo.getGroupId());
