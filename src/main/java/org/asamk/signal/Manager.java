@@ -555,7 +555,7 @@ class Manager implements Signal {
                 .asGroupMessage(group.build())
                 .build();
 
-        final Set<String> membersSend = g.members;
+        final List<String> membersSend = new ArrayList<>(g.members);
         membersSend.remove(this.username);
         sendMessage(message, membersSend);
         return g.groupId;
