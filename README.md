@@ -39,7 +39,11 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
  * Update a group
 
-          signal-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name"
+          signal-cli -u USERNAME updateGroup -g GROUP_ID -n "New group name" -a "AVATAR_IMAGE_FILE"
+
+ * Add member to a group
+
+          signal-cli -u USERNAME updateGroup -g GROUP_ID -m "NEW_MEMBER"
 
  * Leave a group
 
@@ -114,7 +118,7 @@ For legacy users, the old config directory is used as a fallback:
 ## Building
 
 This project uses [Gradle](http://gradle.org) for building and maintaining
-dependencies.
+dependencies. If you have a recent gradle version installed, you can replace `./gradlew` with `gradle` in the following steps.
 
 1. Checkout the source somewhere on your filesystem with
 
