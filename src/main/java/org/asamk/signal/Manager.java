@@ -478,9 +478,11 @@ class Manager implements Signal {
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
-        Set<String> members = g.members;
-        members.remove(this.username);
-        sendMessage(message, members);
+
+        // Don't send group message to ourself
+        final List<String> membersSend = new ArrayList<>(g.members);
+        membersSend.remove(this.username);
+        sendMessage(message, membersSend);
     }
 
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, UntrustedIdentityException {
@@ -555,6 +557,7 @@ class Manager implements Signal {
                 .asGroupMessage(group.build())
                 .build();
 
+        // Don't send group message to ourself
         final List<String> membersSend = new ArrayList<>(g.members);
         membersSend.remove(this.username);
         sendMessage(message, membersSend);
