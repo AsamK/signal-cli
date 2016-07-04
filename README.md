@@ -5,7 +5,7 @@ It is primarily intended to be used on servers to notify admins of important eve
 
 ## Installation
 
-You can [build signal-cli](#building) yourself, or use the provided binary files, which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
+You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
 
 ### Install system-wide on Linux
 ```sh
