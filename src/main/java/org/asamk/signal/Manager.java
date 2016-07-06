@@ -18,6 +18,8 @@ package org.asamk.signal;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +58,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -78,6 +83,9 @@ class Manager implements Signal {
     private final String dataPath;
     private final String attachmentsPath;
     private final String avatarsPath;
+
+    private FileChannel fileChannel;
+    private FileLock lock;
 
     private final ObjectMapper jsonProcessot = new ObjectMapper();
     private String username;
@@ -105,6 +113,8 @@ class Manager implements Signal {
         jsonProcessot.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
         jsonProcessot.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
         jsonProcessot.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        jsonProcessot.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+        jsonProcessot.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
     public String getUsername() {
@@ -141,8 +151,22 @@ class Manager implements Signal {
         return node;
     }
 
+    private void openFileChannel() throws IOException {
+        if (fileChannel != null)
+            return;
+
+        fileChannel = new RandomAccessFile(new File(getFileName()), "rw").getChannel();
+        lock = fileChannel.tryLock();
+        if (lock == null) {
+            System.err.println("Config file is in use by another instance, waiting…");
+            lock = fileChannel.lock();
+            System.err.println("Config file lock acquired.");
+        }
+    }
+
     public void load() throws IOException, InvalidKeyException {
-        JsonNode rootNode = jsonProcessot.readTree(new File(getFileName()));
+        openFileChannel();
+        JsonNode rootNode = jsonProcessot.readTree(Channels.newInputStream(fileChannel));
 
         JsonNode node = rootNode.get("deviceId");
         if (node != null) {
@@ -227,7 +251,11 @@ class Manager implements Signal {
                 .putPOJO("contactStore", contactStore)
         ;
         try {
-            jsonProcessot.writeValue(new File(getFileName()), rootNode);
+            openFileChannel();
+            fileChannel.position(0);
+            jsonProcessot.writeValue(Channels.newOutputStream(fileChannel), rootNode);
+            fileChannel.truncate(fileChannel.position());
+            fileChannel.force(false);
         } catch (Exception e) {
             System.err.println(String.format("Error saving file: %s", e.getMessage()));
         }
