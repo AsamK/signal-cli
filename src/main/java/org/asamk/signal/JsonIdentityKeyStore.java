@@ -10,10 +10,7 @@ import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.state.IdentityKeyStore;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class JsonIdentityKeyStore implements IdentityKeyStore {
 
@@ -40,10 +37,18 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
 
     @Override
     public void saveIdentity(String name, IdentityKey identityKey) {
-        saveIdentity(name, identityKey, TrustLevel.TRUSTED_UNVERIFIED);
+        saveIdentity(name, identityKey, TrustLevel.TRUSTED_UNVERIFIED, null);
     }
 
-    public void saveIdentity(String name, IdentityKey identityKey, TrustLevel trustLevel) {
+    /**
+     * Adds or updates the given identityKey for the user name and sets the trustLevel and added timestamp.
+     *
+     * @param name        User name, i.e. phone number
+     * @param identityKey The user's public key
+     * @param trustLevel
+     * @param added       Added timestamp, if null and the key is newly added, the current time is used.
+     */
+    public void saveIdentity(String name, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
         List<Identity> identities = trustedKeys.get(name);
         if (identities == null) {
             identities = new ArrayList<>();
@@ -54,10 +59,13 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                     continue;
 
                 id.trustLevel = trustLevel;
+                if (added != null) {
+                    id.added = added;
+                }
                 return;
             }
         }
-        identities.add(new Identity(identityKey, trustLevel));
+        identities.add(new Identity(identityKey, trustLevel, added != null ? added : new Date()));
     }
 
     @Override
@@ -97,7 +105,8 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                         try {
                             IdentityKey id = new IdentityKey(Base64.decode(trustedKey.get("identityKey").asText()), 0);
                             TrustLevel trustLevel = trustedKey.has("trustLevel") ? TrustLevel.fromInt(trustedKey.get("trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
-                            keyStore.saveIdentity(trustedKeyName, id, trustLevel);
+                            Date added = trustedKey.has("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp").asLong()) : new Date();
+                            keyStore.saveIdentity(trustedKeyName, id, trustLevel, added);
                         } catch (InvalidKeyException | IOException e) {
                             System.out.println(String.format("Error while decoding key for: %s", trustedKeyName));
                         }
@@ -125,6 +134,7 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                     json.writeStringField("name", trustedKey.getKey());
                     json.writeStringField("identityKey", Base64.encodeBytes(id.identityKey.serialize()));
                     json.writeNumberField("trustLevel", id.trustLevel.ordinal());
+                    json.writeNumberField("addedTimestamp", id.added.getTime());
                     json.writeEndObject();
                 }
             }
@@ -133,33 +143,30 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
         }
     }
 
-    private enum TrustLevel {
-        UNTRUSTED,
-        TRUSTED_UNVERIFIED,
-        TRUSTED_VERIFIED;
-
-        private static TrustLevel[] cachedValues = null;
-
-        public static TrustLevel fromInt(int i) {
-            if (TrustLevel.cachedValues == null) {
-                TrustLevel.cachedValues = TrustLevel.values();
-            }
-            return TrustLevel.cachedValues[i];
-        }
-    }
-
-    private class Identity {
+    public class Identity {
         IdentityKey identityKey;
         TrustLevel trustLevel;
+        Date added;
 
         public Identity(IdentityKey identityKey, TrustLevel trustLevel) {
             this.identityKey = identityKey;
             this.trustLevel = trustLevel;
+            this.added = new Date();
+        }
+
+        public Identity(IdentityKey identityKey, TrustLevel trustLevel, Date added) {
+            this.identityKey = identityKey;
+            this.trustLevel = trustLevel;
+            this.added = added;
         }
 
         public boolean isTrusted() {
             return trustLevel == TrustLevel.TRUSTED_UNVERIFIED ||
                     trustLevel == TrustLevel.TRUSTED_VERIFIED;
+        }
+
+        public String getFingerprint() {
+            return Hex.toStringCondensed(identityKey.getPublicKey().serialize());
         }
     }
 }
