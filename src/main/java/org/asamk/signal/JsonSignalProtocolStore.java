@@ -68,6 +68,10 @@ class JsonSignalProtocolStore implements SignalProtocolStore {
         identityKeyStore.saveIdentity(name, identityKey);
     }
 
+    public void saveIdentity(String name, IdentityKey identityKey, TrustLevel trustLevel) {
+        identityKeyStore.saveIdentity(name, identityKey, trustLevel, null);
+    }
+
     @Override
     public boolean isTrustedIdentity(String name, IdentityKey identityKey) {
         return identityKeyStore.isTrustedIdentity(name, identityKey);

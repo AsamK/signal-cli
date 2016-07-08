@@ -32,7 +32,6 @@ import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
-import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.Medium;
@@ -96,7 +95,7 @@ class Manager implements Signal {
 
     private boolean registered = false;
 
-    private SignalProtocolStore signalProtocolStore;
+    private JsonSignalProtocolStore signalProtocolStore;
     private SignalServiceAccountManager accountManager;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
@@ -648,7 +647,12 @@ class Manager implements Signal {
             throws IOException, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                 deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
-        messageSender.sendMessage(message);
+        try {
+            messageSender.sendMessage(message);
+        } catch (UntrustedIdentityException e) {
+            signalProtocolStore.saveIdentity(e.getE164Number(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+            throw e;
+        }
     }
 
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
@@ -670,7 +674,13 @@ class Manager implements Signal {
                     deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
             if (message.getGroupInfo().isPresent()) {
-                messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
+                try {
+                    messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
+                } catch (EncapsulatedExceptions encapsulatedExceptions) {
+                    for (UntrustedIdentityException e : encapsulatedExceptions.getUntrustedIdentityExceptions()) {
+                        signalProtocolStore.saveIdentity(e.getE164Number(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+                    }
+                }
             } else {
                 // Send to all individually, so sync messages are sent correctly
                 List<UntrustedIdentityException> untrustedIdentities = new LinkedList<>();
@@ -680,6 +690,7 @@ class Manager implements Signal {
                     try {
                         messageSender.sendMessage(address, message);
                     } catch (UntrustedIdentityException e) {
+                        signalProtocolStore.saveIdentity(e.getE164Number(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                         untrustedIdentities.add(e);
                     } catch (UnregisteredUserException e) {
                         unregisteredUsers.add(e);
@@ -705,6 +716,10 @@ class Manager implements Signal {
         SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), signalProtocolStore);
         try {
             return cipher.decrypt(envelope);
+        } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+            // TODO temporarily store message, until user has accepted the key
+            signalProtocolStore.saveIdentity(e.getName(), e.getUntrustedIdentity(), TrustLevel.UNTRUSTED);
+            throw e;
         } catch (Exception e) {
             throw e;
         }
