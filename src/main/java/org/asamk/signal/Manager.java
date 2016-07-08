@@ -274,12 +274,12 @@ class Manager implements Signal {
         return registered;
     }
 
-    public void register(boolean voiceVerication) throws IOException {
+    public void register(boolean voiceVerification) throws IOException {
         password = Util.getSecret(18);
 
         accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, USER_AGENT);
 
-        if (voiceVerication)
+        if (voiceVerification)
             accountManager.requestVoiceVerificationCode();
         else
             accountManager.requestSmsVerificationCode();
