@@ -47,8 +47,7 @@ import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
-import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.push.exceptions.*;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
@@ -489,7 +488,7 @@ class Manager implements Signal {
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
@@ -513,7 +512,7 @@ class Manager implements Signal {
         sendMessage(message, membersSend);
     }
 
-    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, UntrustedIdentityException {
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
@@ -532,7 +531,7 @@ class Manager implements Signal {
         sendMessage(message, g.members);
     }
 
-    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, UntrustedIdentityException {
+    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -594,7 +593,7 @@ class Manager implements Signal {
 
     @Override
     public void sendMessage(String message, List<String> attachments, String recipient)
-            throws EncapsulatedExceptions, AttachmentInvalidException, IOException, UntrustedIdentityException {
+            throws EncapsulatedExceptions, AttachmentInvalidException, IOException {
         List<String> recipients = new ArrayList<>(1);
         recipients.add(recipient);
         sendMessage(message, attachments, recipients);
@@ -603,7 +602,7 @@ class Manager implements Signal {
     @Override
     public void sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, UntrustedIdentityException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
@@ -614,7 +613,7 @@ class Manager implements Signal {
     }
 
     @Override
-    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
         SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage()
                 .build();
@@ -627,8 +626,6 @@ class Manager implements Signal {
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendMessage(message);
-        } catch (EncapsulatedExceptions encapsulatedExceptions) {
-            encapsulatedExceptions.printStackTrace();
         } catch (UntrustedIdentityException e) {
             e.printStackTrace();
         }
@@ -639,65 +636,74 @@ class Manager implements Signal {
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendMessage(message);
-        } catch (EncapsulatedExceptions encapsulatedExceptions) {
-            encapsulatedExceptions.printStackTrace();
         } catch (UntrustedIdentityException e) {
             e.printStackTrace();
         }
     }
 
     private void sendMessage(SignalServiceSyncMessage message)
-            throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+            throws IOException, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                 deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
         messageSender.sendMessage(message);
     }
 
     private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
-            throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+            throws EncapsulatedExceptions, IOException {
+        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
+        for (String recipient : recipients) {
+            try {
+                recipientsTS.add(getPushAddress(recipient));
+            } catch (InvalidNumberException e) {
+                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                System.err.println("Aborting sending.");
+                save();
+                return;
+            }
+        }
+
         try {
             SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                     deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
-
-            Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-            for (String recipient : recipients) {
-                try {
-                    recipientsTS.add(getPushAddress(recipient));
-                } catch (InvalidNumberException e) {
-                    System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                    System.err.println("Aborting sending.");
-                    save();
-                    return;
-                }
-            }
 
             if (message.getGroupInfo().isPresent()) {
                 messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
             } else {
                 // Send to all individually, so sync messages are sent correctly
+                List<UntrustedIdentityException> untrustedIdentities = new LinkedList<>();
+                List<UnregisteredUserException> unregisteredUsers = new LinkedList<>();
+                List<NetworkFailureException> networkExceptions = new LinkedList<>();
                 for (SignalServiceAddress address : recipientsTS) {
-                    messageSender.sendMessage(address, message);
+                    try {
+                        messageSender.sendMessage(address, message);
+                    } catch (UntrustedIdentityException e) {
+                        untrustedIdentities.add(e);
+                    } catch (UnregisteredUserException e) {
+                        unregisteredUsers.add(e);
+                    } catch (PushNetworkException e) {
+                        networkExceptions.add(new NetworkFailureException(address.getNumber(), e));
+                    }
+                }
+                if (!untrustedIdentities.isEmpty() || !unregisteredUsers.isEmpty() || !networkExceptions.isEmpty()) {
+                    throw new EncapsulatedExceptions(untrustedIdentities, unregisteredUsers, networkExceptions);
                 }
             }
-
+        } finally {
             if (message.isEndSession()) {
                 for (SignalServiceAddress recipient : recipientsTS) {
                     handleEndSession(recipient.getNumber());
                 }
             }
-        } finally {
             save();
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) {
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws NoSessionException, LegacyMessageException, InvalidVersionException, InvalidMessageException, DuplicateMessageException, InvalidKeyException, InvalidKeyIdException, org.whispersystems.libsignal.UntrustedIdentityException {
         SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), signalProtocolStore);
         try {
             return cipher.decrypt(envelope);
         } catch (Exception e) {
-            // TODO handle all exceptions
-            e.printStackTrace();
-            return null;
+            throw e;
         }
     }
 
@@ -781,7 +787,14 @@ class Manager implements Signal {
                 try {
                     envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
                     if (!envelope.isReceipt()) {
-                        content = decryptMessage(envelope);
+                        Exception exception;
+                        try {
+                            content = decryptMessage(envelope);
+                        } catch (Exception e) {
+                            exception = e;
+                            // TODO pass exception to handler instead
+                            e.printStackTrace();
+                        }
                         if (content != null) {
                             if (content.getDataMessage().isPresent()) {
                                 SignalServiceDataMessage message = content.getDataMessage().get();
@@ -798,8 +811,6 @@ class Manager implements Signal {
                                     if (rm.isContactsRequest()) {
                                         try {
                                             sendContacts();
-                                        } catch (EncapsulatedExceptions encapsulatedExceptions) {
-                                            encapsulatedExceptions.printStackTrace();
                                         } catch (UntrustedIdentityException e) {
                                             e.printStackTrace();
                                         }
@@ -807,8 +818,6 @@ class Manager implements Signal {
                                     if (rm.isGroupsRequest()) {
                                         try {
                                             sendGroups();
-                                        } catch (EncapsulatedExceptions encapsulatedExceptions) {
-                                            encapsulatedExceptions.printStackTrace();
                                         } catch (UntrustedIdentityException e) {
                                             e.printStackTrace();
                                         }
@@ -1007,7 +1016,7 @@ class Manager implements Signal {
         return false;
     }
 
-    private void sendGroups() throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+    private void sendGroups() throws IOException, UntrustedIdentityException {
         File groupsFile = File.createTempFile("multidevice-group-update", ".tmp");
 
         try {
@@ -1037,7 +1046,7 @@ class Manager implements Signal {
         }
     }
 
-    private void sendContacts() throws IOException, EncapsulatedExceptions, UntrustedIdentityException {
+    private void sendContacts() throws IOException, UntrustedIdentityException {
         File contactsFile = File.createTempFile("multidevice-contact-update", ".tmp");
 
         try {

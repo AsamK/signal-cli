@@ -12,13 +12,13 @@ import java.io.IOException;
 import java.util.List;
 
 public interface Signal extends DBusInterface {
-    void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, UntrustedIdentityException;
+    void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
 
-    void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, UntrustedIdentityException;
+    void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
 
-    void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, UntrustedIdentityException;
+    void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions;
 
-    void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException, UntrustedIdentityException;
+    void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException;
 
     class MessageReceived extends DBusSignal {
         private long timestamp;

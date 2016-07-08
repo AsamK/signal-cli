@@ -265,8 +265,6 @@ public class Main {
                             handleAssertionError(e);
                         } catch (DBusExecutionException e) {
                             handleDBusExecutionException(e);
-                        } catch (UntrustedIdentityException e) {
-                            e.printStackTrace();
                         }
                     } else {
                         String messageText = ns.getString("message");
@@ -305,8 +303,6 @@ public class Main {
                             System.exit(1);
                         } catch (DBusExecutionException e) {
                             handleDBusExecutionException(e);
-                        } catch (UntrustedIdentityException e) {
-                            e.printStackTrace();
                         }
                     }
 
@@ -385,8 +381,6 @@ public class Main {
                         handleAssertionError(e);
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
-                    } catch (UntrustedIdentityException e) {
-                        e.printStackTrace();
                     }
 
                     break;
@@ -419,8 +413,6 @@ public class Main {
                         handleGroupNotFoundException(e);
                     } catch (EncapsulatedExceptions e) {
                         handleEncapsulatedExceptions(e);
-                    } catch (UntrustedIdentityException e) {
-                        e.printStackTrace();
                     }
 
                     break;
