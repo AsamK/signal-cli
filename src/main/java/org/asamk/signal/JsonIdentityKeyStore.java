@@ -85,6 +85,16 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
         return false;
     }
 
+    public Map<String, List<Identity>> getIdentities() {
+        // TODO deep copy
+        return trustedKeys;
+    }
+
+    public List<Identity> getIdentities(String name) {
+        // TODO deep copy
+        return trustedKeys.get(name);
+    }
+
     public static class JsonIdentityKeyStoreDeserializer extends JsonDeserializer<JsonIdentityKeyStore> {
 
         @Override
@@ -165,8 +175,8 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                     trustLevel == TrustLevel.TRUSTED_VERIFIED;
         }
 
-        public String getFingerprint() {
-            return Hex.toStringCondensed(identityKey.getPublicKey().serialize());
+        public byte[] getFingerprint() {
+            return identityKey.getPublicKey().serialize();
         }
     }
 }

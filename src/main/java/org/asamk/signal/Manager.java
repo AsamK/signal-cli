@@ -1100,4 +1100,54 @@ class Manager implements Signal {
     public GroupInfo getGroup(byte[] groupId) {
         return groupStore.getGroup(groupId);
     }
+
+    public Map<String, List<JsonIdentityKeyStore.Identity>> getIdentities() {
+        return signalProtocolStore.getIdentities();
+    }
+
+    public List<JsonIdentityKeyStore.Identity> getIdentities(String number) {
+        return signalProtocolStore.getIdentities(number);
+    }
+
+    /**
+     * Trust this the identity with this fingerprint
+     *
+     * @param name        username of the identity
+     * @param fingerprint Fingerprint
+     */
+    public boolean trustIdentityVerified(String name, byte[] fingerprint) {
+        List<JsonIdentityKeyStore.Identity> ids = signalProtocolStore.getIdentities(name);
+        if (ids == null) {
+            return false;
+        }
+        for (JsonIdentityKeyStore.Identity id : ids) {
+            if (!Arrays.equals(id.identityKey.serialize(), fingerprint)) {
+                continue;
+            }
+
+            signalProtocolStore.saveIdentity(name, id.identityKey, TrustLevel.TRUSTED_VERIFIED);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Trust all keys of this identity without verification
+     *
+     * @param name username of the identity
+     */
+    public boolean trustIdentityAllKeys(String name) {
+        List<JsonIdentityKeyStore.Identity> ids = signalProtocolStore.getIdentities(name);
+        if (ids == null) {
+            return false;
+        }
+        for (JsonIdentityKeyStore.Identity id : ids) {
+            if (id.trustLevel == TrustLevel.UNTRUSTED) {
+                signalProtocolStore.saveIdentity(name, id.identityKey, TrustLevel.TRUSTED_UNVERIFIED);
+            }
+        }
+        save();
+        return true;
+    }
 }

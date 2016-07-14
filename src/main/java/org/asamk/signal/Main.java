@@ -48,6 +48,8 @@ import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class Main {
@@ -437,6 +439,65 @@ public class Main {
                     }
 
                     break;
+                case "listIdentities":
+                    if (dBusConn != null) {
+                        System.err.println("listIdentities is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    if (ns.get("number") == null) {
+                        for (Map.Entry<String, List<JsonIdentityKeyStore.Identity>> keys : m.getIdentities().entrySet()) {
+                            for (JsonIdentityKeyStore.Identity id : keys.getValue()) {
+                                System.out.println(String.format("%s: %s Added: %s Fingerprint: %s", keys.getKey(), id.trustLevel, id.added, Hex.toStringCondensed(id.getFingerprint())));
+                            }
+                        }
+                    } else {
+                        String number = ns.getString("number");
+                        for (JsonIdentityKeyStore.Identity id : m.getIdentities(number)) {
+                            System.out.println(String.format("%s: %s Added: %s Fingerprint: %s", number, id.trustLevel, id.added, Hex.toStringCondensed(id.getFingerprint())));
+                        }
+                    }
+                    break;
+                case "trust":
+                    if (dBusConn != null) {
+                        System.err.println("trust is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    String number = ns.getString("number");
+                    if (ns.getBoolean("trust_all_known_keys")) {
+                        boolean res = m.trustIdentityAllKeys(number);
+                        if (!res) {
+                            System.err.println("Failed to set the trust for this number, make sure the number is correct.");
+                            return 1;
+                        }
+                    } else {
+                        String fingerprint = ns.getString("verified_fingerprint");
+                        if (fingerprint != null) {
+                            byte[] fingerprintBytes;
+                            try {
+                                fingerprintBytes = Hex.toByteArray(fingerprint.replaceAll(" ", "").toLowerCase(Locale.ROOT));
+                            } catch (Exception e) {
+                                System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                                return 1;
+                            }
+                            boolean res = m.trustIdentityVerified(number, fingerprintBytes);
+                            if (!res) {
+                                System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                                return 1;
+                            }
+                        } else {
+                            System.err.println("You need to specify the fingerprint you have verified with -v FINGERPRINT");
+                            return 1;
+                        }
+                    }
+                    break;
                 case "daemon":
                     if (dBusConn != null) {
                         System.err.println("Stop it.");
@@ -592,6 +653,21 @@ public class Main {
         parserUpdateGroup.addArgument("-m", "--member")
                 .nargs("*")
                 .help("Specify one or more members to add to the group");
+
+        Subparser parserListIdentities = subparsers.addParser("listIdentities");
+        parserListIdentities.addArgument("-n", "--number")
+                .help("Only show identity keys for the given phone number.");
+
+        Subparser parserTrust = subparsers.addParser("trust");
+        parserTrust.addArgument("number")
+                .help("Specify the phone number, for which to set the trust.")
+                .required(true);
+        MutuallyExclusiveGroup mutTrust = parserTrust.addMutuallyExclusiveGroup();
+        mutTrust.addArgument("-a", "--trust-all-known-keys")
+                .help("Trust all known keys of this user, only use this for testing.")
+                .action(Arguments.storeTrue());
+        mutTrust.addArgument("-v", "--verified-fingerprint")
+                .help("Specify the fingerprint of the key, only use this option if you have verified the fingerprint.");
 
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
