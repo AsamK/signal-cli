@@ -464,6 +464,9 @@ class Manager implements Signal {
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
         String mime = Files.probeContentType(attachmentFile.toPath());
+        if (mime == null) {
+            mime = "application/octet-stream";
+        }
         return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, null);
     }
 
