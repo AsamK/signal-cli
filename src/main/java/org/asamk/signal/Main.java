@@ -64,6 +64,11 @@ public class Main {
             System.exit(1);
         }
 
+        int res = handleCommands(ns);
+        System.exit(res);
+    }
+
+    private static int handleCommands(Namespace ns) {
         final String username = ns.getString("username");
         Manager m;
         Signal ts;
@@ -87,8 +92,7 @@ public class Main {
                     if (dBusConn != null) {
                         dBusConn.disconnect();
                     }
-                    System.exit(3);
-                    return;
+                    return 3;
                 }
             } else {
                 String settingsPath = ns.getString("config");
@@ -109,8 +113,7 @@ public class Main {
                         m.load();
                     } catch (Exception e) {
                         System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
-                        System.exit(2);
-                        return;
+                        return 2;
                     }
                 }
             }
@@ -119,7 +122,7 @@ public class Main {
                 case "register":
                     if (dBusConn != null) {
                         System.err.println("register is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.userHasKeys()) {
                         m.createNewIdentity();
@@ -128,33 +131,33 @@ public class Main {
                         m.register(ns.getBoolean("voice"));
                     } catch (IOException e) {
                         System.err.println("Request verify error: " + e.getMessage());
-                        System.exit(3);
+                        return 3;
                     }
                     break;
                 case "verify":
                     if (dBusConn != null) {
                         System.err.println("verify is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.userHasKeys()) {
                         System.err.println("User has no keys, first call register.");
-                        System.exit(1);
+                        return 1;
                     }
                     if (m.isRegistered()) {
                         System.err.println("User registration is already verified");
-                        System.exit(1);
+                        return 1;
                     }
                     try {
                         m.verifyAccount(ns.getString("verificationCode"));
                     } catch (IOException e) {
                         System.err.println("Verify error: " + e.getMessage());
-                        System.exit(3);
+                        return 3;
                     }
                     break;
                 case "link":
                     if (dBusConn != null) {
                         System.err.println("link is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
 
                     // When linking, username is null and we always have to create keys
@@ -170,48 +173,48 @@ public class Main {
                         System.out.println("Associated with: " + m.getUsername());
                     } catch (TimeoutException e) {
                         System.err.println("Link request timed out, please try again.");
-                        System.exit(3);
+                        return 3;
                     } catch (IOException e) {
                         System.err.println("Link request error: " + e.getMessage());
-                        System.exit(3);
+                        return 3;
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
-                        System.exit(3);
+                        return 2;
                     } catch (UserAlreadyExists e) {
                         System.err.println("The user " + e.getUsername() + " already exists\nDelete \"" + e.getFileName() + "\" before trying again.");
-                        System.exit(3);
+                        return 1;
                     }
                     break;
                 case "addDevice":
                     if (dBusConn != null) {
                         System.err.println("link is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
                     try {
                         m.addDeviceLink(new URI(ns.getString("uri")));
                     } catch (IOException e) {
                         e.printStackTrace();
-                        System.exit(3);
+                        return 3;
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
-                        System.exit(2);
+                        return 2;
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
-                        System.exit(2);
+                        return 2;
                     }
                     break;
                 case "listDevices":
                     if (dBusConn != null) {
                         System.err.println("listDevices is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
                     try {
                         List<DeviceInfo> devices = m.getLinkedDevices();
@@ -223,48 +226,52 @@ public class Main {
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
-                        System.exit(3);
+                        return 3;
                     }
                     break;
                 case "removeDevice":
                     if (dBusConn != null) {
                         System.err.println("removeDevice is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
                     try {
                         int deviceId = ns.getInt("deviceId");
                         m.removeLinkedDevices(deviceId);
                     } catch (IOException e) {
                         e.printStackTrace();
-                        System.exit(3);
+                        return 3;
                     }
                     break;
                 case "send":
                     if (dBusConn == null && !m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
 
                     if (ns.getBoolean("endsession")) {
                         if (ns.getList("recipient") == null) {
                             System.err.println("No recipients given");
                             System.err.println("Aborting sending.");
-                            System.exit(1);
+                            return 1;
                         }
                         try {
                             ts.sendEndSessionMessage(ns.<String>getList("recipient"));
                         } catch (IOException e) {
                             handleIOException(e);
+                            return 3;
                         } catch (EncapsulatedExceptions e) {
                             handleEncapsulatedExceptions(e);
+                            return 3;
                         } catch (AssertionError e) {
                             handleAssertionError(e);
+                            return 1;
                         } catch (DBusExecutionException e) {
                             handleDBusExecutionException(e);
+                            return 1;
                         }
                     } else {
                         String messageText = ns.getString("message");
@@ -274,7 +281,7 @@ public class Main {
                             } catch (IOException e) {
                                 System.err.println("Failed to read message from stdin: " + e.getMessage());
                                 System.err.println("Aborting sending.");
-                                System.exit(1);
+                                return 1;
                             }
                         }
 
@@ -291,18 +298,23 @@ public class Main {
                             }
                         } catch (IOException e) {
                             handleIOException(e);
+                            return 3;
                         } catch (EncapsulatedExceptions e) {
                             handleEncapsulatedExceptions(e);
+                            return 3;
                         } catch (AssertionError e) {
                             handleAssertionError(e);
+                            return 1;
                         } catch (GroupNotFoundException e) {
                             handleGroupNotFoundException(e);
+                            return 1;
                         } catch (AttachmentInvalidException e) {
                             System.err.println("Failed to add attachment: " + e.getMessage());
                             System.err.println("Aborting sending.");
-                            System.exit(1);
+                            return 1;
                         } catch (DBusExecutionException e) {
                             handleDBusExecutionException(e);
+                            return 1;
                         }
                     }
 
@@ -330,18 +342,19 @@ public class Main {
                             });
                         } catch (DBusException e) {
                             e.printStackTrace();
+                            return 1;
                         }
                         while (true) {
                             try {
                                 Thread.sleep(10000);
                             } catch (InterruptedException e) {
-                                System.exit(0);
+                                return 0;
                             }
                         }
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
                     int timeout = 5;
                     if (ns.getInt("timeout") != null) {
@@ -356,42 +369,47 @@ public class Main {
                         m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
                     } catch (IOException e) {
                         System.err.println("Error while receiving messages: " + e.getMessage());
-                        System.exit(3);
+                        return 3;
                     } catch (AssertionError e) {
                         handleAssertionError(e);
+                        return 1;
                     }
                     break;
                 case "quitGroup":
                     if (dBusConn != null) {
                         System.err.println("quitGroup is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
 
                     try {
                         m.sendQuitGroupMessage(decodeGroupId(ns.getString("group")));
                     } catch (IOException e) {
                         handleIOException(e);
+                        return 3;
                     } catch (EncapsulatedExceptions e) {
                         handleEncapsulatedExceptions(e);
+                        return 3;
                     } catch (AssertionError e) {
                         handleAssertionError(e);
+                        return 1;
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
+                        return 1;
                     }
 
                     break;
                 case "updateGroup":
                     if (dBusConn != null) {
                         System.err.println("updateGroup is not yet implemented via dbus");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
 
                     try {
@@ -405,25 +423,28 @@ public class Main {
                         }
                     } catch (IOException e) {
                         handleIOException(e);
+                        return 3;
                     } catch (AttachmentInvalidException e) {
                         System.err.println("Failed to add avatar attachment for group\": " + e.getMessage());
                         System.err.println("Aborting sending.");
-                        System.exit(1);
+                        return 1;
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
+                        return 1;
                     } catch (EncapsulatedExceptions e) {
                         handleEncapsulatedExceptions(e);
+                        return 3;
                     }
 
                     break;
                 case "daemon":
                     if (dBusConn != null) {
                         System.err.println("Stop it.");
-                        System.exit(1);
+                        return 1;
                     }
                     if (!m.isRegistered()) {
                         System.err.println("User is not registered.");
-                        System.exit(1);
+                        return 1;
                     }
                     DBusConnection conn = null;
                     try {
@@ -439,15 +460,16 @@ public class Main {
                             conn.requestBusName(SIGNAL_BUSNAME);
                         } catch (DBusException e) {
                             e.printStackTrace();
-                            System.exit(3);
+                            return 2;
                         }
                         try {
                             m.receiveMessages(3600, false, new DbusReceiveMessageHandler(m, conn));
                         } catch (IOException e) {
                             System.err.println("Error while receiving messages: " + e.getMessage());
-                            System.exit(3);
+                            return 3;
                         } catch (AssertionError e) {
                             handleAssertionError(e);
+                            return 1;
                         }
                     } finally {
                         if (conn != null) {
@@ -457,7 +479,7 @@ public class Main {
 
                     break;
             }
-            System.exit(0);
+            return 0;
         } finally {
             if (dBusConn != null) {
                 dBusConn.disconnect();
@@ -468,13 +490,11 @@ public class Main {
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
         System.err.println("Failed to send to group: " + e.getMessage());
         System.err.println("Aborting sending.");
-        System.exit(1);
     }
 
     private static void handleDBusExecutionException(DBusExecutionException e) {
         System.err.println("Cannot connect to dbus: " + e.getMessage());
         System.err.println("Aborting.");
-        System.exit(1);
     }
 
     private static byte[] decodeGroupId(String groupId) {
@@ -617,7 +637,6 @@ public class Main {
         System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
         e.printStackTrace();
         System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
-        System.exit(1);
     }
 
     private static void handleEncapsulatedExceptions(EncapsulatedExceptions e) {
