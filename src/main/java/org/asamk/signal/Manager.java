@@ -60,11 +60,16 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static java.nio.file.attribute.PosixFilePermission.*;
 
 class Manager implements Signal {
     private final static String URL = "https://textsecure-service.whispersystems.org";
@@ -124,8 +129,27 @@ class Manager implements Signal {
     }
 
     public String getFileName() {
-        new File(dataPath).mkdirs();
         return dataPath + "/" + username;
+    }
+
+    private static void createPrivateDirectories(String path) throws IOException {
+        final Path file = new File(path).toPath();
+        try {
+            Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE);
+            Files.createDirectories(file, PosixFilePermissions.asFileAttribute(perms));
+        } catch (UnsupportedOperationException e) {
+            Files.createDirectories(file);
+        }
+    }
+
+    private static void createPrivateFile(String path) throws IOException {
+        final Path file = new File(path).toPath();
+        try {
+            Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE);
+            Files.createFile(file, PosixFilePermissions.asFileAttribute(perms));
+        } catch (UnsupportedOperationException e) {
+            Files.createFile(file);
+        }
     }
 
     public boolean userExists() {
@@ -153,6 +177,10 @@ class Manager implements Signal {
         if (fileChannel != null)
             return;
 
+        createPrivateDirectories(dataPath);
+        if (!new File(getFileName()).exists()) {
+            createPrivateFile(getFileName());
+        }
         fileChannel = new RandomAccessFile(new File(getFileName()), "rw").getChannel();
         lock = fileChannel.tryLock();
         if (lock == null) {
@@ -202,7 +230,7 @@ class Manager implements Signal {
                 File attachmentFile = getAttachmentFile(g.getAvatarId());
                 if (!avatarFile.exists() && attachmentFile.exists()) {
                     try {
-                        new File(avatarsPath).mkdirs();
+                        createPrivateDirectories(avatarsPath);
                         Files.copy(attachmentFile.toPath(), avatarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     } catch (Exception e) {
                         // Ignore
@@ -569,7 +597,7 @@ class Manager implements Signal {
 
         File aFile = getGroupAvatarFile(g.groupId);
         if (avatarFile != null) {
-            new File(avatarsPath).mkdirs();
+            createPrivateDirectories(avatarsPath);
             Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         if (aFile.exists()) {
@@ -908,7 +936,7 @@ class Manager implements Signal {
     }
 
     private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
-        new File(avatarsPath).mkdirs();
+        createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getContactAvatarFile(number), false);
@@ -923,7 +951,7 @@ class Manager implements Signal {
     }
 
     private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
-        new File(avatarsPath).mkdirs();
+        createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
@@ -938,7 +966,7 @@ class Manager implements Signal {
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        new File(attachmentsPath).mkdirs();
+        createPrivateDirectories(attachmentsPath);
         return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
     }
 
