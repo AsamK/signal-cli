@@ -310,6 +310,9 @@ public class Main {
                         } catch (GroupNotFoundException e) {
                             handleGroupNotFoundException(e);
                             return 1;
+                        } catch (NotAGroupMemberException e) {
+                            handleNotAGroupMemberException(e);
+                            return 1;
                         } catch (AttachmentInvalidException e) {
                             System.err.println("Failed to add attachment: " + e.getMessage());
                             System.err.println("Aborting sending.");
@@ -401,6 +404,9 @@ public class Main {
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
                         return 1;
+                    } catch (NotAGroupMemberException e) {
+                        handleNotAGroupMemberException(e);
+                        return 1;
                     }
 
                     break;
@@ -432,6 +438,9 @@ public class Main {
                         return 1;
                     } catch (GroupNotFoundException e) {
                         handleGroupNotFoundException(e);
+                        return 1;
+                    } catch (NotAGroupMemberException e) {
+                        handleNotAGroupMemberException(e);
                         return 1;
                     } catch (EncapsulatedExceptions e) {
                         handleEncapsulatedExceptions(e);
@@ -552,6 +561,13 @@ public class Main {
         System.err.println("Failed to send to group: " + e.getMessage());
         System.err.println("Aborting sending.");
     }
+
+    private static void handleNotAGroupMemberException(NotAGroupMemberException e) {
+        System.err.println("Failed to send to group: " + e.getMessage());
+        System.err.println("Update the group on another device to readd the user to this group.");
+        System.err.println("Aborting sending.");
+    }
+
 
     private static void handleDBusExecutionException(DBusExecutionException e) {
         System.err.println("Cannot connect to dbus: " + e.getMessage());

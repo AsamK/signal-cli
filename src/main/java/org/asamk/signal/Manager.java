@@ -515,6 +515,19 @@ class Manager implements Signal {
         return Optional.of(createAttachment(file));
     }
 
+    private GroupInfo getGroupForSending(byte[] groupId) throws GroupNotFoundException, NotAGroupMemberException {
+        GroupInfo g = groupStore.getGroup(groupId);
+        if (g == null) {
+            throw new GroupNotFoundException(groupId);
+        }
+        for (String member : g.members) {
+            if (member.equals(this.username)) {
+                return g;
+            }
+        }
+        throw new NotAGroupMemberException(groupId, g.name);
+    }
+
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
@@ -531,10 +544,7 @@ class Manager implements Signal {
         }
         SignalServiceDataMessage message = messageBuilder.build();
 
-        GroupInfo g = groupStore.getGroup(groupId);
-        if (g == null) {
-            throw new GroupNotFoundException(groupId);
-        }
+        final GroupInfo g = getGroupForSending(groupId);
 
         // Don't send group message to ourself
         final List<String> membersSend = new ArrayList<>(g.members);
@@ -551,10 +561,7 @@ class Manager implements Signal {
                 .asGroupMessage(group)
                 .build();
 
-        final GroupInfo g = groupStore.getGroup(groupId);
-        if (g == null) {
-            throw new GroupNotFoundException(groupId);
-        }
+        final GroupInfo g = getGroupForSending(groupId);
         g.members.remove(this.username);
         groupStore.updateGroup(g);
 
@@ -568,10 +575,7 @@ class Manager implements Signal {
             g = new GroupInfo(Util.getSecretBytes(16));
             g.members.add(username);
         } else {
-            g = groupStore.getGroup(groupId);
-            if (g == null) {
-                throw new GroupNotFoundException(groupId);
-            }
+            g = getGroupForSending(groupId);
         }
 
         if (name != null) {
