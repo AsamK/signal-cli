@@ -44,6 +44,7 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.multidevice.*;
+import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.api.push.exceptions.*;
@@ -568,6 +569,18 @@ class Manager implements Signal {
         sendMessage(message, g.members);
     }
 
+    private static String join(CharSequence separator, Iterable<? extends CharSequence> list) {
+        StringBuilder buf = new StringBuilder();
+        for (CharSequence str : list) {
+            if (buf.length() > 0) {
+                buf.append(separator);
+            }
+            buf.append(str);
+        }
+
+        return buf.toString();
+    }
+
     public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         GroupInfo g;
         if (groupId == null) {
@@ -583,14 +596,30 @@ class Manager implements Signal {
         }
 
         if (members != null) {
+            Set<String> newMembers = new HashSet<>();
             for (String member : members) {
                 try {
-                    g.members.add(canonicalizeNumber(member));
+                    member = canonicalizeNumber(member);
                 } catch (InvalidNumberException e) {
                     System.err.println("Failed to add member \"" + member + "\" to group: " + e.getMessage());
                     System.err.println("Aborting…");
                     System.exit(1);
                 }
+                if (g.members.contains(member)) {
+                    continue;
+                }
+                newMembers.add(member);
+                g.members.add(member);
+            }
+            final List<ContactTokenDetails> contacts = accountManager.getContacts(newMembers);
+            if (contacts.size() != newMembers.size()) {
+                // Some of the new members are not registered on Signal
+                for (ContactTokenDetails contact : contacts) {
+                    newMembers.remove(contact.getNumber());
+                }
+                System.err.println("Failed to add members " + join(", ", newMembers) + " to group: Not registered on Signal");
+                System.err.println("Aborting…");
+                System.exit(1);
             }
         }
 
