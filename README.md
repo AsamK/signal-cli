@@ -17,7 +17,7 @@ sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 
 ## Usage
 
-usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-system] {link,addDevice,listDevices,removeDevice,register,verify,send,quitGroup,updateGroup,receive,daemon} ...
+usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-system] {link,addDevice,listDevices,removeDevice,register,verify,send,quitGroup,updateGroup,listIdentities,trust,receive,daemon} ...
 
 * Register a number (with SMS verification)
 
@@ -85,6 +85,24 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
           signal-cli -u USERNAME listDevices
 
           signal-cli -u USERNAME removeDevice -d DEVICE_ID
+
+* Manage trusted keys
+
+ * View all known keys
+
+          signal-cli -u USERNAME listIdentities
+
+ * View known keys of one number
+
+          signal-cli -u USERNAME listIdentities -n NUMBER
+
+ * Trust new key, after having verified it
+
+          signal-cli -u USERNAME trust -v FINGER_PRINT NUMBER
+
+ * Trust new key, without having verified it. Only use this if you don't care about security
+
+          signal-cli -u USERNAME trust -a NUMBER
 
 ## DBus service
 
