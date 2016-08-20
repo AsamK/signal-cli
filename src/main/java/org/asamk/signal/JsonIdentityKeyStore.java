@@ -58,7 +58,9 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
                 if (!id.identityKey.equals(identityKey))
                     continue;
 
-                id.trustLevel = trustLevel;
+                if (id.trustLevel.compareTo(trustLevel) < 0) {
+                    id.trustLevel = trustLevel;
+                }
                 if (added != null) {
                     id.added = added;
                 }
