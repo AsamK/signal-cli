@@ -768,7 +768,7 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
             SignalServiceAddress source = envelope.getSourceAddress();
             ContactInfo sourceContact = m.getContact(source.getNumber());
             System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
@@ -780,6 +780,16 @@ public class Main {
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
             } else if (envelope.isSignalMessage() | envelope.isPreKeySignalMessage()) {
+                if (exception != null) {
+                    if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
+                        org.whispersystems.libsignal.UntrustedIdentityException e = (org.whispersystems.libsignal.UntrustedIdentityException) exception;
+                        System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
+                        System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getName() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getName() + "' to mark it as trusted");
+                        System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getName() + "' to trust it without verification");
+                    } else {
+                        System.out.println("Exception: " + exception.getMessage() + " (" + exception.getClass().getSimpleName() + ")");
+                    }
+                }
                 if (content == null) {
                     System.out.println("Failed to decrypt message.");
                 } else {
@@ -904,8 +914,8 @@ public class Main {
         }
 
         @Override
-        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
-            super.handleMessage(envelope, content);
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
+            super.handleMessage(envelope, content, exception);
 
             if (!envelope.isReceipt() && content != null && content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();

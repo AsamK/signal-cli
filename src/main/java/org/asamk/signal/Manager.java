@@ -133,6 +133,20 @@ class Manager implements Signal {
         return dataPath + "/" + username;
     }
 
+    private String getMessageCachePath() {
+        return this.dataPath + "/" + username + ".d/msg-cache";
+    }
+
+    private String getMessageCachePath(String sender) {
+        return getMessageCachePath() + "/" + sender.replace("/", "_");
+    }
+
+    private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
+        String cachePath = getMessageCachePath(sender);
+        createPrivateDirectories(cachePath);
+        return new File(cachePath + "/" + now + "_" + timestamp);
+    }
+
     private static void createPrivateDirectories(String path) throws IOException {
         final Path file = new File(path).toPath();
         try {
@@ -778,10 +792,7 @@ class Manager implements Signal {
         try {
             return cipher.decrypt(envelope);
         } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
-            // TODO temporarily store message, until user has accepted the key
             signalProtocolStore.saveIdentity(e.getName(), e.getUntrustedIdentity(), TrustLevel.UNTRUSTED);
-            throw e;
-        } catch (Exception e) {
             throw e;
         }
     }
@@ -791,7 +802,7 @@ class Manager implements Signal {
     }
 
     public interface ReceiveMessageHandler {
-        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent);
+        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, Throwable e);
     }
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
@@ -863,104 +874,154 @@ class Manager implements Signal {
             while (true) {
                 SignalServiceEnvelope envelope;
                 SignalServiceContent content = null;
+                Exception exception = null;
+                final long now = new Date().getTime();
                 try {
-                    envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS);
-                    if (!envelope.isReceipt()) {
-                        Exception exception;
-                        try {
-                            content = decryptMessage(envelope);
-                        } catch (Exception e) {
-                            exception = e;
-                            // TODO pass exception to handler instead
-                            e.printStackTrace();
-                        }
-                        if (content != null) {
-                            if (content.getDataMessage().isPresent()) {
-                                SignalServiceDataMessage message = content.getDataMessage().get();
-                                handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
-                            }
-                            if (content.getSyncMessage().isPresent()) {
-                                SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
-                                if (syncMessage.getSent().isPresent()) {
-                                    SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
-                                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
-                                }
-                                if (syncMessage.getRequest().isPresent()) {
-                                    RequestMessage rm = syncMessage.getRequest().get();
-                                    if (rm.isContactsRequest()) {
-                                        try {
-                                            sendContacts();
-                                        } catch (UntrustedIdentityException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                    if (rm.isGroupsRequest()) {
-                                        try {
-                                            sendGroups();
-                                        } catch (UntrustedIdentityException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                }
-                                if (syncMessage.getGroups().isPresent()) {
-                                    try {
-                                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer()));
-                                        DeviceGroup g;
-                                        while ((g = s.read()) != null) {
-                                            GroupInfo syncGroup = groupStore.getGroup(g.getId());
-                                            if (syncGroup == null) {
-                                                syncGroup = new GroupInfo(g.getId());
-                                            }
-                                            if (g.getName().isPresent()) {
-                                                syncGroup.name = g.getName().get();
-                                            }
-                                            syncGroup.members.addAll(g.getMembers());
-                                            syncGroup.active = g.isActive();
-
-                                            if (g.getAvatar().isPresent()) {
-                                                retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
-                                            }
-                                            groupStore.updateGroup(syncGroup);
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if (syncMessage.getContacts().isPresent()) {
-                                    try {
-                                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
-                                        DeviceContact c;
-                                        while ((c = s.read()) != null) {
-                                            ContactInfo contact = new ContactInfo();
-                                            contact.number = c.getNumber();
-                                            if (c.getName().isPresent()) {
-                                                contact.name = c.getName().get();
-                                            }
-                                            contactStore.updateContact(contact);
-
-                                            if (c.getAvatar().isPresent()) {
-                                                retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
+                    envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS, new SignalServiceMessagePipe.MessagePipeCallback() {
+                        @Override
+                        public void onMessage(SignalServiceEnvelope envelope) {
+                            // store message on disk, before acknowledging receipt to the server
+                            try {
+                                File cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
+                                storeEnvelope(envelope, cacheFile);
+                            } catch (IOException e) {
+                                System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
                             }
                         }
-                    }
-                    save();
-                    handler.handleMessage(envelope, content);
+                    });
                 } catch (TimeoutException e) {
                     if (returnOnTimeout)
                         return;
+                    continue;
                 } catch (InvalidVersionException e) {
                     System.err.println("Ignoring error: " + e.getMessage());
+                    continue;
+                }
+                if (!envelope.isReceipt()) {
+                    try {
+                        content = decryptMessage(envelope);
+                    } catch (Exception e) {
+                        exception = e;
+                    }
+                    handleMessage(envelope, content);
+                }
+                save();
+                handler.handleMessage(envelope, content, exception);
+                if (exception == null || !(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
+                    try {
+                        File cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
+                        cacheFile.delete();
+                    } catch (IOException e) {
+                        // Ignoring
+                        return;
+                    }
                 }
             }
         } finally {
             if (messagePipe != null)
                 messagePipe.shutdown();
+        }
+    }
+
+    private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        if (content != null) {
+            if (content.getDataMessage().isPresent()) {
+                SignalServiceDataMessage message = content.getDataMessage().get();
+                handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
+            }
+            if (content.getSyncMessage().isPresent()) {
+                SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
+                if (syncMessage.getSent().isPresent()) {
+                    SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
+                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
+                }
+                if (syncMessage.getRequest().isPresent()) {
+                    RequestMessage rm = syncMessage.getRequest().get();
+                    if (rm.isContactsRequest()) {
+                        try {
+                            sendContacts();
+                        } catch (UntrustedIdentityException | IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (rm.isGroupsRequest()) {
+                        try {
+                            sendGroups();
+                        } catch (UntrustedIdentityException | IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (syncMessage.getGroups().isPresent()) {
+                    try {
+                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer()));
+                        DeviceGroup g;
+                        while ((g = s.read()) != null) {
+                            GroupInfo syncGroup = groupStore.getGroup(g.getId());
+                            if (syncGroup == null) {
+                                syncGroup = new GroupInfo(g.getId());
+                            }
+                            if (g.getName().isPresent()) {
+                                syncGroup.name = g.getName().get();
+                            }
+                            syncGroup.members.addAll(g.getMembers());
+                            syncGroup.active = g.isActive();
+
+                            if (g.getAvatar().isPresent()) {
+                                retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
+                            }
+                            groupStore.updateGroup(syncGroup);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (syncMessage.getContacts().isPresent()) {
+                    try {
+                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
+                        DeviceContact c;
+                        while ((c = s.read()) != null) {
+                            ContactInfo contact = new ContactInfo();
+                            contact.number = c.getNumber();
+                            if (c.getName().isPresent()) {
+                                contact.name = c.getName().get();
+                            }
+                            contactStore.updateContact(contact);
+
+                            if (c.getAvatar().isPresent()) {
+                                retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
+        try (FileOutputStream f = new FileOutputStream(file)) {
+            DataOutputStream out = new DataOutputStream(f);
+            out.writeInt(1); // version
+            out.writeInt(envelope.getType());
+            out.writeUTF(envelope.getSource());
+            out.writeInt(envelope.getSourceDevice());
+            out.writeUTF(envelope.getRelay());
+            out.writeLong(envelope.getTimestamp());
+            if (envelope.hasContent()) {
+                out.writeInt(envelope.getContent().length);
+                out.write(envelope.getContent());
+            } else {
+                out.writeInt(0);
+            }
+            if (envelope.hasLegacyMessage()) {
+                out.writeInt(envelope.getLegacyMessage().length);
+                out.write(envelope.getLegacyMessage());
+            } else {
+                out.writeInt(0);
+            }
+            out.close();
         }
     }
 
