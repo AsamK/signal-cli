@@ -864,7 +864,49 @@ class Manager implements Signal {
         }
     }
 
+    public void retryFailedReceivedMessages(ReceiveMessageHandler handler) {
+        final File cachePath = new File(getMessageCachePath());
+        if (!cachePath.exists()) {
+            return;
+        }
+        for (final File dir : cachePath.listFiles()) {
+            if (!dir.isDirectory()) {
+                continue;
+            }
+
+            String sender = dir.getName();
+            for (final File fileEntry : dir.listFiles()) {
+                if (!fileEntry.isFile()) {
+                    continue;
+                }
+                SignalServiceEnvelope envelope;
+                try {
+                    envelope = loadEnvelope(fileEntry);
+                    if (envelope == null) {
+                        continue;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+                SignalServiceContent content = null;
+                if (!envelope.isReceipt()) {
+                    try {
+                        content = decryptMessage(envelope);
+                    } catch (Exception e) {
+                        continue;
+                    }
+                    handleMessage(envelope, content);
+                }
+                save();
+                handler.handleMessage(envelope, content, null);
+                fileEntry.delete();
+            }
+        }
+    }
+
     public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
+        retryFailedReceivedMessages(handler);
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
         SignalServiceMessagePipe messagePipe = null;
 
@@ -997,6 +1039,34 @@ class Manager implements Signal {
                     }
                 }
             }
+        }
+    }
+
+    private SignalServiceEnvelope loadEnvelope(File file) throws IOException {
+        try (FileInputStream f = new FileInputStream(file)) {
+            DataInputStream in = new DataInputStream(f);
+            int version = in.readInt();
+            if (version != 1) {
+                return null;
+            }
+            int type = in.readInt();
+            String source = in.readUTF();
+            int sourceDevice = in.readInt();
+            String relay = in.readUTF();
+            long timestamp = in.readLong();
+            byte[] content = null;
+            int contentLen = in.readInt();
+            if (contentLen > 0) {
+                content = new byte[contentLen];
+                in.readFully(content);
+            }
+            byte[] legacyMessage = null;
+            int legacyMessageLen = in.readInt();
+            if (legacyMessageLen > 0) {
+                legacyMessage = new byte[legacyMessageLen];
+                in.readFully(legacyMessage);
+            }
+            return new SignalServiceEnvelope(type, source, sourceDevice, relay, timestamp, legacyMessage, content);
         }
     }
 
