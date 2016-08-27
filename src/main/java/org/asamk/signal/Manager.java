@@ -1017,6 +1017,9 @@ class Manager implements Signal {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    if (syncMessage.getBlockedList().isPresent()) {
+                        // TODO store list of blocked numbers
+                    }
                 }
                 if (syncMessage.getContacts().isPresent()) {
                     try {
@@ -1027,6 +1030,9 @@ class Manager implements Signal {
                             contact.number = c.getNumber();
                             if (c.getName().isPresent()) {
                                 contact.name = c.getName().get();
+                            }
+                            if (c.getColor().isPresent()) {
+                                contact.color = c.getColor().get();
                             }
                             contactStore.updateContact(contact);
 
@@ -1264,7 +1270,7 @@ class Manager implements Signal {
             try {
                 for (ContactInfo record : contactStore.getContacts()) {
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
-                            createContactAvatarAttachment(record.number)));
+                            createContactAvatarAttachment(record.number), Optional.fromNullable(record.color)));
                 }
             } finally {
                 out.close();

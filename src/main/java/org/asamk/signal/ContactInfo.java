@@ -8,4 +8,7 @@ public class ContactInfo {
 
     @JsonProperty
     public String number;
+
+    @JsonProperty
+    public String color;
 }

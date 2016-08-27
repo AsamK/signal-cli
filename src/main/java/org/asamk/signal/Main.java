@@ -28,10 +28,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
-import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
@@ -837,8 +834,19 @@ public class Main {
                                 to = "Unknown";
                             }
                             System.out.println("To: " + to + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
+                            if (sentTranscriptMessage.getExpirationStartTimestamp() > 0) {
+                                System.out.println("Expiration started at: " + sentTranscriptMessage.getExpirationStartTimestamp());
+                            }
                             SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
                             handleSignalServiceDataMessage(message);
+                        }
+                        if (syncMessage.getBlockedList().isPresent()) {
+                            System.out.println("Received sync message with block list");
+                            System.out.println("Blocked numbers:");
+                            final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
+                            for (String number : blockedList.getNumbers()) {
+                                System.out.println(" - " + number);
+                            }
                         }
                     }
                 }
@@ -881,6 +889,12 @@ public class Main {
             }
             if (message.isEndSession()) {
                 System.out.println("Is end session");
+            }
+            if (message.isExpirationUpdate()) {
+                System.out.println("Is Expiration update: " + message.isExpirationUpdate());
+            }
+            if (message.getExpiresInSeconds() > 0) {
+                System.out.println("Expires in: " + message.getExpiresInSeconds() + " seconds");
             }
 
             if (message.getAttachments().isPresent()) {
