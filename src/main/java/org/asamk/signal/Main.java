@@ -43,16 +43,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.Security;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 public class Main {
 
     public static final String SIGNAL_BUSNAME = "org.asamk.Signal";
     public static final String SIGNAL_OBJECTPATH = "/org/asamk/Signal";
+
+    private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
@@ -327,8 +328,8 @@ public class Main {
                             dBusConn.addSigHandler(Signal.MessageReceived.class, new DBusSigHandler<Signal.MessageReceived>() {
                                 @Override
                                 public void handle(Signal.MessageReceived s) {
-                                    System.out.print(String.format("Envelope from: %s\nTimestamp: %d\nBody: %s\n",
-                                            s.getSender(), s.getTimestamp(), s.getMessage()));
+                                    System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
+                                            s.getSender(), formatTimestamp(s.getTimestamp()), s.getMessage()));
                                     if (s.getGroupId().length > 0) {
                                         System.out.println("Group info:");
                                         System.out.println("  Id: " + Base64.encodeBytes(s.getGroupId()));
@@ -772,7 +773,7 @@ public class Main {
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
-            System.out.println("Timestamp: " + envelope.getTimestamp());
+            System.out.println("Timestamp: " + formatTimestamp(envelope.getTimestamp()));
 
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
@@ -810,7 +811,7 @@ public class Main {
                             System.out.println("Received sync read messages list");
                             for (ReadMessage rm : syncMessage.getRead().get()) {
                                 ContactInfo fromContact = m.getContact(rm.getSender());
-                                System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + rm.getTimestamp());
+                                System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + formatTimestamp(rm.getTimestamp()));
                             }
                         }
                         if (syncMessage.getRequest().isPresent()) {
@@ -833,9 +834,9 @@ public class Main {
                             } else {
                                 to = "Unknown";
                             }
-                            System.out.println("To: " + to + " , Message timestamp: " + sentTranscriptMessage.getTimestamp());
+                            System.out.println("To: " + to + " , Message timestamp: " + formatTimestamp(sentTranscriptMessage.getTimestamp()));
                             if (sentTranscriptMessage.getExpirationStartTimestamp() > 0) {
-                                System.out.println("Expiration started at: " + sentTranscriptMessage.getExpirationStartTimestamp());
+                                System.out.println("Expiration started at: " + formatTimestamp(sentTranscriptMessage.getExpirationStartTimestamp()));
                             }
                             SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
                             handleSignalServiceDataMessage(message);
@@ -857,7 +858,7 @@ public class Main {
         }
 
         private void handleSignalServiceDataMessage(SignalServiceDataMessage message) {
-            System.out.println("Message timestamp: " + message.getTimestamp());
+            System.out.println("Message timestamp: " + formatTimestamp(message.getTimestamp()));
 
             if (message.getBody().isPresent()) {
                 System.out.println("Body: " + message.getBody().get());
@@ -961,5 +962,12 @@ public class Main {
             }
         }
 
+    }
+
+    private static String formatTimestamp(long timestamp) {
+        Date date = new Date(timestamp);
+        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        df.setTimeZone(tzUTC);
+        return timestamp + " (" + df.format(date) + ")";
     }
 }
