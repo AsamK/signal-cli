@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.whispersystems:signal-service-java:2.3.0_fetchMessages_provisioning'
+    compile 'org.whispersystems:signal-service-java:2.3.1_fetchMessages_provisioning'
     compile 'org.bouncycastle:bcprov-jdk15on:1.55'
     compile 'net.sourceforge.argparse4j:argparse4j:0.7.0'
     compile 'org.freedesktop.dbus:dbus-java:2.7.0'
