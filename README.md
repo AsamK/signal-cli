@@ -8,8 +8,9 @@ It is primarily intended to be used on servers to notify admins of important eve
 You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
 
 ### Install system-wide on Linux
+See [latest version](https://github.com/AsamK/signal-cli/releases).
 ```sh
-export VERSION=<latest version, e.g. "0.4.0">
+export VERSION=<latest version, format "x.y.z">
 wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
