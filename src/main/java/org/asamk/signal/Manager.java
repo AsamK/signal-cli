@@ -31,6 +31,8 @@ import org.whispersystems.libsignal.*;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
+import org.whispersystems.libsignal.fingerprint.Fingerprint;
+import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.KeyHelper;
@@ -123,6 +125,10 @@ class Manager implements Signal {
 
     public String getUsername() {
         return username;
+    }
+
+    private IdentityKey getIdentity() {
+        return signalProtocolStore.getIdentityKeyPair().getPublicKey();
     }
 
     public int getDeviceId() {
@@ -1331,6 +1337,29 @@ class Manager implements Signal {
     }
 
     /**
+     * Trust this the identity with this safety number
+     *
+     * @param name         username of the identity
+     * @param safetyNumber Safety number
+     */
+    public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) {
+        List<JsonIdentityKeyStore.Identity> ids = signalProtocolStore.getIdentities(name);
+        if (ids == null) {
+            return false;
+        }
+        for (JsonIdentityKeyStore.Identity id : ids) {
+            if (!safetyNumber.equals(computeSafetyNumber(name, id.identityKey))) {
+                continue;
+            }
+
+            signalProtocolStore.saveIdentity(name, id.identityKey, TrustLevel.TRUSTED_VERIFIED);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Trust all keys of this identity without verification
      *
      * @param name username of the identity
@@ -1347,5 +1376,10 @@ class Manager implements Signal {
         }
         save();
         return true;
+    }
+
+    public String computeSafetyNumber(String theirUsername, IdentityKey theirIdentityKey) {
+        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(username, getIdentity(), theirUsername, theirIdentityKey);
+        return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 }

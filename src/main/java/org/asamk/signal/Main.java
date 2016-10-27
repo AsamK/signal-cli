@@ -458,13 +458,13 @@ public class Main {
                     if (ns.get("number") == null) {
                         for (Map.Entry<String, List<JsonIdentityKeyStore.Identity>> keys : m.getIdentities().entrySet()) {
                             for (JsonIdentityKeyStore.Identity id : keys.getValue()) {
-                                System.out.println(String.format("%s: %s Added: %s Fingerprint: %s", keys.getKey(), id.trustLevel, id.added, Hex.toStringCondensed(id.getFingerprint())));
+                                printIdentityFingerprint(m, keys.getKey(), id);
                             }
                         }
                     } else {
                         String number = ns.getString("number");
                         for (JsonIdentityKeyStore.Identity id : m.getIdentities(number)) {
-                            System.out.println(String.format("%s: %s Added: %s Fingerprint: %s", number, id.trustLevel, id.added, Hex.toStringCondensed(id.getFingerprint())));
+                            printIdentityFingerprint(m, number, id);
                         }
                     }
                     break;
@@ -487,16 +487,28 @@ public class Main {
                     } else {
                         String fingerprint = ns.getString("verified_fingerprint");
                         if (fingerprint != null) {
-                            byte[] fingerprintBytes;
-                            try {
-                                fingerprintBytes = Hex.toByteArray(fingerprint.replaceAll(" ", "").toLowerCase(Locale.ROOT));
-                            } catch (Exception e) {
-                                System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
-                                return 1;
-                            }
-                            boolean res = m.trustIdentityVerified(number, fingerprintBytes);
-                            if (!res) {
-                                System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                            fingerprint = fingerprint.replaceAll(" ", "");
+                            if (fingerprint.length() == 66) {
+                                byte[] fingerprintBytes;
+                                try {
+                                    fingerprintBytes = Hex.toByteArray(fingerprint.toLowerCase(Locale.ROOT));
+                                } catch (Exception e) {
+                                    System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                                    return 1;
+                                }
+                                boolean res = m.trustIdentityVerified(number, fingerprintBytes);
+                                if (!res) {
+                                    System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                                    return 1;
+                                }
+                            } else if (fingerprint.length() == 60) {
+                                boolean res = m.trustIdentityVerifiedSafetyNumber(number, fingerprint);
+                                if (!res) {
+                                    System.err.println("Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                                    return 1;
+                                }
+                            } else {
+                                System.err.println("Fingerprint has invalid format, either specify the old hex fingerprint or the new safety number");
                                 return 1;
                             }
                         } else {
@@ -553,6 +565,22 @@ public class Main {
                 dBusConn.disconnect();
             }
         }
+    }
+
+    private static void printIdentityFingerprint(Manager m, String theirUsername, JsonIdentityKeyStore.Identity theirId) {
+        String digits = formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.identityKey));
+        System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
+                theirId.trustLevel, theirId.added, Hex.toStringCondensed(theirId.getFingerprint()), digits));
+    }
+
+    private static String formatSafetyNumber(String digits) {
+        final int partCount = 12;
+        int partSize = digits.length() / partCount;
+        StringBuilder f = new StringBuilder(digits.length() + partCount);
+        for (int i = 0; i < partCount; i++) {
+            f.append(digits.substring(i * partSize, (i * partSize) + partSize)).append(" ");
+        }
+        return f.toString();
     }
 
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
