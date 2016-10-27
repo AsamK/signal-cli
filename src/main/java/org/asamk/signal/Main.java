@@ -110,7 +110,7 @@ public class Main {
                 ts = m;
                 if (m.userExists()) {
                     try {
-                        m.load();
+                        m.init();
                     } catch (Exception e) {
                         System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
                         return 2;

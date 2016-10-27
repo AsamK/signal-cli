@@ -211,7 +211,23 @@ class Manager implements Signal {
         }
     }
 
-    public void load() throws IOException, InvalidKeyException {
+    public void init() throws IOException {
+        load();
+
+        migrateLegacyConfigs();
+
+        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, deviceId, USER_AGENT);
+        try {
+            if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
+                refreshPreKeys();
+                save();
+            }
+        } catch (AuthorizationFailedException e) {
+            System.err.println("Authorization failed, was the number registered elsewhere?");
+        }
+    }
+
+    private void load() throws IOException {
         openFileChannel();
         JsonNode rootNode = jsonProcessot.readTree(Channels.newInputStream(fileChannel));
 
@@ -243,10 +259,21 @@ class Manager implements Signal {
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
         }
+
+        JsonNode contactStoreNode = rootNode.get("contactStore");
+        if (contactStoreNode != null) {
+            contactStore = jsonProcessot.convertValue(contactStoreNode, JsonContactsStore.class);
+        }
+        if (contactStore == null) {
+            contactStore = new JsonContactsStore();
+        }
+    }
+
+    private void migrateLegacyConfigs() {
         // Copy group avatars that were previously stored in the attachments folder
         // to the new avatar folder
-        if (groupStore.groupsWithLegacyAvatarId.size() > 0) {
-            for (GroupInfo g : groupStore.groupsWithLegacyAvatarId) {
+        if (JsonGroupStore.groupsWithLegacyAvatarId.size() > 0) {
+            for (GroupInfo g : JsonGroupStore.groupsWithLegacyAvatarId) {
                 File avatarFile = getGroupAvatarFile(g.groupId);
                 File attachmentFile = getAttachmentFile(g.getAvatarId());
                 if (!avatarFile.exists() && attachmentFile.exists()) {
@@ -258,26 +285,8 @@ class Manager implements Signal {
                     }
                 }
             }
-            groupStore.groupsWithLegacyAvatarId.clear();
+            JsonGroupStore.groupsWithLegacyAvatarId.clear();
             save();
-        }
-
-        JsonNode contactStoreNode = rootNode.get("contactStore");
-        if (contactStoreNode != null) {
-            contactStore = jsonProcessot.convertValue(contactStoreNode, JsonContactsStore.class);
-        }
-        if (contactStore == null) {
-            contactStore = new JsonContactsStore();
-        }
-
-        accountManager = new SignalServiceAccountManager(URL, TRUST_STORE, username, password, deviceId, USER_AGENT);
-        try {
-            if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
-                refreshPreKeys();
-                save();
-            }
-        } catch (AuthorizationFailedException e) {
-            System.err.println("Authorization failed, was the number registered elsewhere?");
         }
     }
 
