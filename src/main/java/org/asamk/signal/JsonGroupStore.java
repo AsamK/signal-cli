@@ -21,7 +21,7 @@ public class JsonGroupStore {
 
     public static List<GroupInfo> groupsWithLegacyAvatarId = new ArrayList<>();
 
-    private static final ObjectMapper jsonProcessot = new ObjectMapper();
+    private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     void updateGroup(GroupInfo group) {
         groups.put(Base64.encodeBytes(group.groupId), group);
@@ -49,7 +49,7 @@ public class JsonGroupStore {
             Map<String, GroupInfo> groups = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
-                GroupInfo g = jsonProcessot.treeToValue(n, GroupInfo.class);
+                GroupInfo g = jsonProcessor.treeToValue(n, GroupInfo.class);
                 // Check if a legacy avatarId exists
                 if (g.getAvatarId() != 0) {
                     groupsWithLegacyAvatarId.add(g);

@@ -19,7 +19,7 @@ public class JsonContactsStore {
     @JsonDeserialize(using = ContactsDeserializer.class)
     private Map<String, ContactInfo> contacts = new HashMap<>();
 
-    private static final ObjectMapper jsonProcessot = new ObjectMapper();
+    private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     void updateContact(ContactInfo contact) {
         contacts.put(contact.number, contact);
@@ -47,7 +47,7 @@ public class JsonContactsStore {
             Map<String, ContactInfo> contacts = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
-                ContactInfo c = jsonProcessot.treeToValue(n, ContactInfo.class);
+                ContactInfo c = jsonProcessor.treeToValue(n, ContactInfo.class);
                 contacts.put(c.number, c);
             }
 

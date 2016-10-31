@@ -93,7 +93,7 @@ class Manager implements Signal {
     private FileChannel fileChannel;
     private FileLock lock;
 
-    private final ObjectMapper jsonProcessot = new ObjectMapper();
+    private final ObjectMapper jsonProcessor = new ObjectMapper();
     private String username;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private String password;
@@ -115,12 +115,12 @@ class Manager implements Signal {
         this.attachmentsPath = this.settingsPath + "/attachments";
         this.avatarsPath = this.settingsPath + "/avatars";
 
-        jsonProcessot.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
-        jsonProcessot.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
-        jsonProcessot.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
-        jsonProcessot.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        jsonProcessot.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
-        jsonProcessot.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
+        jsonProcessor.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
+        jsonProcessor.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+        jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        jsonProcessor.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+        jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
     public String getUsername() {
@@ -229,7 +229,7 @@ class Manager implements Signal {
 
     private void load() throws IOException {
         openFileChannel();
-        JsonNode rootNode = jsonProcessot.readTree(Channels.newInputStream(fileChannel));
+        JsonNode rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
 
         JsonNode node = rootNode.get("deviceId");
         if (node != null) {
@@ -250,11 +250,11 @@ class Manager implements Signal {
         } else {
             nextSignedPreKeyId = 0;
         }
-        signalProtocolStore = jsonProcessot.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
+        signalProtocolStore = jsonProcessor.convertValue(getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
         registered = getNotNullNode(rootNode, "registered").asBoolean();
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
-            groupStore = jsonProcessot.convertValue(groupStoreNode, JsonGroupStore.class);
+            groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
         }
         if (groupStore == null) {
             groupStore = new JsonGroupStore();
@@ -262,7 +262,7 @@ class Manager implements Signal {
 
         JsonNode contactStoreNode = rootNode.get("contactStore");
         if (contactStoreNode != null) {
-            contactStore = jsonProcessot.convertValue(contactStoreNode, JsonContactsStore.class);
+            contactStore = jsonProcessor.convertValue(contactStoreNode, JsonContactsStore.class);
         }
         if (contactStore == null) {
             contactStore = new JsonContactsStore();
@@ -294,7 +294,7 @@ class Manager implements Signal {
         if (username == null) {
             return;
         }
-        ObjectNode rootNode = jsonProcessot.createObjectNode();
+        ObjectNode rootNode = jsonProcessor.createObjectNode();
         rootNode.put("username", username)
                 .put("deviceId", deviceId)
                 .put("password", password)
@@ -309,7 +309,7 @@ class Manager implements Signal {
         try {
             openFileChannel();
             fileChannel.position(0);
-            jsonProcessot.writeValue(Channels.newOutputStream(fileChannel), rootNode);
+            jsonProcessor.writeValue(Channels.newOutputStream(fileChannel), rootNode);
             fileChannel.truncate(fileChannel.position());
             fileChannel.force(false);
         } catch (Exception e) {
