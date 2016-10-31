@@ -26,8 +26,7 @@ public class JsonContactsStore {
     }
 
     ContactInfo getContact(String number) {
-        ContactInfo c = contacts.get(number);
-        return c;
+        return contacts.get(number);
     }
 
     List<ContactInfo> getContacts() {

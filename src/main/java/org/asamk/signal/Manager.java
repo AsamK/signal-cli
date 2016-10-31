@@ -1041,8 +1041,11 @@ class Manager implements Signal {
                         DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
                         DeviceContact c;
                         while ((c = s.read()) != null) {
-                            ContactInfo contact = new ContactInfo();
-                            contact.number = c.getNumber();
+                            ContactInfo contact = contactStore.getContact(c.getNumber());
+                            if (contact == null) {
+                                contact = new ContactInfo();
+                                contact.number = c.getNumber();
+                            }
                             if (c.getName().isPresent()) {
                                 contact.name = c.getName().get();
                             }
