@@ -107,6 +107,7 @@ class Manager implements Signal {
     private SignalServiceAccountManager accountManager;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
+    private JsonThreadStore threadStore;
 
     public Manager(String username, String settingsPath) {
         this.username = username;
@@ -267,6 +268,13 @@ class Manager implements Signal {
         if (contactStore == null) {
             contactStore = new JsonContactsStore();
         }
+        JsonNode threadStoreNode = rootNode.get("threadStore");
+        if (threadStoreNode != null) {
+            threadStore = jsonProcessor.convertValue(threadStoreNode, JsonThreadStore.class);
+        }
+        if (threadStore == null) {
+            threadStore = new JsonThreadStore();
+        }
     }
 
     private void migrateLegacyConfigs() {
@@ -305,6 +313,7 @@ class Manager implements Signal {
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
+                .putPOJO("threadStore", threadStore)
         ;
         try {
             openFileChannel();
@@ -572,14 +581,17 @@ class Manager implements Signal {
                     .build();
             messageBuilder.asGroupMessage(group);
         }
-        SignalServiceDataMessage message = messageBuilder.build();
+        ThreadInfo thread = threadStore.getThread(Base64.encodeBytes(groupId));
+        if (thread != null) {
+            messageBuilder.withExpiration(thread.messageExpirationTime);
+        }
 
         final GroupInfo g = getGroupForSending(groupId);
 
         // Don't send group message to ourself
         final List<String> membersSend = new ArrayList<>(g.members);
         membersSend.remove(this.username);
-        sendMessage(message, membersSend);
+        sendMessage(messageBuilder, membersSend);
     }
 
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
@@ -587,15 +599,14 @@ class Manager implements Signal {
                 .withId(groupId)
                 .build();
 
-        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group)
-                .build();
+        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group);
 
         final GroupInfo g = getGroupForSending(groupId);
         g.members.remove(this.username);
         groupStore.updateGroup(g);
 
-        sendMessage(message, g.members);
+        sendMessage(messageBuilder, g.members);
     }
 
     private static String join(CharSequence separator, Iterable<? extends CharSequence> list) {
@@ -672,14 +683,13 @@ class Manager implements Signal {
 
         groupStore.updateGroup(g);
 
-        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build())
-                .build();
+        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build());
 
         // Don't send group message to ourself
         final List<String> membersSend = new ArrayList<>(g.members);
         membersSend.remove(this.username);
-        sendMessage(message, membersSend);
+        sendMessage(messageBuilder, membersSend);
         return g.groupId;
     }
 
@@ -699,25 +709,22 @@ class Manager implements Signal {
         if (attachments != null) {
             messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
         }
-        SignalServiceDataMessage message = messageBuilder.build();
-
-        sendMessage(message, recipients);
+        sendMessage(messageBuilder, recipients);
     }
 
     @Override
     public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
-        SignalServiceDataMessage message = SignalServiceDataMessage.newBuilder()
-                .asEndSessionMessage()
-                .build();
+        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .asEndSessionMessage();
 
-        sendMessage(message, recipients);
+        sendMessage(messageBuilder, recipients);
     }
 
     private void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
-            sendMessage(message);
+            sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
             e.printStackTrace();
         }
@@ -727,13 +734,13 @@ class Manager implements Signal {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
-            sendMessage(message);
+            sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
             e.printStackTrace();
         }
     }
 
-    private void sendMessage(SignalServiceSyncMessage message)
+    private void sendSyncMessage(SignalServiceSyncMessage message)
             throws IOException, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                 deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
@@ -745,24 +752,17 @@ class Manager implements Signal {
         }
     }
 
-    private void sendMessage(SignalServiceDataMessage message, Collection<String> recipients)
+    private void sendMessage(SignalServiceDataMessage.Builder messageBuilder, Collection<String> recipients)
             throws EncapsulatedExceptions, IOException {
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                save();
-                return;
-            }
-        }
+        Set<SignalServiceAddress> recipientsTS = getSignalServiceAddresses(recipients);
+        if (recipientsTS == null) return;
 
+        SignalServiceDataMessage message = null;
         try {
             SignalServiceMessageSender messageSender = new SignalServiceMessageSender(URL, TRUST_STORE, username, password,
                     deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
 
+            message = messageBuilder.build();
             if (message.getGroupInfo().isPresent()) {
                 try {
                     messageSender.sendMessage(new ArrayList<>(recipientsTS), message);
@@ -777,6 +777,13 @@ class Manager implements Signal {
                 List<UnregisteredUserException> unregisteredUsers = new LinkedList<>();
                 List<NetworkFailureException> networkExceptions = new LinkedList<>();
                 for (SignalServiceAddress address : recipientsTS) {
+                    ThreadInfo thread = threadStore.getThread(address.getNumber());
+                    if (thread != null) {
+                        messageBuilder.withExpiration(thread.messageExpirationTime);
+                    } else {
+                        messageBuilder.withExpiration(0);
+                    }
+                    message = messageBuilder.build();
                     try {
                         messageSender.sendMessage(address, message);
                     } catch (UntrustedIdentityException e) {
@@ -793,13 +800,28 @@ class Manager implements Signal {
                 }
             }
         } finally {
-            if (message.isEndSession()) {
+            if (message != null && message.isEndSession()) {
                 for (SignalServiceAddress recipient : recipientsTS) {
                     handleEndSession(recipient.getNumber());
                 }
             }
             save();
         }
+    }
+
+    private Set<SignalServiceAddress> getSignalServiceAddresses(Collection<String> recipients) {
+        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
+        for (String recipient : recipients) {
+            try {
+                recipientsTS.add(getPushAddress(recipient));
+            } catch (InvalidNumberException e) {
+                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
+                System.err.println("Aborting sending.");
+                save();
+                return null;
+            }
+        }
+        return recipientsTS;
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws NoSessionException, LegacyMessageException, InvalidVersionException, InvalidMessageException, DuplicateMessageException, InvalidKeyException, InvalidKeyIdException, org.whispersystems.libsignal.UntrustedIdentityException {
@@ -821,8 +843,10 @@ class Manager implements Signal {
     }
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
+        String threadId;
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
+            threadId = Base64.encodeBytes(groupInfo.getGroupId());
             switch (groupInfo.getType()) {
                 case UPDATE:
                     GroupInfo group;
@@ -862,9 +886,26 @@ class Manager implements Signal {
                     }
                     break;
             }
+        } else {
+            if (isSync) {
+                threadId = destination;
+            } else {
+                threadId = source;
+            }
         }
         if (message.isEndSession()) {
             handleEndSession(isSync ? destination : source);
+        }
+        if (message.isExpirationUpdate() || message.getBody().isPresent()) {
+            ThreadInfo thread = threadStore.getThread(threadId);
+            if (thread == null) {
+                thread = new ThreadInfo();
+                thread.id = threadId;
+            }
+            if (thread.messageExpirationTime != message.getExpiresInSeconds()) {
+                thread.messageExpirationTime = message.getExpiresInSeconds();
+                threadStore.updateThread(thread);
+            }
         }
         if (message.getAttachments().isPresent()) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
@@ -1273,7 +1314,7 @@ class Manager implements Signal {
                         .withLength(groupsFile.length())
                         .build();
 
-                sendMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
             }
         } finally {
             groupsFile.delete();
@@ -1302,7 +1343,7 @@ class Manager implements Signal {
                         .withLength(contactsFile.length())
                         .build();
 
-                sendMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
+                sendSyncMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
             }
         } finally {
             contactsFile.delete();
