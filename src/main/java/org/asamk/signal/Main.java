@@ -177,6 +177,9 @@ public class Main {
                     } catch (IOException e) {
                         System.err.println("Link request error: " + e.getMessage());
                         return 3;
+                    } catch (AssertionError e) {
+                        handleAssertionError(e);
+                        return 1;
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
                         return 2;
@@ -202,6 +205,9 @@ public class Main {
                     } catch (InvalidKeyException e) {
                         e.printStackTrace();
                         return 2;
+                    } catch (AssertionError e) {
+                        handleAssertionError(e);
+                        return 1;
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                         return 2;
