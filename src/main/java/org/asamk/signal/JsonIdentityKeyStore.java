@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.*;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.IdentityKeyStore;
 
 import java.io.IOException;
@@ -36,8 +37,8 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
     }
 
     @Override
-    public void saveIdentity(String name, IdentityKey identityKey) {
-        saveIdentity(name, identityKey, TrustLevel.TRUSTED_UNVERIFIED, null);
+    public void saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
+        saveIdentity(address.getName(), identityKey, TrustLevel.TRUSTED_UNVERIFIED, null);
     }
 
     /**
@@ -71,8 +72,8 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
     }
 
     @Override
-    public boolean isTrustedIdentity(String name, IdentityKey identityKey) {
-        List<Identity> identities = trustedKeys.get(name);
+    public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
+        List<Identity> identities = trustedKeys.get(address.getName());
         if (identities == null) {
             // Trust on first use
             return true;
