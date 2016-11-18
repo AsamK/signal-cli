@@ -227,8 +227,8 @@ public class Main {
                         for (DeviceInfo d : devices) {
                             System.out.println("Device " + d.getId() + (d.getId() == m.getDeviceId() ? " (this device)" : "") + ":");
                             System.out.println(" Name: " + d.getName());
-                            System.out.println(" Created: " + d.getCreated());
-                            System.out.println(" Last seen: " + d.getLastSeen());
+                            System.out.println(" Created: " + formatTimestamp(d.getCreated()));
+                            System.out.println(" Last seen: " + formatTimestamp(d.getLastSeen()));
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
