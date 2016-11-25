@@ -663,34 +663,75 @@ class Manager implements Signal {
             }
         }
 
-        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
-                .withId(g.groupId)
-                .withName(g.name)
-                .withMembers(new ArrayList<>(g.members));
-
-        File aFile = getGroupAvatarFile(g.groupId);
         if (avatarFile != null) {
             createPrivateDirectories(avatarsPath);
+            File aFile = getGroupAvatarFile(g.groupId);
             Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
-        if (aFile.exists()) {
-            try {
-                group.withAvatar(createAttachment(aFile));
-            } catch (IOException e) {
-                throw new AttachmentInvalidException(avatarFile, e);
-            }
         }
 
         groupStore.updateGroup(g);
 
-        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build());
+        SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Don't send group message to ourself
         final List<String> membersSend = new ArrayList<>(g.members);
         membersSend.remove(this.username);
         sendMessage(messageBuilder, membersSend);
         return g.groupId;
+    }
+
+    private void sendUpdateGroupMessage(byte[] groupId, String recipient) throws IOException, EncapsulatedExceptions {
+        if (groupId == null) {
+            return;
+        }
+        GroupInfo g = getGroupForSending(groupId);
+
+        if (!g.members.contains(recipient)) {
+            return;
+        }
+
+        SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
+
+        // Send group message only to the recipient who requested it
+        final List<String> membersSend = new ArrayList<>();
+        membersSend.add(recipient);
+        sendMessage(messageBuilder, membersSend);
+    }
+
+    private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfo g) {
+        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
+                .withId(g.groupId)
+                .withName(g.name)
+                .withMembers(new ArrayList<>(g.members));
+
+        File aFile = getGroupAvatarFile(g.groupId);
+        if (aFile.exists()) {
+            try {
+                group.withAvatar(createAttachment(aFile));
+            } catch (IOException e) {
+                throw new AttachmentInvalidException(aFile.toString(), e);
+            }
+        }
+
+        return SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build());
+    }
+
+    private void sendGroupInfoRequest(byte[] groupId, String recipient) throws IOException, EncapsulatedExceptions {
+        if (groupId == null) {
+            return;
+        }
+
+        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO)
+                .withId(groupId);
+
+        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build());
+
+        // Send group info request message to the recipient who sent us a message with this groupId
+        final List<String> membersSend = new ArrayList<>();
+        membersSend.add(recipient);
+        sendMessage(messageBuilder, membersSend);
     }
 
     @Override
@@ -847,10 +888,9 @@ class Manager implements Signal {
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
             threadId = Base64.encodeBytes(groupInfo.getGroupId());
+            GroupInfo group = groupStore.getGroup(groupInfo.getGroupId());
             switch (groupInfo.getType()) {
                 case UPDATE:
-                    GroupInfo group;
-                    group = groupStore.getGroup(groupInfo.getGroupId());
                     if (group == null) {
                         group = new GroupInfo(groupInfo.getGroupId());
                     }
@@ -877,12 +917,31 @@ class Manager implements Signal {
                     groupStore.updateGroup(group);
                     break;
                 case DELIVER:
+                    if (group == null) {
+                        try {
+                            sendGroupInfoRequest(groupInfo.getGroupId(), source);
+                        } catch (IOException | EncapsulatedExceptions e) {
+                            e.printStackTrace();
+                        }
+                    }
                     break;
                 case QUIT:
-                    group = groupStore.getGroup(groupInfo.getGroupId());
-                    if (group != null) {
+                    if (group == null) {
+                        try {
+                            sendGroupInfoRequest(groupInfo.getGroupId(), source);
+                        } catch (IOException | EncapsulatedExceptions e) {
+                            e.printStackTrace();
+                        }
+                    } else {
                         group.members.remove(source);
                         groupStore.updateGroup(group);
+                    }
+                    break;
+                case REQUEST_INFO:
+                    try {
+                        sendUpdateGroupMessage(groupInfo.getGroupId(), source);
+                    } catch (IOException | EncapsulatedExceptions e) {
+                        e.printStackTrace();
                     }
                     break;
             }
