@@ -107,9 +107,9 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
 * Set configuration directory
 
-          signal-cli -config=/home/other_user/.config/signal
+          signal-cli --config=/home/other_user/.config/signal
 
-        This is particularily useful in the case, when you would like to run the signal-cli tool as a different user as the one, that was used to register the account. You should make sure, that the caller can list and read the given directory.
+        This is particularily useful in the case, when you would like to run the signal-cli tool as a different user as the one, that was used to register the account. You should make sure, that the caller has full read/write access to the given directory.
         
 ## DBus service
 
