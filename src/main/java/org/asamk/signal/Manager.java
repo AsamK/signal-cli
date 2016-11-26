@@ -1372,13 +1372,17 @@ class Manager implements Signal {
 
             if (groupsFile.exists() && groupsFile.length() > 0) {
                 FileInputStream contactsFileStream = new FileInputStream(groupsFile);
-                SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
-                        .withStream(contactsFileStream)
-                        .withContentType("application/octet-stream")
-                        .withLength(groupsFile.length())
-                        .build();
+                try {
+                    SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                            .withStream(contactsFileStream)
+                            .withContentType("application/octet-stream")
+                            .withLength(groupsFile.length())
+                            .build();
 
-                sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                    sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                } finally {
+                    contactsFileStream.close();
+                }
             }
         } finally {
             groupsFile.delete();
