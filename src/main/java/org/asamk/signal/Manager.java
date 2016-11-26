@@ -938,10 +938,14 @@ class Manager implements Signal {
                     }
                     break;
                 case REQUEST_INFO:
-                    try {
-                        sendUpdateGroupMessage(groupInfo.getGroupId(), source);
-                    } catch (IOException | EncapsulatedExceptions e) {
-                        e.printStackTrace();
+                    if (group != null) {
+                        try {
+                            sendUpdateGroupMessage(groupInfo.getGroupId(), source);
+                        } catch (IOException | EncapsulatedExceptions e) {
+                            e.printStackTrace();
+                        } catch (NotAGroupMemberException e) {
+                            // We have left this group, so don't send a group update message
+                        }
                     }
                     break;
             }
