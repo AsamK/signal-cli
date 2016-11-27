@@ -1325,8 +1325,11 @@ class Manager implements Signal {
                 output.close();
             }
             input.close();
-            if (!tmpFile.delete()) {
-                System.err.println("Failed to delete temp file: " + tmpFile);
+            try {
+                Files.delete(tmpFile.toPath());
+            } catch(Exception e) {
+                System.out.println("Failed to delete temp file: " + tmpFile);
+                e.printStackTrace();
             }
         }
         return outputFile;
