@@ -993,7 +993,6 @@ class Manager implements Signal {
                 continue;
             }
 
-            String sender = dir.getName();
             for (final File fileEntry : dir.listFiles()) {
                 if (!fileEntry.isFile()) {
                     continue;
@@ -1019,7 +1018,11 @@ class Manager implements Signal {
                 }
                 save();
                 handler.handleMessage(envelope, content, null);
-                fileEntry.delete();
+                try {
+                    Files.delete(fileEntry.toPath());
+                } catch (IOException e) {
+                    System.out.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
+                }
             }
         }
     }
@@ -1069,12 +1072,12 @@ class Manager implements Signal {
                 save();
                 handler.handleMessage(envelope, content, exception);
                 if (exception == null || !(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
+                    File cacheFile = null;
                     try {
-                        File cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
-                        cacheFile.delete();
+                        cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
+                        Files.delete(cacheFile.toPath());
                     } catch (IOException e) {
-                        // Ignoring
-                        return;
+                        System.out.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
                     }
                 }
             }
@@ -1114,8 +1117,10 @@ class Manager implements Signal {
                     }
                 }
                 if (syncMessage.getGroups().isPresent()) {
+                    File tmpFile = null;
                     try {
-                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer()));
+                        tmpFile = Util.createTempFile();
+                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer(), tmpFile));
                         DeviceGroup g;
                         while ((g = s.read()) != null) {
                             GroupInfo syncGroup = groupStore.getGroup(g.getId());
@@ -1135,14 +1140,24 @@ class Manager implements Signal {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        if (tmpFile != null) {
+                            try {
+                                Files.delete(tmpFile.toPath());
+                            } catch (IOException e) {
+                                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                            }
+                        }
                     }
                     if (syncMessage.getBlockedList().isPresent()) {
                         // TODO store list of blocked numbers
                     }
                 }
                 if (syncMessage.getContacts().isPresent()) {
+                    File tmpFile = null;
                     try {
-                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer()));
+                        tmpFile = Util.createTempFile();
+                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer(), tmpFile));
                         DeviceContact c;
                         while ((c = s.read()) != null) {
                             ContactInfo contact = contactStore.getContact(c.getNumber());
@@ -1164,6 +1179,14 @@ class Manager implements Signal {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        if (tmpFile != null) {
+                            try {
+                                Files.delete(tmpFile.toPath());
+                            } catch (IOException e) {
+                                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                            }
+                        }
                     }
                 }
             }
@@ -1305,7 +1328,7 @@ class Manager implements Signal {
 
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
 
-        File tmpFile = File.createTempFile("ts_attach_" + pointer.getId(), ".tmp");
+        File tmpFile = Util.createTempFile();
         InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
 
         OutputStream output = null;
@@ -1327,20 +1350,16 @@ class Manager implements Signal {
             input.close();
             try {
                 Files.delete(tmpFile.toPath());
-            } catch(Exception e) {
-                System.out.println("Failed to delete temp file: " + tmpFile);
-                e.printStackTrace();
+            } catch (IOException e) {
+                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
             }
         }
         return outputFile;
     }
 
-    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
+    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
-        File file = File.createTempFile("ts_tmp", "tmp");
-        file.deleteOnExit();
-
-        return messageReceiver.retrieveAttachment(pointer, file);
+        return messageReceiver.retrieveAttachment(pointer, tmpFile);
     }
 
     private String canonicalizeNumber(String number) throws InvalidNumberException {
@@ -1359,7 +1378,7 @@ class Manager implements Signal {
     }
 
     private void sendGroups() throws IOException, UntrustedIdentityException {
-        File groupsFile = File.createTempFile("multidevice-group-update", ".tmp");
+        File groupsFile = Util.createTempFile();
 
         try {
             DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(new FileOutputStream(groupsFile));
@@ -1374,26 +1393,27 @@ class Manager implements Signal {
             }
 
             if (groupsFile.exists() && groupsFile.length() > 0) {
-                FileInputStream contactsFileStream = new FileInputStream(groupsFile);
-                try {
+                try (FileInputStream groupsFileStream = new FileInputStream(groupsFile)) {
                     SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
-                            .withStream(contactsFileStream)
+                            .withStream(groupsFileStream)
                             .withContentType("application/octet-stream")
                             .withLength(groupsFile.length())
                             .build();
 
                     sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
-                } finally {
-                    contactsFileStream.close();
                 }
             }
         } finally {
-            groupsFile.delete();
+            try {
+                Files.delete(groupsFile.toPath());
+            } catch (IOException e) {
+                System.out.println("Failed to delete temp file “" + groupsFile + "”: " + e.getMessage());
+            }
         }
     }
 
     private void sendContacts() throws IOException, UntrustedIdentityException {
-        File contactsFile = File.createTempFile("multidevice-contact-update", ".tmp");
+        File contactsFile = Util.createTempFile();
 
         try {
             DeviceContactsOutputStream out = new DeviceContactsOutputStream(new FileOutputStream(contactsFile));
@@ -1407,17 +1427,22 @@ class Manager implements Signal {
             }
 
             if (contactsFile.exists() && contactsFile.length() > 0) {
-                FileInputStream contactsFileStream = new FileInputStream(contactsFile);
-                SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
-                        .withStream(contactsFileStream)
-                        .withContentType("application/octet-stream")
-                        .withLength(contactsFile.length())
-                        .build();
+                try (FileInputStream contactsFileStream = new FileInputStream(contactsFile)) {
+                    SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                            .withStream(contactsFileStream)
+                            .withContentType("application/octet-stream")
+                            .withLength(contactsFile.length())
+                            .build();
 
-                sendSyncMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
+                    sendSyncMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
+                }
             }
         } finally {
-            contactsFile.delete();
+            try {
+                Files.delete(contactsFile.toPath());
+            } catch (IOException e) {
+                System.out.println("Failed to delete temp file “" + contactsFile + "”: " + e.getMessage());
+            }
         }
     }
 

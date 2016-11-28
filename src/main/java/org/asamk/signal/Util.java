@@ -1,5 +1,7 @@
 package org.asamk.signal;
 
+import java.io.File;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -21,5 +23,9 @@ class Util {
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
+    }
+
+    public static File createTempFile() throws IOException {
+        return File.createTempFile("signal_tmp_", ".tmp");
     }
 }
