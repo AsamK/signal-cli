@@ -1027,7 +1027,7 @@ class Manager implements Signal {
         }
     }
 
-    public void receiveMessages(int timeoutSeconds, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
+    public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler);
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
         SignalServiceMessagePipe messagePipe = null;
@@ -1041,7 +1041,7 @@ class Manager implements Signal {
                 Exception exception = null;
                 final long now = new Date().getTime();
                 try {
-                    envelope = messagePipe.read(timeoutSeconds, TimeUnit.SECONDS, new SignalServiceMessagePipe.MessagePipeCallback() {
+                    envelope = messagePipe.read(timeout, unit, new SignalServiceMessagePipe.MessagePipeCallback() {
                         @Override
                         public void onMessage(SignalServiceEnvelope envelope) {
                             // store message on disk, before acknowledging receipt to the server

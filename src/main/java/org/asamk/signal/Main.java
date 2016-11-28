@@ -46,6 +46,7 @@ import java.security.Security;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class Main {
@@ -365,9 +366,9 @@ public class Main {
                         System.err.println("User is not registered.");
                         return 1;
                     }
-                    int timeout = 5;
-                    if (ns.getInt("timeout") != null) {
-                        timeout = ns.getInt("timeout");
+                    double timeout = 5;
+                    if (ns.getDouble("timeout") != null) {
+                        timeout = ns.getDouble("timeout");
                     }
                     boolean returnOnTimeout = true;
                     if (timeout < 0) {
@@ -375,7 +376,7 @@ public class Main {
                         timeout = 3600;
                     }
                     try {
-                        m.receiveMessages(timeout, returnOnTimeout, new ReceiveMessageHandler(m));
+                        m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, new ReceiveMessageHandler(m));
                     } catch (IOException e) {
                         System.err.println("Error while receiving messages: " + e.getMessage());
                         return 3;
@@ -549,7 +550,7 @@ public class Main {
                             return 2;
                         }
                         try {
-                            m.receiveMessages(3600, false, new DbusReceiveMessageHandler(m, conn));
+                            m.receiveMessages(1, TimeUnit.HOURS, false, new DbusReceiveMessageHandler(m, conn));
                         } catch (IOException e) {
                             System.err.println("Error while receiving messages: " + e.getMessage());
                             return 3;
@@ -719,7 +720,7 @@ public class Main {
 
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
-                .type(int.class)
+                .type(double.class)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
 
         Subparser parserDaemon = subparsers.addParser("daemon");
