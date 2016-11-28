@@ -20,6 +20,8 @@ sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 
 usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-system] {link,addDevice,listDevices,removeDevice,register,verify,send,quitGroup,updateGroup,listIdentities,trust,receive,daemon} ...
 
+See also: [man page in asciidoc format](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.txt)
+
 * Register a number (with SMS verification)
 
         signal-cli -u USERNAME register
@@ -109,7 +111,7 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
           signal-cli --config=/home/other_user/.config/signal
 
-        This is particularily useful in the case, when you would like to run the signal-cli tool as a different user as the one, that was used to register the account. You should make sure, that the caller has full read/write access to the given directory.
+      This is particularily useful in the case, when you would like to run the signal-cli tool as a different user as the one, that was used to register the account. You should make sure, that the caller has full read/write access to the given directory.
         
 ## DBus service
 
