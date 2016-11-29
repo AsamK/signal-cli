@@ -1223,26 +1223,26 @@ class Manager implements Signal {
 
     private void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (FileOutputStream f = new FileOutputStream(file)) {
-            DataOutputStream out = new DataOutputStream(f);
-            out.writeInt(1); // version
-            out.writeInt(envelope.getType());
-            out.writeUTF(envelope.getSource());
-            out.writeInt(envelope.getSourceDevice());
-            out.writeUTF(envelope.getRelay());
-            out.writeLong(envelope.getTimestamp());
-            if (envelope.hasContent()) {
-                out.writeInt(envelope.getContent().length);
-                out.write(envelope.getContent());
-            } else {
-                out.writeInt(0);
+            try (DataOutputStream out = new DataOutputStream(f)) {
+                out.writeInt(1); // version
+                out.writeInt(envelope.getType());
+                out.writeUTF(envelope.getSource());
+                out.writeInt(envelope.getSourceDevice());
+                out.writeUTF(envelope.getRelay());
+                out.writeLong(envelope.getTimestamp());
+                if (envelope.hasContent()) {
+                    out.writeInt(envelope.getContent().length);
+                    out.write(envelope.getContent());
+                } else {
+                    out.writeInt(0);
+                }
+                if (envelope.hasLegacyMessage()) {
+                    out.writeInt(envelope.getLegacyMessage().length);
+                    out.write(envelope.getLegacyMessage());
+                } else {
+                    out.writeInt(0);
+                }
             }
-            if (envelope.hasLegacyMessage()) {
-                out.writeInt(envelope.getLegacyMessage().length);
-                out.write(envelope.getLegacyMessage());
-            } else {
-                out.writeInt(0);
-            }
-            out.close();
         }
     }
 
@@ -1288,9 +1288,7 @@ class Manager implements Signal {
     private File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException, InvalidMessageException {
         InputStream input = stream.getInputStream();
 
-        OutputStream output = null;
-        try {
-            output = new FileOutputStream(outputFile);
+        try (OutputStream output = new FileOutputStream(outputFile)) {
             byte[] buffer = new byte[4096];
             int read;
 
@@ -1300,10 +1298,6 @@ class Manager implements Signal {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;
-        } finally {
-            if (output != null) {
-                output.close();
-            }
         }
         return outputFile;
     }
@@ -1311,43 +1305,31 @@ class Manager implements Signal {
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview) throws IOException, InvalidMessageException {
         if (storePreview && pointer.getPreview().isPresent()) {
             File previewFile = new File(outputFile + ".preview");
-            OutputStream output = null;
-            try {
-                output = new FileOutputStream(previewFile);
+            try (OutputStream output = new FileOutputStream(previewFile)) {
                 byte[] preview = pointer.getPreview().get();
                 output.write(preview, 0, preview.length);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 return null;
-            } finally {
-                if (output != null) {
-                    output.close();
-                }
             }
         }
 
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
 
         File tmpFile = Util.createTempFile();
-        InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile);
+        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile)) {
+            try (OutputStream output = new FileOutputStream(outputFile)) {
+                byte[] buffer = new byte[4096];
+                int read;
 
-        OutputStream output = null;
-        try {
-            output = new FileOutputStream(outputFile);
-            byte[] buffer = new byte[4096];
-            int read;
-
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
+                while ((read = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, read);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return null;
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
         } finally {
-            if (output != null) {
-                output.close();
-            }
-            input.close();
             try {
                 Files.delete(tmpFile.toPath());
             } catch (IOException e) {
@@ -1381,15 +1363,13 @@ class Manager implements Signal {
         File groupsFile = Util.createTempFile();
 
         try {
-            DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(new FileOutputStream(groupsFile));
-            try {
+            try (OutputStream fos = new FileOutputStream(groupsFile)) {
+                DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(fos);
                 for (GroupInfo record : groupStore.getGroups()) {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.members), createGroupAvatarAttachment(record.groupId),
                             record.active));
                 }
-            } finally {
-                out.close();
             }
 
             if (groupsFile.exists() && groupsFile.length() > 0) {
@@ -1416,14 +1396,12 @@ class Manager implements Signal {
         File contactsFile = Util.createTempFile();
 
         try {
-            DeviceContactsOutputStream out = new DeviceContactsOutputStream(new FileOutputStream(contactsFile));
-            try {
+            try (OutputStream fos = new FileOutputStream(contactsFile)) {
+                DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : contactStore.getContacts()) {
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color)));
                 }
-            } finally {
-                out.close();
             }
 
             if (contactsFile.exists() && contactsFile.length() > 0) {
