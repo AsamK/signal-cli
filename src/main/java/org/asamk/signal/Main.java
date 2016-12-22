@@ -375,8 +375,9 @@ public class Main {
                         returnOnTimeout = false;
                         timeout = 3600;
                     }
+                    boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
                     try {
-                        m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, new ReceiveMessageHandler(m));
+                        m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, ignoreAttachments, new ReceiveMessageHandler(m));
                     } catch (IOException e) {
                         System.err.println("Error while receiving messages: " + e.getMessage());
                         return 3;
@@ -549,8 +550,9 @@ public class Main {
                             e.printStackTrace();
                             return 2;
                         }
+                        ignoreAttachments = ns.getBoolean("ignore_attachments");
                         try {
-                            m.receiveMessages(1, TimeUnit.HOURS, false, new DbusReceiveMessageHandler(m, conn));
+                            m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, new DbusReceiveMessageHandler(m, conn));
                         } catch (IOException e) {
                             System.err.println("Error while receiving messages: " + e.getMessage());
                             return 3;
@@ -722,11 +724,17 @@ public class Main {
         parserReceive.addArgument("-t", "--timeout")
                 .type(double.class)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
+        parserReceive.addArgument("--ignore-attachments")
+                .help("Don’t download attachments of received messages.")
+                .action(Arguments.storeTrue());
 
         Subparser parserDaemon = subparsers.addParser("daemon");
         parserDaemon.addArgument("--system")
                 .action(Arguments.storeTrue())
                 .help("Use DBus system bus instead of user bus.");
+        parserDaemon.addArgument("--ignore-attachments")
+                .help("Don’t download attachments of received messages.")
+                .action(Arguments.storeTrue());
 
         try {
             Namespace ns = parser.parseArgs(args);

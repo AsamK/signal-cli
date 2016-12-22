@@ -883,7 +883,7 @@ class Manager implements Signal {
         void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, Throwable e);
     }
 
-    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination) {
+    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, String destination, boolean ignoreAttachments) {
         String threadId;
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
@@ -970,7 +970,7 @@ class Manager implements Signal {
                 threadStore.updateThread(thread);
             }
         }
-        if (message.getAttachments().isPresent()) {
+        if (message.getAttachments().isPresent() && !ignoreAttachments) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                 if (attachment.isPointer()) {
                     try {
@@ -983,7 +983,7 @@ class Manager implements Signal {
         }
     }
 
-    public void retryFailedReceivedMessages(ReceiveMessageHandler handler) {
+    public void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
         final File cachePath = new File(getMessageCachePath());
         if (!cachePath.exists()) {
             return;
@@ -1014,7 +1014,7 @@ class Manager implements Signal {
                     } catch (Exception e) {
                         continue;
                     }
-                    handleMessage(envelope, content);
+                    handleMessage(envelope, content, ignoreAttachments);
                 }
                 save();
                 handler.handleMessage(envelope, content, null);
@@ -1027,8 +1027,8 @@ class Manager implements Signal {
         }
     }
 
-    public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler) throws IOException {
-        retryFailedReceivedMessages(handler);
+    public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
+        retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(URL, TRUST_STORE, username, password, deviceId, signalingKey, USER_AGENT);
         SignalServiceMessagePipe messagePipe = null;
 
@@ -1067,7 +1067,7 @@ class Manager implements Signal {
                     } catch (Exception e) {
                         exception = e;
                     }
-                    handleMessage(envelope, content);
+                    handleMessage(envelope, content, ignoreAttachments);
                 }
                 save();
                 handler.handleMessage(envelope, content, exception);
@@ -1087,17 +1087,17 @@ class Manager implements Signal {
         }
     }
 
-    private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
+    private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
         if (content != null) {
             if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
-                handleSignalServiceDataMessage(message, false, envelope.getSource(), username);
+                handleSignalServiceDataMessage(message, false, envelope.getSource(), username, ignoreAttachments);
             }
             if (content.getSyncMessage().isPresent()) {
                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
                     SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
-                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get());
+                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get(), ignoreAttachments);
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();

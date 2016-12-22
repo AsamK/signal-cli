@@ -120,6 +120,8 @@ attachments are downloaded to the config directory.
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 	Number of seconds to wait for new messages (negative values disable timeout).
 	Default is 5 seconds.
+*--ignore-attachments*::
+	Don’t download attachments of received messages.
 
 updateGroup
 ~~~~~~~~~~~
@@ -179,6 +181,8 @@ libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
 
 *--system*::
 	Use DBus system bus instead of user bus.
+*--ignore-attachments*::
+	Don’t download attachments of received messages.
 
 
 Examples
