@@ -88,6 +88,9 @@ public class Main {
                     ts = (Signal) dBusConn.getRemoteObject(
                             SIGNAL_BUSNAME, SIGNAL_OBJECTPATH,
                             Signal.class);
+                } catch (UnsatisfiedLinkError e) {
+                    System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
+                    return 1;
                 } catch (DBusException e) {
                     e.printStackTrace();
                     if (dBusConn != null) {
@@ -350,6 +353,9 @@ public class Main {
                                     System.out.println();
                                 }
                             });
+                        } catch (UnsatisfiedLinkError e) {
+                            System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
+                            return 1;
                         } catch (DBusException e) {
                             e.printStackTrace();
                             return 1;
@@ -546,6 +552,9 @@ public class Main {
                             conn = DBusConnection.getConnection(busType);
                             conn.exportObject(SIGNAL_OBJECTPATH, m);
                             conn.requestBusName(SIGNAL_BUSNAME);
+                        } catch (UnsatisfiedLinkError e) {
+                            System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
+                            return 1;
                         } catch (DBusException e) {
                             e.printStackTrace();
                             return 2;
