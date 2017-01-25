@@ -142,7 +142,7 @@ systemctl enable signal.service
 systemctl reload dbus.service
 ```
 
-Then just execute the send command from above, the service will be autostarted by dbus the first time it is requested.
+Make sure to use "--dbus-system" with the send command, the service will be autostarted by dbus the first time it is requested.
 
 ## Storage
 
