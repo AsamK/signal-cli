@@ -132,6 +132,9 @@ To run on the system bus you need to take some additional steps.
 It’s advisable to run signal-cli as a separate unix user, the following steps assume you created a user named *signal-cli*.
 These steps, executed as root, should work on all distributions using systemd.
 
+Mind the fact that signal.service executes the signal-cli with "--config /var/lib/signal-cli".
+If you registered with user signal-cli, remove the config option.
+
 ```bash
 cp data/org.asamk.Signal.conf /etc/dbus-1/system.d/
 cp data/org.asamk.Signal.service /usr/share/dbus-1/system-services/
