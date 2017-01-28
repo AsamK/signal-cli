@@ -22,6 +22,8 @@ usage: signal-cli [-h] [-v] [--config CONFIG] [-u USERNAME | --dbus | --dbus-sys
 
 See also: [man page in asciidoc format](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.txt)
 
+The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.
+
 * Register a number (with SMS verification)
 
         signal-cli -u USERNAME register

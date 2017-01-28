@@ -39,6 +39,8 @@ Options
 
 *-u* USERNAME, *--username* USERNAME::
 	Specify your phone number, that will be your identifier.
+	The phone number must include the country calling code, i.e. the number must
+	start with a "+" sign.
 
 *--dbus*::
 	Make request via user dbus.
