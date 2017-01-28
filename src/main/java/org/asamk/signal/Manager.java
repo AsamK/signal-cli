@@ -110,6 +110,7 @@ class Manager implements Signal {
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
     private JsonThreadStore threadStore;
+    private SignalServiceMessagePipe messagePipe = null;
 
     public Manager(String username, String settingsPath) {
         this.username = username;
@@ -786,7 +787,7 @@ class Manager implements Signal {
     private void sendSyncMessage(SignalServiceSyncMessage message)
             throws IOException, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceUrls, username, password,
-                deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+                deviceId, signalProtocolStore, USER_AGENT, Optional.fromNullable(messagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
         try {
             messageSender.sendMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -803,7 +804,7 @@ class Manager implements Signal {
         SignalServiceDataMessage message = null;
         try {
             SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceUrls, username, password,
-                    deviceId, signalProtocolStore, USER_AGENT, Optional.<SignalServiceMessageSender.EventListener>absent());
+                    deviceId, signalProtocolStore, USER_AGENT, Optional.fromNullable(messagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
 
             message = messageBuilder.build();
             if (message.getGroupInfo().isPresent()) {
@@ -1032,10 +1033,11 @@ class Manager implements Signal {
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
-        SignalServiceMessagePipe messagePipe = null;
 
         try {
-            messagePipe = messageReceiver.createMessagePipe();
+            if (messagePipe == null) {
+                messagePipe = messageReceiver.createMessagePipe();
+            }
 
             while (true) {
                 SignalServiceEnvelope envelope;
@@ -1084,8 +1086,10 @@ class Manager implements Signal {
                 }
             }
         } finally {
-            if (messagePipe != null)
+            if (messagePipe != null) {
                 messagePipe.shutdown();
+                messagePipe = null;
+            }
         }
     }
 
