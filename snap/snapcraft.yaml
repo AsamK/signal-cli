@@ -1,0 +1,23 @@
+name: signal-cli
+version: master
+summary: commandline interface for libsignal-service-java
+description: |
+  It supports registering, verifying, sending and receiving messages.
+  It is primarily intended to be used on servers to notify admins of important
+  events.
+
+grade: devel
+confinement: strict
+
+apps:
+  signal-cli:
+    command: signal-cli/bin/signal-cli --config $SNAP_USER_DATA
+    plugs: [network, network-bind, home]
+
+parts:
+  signal-cli:
+    source: .
+    plugin: gradle
+    install: |
+      ./gradlew installDist
+      mv build/install/signal-cli/ $SNAPCRAFT_PART_INSTALL
