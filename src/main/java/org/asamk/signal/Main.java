@@ -138,6 +138,22 @@ public class Main {
                         return 3;
                     }
                     break;
+                case "unregister":
+                    if (dBusConn != null) {
+                        System.err.println("unregister is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    try {
+                        m.unregister();
+                    } catch (IOException e) {
+                        System.err.println("Unregister error: " + e.getMessage());
+                        return 3;
+                    }
+                    break;
                 case "verify":
                     if (dBusConn != null) {
                         System.err.println("verify is not yet implemented via dbus");
@@ -678,6 +694,9 @@ public class Main {
         parserRegister.addArgument("-v", "--voice")
                 .help("The verification should be done over voice, not sms.")
                 .action(Arguments.storeTrue());
+
+        Subparser parserUnregister = subparsers.addParser("unregister");
+        parserUnregister.help("Unregister the current device from the signal server.");
 
         Subparser parserVerify = subparsers.addParser("verify");
         parserVerify.addArgument("verificationCode")

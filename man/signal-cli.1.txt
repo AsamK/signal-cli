@@ -66,6 +66,13 @@ Verify the number using the code received via SMS or voice.
 VERIFICATIONCODE::
 	The verification code.
 
+unregister
+~~~~~~~~
+Disable push support for this device, i.e. this device won't receive any more messages.
+If this is the master device, other users can't send messages to this number anymore.
+Use "updateAccount" to undo this.
+To remove a linked device, use "removeDevice" from the master device.
+
 link
 ~~~~
 Link to an existing device, instead of registering a new number.  This shows a

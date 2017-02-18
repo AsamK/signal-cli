@@ -356,6 +356,13 @@ class Manager implements Signal {
         save();
     }
 
+    public void unregister() throws IOException {
+        // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
+        // If this is the master device, other users can't send messages to this number anymore.
+        // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
+        accountManager.setGcmId(Optional.<String>absent());
+    }
+
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         password = Util.getSecret(18);
 
