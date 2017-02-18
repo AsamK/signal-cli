@@ -357,7 +357,7 @@ class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), false, true);
+        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), false, false,true);
     }
 
     public void unregister() throws IOException {
@@ -507,7 +507,7 @@ class Manager implements Signal {
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), false, true);
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), false, false,true);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
