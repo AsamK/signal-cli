@@ -356,6 +356,10 @@ class Manager implements Signal {
         save();
     }
 
+    public void updateAccountAttributes() throws IOException {
+        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), false, true);
+    }
+
     public void unregister() throws IOException {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
         // If this is the master device, other users can't send messages to this number anymore.

@@ -154,6 +154,22 @@ public class Main {
                         return 3;
                     }
                     break;
+                case "updateAccount":
+                    if (dBusConn != null) {
+                        System.err.println("updateAccount is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    try {
+                        m.updateAccountAttributes();
+                    } catch (IOException e) {
+                        System.err.println("UpdateAccount error: " + e.getMessage());
+                        return 3;
+                    }
+                    break;
                 case "verify":
                     if (dBusConn != null) {
                         System.err.println("verify is not yet implemented via dbus");
@@ -697,6 +713,9 @@ public class Main {
 
         Subparser parserUnregister = subparsers.addParser("unregister");
         parserUnregister.help("Unregister the current device from the signal server.");
+
+        Subparser parserUpdateAccount = subparsers.addParser("updateAccount");
+        parserUpdateAccount.help("Update the account attributes on the signal server.");
 
         Subparser parserVerify = subparsers.addParser("verify");
         parserVerify.addArgument("verificationCode")
