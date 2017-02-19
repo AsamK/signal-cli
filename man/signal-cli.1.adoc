@@ -3,8 +3,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 /////
 :quotes.~:
 
-signal-cli (1)
-============
+= signal-cli (1)
 
 Name
 ----
@@ -67,14 +66,14 @@ VERIFICATIONCODE::
 	The verification code.
 
 unregister
-~~~~~~~~
+~~~~~~~~~~
 Disable push support for this device, i.e. this device won't receive any more messages.
 If this is the master device, other users can't send messages to this number anymore.
 Use "updateAccount" to undo this.
 To remove a linked device, use "removeDevice" from the master device.
 
 updateAccount
-~~~~~~~~
+~~~~~~~~~~~~~
 Update the account attributes on the signal server.
 Can fix problems with receiving messages.
 

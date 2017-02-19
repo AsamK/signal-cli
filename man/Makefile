@@ -5,6 +5,6 @@ MANPAGESRC = signal-cli.1
 .PHONY: all
 all: $(MANPAGESRC)
 
-%: %.txt
+%: %.adoc
 	@echo "Generating manpage for $@"
 	$(A2X) --no-xmllint --doctype manpage --format manpage "$^"
