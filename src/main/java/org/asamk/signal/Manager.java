@@ -775,6 +775,21 @@ class Manager implements Signal {
         sendMessage(messageBuilder, recipients);
     }
 
+    @Override
+    public String getContactName(String number) {
+        ContactInfo contact = contactStore.getContact(number);
+        if(contact == null) {
+            return number;
+        } else {
+            return contact.name;
+        }
+    }
+
+    @Override
+    public String getGroupName(byte[] groupId) {
+        return getGroup(groupId).name;
+    }
+
     private void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
