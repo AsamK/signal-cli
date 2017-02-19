@@ -786,6 +786,11 @@ class Manager implements Signal {
     }
 
     @Override
+    public String getGroupName(byte[] groupId) {
+        return getGroup(groupId).name;
+    }
+
+    @Override
     public void setContactName(String number, String name) {
         ContactInfo contact = contactStore.getContact(number);
         if(contact == null) {

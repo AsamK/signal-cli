@@ -23,6 +23,8 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name);
 
+    String getGroupName(byte[] groupId);
+
     class MessageReceived extends DBusSignal {
         private long timestamp;
         private String sender;
