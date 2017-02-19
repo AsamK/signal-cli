@@ -5,3 +5,7 @@ build/
 *.swp
 *.iml
 local.properties
+.classpath
+.project
+.settings/
+
