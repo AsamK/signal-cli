@@ -802,6 +802,7 @@ class Manager implements Signal {
         }
         contact.name = name;
         contactStore.updateContact(contact);
+        save();
     }
 
     private void requestSyncGroups() throws IOException {
