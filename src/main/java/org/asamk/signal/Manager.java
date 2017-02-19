@@ -790,20 +790,6 @@ class Manager implements Signal {
         return getGroup(groupId).name;
     }
 
-    @Override
-    public void setContactName(String number, String name) {
-        ContactInfo contact = contactStore.getContact(number);
-        if(contact == null) {
-            contact = new ContactInfo();
-            contact.number = number;
-            System.out.println("Add contact " + number + " named " + name);
-        } else {
-            System.out.println("Updating contact " + number + " name " + contact.name + " -> " + name);
-        }
-        contact.name = name;
-        contactStore.updateContact(contact);
-    }
-
     private void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
