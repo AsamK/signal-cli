@@ -21,9 +21,11 @@ public interface Signal extends DBusInterface {
 
     String getContactName(String number);
 
+    void setContactName(String number, String name);
+
     String getGroupName(byte[] groupId);
 
-    void setContactName(String number, String name);
+    List<String> getGroupMembers(byte[] groupId);
 
     void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
 

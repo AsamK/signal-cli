@@ -786,11 +786,6 @@ class Manager implements Signal {
     }
 
     @Override
-    public String getGroupName(byte[] groupId) {
-        return getGroup(groupId).name;
-    }
-
-    @Override
     public void setContactName(String number, String name) {
         ContactInfo contact = contactStore.getContact(number);
         if(contact == null) {
@@ -803,6 +798,16 @@ class Manager implements Signal {
         contact.name = name;
         contactStore.updateContact(contact);
         save();
+    }
+
+    @Override
+    public String getGroupName(byte[] groupId) {
+        return getGroup(groupId).name;
+    }
+
+    @Override
+    public List<String> getGroupMembers(byte[] groupId) {
+        return new ArrayList<String>(getGroup(groupId).members);
     }
 
     @Override
