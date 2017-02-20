@@ -834,8 +834,7 @@ class Manager implements Signal {
         if (!avatar.isEmpty()) {
             optAvatar = avatar;
         }
-        System.err.println("sendUpdateGroupMessage(" + Base64.encodeBytes(groupId) + ", " + optName + ", " + optMembers + ", " + optAvatar + ");");
-        sendUpdateGroupMessage(groupId, optName, optMembers, null);
+        sendUpdateGroupMessage(groupId, optName, optMembers, optAvatar);
     }
 
     private void requestSyncGroups() throws IOException {
