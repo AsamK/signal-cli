@@ -805,6 +805,24 @@ class Manager implements Signal {
         save();
     }
 
+    @Override
+    public void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        String optName = null;
+        Collection<String> optMembers = null;
+        String optAvatar = null;
+        if(!name.isEmpty()) {
+            optName = name;
+        }
+        if(members.size() > 0) {
+            optMembers = members;
+        }
+        if(!avatar.isEmpty()) {
+            optAvatar = avatar;
+        }
+        System.err.println("sendUpdateGroupMessage(" + Base64.encodeBytes(groupId) + ", " + optName + ", " + optMembers + ", " + optAvatar + ");");
+        sendUpdateGroupMessage(groupId, optName, optMembers, null);
+    }
+
     private void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));

@@ -21,9 +21,11 @@ public interface Signal extends DBusInterface {
 
     String getContactName(String number);
 
+    String getGroupName(byte[] groupId);
+
     void setContactName(String number, String name);
 
-    String getGroupName(byte[] groupId);
+    void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
 
     class MessageReceived extends DBusSignal {
         private long timestamp;
