@@ -779,7 +779,7 @@ class Manager implements Signal {
     public String getContactName(String number) {
         ContactInfo contact = contactStore.getContact(number);
         if (contact == null) {
-            return number;
+            return "";
         } else {
             return contact.name;
         }
