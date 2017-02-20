@@ -580,6 +580,10 @@ class Manager implements Signal {
         }
         throw new NotAGroupMemberException(groupId, g.name);
     }
+    
+    public List<GroupInfo> getGroups() {
+    	return groupStore.getGroups();
+    }
 
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
