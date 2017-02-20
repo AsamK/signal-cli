@@ -822,19 +822,16 @@ class Manager implements Signal {
 
     @Override
     public void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
-        String optName = null;
-        Collection<String> optMembers = null;
-        String optAvatar = null;
-        if (!name.isEmpty()) {
-            optName = name;
+        if (name.isEmpty()) {
+            name = null;
         }
-        if (members.size() > 0) {
-            optMembers = members;
+        if (members.size() == 0) {
+            members = null;
         }
-        if (!avatar.isEmpty()) {
-            optAvatar = avatar;
+        if (avatar.isEmpty()) {
+            avatar = null;
         }
-        sendUpdateGroupMessage(groupId, optName, optMembers, optAvatar);
+        sendUpdateGroupMessage(groupId, name, members, avatar);
     }
 
     private void requestSyncGroups() throws IOException {
