@@ -802,12 +802,22 @@ class Manager implements Signal {
 
     @Override
     public String getGroupName(byte[] groupId) {
-        return getGroup(groupId).name;
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            return "";
+        } else {
+            return group.name;
+        }
     }
 
     @Override
     public List<String> getGroupMembers(byte[] groupId) {
-        return new ArrayList<String>(getGroup(groupId).members);
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            return new ArrayList<String>();
+        } else {
+            return new ArrayList<String>(group.members);
+        }
     }
 
     @Override
