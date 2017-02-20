@@ -778,7 +778,7 @@ class Manager implements Signal {
     @Override
     public String getContactName(String number) {
         ContactInfo contact = contactStore.getContact(number);
-        if(contact == null) {
+        if (contact == null) {
             return number;
         } else {
             return contact.name;
@@ -788,7 +788,7 @@ class Manager implements Signal {
     @Override
     public void setContactName(String number, String name) {
         ContactInfo contact = contactStore.getContact(number);
-        if(contact == null) {
+        if (contact == null) {
             contact = new ContactInfo();
             contact.number = number;
             System.out.println("Add contact " + number + " named " + name);
@@ -815,13 +815,13 @@ class Manager implements Signal {
         String optName = null;
         Collection<String> optMembers = null;
         String optAvatar = null;
-        if(!name.isEmpty()) {
+        if (!name.isEmpty()) {
             optName = name;
         }
-        if(members.size() > 0) {
+        if (members.size() > 0) {
             optMembers = members;
         }
-        if(!avatar.isEmpty()) {
+        if (!avatar.isEmpty()) {
             optAvatar = avatar;
         }
         System.err.println("sendUpdateGroupMessage(" + Base64.encodeBytes(groupId) + ", " + optName + ", " + optMembers + ", " + optAvatar + ");");
