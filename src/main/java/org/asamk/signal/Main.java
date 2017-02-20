@@ -492,6 +492,22 @@ public class Main {
                     }
 
                     break;
+                case "listGroups":
+                    if (dBusConn != null) {
+                        System.err.println("listGroups is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+    
+                    List<GroupInfo> groups = m.getGroups();
+    
+                    for (GroupInfo group : groups) {
+                        printGroup(group, ns.getBoolean("detailed"));
+                    }
+                    break;
                 case "listIdentities":
                     if (dBusConn != null) {
                         System.err.println("listIdentities is not yet implemented via dbus");
@@ -622,6 +638,17 @@ public class Main {
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
                 theirId.trustLevel, theirId.added, Hex.toStringCondensed(theirId.getFingerprint()), digits));
     }
+    
+    private static void printGroup(GroupInfo group, boolean detailed) {
+        System.out.println(String.format("Group id: %s\n Group name: %s \n active: %s",
+                Base64.encodeBytes(group.groupId), group.name, group.active));
+        if (detailed) {
+            System.out.println(" Members:");
+            for (String member : group.members) {
+                System.out.println("  " + member);
+            }
+        }
+    }
 
     private static String formatSafetyNumber(String digits) {
         final int partCount = 12;
@@ -751,6 +778,11 @@ public class Main {
         parserUpdateGroup.addArgument("-m", "--member")
                 .nargs("*")
                 .help("Specify one or more members to add to the group");
+        
+        Subparser parserListGroups = subparsers.addParser("listGroups");
+        parserListGroups.addArgument("-d", "--detailed").action(Arguments.storeTrue())
+                .help("List members of each group");
+        parserListGroups.help("List group name and ids");
 
         Subparser parserListIdentities = subparsers.addParser("listIdentities");
         parserListIdentities.addArgument("-n", "--number")
