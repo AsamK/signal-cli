@@ -582,7 +582,7 @@ class Manager implements Signal {
     }
     
     public List<GroupInfo> getGroups() {
-    	return groupStore.getGroups();
+        return groupStore.getGroups();
     }
 
     @Override

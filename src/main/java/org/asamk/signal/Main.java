@@ -503,9 +503,10 @@ public class Main {
                     }
     
                     List<GroupInfo> groups = m.getGroups();
+                    boolean detailed = ns.getBoolean("detailed");
     
                     for (GroupInfo group : groups) {
-                        printGroup(group, ns.getBoolean("detailed"));
+                        printGroup(group, detailed);
                     }
                     break;
                 case "listIdentities":
@@ -640,13 +641,12 @@ public class Main {
     }
     
     private static void printGroup(GroupInfo group, boolean detailed) {
-        System.out.println(String.format("Group id: %s\n Group name: %s \n active: %s",
-                Base64.encodeBytes(group.groupId), group.name, group.active));
         if (detailed) {
-            System.out.println(" Members:");
-            for (String member : group.members) {
-                System.out.println("  " + member);
-            }
+            System.out.println(String.format("Id: %s Name: %s  Active: %s Members: %s",
+                    Base64.encodeBytes(group.groupId), group.name, group.active, group.members));
+        } else {
+            System.out.println(String.format("Id: %s Name: %s  Active: %s", Base64.encodeBytes(group.groupId),
+                    group.name, group.active));
         }
     }
 
