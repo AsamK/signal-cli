@@ -19,6 +19,16 @@ public interface Signal extends DBusInterface {
 
     void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException;
 
+    String getContactName(String number);
+
+    void setContactName(String number, String name);
+
+    String getGroupName(byte[] groupId);
+
+    List<String> getGroupMembers(byte[] groupId);
+
+    void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
+
     class MessageReceived extends DBusSignal {
         private long timestamp;
         private String sender;

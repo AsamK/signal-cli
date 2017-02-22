@@ -779,6 +779,65 @@ class Manager implements Signal {
         sendMessage(messageBuilder, recipients);
     }
 
+    @Override
+    public String getContactName(String number) {
+        ContactInfo contact = contactStore.getContact(number);
+        if (contact == null) {
+            return "";
+        } else {
+            return contact.name;
+        }
+    }
+
+    @Override
+    public void setContactName(String number, String name) {
+        ContactInfo contact = contactStore.getContact(number);
+        if (contact == null) {
+            contact = new ContactInfo();
+            contact.number = number;
+            System.out.println("Add contact " + number + " named " + name);
+        } else {
+            System.out.println("Updating contact " + number + " name " + contact.name + " -> " + name);
+        }
+        contact.name = name;
+        contactStore.updateContact(contact);
+        save();
+    }
+
+    @Override
+    public String getGroupName(byte[] groupId) {
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            return "";
+        } else {
+            return group.name;
+        }
+    }
+
+    @Override
+    public List<String> getGroupMembers(byte[] groupId) {
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            return new ArrayList<String>();
+        } else {
+            return new ArrayList<String>(group.members);
+        }
+    }
+
+    @Override
+    public void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        if (name.isEmpty()) {
+            name = null;
+        }
+        if (members.size() == 0) {
+            members = null;
+        }
+        if (avatar.isEmpty()) {
+            avatar = null;
+        }
+        sendUpdateGroupMessage(groupId, name, members, avatar);
+    }
+
     private void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
