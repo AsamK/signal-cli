@@ -160,6 +160,12 @@ Send a quit group message to all group members and remove self from member list.
 *-g* GROUP, *--group* GROUP::
 	Specify the recipient group ID in base64 encoding.
 
+listGroups
+~~~~~~~~~~~
+Show a list of known groups.
+
+*-d*, *--detailed*::
+	Include the list of members of each group.
 
 listIdentities
 ~~~~~~~~~~~~~~
