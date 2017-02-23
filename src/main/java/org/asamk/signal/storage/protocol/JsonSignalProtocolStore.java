@@ -1,8 +1,10 @@
-package org.asamk.signal;
+package org.asamk.signal.storage.protocol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import org.asamk.signal.TrustLevel;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyIdException;
@@ -15,7 +17,7 @@ import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import java.util.List;
 import java.util.Map;
 
-class JsonSignalProtocolStore implements SignalProtocolStore {
+public class JsonSignalProtocolStore implements SignalProtocolStore {
 
     @JsonProperty("preKeys")
     @JsonDeserialize(using = JsonPreKeyStore.JsonPreKeyStoreDeserializer.class)

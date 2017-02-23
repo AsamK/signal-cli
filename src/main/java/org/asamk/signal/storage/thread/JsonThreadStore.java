@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.storage.thread;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -21,15 +21,15 @@ public class JsonThreadStore {
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
-    void updateThread(ThreadInfo thread) {
+    public void updateThread(ThreadInfo thread) {
         threads.put(thread.id, thread);
     }
 
-    ThreadInfo getThread(String id) {
+    public ThreadInfo getThread(String id) {
         return threads.get(id);
     }
 
-    List<ThreadInfo> getThreads() {
+    public List<ThreadInfo> getThreads() {
         return new ArrayList<>(threads.values());
     }
 

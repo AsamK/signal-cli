@@ -1,9 +1,12 @@
-package org.asamk.signal;
+package org.asamk.signal.storage.protocol;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
+
+import org.asamk.signal.TrustLevel;
+import org.asamk.signal.util.Base64;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -13,7 +16,7 @@ import org.whispersystems.libsignal.state.IdentityKeyStore;
 import java.io.IOException;
 import java.util.*;
 
-class JsonIdentityKeyStore implements IdentityKeyStore {
+public class JsonIdentityKeyStore implements IdentityKeyStore {
 
     private final Map<String, List<Identity>> trustedKeys = new HashMap<>();
 
@@ -176,6 +179,18 @@ class JsonIdentityKeyStore implements IdentityKeyStore {
         public boolean isTrusted() {
             return trustLevel == TrustLevel.TRUSTED_UNVERIFIED ||
                     trustLevel == TrustLevel.TRUSTED_VERIFIED;
+        }
+        
+        public IdentityKey getIdentityKey() {
+            return this.identityKey;
+        }
+        
+        public TrustLevel getTrustLevel() {
+            return this.trustLevel;
+        }
+        
+        public Date getDateAdded() {
+            return this.added;
         }
 
         public byte[] getFingerprint() {

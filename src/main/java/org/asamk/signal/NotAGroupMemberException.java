@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import org.asamk.signal.util.Base64;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 public class NotAGroupMemberException extends DBusExecutionException {
