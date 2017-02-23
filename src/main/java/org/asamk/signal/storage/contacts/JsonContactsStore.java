@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.storage.contacts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -21,15 +21,15 @@ public class JsonContactsStore {
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
-    void updateContact(ContactInfo contact) {
+    public void updateContact(ContactInfo contact) {
         contacts.put(contact.number, contact);
     }
 
-    ContactInfo getContact(String number) {
+    public ContactInfo getContact(String number) {
         return contacts.get(number);
     }
 
-    List<ContactInfo> getContacts() {
+    public List<ContactInfo> getContacts() {
         return new ArrayList<>(contacts.values());
     }
 

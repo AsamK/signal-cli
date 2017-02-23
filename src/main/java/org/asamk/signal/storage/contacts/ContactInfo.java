@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.storage.contacts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

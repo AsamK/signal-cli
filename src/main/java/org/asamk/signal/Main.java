@@ -21,6 +21,11 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
+import org.asamk.signal.storage.contacts.ContactInfo;
+import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
+import org.asamk.signal.util.Base64;
+import org.asamk.signal.util.Hex;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -635,9 +640,9 @@ public class Main {
     }
 
     private static void printIdentityFingerprint(Manager m, String theirUsername, JsonIdentityKeyStore.Identity theirId) {
-        String digits = formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.identityKey));
+        String digits = formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.getIdentityKey()));
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
-                theirId.trustLevel, theirId.added, Hex.toStringCondensed(theirId.getFingerprint()), digits));
+                theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toStringCondensed(theirId.getFingerprint()), digits));
     }
     
     private static void printGroup(GroupInfo group, boolean detailed) {

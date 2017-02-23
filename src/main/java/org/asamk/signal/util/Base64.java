@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.util;
 
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>

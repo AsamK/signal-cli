@@ -1,11 +1,11 @@
-package org.asamk.signal;
+package org.asamk.signal.util;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-class Util {
+public class Util {
     public static String getSecret(int size) {
         byte[] secret = getSecretBytes(size);
         return Base64.encodeBytes(secret);
