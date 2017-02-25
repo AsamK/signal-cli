@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.thread;
+package org.asamk.signal.storage.threads;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
