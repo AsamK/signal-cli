@@ -34,6 +34,7 @@ Options
 
 *--config* CONFIG::
 	Set the path, where to store the config.
+	Make sure you have full read/write access to the given directory.
 	(Default: $HOME/.config/signal)
 
 *-u* USERNAME, *--username* USERNAME::
