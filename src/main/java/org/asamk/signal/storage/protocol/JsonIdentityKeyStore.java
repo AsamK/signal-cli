@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
-
 import org.asamk.signal.TrustLevel;
 import org.asamk.signal.util.Base64;
 import org.whispersystems.libsignal.IdentityKey;
@@ -180,15 +179,15 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             return trustLevel == TrustLevel.TRUSTED_UNVERIFIED ||
                     trustLevel == TrustLevel.TRUSTED_VERIFIED;
         }
-        
+
         public IdentityKey getIdentityKey() {
             return this.identityKey;
         }
-        
+
         public TrustLevel getTrustLevel() {
             return this.trustLevel;
         }
-        
+
         public Date getDateAdded() {
             return this.added;
         }

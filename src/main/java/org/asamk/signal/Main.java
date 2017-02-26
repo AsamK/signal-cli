@@ -18,13 +18,7 @@ package org.asamk.signal;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
-import net.sourceforge.argparse4j.inf.Namespace;
-import net.sourceforge.argparse4j.inf.Subparser;
-import net.sourceforge.argparse4j.inf.Subparsers;
-
+import net.sourceforge.argparse4j.inf.*;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
 import org.asamk.signal.storage.contacts.ContactInfo;
@@ -38,17 +32,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
-import org.whispersystems.signalservice.api.messages.SignalServiceContent;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
-import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
@@ -65,12 +50,7 @@ import java.nio.charset.Charset;
 import java.security.Security;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -526,10 +506,10 @@ public class Main {
                         System.err.println("User is not registered.");
                         return 1;
                     }
-    
+
                     List<GroupInfo> groups = m.getGroups();
                     boolean detailed = ns.getBoolean("detailed");
-    
+
                     for (GroupInfo group : groups) {
                         printGroup(group, detailed);
                     }
@@ -664,7 +644,7 @@ public class Main {
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
                 theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toStringCondensed(theirId.getFingerprint()), digits));
     }
-    
+
     private static void printGroup(GroupInfo group, boolean detailed) {
         if (detailed) {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Members: %s",
@@ -803,7 +783,7 @@ public class Main {
         parserUpdateGroup.addArgument("-m", "--member")
                 .nargs("*")
                 .help("Specify one or more members to add to the group");
-        
+
         Subparser parserListGroups = subparsers.addParser("listGroups");
         parserListGroups.addArgument("-d", "--detailed").action(Arguments.storeTrue())
                 .help("List members of each group");
