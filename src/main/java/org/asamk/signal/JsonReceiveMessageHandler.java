@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.signal.util.Base64;
+import org.asamk.signal.util.Util;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -12,6 +13,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -265,6 +267,72 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     private static final String formatTimestamp(long timestamp) {
         final Date date = new Date(timestamp);
         return df.format(date);
+    }
+
+    private final JSONArray jsonGroupsAttachment( SignalServiceAttachment groupsAttachment ) {
+        final JSONArray groups = new JSONArray();
+        File tmpFile = null;
+        try {
+            tmpFile = Util.createTempFile();
+            final DeviceGroupsInputStream s = new DeviceGroupsInputStream(
+                m.retrieveAttachmentAsStream(groupsAttachment.asPointer(), tmpFile ) );
+            DeviceGroup g;
+            while ((g = s.read()) != null) {
+                final JSONObject group = new JSONObject();
+                group.put("id", Base64.encodeBytes( g.getId() ) );
+                group.put("isActive", g.isActive() );
+                group.put("members", jsonListOfStrings( g.getMembers() ) );
+                if(g.getName().isPresent())
+                    group.put("name", g.getName().get() );
+                if (g.getAvatar().isPresent()) // group.put("avatar", jsonAttachment( g.getAvatar().get() ) );
+                    m.retrieveGroupAvatarAttachment(g.getAvatar().get(), g.getId() );
+                groups.put( group );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (tmpFile != null) {
+                try {
+                    Files.delete(tmpFile.toPath());
+                } catch (IOException e) {
+                    System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                }
+            }
+        }
+        return groups;
+    }
+
+    private final JSONArray jsonContactsAttachment( SignalServiceAttachment contactsAttachment ) {
+        final JSONArray contacts = new JSONArray();
+        File tmpFile = null;
+        try {
+            tmpFile = Util.createTempFile();
+            final DeviceContactsInputStream s = new DeviceContactsInputStream(
+                    m.retrieveAttachmentAsStream(contactsAttachment.asPointer(), tmpFile));
+            DeviceContact c;
+            while ((c = s.read()) != null) {
+                final JSONObject contact = new JSONObject();
+                contact.put( "number", c.getNumber() );
+                if( c.getName().isPresent() )
+                    contact.put( "name", c.getName().get() );
+                if( c.getColor().isPresent() )
+                    contact.put( "color", c.getColor().get() );
+                if( c.getAvatar().isPresent() ) //contact.put( "avatar", jsonAttachment( c.getAvatar().get() ) );
+                    m.retrieveContactAvatarAttachment(c.getAvatar().get(), c.getNumber() );
+                contacts.put( contact );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (tmpFile != null) {
+                try {
+                    Files.delete(tmpFile.toPath());
+                } catch (IOException e) {
+                    System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                }
+            }
+        }
+        return contacts;
     }
 
 }

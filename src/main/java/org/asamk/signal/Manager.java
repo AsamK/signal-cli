@@ -1340,7 +1340,7 @@ class Manager implements Signal {
         return new File(avatarsPath, "contact-" + number);
     }
 
-    private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
+    public File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
         createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
@@ -1355,7 +1355,7 @@ class Manager implements Signal {
         return new File(avatarsPath, "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
     }
 
-    private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
+    public File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
         createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
@@ -1429,7 +1429,7 @@ class Manager implements Signal {
         return outputFile;
     }
 
-    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
+    public InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
         return messageReceiver.retrieveAttachment(pointer, tmpFile);
     }
