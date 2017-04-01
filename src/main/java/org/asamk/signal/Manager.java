@@ -96,6 +96,7 @@ class Manager implements Signal {
 
     private final static int PREKEY_MINIMUM_COUNT = 20;
     private static final int PREKEY_BATCH_SIZE = 100;
+    private static final int MAX_ATTACHMENT_SIZE = 150 * 1024  * 1024;
 
     private final String settingsPath;
     private final String dataPath;
@@ -557,7 +558,7 @@ class Manager implements Signal {
         if (mime == null) {
             mime = "application/octet-stream";
         }
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, null);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), null);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -1407,7 +1408,7 @@ class Manager implements Signal {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
 
         File tmpFile = Util.createTempFile();
-        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile)) {
+        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE)) {
             try (OutputStream output = new FileOutputStream(outputFile)) {
                 byte[] buffer = new byte[4096];
                 int read;
@@ -1431,7 +1432,7 @@ class Manager implements Signal {
 
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
-        return messageReceiver.retrieveAttachment(pointer, tmpFile);
+        return messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE);
     }
 
     private String canonicalizeNumber(String number) throws InvalidNumberException {

@@ -1038,6 +1038,7 @@ public class Main {
             if (attachment.isPointer()) {
                 final SignalServiceAttachmentPointer pointer = attachment.asPointer();
                 System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
+                System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                 File file = m.getAttachmentFile(pointer.getId());
                 if (file.exists()) {
