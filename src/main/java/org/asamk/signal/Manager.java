@@ -836,7 +836,10 @@ class Manager implements Signal {
     }
 
     @Override
-    public void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+        if (groupId.length == 0) {
+            groupId = null;
+        }
         if (name.isEmpty()) {
             name = null;
         }
@@ -846,7 +849,7 @@ class Manager implements Signal {
         if (avatar.isEmpty()) {
             avatar = null;
         }
-        sendUpdateGroupMessage(groupId, name, members, avatar);
+        return sendUpdateGroupMessage(groupId, name, members, avatar);
     }
 
     private void requestSyncGroups() throws IOException {

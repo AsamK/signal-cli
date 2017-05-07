@@ -27,7 +27,7 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId);
 
-    void updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
+    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
 
     class MessageReceived extends DBusSignal {
         private long timestamp;

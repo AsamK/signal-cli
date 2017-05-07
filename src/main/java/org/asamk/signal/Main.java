@@ -460,11 +460,7 @@ public class Main {
 
                     break;
                 case "updateGroup":
-                    if (dBusConn != null) {
-                        System.err.println("updateGroup is not yet implemented via dbus");
-                        return 1;
-                    }
-                    if (!m.isRegistered()) {
+                    if (dBusConn == null && !m.isRegistered()) {
                         System.err.println("User is not registered.");
                         return 1;
                     }
@@ -474,8 +470,23 @@ public class Main {
                         if (ns.getString("group") != null) {
                             groupId = decodeGroupId(ns.getString("group"));
                         }
-                        byte[] newGroupId = m.sendUpdateGroupMessage(groupId, ns.getString("name"), ns.<String>getList("member"), ns.getString("avatar"));
                         if (groupId == null) {
+                            groupId = new byte[0];
+                        }
+                        String groupName = ns.getString("name");
+                        if (groupName == null) {
+                            groupName = "";
+                        }
+                        List<String> groupMembers = ns.<String>getList("member");
+                        if (groupMembers == null) {
+                            groupMembers = new ArrayList<String>();
+                        }
+                        String groupAvatar = ns.getString("avatar");
+                        if (groupAvatar == null) {
+                            groupAvatar = "";
+                        }
+                        byte[] newGroupId = ts.updateGroup(groupId, groupName, groupMembers, groupAvatar);
+                        if (groupId.length != newGroupId.length) {
                             System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
                         }
                     } catch (IOException e) {
