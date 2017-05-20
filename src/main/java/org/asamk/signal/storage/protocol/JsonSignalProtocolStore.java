@@ -8,10 +8,7 @@ import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
-import org.whispersystems.libsignal.state.PreKeyRecord;
-import org.whispersystems.libsignal.state.SessionRecord;
-import org.whispersystems.libsignal.state.SignalProtocolStore;
-import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.state.*;
 
 import java.util.List;
 import java.util.Map;
@@ -66,8 +63,8 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
     }
 
     @Override
-    public void saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        identityKeyStore.saveIdentity(address, identityKey);
+    public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
+        return identityKeyStore.saveIdentity(address, identityKey);
     }
 
     public void saveIdentity(String name, IdentityKey identityKey, TrustLevel trustLevel) {
@@ -83,8 +80,8 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
     }
 
     @Override
-    public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        return identityKeyStore.isTrustedIdentity(address, identityKey);
+    public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
+        return identityKeyStore.isTrustedIdentity(address, identityKey, direction);
     }
 
     @Override

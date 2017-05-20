@@ -558,7 +558,8 @@ class Manager implements Signal {
         if (mime == null) {
             mime = "application/octet-stream";
         }
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), null);
+        // TODO mabybe add a parameter to set the voiceNote and preview option
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, Optional.<byte[]>absent(),null);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -1251,7 +1252,11 @@ class Manager implements Signal {
                     File tmpFile = null;
                     try {
                         tmpFile = Util.createTempFile();
-                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(syncMessage.getContacts().get().asPointer(), tmpFile));
+                        final ContactsMessage contactsMessage = syncMessage.getContacts().get();
+                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(contactsMessage.getContactsStream().asPointer(), tmpFile));
+                        if (contactsMessage.isComplete()) {
+                            contactStore.clear();
+                        }
                         DeviceContact c;
                         while ((c = s.read()) != null) {
                             ContactInfo contact = contactStore.getContact(c.getNumber());
@@ -1506,7 +1511,7 @@ class Manager implements Signal {
                             .withLength(contactsFile.length())
                             .build();
 
-                    sendSyncMessage(SignalServiceSyncMessage.forContacts(attachmentStream));
+                    sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream, true)));
                 }
             }
         } finally {

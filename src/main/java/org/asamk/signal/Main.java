@@ -938,8 +938,13 @@ public class Main {
                         SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
 
                         if (syncMessage.getContacts().isPresent()) {
-                            System.out.println("Received sync contacts");
-                            printAttachment(syncMessage.getContacts().get());
+                            final ContactsMessage contactsMessage = syncMessage.getContacts().get();
+                            if (contactsMessage.isComplete()) {
+                                System.out.println("Received complete sync contacts");
+                            } else {
+                                System.out.println("Received sync contacts");
+                            }
+                            printAttachment(contactsMessage.getContactsStream());
                         }
                         if (syncMessage.getGroups().isPresent()) {
                             System.out.println("Received sync groups");
@@ -1051,6 +1056,7 @@ public class Main {
                 System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
                 System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
+                System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
                 File file = m.getAttachmentFile(pointer.getId());
                 if (file.exists()) {
                     System.out.println("  Stored plaintext in: " + file);

@@ -33,6 +33,13 @@ public class JsonContactsStore {
         return new ArrayList<>(contacts.values());
     }
 
+    /**
+     * Remove all contacts from the store
+     */
+    public void clear() {
+        contacts.clear();
+    }
+
     public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
         @Override
         public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
