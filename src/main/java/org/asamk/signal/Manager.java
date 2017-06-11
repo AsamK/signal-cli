@@ -96,7 +96,7 @@ class Manager implements Signal {
 
     private final static int PREKEY_MINIMUM_COUNT = 20;
     private static final int PREKEY_BATCH_SIZE = 100;
-    private static final int MAX_ATTACHMENT_SIZE = 150 * 1024  * 1024;
+    private static final int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
 
     private final String settingsPath;
     private final String dataPath;
@@ -559,7 +559,7 @@ class Manager implements Signal {
             mime = "application/octet-stream";
         }
         // TODO mabybe add a parameter to set the voiceNote and preview option
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, Optional.<byte[]>absent(),null);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, Optional.<byte[]>absent(), null);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -1199,6 +1199,7 @@ class Manager implements Signal {
                     if (rm.isContactsRequest()) {
                         try {
                             sendContacts();
+                            sendVerifiedMessage();
                         } catch (UntrustedIdentityException | IOException e) {
                             e.printStackTrace();
                         }
@@ -1286,6 +1287,12 @@ class Manager implements Signal {
                                 System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
                             }
                         }
+                    }
+                }
+                if (syncMessage.getVerified().isPresent()) {
+                    final List<VerifiedMessage> verifiedList = syncMessage.getVerified().get();
+                    for (VerifiedMessage v : verifiedList) {
+                        signalProtocolStore.saveIdentity(v.getDestination(), v.getIdentityKey(), TrustLevel.fromVerifiedState(v.getVerified()));
                     }
                 }
             }
@@ -1523,6 +1530,26 @@ class Manager implements Signal {
         }
     }
 
+    private void sendVerifiedMessage() throws IOException, UntrustedIdentityException {
+        List<VerifiedMessage> verifiedMessages = new LinkedList<>();
+        for (Map.Entry<String, List<JsonIdentityKeyStore.Identity>> x : getIdentities().entrySet()) {
+            final String name = x.getKey();
+            for (JsonIdentityKeyStore.Identity id : x.getValue()) {
+                if (id.getTrustLevel() == TrustLevel.TRUSTED_UNVERIFIED) {
+                    continue;
+                }
+                VerifiedMessage verifiedMessage = new VerifiedMessage(name, id.getIdentityKey(), id.getTrustLevel().toVerifiedState());
+                verifiedMessages.add(verifiedMessage);
+            }
+        }
+        sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessages));
+    }
+
+    private void sendVerifiedMessage(String destination, IdentityKey identityKey, TrustLevel trustLevel) throws IOException, UntrustedIdentityException {
+        VerifiedMessage verifiedMessage = new VerifiedMessage(destination, identityKey, trustLevel.toVerifiedState());
+        sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+    }
+
     public ContactInfo getContact(String number) {
         return contactStore.getContact(number);
     }
@@ -1556,6 +1583,11 @@ class Manager implements Signal {
             }
 
             signalProtocolStore.saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            try {
+                sendVerifiedMessage(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            } catch (IOException | UntrustedIdentityException e) {
+                e.printStackTrace();
+            }
             save();
             return true;
         }
@@ -1579,6 +1611,11 @@ class Manager implements Signal {
             }
 
             signalProtocolStore.saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            try {
+                sendVerifiedMessage(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            } catch (IOException | UntrustedIdentityException e) {
+                e.printStackTrace();
+            }
             save();
             return true;
         }
@@ -1598,6 +1635,11 @@ class Manager implements Signal {
         for (JsonIdentityKeyStore.Identity id : ids) {
             if (id.getTrustLevel() == TrustLevel.UNTRUSTED) {
                 signalProtocolStore.saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
+                try {
+                    sendVerifiedMessage(name, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
+                } catch (IOException | UntrustedIdentityException e) {
+                    e.printStackTrace();
+                }
             }
         }
         save();
