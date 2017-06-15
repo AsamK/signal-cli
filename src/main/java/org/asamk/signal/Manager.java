@@ -807,9 +807,9 @@ class Manager implements Signal {
         if (contact == null) {
             contact = new ContactInfo();
             contact.number = number;
-            System.out.println("Add contact " + number + " named " + name);
+            System.err.println("Add contact " + number + " named " + name);
         } else {
-            System.out.println("Updating contact " + number + " name " + contact.name + " -> " + name);
+            System.err.println("Updating contact " + number + " name " + contact.name + " -> " + name);
         }
         contact.name = name;
         contactStore.updateContact(contact);
@@ -1113,7 +1113,7 @@ class Manager implements Signal {
                 try {
                     Files.delete(fileEntry.toPath());
                 } catch (IOException e) {
-                    System.out.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
+                    System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
                 }
             }
         }
@@ -1170,7 +1170,7 @@ class Manager implements Signal {
                         cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
                         Files.delete(cacheFile.toPath());
                     } catch (IOException e) {
-                        System.out.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
+                        System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
                     }
                 }
             }
@@ -1216,23 +1216,25 @@ class Manager implements Signal {
                     File tmpFile = null;
                     try {
                         tmpFile = Util.createTempFile();
-                        DeviceGroupsInputStream s = new DeviceGroupsInputStream(retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer(), tmpFile));
-                        DeviceGroup g;
-                        while ((g = s.read()) != null) {
-                            GroupInfo syncGroup = groupStore.getGroup(g.getId());
-                            if (syncGroup == null) {
-                                syncGroup = new GroupInfo(g.getId());
-                            }
-                            if (g.getName().isPresent()) {
-                                syncGroup.name = g.getName().get();
-                            }
-                            syncGroup.members.addAll(g.getMembers());
-                            syncGroup.active = g.isActive();
+                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer(), tmpFile)) {
+                            DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
+                            DeviceGroup g;
+                            while ((g = s.read()) != null) {
+                                GroupInfo syncGroup = groupStore.getGroup(g.getId());
+                                if (syncGroup == null) {
+                                    syncGroup = new GroupInfo(g.getId());
+                                }
+                                if (g.getName().isPresent()) {
+                                    syncGroup.name = g.getName().get();
+                                }
+                                syncGroup.members.addAll(g.getMembers());
+                                syncGroup.active = g.isActive();
 
-                            if (g.getAvatar().isPresent()) {
-                                retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
+                                if (g.getAvatar().isPresent()) {
+                                    retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
+                                }
+                                groupStore.updateGroup(syncGroup);
                             }
-                            groupStore.updateGroup(syncGroup);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1241,7 +1243,7 @@ class Manager implements Signal {
                             try {
                                 Files.delete(tmpFile.toPath());
                             } catch (IOException e) {
-                                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                                System.err.println("Failed to delete received groups temp file “" + tmpFile + "”: " + e.getMessage());
                             }
                         }
                     }
@@ -1254,27 +1256,29 @@ class Manager implements Signal {
                     try {
                         tmpFile = Util.createTempFile();
                         final ContactsMessage contactsMessage = syncMessage.getContacts().get();
-                        DeviceContactsInputStream s = new DeviceContactsInputStream(retrieveAttachmentAsStream(contactsMessage.getContactsStream().asPointer(), tmpFile));
-                        if (contactsMessage.isComplete()) {
-                            contactStore.clear();
-                        }
-                        DeviceContact c;
-                        while ((c = s.read()) != null) {
-                            ContactInfo contact = contactStore.getContact(c.getNumber());
-                            if (contact == null) {
-                                contact = new ContactInfo();
-                                contact.number = c.getNumber();
+                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream().asPointer(), tmpFile)) {
+                            DeviceContactsInputStream s = new DeviceContactsInputStream(attachmentAsStream);
+                            if (contactsMessage.isComplete()) {
+                                contactStore.clear();
                             }
-                            if (c.getName().isPresent()) {
-                                contact.name = c.getName().get();
-                            }
-                            if (c.getColor().isPresent()) {
-                                contact.color = c.getColor().get();
-                            }
-                            contactStore.updateContact(contact);
+                            DeviceContact c;
+                            while ((c = s.read()) != null) {
+                                ContactInfo contact = contactStore.getContact(c.getNumber());
+                                if (contact == null) {
+                                    contact = new ContactInfo();
+                                    contact.number = c.getNumber();
+                                }
+                                if (c.getName().isPresent()) {
+                                    contact.name = c.getName().get();
+                                }
+                                if (c.getColor().isPresent()) {
+                                    contact.color = c.getColor().get();
+                                }
+                                contactStore.updateContact(contact);
 
-                            if (c.getAvatar().isPresent()) {
-                                retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
+                                if (c.getAvatar().isPresent()) {
+                                    retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -1284,7 +1288,7 @@ class Manager implements Signal {
                             try {
                                 Files.delete(tmpFile.toPath());
                             } catch (IOException e) {
-                                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                                System.err.println("Failed to delete received contacts temp file “" + tmpFile + "”: " + e.getMessage());
                             }
                         }
                     }
@@ -1439,7 +1443,7 @@ class Manager implements Signal {
             try {
                 Files.delete(tmpFile.toPath());
             } catch (IOException e) {
-                System.out.println("Failed to delete temp file “" + tmpFile + "”: " + e.getMessage());
+                System.err.println("Failed to delete received attachment temp file “" + tmpFile + "”: " + e.getMessage());
             }
         }
         return outputFile;
@@ -1493,7 +1497,7 @@ class Manager implements Signal {
             try {
                 Files.delete(groupsFile.toPath());
             } catch (IOException e) {
-                System.out.println("Failed to delete temp file “" + groupsFile + "”: " + e.getMessage());
+                System.err.println("Failed to delete groups temp file “" + groupsFile + "”: " + e.getMessage());
             }
         }
     }
@@ -1525,7 +1529,7 @@ class Manager implements Signal {
             try {
                 Files.delete(contactsFile.toPath());
             } catch (IOException e) {
-                System.out.println("Failed to delete temp file “" + contactsFile + "”: " + e.getMessage());
+                System.err.println("Failed to delete contacts temp file “" + contactsFile + "”: " + e.getMessage());
             }
         }
     }
