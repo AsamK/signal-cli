@@ -16,6 +16,13 @@
  */
 package org.asamk.signal;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
@@ -420,7 +427,8 @@ public class Main {
                     }
                     boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
                     try {
-                        m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, ignoreAttachments, new ReceiveMessageHandler(m));
+                        final Manager.ReceiveMessageHandler handler = ns.getBoolean("json") ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m);
+                        m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, ignoreAttachments, handler);
                     } catch (IOException e) {
                         System.err.println("Error while receiving messages: " + e.getMessage());
                         return 3;
@@ -822,6 +830,9 @@ public class Main {
         parserReceive.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
+        parserReceive.addArgument("--json")
+                .help("Output received messages in json format, one json object per line.")
+                .action(Arguments.storeTrue());
 
         Subparser parserDaemon = subparsers.addParser("daemon");
         parserDaemon.addArgument("--system")
@@ -1116,7 +1127,37 @@ public class Main {
                 }
             }
         }
+    }
 
+    private static class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+        final Manager m;
+        final ObjectMapper jsonProcessor;
+
+        public JsonReceiveMessageHandler(Manager m) {
+            this.m = m;
+            this.jsonProcessor = new ObjectMapper();
+            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
+            jsonProcessor.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+            jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        }
+
+        @Override
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
+            ObjectNode result = jsonProcessor.createObjectNode();
+            if (exception != null) {
+                result.putPOJO("error", new JsonError(exception));
+            }
+            if (envelope != null) {
+                result.putPOJO("envelope", new JsonMessageEnvelope(envelope, content));
+            }
+            try {
+                jsonProcessor.writeValue(System.out, result);
+                System.out.println();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static String formatTimestamp(long timestamp) {
