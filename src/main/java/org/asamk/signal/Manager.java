@@ -1116,6 +1116,8 @@ class Manager implements Signal {
                     System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
                 }
             }
+            // Try to delete directory if empty
+            dir.delete();
         }
     }
 
@@ -1169,6 +1171,8 @@ class Manager implements Signal {
                     try {
                         cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
                         Files.delete(cacheFile.toPath());
+                        // Try to delete directory if empty
+                        new File(getMessageCachePath()).delete();
                     } catch (IOException e) {
                         System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
                     }
