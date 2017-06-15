@@ -1,5 +1,7 @@
 package org.asamk.signal.util;
 
+import org.whispersystems.signalservice.internal.util.Base64;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

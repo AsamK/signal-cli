@@ -35,7 +35,6 @@ import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.storage.threads.JsonThreadStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
-import org.asamk.signal.util.Base64;
 import org.asamk.signal.util.Util;
 import org.whispersystems.libsignal.*;
 import org.whispersystems.libsignal.ecc.Curve;
@@ -64,6 +63,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.SignalServiceUrl;
+import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.*;
 import java.net.URI;

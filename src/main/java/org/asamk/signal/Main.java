@@ -24,7 +24,6 @@ import org.asamk.Signal;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
-import org.asamk.signal.util.Base64;
 import org.asamk.signal.util.Hex;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
@@ -39,6 +38,7 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.File;
 import java.io.IOException;

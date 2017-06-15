@@ -5,12 +5,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import org.asamk.signal.TrustLevel;
-import org.asamk.signal.util.Base64;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.IdentityKeyStore;
+import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.IOException;
 import java.util.*;

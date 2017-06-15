@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.asamk.signal.util.Base64;
+import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.IOException;
 import java.util.ArrayList;
