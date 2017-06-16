@@ -32,6 +32,7 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.util.Hex;
+import org.asamk.signal.JsonReceiveMessageHandler;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -48,9 +49,11 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -375,6 +378,39 @@ public class Main {
                         }
                     }
 
+                    break;
+                case "json":
+                    {
+                        if (!m.isRegistered()) {
+                            System.err.println("User is not registered.");
+                            return 1;
+                        }
+                        double timeout = 5;
+                        if (ns.getDouble("timeout") != null) {
+                            timeout = ns.getDouble("timeout");
+                        }
+                        boolean returnOnTimeout = true;
+                        if (timeout < 0) {
+                            returnOnTimeout = false;
+                            timeout = 3600;
+                        }
+                        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+                        try {
+                            Writer logfile = new FileWriter(ns.getString("logfile"),true);
+                            logfile.write("{\"init\":true},\n");
+                            logfile.flush();
+                            m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, ignoreAttachments, new JsonReceiveMessageHandler(m,logfile));
+                            logfile.write("{\"done\":true}]\n");
+                            logfile.flush();
+                            logfile.close();
+                        } catch (IOException e) {
+                            System.err.println("Error while receiving messages: " + e.getMessage());
+                            return 3;
+                        } catch (AssertionError e) {
+                            handleAssertionError(e);
+                            return 1;
+                        }
+                    }
                     break;
                 case "receive":
                     if (dBusConn != null) {
@@ -822,6 +858,16 @@ public class Main {
                 .action(Arguments.storeTrue());
         mutTrust.addArgument("-v", "--verified-fingerprint")
                 .help("Specify the fingerprint of the key, only use this option if you have verified the fingerprint.");
+
+        Subparser parserJson = subparsers.addParser("json");
+        parserJson.addArgument("-t", "--timeout")
+                .type(double.class)
+                .help("Number of seconds to wait for new messages (negative values disable timeout)");
+        parserJson.addArgument("--ignore-attachments")
+                .help("Don’t download attachments of received messages.")
+                .action(Arguments.storeTrue());
+        parserJson.addArgument("-l","--logfile")
+                .help("File to store received messages in JSON format.");
 
         Subparser parserReceive = subparsers.addParser("receive");
         parserReceive.addArgument("-t", "--timeout")
