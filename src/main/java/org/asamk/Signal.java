@@ -65,4 +65,23 @@ public interface Signal extends DBusInterface {
             return attachments;
         }
     }
+
+    class ReceiptReceived extends DBusSignal {
+        private long timestamp;
+        private String sender;
+
+        public ReceiptReceived(String objectpath, long timestamp, String sender) throws DBusException {
+            super(objectpath, timestamp, sender);
+            this.timestamp = timestamp;
+            this.sender = sender;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public String getSender() {
+            return sender;
+        }
+    }
 }
