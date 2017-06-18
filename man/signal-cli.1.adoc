@@ -136,6 +136,8 @@ attachments are downloaded to the config directory.
 	Default is 5 seconds.
 *--ignore-attachments*::
 	Don’t download attachments of received messages.
+*--json*::
+	Output received messages in json format, one object per line.
 
 updateGroup
 ~~~~~~~~~~~
