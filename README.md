@@ -7,7 +7,32 @@ signal-cli is primarily intended to be used on servers to notify admins of impor
 
 ## Installation
 
-You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
+You can [build signal-cli](#building) yourself, run the
+[auto-built Docker image](https://hub.docker.com/r/kayvan/signal-cli/),
+or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
+
+## Running the Docker image
+
+Where you have a working Docker installation, you can run signal-cli like this:
+
+    docker run -v $HOME:/home/gradle --rm -it kayvan/signal-cli -h
+
+Use the `-v $HOME:/home/gradle` arguments to ensure that your signal-cli
+settings and data end up in `$HOME/.config/signal/` and persist.
+
+You can link the CLI client to your primary device (phone, tablet, etc.):
+
+    docker run -v $HOME:/home/gradle --rm -it kayvan/signal-cli link
+    tsdevice:/?uuid=SOME_ID&pub_key=SECRET
+
+Use qrencode to turn the generated `tsdevice:` URL into a QR code to scan:
+
+    qrencode -t ANSI256 'tsdevice:/?uuid=SOME_ID&pub_key=SECRET'
+
+When you scan the code using your master device, signal-cli will emit a
+verification message:
+
+    Associated with: [YourPhoneNumber]
 
 ### Install system-wide on Linux
 See [latest version](https://github.com/AsamK/signal-cli/releases).
