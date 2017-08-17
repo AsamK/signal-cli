@@ -368,7 +368,7 @@ class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), false, false, true);
+        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), true);
     }
 
     public void unregister() throws IOException {
@@ -481,24 +481,6 @@ class Manager implements Signal {
         return records;
     }
 
-    private PreKeyRecord getOrGenerateLastResortPreKey() {
-        if (signalProtocolStore.containsPreKey(Medium.MAX_VALUE)) {
-            try {
-                return signalProtocolStore.loadPreKey(Medium.MAX_VALUE);
-            } catch (InvalidKeyIdException e) {
-                signalProtocolStore.removePreKey(Medium.MAX_VALUE);
-            }
-        }
-
-        ECKeyPair keyPair = Curve.generateKeyPair();
-        PreKeyRecord record = new PreKeyRecord(Medium.MAX_VALUE, keyPair);
-
-        signalProtocolStore.storePreKey(Medium.MAX_VALUE, record);
-        save();
-
-        return record;
-    }
-
     private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
         try {
             ECKeyPair keyPair = Curve.generateKeyPair();
@@ -518,7 +500,7 @@ class Manager implements Signal {
     public void verifyAccount(String verificationCode) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), false, false, true);
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), true);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
@@ -529,10 +511,9 @@ class Manager implements Signal {
 
     private void refreshPreKeys() throws IOException {
         List<PreKeyRecord> oneTimePreKeys = generatePreKeys();
-        PreKeyRecord lastResortKey = getOrGenerateLastResortPreKey();
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(signalProtocolStore.getIdentityKeyPair());
 
-        accountManager.setPreKeys(signalProtocolStore.getIdentityKeyPair().getPublicKey(), lastResortKey, signedPreKeyRecord, oneTimePreKeys);
+        accountManager.setPreKeys(signalProtocolStore.getIdentityKeyPair().getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
 
@@ -1203,7 +1184,6 @@ class Manager implements Signal {
                     if (rm.isContactsRequest()) {
                         try {
                             sendContacts();
-                            sendVerifiedMessage();
                         } catch (UntrustedIdentityException | IOException e) {
                             e.printStackTrace();
                         }
@@ -1298,10 +1278,8 @@ class Manager implements Signal {
                     }
                 }
                 if (syncMessage.getVerified().isPresent()) {
-                    final List<VerifiedMessage> verifiedList = syncMessage.getVerified().get();
-                    for (VerifiedMessage v : verifiedList) {
-                        signalProtocolStore.saveIdentity(v.getDestination(), v.getIdentityKey(), TrustLevel.fromVerifiedState(v.getVerified()));
-                    }
+                    final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
+                    signalProtocolStore.saveIdentity(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                 }
             }
         }
@@ -1513,8 +1491,21 @@ class Manager implements Signal {
             try (OutputStream fos = new FileOutputStream(contactsFile)) {
                 DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : contactStore.getContacts()) {
+                    VerifiedMessage verifiedMessage = null;
+                    if (getIdentities().containsKey(record.number)) {
+                        JsonIdentityKeyStore.Identity currentIdentity = null;
+                        for (JsonIdentityKeyStore.Identity id : getIdentities().get(record.number)) {
+                            if (currentIdentity == null || id.getDateAdded().after(currentIdentity.getDateAdded())) {
+                                currentIdentity = id;
+                            }
+                        }
+                        if (currentIdentity != null) {
+                            verifiedMessage = new VerifiedMessage(record.number, currentIdentity.getIdentityKey(), currentIdentity.getTrustLevel().toVerifiedState(), currentIdentity.getDateAdded().getTime());
+                        }
+                    }
+
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
-                            createContactAvatarAttachment(record.number), Optional.fromNullable(record.color)));
+                            createContactAvatarAttachment(record.number), Optional.fromNullable(record.color), Optional.fromNullable(verifiedMessage)));
                 }
             }
 
@@ -1538,23 +1529,8 @@ class Manager implements Signal {
         }
     }
 
-    private void sendVerifiedMessage() throws IOException, UntrustedIdentityException {
-        List<VerifiedMessage> verifiedMessages = new LinkedList<>();
-        for (Map.Entry<String, List<JsonIdentityKeyStore.Identity>> x : getIdentities().entrySet()) {
-            final String name = x.getKey();
-            for (JsonIdentityKeyStore.Identity id : x.getValue()) {
-                if (id.getTrustLevel() == TrustLevel.TRUSTED_UNVERIFIED) {
-                    continue;
-                }
-                VerifiedMessage verifiedMessage = new VerifiedMessage(name, id.getIdentityKey(), id.getTrustLevel().toVerifiedState());
-                verifiedMessages.add(verifiedMessage);
-            }
-        }
-        sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessages));
-    }
-
     private void sendVerifiedMessage(String destination, IdentityKey identityKey, TrustLevel trustLevel) throws IOException, UntrustedIdentityException {
-        VerifiedMessage verifiedMessage = new VerifiedMessage(destination, identityKey, trustLevel.toVerifiedState());
+        VerifiedMessage verifiedMessage = new VerifiedMessage(destination, identityKey, trustLevel.toVerifiedState(), System.currentTimeMillis());
         sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 

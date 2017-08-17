@@ -1012,13 +1012,10 @@ public class Main {
                         }
                         if (syncMessage.getVerified().isPresent()) {
                             System.out.println("Received sync message with verified identities:");
-                            final List<VerifiedMessage> verifiedList = syncMessage.getVerified().get();
-                            for (VerifiedMessage v : verifiedList) {
-                                System.out.println(" - " + v.getDestination() + ": " + v.getVerified());
-                                String safetyNumber = formatSafetyNumber(m.computeSafetyNumber(v.getDestination(), v.getIdentityKey()));
-                                System.out.println("   " + safetyNumber);
-                            }
-
+                            final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
+                            System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
+                            String safetyNumber = formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
+                            System.out.println("   " + safetyNumber);
                         }
                     }
                 }
