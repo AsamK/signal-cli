@@ -61,8 +61,10 @@ import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.api.push.exceptions.*;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
-import org.whispersystems.signalservice.internal.push.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.*;
@@ -87,8 +89,12 @@ import static java.nio.file.attribute.PosixFilePermission.*;
 
 class Manager implements Signal {
     private final static String URL = "https://textsecure-service.whispersystems.org";
+    private final static String CDN_URL = "https://cdn.signal.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
-    private final static SignalServiceUrl[] serviceUrls = new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)};
+    private final static SignalServiceConfiguration serviceConfiguration = new SignalServiceConfiguration(
+            new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
+            new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)}
+    );
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
     public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
@@ -231,7 +237,7 @@ class Manager implements Signal {
 
         migrateLegacyConfigs();
 
-        accountManager = new SignalServiceAccountManager(serviceUrls, username, password, deviceId, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, deviceId, USER_AGENT);
         try {
             if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
                 refreshPreKeys();
@@ -356,7 +362,7 @@ class Manager implements Signal {
     public void register(boolean voiceVerification) throws IOException {
         password = Util.getSecret(18);
 
-        accountManager = new SignalServiceAccountManager(serviceUrls, username, password, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, USER_AGENT);
 
         if (voiceVerification)
             accountManager.requestVoiceVerificationCode();
@@ -381,7 +387,7 @@ class Manager implements Signal {
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         password = Util.getSecret(18);
 
-        accountManager = new SignalServiceAccountManager(serviceUrls, username, password, USER_AGENT);
+        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, USER_AGENT);
         String uuid = accountManager.getNewDeviceUuid();
 
         registered = false;
@@ -460,7 +466,8 @@ class Manager implements Signal {
         IdentityKeyPair identityKeyPair = signalProtocolStore.getIdentityKeyPair();
         String verificationCode = accountManager.getNewDeviceVerificationCode();
 
-        accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, verificationCode);
+        // TODO send profile key
+        accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, Optional.<byte[]>absent(), verificationCode);
     }
 
     private List<PreKeyRecord> generatePreKeys() {
@@ -856,7 +863,7 @@ class Manager implements Signal {
 
     private void sendSyncMessage(SignalServiceSyncMessage message)
             throws IOException, UntrustedIdentityException {
-        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceUrls, username, password,
+        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceConfiguration, username, password,
                 deviceId, signalProtocolStore, USER_AGENT, Optional.fromNullable(messagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
         try {
             messageSender.sendMessage(message);
@@ -873,7 +880,7 @@ class Manager implements Signal {
 
         SignalServiceDataMessage message = null;
         try {
-            SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceUrls, username, password,
+            SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceConfiguration, username, password,
                     deviceId, signalProtocolStore, USER_AGENT, Optional.fromNullable(messagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
 
             message = messageBuilder.build();
@@ -1104,7 +1111,7 @@ class Manager implements Signal {
 
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
 
         try {
             if (messagePipe == null) {
@@ -1406,7 +1413,7 @@ class Manager implements Signal {
             }
         }
 
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
 
         File tmpFile = Util.createTempFile();
         try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE)) {
@@ -1432,7 +1439,7 @@ class Manager implements Signal {
     }
 
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceUrls, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
         return messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE);
     }
 
@@ -1504,8 +1511,10 @@ class Manager implements Signal {
                         }
                     }
 
+                    // TODO include profile key
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
-                            createContactAvatarAttachment(record.number), Optional.fromNullable(record.color), Optional.fromNullable(verifiedMessage)));
+                            createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
+                            Optional.fromNullable(verifiedMessage), Optional.<byte[]>absent()));
                 }
             }
 
