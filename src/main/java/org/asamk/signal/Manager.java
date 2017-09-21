@@ -805,6 +805,16 @@ class Manager implements Signal {
     }
 
     @Override
+    public List<byte[]> getGroupIds() {
+        List<GroupInfo> groups = getGroups();
+        List<byte[]> ids = new ArrayList<byte[]>(groups.size());
+        for (GroupInfo group : groups) {
+          ids.add(group.groupId);
+        }
+        return ids;
+    }
+
+    @Override
     public String getGroupName(byte[] groupId) {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
