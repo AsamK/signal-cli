@@ -1111,7 +1111,7 @@ class Manager implements Signal {
 
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null);
 
         try {
             if (messagePipe == null) {
@@ -1413,7 +1413,7 @@ class Manager implements Signal {
             }
         }
 
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null);
 
         File tmpFile = Util.createTempFile();
         try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE)) {
@@ -1439,7 +1439,7 @@ class Manager implements Signal {
     }
 
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null);
         return messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE);
     }
 
