@@ -1,5 +1,6 @@
 .gradle/
-.idea/
+.idea/*
+!.idea/codeStyles/
 build/
 *~
 *.swp
@@ -8,4 +9,3 @@ local.properties
 .classpath
 .project
 .settings/
-
