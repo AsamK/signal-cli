@@ -720,7 +720,8 @@ public class Main {
     }
 
     private static Namespace parseArgs(String[] args) {
-        ArgumentParser parser = ArgumentParsers.newArgumentParser("signal-cli")
+        ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
+                .build()
                 .defaultHelp(true)
                 .description("Commandline interface for Signal.")
                 .version(Manager.PROJECT_NAME + " " + Manager.PROJECT_VERSION);
