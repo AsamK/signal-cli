@@ -547,7 +547,7 @@ class Manager implements Signal {
             mime = "application/octet-stream";
         }
         // TODO mabybe add a parameter to set the voiceNote and preview option
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, Optional.<byte[]>absent(), null);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, Optional.<byte[]>absent(), 0, 0, null);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -1467,7 +1467,7 @@ class Manager implements Signal {
                 for (GroupInfo record : groupStore.getGroups()) {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.members), createGroupAvatarAttachment(record.groupId),
-                            record.active));
+                            record.active, Optional.<Integer>absent()));
                 }
             }
 
@@ -1514,7 +1514,7 @@ class Manager implements Signal {
                     // TODO include profile key
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
-                            Optional.fromNullable(verifiedMessage), Optional.<byte[]>absent()));
+                            Optional.fromNullable(verifiedMessage), Optional.<byte[]>absent(), false, Optional.<Integer>absent()));
                 }
             }
 

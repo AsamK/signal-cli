@@ -39,6 +39,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.calls.*;
 import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
@@ -1018,6 +1019,54 @@ public class Main {
                             String safetyNumber = formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
                             System.out.println("   " + safetyNumber);
                         }
+                        if (syncMessage.getConfiguration().isPresent()) {
+                            System.out.println("Received sync message with configuration:");
+                            final ConfigurationMessage configurationMessage = syncMessage.getConfiguration().get();
+                            if (configurationMessage.getReadReceipts().isPresent()) {
+                                System.out.println(" - Read receipts: " + (configurationMessage.getReadReceipts().get() ? "enabled" : "disabled"));
+                            }
+                        }
+                    }
+                    if (content.getCallMessage().isPresent()) {
+                        System.out.println("Received a call message");
+                        SignalServiceCallMessage callMessage = content.getCallMessage().get();
+                        if (callMessage.getAnswerMessage().isPresent()) {
+                            AnswerMessage answerMessage = callMessage.getAnswerMessage().get();
+                            System.out.println("Answer message: " + answerMessage.getId() + ": " + answerMessage.getDescription());
+                        }
+                        if (callMessage.getBusyMessage().isPresent()) {
+                            BusyMessage busyMessage = callMessage.getBusyMessage().get();
+                            System.out.println("Busy message: " + busyMessage.getId());
+                        }
+                        if (callMessage.getHangupMessage().isPresent()) {
+                            HangupMessage hangupMessage = callMessage.getHangupMessage().get();
+                            System.out.println("Hangup message: " + hangupMessage.getId());
+                        }
+                        if (callMessage.getIceUpdateMessages().isPresent()) {
+                            List<IceUpdateMessage> iceUpdateMessages = callMessage.getIceUpdateMessages().get();
+                            for (IceUpdateMessage iceUpdateMessage : iceUpdateMessages) {
+                                System.out.println("Ice update message: " + iceUpdateMessage.getId() + ", sdp: " + iceUpdateMessage.getSdp());
+                            }
+                        }
+                        if (callMessage.getOfferMessage().isPresent()) {
+                            OfferMessage offerMessage = callMessage.getOfferMessage().get();
+                            System.out.println("Offer message: " + offerMessage.getId() + ": " + offerMessage.getDescription());
+                        }
+                    }
+                    if (content.getReceiptMessage().isPresent()) {
+                        System.out.println("Received a receipt message");
+                        SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
+                        System.out.println(" - When: " + formatTimestamp(receiptMessage.getWhen()));
+                        if (receiptMessage.isDeliveryReceipt()) {
+                            System.out.println(" - Is delivery receipt");
+                        }
+                        if (receiptMessage.isReadReceipt()) {
+                            System.out.println(" - Is read receipt");
+                        }
+                        System.out.println(" - Timestamps:");
+                        for (long timestamp : receiptMessage.getTimestamps()) {
+                            System.out.println("    " + formatTimestamp(timestamp));
+                        }
                     }
                 }
             } else {
@@ -1066,6 +1115,9 @@ public class Main {
             if (message.getExpiresInSeconds() > 0) {
                 System.out.println("Expires in: " + message.getExpiresInSeconds() + " seconds");
             }
+            if (message.isProfileKeyUpdate() && message.getProfileKey().isPresent()) {
+                System.out.println("Profile key update, key length:" + message.getProfileKey().get().length);
+            }
 
             if (message.getAttachments().isPresent()) {
                 System.out.println("Attachments: ");
@@ -1083,6 +1135,7 @@ public class Main {
                 System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                 System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
+                System.out.println("  Dimensions: " + pointer.getWidth() + "x" + pointer.getHeight());
                 File file = m.getAttachmentFile(pointer.getId());
                 if (file.exists()) {
                     System.out.println("  Stored plaintext in: " + file);
