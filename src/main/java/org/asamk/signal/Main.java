@@ -37,6 +37,7 @@ import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.calls.*;
@@ -46,6 +47,7 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.File;
@@ -183,6 +185,39 @@ public class Main {
                         return 3;
                     }
                     break;
+                case "setPin":
+                    if (dBusConn != null) {
+                        System.err.println("setPin is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    try {
+                        String registrationLockPin = ns.getString("registrationLockPin");
+                        m.setRegistrationLockPin(Optional.of(registrationLockPin));
+                    } catch (IOException e) {
+                        System.err.println("Set pin error: " + e.getMessage());
+                        return 3;
+                    }
+                    break;
+                case "removePin":
+                    if (dBusConn != null) {
+                        System.err.println("removePin is not yet implemented via dbus");
+                        return 1;
+                    }
+                    if (!m.isRegistered()) {
+                        System.err.println("User is not registered.");
+                        return 1;
+                    }
+                    try {
+                        m.setRegistrationLockPin(Optional.<String>absent());
+                    } catch (IOException e) {
+                        System.err.println("Remove pin error: " + e.getMessage());
+                        return 3;
+                    }
+                    break;
                 case "verify":
                     if (dBusConn != null) {
                         System.err.println("verify is not yet implemented via dbus");
@@ -197,7 +232,13 @@ public class Main {
                         return 1;
                     }
                     try {
-                        m.verifyAccount(ns.getString("verificationCode"));
+                        String verificationCode = ns.getString("verificationCode");
+                        String pin = ns.getString("pin");
+                        m.verifyAccount(verificationCode, pin);
+                    } catch (LockedException e) {
+                        System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: " + (e.getTimeRemaining() / 1000 / 60 / 60));
+                        System.err.println("Use '--pin PIN_CODE' to specify the registration lock PIN");
+                        return 3;
                     } catch (IOException e) {
                         System.err.println("Verify error: " + e.getMessage());
                         return 3;
@@ -777,9 +818,17 @@ public class Main {
         Subparser parserUpdateAccount = subparsers.addParser("updateAccount");
         parserUpdateAccount.help("Update the account attributes on the signal server.");
 
+        Subparser parserSetPin = subparsers.addParser("setPin");
+        parserSetPin.addArgument("registrationLockPin")
+                .help("The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)");
+
+        Subparser parserRemovePin = subparsers.addParser("removePin");
+
         Subparser parserVerify = subparsers.addParser("verify");
         parserVerify.addArgument("verificationCode")
                 .help("The verification code you received via sms or voice call.");
+        parserVerify.addArgument("-p", "--pin")
+                .help("The registration lock PIN, that was set by the user (Optional)");
 
         Subparser parserSend = subparsers.addParser("send");
         parserSend.addArgument("-g", "--group")

@@ -116,6 +116,7 @@ class Manager implements Signal {
     private String username;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private String password;
+    private String registrationLockPin;
     private String signalingKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
@@ -258,6 +259,8 @@ class Manager implements Signal {
         }
         username = getNotNullNode(rootNode, "username").asText();
         password = getNotNullNode(rootNode, "password").asText();
+        JsonNode pinNode = rootNode.get("registrationLockPin");
+        registrationLockPin = pinNode == null ? null : pinNode.asText();
         if (rootNode.has("signalingKey")) {
             signalingKey = getNotNullNode(rootNode, "signalingKey").asText();
         }
@@ -326,6 +329,7 @@ class Manager implements Signal {
         rootNode.put("username", username)
                 .put("deviceId", deviceId)
                 .put("password", password)
+                .put("registrationLockPin", registrationLockPin)
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
@@ -374,7 +378,7 @@ class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), true);
+        accountManager.setAccountAttributes(signalingKey, signalProtocolStore.getLocalRegistrationId(), true, registrationLockPin);
     }
 
     public void unregister() throws IOException {
@@ -504,16 +508,26 @@ class Manager implements Signal {
         }
     }
 
-    public void verifyAccount(String verificationCode) throws IOException {
+    public void verifyAccount(String verificationCode, String pin) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         signalingKey = Util.getSecret(52);
-        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), true);
+        accountManager.verifyAccountWithCode(verificationCode, signalingKey, signalProtocolStore.getLocalRegistrationId(), true, pin);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         registered = true;
+        registrationLockPin = pin;
 
         refreshPreKeys();
         save();
+    }
+
+    public void setRegistrationLockPin(Optional<String> pin) throws IOException {
+        accountManager.setPin(pin);
+        if (pin.isPresent()) {
+            registrationLockPin = pin.get();
+        } else {
+            registrationLockPin = null;
+        }
     }
 
     private void refreshPreKeys() throws IOException {
