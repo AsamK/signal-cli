@@ -66,6 +66,9 @@ Verify the number using the code received via SMS or voice.
 VERIFICATIONCODE::
 	The verification code.
 
+*-p* PIN, *--pin* PIN::
+	The registration lock PIN, that was set by the user. Only required if a PIN was set.
+
 unregister
 ~~~~~~~~~~
 Disable push support for this device, i.e. this device won't receive any more messages.
@@ -77,6 +80,17 @@ updateAccount
 ~~~~~~~~~~~~~
 Update the account attributes on the signal server.
 Can fix problems with receiving messages.
+
+setPin
+~~~~~~
+Set a registration lock pin, to prevent others from registering this number.
+
+REGISTRATION_LOCK_PIN::
+    The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
+
+removePin
+~~~~~~
+Remove the registration lock pin.
 
 link
 ~~~~
