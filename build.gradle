@@ -12,6 +12,7 @@ version = '0.5.6'
 compileJava.options.encoding = 'UTF-8'
 
 repositories {
+    mavenLocal()
     maven {
         url "https://raw.github.com/AsamK/maven/master/releases/"
     }
@@ -19,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.turasa:signal-service-java:2.7.3_unofficial_1'
+    compile 'com.github.turasa:signal-service-java:2.7.5_unofficial_1'
     compile 'org.bouncycastle:bcprov-jdk15on:1.59'
     compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     compile 'org.freedesktop.dbus:dbus-java:2.7.0'
@@ -32,5 +33,41 @@ jar {
                 'Implementation-Version': project.version,
                 'Main-Class': project.mainClassName,
         )
+    }
+}
+
+// Find any 3rd party libraries which have released new versions
+// to the central Maven repo since we last upgraded.
+// http://daniel.gredler.net/2011/08/08/gradle-keeping-libraries-up-to-date/
+task checkLibVersions << {
+    def checked = [:]
+    allprojects {
+        configurations.each { configuration ->
+            configuration.allDependencies.each { dependency ->
+                def version = dependency.version
+                if (!version.contains('SNAPSHOT') && !checked[dependency]) {
+                    def group = dependency.group
+                    def path = group.replace('.', '/')
+                    def name = dependency.name
+                    def url = "http://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
+                    try {
+                        def metadata = new XmlSlurper().parseText(url.toURL().text)
+                        def versions = metadata.versioning.versions.version.collect { it.text() }
+                        versions.removeAll { it.toLowerCase().contains('alpha') }
+                        versions.removeAll { it.toLowerCase().contains('beta') }
+                        versions.removeAll { it.toLowerCase().contains('rc') }
+                        def newest = versions.max()
+                        if (version != newest) {
+                            println "$group:$name $version -> $newest"
+                        }
+                    } catch (FileNotFoundException e) {
+                        logger.debug "Unable to download $url: $e.message"
+                    } catch (org.xml.sax.SAXParseException e) {
+                        logger.debug "Unable to parse $url: $e.message"
+                    }
+                    checked[dependency] = true
+                }
+            }
+        }
     }
 }
