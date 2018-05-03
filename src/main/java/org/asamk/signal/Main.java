@@ -1168,6 +1168,22 @@ public class Main {
                 System.out.println("Profile key update, key length:" + message.getProfileKey().get().length);
             }
 
+            if (message.getQuote().isPresent()) {
+                SignalServiceDataMessage.Quote quote = message.getQuote().get();
+                System.out.println("Quote: (" + quote.getId() + ")");
+                System.out.println(" Author: " + quote.getAuthor().getNumber());
+                System.out.println(" Text: " + quote.getText());
+                if (quote.getAttachments().size() > 0) {
+                    System.out.println(" Attachments: ");
+                    for (SignalServiceDataMessage.Quote.QuotedAttachment attachment : quote.getAttachments()) {
+                        System.out.println("  Filename: " + attachment.getFileName());
+                        System.out.println("  Type: " + attachment.getContentType());
+                        System.out.println("  Thumbnail:");
+                        printAttachment(attachment.getThumbnail());
+                    }
+                }
+            }
+
             if (message.getAttachments().isPresent()) {
                 System.out.println("Attachments: ");
                 for (SignalServiceAttachment attachment : message.getAttachments().get()) {
