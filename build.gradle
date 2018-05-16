@@ -38,6 +38,8 @@ jar {
 
 run {
     if (project.hasProperty("appArgs")) {
+        // allow passing command-line arguments to the main application e.g.:
+        // $ gradle run -PappArgs="['-u', '+...', 'daemon', '--json']"
         args Eval.me(appArgs)
     }
 }
