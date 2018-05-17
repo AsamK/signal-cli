@@ -1489,9 +1489,10 @@ class Manager implements Signal {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
                 DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(fos);
                 for (GroupInfo record : groupStore.getGroups()) {
+                    ThreadInfo info = threadStore.getThread(Base64.encodeBytes(record.groupId));
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.members), createGroupAvatarAttachment(record.groupId),
-                            record.active, Optional.<Integer>absent()));
+                            record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
                 }
             }
 
@@ -1523,6 +1524,7 @@ class Manager implements Signal {
                 DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : contactStore.getContacts()) {
                     VerifiedMessage verifiedMessage = null;
+                    ThreadInfo info = threadStore.getThread(record.number);
                     if (getIdentities().containsKey(record.number)) {
                         JsonIdentityKeyStore.Identity currentIdentity = null;
                         for (JsonIdentityKeyStore.Identity id : getIdentities().get(record.number)) {
@@ -1538,7 +1540,7 @@ class Manager implements Signal {
                     // TODO include profile key
                     out.write(new DeviceContact(record.number, Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
-                            Optional.fromNullable(verifiedMessage), Optional.<byte[]>absent(), false, Optional.<Integer>absent()));
+                            Optional.fromNullable(verifiedMessage), Optional.<byte[]>absent(), false, Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
                 }
             }
 
