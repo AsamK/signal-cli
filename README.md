@@ -17,6 +17,8 @@ wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
+[Install on Ubuntu](https://github.com/AsamK/signal-cli/wiki/HowToUbuntu)
+[Use DBus Service](https://github.com/AsamK/signal-cli/wiki/DBus-service)
 
 ## Usage
 
