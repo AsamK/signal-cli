@@ -89,7 +89,7 @@ REGISTRATION_LOCK_PIN::
     The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
 
 removePin
-~~~~~~
+~~~~~~~~~
 Remove the registration lock pin.
 
 link
