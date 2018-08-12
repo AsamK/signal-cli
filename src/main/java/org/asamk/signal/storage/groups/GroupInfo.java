@@ -27,14 +27,18 @@ public class GroupInfo {
     @JsonProperty
     public boolean active;
 
+    @JsonProperty
+    public String color;
+
     public GroupInfo(byte[] groupId) {
         this.groupId = groupId;
     }
 
-    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId) {
+    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color) {
         this.groupId = groupId;
         this.name = name;
         this.members.addAll(members);
         this.avatarId = avatarId;
+        this.color = color;
     }
 }
