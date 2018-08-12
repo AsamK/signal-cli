@@ -1182,7 +1182,9 @@ public class Main {
                         System.out.println("  Filename: " + attachment.getFileName());
                         System.out.println("  Type: " + attachment.getContentType());
                         System.out.println("  Thumbnail:");
-                        printAttachment(attachment.getThumbnail());
+                        if (attachment.getThumbnail() != null) {
+                            printAttachment(attachment.getThumbnail());
+                        }
                     }
                 }
             }
