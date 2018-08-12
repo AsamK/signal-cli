@@ -1226,44 +1226,7 @@ public class Main {
         public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
             super.handleMessage(envelope, content, exception);
 
-            if (envelope.isReceipt()) {
-                try {
-                    conn.sendSignal(new Signal.ReceiptReceived(
-                            SIGNAL_OBJECTPATH,
-                            envelope.getTimestamp(),
-                            envelope.getSource()
-                    ));
-                } catch (DBusException e) {
-                    e.printStackTrace();
-                }
-            } else if (content != null && content.getDataMessage().isPresent()) {
-                SignalServiceDataMessage message = content.getDataMessage().get();
-
-                if (!message.isEndSession() &&
-                        !(message.getGroupInfo().isPresent() &&
-                                message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
-                    List<String> attachments = new ArrayList<>();
-                    if (message.getAttachments().isPresent()) {
-                        for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                            if (attachment.isPointer()) {
-                                attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
-                            }
-                        }
-                    }
-
-                    try {
-                        conn.sendSignal(new Signal.MessageReceived(
-                                SIGNAL_OBJECTPATH,
-                                message.getTimestamp(),
-                                envelope.getSource(),
-                                message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
-                                message.getBody().isPresent() ? message.getBody().get() : "",
-                                attachments));
-                    } catch (DBusException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            JsonDbusReceiveMessageHandler.sendReceivedMessageToDbus(envelope, content, conn, m);
         }
     }
 
@@ -1310,6 +1273,10 @@ public class Main {
         public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
             super.handleMessage(envelope, content, exception);
 
+            sendReceivedMessageToDbus(envelope, content, conn, m);
+        }
+
+        private static void sendReceivedMessageToDbus(SignalServiceEnvelope envelope, SignalServiceContent content, DBusConnection conn, Manager m) {
             if (envelope.isReceipt()) {
                 try {
                     conn.sendSignal(new Signal.ReceiptReceived(
