@@ -64,6 +64,7 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
+import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
@@ -95,7 +96,8 @@ class Manager implements Signal {
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
     private final static SignalServiceConfiguration serviceConfiguration = new SignalServiceConfiguration(
             new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
-            new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)}
+            new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
+            new SignalContactDiscoveryUrl[0]
     );
 
     public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
@@ -827,7 +829,7 @@ class Manager implements Signal {
         List<GroupInfo> groups = getGroups();
         List<byte[]> ids = new ArrayList<byte[]>(groups.size());
         for (GroupInfo group : groups) {
-          ids.add(group.groupId);
+            ids.add(group.groupId);
         }
         return ids;
     }
@@ -1500,7 +1502,7 @@ class Manager implements Signal {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.members), createGroupAvatarAttachment(record.groupId),
                             record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null),
-                            Optional.fromNullable(record.color)));
+                            Optional.fromNullable(record.color), false));
                 }
             }
 
