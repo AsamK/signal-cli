@@ -21,7 +21,7 @@ public class Util {
 
     private static SecureRandom getSecureRandom() {
         try {
-            return SecureRandom.getInstance("SHA1PRNG");
+            return SecureRandom.getInstance("NativePRNG");
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
