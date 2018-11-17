@@ -11,4 +11,7 @@ public class ContactInfo {
 
     @JsonProperty
     public String color;
+
+    @JsonProperty
+    public String profileKey;
 }

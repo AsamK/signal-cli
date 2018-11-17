@@ -92,6 +92,25 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         return false;
     }
 
+    @Override
+    public IdentityKey getIdentity(SignalProtocolAddress address) {
+        List<Identity> identities = trustedKeys.get(address.getName());
+        if (identities == null) {
+            return null;
+        }
+
+        long maxDate = 0;
+        Identity maxIdentity = null;
+        for (Identity id : identities) {
+            final long time = id.getDateAdded().getTime();
+            if (maxDate <= time) {
+                maxDate = time;
+                maxIdentity = id;
+            }
+        }
+        return maxIdentity.getIdentityKey();
+    }
+
     public Map<String, List<Identity>> getIdentities() {
         // TODO deep copy
         return trustedKeys;

@@ -100,7 +100,7 @@ public class Main {
                         busType = DBusConnection.SESSION;
                     }
                     dBusConn = DBusConnection.getConnection(busType);
-                    ts = (Signal) dBusConn.getRemoteObject(
+                    ts = dBusConn.getRemoteObject(
                             SIGNAL_BUSNAME, SIGNAL_OBJECTPATH,
                             Signal.class);
                 } catch (UnsatisfiedLinkError e) {
@@ -984,6 +984,9 @@ public class Main {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
             System.out.println("Timestamp: " + formatTimestamp(envelope.getTimestamp()));
+            if (envelope.isUnidentifiedSender()) {
+                System.out.println("Sent by unidentified/sealed sender");
+            }
 
             if (envelope.isReceipt()) {
                 System.out.println("Got receipt.");
@@ -1120,6 +1123,20 @@ public class Main {
                             System.out.println("    " + formatTimestamp(timestamp));
                         }
                     }
+                    if (content.getTypingMessage().isPresent()) {
+                        System.out.println("Received a typing message");
+                        SignalServiceTypingMessage typingMessage = content.getTypingMessage().get();
+                        System.out.println(" - Action: " + typingMessage.getAction());
+                        System.out.println(" - Timestamp: " + formatTimestamp(typingMessage.getTimestamp()));
+                        if (typingMessage.getGroupId().isPresent()) {
+                            GroupInfo group = m.getGroup(typingMessage.getGroupId().get());
+                            if (group != null) {
+                                System.out.println("  Name: " + group.name);
+                            } else {
+                                System.out.println("  Name: <Unknown group>");
+                            }
+                        }
+                    }
                 }
             } else {
                 System.out.println("Unknown message received.");
@@ -1167,7 +1184,7 @@ public class Main {
             if (message.getExpiresInSeconds() > 0) {
                 System.out.println("Expires in: " + message.getExpiresInSeconds() + " seconds");
             }
-            if (message.isProfileKeyUpdate() && message.getProfileKey().isPresent()) {
+            if (message.getProfileKey().isPresent()) {
                 System.out.println("Profile key update, key length:" + message.getProfileKey().get().length);
             }
 
@@ -1201,7 +1218,7 @@ public class Main {
             System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
             if (attachment.isPointer()) {
                 final SignalServiceAttachmentPointer pointer = attachment.asPointer();
-                System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length + (pointer.getRelay().isPresent() ? " Relay: " + pointer.getRelay().get() : ""));
+                System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length);
                 System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
                 System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
                 System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
