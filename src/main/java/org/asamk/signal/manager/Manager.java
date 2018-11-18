@@ -16,7 +16,6 @@
  */
 package org.asamk.signal.manager;
 
-import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
 import org.asamk.signal.*;
 import org.asamk.signal.storage.SignalAccount;
@@ -28,13 +27,10 @@ import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.libsignal.metadata.*;
-import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.whispersystems.libsignal.*;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.libsignal.fingerprint.Fingerprint;
-import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.KeyHelper;
@@ -57,7 +53,6 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
@@ -65,8 +60,6 @@ import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.*;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -99,43 +92,6 @@ public class Manager implements Signal {
 
     }
 
-    private static List<SignalServiceAttachment> getSignalServiceAttachments(List<String> attachments) throws AttachmentInvalidException {
-        List<SignalServiceAttachment> SignalServiceAttachments = null;
-        if (attachments != null) {
-            SignalServiceAttachments = new ArrayList<>(attachments.size());
-            for (String attachment : attachments) {
-                try {
-                    SignalServiceAttachments.add(createAttachment(new File(attachment)));
-                } catch (IOException e) {
-                    throw new AttachmentInvalidException(attachment, e);
-                }
-            }
-        }
-        return SignalServiceAttachments;
-    }
-
-    private static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        InputStream attachmentStream = new FileInputStream(attachmentFile);
-        final long attachmentSize = attachmentFile.length();
-        String mime = Files.probeContentType(attachmentFile.toPath());
-        if (mime == null) {
-            mime = "application/octet-stream";
-        }
-        // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
-        Optional<byte[]> preview = Optional.absent();
-        Optional<String> caption = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, null);
-    }
-
-    private static CertificateValidator getCertificateValidator() {
-        try {
-            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(BaseConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
-            return new CertificateValidator(unidentifiedSenderTrustRoot);
-        } catch (InvalidKeyException | IOException e) {
-            throw new AssertionError(e);
-        }
-    }
-
     public String getUsername() {
         return username;
     }
@@ -163,7 +119,7 @@ public class Manager implements Signal {
     }
 
     public boolean userHasKeys() {
-        return account.getSignalProtocolStore() != null;
+        return account != null && account.getSignalProtocolStore() != null;
     }
 
     public void init() throws IOException {
@@ -253,7 +209,7 @@ public class Manager implements Signal {
         accountManager.setGcmId(Optional.<String>absent());
     }
 
-    public URI getDeviceLinkUri() throws TimeoutException, IOException {
+    public String getDeviceLinkUri() throws TimeoutException, IOException {
         if (account == null) {
             createNewIdentity();
         }
@@ -261,12 +217,7 @@ public class Manager implements Signal {
         accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, username, account.getPassword(), BaseConfig.USER_AGENT, timer);
         String uuid = accountManager.getNewDeviceUuid();
 
-        try {
-            return new URI("tsdevice:/?uuid=" + URLEncoder.encode(uuid, "utf-8") + "&pub_key=" + URLEncoder.encode(Base64.encodeBytesWithoutPadding(getIdentity().serialize()), "utf-8"));
-        } catch (URISyntaxException e) {
-            // Shouldn't happen
-            return null;
-        }
+        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(uuid, getIdentity().getPublicKey()));
     }
 
     public void finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
@@ -290,6 +241,8 @@ public class Manager implements Signal {
 
         requestSyncGroups();
         requestSyncContacts();
+        requestSyncBlocked();
+        requestSyncConfiguration();
 
         account.save();
     }
@@ -305,17 +258,9 @@ public class Manager implements Signal {
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
-        Map<String, String> query = Util.getQueryMap(linkUri.getRawQuery());
-        String deviceIdentifier = query.get("uuid");
-        String publicKeyEncoded = query.get("pub_key");
+        Utils.DeviceLinkInfo info = Utils.parseDeviceLinkUri(linkUri);
 
-        if (TextUtils.isEmpty(deviceIdentifier) || TextUtils.isEmpty(publicKeyEncoded)) {
-            throw new RuntimeException("Invalid device link uri");
-        }
-
-        ECPublicKey deviceKey = Curve.decodePoint(Base64.decode(publicKeyEncoded), 0);
-
-        addDevice(deviceIdentifier, deviceKey);
+        addDevice(info.deviceIdentifier, info.deviceKey);
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
@@ -362,6 +307,7 @@ public class Manager implements Signal {
     public void verifyAccount(String verificationCode, String pin) throws IOException {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
+        // TODO make unrestricted unidentified access configurable
         accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, getSelfUnidentifiedAccessKey(), false);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
@@ -379,6 +325,7 @@ public class Manager implements Signal {
         } else {
             account.setRegistrationLockPin(null);
         }
+        account.save();
     }
 
     private void refreshPreKeys() throws IOException {
@@ -395,7 +342,7 @@ public class Manager implements Signal {
             return Optional.absent();
         }
 
-        return Optional.of(createAttachment(file));
+        return Optional.of(Utils.createAttachment(file));
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(String number) throws IOException {
@@ -404,7 +351,7 @@ public class Manager implements Signal {
             return Optional.absent();
         }
 
-        return Optional.of(createAttachment(file));
+        return Optional.of(Utils.createAttachment(file));
     }
 
     private GroupInfo getGroupForSending(byte[] groupId) throws GroupNotFoundException, NotAGroupMemberException {
@@ -430,7 +377,7 @@ public class Manager implements Signal {
             throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
+            messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
         }
         if (groupId != null) {
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
@@ -484,7 +431,7 @@ public class Manager implements Signal {
             Set<String> newMembers = new HashSet<>();
             for (String member : members) {
                 try {
-                    member = canonicalizeNumber(member);
+                    member = Utils.canonicalizeNumber(member, username);
                 } catch (InvalidNumberException e) {
                     System.err.println("Failed to add member \"" + member + "\" to group: " + e.getMessage());
                     System.err.println("Aborting…");
@@ -552,7 +499,7 @@ public class Manager implements Signal {
         File aFile = getGroupAvatarFile(g.groupId);
         if (aFile.exists()) {
             try {
-                group.withAvatar(createAttachment(aFile));
+                group.withAvatar(Utils.createAttachment(aFile));
             } catch (IOException e) {
                 throw new AttachmentInvalidException(aFile.toString(), e);
             }
@@ -593,7 +540,7 @@ public class Manager implements Signal {
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(getSignalServiceAttachments(attachments));
+            messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
         }
         sendMessageLegacy(messageBuilder, recipients);
     }
@@ -796,8 +743,11 @@ public class Manager implements Signal {
 
     private List<SendMessageResult> sendMessage(SignalServiceDataMessage.Builder messageBuilder, Collection<String> recipients)
             throws IOException {
-        Set<SignalServiceAddress> recipientsTS = getSignalServiceAddresses(recipients);
-        if (recipientsTS == null) return Collections.emptyList();
+        Set<SignalServiceAddress> recipientsTS = Utils.getSignalServiceAddresses(recipients, username);
+        if (recipientsTS == null) {
+            account.save();
+            return Collections.emptyList();
+        }
 
         SignalServiceDataMessage message = null;
         try {
@@ -849,23 +799,8 @@ public class Manager implements Signal {
         }
     }
 
-    private Set<SignalServiceAddress> getSignalServiceAddresses(Collection<String> recipients) {
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                account.save();
-                return null;
-            }
-        }
-        return recipientsTS;
-    }
-
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException {
-        SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), account.getSignalProtocolStore(), getCertificateValidator());
+        SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), account.getSignalProtocolStore(), Utils.getCertificateValidator());
         try {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
@@ -978,6 +913,9 @@ public class Manager implements Signal {
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
+            if (source.equals(username)) {
+                this.account.setProfileKey(message.getProfileKey().get());
+            }
             ContactInfo contact = account.getContactStore().getContact(source);
             if (contact == null) {
                 contact = new ContactInfo();
@@ -1003,7 +941,7 @@ public class Manager implements Signal {
                 }
                 SignalServiceEnvelope envelope;
                 try {
-                    envelope = loadEnvelope(fileEntry);
+                    envelope = Utils.loadEnvelope(fileEntry);
                     if (envelope == null) {
                         continue;
                     }
@@ -1054,7 +992,7 @@ public class Manager implements Signal {
                             // store message on disk, before acknowledging receipt to the server
                             try {
                                 File cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
-                                storeEnvelope(envelope, cacheFile);
+                                Utils.storeEnvelope(envelope, cacheFile);
                             } catch (IOException e) {
                                 System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
                             }
@@ -1242,73 +1180,6 @@ public class Manager implements Signal {
         }
     }
 
-    private SignalServiceEnvelope loadEnvelope(File file) throws IOException {
-        try (FileInputStream f = new FileInputStream(file)) {
-            DataInputStream in = new DataInputStream(f);
-            int version = in.readInt();
-            if (version > 2) {
-                return null;
-            }
-            int type = in.readInt();
-            String source = in.readUTF();
-            int sourceDevice = in.readInt();
-            if (version == 1) {
-                // read legacy relay field
-                in.readUTF();
-            }
-            long timestamp = in.readLong();
-            byte[] content = null;
-            int contentLen = in.readInt();
-            if (contentLen > 0) {
-                content = new byte[contentLen];
-                in.readFully(content);
-            }
-            byte[] legacyMessage = null;
-            int legacyMessageLen = in.readInt();
-            if (legacyMessageLen > 0) {
-                legacyMessage = new byte[legacyMessageLen];
-                in.readFully(legacyMessage);
-            }
-            long serverTimestamp = 0;
-            String uuid = null;
-            if (version == 2) {
-                serverTimestamp = in.readLong();
-                uuid = in.readUTF();
-                if ("".equals(uuid)) {
-                    uuid = null;
-                }
-            }
-            return new SignalServiceEnvelope(type, source, sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
-        }
-    }
-
-    private void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
-        try (FileOutputStream f = new FileOutputStream(file)) {
-            try (DataOutputStream out = new DataOutputStream(f)) {
-                out.writeInt(2); // version
-                out.writeInt(envelope.getType());
-                out.writeUTF(envelope.getSource());
-                out.writeInt(envelope.getSourceDevice());
-                out.writeLong(envelope.getTimestamp());
-                if (envelope.hasContent()) {
-                    out.writeInt(envelope.getContent().length);
-                    out.write(envelope.getContent());
-                } else {
-                    out.writeInt(0);
-                }
-                if (envelope.hasLegacyMessage()) {
-                    out.writeInt(envelope.getLegacyMessage().length);
-                    out.write(envelope.getLegacyMessage());
-                } else {
-                    out.writeInt(0);
-                }
-                out.writeLong(envelope.getServerTimestamp());
-                String uuid = envelope.getUuid();
-                out.writeUTF(uuid == null ? "" : uuid);
-            }
-        }
-    }
-
     private File getContactAvatarFile(String number) {
         return new File(avatarsPath, "contact-" + number);
     }
@@ -1320,7 +1191,7 @@ public class Manager implements Signal {
             return retrieveAttachment(pointer, getContactAvatarFile(number), false);
         } else {
             SignalServiceAttachmentStream stream = attachment.asStream();
-            return retrieveAttachment(stream, getContactAvatarFile(number));
+            return Utils.retrieveAttachment(stream, getContactAvatarFile(number));
         }
     }
 
@@ -1335,7 +1206,7 @@ public class Manager implements Signal {
             return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
         } else {
             SignalServiceAttachmentStream stream = attachment.asStream();
-            return retrieveAttachment(stream, getGroupAvatarFile(groupId));
+            return Utils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
         }
     }
 
@@ -1346,23 +1217,6 @@ public class Manager implements Signal {
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
         IOUtils.createPrivateDirectories(attachmentsPath);
         return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
-    }
-
-    private File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException {
-        InputStream input = stream.getInputStream();
-
-        try (OutputStream output = new FileOutputStream(outputFile)) {
-            byte[] buffer = new byte[4096];
-            int read;
-
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return outputFile;
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview) throws IOException, InvalidMessageException {
@@ -1405,16 +1259,6 @@ public class Manager implements Signal {
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, username, account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer);
         return messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE);
-    }
-
-    private String canonicalizeNumber(String number) throws InvalidNumberException {
-        String localNumber = username;
-        return PhoneNumberFormatter.formatNumber(number, localNumber);
-    }
-
-    private SignalServiceAddress getPushAddress(String number) throws InvalidNumberException {
-        String e164number = canonicalizeNumber(number);
-        return new SignalServiceAddress(e164number);
     }
 
     @Override
@@ -1618,8 +1462,7 @@ public class Manager implements Signal {
     }
 
     public String computeSafetyNumber(String theirUsername, IdentityKey theirIdentityKey) {
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(username, getIdentity(), theirUsername, theirIdentityKey);
-        return fingerprint.getDisplayableFingerprint().getDisplayText();
+        return Utils.computeSafetyNumber(username, getIdentity(), theirUsername, theirIdentityKey);
     }
 
     public interface ReceiveMessageHandler {

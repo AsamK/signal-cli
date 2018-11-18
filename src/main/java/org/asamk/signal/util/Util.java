@@ -3,10 +3,6 @@ package org.asamk.signal.util;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.InvalidObjectException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Util {
 
@@ -21,28 +17,6 @@ public class Util {
             f.append(digits, i * partSize, (i * partSize) + partSize).append(" ");
         }
         return f.toString();
-    }
-
-    public static Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<>();
-        for (String param : params) {
-            String name = null;
-            final String[] paramParts = param.split("=");
-            try {
-                name = URLDecoder.decode(paramParts[0], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
-            String value = null;
-            try {
-                value = URLDecoder.decode(paramParts[1], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
-            map.put(name, value);
-        }
-        return map;
     }
 
     public static String join(CharSequence separator, Iterable<? extends CharSequence> list) {

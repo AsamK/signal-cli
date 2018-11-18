@@ -70,8 +70,8 @@ import java.util.concurrent.TimeoutException;
 
 public class Main {
 
-    public static final String SIGNAL_BUSNAME = "org.asamk.Signal";
-    public static final String SIGNAL_OBJECTPATH = "/org/asamk/Signal";
+    private static final String SIGNAL_BUSNAME = "org.asamk.Signal";
+    private static final String SIGNAL_OBJECTPATH = "/org/asamk/Signal";
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
@@ -286,15 +286,12 @@ public class Main {
                     } catch (IOException e) {
                         e.printStackTrace();
                         return 3;
-                    } catch (InvalidKeyException e) {
+                    } catch (InvalidKeyException | URISyntaxException e) {
                         e.printStackTrace();
                         return 2;
                     } catch (AssertionError e) {
                         handleAssertionError(e);
                         return 1;
-                    } catch (URISyntaxException e) {
-                        e.printStackTrace();
-                        return 2;
                     }
                     break;
                 case "listDevices":
@@ -528,9 +525,9 @@ public class Main {
                         if (groupName == null) {
                             groupName = "";
                         }
-                        List<String> groupMembers = ns.<String>getList("member");
+                        List<String> groupMembers = ns.getList("member");
                         if (groupMembers == null) {
-                            groupMembers = new ArrayList<String>();
+                            groupMembers = new ArrayList<>();
                         }
                         String groupAvatar = ns.getString("avatar");
                         if (groupAvatar == null) {
@@ -943,7 +940,7 @@ public class Main {
 
         final Manager m;
 
-        public ReceiveMessageHandler(Manager m) {
+        ReceiveMessageHandler(Manager m) {
             this.m = m;
         }
 
@@ -1207,7 +1204,7 @@ public class Main {
 
         final DBusConnection conn;
 
-        public DbusReceiveMessageHandler(Manager m, DBusConnection conn) {
+        DbusReceiveMessageHandler(Manager m, DBusConnection conn) {
             super(m);
             this.conn = conn;
         }
@@ -1225,7 +1222,7 @@ public class Main {
         final Manager m;
         final ObjectMapper jsonProcessor;
 
-        public JsonReceiveMessageHandler(Manager m) {
+        JsonReceiveMessageHandler(Manager m) {
             this.m = m;
             this.jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
@@ -1256,7 +1253,7 @@ public class Main {
 
         final DBusConnection conn;
 
-        public JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn) {
+        JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn) {
             super(m);
             this.conn = conn;
         }
