@@ -23,7 +23,6 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
 
     }
 
-
     public void addSignedPreKeys(Map<Integer, byte[]> preKeys) {
         store.putAll(preKeys);
     }
@@ -76,7 +75,6 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
         @Override
         public JsonSignedPreKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-
 
             Map<Integer, byte[]> preKeyMap = new HashMap<>();
             if (node.isArray()) {

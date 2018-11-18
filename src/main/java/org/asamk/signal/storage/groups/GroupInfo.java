@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class GroupInfo {
+
     @JsonProperty
     public final byte[] groupId;
 
@@ -16,19 +17,12 @@ public class GroupInfo {
 
     @JsonProperty
     public Set<String> members = new HashSet<>();
-
-    private long avatarId;
-
-    @JsonIgnore
-    public long getAvatarId() {
-        return avatarId;
-    }
-
     @JsonProperty
     public boolean active;
-
     @JsonProperty
     public String color;
+
+    private long avatarId;
 
     public GroupInfo(byte[] groupId) {
         this.groupId = groupId;
@@ -40,5 +34,10 @@ public class GroupInfo {
         this.members.addAll(members);
         this.avatarId = avatarId;
         this.color = color;
+    }
+
+    @JsonIgnore
+    public long getAvatarId() {
+        return avatarId;
     }
 }

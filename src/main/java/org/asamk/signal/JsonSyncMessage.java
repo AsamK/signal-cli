@@ -6,6 +6,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import java.util.List;
 
 class JsonSyncMessage {
+
     JsonDataMessage sentMessage;
     List<String> blockedNumbers;
     List<ReadMessage> readMessages;

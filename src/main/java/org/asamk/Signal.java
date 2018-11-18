@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 
 public interface Signal extends DBusInterface {
+
     void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
 
     void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
@@ -32,6 +33,7 @@ public interface Signal extends DBusInterface {
     byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
 
     class MessageReceived extends DBusSignal {
+
         private long timestamp;
         private String sender;
         private byte[] groupId;
@@ -69,6 +71,7 @@ public interface Signal extends DBusInterface {
     }
 
     class ReceiptReceived extends DBusSignal {
+
         private long timestamp;
         private String sender;
 

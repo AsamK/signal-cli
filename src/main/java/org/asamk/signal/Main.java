@@ -129,13 +129,11 @@ public class Main {
 
                 m = new Manager(username, settingsPath);
                 ts = m;
-                if (m.userExists()) {
-                    try {
-                        m.init();
-                    } catch (Exception e) {
-                        System.err.println("Error loading state file \"" + m.getFileName() + "\": " + e.getMessage());
-                        return 2;
-                    }
+                try {
+                    m.init();
+                } catch (Exception e) {
+                    System.err.println("Error loading state file: " + e.getMessage());
+                    return 2;
                 }
             }
 
@@ -144,9 +142,6 @@ public class Main {
                     if (dBusConn != null) {
                         System.err.println("register is not yet implemented via dbus");
                         return 1;
-                    }
-                    if (!m.userHasKeys()) {
-                        m.createNewIdentity();
                     }
                     try {
                         m.register(ns.getBoolean("voice"));
@@ -251,9 +246,6 @@ public class Main {
                         System.err.println("link is not yet implemented via dbus");
                         return 1;
                     }
-
-                    // When linking, username is null and we always have to create keys
-                    m.createNewIdentity();
 
                     String deviceName = ns.getString("name");
                     if (deviceName == null) {
@@ -736,7 +728,6 @@ public class Main {
         System.err.println("Aborting sending.");
     }
 
-
     private static void handleDBusExecutionException(DBusExecutionException e) {
         System.err.println("Cannot connect to dbus: " + e.getMessage());
         System.err.println("Aborting.");
@@ -949,6 +940,7 @@ public class Main {
     }
 
     private static class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+
         final Manager m;
 
         public ReceiveMessageHandler(Manager m) {
@@ -1212,6 +1204,7 @@ public class Main {
     }
 
     private static class DbusReceiveMessageHandler extends ReceiveMessageHandler {
+
         final DBusConnection conn;
 
         public DbusReceiveMessageHandler(Manager m, DBusConnection conn) {
@@ -1228,6 +1221,7 @@ public class Main {
     }
 
     private static class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+
         final Manager m;
         final ObjectMapper jsonProcessor;
 
@@ -1259,18 +1253,12 @@ public class Main {
     }
 
     private static class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
+
         final DBusConnection conn;
 
         public JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn) {
             super(m);
             this.conn = conn;
-        }
-
-        @Override
-        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-            super.handleMessage(envelope, content, exception);
-
-            sendReceivedMessageToDbus(envelope, content, conn, m);
         }
 
         private static void sendReceivedMessageToDbus(SignalServiceEnvelope envelope, SignalServiceContent content, DBusConnection conn, Manager m) {
@@ -1312,6 +1300,13 @@ public class Main {
                     }
                 }
             }
+        }
+
+        @Override
+        public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
+            super.handleMessage(envelope, content, exception);
+
+            sendReceivedMessageToDbus(envelope, content, conn, m);
         }
     }
 }

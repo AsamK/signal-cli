@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class JsonDataMessage {
+
     long timestamp;
     String message;
     int expiresInSeconds;

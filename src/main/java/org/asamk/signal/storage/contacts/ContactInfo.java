@@ -3,6 +3,7 @@ package org.asamk.signal.storage.contacts;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ContactInfo {
+
     @JsonProperty
     public String name;
 

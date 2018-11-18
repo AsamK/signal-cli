@@ -1,28 +1,28 @@
-package org.asamk.signal.util;
+package org.asamk.signal.manager;
 
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-public class KeyUtils {
+class KeyUtils {
 
     private KeyUtils() {
     }
 
-    public static String createSignalingKey() {
+    static String createSignalingKey() {
         return getSecret(52);
     }
 
-    public static byte[] createProfileKey() {
+    static byte[] createProfileKey() {
         return getSecretBytes(32);
     }
 
-    public static String createPassword() {
+    static String createPassword() {
         return getSecret(18);
     }
 
-    public static byte[] createGroupId() {
+    static byte[] createGroupId() {
         return getSecretBytes(16);
     }
 

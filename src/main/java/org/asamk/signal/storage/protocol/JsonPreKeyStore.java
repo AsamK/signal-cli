@@ -17,7 +17,6 @@ class JsonPreKeyStore implements PreKeyStore {
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 
-
     public JsonPreKeyStore() {
 
     }
@@ -59,7 +58,6 @@ class JsonPreKeyStore implements PreKeyStore {
         @Override
         public JsonPreKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-
 
             Map<Integer, byte[]> preKeyMap = new HashMap<>();
             if (node.isArray()) {

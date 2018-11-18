@@ -5,6 +5,7 @@ import org.whispersystems.signalservice.api.messages.calls.*;
 import java.util.List;
 
 class JsonCallMessage {
+
     OfferMessage offerMessage;
     AnswerMessage answerMessage;
     BusyMessage busyMessage;

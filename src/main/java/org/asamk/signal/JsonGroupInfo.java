@@ -6,6 +6,7 @@ import org.whispersystems.signalservice.internal.util.Base64;
 import java.util.List;
 
 class JsonGroupInfo {
+
     String groupId;
     List<String> members;
     String name;

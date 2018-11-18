@@ -1,5 +1,8 @@
 package org.asamk.signal.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.InvalidObjectException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -52,5 +55,14 @@ public class Util {
         }
 
         return buf.toString();
+    }
+
+    public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
+        JsonNode node = parent.get(name);
+        if (node == null) {
+            throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ", name));
+        }
+
+        return node;
     }
 }

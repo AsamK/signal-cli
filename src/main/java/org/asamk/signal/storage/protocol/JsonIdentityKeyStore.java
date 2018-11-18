@@ -22,7 +22,6 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     private final IdentityKeyPair identityKeyPair;
     private final int localRegistrationId;
 
-
     public JsonIdentityKeyStore(IdentityKeyPair identityKeyPair, int localRegistrationId) {
         this.identityKeyPair = identityKeyPair;
         this.localRegistrationId = localRegistrationId;
@@ -131,7 +130,6 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                 int localRegistrationId = node.get("registrationId").asInt();
                 IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.decode(node.get("identityKey").asText()));
 
-
                 JsonIdentityKeyStore keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
 
                 JsonNode trustedKeysNode = node.get("trustedKeys");
@@ -180,6 +178,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     }
 
     public class Identity {
+
         IdentityKey identityKey;
         TrustLevel trustLevel;
         Date added;

@@ -24,7 +24,6 @@ class JsonSessionStore implements SessionStore {
         this.sessions.putAll(sessions);
     }
 
-
     @Override
     public synchronized SessionRecord loadSession(SignalProtocolAddress remoteAddress) {
         try {

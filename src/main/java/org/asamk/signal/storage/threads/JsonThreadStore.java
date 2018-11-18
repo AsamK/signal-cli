@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonThreadStore {
+
+    private static final ObjectMapper jsonProcessor = new ObjectMapper();
+
     @JsonProperty("threads")
     @JsonSerialize(using = JsonThreadStore.MapToListSerializer.class)
     @JsonDeserialize(using = ThreadsDeserializer.class)
     private Map<String, ThreadInfo> threads = new HashMap<>();
-
-    private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     public void updateThread(ThreadInfo thread) {
         threads.put(thread.id, thread);
@@ -34,6 +35,7 @@ public class JsonThreadStore {
     }
 
     public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
+
         @Override
         public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
             jgen.writeObject(value.values());
@@ -41,6 +43,7 @@ public class JsonThreadStore {
     }
 
     public static class ThreadsDeserializer extends JsonDeserializer<Map<String, ThreadInfo>> {
+
         @Override
         public Map<String, ThreadInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             Map<String, ThreadInfo> threads = new HashMap<>();

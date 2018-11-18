@@ -4,6 +4,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 
 class JsonAttachment {
+
     String contentType;
     long id;
     int size;

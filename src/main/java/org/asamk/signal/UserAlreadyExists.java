@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 public class UserAlreadyExists extends Exception {
+
     private String username;
     private String fileName;
 

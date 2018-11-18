@@ -33,13 +33,18 @@ public class IOUtils {
         return output.toString();
     }
 
-    public static void createPrivateDirectories(String path) throws IOException {
-        final Path file = new File(path).toPath();
+    public static void createPrivateDirectories(String directoryPath) throws IOException {
+        final File file = new File(directoryPath);
+        if (file.exists()) {
+            return;
+        }
+
+        final Path path = file.toPath();
         try {
             Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE);
-            Files.createDirectories(file, PosixFilePermissions.asFileAttribute(perms));
+            Files.createDirectories(path, PosixFilePermissions.asFileAttribute(perms));
         } catch (UnsupportedOperationException e) {
-            Files.createDirectories(file);
+            Files.createDirectories(path);
         }
     }
 
