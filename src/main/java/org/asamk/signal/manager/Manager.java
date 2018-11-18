@@ -1,20 +1,20 @@
-/**
- * Copyright (C) 2015 AsamK
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/*
+  Copyright (C) 2015-2018 AsamK
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.asamk.signal;
+package org.asamk.signal.manager;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
+import org.asamk.signal.*;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -63,7 +64,6 @@ import org.whispersystems.signalservice.api.messages.*;
 import org.whispersystems.signalservice.api.messages.multidevice.*;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
@@ -72,10 +72,6 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
-import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
-import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.util.Base64;
 
@@ -93,24 +89,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class Manager implements Signal {
-    private final static String URL = "https://textsecure-service.whispersystems.org";
-    private final static String CDN_URL = "https://cdn.signal.org";
-    private final static TrustStore TRUST_STORE = new WhisperTrustStore();
-    private final static SignalServiceConfiguration serviceConfiguration = new SignalServiceConfiguration(
-            new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
-            new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
-            new SignalContactDiscoveryUrl[0]
-    );
-    private final static String UNIDENTIFIED_SENDER_TRUST_ROOT = "BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF";
-
-    public final static String PROJECT_NAME = Manager.class.getPackage().getImplementationTitle();
-    public final static String PROJECT_VERSION = Manager.class.getPackage().getImplementationVersion();
-    private final static String USER_AGENT = PROJECT_NAME == null ? null : PROJECT_NAME + " " + PROJECT_VERSION;
-
-    private final static int PREKEY_MINIMUM_COUNT = 20;
-    private static final int PREKEY_BATCH_SIZE = 100;
-    private static final int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
+public class Manager implements Signal {
 
     private final String settingsPath;
     private final String dataPath;
@@ -231,9 +210,9 @@ class Manager implements Signal {
 
         migrateLegacyConfigs();
 
-        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, deviceId, USER_AGENT, timer);
+        accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, username, password, deviceId, BaseConfig.USER_AGENT, timer);
         try {
-            if (registered && accountManager.getPreKeysCount() < PREKEY_MINIMUM_COUNT) {
+            if (registered && accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
                 refreshPreKeys();
                 save();
             }
@@ -366,7 +345,7 @@ class Manager implements Signal {
     public void register(boolean voiceVerification) throws IOException {
         password = KeyUtils.createPassword();
 
-        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, USER_AGENT, timer);
+        accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, username, password, BaseConfig.USER_AGENT, timer);
 
         if (voiceVerification)
             accountManager.requestVoiceVerificationCode();
@@ -391,7 +370,7 @@ class Manager implements Signal {
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         password = KeyUtils.createPassword();
 
-        accountManager = new SignalServiceAccountManager(serviceConfiguration, username, password, USER_AGENT, timer);
+        accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, username, password, BaseConfig.USER_AGENT, timer);
         String uuid = accountManager.getNewDeviceUuid();
 
         registered = false;
@@ -459,7 +438,7 @@ class Manager implements Signal {
     private List<PreKeyRecord> generatePreKeys() {
         List<PreKeyRecord> records = new LinkedList<>();
 
-        for (int i = 0; i < PREKEY_BATCH_SIZE; i++) {
+        for (int i = 0; i < BaseConfig.PREKEY_BATCH_SIZE; i++) {
             int preKeyId = (preKeyIdOffset + i) % Medium.MAX_VALUE;
             ECKeyPair keyPair = Curve.generateKeyPair();
             PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
@@ -468,7 +447,7 @@ class Manager implements Signal {
             records.add(record);
         }
 
-        preKeyIdOffset = (preKeyIdOffset + PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
+        preKeyIdOffset = (preKeyIdOffset + BaseConfig.PREKEY_BATCH_SIZE + 1) % Medium.MAX_VALUE;
         save();
 
         return records;
@@ -625,7 +604,7 @@ class Manager implements Signal {
         sendMessageLegacy(messageBuilder, g.members);
     }
 
-    public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -793,7 +772,7 @@ class Manager implements Signal {
     @Override
     public List<byte[]> getGroupIds() {
         List<GroupInfo> groups = getGroups();
-        List<byte[]> ids = new ArrayList<byte[]>(groups.size());
+        List<byte[]> ids = new ArrayList<>(groups.size());
         for (GroupInfo group : groups) {
             ids.add(group.groupId);
         }
@@ -814,9 +793,9 @@ class Manager implements Signal {
     public List<String> getGroupMembers(byte[] groupId) {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         } else {
-            return new ArrayList<String>(group.members);
+            return new ArrayList<>(group.members);
         }
     }
 
@@ -835,6 +814,19 @@ class Manager implements Signal {
             avatar = null;
         }
         return sendUpdateGroupMessage(groupId, name, members, avatar);
+    }
+
+
+    /**
+     * Change the expiration timer for a thread (number of groupId)
+     *
+     * @param numberOrGroupId
+     * @param messageExpirationTimer
+     */
+    public void setExpirationTimer(String numberOrGroupId, int messageExpirationTimer) {
+        ThreadInfo thread = threadStore.getThread(numberOrGroupId);
+        thread.messageExpirationTime = messageExpirationTimer;
+        threadStore.updateThread(thread);
     }
 
     private void requestSyncGroups() throws IOException {
@@ -866,12 +858,12 @@ class Manager implements Signal {
         return null;
     }
 
-    public Optional<UnidentifiedAccessPair> getAccessForSync() {
+    private Optional<UnidentifiedAccessPair> getAccessForSync() {
         // TODO implement
         return Optional.absent();
     }
 
-    public List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
+    private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
         List<Optional<UnidentifiedAccessPair>> result = new ArrayList<>(recipients.size());
         for (SignalServiceAddress recipient : recipients) {
             result.add(Optional.<UnidentifiedAccessPair>absent());
@@ -879,15 +871,15 @@ class Manager implements Signal {
         return result;
     }
 
-    public Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
+    private Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
         // TODO implement
         return Optional.absent();
     }
 
     private void sendSyncMessage(SignalServiceSyncMessage message)
             throws IOException, UntrustedIdentityException {
-        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceConfiguration, username, password,
-                deviceId, signalProtocolStore, USER_AGENT, isMultiDevice, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
+        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(BaseConfig.serviceConfiguration, username, password,
+                deviceId, signalProtocolStore, BaseConfig.USER_AGENT, isMultiDevice, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
         try {
             messageSender.sendMessage(message, getAccessForSync());
         } catch (UntrustedIdentityException e) {
@@ -928,8 +920,8 @@ class Manager implements Signal {
 
         SignalServiceDataMessage message = null;
         try {
-            SignalServiceMessageSender messageSender = new SignalServiceMessageSender(serviceConfiguration, username, password,
-                    deviceId, signalProtocolStore, USER_AGENT, isMultiDevice, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
+            SignalServiceMessageSender messageSender = new SignalServiceMessageSender(BaseConfig.serviceConfiguration, username, password,
+                    deviceId, signalProtocolStore, BaseConfig.USER_AGENT, isMultiDevice, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
 
             message = messageBuilder.build();
             if (message.getGroupInfo().isPresent()) {
@@ -991,16 +983,16 @@ class Manager implements Signal {
         return recipientsTS;
     }
 
-    public static CertificateValidator getCertificateValidator() {
+    private static CertificateValidator getCertificateValidator() {
         try {
-            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(BaseConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
             return new CertificateValidator(unidentifiedSenderTrustRoot);
         } catch (InvalidKeyException | IOException e) {
             throw new AssertionError(e);
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws org.whispersystems.libsignal.UntrustedIdentityException, InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException {
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException {
         SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), signalProtocolStore, getCertificateValidator());
         try {
             return cipher.decrypt(envelope);
@@ -1127,17 +1119,17 @@ class Manager implements Signal {
         }
     }
 
-    public void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
+    private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
         final File cachePath = new File(getMessageCachePath());
         if (!cachePath.exists()) {
             return;
         }
-        for (final File dir : cachePath.listFiles()) {
+        for (final File dir : Objects.requireNonNull(cachePath.listFiles())) {
             if (!dir.isDirectory()) {
                 continue;
             }
 
-            for (final File fileEntry : dir.listFiles()) {
+            for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (!fileEntry.isFile()) {
                     continue;
                 }
@@ -1175,7 +1167,7 @@ class Manager implements Signal {
 
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null, timer);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, username, password, deviceId, signalingKey, BaseConfig.USER_AGENT, null, timer);
 
         try {
             if (messagePipe == null) {
@@ -1218,7 +1210,7 @@ class Manager implements Signal {
                 }
                 save();
                 handler.handleMessage(envelope, content, exception);
-                if (exception == null || !(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
+                if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
                     File cacheFile = null;
                     try {
                         cacheFile = getMessageCacheFile(envelope.getSource(), now, envelope.getTimestamp());
@@ -1442,7 +1434,7 @@ class Manager implements Signal {
         }
     }
 
-    public File getContactAvatarFile(String number) {
+    private File getContactAvatarFile(String number) {
         return new File(avatarsPath, "contact-" + number);
     }
 
@@ -1457,7 +1449,7 @@ class Manager implements Signal {
         }
     }
 
-    public File getGroupAvatarFile(byte[] groupId) {
+    private File getGroupAvatarFile(byte[] groupId) {
         return new File(avatarsPath, "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
     }
 
@@ -1481,7 +1473,7 @@ class Manager implements Signal {
         return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
     }
 
-    private File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException, InvalidMessageException {
+    private File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException {
         InputStream input = stream.getInputStream();
 
         try (OutputStream output = new FileOutputStream(outputFile)) {
@@ -1510,10 +1502,10 @@ class Manager implements Signal {
             }
         }
 
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null, timer);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, username, password, deviceId, signalingKey, BaseConfig.USER_AGENT, null, timer);
 
         File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE)) {
+        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE)) {
             try (OutputStream output = new FileOutputStream(outputFile)) {
                 byte[] buffer = new byte[4096];
                 int read;
@@ -1536,8 +1528,8 @@ class Manager implements Signal {
     }
 
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
-        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null, timer);
-        return messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE);
+        final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, username, password, deviceId, signalingKey, BaseConfig.USER_AGENT, null, timer);
+        return messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE);
     }
 
     private String canonicalizeNumber(String number) throws InvalidNumberException {

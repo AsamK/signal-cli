@@ -1,18 +1,18 @@
-/**
- * Copyright (C) 2015 AsamK
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/*
+  Copyright (C) 2015-2018 AsamK
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.asamk.signal;
 
@@ -28,6 +28,8 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.apache.http.util.TextUtils;
 import org.asamk.Signal;
+import org.asamk.signal.manager.BaseConfig;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
@@ -756,7 +758,7 @@ public class Main {
                 .build()
                 .defaultHelp(true)
                 .description("Commandline interface for Signal.")
-                .version(Manager.PROJECT_NAME + " " + Manager.PROJECT_VERSION);
+                .version(BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
 
         parser.addArgument("-v", "--version")
                 .help("Show package version.")
