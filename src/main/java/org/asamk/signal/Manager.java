@@ -35,6 +35,7 @@ import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.storage.threads.JsonThreadStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
+import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.KeyUtils;
 import org.asamk.signal.util.Util;
 import org.signal.libsignal.metadata.*;
@@ -81,22 +82,16 @@ import org.whispersystems.signalservice.internal.util.Base64;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static java.nio.file.attribute.PosixFilePermission.*;
 
 class Manager implements Signal {
     private final static String URL = "https://textsecure-service.whispersystems.org";
@@ -189,28 +184,8 @@ class Manager implements Signal {
 
     private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
         String cachePath = getMessageCachePath(sender);
-        createPrivateDirectories(cachePath);
+        IOUtils.createPrivateDirectories(cachePath);
         return new File(cachePath + "/" + now + "_" + timestamp);
-    }
-
-    private static void createPrivateDirectories(String path) throws IOException {
-        final Path file = new File(path).toPath();
-        try {
-            Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE);
-            Files.createDirectories(file, PosixFilePermissions.asFileAttribute(perms));
-        } catch (UnsupportedOperationException e) {
-            Files.createDirectories(file);
-        }
-    }
-
-    private static void createPrivateFile(String path) throws IOException {
-        final Path file = new File(path).toPath();
-        try {
-            Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE);
-            Files.createFile(file, PosixFilePermissions.asFileAttribute(perms));
-        } catch (UnsupportedOperationException e) {
-            Files.createFile(file);
-        }
     }
 
     public boolean userExists() {
@@ -238,9 +213,9 @@ class Manager implements Signal {
         if (fileChannel != null)
             return;
 
-        createPrivateDirectories(dataPath);
+        IOUtils.createPrivateDirectories(dataPath);
         if (!new File(getFileName()).exists()) {
-            createPrivateFile(getFileName());
+            IOUtils.createPrivateFile(getFileName());
         }
         fileChannel = new RandomAccessFile(new File(getFileName()), "rw").getChannel();
         lock = fileChannel.tryLock();
@@ -334,7 +309,7 @@ class Manager implements Signal {
                 File attachmentFile = getAttachmentFile(g.getAvatarId());
                 if (!avatarFile.exists() && attachmentFile.exists()) {
                     try {
-                        createPrivateDirectories(avatarsPath);
+                        IOUtils.createPrivateDirectories(avatarsPath);
                         Files.copy(attachmentFile.toPath(), avatarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     } catch (Exception e) {
                         // Ignore
@@ -459,30 +434,8 @@ class Manager implements Signal {
         accountManager.removeDevice(deviceId);
     }
 
-    public static Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<>();
-        for (String param : params) {
-            String name = null;
-            final String[] paramParts = param.split("=");
-            try {
-                name = URLDecoder.decode(paramParts[0], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
-            String value = null;
-            try {
-                value = URLDecoder.decode(paramParts[1], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
-            map.put(name, value);
-        }
-        return map;
-    }
-
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
-        Map<String, String> query = getQueryMap(linkUri.getRawQuery());
+        Map<String, String> query = Util.getQueryMap(linkUri.getRawQuery());
         String deviceIdentifier = query.get("uuid");
         String publicKeyEncoded = query.get("pub_key");
 
@@ -672,18 +625,6 @@ class Manager implements Signal {
         sendMessageLegacy(messageBuilder, g.members);
     }
 
-    private static String join(CharSequence separator, Iterable<? extends CharSequence> list) {
-        StringBuilder buf = new StringBuilder();
-        for (CharSequence str : list) {
-            if (buf.length() > 0) {
-                buf.append(separator);
-            }
-            buf.append(str);
-        }
-
-        return buf.toString();
-    }
-
     public byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         GroupInfo g;
         if (groupId == null) {
@@ -720,14 +661,14 @@ class Manager implements Signal {
                 for (ContactTokenDetails contact : contacts) {
                     newMembers.remove(contact.getNumber());
                 }
-                System.err.println("Failed to add members " + join(", ", newMembers) + " to group: Not registered on Signal");
+                System.err.println("Failed to add members " + Util.join(", ", newMembers) + " to group: Not registered on Signal");
                 System.err.println("Aborting…");
                 System.exit(1);
             }
         }
 
         if (avatarFile != null) {
-            createPrivateDirectories(avatarsPath);
+            IOUtils.createPrivateDirectories(avatarsPath);
             File aFile = getGroupAvatarFile(g.groupId);
             Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
@@ -920,7 +861,7 @@ class Manager implements Signal {
         return UnidentifiedAccess.deriveAccessKeyFrom(profileKey);
     }
 
-    private static byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
+    private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
         // TODO implement
         return null;
     }
@@ -1330,7 +1271,7 @@ class Manager implements Signal {
                 if (syncMessage.getGroups().isPresent()) {
                     File tmpFile = null;
                     try {
-                        tmpFile = Util.createTempFile();
+                        tmpFile = IOUtils.createTempFile();
                         try (InputStream attachmentAsStream = retrieveAttachmentAsStream(syncMessage.getGroups().get().asPointer(), tmpFile)) {
                             DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
@@ -1372,7 +1313,7 @@ class Manager implements Signal {
                 if (syncMessage.getContacts().isPresent()) {
                     File tmpFile = null;
                     try {
-                        tmpFile = Util.createTempFile();
+                        tmpFile = IOUtils.createTempFile();
                         final ContactsMessage contactsMessage = syncMessage.getContacts().get();
                         try (InputStream attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream().asPointer(), tmpFile)) {
                             DeviceContactsInputStream s = new DeviceContactsInputStream(attachmentAsStream);
@@ -1506,7 +1447,7 @@ class Manager implements Signal {
     }
 
     private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
-        createPrivateDirectories(avatarsPath);
+        IOUtils.createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getContactAvatarFile(number), false);
@@ -1521,7 +1462,7 @@ class Manager implements Signal {
     }
 
     private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
-        createPrivateDirectories(avatarsPath);
+        IOUtils.createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
@@ -1536,7 +1477,7 @@ class Manager implements Signal {
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
-        createPrivateDirectories(attachmentsPath);
+        IOUtils.createPrivateDirectories(attachmentsPath);
         return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
     }
 
@@ -1571,7 +1512,7 @@ class Manager implements Signal {
 
         final SignalServiceMessageReceiver messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration, username, password, deviceId, signalingKey, USER_AGENT, null, timer);
 
-        File tmpFile = Util.createTempFile();
+        File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, MAX_ATTACHMENT_SIZE)) {
             try (OutputStream output = new FileOutputStream(outputFile)) {
                 byte[] buffer = new byte[4096];
@@ -1615,7 +1556,7 @@ class Manager implements Signal {
     }
 
     private void sendGroups() throws IOException, UntrustedIdentityException {
-        File groupsFile = Util.createTempFile();
+        File groupsFile = IOUtils.createTempFile();
 
         try {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
@@ -1650,7 +1591,7 @@ class Manager implements Signal {
     }
 
     private void sendContacts() throws IOException, UntrustedIdentityException {
-        File contactsFile = Util.createTempFile();
+        File contactsFile = IOUtils.createTempFile();
 
         try {
             try (OutputStream fos = new FileOutputStream(contactsFile)) {

@@ -31,7 +31,10 @@ import org.asamk.Signal;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
+import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Hex;
+import org.asamk.signal.util.IOUtils;
+import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -52,15 +55,14 @@ import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.Security;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -68,8 +70,6 @@ public class Main {
 
     public static final String SIGNAL_BUSNAME = "org.asamk.Signal";
     public static final String SIGNAL_OBJECTPATH = "/org/asamk/Signal";
-
-    private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
 
     public static void main(String[] args) {
         // Workaround for BKS truststore
@@ -317,8 +317,8 @@ public class Main {
                         for (DeviceInfo d : devices) {
                             System.out.println("Device " + d.getId() + (d.getId() == m.getDeviceId() ? " (this device)" : "") + ":");
                             System.out.println(" Name: " + d.getName());
-                            System.out.println(" Created: " + formatTimestamp(d.getCreated()));
-                            System.out.println(" Last seen: " + formatTimestamp(d.getLastSeen()));
+                            System.out.println(" Created: " + DateUtils.formatTimestamp(d.getCreated()));
+                            System.out.println(" Last seen: " + DateUtils.formatTimestamp(d.getLastSeen()));
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -373,7 +373,7 @@ public class Main {
                         String messageText = ns.getString("message");
                         if (messageText == null) {
                             try {
-                                messageText = readAll(System.in);
+                                messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
                             } catch (IOException e) {
                                 System.err.println("Failed to read message from stdin: " + e.getMessage());
                                 System.err.println("Aborting sending.");
@@ -425,7 +425,7 @@ public class Main {
                                 @Override
                                 public void handle(Signal.MessageReceived s) {
                                     System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
-                                            s.getSender(), formatTimestamp(s.getTimestamp()), s.getMessage()));
+                                            s.getSender(), DateUtils.formatTimestamp(s.getTimestamp()), s.getMessage()));
                                     if (s.getGroupId().length > 0) {
                                         System.out.println("Group info:");
                                         System.out.println("  Id: " + Base64.encodeBytes(s.getGroupId()));
@@ -443,7 +443,7 @@ public class Main {
                                 @Override
                                 public void handle(Signal.ReceiptReceived s) {
                                     System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                                            s.getSender(), formatTimestamp(s.getTimestamp())));
+                                            s.getSender(), DateUtils.formatTimestamp(s.getTimestamp())));
                                 }
                             });
                         } catch (UnsatisfiedLinkError e) {
@@ -708,7 +708,7 @@ public class Main {
     }
 
     private static void printIdentityFingerprint(Manager m, String theirUsername, JsonIdentityKeyStore.Identity theirId) {
-        String digits = formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.getIdentityKey()));
+        String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.getIdentityKey()));
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
                 theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toStringCondensed(theirId.getFingerprint()), digits));
     }
@@ -721,16 +721,6 @@ public class Main {
             System.out.println(String.format("Id: %s Name: %s  Active: %s", Base64.encodeBytes(group.groupId),
                     group.name, group.active));
         }
-    }
-
-    private static String formatSafetyNumber(String digits) {
-        final int partCount = 12;
-        int partSize = digits.length() / partCount;
-        StringBuilder f = new StringBuilder(digits.length() + partCount);
-        for (int i = 0; i < partCount; i++) {
-            f.append(digits.substring(i * partSize, (i * partSize) + partSize)).append(" ");
-        }
-        return f.toString();
     }
 
     private static void handleGroupNotFoundException(GroupNotFoundException e) {
@@ -956,18 +946,6 @@ public class Main {
         System.err.println("Failed to send message: " + e.getMessage());
     }
 
-    private static String readAll(InputStream in) throws IOException {
-        StringWriter output = new StringWriter();
-        byte[] buffer = new byte[4096];
-        long count = 0;
-        int n;
-        while (-1 != (n = System.in.read(buffer))) {
-            output.write(new String(buffer, 0, n, Charset.defaultCharset()));
-            count += n;
-        }
-        return output.toString();
-    }
-
     private static class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         final Manager m;
 
@@ -983,7 +961,7 @@ public class Main {
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
-            System.out.println("Timestamp: " + formatTimestamp(envelope.getTimestamp()));
+            System.out.println("Timestamp: " + DateUtils.formatTimestamp(envelope.getTimestamp()));
             if (envelope.isUnidentifiedSender()) {
                 System.out.println("Sent by unidentified/sealed sender");
             }
@@ -1029,7 +1007,7 @@ public class Main {
                             System.out.println("Received sync read messages list");
                             for (ReadMessage rm : syncMessage.getRead().get()) {
                                 ContactInfo fromContact = m.getContact(rm.getSender());
-                                System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + formatTimestamp(rm.getTimestamp()));
+                                System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                             }
                         }
                         if (syncMessage.getRequest().isPresent()) {
@@ -1052,9 +1030,9 @@ public class Main {
                             } else {
                                 to = "Unknown";
                             }
-                            System.out.println("To: " + to + " , Message timestamp: " + formatTimestamp(sentTranscriptMessage.getTimestamp()));
+                            System.out.println("To: " + to + " , Message timestamp: " + DateUtils.formatTimestamp(sentTranscriptMessage.getTimestamp()));
                             if (sentTranscriptMessage.getExpirationStartTimestamp() > 0) {
-                                System.out.println("Expiration started at: " + formatTimestamp(sentTranscriptMessage.getExpirationStartTimestamp()));
+                                System.out.println("Expiration started at: " + DateUtils.formatTimestamp(sentTranscriptMessage.getExpirationStartTimestamp()));
                             }
                             SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
                             handleSignalServiceDataMessage(message);
@@ -1071,7 +1049,7 @@ public class Main {
                             System.out.println("Received sync message with verified identities:");
                             final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
                             System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
-                            String safetyNumber = formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
+                            String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
                             System.out.println("   " + safetyNumber);
                         }
                         if (syncMessage.getConfiguration().isPresent()) {
@@ -1111,7 +1089,7 @@ public class Main {
                     if (content.getReceiptMessage().isPresent()) {
                         System.out.println("Received a receipt message");
                         SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
-                        System.out.println(" - When: " + formatTimestamp(receiptMessage.getWhen()));
+                        System.out.println(" - When: " + DateUtils.formatTimestamp(receiptMessage.getWhen()));
                         if (receiptMessage.isDeliveryReceipt()) {
                             System.out.println(" - Is delivery receipt");
                         }
@@ -1120,14 +1098,14 @@ public class Main {
                         }
                         System.out.println(" - Timestamps:");
                         for (long timestamp : receiptMessage.getTimestamps()) {
-                            System.out.println("    " + formatTimestamp(timestamp));
+                            System.out.println("    " + DateUtils.formatTimestamp(timestamp));
                         }
                     }
                     if (content.getTypingMessage().isPresent()) {
                         System.out.println("Received a typing message");
                         SignalServiceTypingMessage typingMessage = content.getTypingMessage().get();
                         System.out.println(" - Action: " + typingMessage.getAction());
-                        System.out.println(" - Timestamp: " + formatTimestamp(typingMessage.getTimestamp()));
+                        System.out.println(" - Timestamp: " + DateUtils.formatTimestamp(typingMessage.getTimestamp()));
                         if (typingMessage.getGroupId().isPresent()) {
                             GroupInfo group = m.getGroup(typingMessage.getGroupId().get());
                             if (group != null) {
@@ -1145,7 +1123,7 @@ public class Main {
         }
 
         private void handleSignalServiceDataMessage(SignalServiceDataMessage message) {
-            System.out.println("Message timestamp: " + formatTimestamp(message.getTimestamp()));
+            System.out.println("Message timestamp: " + DateUtils.formatTimestamp(message.getTimestamp()));
 
             if (message.getBody().isPresent()) {
                 System.out.println("Body: " + message.getBody().get());
@@ -1333,12 +1311,5 @@ public class Main {
                 }
             }
         }
-    }
-
-    private static String formatTimestamp(long timestamp) {
-        Date date = new Date(timestamp);
-        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
-        df.setTimeZone(tzUTC);
-        return timestamp + " (" + df.format(date) + ")";
     }
 }
