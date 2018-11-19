@@ -1,7 +1,10 @@
 package org.asamk.signal.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.asamk.signal.GroupIdFormatException;
+import org.whispersystems.signalservice.internal.util.Base64;
 
+import java.io.IOException;
 import java.io.InvalidObjectException;
 
 public class Util {
@@ -38,5 +41,13 @@ public class Util {
         }
 
         return node;
+    }
+
+    public static byte[] decodeGroupId(String groupId) throws GroupIdFormatException {
+        try {
+            return Base64.decode(groupId);
+        } catch (IOException e) {
+            throw new GroupIdFormatException(groupId, e);
+        }
     }
 }
