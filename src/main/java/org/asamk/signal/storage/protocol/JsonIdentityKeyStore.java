@@ -94,7 +94,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
         List<Identity> identities = trustedKeys.get(address.getName());
-        if (identities == null) {
+        if (identities == null || identities.size() == 0) {
             return null;
         }
 
@@ -102,7 +102,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         Identity maxIdentity = null;
         for (Identity id : identities) {
             final long time = id.getDateAdded().getTime();
-            if (maxDate <= time) {
+            if (maxIdentity == null || maxDate <= time) {
                 maxDate = time;
                 maxIdentity = id;
             }
@@ -123,7 +123,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public static class JsonIdentityKeyStoreDeserializer extends JsonDeserializer<JsonIdentityKeyStore> {
 
         @Override
-        public JsonIdentityKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+        public JsonIdentityKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             try {
@@ -157,7 +157,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public static class JsonIdentityKeyStoreSerializer extends JsonSerializer<JsonIdentityKeyStore> {
 
         @Override
-        public void serialize(JsonIdentityKeyStore jsonIdentityKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        public void serialize(JsonIdentityKeyStore jsonIdentityKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeStartObject();
             json.writeNumberField("registrationId", jsonIdentityKeyStore.getLocalRegistrationId());
             json.writeStringField("identityKey", Base64.encodeBytes(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));

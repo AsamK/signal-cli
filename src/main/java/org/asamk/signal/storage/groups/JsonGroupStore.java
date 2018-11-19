@@ -30,8 +30,7 @@ public class JsonGroupStore {
     }
 
     public GroupInfo getGroup(byte[] groupId) {
-        GroupInfo g = groups.get(Base64.encodeBytes(groupId));
-        return g;
+        return groups.get(Base64.encodeBytes(groupId));
     }
 
     public List<GroupInfo> getGroups() {

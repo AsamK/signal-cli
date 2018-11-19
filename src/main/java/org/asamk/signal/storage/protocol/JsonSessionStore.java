@@ -78,7 +78,7 @@ class JsonSessionStore implements SessionStore {
     public static class JsonSessionStoreDeserializer extends JsonDeserializer<JsonSessionStore> {
 
         @Override
-        public JsonSessionStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+        public JsonSessionStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             Map<SignalProtocolAddress, byte[]> sessionMap = new HashMap<>();
@@ -104,7 +104,7 @@ class JsonSessionStore implements SessionStore {
     public static class JsonPreKeyStoreSerializer extends JsonSerializer<JsonSessionStore> {
 
         @Override
-        public void serialize(JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        public void serialize(JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeStartArray();
             for (Map.Entry<SignalProtocolAddress, byte[]> preKey : jsonSessionStore.sessions.entrySet()) {
                 json.writeStartObject();
