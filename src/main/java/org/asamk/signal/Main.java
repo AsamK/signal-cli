@@ -24,6 +24,8 @@ import org.asamk.Signal;
 import org.asamk.signal.commands.*;
 import org.asamk.signal.manager.BaseConfig;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.SecurityProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -35,8 +37,9 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        // Workaround for BKS truststore
-        Security.insertProviderAt(new org.bouncycastle.jce.provider.BouncyCastleProvider(), 1);
+        // Register our own security provider
+        Security.insertProviderAt(new SecurityProvider(), 1);
+        Security.addProvider(new BouncyCastleProvider());
 
         Namespace ns = parseArgs(args);
         if (ns == null) {

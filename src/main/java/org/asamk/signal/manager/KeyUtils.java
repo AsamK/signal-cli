@@ -1,9 +1,7 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.util.RandomUtils;
 import org.whispersystems.signalservice.internal.util.Base64;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 class KeyUtils {
 
@@ -33,15 +31,7 @@ class KeyUtils {
 
     private static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
-        getSecureRandom().nextBytes(secret);
+        RandomUtils.getSecureRandom().nextBytes(secret);
         return secret;
-    }
-
-    private static SecureRandom getSecureRandom() {
-        try {
-            return SecureRandom.getInstance("SHA1PRNG");
-        } catch (NoSuchAlgorithmException e) {
-            throw new AssertionError(e);
-        }
     }
 }
