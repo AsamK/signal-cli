@@ -248,11 +248,15 @@ public class Manager implements Signal {
     public List<DeviceInfo> getLinkedDevices() throws IOException {
         List<DeviceInfo> devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
+        account.save();
         return devices;
     }
 
     public void removeLinkedDevices(int deviceId) throws IOException {
         accountManager.removeDevice(deviceId);
+        List<DeviceInfo> devices = accountManager.getDevices();
+        account.setMultiDevice(devices.size() > 1);
+        account.save();
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
@@ -267,6 +271,7 @@ public class Manager implements Signal {
 
         accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, Optional.of(account.getProfileKey()), verificationCode);
         account.setMultiDevice(true);
+        account.save();
     }
 
     private List<PreKeyRecord> generatePreKeys() {

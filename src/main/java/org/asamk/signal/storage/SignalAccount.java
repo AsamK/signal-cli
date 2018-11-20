@@ -135,10 +135,11 @@ public class SignalAccount {
         if (node != null) {
             deviceId = node.asInt();
         }
+        if (rootNode.has("isMultiDevice")) isMultiDevice = Util.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
         username = Util.getNotNullNode(rootNode, "username").asText();
         password = Util.getNotNullNode(rootNode, "password").asText();
         JsonNode pinNode = rootNode.get("registrationLockPin");
-        registrationLockPin = pinNode == null ? null : pinNode.asText();
+        registrationLockPin = pinNode == null || pinNode.isNull() ? null : pinNode.asText();
         if (rootNode.has("signalingKey")) {
             signalingKey = Util.getNotNullNode(rootNode, "signalingKey").asText();
         }
@@ -189,11 +190,13 @@ public class SignalAccount {
         ObjectNode rootNode = jsonProcessor.createObjectNode();
         rootNode.put("username", username)
                 .put("deviceId", deviceId)
+                .put("isMultiDevice", isMultiDevice)
                 .put("password", password)
                 .put("registrationLockPin", registrationLockPin)
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
+                .put("profileKey", Base64.encodeBytes(profileKey))
                 .put("registered", registered)
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
