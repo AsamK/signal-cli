@@ -2,7 +2,6 @@ package org.asamk.signal.storage.protocol;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import org.asamk.signal.TrustLevel;
 import org.whispersystems.libsignal.IdentityKey;
@@ -189,13 +188,13 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             this.added = new Date();
         }
 
-        public Identity(IdentityKey identityKey, TrustLevel trustLevel, Date added) {
+        Identity(IdentityKey identityKey, TrustLevel trustLevel, Date added) {
             this.identityKey = identityKey;
             this.trustLevel = trustLevel;
             this.added = added;
         }
 
-        public boolean isTrusted() {
+        boolean isTrusted() {
             return trustLevel == TrustLevel.TRUSTED_UNVERIFIED ||
                     trustLevel == TrustLevel.TRUSTED_VERIFIED;
         }

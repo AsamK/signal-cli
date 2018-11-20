@@ -2,7 +2,6 @@ package org.asamk.signal.storage.protocol;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.SessionRecord;
@@ -20,7 +19,7 @@ class JsonSessionStore implements SessionStore {
 
     }
 
-    public void addSessions(Map<SignalProtocolAddress, byte[]> sessions) {
+    private void addSessions(Map<SignalProtocolAddress, byte[]> sessions) {
         this.sessions.putAll(sessions);
     }
 

@@ -73,15 +73,13 @@ public class Manager implements Signal {
     private final String dataPath;
     private final String attachmentsPath;
     private final String avatarsPath;
+    private final SleepTimer timer = new UptimeSleepTimer();
 
     private SignalAccount account;
-
     private String username;
     private SignalServiceAccountManager accountManager;
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
-
-    private SleepTimer timer = new UptimeSleepTimer();
 
     public Manager(String username, String settingsPath) {
         this.username = username;

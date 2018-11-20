@@ -40,7 +40,7 @@ public class JsonContactsStore {
         contacts.clear();
     }
 
-    public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
+    private static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
 
         @Override
         public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
@@ -48,7 +48,7 @@ public class JsonContactsStore {
         }
     }
 
-    public static class ContactsDeserializer extends JsonDeserializer<Map<String, ContactInfo>> {
+    private static class ContactsDeserializer extends JsonDeserializer<Map<String, ContactInfo>> {
 
         @Override
         public Map<String, ContactInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {

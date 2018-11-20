@@ -34,7 +34,7 @@ public class JsonThreadStore {
         return new ArrayList<>(threads.values());
     }
 
-    public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
+    private static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
 
         @Override
         public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
@@ -42,7 +42,7 @@ public class JsonThreadStore {
         }
     }
 
-    public static class ThreadsDeserializer extends JsonDeserializer<Map<String, ThreadInfo>> {
+    private static class ThreadsDeserializer extends JsonDeserializer<Map<String, ThreadInfo>> {
 
         @Override
         public Map<String, ThreadInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {

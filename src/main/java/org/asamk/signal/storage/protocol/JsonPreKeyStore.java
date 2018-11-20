@@ -2,7 +2,6 @@ package org.asamk.signal.storage.protocol;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.state.PreKeyRecord;
@@ -21,7 +20,7 @@ class JsonPreKeyStore implements PreKeyStore {
 
     }
 
-    public void addPreKeys(Map<Integer, byte[]> preKeys) {
+    private void addPreKeys(Map<Integer, byte[]> preKeys) {
         store.putAll(preKeys);
     }
 

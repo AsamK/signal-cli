@@ -37,7 +37,7 @@ public class JsonGroupStore {
         return new ArrayList<>(groups.values());
     }
 
-    public static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
+    private static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
 
         @Override
         public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
@@ -45,7 +45,7 @@ public class JsonGroupStore {
         }
     }
 
-    public static class GroupsDeserializer extends JsonDeserializer<Map<String, GroupInfo>> {
+    private static class GroupsDeserializer extends JsonDeserializer<Map<String, GroupInfo>> {
 
         @Override
         public Map<String, GroupInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {

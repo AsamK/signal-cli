@@ -223,8 +223,8 @@ class Utils {
 
     static class DeviceLinkInfo {
 
-        String deviceIdentifier;
-        ECPublicKey deviceKey;
+        final String deviceIdentifier;
+        final ECPublicKey deviceKey;
 
         DeviceLinkInfo(final String deviceIdentifier, final ECPublicKey deviceKey) {
             this.deviceIdentifier = deviceIdentifier;
