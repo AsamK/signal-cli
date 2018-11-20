@@ -14,11 +14,11 @@ import org.whispersystems.signalservice.internal.util.Base64;
 import java.io.File;
 import java.util.List;
 
-class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     final Manager m;
 
-    ReceiveMessageHandler(Manager m) {
+    public ReceiveMessageHandler(Manager m) {
         this.m = m;
     }
 

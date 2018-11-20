@@ -13,12 +13,12 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
 import java.io.IOException;
 
-class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     final Manager m;
     private final ObjectMapper jsonProcessor;
 
-    JsonReceiveMessageHandler(Manager m) {
+    public JsonReceiveMessageHandler(Manager m) {
         this.m = m;
         this.jsonProcessor = new ObjectMapper();
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect

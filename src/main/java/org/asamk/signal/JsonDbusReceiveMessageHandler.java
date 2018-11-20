@@ -9,13 +9,13 @@ import org.whispersystems.signalservice.api.messages.*;
 import java.util.ArrayList;
 import java.util.List;
 
-class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
+public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
 
     private final DBusConnection conn;
 
     private final String objectPath;
 
-    JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
+    public JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
         super(m);
         this.conn = conn;
         this.objectPath = objectPath;

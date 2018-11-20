@@ -5,12 +5,12 @@ import org.freedesktop.dbus.DBusConnection;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
-class DbusReceiveMessageHandler extends ReceiveMessageHandler {
+public class DbusReceiveMessageHandler extends ReceiveMessageHandler {
 
     private final DBusConnection conn;
     private final String objectPath;
 
-    DbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
+    public DbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
         super(m);
         this.conn = conn;
         this.objectPath = objectPath;
