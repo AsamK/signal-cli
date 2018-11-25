@@ -161,6 +161,7 @@ public class Manager implements Signal {
         if (account.getProfileKey() == null) {
             // Old config file, creating new profile key
             account.setProfileKey(KeyUtils.createProfileKey());
+            account.save();
         }
     }
 
