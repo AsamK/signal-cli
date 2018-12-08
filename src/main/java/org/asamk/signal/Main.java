@@ -24,6 +24,7 @@ import org.asamk.Signal;
 import org.asamk.signal.commands.*;
 import org.asamk.signal.manager.BaseConfig;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.freedesktop.dbus.DBusConnection;
@@ -80,18 +81,12 @@ public class Main {
                     return 3;
                 }
             } else {
-                String settingsPath = ns.getString("config");
-                if (TextUtils.isEmpty(settingsPath)) {
-                    settingsPath = System.getProperty("user.home") + "/.config/signal";
-                    if (!new File(settingsPath).exists()) {
-                        String legacySettingsPath = System.getProperty("user.home") + "/.config/textsecure";
-                        if (new File(legacySettingsPath).exists()) {
-                            settingsPath = legacySettingsPath;
-                        }
-                    }
+                String dataPath = ns.getString("config");
+                if (TextUtils.isEmpty(dataPath)) {
+                    dataPath = getDefaultDataPath();
                 }
 
-                m = new Manager(username, settingsPath);
+                m = new Manager(username, dataPath);
                 ts = m;
                 try {
                     m.init();
@@ -134,6 +129,32 @@ public class Main {
         }
     }
 
+    /**
+     * Uses $XDG_DATA_HOME/signal-cli if it exists, or if none of the legacy directories exist:
+     * - $HOME/.config/signal
+     * - $HOME/.config/textsecure
+     *
+     * @return the data directory to be used by signal-cli.
+     */
+    private static String getDefaultDataPath() {
+        String dataPath = IOUtils.getDataHomeDir() + "/signal-cli";
+        if (new File(dataPath).exists()) {
+            return dataPath;
+        }
+
+        String legacySettingsPath = System.getProperty("user.home") + "/.config/signal";
+        if (new File(legacySettingsPath).exists()) {
+            return legacySettingsPath;
+        }
+
+        legacySettingsPath = System.getProperty("user.home") + "/.config/textsecure";
+        if (new File(legacySettingsPath).exists()) {
+            return legacySettingsPath;
+        }
+
+        return dataPath;
+    }
+
     private static Namespace parseArgs(String[] args) {
         ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
                 .build()
@@ -145,7 +166,7 @@ public class Main {
                 .help("Show package version.")
                 .action(Arguments.version());
         parser.addArgument("--config")
-                .help("Set the path, where to store the config (Default: $HOME/.config/signal).");
+                .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")

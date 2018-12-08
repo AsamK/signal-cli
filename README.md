@@ -53,9 +53,11 @@ For more information read the [man page](https://github.com/AsamK/signal-cli/blo
 
 The password and cryptographic keys are created when registering and stored in the current users home directory:
 
-        $HOME/.config/signal/data/
+`$XDG_DATA_HOME/signal-cli/data/` (`$HOME/.local/share/signal-cli/data/`)
 
-For legacy users, the old config directory is used as a fallback:
+For legacy users, the old config directories are used as a fallback:
+
+        $HOME/.config/signal/data/
 
         $HOME/.config/textsecure/data/
 

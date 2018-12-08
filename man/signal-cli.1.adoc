@@ -35,7 +35,7 @@ Options
 *--config* CONFIG::
 	Set the path, where to store the config.
 	Make sure you have full read/write access to the given directory.
-	(Default: $HOME/.config/signal)
+	(Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
 
 *-u* USERNAME, *--username* USERNAME::
 	Specify your phone number, that will be your identifier.
@@ -259,9 +259,11 @@ Files
 The password and cryptographic keys are created when registering and stored in the
 current users home directory, the directory can be changed with *--config*:
 
-    $HOME/.config/signal/
+`$XDG_DATA_HOME/signal-cli/` (`$HOME/.local/share/signal-cli/`)
 
-For legacy users, the old config directory is used as a fallback:
+For legacy users, the old config directories are used as a fallback:
+
+    $HOME/.config/signal/
 
     $HOME/.config/textsecure/
 

@@ -57,4 +57,13 @@ public class IOUtils {
             Files.createFile(file);
         }
     }
+
+    public static String getDataHomeDir() {
+        String dataHome = System.getenv("XDG_DATA_HOME");
+        if (dataHome != null) {
+            return dataHome;
+        }
+
+        return System.getProperty("user.home") + "/.local/share";
+    }
 }
