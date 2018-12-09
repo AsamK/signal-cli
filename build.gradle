@@ -7,7 +7,7 @@ targetCompatibility = JavaVersion.VERSION_1_7
 
 mainClassName = 'org.asamk.signal.Main'
 
-version = '0.6.0'
+version = '0.6.1'
 
 compileJava.options.encoding = 'UTF-8'
 
