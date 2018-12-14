@@ -46,6 +46,12 @@ public class SendCommand implements DbusCommand {
             return 1;
         }
 
+        if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && (ns.getBoolean("endsession") || ns.getString("group") == null)) {
+            System.err.println("No recipients given");
+            System.err.println("Aborting sending.");
+            return 1;
+        }
+
         if (ns.getBoolean("endsession") && ns.getList("recipient") != null && ns.getList("recipient").size() > 0) {
             try {
                 signal.sendEndSessionMessage(ns.<String>getList("recipient"));
@@ -63,12 +69,6 @@ public class SendCommand implements DbusCommand {
                 handleDBusExecutionException(e);
                 return 1;
             }
-        }
-
-        if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && ns.getString("group") == null) {
-            System.err.println("No recipients given");
-            System.err.println("Aborting sending.");
-            return 1;
         }
 
         String messageText = ns.getString("message");
