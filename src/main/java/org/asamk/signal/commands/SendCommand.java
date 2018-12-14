@@ -52,7 +52,7 @@ public class SendCommand implements DbusCommand {
             return 1;
         }
 
-        if (ns.getBoolean("endsession") && ns.getList("recipient") != null && ns.getList("recipient").size() > 0) {
+        if (ns.getBoolean("endsession")) {
             try {
                 signal.sendEndSessionMessage(ns.<String>getList("recipient"));
                 return 0;
