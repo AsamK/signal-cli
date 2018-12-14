@@ -216,7 +216,7 @@ public class Main {
             }
         }
         if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
-            System.err.println("You cannot specify recipients by phone number and groups a the same time");
+            System.err.println("You cannot specify recipients by phone number and groups at the same time");
             System.exit(2);
         }
         return ns;
