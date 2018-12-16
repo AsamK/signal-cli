@@ -188,10 +188,11 @@ public class Manager implements Signal {
         account.setPassword(KeyUtils.createPassword());
         accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, account.getUsername(), account.getPassword(), BaseConfig.USER_AGENT, timer);
 
-        if (voiceVerification)
+        if (voiceVerification) {
             accountManager.requestVoiceVerificationCode(Locale.getDefault());
-        else
-            accountManager.requestSmsVerificationCode();
+        } else {
+            accountManager.requestSmsVerificationCode(false);
+        }
 
         account.setRegistered(false);
         account.save();
