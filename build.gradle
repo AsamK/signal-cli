@@ -24,6 +24,7 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
     compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     compile 'org.freedesktop.dbus:dbus-java:2.7.0'
+	compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.0.2'
 }
 
 jar {
