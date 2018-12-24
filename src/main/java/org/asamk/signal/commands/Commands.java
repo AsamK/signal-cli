@@ -26,6 +26,9 @@ public class Commands {
         addCommand("updateAccount", new UpdateAccountCommand());
         addCommand("updateGroup", new UpdateGroupCommand());
         addCommand("verify", new VerifyCommand());
+
+        // mqtt commands
+        addCommand("mqtt", new MqttCommand());
     }
 
     public static Map<String, Command> getCommands() {
