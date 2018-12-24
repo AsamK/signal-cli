@@ -20,11 +20,8 @@ public class MqttCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        //subparser.addArgument("--json")
-        //       .help("Output received messages in json format, one json object per line.")
-        //      .action(Arguments.storeTrue());
         subparser.addArgument("-b", "--broker")
-                .help("Output received messages in json format, one json object per line.")
+                .help("The broker to connect to, default: " + DEFAULT_MQTT_BROKER)
                 .action(Arguments.store());
     }
 
@@ -49,6 +46,7 @@ public class MqttCommand implements LocalCommand {
             System.out.println("Connecting to broker: " + broker);
             mqttClient.connect(connOpts);
             System.out.println("Connected");
+
             boolean ignoreAttachments = false;
             try {
                 m.receiveMessages(1,
