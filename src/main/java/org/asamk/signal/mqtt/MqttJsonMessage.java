@@ -80,7 +80,7 @@ public class MqttJsonMessage {
 
         if (envelope != null) {
             result.putPOJO("envelope", new JsonMessageEnvelope(envelope, content));
-            message.setSubTopic(findSubTopic(content));
+            message.setSubTopic(findSubTopic(envelope, content));
         }
         try {
             message.setContent(jsonProcessor.writeValueAsString(result));
@@ -102,22 +102,37 @@ public class MqttJsonMessage {
      * Finds the designated type of the message and defines the subtopic for the mqtt broker.
      *
      * Possible subtopics: data, synq, call, typinginfo, receipt, other
+     *
+     * @param envelope
      * @param content
      * @return
      */
-    private static String findSubTopic(final SignalServiceContent content) {
-        if (content.getDataMessage().isPresent()) {
-            return SUBTOPIC_DATA;
-        } else if (content.getSyncMessage().isPresent()) {
-            return SUBTOPIC_SYNC;
-        } else if (content.getCallMessage().isPresent()) {
-            return SUBTOPIC_CALL;
-        } else if (content.getTypingMessage().isPresent()) {
-            return SUBTOPIC_TYPING_INFO;
-        } else if (content.getReceiptMessage().isPresent()) {
-            return SUBTOPIC_RECEIPT;
-        } else {
-            return SUBTOPIC_OTHER;
+    private static String findSubTopic(final SignalServiceEnvelope envelope, final SignalServiceContent content) {
+        if(content !=null) {
+            if (content.getDataMessage().isPresent()) {
+                return SUBTOPIC_DATA;
+            } else if (content.getSyncMessage().isPresent()) {
+                return SUBTOPIC_SYNC;
+            } else if (content.getCallMessage().isPresent()) {
+                return SUBTOPIC_CALL;
+            } else if (content.getTypingMessage().isPresent()) {
+                return SUBTOPIC_TYPING_INFO;
+            } else if (content.getReceiptMessage().isPresent()) {
+                return SUBTOPIC_RECEIPT;
+            } else {
+                return SUBTOPIC_OTHER;
+            }
+        }
+        else
+        {
+            if(envelope.isReceipt())
+            {
+                return SUBTOPIC_RECEIPT;
+            }
+            else
+            {
+                return SUBTOPIC_OTHER;
+            }
         }
     }
 }
