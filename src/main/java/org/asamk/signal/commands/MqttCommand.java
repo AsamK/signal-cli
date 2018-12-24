@@ -53,7 +53,7 @@ public class MqttCommand implements LocalCommand {
                         TimeUnit.HOURS,
                         false,
                         ignoreAttachments,
-                        new MqttReceiveMessageHandler(mqttClient));
+                        new MqttReceiveMessageHandler(m, mqttClient));
                 return 0;
             } catch (IOException e) {
                 System.err.println("Error while receiving messages: " + e.getMessage());
