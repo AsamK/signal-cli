@@ -8,7 +8,6 @@ import org.asamk.signal.mqtt.MqttReceiveMessageHandler;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
