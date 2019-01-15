@@ -167,6 +167,8 @@ public class Main {
                 .action(Arguments.version());
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
+        parser.addArgument("-n", "--busname")
+                .help("Name of the DBus.");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")
