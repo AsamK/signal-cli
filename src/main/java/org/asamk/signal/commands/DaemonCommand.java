@@ -42,6 +42,7 @@ public class DaemonCommand implements LocalCommand {
         try {
             try {
                 int busType;
+                String  busName;
                 if (ns.getBoolean("system")) {
                     busType = DBusConnection.SYSTEM;
                 } else {
@@ -49,7 +50,12 @@ public class DaemonCommand implements LocalCommand {
                 }
                 conn = DBusConnection.getConnection(busType);
                 conn.exportObject(SIGNAL_OBJECTPATH, m);
-                conn.requestBusName(SIGNAL_BUSNAME);
+		busName = ns.getString("busname");
+		if (busName == null) {
+		    conn.requestBusName(SIGNAL_BUSNAME);
+		} else {
+		    conn.requestBusName(busName);
+		}
             } catch (UnsatisfiedLinkError e) {
                 System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
                 return 1;
