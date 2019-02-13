@@ -210,7 +210,7 @@ public class Main {
                 System.err.println("You need to specify a username (phone number)");
                 System.exit(2);
             }
-            if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"))) {
+            if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"), null)) {
                 System.err.println("Invalid username (phone number), make sure you include the country code.");
                 System.exit(2);
             }
