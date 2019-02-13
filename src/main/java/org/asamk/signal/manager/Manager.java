@@ -1149,6 +1149,10 @@ public class Manager implements Signal {
                                 }
                                 if (c.getExpirationTimer().isPresent()) {
                                     ThreadInfo thread = account.getThreadStore().getThread(c.getNumber());
+                                    if (thread == null) {
+                                        thread = new ThreadInfo();
+                                        thread.id = c.getNumber();
+                                    }
                                     thread.messageExpirationTime = c.getExpirationTimer().get();
                                     account.getThreadStore().updateThread(thread);
                                 }
