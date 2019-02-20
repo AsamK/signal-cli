@@ -15,16 +15,5 @@ public class JsonSendableMessage {
     }
 
     String message;
-
-    public void setAttachments(List<String> attachments) {
-        if ( attachments == null ) {
-            return;
-        }
-
-        this.attachments = attachments.stream()
-                .map(i -> new String(Base64.getDecoder().decode(i)))
-                .collect(Collectors.toList());
-    }
-
     List<String> attachments;
 }
