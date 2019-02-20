@@ -1,13 +1,12 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+import netscape.javascript.JSException;
 import org.asamk.Signal;
-import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
+import org.asamk.signal.*;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -16,6 +15,7 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.*;
@@ -87,6 +87,15 @@ public class SendCommand implements DbusCommand {
             if (attachments == null) {
                 attachments = new ArrayList<>();
             }
+
+            // check to see if message is a JSON
+            // { "messageText": "string", "attachments": [ "base64" ] }
+            if (messageText.startsWith("{")) {
+                JsonSendableMessage result = new ObjectMapper().readValue(messageText, JsonSendableMessage.class);
+                messageText = result.getMessage();
+                attachments = result.getAttachments();
+            }
+
             if (ns.getString("group") != null) {
                 byte[] groupId = Util.decodeGroupId(ns.getString("group"));
                 signal.sendGroupMessage(messageText, attachments, groupId);
@@ -119,6 +128,10 @@ public class SendCommand implements DbusCommand {
         } catch (GroupIdFormatException e) {
             handleGroupIdFormatException(e);
             return 1;
+        } catch (JSException e) {
+            // not sure how to deal with this.
+            e.printStackTrace();
+            return 3;
         }
     }
 }
