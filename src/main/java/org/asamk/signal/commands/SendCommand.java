@@ -89,7 +89,7 @@ public class SendCommand implements DbusCommand {
             }
 
             // check to see if message is a JSON
-            // { "messageText": "string", "attachments": [ "base64" ] }
+            // { "message": "string", "attachments": [ "path to file", ... ] }
             if (messageText.startsWith("{")) {
                 JsonSendableMessage result = new ObjectMapper().readValue(messageText, JsonSendableMessage.class);
                 messageText = result.getMessage();
