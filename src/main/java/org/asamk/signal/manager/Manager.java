@@ -773,6 +773,24 @@ public class Manager implements Signal {
                     account.getSignalProtocolStore().saveIdentity(e.getE164Number(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                     return Collections.emptyList();
                 }
+            } else if (recipientsTS.size() == 1 && recipientsTS.contains(new SignalServiceAddress(username))) {
+                SignalServiceAddress recipient = new SignalServiceAddress(username);
+                final Optional<UnidentifiedAccessPair> unidentifiedAccess = getAccessFor(recipient);
+                SentTranscriptMessage transcript = new SentTranscriptMessage(recipient.getNumber(),
+                        message.getTimestamp(),
+                        message,
+                        message.getExpiresInSeconds(),
+                        Collections.singletonMap(recipient.getNumber(), unidentifiedAccess.isPresent()));
+                SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
+
+                List<SendMessageResult> results = new ArrayList<>(recipientsTS.size());
+                try {
+                    messageSender.sendMessage(syncMessage, unidentifiedAccess);
+                } catch (UntrustedIdentityException e) {
+                    account.getSignalProtocolStore().saveIdentity(e.getE164Number(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+                    results.add(SendMessageResult.identityFailure(recipient, e.getIdentityKey()));
+                }
+                return results;
             } else {
                 // Send to all individually, so sync messages are sent correctly
                 List<SendMessageResult> results = new ArrayList<>(recipientsTS.size());
