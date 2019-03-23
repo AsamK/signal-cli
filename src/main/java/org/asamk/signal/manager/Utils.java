@@ -1,6 +1,5 @@
 package org.asamk.signal.manager;
 
-import org.apache.http.util.TextUtils;
 import org.asamk.signal.AttachmentInvalidException;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.whispersystems.libsignal.IdentityKey;
@@ -24,6 +23,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.*;
+
+import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 class Utils {
 
@@ -100,7 +101,7 @@ class Utils {
         String deviceIdentifier = query.get("uuid");
         String publicKeyEncoded = query.get("pub_key");
 
-        if (TextUtils.isEmpty(deviceIdentifier) || TextUtils.isEmpty(publicKeyEncoded)) {
+        if (isEmpty(deviceIdentifier) || isEmpty(publicKeyEncoded)) {
             throw new RuntimeException("Invalid device link uri");
         }
 
