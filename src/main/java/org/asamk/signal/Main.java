@@ -20,6 +20,7 @@ import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 import org.asamk.Signal;
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.commands.*;
 import org.asamk.signal.manager.BaseConfig;
 import org.asamk.signal.manager.Manager;
@@ -57,6 +58,9 @@ public class Main {
         Manager m;
         Signal ts;
         DBusConnection dBusConn = null;
+        DbusConfig dbc = new DbusConfig();
+        if (!isEmpty(ns.getString("busname")))
+            dbc.setName(ns.getString("busname"));
         try {
             if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
                 try {
@@ -69,7 +73,7 @@ public class Main {
                     }
                     dBusConn = DBusConnection.getConnection(busType);
                     ts = dBusConn.getRemoteObject(
-                            DbusConfig.SIGNAL_BUSNAME, DbusConfig.SIGNAL_OBJECTPATH,
+                            dbc.getName(), dbc.getObjectPath(),
                             Signal.class);
                 } catch (UnsatisfiedLinkError e) {
                     System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
@@ -168,6 +172,8 @@ public class Main {
                 .action(Arguments.version());
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
+        parser.addArgument("--busname")
+                .help("Specify the dbus name, that will be used for communication (Default: org.asamk.Signal).");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")

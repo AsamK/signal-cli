@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
@@ -12,9 +13,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static org.asamk.signal.DbusConfig.SIGNAL_BUSNAME;
-import static org.asamk.signal.DbusConfig.SIGNAL_OBJECTPATH;
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
+import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public class DaemonCommand implements LocalCommand {
 
@@ -37,6 +37,9 @@ public class DaemonCommand implements LocalCommand {
             System.err.println("User is not registered.");
             return 1;
         }
+        DbusConfig dbc = new DbusConfig();
+        if (!isEmpty(ns.getString("busname")))
+            dbc.setName(ns.getString("busname"));
         DBusConnection conn = null;
         try {
             try {
@@ -47,8 +50,8 @@ public class DaemonCommand implements LocalCommand {
                     busType = DBusConnection.SESSION;
                 }
                 conn = DBusConnection.getConnection(busType);
-                conn.exportObject(SIGNAL_OBJECTPATH, m);
-                conn.requestBusName(SIGNAL_BUSNAME);
+                conn.exportObject(dbc.getObjectPath(), m);
+                conn.requestBusName(dbc.getName());
             } catch (UnsatisfiedLinkError e) {
                 System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
                 return 1;
@@ -58,7 +61,7 @@ public class DaemonCommand implements LocalCommand {
             }
             boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
             try {
-                m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, ns.getBoolean("json") ? new JsonDbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH) : new DbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH));
+                m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, ns.getBoolean("json") ? new JsonDbusReceiveMessageHandler(m, conn, dbc.getObjectPath()) : new DbusReceiveMessageHandler(m, conn, dbc.getObjectPath()));
                 return 0;
             } catch (IOException e) {
                 System.err.println("Error while receiving messages: " + e.getMessage());
