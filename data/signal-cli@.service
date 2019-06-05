@@ -8,9 +8,9 @@ After=network-online.target
 [Service]
 Type=dbus
 Environment="SIGNAL_CLI_OPTS=-Xms2m"
-ExecStart=%dir%/bin/signal-cli -u %I --config /var/lib/signal-cli daemon --system
+ExecStart=%dir%/bin/signal-cli -u +%I --busname org.asamk.Signal_%I --config /var/lib/signal-cli daemon --system
 User=signal-cli
-BusName=org.asamk.Signal
+BusName=org.asamk.Signal_%I
 
 [Install]
 WantedBy=multi-user.target
