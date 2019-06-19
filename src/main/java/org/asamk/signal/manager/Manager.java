@@ -56,6 +56,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.*;
@@ -762,7 +763,8 @@ public class Manager implements Signal {
             message = messageBuilder.build();
             if (message.getGroupInfo().isPresent()) {
                 try {
-                    List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipientsTS), getAccessFor(recipientsTS), message);
+                    final boolean isRecipientUpdate = true;
+                    List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipientsTS), getAccessFor(recipientsTS), isRecipientUpdate, message);
                     for (SendMessageResult r : result) {
                         if (r.getIdentityFailure() != null) {
                             account.getSignalProtocolStore().saveIdentity(r.getAddress().getNumber(), r.getIdentityFailure().getIdentityKey(), TrustLevel.UNTRUSTED);
@@ -780,7 +782,8 @@ public class Manager implements Signal {
                         message.getTimestamp(),
                         message,
                         message.getExpiresInSeconds(),
-                        Collections.singletonMap(recipient.getNumber(), unidentifiedAccess.isPresent()));
+                        Collections.singletonMap(recipient.getNumber(), unidentifiedAccess.isPresent()),
+                        false);
                 SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
                 List<SendMessageResult> results = new ArrayList<>(recipientsTS.size());
@@ -822,7 +825,7 @@ public class Manager implements Signal {
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException {
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException, UnsupportedDataMessageException {
         SignalServiceCipher cipher = new SignalServiceCipher(new SignalServiceAddress(username), account.getSignalProtocolStore(), Utils.getCertificateValidator());
         try {
             return cipher.decrypt(envelope);
