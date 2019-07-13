@@ -190,9 +190,9 @@ public class Manager implements Signal {
         accountManager = new SignalServiceAccountManager(BaseConfig.serviceConfiguration, account.getUsername(), account.getPassword(), BaseConfig.USER_AGENT, timer);
 
         if (voiceVerification) {
-            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.<String>absent());
+            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.<String>absent(), Optional.<String>absent());
         } else {
-            accountManager.requestSmsVerificationCode(false, Optional.<String>absent());
+            accountManager.requestSmsVerificationCode(false, Optional.<String>absent(), Optional.<String>absent());
         }
 
         account.setRegistered(false);
