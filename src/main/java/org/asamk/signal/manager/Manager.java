@@ -137,6 +137,7 @@ public class Manager implements Signal {
             }
         } catch (AuthorizationFailedException e) {
             System.err.println("Authorization failed, was the number registered elsewhere?");
+            throw e;
         }
     }
 
