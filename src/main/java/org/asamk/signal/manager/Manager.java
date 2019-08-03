@@ -209,6 +209,9 @@ public class Manager implements Signal {
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
         accountManager.setGcmId(Optional.<String>absent());
+
+        account.setRegistered(false);
+        account.save();
     }
 
     public String getDeviceLinkUri() throws TimeoutException, IOException {
