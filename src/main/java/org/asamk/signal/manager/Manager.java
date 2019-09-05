@@ -515,8 +515,15 @@ public class Manager implements Signal {
             }
         }
 
-        return SignalServiceDataMessage.newBuilder()
+        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build());
+
+        ThreadInfo thread = account.getThreadStore().getThread(Base64.encodeBytes(g.groupId));
+        if (thread != null) {
+            messageBuilder.withExpiration(thread.messageExpirationTime);
+        }
+
+        return messageBuilder;
     }
 
     private void sendGroupInfoRequest(byte[] groupId, String recipient) throws IOException, EncapsulatedExceptions {
@@ -529,6 +536,11 @@ public class Manager implements Signal {
 
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build());
+
+        ThreadInfo thread = account.getThreadStore().getThread(Base64.encodeBytes(groupId));
+        if (thread != null) {
+            messageBuilder.withExpiration(thread.messageExpirationTime);
+        }
 
         // Send group info request message to the recipient who sent us a message with this groupId
         final List<String> membersSend = new ArrayList<>();
