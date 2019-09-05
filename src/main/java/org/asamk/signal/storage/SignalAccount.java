@@ -129,7 +129,11 @@ public class SignalAccount {
     }
 
     private void load() throws IOException {
-        JsonNode rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
+        JsonNode rootNode;
+        synchronized (fileChannel) {
+            fileChannel.position(0);
+            rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
+        }
 
         JsonNode node = rootNode.get("deviceId");
         if (node != null) {
@@ -204,10 +208,12 @@ public class SignalAccount {
                 .putPOJO("threadStore", threadStore)
         ;
         try {
-            fileChannel.position(0);
-            jsonProcessor.writeValue(Channels.newOutputStream(fileChannel), rootNode);
-            fileChannel.truncate(fileChannel.position());
-            fileChannel.force(false);
+            synchronized (fileChannel) {
+                fileChannel.position(0);
+                jsonProcessor.writeValue(Channels.newOutputStream(fileChannel), rootNode);
+                fileChannel.truncate(fileChannel.position());
+                fileChannel.force(false);
+            }
         } catch (Exception e) {
             System.err.println(String.format("Error saving file: %s", e.getMessage()));
         }
