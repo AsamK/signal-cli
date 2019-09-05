@@ -779,7 +779,7 @@ public class Manager implements Signal {
             message = messageBuilder.build();
             if (message.getGroupInfo().isPresent()) {
                 try {
-                    final boolean isRecipientUpdate = true;
+                    final boolean isRecipientUpdate = false;
                     List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipientsTS), getAccessFor(recipientsTS), isRecipientUpdate, message);
                     for (SendMessageResult r : result) {
                         if (r.getIdentityFailure() != null) {
