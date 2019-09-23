@@ -14,6 +14,7 @@ class JsonMessageEnvelope {
     JsonDataMessage dataMessage;
     JsonSyncMessage syncMessage;
     JsonCallMessage callMessage;
+    JsonReceiptMessage receiptMessage;
 
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
         SignalServiceAddress source = envelope.getSourceAddress();
@@ -31,6 +32,9 @@ class JsonMessageEnvelope {
             }
             if (content.getCallMessage().isPresent()) {
                 this.callMessage = new JsonCallMessage(content.getCallMessage().get());
+            }
+            if (content.getReceiptMessage().isPresent()) {
+                this.receiptMessage = new JsonReceiptMessage(content.getReceiptMessage().get());
             }
         }
     }
