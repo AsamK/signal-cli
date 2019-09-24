@@ -208,6 +208,19 @@ number::
 	Specify the safety number or fingerprint of the key, only use this option if you have verified
 	the fingerprint.
 
+setContactName
+--------------
+Update name associated to a number on our contact list. This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
+
+number::
+	Specify the contact phone number.
+
+name::
+	Specify the new name for this contact.
+
+sendContacts
+------------
+Update contact list on Signal servers.
 
 daemon
 ~~~~~~
