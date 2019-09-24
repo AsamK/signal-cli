@@ -1416,7 +1416,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void sendContacts() throws IOException, UntrustedIdentityException {
+    public void sendContacts() throws IOException, UntrustedIdentityException {
         File contactsFile = IOUtils.createTempFile();
 
         try {
