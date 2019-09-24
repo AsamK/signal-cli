@@ -54,6 +54,7 @@ import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureExcept
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.SleepTimer;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
@@ -202,6 +203,14 @@ public class Manager implements Signal {
 
     public void updateAccountAttributes() throws IOException {
         accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), getSelfUnidentifiedAccessKey(), false);
+    }
+
+    public void setProfileName(String name) throws IOException {
+        accountManager.setProfileName(account.getProfileKey(), name);
+    }
+
+    public void setProfileAvatar(File avatar) throws IOException {
+        accountManager.setProfileAvatar(account.getProfileKey(), Utils.createStreamDetailsFromFile(avatar));
     }
 
     public void unregister() throws IOException {

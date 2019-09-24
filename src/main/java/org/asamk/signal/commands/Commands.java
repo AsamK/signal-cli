@@ -20,6 +20,8 @@ public class Commands {
         addCommand("removeDevice", new RemoveDeviceCommand());
         addCommand("removePin", new RemovePinCommand());
         addCommand("send", new SendCommand());
+        addCommand("setProfileAvatar", new SetProfileAvatarCommand());
+        addCommand("setProfileName", new SetProfileNameCommand());
         addCommand("setPin", new SetPinCommand());
         addCommand("trust", new TrustCommand());
         addCommand("unregister", new UnregisterCommand());
