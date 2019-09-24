@@ -15,6 +15,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Base64;
 
 import java.io.*;
@@ -54,6 +55,16 @@ class Utils {
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, null);
+    }
+
+    static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
+        InputStream stream = new FileInputStream(file);
+        final long size = file.length();
+        String mime = Files.probeContentType(file.toPath());
+        if (mime == null) {
+            mime = "application/octet-stream";
+        }
+	return new StreamDetails(stream, mime, size);
     }
 
     static CertificateValidator getCertificateValidator() {

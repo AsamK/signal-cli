@@ -208,6 +208,19 @@ number::
 	Specify the safety number or fingerprint of the key, only use this option if you have verified
 	the fingerprint.
 
+setProfileName
+--------------
+Update the name visible by message recipients for the current users.
+
+name::
+	New name visible by message recipients.
+
+setProfileAvatar
+----------------
+Update the avatar visible by message recipients for the current users.
+
+avatar::
+	Path to the new avatar visible by message recipients.
 
 daemon
 ~~~~~~
