@@ -7,7 +7,7 @@ class JsonAttachment {
 
     String contentType;
     String filename;
-    long id;
+    String id;
     int size;
 
     JsonAttachment(SignalServiceAttachment attachment) {
@@ -15,7 +15,7 @@ class JsonAttachment {
 
         final SignalServiceAttachmentPointer pointer = attachment.asPointer();
         if (attachment.isPointer()) {
-            this.id = pointer.getId();
+            this.id = String.valueOf(pointer.getId());
             if (pointer.getFileName().isPresent()) {
                 this.filename = pointer.getFileName().get();
             }
