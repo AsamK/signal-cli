@@ -1,19 +1,20 @@
 package org.asamk.signal.commands;
 
-import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.manager.Manager;
 
-public class SetContactNameCommand implements LocalCommand {
+public class UpdateContactCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("number")
                 .help("Contact number");
-        subparser.addArgument("name")
+        subparser.addArgument("-n", "--name")
+                .required(true)
                 .help("New contact name");
-        subparser.help("Set the name of a given contact");
+        subparser.help("Update the details of a given contact");
     }
 
     @Override
@@ -30,5 +31,4 @@ public class SetContactNameCommand implements LocalCommand {
 
         return 0;
     }
-
 }

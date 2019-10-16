@@ -11,7 +11,7 @@ public class SendContactsCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.help("Send contacts to the signal server.");
+        subparser.help("Send a synchronization message with the local contacts list to all linked devices.");
     }
 
     @Override
