@@ -69,7 +69,8 @@ class Utils {
         // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, null);
+        Optional<String> blurHash = Optional.absent();
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
