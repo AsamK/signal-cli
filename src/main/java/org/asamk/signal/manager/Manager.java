@@ -564,6 +564,7 @@ public class Manager implements Signal {
         if (attachments != null) {
             messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
         }
+        messageBuilder.withProfileKey(account.getProfileKey());
         sendMessageLegacy(messageBuilder, recipients);
     }
 
