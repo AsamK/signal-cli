@@ -208,19 +208,20 @@ number::
 	Specify the safety number or fingerprint of the key, only use this option if you have verified
 	the fingerprint.
 
-setProfileName
+updateProfile
 --------------
-Update the name visible by message recipients for the current users.
+Update the name and/or avatar image visible by message recipients for the current users.
+The profile is stored encrypted on the Signal servers. The decryption key is sent
+with every outgoing messages (excluding group messages).
 
-name::
+*--name*::
 	New name visible by message recipients.
 
-setProfileAvatar
-----------------
-Update the avatar visible by message recipients for the current users.
-
-avatar::
+*--avatar*::
 	Path to the new avatar visible by message recipients.
+
+*--remove-avatar*::
+	Remove the avatar visible by message recipients.
 
 daemon
 ~~~~~~

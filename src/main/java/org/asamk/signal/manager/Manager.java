@@ -210,7 +210,13 @@ public class Manager implements Signal {
     }
 
     public void setProfileAvatar(File avatar) throws IOException {
-        accountManager.setProfileAvatar(account.getProfileKey(), Utils.createStreamDetailsFromFile(avatar));
+        final StreamDetails streamDetails = Utils.createStreamDetailsFromFile(avatar);
+        accountManager.setProfileAvatar(account.getProfileKey(), streamDetails);
+        streamDetails.getStream().close();
+    }
+
+    public void removeProfileAvatar() throws IOException {
+        accountManager.setProfileAvatar(account.getProfileKey(), null);
     }
 
     public void unregister() throws IOException {
