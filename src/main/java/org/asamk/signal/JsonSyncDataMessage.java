@@ -2,9 +2,6 @@ package org.asamk.signal;
 
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 class JsonSyncDataMessage extends JsonDataMessage {
 
     String destination;

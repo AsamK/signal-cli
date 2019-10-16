@@ -1,13 +1,14 @@
 package org.asamk.signal.commands;
 
-import java.io.IOException;
-import java.io.File;
-
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.manager.Manager;
+
+import java.io.File;
+import java.io.IOException;
 
 public class UpdateProfileCommand implements LocalCommand {
 

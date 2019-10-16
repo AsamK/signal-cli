@@ -4,7 +4,11 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.whispersystems.signalservice.api.messages.*;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
+import org.whispersystems.signalservice.api.messages.SignalServiceContent;
+import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 
 import java.util.ArrayList;
 import java.util.List;

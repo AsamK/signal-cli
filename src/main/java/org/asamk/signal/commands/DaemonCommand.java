@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
