@@ -2,19 +2,16 @@ package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
-
 import org.asamk.signal.manager.Manager;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 
 import java.io.IOException;
 
-public class RemoveDeviceCommand implements LocalCommand {
+public class SendContactsCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--deviceId")
-                .type(int.class)
-                .required(true)
-                .help("Specify the device you want to remove. Use listDevices to see the deviceIds.");
+        subparser.help("Send a synchronization message with the local contacts list to all linked devices.");
     }
 
     @Override
@@ -24,11 +21,10 @@ public class RemoveDeviceCommand implements LocalCommand {
             return 1;
         }
         try {
-            int deviceId = ns.getInt("deviceId");
-            m.removeLinkedDevices(deviceId);
+            m.sendContacts();
             return 0;
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException | UntrustedIdentityException e) {
+            System.err.println("SendContacts error: " + e.getMessage());
             return 3;
         }
     }

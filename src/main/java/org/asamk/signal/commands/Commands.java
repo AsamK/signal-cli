@@ -20,11 +20,14 @@ public class Commands {
         addCommand("removeDevice", new RemoveDeviceCommand());
         addCommand("removePin", new RemovePinCommand());
         addCommand("send", new SendCommand());
+        addCommand("sendContacts", new SendContactsCommand());
+        addCommand("updateContact", new UpdateContactCommand());
         addCommand("setPin", new SetPinCommand());
         addCommand("trust", new TrustCommand());
         addCommand("unregister", new UnregisterCommand());
         addCommand("updateAccount", new UpdateAccountCommand());
         addCommand("updateGroup", new UpdateGroupCommand());
+        addCommand("updateProfile", new UpdateProfileCommand());
         addCommand("verify", new VerifyCommand());
     }
 

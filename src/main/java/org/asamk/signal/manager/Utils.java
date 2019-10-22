@@ -15,14 +15,30 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Base64;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
@@ -53,7 +69,18 @@ class Utils {
         // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, null);
+        Optional<String> blurHash = Optional.absent();
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null);
+    }
+
+    static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
+        InputStream stream = new FileInputStream(file);
+        final long size = file.length();
+        String mime = Files.probeContentType(file.toPath());
+        if (mime == null) {
+            mime = "application/octet-stream";
+        }
+        return new StreamDetails(stream, mime, size);
     }
 
     static CertificateValidator getCertificateValidator() {

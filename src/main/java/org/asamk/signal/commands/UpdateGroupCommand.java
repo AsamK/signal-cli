@@ -2,6 +2,7 @@ package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.Signal;
 import org.asamk.signal.AttachmentInvalidException;
 import org.asamk.signal.GroupIdFormatException;
@@ -15,7 +16,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.*;
+import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
+import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
+import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
+import static org.asamk.signal.util.ErrorUtils.handleIOException;
+import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class UpdateGroupCommand implements DbusCommand {
 

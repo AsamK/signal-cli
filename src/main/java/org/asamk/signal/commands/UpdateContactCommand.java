@@ -5,16 +5,16 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 
-import java.io.IOException;
-
-public class RemoveDeviceCommand implements LocalCommand {
+public class UpdateContactCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--deviceId")
-                .type(int.class)
+        subparser.addArgument("number")
+                .help("Contact number");
+        subparser.addArgument("-n", "--name")
                 .required(true)
-                .help("Specify the device you want to remove. Use listDevices to see the deviceIds.");
+                .help("New contact name");
+        subparser.help("Update the details of a given contact");
     }
 
     @Override
@@ -23,13 +23,12 @@ public class RemoveDeviceCommand implements LocalCommand {
             System.err.println("User is not registered.");
             return 1;
         }
-        try {
-            int deviceId = ns.getInt("deviceId");
-            m.removeLinkedDevices(deviceId);
-            return 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 3;
-        }
+
+        String number = ns.getString("number");
+        String name = ns.getString("name");
+
+        m.setContactName(number, name);
+
+        return 0;
     }
 }

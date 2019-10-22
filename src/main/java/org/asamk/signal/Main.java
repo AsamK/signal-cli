@@ -18,9 +18,19 @@ package org.asamk.signal;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.*;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
+import net.sourceforge.argparse4j.inf.Namespace;
+import net.sourceforge.argparse4j.inf.Subparser;
+import net.sourceforge.argparse4j.inf.Subparsers;
+
 import org.asamk.Signal;
-import org.asamk.signal.commands.*;
+import org.asamk.signal.commands.Command;
+import org.asamk.signal.commands.Commands;
+import org.asamk.signal.commands.DbusCommand;
+import org.asamk.signal.commands.ExtendedDbusCommand;
+import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.manager.BaseConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.IOUtils;

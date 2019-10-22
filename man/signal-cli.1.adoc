@@ -208,6 +208,38 @@ number::
 	Specify the safety number or fingerprint of the key, only use this option if you have verified
 	the fingerprint.
 
+updateProfile
+--------------
+Update the name and/or avatar image visible by message recipients for the current users.
+The profile is stored encrypted on the Signal servers. The decryption key is sent
+with every outgoing messages (excluding group messages).
+
+*--name*::
+	New name visible by message recipients.
+
+*--avatar*::
+	Path to the new avatar visible by message recipients.
+
+*--remove-avatar*::
+	Remove the avatar visible by message recipients.
+
+updateContact
+--------------
+Update the info associated to a number on our contact list. This change is only
+local but can be synchronized to other devices by using `sendContacts` (see
+below).
+If the contact doesn't exist yet, it will be added.
+
+NUMBER::
+	Specify the contact phone number.
+
+*-n*, *--name*::
+	Specify the new name for this contact.
+
+sendContacts
+------------
+Send a synchronization message with the local contacts list to all linked devices.
+This command should only be used if this is the master device.
 
 daemon
 ~~~~~~

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
@@ -139,7 +140,9 @@ public class SignalAccount {
         if (node != null) {
             deviceId = node.asInt();
         }
-        if (rootNode.has("isMultiDevice")) isMultiDevice = Util.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
+        if (rootNode.has("isMultiDevice")) {
+            isMultiDevice = Util.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
+        }
         username = Util.getNotNullNode(rootNode, "username").asText();
         password = Util.getNotNullNode(rootNode, "password").asText();
         JsonNode pinNode = rootNode.get("registrationLockPin");

@@ -2,6 +2,7 @@ package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.GroupIdFormatException;
 import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
@@ -11,7 +12,12 @@ import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptio
 
 import java.io.IOException;
 
-import static org.asamk.signal.util.ErrorUtils.*;
+import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
+import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
+import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
+import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
+import static org.asamk.signal.util.ErrorUtils.handleIOException;
+import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class QuitGroupCommand implements LocalCommand {
 
