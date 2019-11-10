@@ -58,7 +58,7 @@ task checkLibVersions {
                         def group = dependency.group
                         def path = group.replace('.', '/')
                         def name = dependency.name
-                        def url = "http://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
+                        def url = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
                         try {
                             def metadata = new XmlSlurper().parseText(url.toURL().text)
                             def versions = metadata.versioning.versions.version.collect { it.text() }
