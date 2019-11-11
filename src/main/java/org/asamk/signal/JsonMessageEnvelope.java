@@ -20,14 +20,14 @@ class JsonMessageEnvelope {
         SignalServiceAddress source = envelope.getSourceAddress();
         this.source = source.getNumber();
         this.sourceDevice = envelope.getSourceDevice();
-        if (this.source.equals("")) {
-            this.source = content.getSender();
-            this.sourceDevice = content.getSenderDevice();
-        }
         this.relay = source.getRelay().isPresent() ? source.getRelay().get() : null;
         this.timestamp = envelope.getTimestamp();
         this.isReceipt = envelope.isReceipt();
         if (content != null) {
+            if (envelope.isUnidentifiedSender()) {
+                this.source = content.getSender();
+                this.sourceDevice = content.getSenderDevice();
+            }
             if (content.getDataMessage().isPresent()) {
                 this.dataMessage = new JsonDataMessage(content.getDataMessage().get());
             }

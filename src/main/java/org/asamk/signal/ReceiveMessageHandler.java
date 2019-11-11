@@ -43,14 +43,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         SignalServiceAddress source = envelope.getSourceAddress();
-        String sender = source.getNumber();
-        int senderDeviceId = envelope.getSourceDevice();
-        if (sender.equals("")) {
-            sender = content.getSender();
-            senderDeviceId = content.getSenderDevice();
-        }
-        ContactInfo sourceContact = m.getContact(sender);
-        System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + sender, senderDeviceId));
+        ContactInfo sourceContact = m.getContact(source.getNumber());
+        System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
         if (source.getRelay().isPresent()) {
             System.out.println("Relayed by: " + source.getRelay().get());
         }
@@ -61,7 +55,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
         if (envelope.isReceipt()) {
             System.out.println("Got receipt.");
-        } else if (envelope.isSignalMessage() | envelope.isPreKeySignalMessage()) {
+        } else if (envelope.isSignalMessage() || envelope.isPreKeySignalMessage() || envelope.isUnidentifiedSender()) {
             if (exception != null) {
                 if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
                     org.whispersystems.libsignal.UntrustedIdentityException e = (org.whispersystems.libsignal.UntrustedIdentityException) exception;
@@ -75,6 +69,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
+                System.out.println(String.format("Sender: %s (device: %d)", content.getSender(), content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
                     handleSignalServiceDataMessage(message);
