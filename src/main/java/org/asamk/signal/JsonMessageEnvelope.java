@@ -19,6 +19,9 @@ class JsonMessageEnvelope {
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
         SignalServiceAddress source = envelope.getSourceAddress();
         this.source = source.getNumber();
+        if (this.source.equals("")) {
+            this.source = content.getSender();
+        }
         this.sourceDevice = envelope.getSourceDevice();
         this.relay = source.getRelay().isPresent() ? source.getRelay().get() : null;
         this.timestamp = envelope.getTimestamp();
