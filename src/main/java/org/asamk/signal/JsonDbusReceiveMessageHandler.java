@@ -55,7 +55,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     conn.sendSignal(new Signal.MessageReceived(
                             objectPath,
                             message.getTimestamp(),
-                            envelope.getSource(),
+                            envelope.isUnidentifiedSender() ? content.getSender() : envelope.getSource(),
                             message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
                             message.getBody().isPresent() ? message.getBody().get() : "",
                             attachments));
