@@ -44,11 +44,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         SignalServiceAddress source = envelope.getSourceAddress();
         String sender = source.getNumber();
+        int senderDeviceId = envelope.getSourceDevice();
         if (sender.equals("")) {
             sender = content.getSender();
+            senderDeviceId = content.getSenderDevice();
         }
         ContactInfo sourceContact = m.getContact(sender);
-        System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + sender, envelope.getSourceDevice()));
+        System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + sender, senderDeviceId));
         if (source.getRelay().isPresent()) {
             System.out.println("Relayed by: " + source.getRelay().get());
         }
