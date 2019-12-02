@@ -1484,6 +1484,10 @@ public class Manager implements Signal {
         sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 
+    public List<ContactInfo> getContacts() {
+        return account.getContactStore().getContacts();
+    }
+
     public ContactInfo getContact(String number) {
         return account.getContactStore().getContact(number);
     }
