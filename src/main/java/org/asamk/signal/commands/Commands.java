@@ -11,6 +11,7 @@ public class Commands {
         addCommand("addDevice", new AddDeviceCommand());
         addCommand("daemon", new DaemonCommand());
         addCommand("link", new LinkCommand());
+        addCommand("listContacts", new ListContactsCommand());
         addCommand("listDevices", new ListDevicesCommand());
         addCommand("listGroups", new ListGroupsCommand());
         addCommand("listIdentities", new ListIdentitiesCommand());
