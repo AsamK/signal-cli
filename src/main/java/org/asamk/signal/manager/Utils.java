@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Base64;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -59,13 +61,23 @@ class Utils {
         return SignalServiceAttachments;
     }
 
-    static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        InputStream attachmentStream = new FileInputStream(attachmentFile);
-        final long attachmentSize = attachmentFile.length();
-        String mime = Files.probeContentType(attachmentFile.toPath());
+    private static String getFileMimeType(File file) throws IOException {
+        String mime = Files.probeContentType(file.toPath());
+        if (mime == null) {
+            try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
+                mime = URLConnection.guessContentTypeFromStream(bufferedStream);
+            }
+        }
         if (mime == null) {
             mime = "application/octet-stream";
         }
+        return mime;
+    }
+
+    static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
+        InputStream attachmentStream = new FileInputStream(attachmentFile);
+        final long attachmentSize = attachmentFile.length();
+        final String mime = getFileMimeType(attachmentFile);
         // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
