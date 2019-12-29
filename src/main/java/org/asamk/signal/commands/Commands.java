@@ -33,6 +33,7 @@ public class Commands {
         addCommand("updateGroup", new UpdateGroupCommand());
         addCommand("updateProfile", new UpdateProfileCommand());
         addCommand("verify", new VerifyCommand());
+        addCommand("uploadStickerPack", new UploadStickerPackCommand());
     }
 
     public static Map<String, Command> getCommands() {
