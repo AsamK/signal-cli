@@ -1151,18 +1151,27 @@ public class Manager implements Signal {
         }
     }
 
+    private static String senderForMessage(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        String envelopeSource = envelope.getSource();
+        if (envelopeSource.isEmpty()) {
+            return content.getSender();
+        } else {
+            return envelopeSource;
+        }
+    }
+
     private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
         if (content != null) {
             if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
-                handleSignalServiceDataMessage(message, false, envelope.getSource(), username, ignoreAttachments);
+                handleSignalServiceDataMessage(message, false, senderForMessage(envelope, content), username, ignoreAttachments);
             }
             if (content.getSyncMessage().isPresent()) {
                 account.setMultiDevice(true);
                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
                     SignalServiceDataMessage message = syncMessage.getSent().get().getMessage();
-                    handleSignalServiceDataMessage(message, true, envelope.getSource(), syncMessage.getSent().get().getDestination().get(), ignoreAttachments);
+                    handleSignalServiceDataMessage(message, true, senderForMessage(envelope, content), syncMessage.getSent().get().getDestination().get(), ignoreAttachments);
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();
