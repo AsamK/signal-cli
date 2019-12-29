@@ -1,9 +1,8 @@
 package org.asamk.signal.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
+import org.whispersystems.signalservice.internal.util.Util;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +32,12 @@ public class IOUtils {
             output.write(new String(buffer, 0, n, charset));
         }
         return output.toString();
+    }
+
+    public static byte[] readFully(InputStream in) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Util.copy(in, baos);
+        return baos.toByteArray();
     }
 
     public static void createPrivateDirectories(String directoryPath) throws IOException {
