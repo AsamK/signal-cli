@@ -2,7 +2,10 @@ package org.asamk.signal;
 
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+
+import java.util.ArrayList;
 import java.util.List;
 
 enum JsonSyncMessageType {
@@ -23,7 +26,10 @@ class JsonSyncMessage {
            this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get());
        }
        if (syncMessage.getBlockedList().isPresent()) {
-           this.blockedNumbers = syncMessage.getBlockedList().get().getNumbers();
+           this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
+           for (SignalServiceAddress address : syncMessage.getBlockedList().get().getAddresses()) {
+               this.blockedNumbers.add(address.getNumber().get());
+           }
        }
        if (syncMessage.getRead().isPresent()) {
            this.readMessages = syncMessage.getRead().get();

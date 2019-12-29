@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.groups.GroupInfo;
-import org.whispersystems.signalservice.internal.util.Base64;
+import org.whispersystems.util.Base64;
 
 import java.util.List;
 

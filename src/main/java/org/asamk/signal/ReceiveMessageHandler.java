@@ -27,7 +27,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptM
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.internal.util.Base64;
+import org.whispersystems.util.Base64;
 
 import java.io.File;
 import java.util.List;
@@ -43,7 +43,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         SignalServiceAddress source = envelope.getSourceAddress();
-        ContactInfo sourceContact = m.getContact(source.getNumber());
+        ContactInfo sourceContact = m.getContact(source.getNumber().get());
         System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
         if (source.getRelay().isPresent()) {
             System.out.println("Relayed by: " + source.getRelay().get());
@@ -94,7 +94,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getRead().isPresent()) {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
-                            ContactInfo fromContact = m.getContact(rm.getSender());
+                            ContactInfo fromContact = m.getContact(rm.getSender().getNumber().get());
                             System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
@@ -112,7 +112,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         final SentTranscriptMessage sentTranscriptMessage = syncMessage.getSent().get();
                         String to;
                         if (sentTranscriptMessage.getDestination().isPresent()) {
-                            String dest = sentTranscriptMessage.getDestination().get();
+                            String dest = sentTranscriptMessage.getDestination().get().getNumber().get();
                             ContactInfo destContact = m.getContact(dest);
                             to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
                         } else {
@@ -129,15 +129,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync message with block list");
                         System.out.println("Blocked numbers:");
                         final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
-                        for (String number : blockedList.getNumbers()) {
-                            System.out.println(" - " + number);
+                        for (SignalServiceAddress address : blockedList.getAddresses()) {
+                            System.out.println(" - " + address.getNumber());
                         }
                     }
                     if (syncMessage.getVerified().isPresent()) {
                         System.out.println("Received sync message with verified identities:");
                         final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
                         System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
-                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
+                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey()));
                         System.out.println("   " + safetyNumber);
                     }
                     if (syncMessage.getConfiguration().isPresent()) {
@@ -232,8 +232,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
             System.out.println("  Type: " + groupInfo.getType());
             if (groupInfo.getMembers().isPresent()) {
-                for (String member : groupInfo.getMembers().get()) {
-                    System.out.println("  Member: " + member);
+                for (SignalServiceAddress member : groupInfo.getMembers().get()) {
+                    System.out.println("  Member: " + member.getNumber().get());
                 }
             }
             if (groupInfo.getAvatar().isPresent()) {

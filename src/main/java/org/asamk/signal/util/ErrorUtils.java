@@ -31,7 +31,7 @@ public class ErrorUtils {
             System.err.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
         }
         for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
-            System.err.println("Untrusted Identity for \"" + n.getE164Number() + "\": " + n.getMessage());
+            System.err.println("Untrusted Identity for \"" + n.getIdentifier() + "\": " + n.getMessage());
         }
     }
 
