@@ -3,6 +3,8 @@ package org.asamk.signal.storage.groups;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,5 +41,20 @@ public class GroupInfo {
     @JsonIgnore
     public long getAvatarId() {
         return avatarId;
+    }
+
+    @JsonIgnore
+    public Set<SignalServiceAddress> getMembers() {
+        Set<SignalServiceAddress> addresses = new HashSet<>(members.size());
+        for (String member : members) {
+            addresses.add(new SignalServiceAddress(null, member));
+        }
+        return addresses;
+    }
+
+    public void addMembers(Collection<SignalServiceAddress> members) {
+        for (SignalServiceAddress member : members) {
+            this.members.add(member.getNumber().get());
+        }
     }
 }

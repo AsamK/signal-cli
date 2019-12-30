@@ -271,6 +271,10 @@ public class SignalAccount {
         return username;
     }
 
+    public SignalServiceAddress getSelfAddress() {
+        return new SignalServiceAddress(null, username);
+    }
+
     public int getDeviceId() {
         return deviceId;
     }

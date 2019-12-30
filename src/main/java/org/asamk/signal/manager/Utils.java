@@ -257,6 +257,8 @@ class Utils {
     }
 
     static String computeSafetyNumber(String ownUsername, IdentityKey ownIdentityKey, String theirUsername, IdentityKey theirIdentityKey) {
+        // Version 1: E164 user
+        // Version 2: UUID user
         Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(1, ownUsername.getBytes(), ownIdentityKey, theirUsername.getBytes(), theirIdentityKey);
         return fingerprint.getDisplayableFingerprint().getDisplayText();
     }

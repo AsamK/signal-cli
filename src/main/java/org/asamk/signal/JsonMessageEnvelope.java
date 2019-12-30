@@ -17,10 +17,12 @@ class JsonMessageEnvelope {
     JsonReceiptMessage receiptMessage;
 
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source = envelope.getSourceAddress();
-        this.source = source.getNumber().get();
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            SignalServiceAddress source = envelope.getSourceAddress();
+            this.source = source.getNumber().get();
+            this.relay = source.getRelay().isPresent() ? source.getRelay().get() : null;
+        }
         this.sourceDevice = envelope.getSourceDevice();
-        this.relay = source.getRelay().isPresent() ? source.getRelay().get() : null;
         this.timestamp = envelope.getTimestamp();
         this.isReceipt = envelope.isReceipt();
         if (content != null) {

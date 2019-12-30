@@ -42,11 +42,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-        SignalServiceAddress source = envelope.getSourceAddress();
-        ContactInfo sourceContact = m.getContact(source.getNumber().get());
-        System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber(), envelope.getSourceDevice()));
-        if (source.getRelay().isPresent()) {
-            System.out.println("Relayed by: " + source.getRelay().get());
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            SignalServiceAddress source = envelope.getSourceAddress();
+            ContactInfo sourceContact = m.getContact(source.getNumber().get());
+            System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber().get(), envelope.getSourceDevice()));
+            if (source.getRelay().isPresent()) {
+                System.out.println("Relayed by: " + source.getRelay().get());
+            }
+        } else {
+            System.out.println("Envelope from: unknown source");
         }
         System.out.println("Timestamp: " + DateUtils.formatTimestamp(envelope.getTimestamp()));
         if (envelope.isUnidentifiedSender()) {
@@ -69,7 +73,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
-                System.out.println(String.format("Sender: %s (device: %d)", content.getSender(), content.getSenderDevice()));
+                System.out.println(String.format("Sender: %s (device: %d)", content.getSender().getNumber().get(), content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
                     handleSignalServiceDataMessage(message);
