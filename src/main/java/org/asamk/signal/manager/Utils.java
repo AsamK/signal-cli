@@ -16,7 +16,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
-import org.whispersystems.signalservice.internal.util.Base64;
+import org.whispersystems.util.Base64;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -169,7 +169,7 @@ class Utils {
 
     private static SignalServiceAddress getPushAddress(String number, String localNumber) throws InvalidNumberException {
         String e164number = canonicalizeNumber(number, localNumber);
-        return new SignalServiceAddress(e164number);
+        return new SignalServiceAddress(null, e164number);
     }
 
     static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
@@ -208,7 +208,7 @@ class Utils {
                     uuid = null;
                 }
             }
-            return new SignalServiceEnvelope(type, source, sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
+            return new SignalServiceEnvelope(type, Optional.of(new SignalServiceAddress(null, source)), sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
         }
     }
 
@@ -217,7 +217,7 @@ class Utils {
             try (DataOutputStream out = new DataOutputStream(f)) {
                 out.writeInt(2); // version
                 out.writeInt(envelope.getType());
-                out.writeUTF(envelope.getSource());
+                out.writeUTF(envelope.getSourceE164().get());
                 out.writeInt(envelope.getSourceDevice());
                 out.writeLong(envelope.getTimestamp());
                 if (envelope.hasContent()) {
@@ -257,7 +257,7 @@ class Utils {
     }
 
     static String computeSafetyNumber(String ownUsername, IdentityKey ownIdentityKey, String theirUsername, IdentityKey theirIdentityKey) {
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(ownUsername, ownIdentityKey, theirUsername, theirIdentityKey);
+        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(1, ownUsername.getBytes(), ownIdentityKey, theirUsername.getBytes(), theirIdentityKey);
         return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 

@@ -31,7 +31,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 conn.sendSignal(new Signal.ReceiptReceived(
                         objectPath,
                         envelope.getTimestamp(),
-                        envelope.getSource()
+                        envelope.getSourceE164().get()
                 ));
             } catch (DBusException e) {
                 e.printStackTrace();
@@ -55,7 +55,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     conn.sendSignal(new Signal.MessageReceived(
                             objectPath,
                             message.getTimestamp(),
-                            envelope.isUnidentifiedSender() ? content.getSender() : envelope.getSource(),
+                            envelope.isUnidentifiedSender() ? content.getSender().getNumber().get() : envelope.getSourceE164().get(),
                             message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
                             message.getBody().isPresent() ? message.getBody().get() : "",
                             attachments));

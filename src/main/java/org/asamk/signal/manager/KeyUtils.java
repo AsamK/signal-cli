@@ -1,7 +1,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.util.RandomUtils;
-import org.whispersystems.signalservice.internal.util.Base64;
+import org.whispersystems.util.Base64;
 
 class KeyUtils {
 

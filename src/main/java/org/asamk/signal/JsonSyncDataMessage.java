@@ -9,7 +9,7 @@ class JsonSyncDataMessage extends JsonDataMessage {
     JsonSyncDataMessage(SentTranscriptMessage transcriptMessage) {
         super(transcriptMessage.getMessage());
         if (transcriptMessage.getDestination().isPresent()) {
-            this.destination = transcriptMessage.getDestination().get();
+            this.destination = transcriptMessage.getDestination().get().getNumber().get();
         }
     }
 }
