@@ -26,6 +26,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
+import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
@@ -244,6 +245,33 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 System.out.println("  Avatar:");
                 printAttachment(groupInfo.getAvatar().get());
             }
+        }
+        if (message.getPreviews().isPresent()) {
+            final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
+            System.out.println("Previes:");
+            for (SignalServiceDataMessage.Preview preview : previews) {
+                System.out.println(" - Title: " + preview.getTitle());
+                System.out.println(" - Url: " + preview.getUrl());
+                if (preview.getImage().isPresent()) {
+                    printAttachment(preview.getImage().get());
+                }
+            }
+        }
+        if (message.getSharedContacts().isPresent()) {
+            final List<SharedContact> sharedContacts = message.getSharedContacts().get();
+            System.out.println("Contacts:");
+            for (SharedContact contact : sharedContacts) {
+                System.out.println(" - Name: " + contact.getName());
+                // TODO show or store rest of the contact info
+            }
+        }
+        if (message.getSticker().isPresent()) {
+            final SignalServiceDataMessage.Sticker sticker = message.getSticker().get();
+            System.out.println("Sticker:");
+            System.out.println(" - Pack id: " + Base64.encodeBytes(sticker.getPackId()));
+            System.out.println(" - Pack key: " + Base64.encodeBytes(sticker.getPackKey()));
+            System.out.println(" - Sticker id: " + sticker.getStickerId());
+            // TODO also download sticker image ??
         }
         if (message.isEndSession()) {
             System.out.println("Is end session");

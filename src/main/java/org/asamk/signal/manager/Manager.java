@@ -1049,6 +1049,19 @@ public class Manager implements Signal {
             }
             contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
         }
+        if (message.getPreviews().isPresent()) {
+            final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
+            for (SignalServiceDataMessage.Preview preview : previews) {
+                if (preview.getImage().isPresent() && preview.getImage().get().isPointer()) {
+                    SignalServiceAttachmentPointer attachment = preview.getImage().get().asPointer();
+                    try {
+                        retrieveAttachment(attachment);
+                    } catch (IOException | InvalidMessageException e) {
+                        System.err.println("Failed to retrieve attachment (" + attachment.getId() + "): " + e.getMessage());
+                    }
+                }
+            }
+        }
     }
 
     private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
