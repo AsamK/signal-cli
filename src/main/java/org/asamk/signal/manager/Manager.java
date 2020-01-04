@@ -1503,10 +1503,10 @@ public class Manager implements Signal {
 
                     byte[] profileKey = record.profileKey == null ? null : Base64.decode(record.profileKey);
                     // TODO store list of blocked numbers
-                    boolean blocked = false;
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
-                            Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), blocked, Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
+                            Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
+                            Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
                 }
 
                 if (account.getProfileKey() != null) {
