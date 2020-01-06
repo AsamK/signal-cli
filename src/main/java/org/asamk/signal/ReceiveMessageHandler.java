@@ -100,7 +100,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
                             ContactInfo fromContact = m.getContact(rm.getSender().getNumber().get());
-                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
+                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
                     if (syncMessage.getRequest().isPresent()) {
