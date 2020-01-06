@@ -1182,7 +1182,9 @@ public class Manager implements Signal {
                     handleMessage(envelope, content, ignoreAttachments);
                 }
                 account.save();
-                handler.handleMessage(envelope, content, exception);
+                if (!isMessageBlocked(envelope, content)) {
+                    handler.handleMessage(envelope, content, exception);
+                }
                 if (!(exception instanceof ProtocolUntrustedIdentityException)) {
                     File cacheFile = null;
                     try {
@@ -1201,6 +1203,26 @@ public class Manager implements Signal {
                 messagePipe = null;
             }
         }
+    }
+
+    private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        SignalServiceAddress source = envelope.getSourceAddress();
+        ContactInfo sourceContact = getContact(source.getNumber().get());
+        if (sourceContact != null && sourceContact.blocked) {
+            return true;
+        }
+
+        if (content != null && content.getDataMessage().isPresent()) {
+            SignalServiceDataMessage message = content.getDataMessage().get();
+            if (message.getGroupInfo().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+                GroupInfo group = getGroup(groupInfo.getGroupId());
+                if (groupInfo.getType() == SignalServiceGroup.Type.DELIVER && group != null && group.blocked) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
