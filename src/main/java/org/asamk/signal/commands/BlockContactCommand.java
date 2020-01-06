@@ -22,7 +22,7 @@ public class BlockContactCommand implements LocalCommand {
 
         String number = ns.getString("number");
 
-        m.blockContact(number);
+        m.setContactBlocked(number, true);
 
         return 0;
     }

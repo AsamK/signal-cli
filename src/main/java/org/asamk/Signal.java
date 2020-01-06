@@ -24,9 +24,7 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name);
 
-    void blockContact(String number);
-
-    void unblockContact(String number);
+    void setContactBlocked(String number, boolean blocked);
 
     List<byte[]> getGroupIds();
 

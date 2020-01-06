@@ -687,31 +687,16 @@ public class Manager implements Signal {
     }
 
     @Override
-    public void blockContact(String number) {
+    public void setContactBlocked(String number, boolean blocked) {
         ContactInfo contact = account.getContactStore().getContact(number);
         if (contact == null) {
             contact = new ContactInfo();
             contact.number = number;
-            System.err.println("Adding and blocking contact " + number);
+            System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + number);
         } else {
-            System.err.println("Blocking contact " + number);
+            System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + number);
         }
-        contact.blocked = true;
-        account.getContactStore().updateContact(contact);
-        account.save();
-    }
-
-    @Override
-    public void unblockContact(String number) {
-        ContactInfo contact = account.getContactStore().getContact(number);
-        if (contact == null) {
-            contact = new ContactInfo();
-            contact.number = number;
-            System.err.println("Adding and unblocking contact " + number);
-        } else {
-            System.err.println("Unblocking contact " + number);
-        }
-        contact.blocked = false;
+        contact.blocked = blocked;
         account.getContactStore().updateContact(contact);
         account.save();
     }

@@ -22,7 +22,7 @@ public class UnblockContactCommand implements LocalCommand {
 
         String number = ns.getString("number");
 
-        m.unblockContact(number);
+        m.setContactBlocked(number, false);
 
         return 0;
     }
