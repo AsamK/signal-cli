@@ -23,6 +23,8 @@ public class GroupInfo {
     public boolean active;
     @JsonProperty
     public String color;
+    @JsonProperty(defaultValue = "false")
+    public boolean blocked;
 
     private long avatarId;
 
@@ -30,12 +32,13 @@ public class GroupInfo {
         this.groupId = groupId;
     }
 
-    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color) {
+    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked) {
         this.groupId = groupId;
         this.name = name;
         this.members.addAll(members);
         this.avatarId = avatarId;
         this.color = color;
+        this.blocked = blocked;
     }
 
     @JsonIgnore

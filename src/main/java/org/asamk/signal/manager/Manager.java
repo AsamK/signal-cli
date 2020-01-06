@@ -702,6 +702,19 @@ public class Manager implements Signal {
     }
 
     @Override
+    public void setGroupBlocked(final byte[] groupId, final boolean blocked) throws GroupNotFoundException {
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            throw new GroupNotFoundException(groupId);
+        } else {
+            System.err.println((blocked ? "Blocking" : "Unblocking") + " group " + Base64.encodeBytes(groupId));
+            group.blocked = blocked;
+            account.getGroupStore().updateGroup(group);
+            account.save();
+        }
+    }
+
+    @Override
     public List<byte[]> getGroupIds() {
         List<GroupInfo> groups = getGroups();
         List<byte[]> ids = new ArrayList<>(groups.size());
@@ -1441,7 +1454,7 @@ public class Manager implements Signal {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
                             record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null),
-                            Optional.fromNullable(record.color), false));
+                            Optional.fromNullable(record.color), record.blocked));
                 }
             }
 
