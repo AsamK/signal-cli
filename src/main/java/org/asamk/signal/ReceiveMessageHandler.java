@@ -25,7 +25,9 @@ import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMessage;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
@@ -150,6 +152,29 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         final ConfigurationMessage configurationMessage = syncMessage.getConfiguration().get();
                         if (configurationMessage.getReadReceipts().isPresent()) {
                             System.out.println(" - Read receipts: " + (configurationMessage.getReadReceipts().get() ? "enabled" : "disabled"));
+                        }
+                    }
+                    if (syncMessage.getFetchType().isPresent()) {
+                        final SignalServiceSyncMessage.FetchType fetchType = syncMessage.getFetchType().get();
+                        System.out.println("Received sync message with fetch type: " + fetchType.toString());
+                    }
+                    if (syncMessage.getViewOnceOpen().isPresent()) {
+                        final ViewOnceOpenMessage viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
+                        System.out.println("Received sync message with view once open message:");
+                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber());
+                        System.out.println(" - Timestamp:" + viewOnceOpenMessage.getTimestamp());
+                    }
+                    if (syncMessage.getStickerPackOperations().isPresent()) {
+                        final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
+                        System.out.println("Received sync message with sticker pack operations:");
+                        for (StickerPackOperationMessage m : stickerPackOperationMessages) {
+                            System.out.println(" - " + m.getType().toString());
+                            if (m.getPackId().isPresent()) {
+                                System.out.println("   packId: " + Base64.encodeBytes(m.getPackId().get()));
+                            }
+                            if (m.getPackKey().isPresent()) {
+                                System.out.println("   packKey: " + Base64.encodeBytes(m.getPackKey().get()));
+                            }
                         }
                     }
                 }
