@@ -20,7 +20,7 @@ public class ListContactsCommand implements LocalCommand {
         }
         List<ContactInfo> contacts = m.getContacts();
         for (ContactInfo c : contacts) {
-            System.out.println(String.format("Number: %s Name: %s", c.number, c.name));
+            System.out.println(String.format("Number: %s Name: %s  Blocked: %b", c.number, c.name, c.blocked));
         }
         return 0;
     }
