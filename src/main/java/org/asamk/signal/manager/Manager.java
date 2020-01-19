@@ -70,6 +70,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
@@ -1260,7 +1261,14 @@ public class Manager implements Signal {
                             e.printStackTrace();
                         }
                     }
-                    // TODO Handle rm.isBlockedListRequest(); rm.isConfigurationRequest();
+                    if (rm.isBlockedListRequest()) {
+                        try {
+                            sendBlockedList();
+                        } catch (UntrustedIdentityException | IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    // TODO Handle rm.isConfigurationRequest();
                 }
                 if (syncMessage.getGroups().isPresent()) {
                     File tmpFile = null;
@@ -1302,7 +1310,18 @@ public class Manager implements Signal {
                     }
                 }
                 if (syncMessage.getBlockedList().isPresent()) {
-                    // TODO store list of blocked numbers
+                    final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
+                    for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
+                        if (address.getNumber().isPresent())
+                            setContactBlocked(address.getNumber().get(), true);
+                    }
+                    for (byte[] groupId : blockedListMessage.getGroupIds()) {
+                        try {
+                            setGroupBlocked(groupId, true);
+                        } catch (GroupNotFoundException e) {
+                            System.err.println("BlockedListMessage contained groupID that was not found in GroupStore: " + Base64.encodeBytes(groupId));
+                        }
+                    }
                 }
                 if (syncMessage.getContacts().isPresent()) {
                     File tmpFile = null;
@@ -1522,7 +1541,6 @@ public class Manager implements Signal {
                     }
 
                     byte[] profileKey = record.profileKey == null ? null : Base64.decode(record.profileKey);
-                    // TODO store list of blocked numbers
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
@@ -1557,6 +1575,22 @@ public class Manager implements Signal {
                 System.err.println("Failed to delete contacts temp file “" + contactsFile + "”: " + e.getMessage());
             }
         }
+    }
+
+    private void sendBlockedList() throws IOException, UntrustedIdentityException {
+        List<SignalServiceAddress> addresses = new ArrayList<>();
+        for (ContactInfo record : account.getContactStore().getContacts()) {
+            if (record.blocked) {
+                addresses.add(record.getAddress());
+            }
+        }
+        List<byte[]> groupIds = new ArrayList<>();
+        for (GroupInfo record : account.getGroupStore().getGroups()) {
+            if (record.blocked) {
+                groupIds.add(record.groupId);
+            }
+        }
+        sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
     }
 
     private void sendVerifiedMessage(SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel) throws IOException, UntrustedIdentityException {
