@@ -1287,6 +1287,7 @@ public class Manager implements Signal {
                                 }
                                 syncGroup.addMembers(g.getMembers());
                                 syncGroup.active = g.isActive();
+                                syncGroup.blocked = g.isBlocked();
                                 if (g.getColor().isPresent()) {
                                     syncGroup.color = g.getColor().get();
                                 }
@@ -1365,9 +1366,7 @@ public class Manager implements Signal {
                                     thread.messageExpirationTime = c.getExpirationTimer().get();
                                     account.getThreadStore().updateThread(thread);
                                 }
-                                if (c.isBlocked()) {
-                                    // TODO store list of blocked numbers
-                                }
+                                contact.blocked = c.isBlocked();
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
