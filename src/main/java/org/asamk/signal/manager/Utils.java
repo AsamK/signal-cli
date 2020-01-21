@@ -47,18 +47,18 @@ import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 class Utils {
 
     static List<SignalServiceAttachment> getSignalServiceAttachments(List<String> attachments) throws AttachmentInvalidException {
-        List<SignalServiceAttachment> SignalServiceAttachments = null;
+        List<SignalServiceAttachment> signalServiceAttachments = null;
         if (attachments != null) {
-            SignalServiceAttachments = new ArrayList<>(attachments.size());
+            signalServiceAttachments = new ArrayList<>(attachments.size());
             for (String attachment : attachments) {
                 try {
-                    SignalServiceAttachments.add(createAttachment(new File(attachment)));
+                    signalServiceAttachments.add(createAttachment(new File(attachment)));
                 } catch (IOException e) {
                     throw new AttachmentInvalidException(attachment, e);
                 }
             }
         }
-        return SignalServiceAttachments;
+        return signalServiceAttachments;
     }
 
     private static String getFileMimeType(File file) throws IOException {

@@ -647,7 +647,20 @@ public class Manager implements Signal {
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
+            List<SignalServiceAttachment> attachmentStreams = Utils.getSignalServiceAttachments(attachments);
+
+            // Upload attachments here, so we only upload once even for multiple recipients
+            SignalServiceMessageSender messageSender = getMessageSender();
+            List<SignalServiceAttachment> attachmentPointers = new ArrayList<>(attachmentStreams.size());
+            for (SignalServiceAttachment attachment : attachmentStreams) {
+                if (attachment.isStream()) {
+                    attachmentPointers.add(messageSender.uploadAttachment(attachment.asStream()));
+                } else if (attachment.isPointer()) {
+                    attachmentPointers.add(attachment.asPointer());
+                }
+            }
+
+            messageBuilder.withAttachments(attachmentPointers);
         }
         messageBuilder.withProfileKey(account.getProfileKey());
         sendMessageLegacy(messageBuilder, recipients);
