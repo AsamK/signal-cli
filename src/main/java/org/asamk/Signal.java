@@ -6,6 +6,7 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,9 +21,9 @@ public interface Signal extends DBusInterface {
 
     void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException;
 
-    String getContactName(String number);
+    String getContactName(String number) throws InvalidNumberException;
 
-    void setContactName(String number, String name);
+    void setContactName(String number, String name) throws InvalidNumberException;
 
     List<byte[]> getGroupIds();
 

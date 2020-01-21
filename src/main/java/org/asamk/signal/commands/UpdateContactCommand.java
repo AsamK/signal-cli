@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class UpdateContactCommand implements LocalCommand {
 
@@ -27,7 +28,11 @@ public class UpdateContactCommand implements LocalCommand {
         String number = ns.getString("number");
         String name = ns.getString("name");
 
-        m.setContactName(number, name);
+        try {
+            m.setContactName(number, name);
+        } catch (InvalidNumberException e) {
+            System.out.println("Invalid contact number: " + e.getMessage());
+        }
 
         return 0;
     }

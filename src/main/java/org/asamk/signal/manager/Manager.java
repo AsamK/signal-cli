@@ -675,8 +675,9 @@ public class Manager implements Signal {
     }
 
     @Override
-    public String getContactName(String number) {
-        ContactInfo contact = account.getContactStore().getContact(number);
+    public String getContactName(String number) throws InvalidNumberException {
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
         if (contact == null) {
             return "";
         } else {
@@ -685,14 +686,15 @@ public class Manager implements Signal {
     }
 
     @Override
-    public void setContactName(String number, String name) {
-        ContactInfo contact = account.getContactStore().getContact(number);
+    public void setContactName(String number, String name) throws InvalidNumberException {
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
         if (contact == null) {
             contact = new ContactInfo();
-            contact.number = number;
-            System.err.println("Add contact " + number + " named " + name);
+            contact.number = canonicalizedNumber;
+            System.err.println("Add contact " + canonicalizedNumber + " named " + name);
         } else {
-            System.err.println("Updating contact " + number + " name " + contact.name + " -> " + name);
+            System.err.println("Updating contact " + canonicalizedNumber + " name " + contact.name + " -> " + name);
         }
         contact.name = name;
         account.getContactStore().updateContact(contact);
