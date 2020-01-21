@@ -7,6 +7,8 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
+import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
 import java.util.Map;
@@ -39,8 +41,13 @@ public class ListIdentitiesCommand implements LocalCommand {
             }
         } else {
             String number = ns.getString("number");
-            for (JsonIdentityKeyStore.Identity id : m.getIdentities(number)) {
-                printIdentityFingerprint(m, number, id);
+            try {
+                Pair<String, List<JsonIdentityKeyStore.Identity>> key = m.getIdentities(number);
+                for (JsonIdentityKeyStore.Identity id : key.second()) {
+                    printIdentityFingerprint(m, key.first(), id);
+                }
+            } catch (InvalidNumberException e) {
+                System.out.println("Invalid number: " + e.getMessage());
             }
         }
         return 0;

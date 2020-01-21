@@ -53,6 +53,7 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.Medium;
+import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
@@ -1545,8 +1546,9 @@ public class Manager implements Signal {
         return account.getSignalProtocolStore().getIdentities();
     }
 
-    public List<JsonIdentityKeyStore.Identity> getIdentities(String number) {
-        return account.getSignalProtocolStore().getIdentities(number);
+    public Pair<String, List<JsonIdentityKeyStore.Identity>> getIdentities(String number) throws InvalidNumberException {
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        return new Pair<>(canonicalizedNumber, account.getSignalProtocolStore().getIdentities(canonicalizedNumber));
     }
 
     /**
