@@ -16,7 +16,6 @@
       <option name="BLANK_LINES_AFTER_CLASS_HEADER" value="1" />
     </codeStyleSettings>
     <codeStyleSettings language="XML">
-      <option name="FORCE_REARRANGE_MODE" value="0" />
       <arrangement>
         <rules />
       </arrangement>

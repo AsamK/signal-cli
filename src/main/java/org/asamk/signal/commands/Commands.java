@@ -9,6 +9,7 @@ public class Commands {
 
     static {
         addCommand("addDevice", new AddDeviceCommand());
+        addCommand("block", new BlockCommand());
         addCommand("daemon", new DaemonCommand());
         addCommand("link", new LinkCommand());
         addCommand("listContacts", new ListContactsCommand());
@@ -25,6 +26,7 @@ public class Commands {
         addCommand("updateContact", new UpdateContactCommand());
         addCommand("setPin", new SetPinCommand());
         addCommand("trust", new TrustCommand());
+        addCommand("unblock", new UnblockCommand());
         addCommand("unregister", new UnregisterCommand());
         addCommand("updateAccount", new UpdateAccountCommand());
         addCommand("updateGroup", new UpdateGroupCommand());

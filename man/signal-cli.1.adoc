@@ -209,7 +209,7 @@ number::
 	the fingerprint.
 
 updateProfile
---------------
+~~~~~~~~~~~~~
 Update the name and/or avatar image visible by message recipients for the current users.
 The profile is stored encrypted on the Signal servers. The decryption key is sent
 with every outgoing messages (excluding group messages).
@@ -224,7 +224,7 @@ with every outgoing messages (excluding group messages).
 	Remove the avatar visible by message recipients.
 
 updateContact
---------------
+~~~~~~~~~~~~~
 Update the info associated to a number on our contact list. This change is only
 local but can be synchronized to other devices by using `sendContacts` (see
 below).
@@ -236,8 +236,32 @@ NUMBER::
 *-n*, *--name*::
 	Specify the new name for this contact.
 
+block
+~~~~~
+Block the given contacts or groups (no messages will be received). This change is only
+local but can be synchronized to other devices by using `sendContacts` (see
+below).
+
+[CONTACT [CONTACT ...]]::
+	Specify the phone numbers of contacts that should be blocked.
+
+*-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
+	Specify the group IDs that should be blocked in base64 encoding.
+
+unblock
+~~~~~~~
+Unblock the given contacts or groups (messages will be received again). This change is only
+local but can be synchronized to other devices by using `sendContacts` (see
+below).
+
+[CONTACT [CONTACT ...]]::
+Specify the phone numbers of contacts that should be unblocked.
+
+*-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
+Specify the group IDs that should be unblocked in base64 encoding.
+
 sendContacts
-------------
+~~~~~~~~~~~~
 Send a synchronization message with the local contacts list to all linked devices.
 This command should only be used if this is the master device.
 

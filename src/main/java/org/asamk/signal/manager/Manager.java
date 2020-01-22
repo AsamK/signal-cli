@@ -71,6 +71,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
@@ -703,6 +704,35 @@ public class Manager implements Signal {
     }
 
     @Override
+    public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
+        number = Utils.canonicalizeNumber(number, username);
+        ContactInfo contact = account.getContactStore().getContact(number);
+        if (contact == null) {
+            contact = new ContactInfo();
+            contact.number = number;
+            System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + number);
+        } else {
+            System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + number);
+        }
+        contact.blocked = blocked;
+        account.getContactStore().updateContact(contact);
+        account.save();
+    }
+
+    @Override
+    public void setGroupBlocked(final byte[] groupId, final boolean blocked) throws GroupNotFoundException {
+        GroupInfo group = getGroup(groupId);
+        if (group == null) {
+            throw new GroupNotFoundException(groupId);
+        } else {
+            System.err.println((blocked ? "Blocking" : "Unblocking") + " group " + Base64.encodeBytes(groupId));
+            group.blocked = blocked;
+            account.getGroupStore().updateGroup(group);
+            account.save();
+        }
+    }
+
+    @Override
     public List<byte[]> getGroupIds() {
         List<GroupInfo> groups = getGroups();
         List<byte[]> ids = new ArrayList<>(groups.size());
@@ -1170,7 +1200,9 @@ public class Manager implements Signal {
                     handleMessage(envelope, content, ignoreAttachments);
                 }
                 account.save();
-                handler.handleMessage(envelope, content, exception);
+                if (!isMessageBlocked(envelope, content)) {
+                    handler.handleMessage(envelope, content, exception);
+                }
                 if (!(exception instanceof ProtocolUntrustedIdentityException)) {
                     File cacheFile = null;
                     try {
@@ -1189,6 +1221,33 @@ public class Manager implements Signal {
                 messagePipe = null;
             }
         }
+    }
+
+    private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        SignalServiceAddress source;
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            source = envelope.getSourceAddress();
+        } else if (content != null) {
+            source = content.getSender();
+        } else {
+            return false;
+        }
+        ContactInfo sourceContact = getContact(source.getNumber().get());
+        if (sourceContact != null && sourceContact.blocked) {
+            return true;
+        }
+
+        if (content != null && content.getDataMessage().isPresent()) {
+            SignalServiceDataMessage message = content.getDataMessage().get();
+            if (message.getGroupInfo().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+                GroupInfo group = getGroup(groupInfo.getGroupId());
+                if (groupInfo.getType() == SignalServiceGroup.Type.DELIVER && group != null && group.blocked) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
@@ -1226,7 +1285,14 @@ public class Manager implements Signal {
                             e.printStackTrace();
                         }
                     }
-                    // TODO Handle rm.isBlockedListRequest(); rm.isConfigurationRequest();
+                    if (rm.isBlockedListRequest()) {
+                        try {
+                            sendBlockedList();
+                        } catch (UntrustedIdentityException | IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    // TODO Handle rm.isConfigurationRequest();
                 }
                 if (syncMessage.getGroups().isPresent()) {
                     File tmpFile = null;
@@ -1245,6 +1311,7 @@ public class Manager implements Signal {
                                 }
                                 syncGroup.addMembers(g.getMembers());
                                 syncGroup.active = g.isActive();
+                                syncGroup.blocked = g.isBlocked();
                                 if (g.getColor().isPresent()) {
                                     syncGroup.color = g.getColor().get();
                                 }
@@ -1268,7 +1335,23 @@ public class Manager implements Signal {
                     }
                 }
                 if (syncMessage.getBlockedList().isPresent()) {
-                    // TODO store list of blocked numbers
+                    final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
+                    for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
+                        if (address.getNumber().isPresent()) {
+                            try {
+                                setContactBlocked(address.getNumber().get(), true);
+                            } catch (InvalidNumberException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    for (byte[] groupId : blockedListMessage.getGroupIds()) {
+                        try {
+                            setGroupBlocked(groupId, true);
+                        } catch (GroupNotFoundException e) {
+                            System.err.println("BlockedListMessage contained groupID that was not found in GroupStore: " + Base64.encodeBytes(groupId));
+                        }
+                    }
                 }
                 if (syncMessage.getContacts().isPresent()) {
                     File tmpFile = null;
@@ -1312,9 +1395,7 @@ public class Manager implements Signal {
                                     thread.messageExpirationTime = c.getExpirationTimer().get();
                                     account.getThreadStore().updateThread(thread);
                                 }
-                                if (c.isBlocked()) {
-                                    // TODO store list of blocked numbers
-                                }
+                                contact.blocked = c.isBlocked();
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
@@ -1442,7 +1523,7 @@ public class Manager implements Signal {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
                             record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null),
-                            Optional.fromNullable(record.color), false));
+                            Optional.fromNullable(record.color), record.blocked));
                 }
             }
 
@@ -1488,11 +1569,10 @@ public class Manager implements Signal {
                     }
 
                     byte[] profileKey = record.profileKey == null ? null : Base64.decode(record.profileKey);
-                    // TODO store list of blocked numbers
-                    boolean blocked = false;
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
-                            Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), blocked, Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
+                            Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
+                            Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
                 }
 
                 if (account.getProfileKey() != null) {
@@ -1523,6 +1603,22 @@ public class Manager implements Signal {
                 System.err.println("Failed to delete contacts temp file “" + contactsFile + "”: " + e.getMessage());
             }
         }
+    }
+
+    private void sendBlockedList() throws IOException, UntrustedIdentityException {
+        List<SignalServiceAddress> addresses = new ArrayList<>();
+        for (ContactInfo record : account.getContactStore().getContacts()) {
+            if (record.blocked) {
+                addresses.add(record.getAddress());
+            }
+        }
+        List<byte[]> groupIds = new ArrayList<>();
+        for (GroupInfo record : account.getGroupStore().getGroups()) {
+            if (record.blocked) {
+                groupIds.add(record.groupId);
+            }
+        }
+        sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
     }
 
     private void sendVerifiedMessage(SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel) throws IOException, UntrustedIdentityException {

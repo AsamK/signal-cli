@@ -25,6 +25,10 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name) throws InvalidNumberException;
 
+    void setContactBlocked(String number, boolean blocked) throws InvalidNumberException;
+
+    void setGroupBlocked(byte[] groupId, boolean blocked) throws GroupNotFoundException;
+
     List<byte[]> getGroupIds();
 
     String getGroupName(byte[] groupId);

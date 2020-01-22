@@ -14,11 +14,11 @@ public class ListGroupsCommand implements LocalCommand {
 
     private static void printGroup(GroupInfo group, boolean detailed) {
         if (detailed) {
-            System.out.println(String.format("Id: %s Name: %s  Active: %s Members: %s",
-                    Base64.encodeBytes(group.groupId), group.name, group.active, group.members));
+            System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b Members: %s",
+                    Base64.encodeBytes(group.groupId), group.name, group.active, group.blocked, group.members));
         } else {
-            System.out.println(String.format("Id: %s Name: %s  Active: %s", Base64.encodeBytes(group.groupId),
-                    group.name, group.active));
+            System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
+                    Base64.encodeBytes(group.groupId), group.name, group.active, group.blocked));
         }
     }
 

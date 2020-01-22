@@ -19,6 +19,9 @@ public class ContactInfo {
     @JsonProperty
     public String profileKey;
 
+    @JsonProperty(defaultValue = "false")
+    public boolean blocked;
+
     @JsonIgnore
     public SignalServiceAddress getAddress() {
         return new SignalServiceAddress(null, number);
