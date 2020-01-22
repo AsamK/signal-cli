@@ -6,6 +6,7 @@ import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +25,7 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name);
 
-    void setContactBlocked(String number, boolean blocked);
+    void setContactBlocked(String number, boolean blocked) throws InvalidNumberException;
 
     void setGroupBlocked(byte[] groupId, boolean blocked) throws GroupNotFoundException;
 

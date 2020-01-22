@@ -6,6 +6,7 @@ import org.asamk.signal.GroupIdFormatException;
 import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.Util;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class UnblockCommand implements LocalCommand {
 
@@ -28,10 +29,14 @@ public class UnblockCommand implements LocalCommand {
         }
 
         for (String contact_number : ns.<String>getList("contact")) {
-            m.setContactBlocked(contact_number, false);
+            try {
+                m.setContactBlocked(contact_number, false);
+            } catch (InvalidNumberException e) {
+                System.err.println(e.getMessage());
+            }
         }
 
-        if(ns.<String>getList("group") != null) {
+        if (ns.<String>getList("group") != null) {
             for (String groupIdString : ns.<String>getList("group")) {
                 try {
                     byte[] groupId = Util.decodeGroupId(groupIdString);

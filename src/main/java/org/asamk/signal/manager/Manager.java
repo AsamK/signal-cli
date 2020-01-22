@@ -688,7 +688,8 @@ public class Manager implements Signal {
     }
 
     @Override
-    public void setContactBlocked(String number, boolean blocked) {
+    public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
+        number = Utils.canonicalizeNumber(number, username);
         ContactInfo contact = account.getContactStore().getContact(number);
         if (contact == null) {
             contact = new ContactInfo();
@@ -1207,7 +1208,14 @@ public class Manager implements Signal {
     }
 
     private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source = envelope.getSourceAddress();
+        SignalServiceAddress source;
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            source = envelope.getSourceAddress();
+        } else if (content != null) {
+            source = content.getSender();
+        } else {
+            return false;
+        }
         ContactInfo sourceContact = getContact(source.getNumber().get());
         if (sourceContact != null && sourceContact.blocked) {
             return true;
@@ -1313,8 +1321,13 @@ public class Manager implements Signal {
                 if (syncMessage.getBlockedList().isPresent()) {
                     final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
                     for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
-                        if (address.getNumber().isPresent())
-                            setContactBlocked(address.getNumber().get(), true);
+                        if (address.getNumber().isPresent()) {
+                            try {
+                                setContactBlocked(address.getNumber().get(), true);
+                            } catch (InvalidNumberException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                     for (byte[] groupId : blockedListMessage.getGroupIds()) {
                         try {
