@@ -49,9 +49,7 @@ import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 public class Main {
 
     public static void main(String[] args) {
-        // Register our own security provider
-        Security.insertProviderAt(new SecurityProvider(), 1);
-        Security.addProvider(new BouncyCastleProvider());
+        installSecurityProviderWorkaround();
 
         Namespace ns = parseArgs(args);
         if (ns == null) {
@@ -60,6 +58,12 @@ public class Main {
 
         int res = handleCommands(ns);
         System.exit(res);
+    }
+
+    public static void installSecurityProviderWorkaround() {
+        // Register our own security provider
+        Security.insertProviderAt(new SecurityProvider(), 1);
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     private static int handleCommands(Namespace ns) {
