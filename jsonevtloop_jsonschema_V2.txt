@@ -1,0 +1,80 @@
+
+	------------------------------
+	Description of the JSON schema
+	------------------------------
+
+
+Version 2
+
+
+	JSON Requests are read from STDIN in "jsonevtloop" mode and the Reponses are
+	sent to STDOUT in "jsonevtloop" mode
+	
+	Generic Request attributes valid for ALL requests
+	{
+		"reqType": "<request-type>",				// MANDATORY: Name of request type
+		"reqID": <integer or string>				// Optional: reqID that will be present in the 
+													// response message for async callers to use as transaction id
+													// (note: for brevity omitted in the examples below)
+	}
+	Generic Response attributes valid for ALL responses
+	{
+		"respType": "<response-type>",				// Name of response type
+		"apiVer": 2,								// API Version 2
+		"reqID": <object>,							// Request Identifier as present in the request object
+		"status": "<ok|error>",						// Whether the request was a success of failure
+		"message": "<error-message>"				// In case of status="error", this contains any error message
+	}
+
+	
+	Send Message Request (direct message to another person)
+	{
+		"reqType": "send_message",
+		"recipientNumber": "<number>",
+		"messageBody": "<message-body-text>",
+		"attachments": [ "<file-name1>", ... ]
+	}
+
+
+	Alive Request
+	Test if signal-cli is still responding
+	{
+		"reqType": "alive"
+	}
+
+	Alive Response
+	{
+		"respType": "alive"
+	}
+	
+
+	Exit Request		
+	Request immediate termination of signal-cli client
+	{
+		"reqType": "exit"
+	}
+	
+	Exit Response to an exit request
+	Indicated the exit was due to an exit request as opposed to an error
+	{
+		"respType": "exit",
+		"status": "ok"
+	}
+	
+	Exit Response due to an unrecoverable error
+	{
+		"respType": "exit",
+		"status": "error",
+		"message": "<error-message>"
+	}
+	
+	Generic Error Response
+	{
+		"respType": "error",
+		"status": "error",
+		"message": "<error-message>"
+	}
+	
+	
+	
+	
