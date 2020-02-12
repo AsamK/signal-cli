@@ -25,6 +25,10 @@ public class GroupInfo {
     public String color;
     @JsonProperty(defaultValue = "false")
     public boolean blocked;
+    @JsonProperty
+    public Integer inboxPosition;
+    @JsonProperty(defaultValue = "false")
+    public boolean archived;
 
     private long avatarId;
 

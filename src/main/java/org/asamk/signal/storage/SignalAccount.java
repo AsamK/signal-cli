@@ -291,6 +291,10 @@ public class SignalAccount {
         return registrationLockPin;
     }
 
+    public String getRegistrationLock() {
+        return null; // TODO implement KBS
+    }
+
     public void setRegistrationLockPin(final String registrationLockPin) {
         this.registrationLockPin = registrationLockPin;
     }

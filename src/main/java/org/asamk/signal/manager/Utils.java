@@ -82,7 +82,7 @@ class Utils {
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null, null);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {

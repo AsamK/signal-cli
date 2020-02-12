@@ -22,6 +22,12 @@ public class ContactInfo {
     @JsonProperty(defaultValue = "false")
     public boolean blocked;
 
+    @JsonProperty
+    public Integer inboxPosition;
+
+    @JsonProperty(defaultValue = "false")
+    public boolean archived;
+
     @JsonIgnore
     public SignalServiceAddress getAddress() {
         return new SignalServiceAddress(null, number);
