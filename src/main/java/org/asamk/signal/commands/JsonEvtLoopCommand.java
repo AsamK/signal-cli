@@ -9,6 +9,8 @@ import org.asamk.signal.GroupIdFormatException;
 import org.asamk.signal.JsonEvtLoopReceiveMessageHandler;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.storage.contacts.ContactInfo;
+import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
@@ -48,10 +50,33 @@ public class JsonEvtLoopCommand implements LocalCommand {
     	}
 
     	/**
-    	 * 	Send signal message and respond with status message
+    	 * 	Command Handler: list_groups
+    	 * @param reqObj
+    	 * @param reqID
+    	 * @return
+    	 */
+    	JsonEvtLoopStatusReport list_groups( JsonNode reqObj, JsonNode reqID) {
+    		List<GroupInfo> groups = m.getGroups();
+    		ObjectMapper mapper = new ObjectMapper();
+    		JsonNode data_obj = mapper.valueToTree(groups);
+    		return new JsonEvtLoopStatusReport( "group_list", reqID, data_obj);
+    	}
+    	
+    	/**
+    	 * 	Command Handler: list_contacts
+    	 */
+    	JsonEvtLoopStatusReport list_contacts( JsonNode reqObj, JsonNode reqID) {
+            List<ContactInfo> contacts = m.getContacts();
+            ObjectMapper mpr = new ObjectMapper();
+            JsonNode data_obj = mpr.valueToTree(contacts);
+            return new JsonEvtLoopStatusReport( "contact_list", reqID, data_obj);
+    	}
+    	
+    	/**
+    	 * 	Command Handler: Send signal message and respond with status message
     	 * @param reqObj JSON parsed request object
     	 */
-    	JsonEvtLoopStatusReport sendMessage( JsonNode reqObj, JsonNode reqID) {
+    	JsonEvtLoopStatusReport send_message( JsonNode reqObj, JsonNode reqID) {
 
     		// get body text
     		String body_text = null;
@@ -102,7 +127,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
     	 * @param textRow String with the textRow to process
     	 */
     	void handle( String textRow) {
-    		System.err.println( "JsonRequestHandler: incoming string: " + textRow);
+    		//System.err.println( "JsonRequestHandler: incoming string: " + textRow);
     		
     		JsonEvtLoopStatusReport resp = null;
     		boolean exitNow = false;
@@ -123,7 +148,13 @@ public class JsonEvtLoopCommand implements LocalCommand {
 	    					exitNow = true;
 	    					break;
 	    				case "send_message":
-	    					resp = this.sendMessage( reqObj, reqID);
+	    					resp = this.send_message( reqObj, reqID);
+	    					break;
+	    				case "list_groups":
+	    					resp = this.list_groups( reqObj, reqID);
+	    					break;
+	    				case "list_contacts":
+	    					resp = this.list_contacts( reqObj, reqID);
 	    					break;
 	    				default:
 	    					resp = new JsonEvtLoopStatusReport("error", reqID, "error", "Unknown reqType '" + reqType + "'");
