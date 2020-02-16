@@ -76,7 +76,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
-                System.out.println(String.format("Sender: %s (device: %d)", content.getSender().getNumber().get(), content.getSenderDevice()));
+                ContactInfo sourceContact = m.getContact(content.getSender().getNumber().get());
+                System.out.println(String.format("Sender: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender().getNumber().get(), content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
                     handleSignalServiceDataMessage(message);

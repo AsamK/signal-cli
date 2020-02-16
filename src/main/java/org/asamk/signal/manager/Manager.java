@@ -266,7 +266,7 @@ public class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), getSelfUnidentifiedAccessKey(), false);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false);
     }
 
     public void setProfileName(String name) throws IOException {
@@ -397,7 +397,7 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, getSelfUnidentifiedAccessKey(), false);
+        accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.setRegistered(true);
@@ -408,11 +408,12 @@ public class Manager implements Signal {
     }
 
     public void setRegistrationLockPin(Optional<String> pin) throws IOException {
-        accountManager.setPin(pin);
         if (pin.isPresent()) {
             account.setRegistrationLockPin(pin.get());
+            throw new RuntimeException("Not implemented anymore, will be replaced with KBS");
         } else {
             account.setRegistrationLockPin(null);
+            accountManager.removeV1Pin();
         }
         account.save();
     }
@@ -1320,6 +1321,8 @@ public class Manager implements Signal {
                                 if (g.getAvatar().isPresent()) {
                                     retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
                                 }
+                                syncGroup.inboxPosition = g.getInboxPosition().orNull();
+                                syncGroup.archived = g.isArchived();
                                 account.getGroupStore().updateGroup(syncGroup);
                             }
                         }
@@ -1397,6 +1400,8 @@ public class Manager implements Signal {
                                     account.getThreadStore().updateThread(thread);
                                 }
                                 contact.blocked = c.isBlocked();
+                                contact.inboxPosition = c.getInboxPosition().orNull();
+                                contact.archived = c.isArchived();
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
@@ -1528,7 +1533,7 @@ public class Manager implements Signal {
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
                             record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null),
-                            Optional.fromNullable(record.color), record.blocked));
+                            Optional.fromNullable(record.color), record.blocked, Optional.fromNullable(record.inboxPosition), record.archived));
                 }
             }
 
@@ -1577,7 +1582,8 @@ public class Manager implements Signal {
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
-                            Optional.fromNullable(info != null ? info.messageExpirationTime : null)));
+                            Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            Optional.fromNullable(record.inboxPosition), record.archived));
                 }
 
                 if (account.getProfileKey() != null) {
@@ -1586,7 +1592,7 @@ public class Manager implements Signal {
                             Optional.<String>absent(), Optional.<SignalServiceAttachmentStream>absent(),
                             Optional.<String>absent(), Optional.<VerifiedMessage>absent(),
                             Optional.of(account.getProfileKey()),
-                            false, Optional.<Integer>absent()));
+                            false, Optional.<Integer>absent(), Optional.<Integer>absent(), false));
                 }
             }
 
