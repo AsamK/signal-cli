@@ -21,6 +21,7 @@ public class JsonEvtLoopStatusReport {
 	public String status;
 	public String message;
 	public JsonMessageEnvelope envelope;
+	public JsonNode data;
 
 
 	/**
@@ -33,6 +34,13 @@ public class JsonEvtLoopStatusReport {
 		this.respType = "envelope";
 		this.status = "ok";
 		this.reqID = null;
+	}
+	
+	public JsonEvtLoopStatusReport( String respType, JsonNode reqID, JsonNode data) {
+		this.respType = respType;
+		this.status = "ok";
+		this.reqID = reqID;
+		this.data = data;
 	}
 	
 	/**
@@ -70,7 +78,11 @@ public class JsonEvtLoopStatusReport {
 		ObjectMapper mpr = new ObjectMapper();
 		mpr.setVisibility( PropertyAccessor.FIELD, Visibility.ANY);
 		try {
-			System.out.println( mpr.writeValueAsString(this));
+			//System.out.println( mpr.writeValueAsString(this));
+			JsonNode n = mpr.valueToTree(this);
+			System.out.println( mpr.writeValueAsString(n));
+		} catch( IllegalArgumentException e) {
+			System.err.println( "JsonEvtLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
 		} catch( JsonProcessingException e) {
 			System.err.println( "JsonEvtLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
 		}
