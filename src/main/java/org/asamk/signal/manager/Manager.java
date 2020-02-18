@@ -30,7 +30,6 @@ import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
-import org.asamk.signal.JsonAttachment;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
 import org.signal.libsignal.metadata.InvalidMetadataVersionException;
 import org.signal.libsignal.metadata.ProtocolDuplicateMessageException;
@@ -145,7 +144,6 @@ public class Manager implements Signal {
         this.dataPath = this.settingsPath + "/data";
         this.attachmentsPath = this.settingsPath + "/attachments";
         this.avatarsPath = this.settingsPath + "/avatars";
-        JsonAttachment.setAttachmentStoragePath(this.attachmentsPath);
     }
 
     public String getUsername() {
@@ -1466,8 +1464,8 @@ public class Manager implements Signal {
         return new File(attachmentsPath, attachmentId + "");
     }
 
-    public String getAttachmentFilePath(long attachmentId) {
-    	return attachmentsPath + File.separator + attachmentId;
+    public String getAttachmentsPath() {
+    	return attachmentsPath;
     }
     
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
