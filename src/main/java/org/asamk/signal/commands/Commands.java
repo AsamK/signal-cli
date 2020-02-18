@@ -11,7 +11,7 @@ public class Commands {
         addCommand("addDevice", new AddDeviceCommand());
         addCommand("block", new BlockCommand());
         addCommand("daemon", new DaemonCommand());
-        addCommand("jsonevtloop", new JsonEvtLoopCommand());
+        addCommand("jsonEventLoop", new JsonEventLoopCommand());
         addCommand("link", new LinkCommand());
         addCommand("listContacts", new ListContactsCommand());
         addCommand("listDevices", new ListDevicesCommand());

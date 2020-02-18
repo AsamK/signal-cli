@@ -18,20 +18,20 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
 //import java.io.IOException;
 
-public class JsonEvtLoopReceiveMessageHandler implements Manager.ReceiveMessageHandler {
+public class JsonEventLoopReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
 	public interface ResponseEmitter {
-		public void emit( JsonEvtLoopStatusReport resp);
+		public void emit( JsonEventLoopStatusReport resp);
 	}
 	
     final Manager m;
     ResponseEmitter responseEmitter;
 
-    public JsonEvtLoopReceiveMessageHandler(Manager m) {
+    public JsonEventLoopReceiveMessageHandler(Manager m) {
         this.m = m;
     }
     
-    public JsonEvtLoopReceiveMessageHandler( Manager m, ResponseEmitter responseEmitter) {
+    public JsonEventLoopReceiveMessageHandler( Manager m, ResponseEmitter responseEmitter) {
     	this.m = m;
     	this.responseEmitter = responseEmitter;
     }
@@ -39,17 +39,17 @@ public class JsonEvtLoopReceiveMessageHandler implements Manager.ReceiveMessageH
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         //ObjectNode result = jsonProcessor.createObjectNode();
-    	JsonEvtLoopStatusReport resp = null;
+    	JsonEventLoopStatusReport resp = null;
         if (exception != null) {
-        	resp = new JsonEvtLoopStatusReport( "error", null, "error", "JsonEvtLoopReceiveMessageHandler::handleMessage: Exception: " + exception.toString());
+        	resp = new JsonEventLoopStatusReport( "error", null, "error", "JsonEventLoopReceiveMessageHandler::handleMessage: Exception: " + exception.toString());
             //result.putPOJO("error", new JsonError(exception));
         }
         if (envelope != null) {
             //result.putPOJO("envelope", new JsonMessageEnvelope(envelope, content));
-        	resp = new JsonEvtLoopStatusReport( new JsonMessageEnvelope(envelope, content));
+        	resp = new JsonEventLoopStatusReport( new JsonMessageEnvelope(envelope, content));
         }
     	if(resp == null) {
-    		new JsonEvtLoopStatusReport( "error",  null, "JsonEvtLoopReceiveMessageHandler::handleMessage: both exceptino and envelope is null!").emit();
+    		new JsonEventLoopStatusReport( "error",  null, "JsonEventLoopReceiveMessageHandler::handleMessage: both exceptino and envelope is null!").emit();
     	} else {
     		if( this.responseEmitter != null) {
     			this.responseEmitter.emit( resp);

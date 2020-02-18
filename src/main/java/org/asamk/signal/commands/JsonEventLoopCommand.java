@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.JsonEvtLoopReceiveMessageHandler;
+import org.asamk.signal.JsonEventLoopReceiveMessageHandler;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
@@ -29,7 +29,7 @@ import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 
 
-public class JsonEvtLoopCommand implements LocalCommand {
+public class JsonEventLoopCommand implements LocalCommand {
 
 
 	
@@ -38,14 +38,14 @@ public class JsonEvtLoopCommand implements LocalCommand {
      * 	@author bingel
      *
      */
-    private static class JsonEvtLoopRequestHandler {
+    private static class JsonEventLoopRequestHandler {
     	Manager m;
 
     	/**
     	 * Constructor
     	 * @param m Signal Manager object
     	 */
-    	JsonEvtLoopRequestHandler( Manager m) {    		
+    	JsonEventLoopRequestHandler( Manager m) {
     		this.m = m;
     	}
 
@@ -55,28 +55,28 @@ public class JsonEvtLoopCommand implements LocalCommand {
     	 * @param reqID
     	 * @return
     	 */
-    	JsonEvtLoopStatusReport list_groups( JsonNode reqObj, JsonNode reqID) {
+    	JsonEventLoopStatusReport list_groups( JsonNode reqObj, JsonNode reqID) {
     		List<GroupInfo> groups = m.getGroups();
     		ObjectMapper mapper = new ObjectMapper();
     		JsonNode data_obj = mapper.valueToTree(groups);
-    		return new JsonEvtLoopStatusReport( "group_list", reqID, data_obj);
+    		return new JsonEventLoopStatusReport( "group_list", reqID, data_obj);
     	}
     	
     	/**
     	 * 	Command Handler: list_contacts
     	 */
-    	JsonEvtLoopStatusReport list_contacts( JsonNode reqObj, JsonNode reqID) {
+    	JsonEventLoopStatusReport list_contacts( JsonNode reqObj, JsonNode reqID) {
             List<ContactInfo> contacts = m.getContacts();
             ObjectMapper mpr = new ObjectMapper();
             JsonNode data_obj = mpr.valueToTree(contacts);
-            return new JsonEvtLoopStatusReport( "contact_list", reqID, data_obj);
+            return new JsonEventLoopStatusReport( "contact_list", reqID, data_obj);
     	}
     	
     	/**
     	 * 	Command Handler: Send signal message and respond with status message
     	 * @param reqObj JSON parsed request object
     	 */
-    	JsonEvtLoopStatusReport send_message( JsonNode reqObj, JsonNode reqID) {
+    	JsonEventLoopStatusReport send_message( JsonNode reqObj, JsonNode reqID) {
 
     		// get body text
     		String body_text = null;
@@ -98,9 +98,9 @@ public class JsonEvtLoopCommand implements LocalCommand {
     			try {
     				m.sendMessage( body_text, attachments, recipientNumber);    			
     			} catch( IOException e) {
-    				return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "IOException: " + e.toString() );
+    				return new JsonEventLoopStatusReport( "send_message", reqID, "error", "IOException: " + e.toString() );
     			} catch( EncapsulatedExceptions e) {
-    				return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "EncapsulatedException: " + e.toString() );    				
+    				return new JsonEventLoopStatusReport( "send_message", reqID, "error", "EncapsulatedException: " + e.toString() );    				
     			}
     		} else if( reqObj.get("recipientGroupID") != null) {
     			// send message to group
@@ -109,17 +109,17 @@ public class JsonEvtLoopCommand implements LocalCommand {
     				byte[] recipientGroupID_bytearray = Util.decodeGroupId(recipientGroupID);
     				m.sendGroupMessage( body_text, attachments, recipientGroupID_bytearray);
     			} catch( GroupIdFormatException e) {
-    				return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "GroupIdFormatException: " + e.toString() );    				
+    				return new JsonEventLoopStatusReport( "send_message", reqID, "error", "GroupIdFormatException: " + e.toString() );    				
     			} catch( IOException e) {
-    				return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "IOException: " + e.toString() );    				
+    				return new JsonEventLoopStatusReport( "send_message", reqID, "error", "IOException: " + e.toString() );    				
     			} catch( EncapsulatedExceptions e) {
-    				return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "EncapsulatedException: " + e.toString() );    				
+    				return new JsonEventLoopStatusReport( "send_message", reqID, "error", "EncapsulatedException: " + e.toString() );    				
     			}
     		} else {
-    			return new JsonEvtLoopStatusReport( "send_message", reqID, "error", "Neither recipientNumber or recipientGroupID present in request, nothing to do");
+    			return new JsonEventLoopStatusReport( "send_message", reqID, "error", "Neither recipientNumber or recipientGroupID present in request, nothing to do");
     		}
     		
-    		return new JsonEvtLoopStatusReport("send_message", reqID, "ok");
+    		return new JsonEventLoopStatusReport("send_message", reqID, "ok");
     	}
 
     	/**
@@ -129,7 +129,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
     	void handle( String textRow) {
     		//System.err.println( "JsonRequestHandler: incoming string: " + textRow);
     		
-    		JsonEvtLoopStatusReport resp = null;
+    		JsonEventLoopStatusReport resp = null;
     		boolean exitNow = false;
     		try {
     			ObjectMapper objectMapper = new ObjectMapper();
@@ -140,10 +140,10 @@ public class JsonEvtLoopCommand implements LocalCommand {
 	    				JsonNode reqID = reqObj.get("reqID");
 	    				switch(reqType) {
 	    				case "alive":
-	    					resp = new JsonEvtLoopStatusReport("alive", reqID, "ok");
+	    					resp = new JsonEventLoopStatusReport("alive", reqID, "ok");
 	    					break;
 	    				case "exit":
-	    					resp = new JsonEvtLoopStatusReport("exit", reqID, "ok");
+	    					resp = new JsonEventLoopStatusReport("exit", reqID, "ok");
 	    					//System.exit(0);
 	    					exitNow = true;
 	    					break;
@@ -157,20 +157,20 @@ public class JsonEvtLoopCommand implements LocalCommand {
 	    					resp = this.list_contacts( reqObj, reqID);
 	    					break;
 	    				default:
-	    					resp = new JsonEvtLoopStatusReport("error", reqID, "error", "Unknown reqType '" + reqType + "'");
+	    					resp = new JsonEventLoopStatusReport("error", reqID, "error", "Unknown reqType '" + reqType + "'");
 	    					System.err.println("JsonEvtRequestHandler: ERROR: Unknown reqType '" + reqType + "'");
 	    					break;
 	    				}
     				} else {
-    					resp = new JsonEvtLoopStatusReport("error", null, "error", "reqType attribute missing");
+    					resp = new JsonEventLoopStatusReport("error", null, "error", "reqType attribute missing");
     					System.err.println("JsonEvtRequestHandler: ERROR: reqType attribute is missing in request");    					
     				}
     			} else {
-					resp = new JsonEvtLoopStatusReport("error", null, "error", "Failed to parse JSON, reqObj is NULL");
+					resp = new JsonEventLoopStatusReport("error", null, "error", "Failed to parse JSON, reqObj is NULL");
         			System.err.println( "JsonEvtRequestHandler: Failed to parse JSON, reqObj is NULL");			
     			}
     		} catch( IOException e) {
-				resp = new JsonEvtLoopStatusReport("error", null, "error", "Failed to parse JSON: " + e.toString());
+				resp = new JsonEventLoopStatusReport("error", null, "error", "Failed to parse JSON: " + e.toString());
     			System.err.println( "JsonEvtRequestHandler: Failed to parse JSON, text='" + textRow + "', IOException: " + e.toString());
     		}
 
@@ -178,7 +178,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
     		if(resp != null) {
     			resp.emit();
     		} else {
-    			System.err.println( "JsonEvtRequestHandler: ERROR: No response!");    			
+    			System.err.println( "JsonEventRequestHandler: ERROR: No response!");    			
     		}
     		
     		// Someone requested we exit the program now
@@ -194,7 +194,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
 	 *
 	 */
 	private static class JsonStdinReader implements Runnable {
-	    JsonEvtLoopRequestHandler jsonEvtLoopRequestHandler = null;
+	    JsonEventLoopRequestHandler jsonEventLoopRequestHandler = null;
 	
 	    public void run() {
 	        BufferedReader br = new BufferedReader( new InputStreamReader( System.in));
@@ -207,12 +207,12 @@ public class JsonEvtLoopCommand implements LocalCommand {
 	                System.exit(1);
 	            }
 	            if( line != null && !line.equals(""))
-	                this.jsonEvtLoopRequestHandler.handle(line);
+	                this.jsonEventLoopRequestHandler.handle(line);
 	        }
 	    }
 	
-	    public JsonStdinReader( JsonEvtLoopRequestHandler j) {
-	        this.jsonEvtLoopRequestHandler = j;
+	    public JsonStdinReader( JsonEventLoopRequestHandler j) {
+	        this.jsonEventLoopRequestHandler = j;
 	    }
 	}
 
@@ -232,12 +232,12 @@ public class JsonEvtLoopCommand implements LocalCommand {
     public int handleCommand(final Namespace ns, final Manager m) {
         if (!m.isRegistered()) {
             //System.err.println("User is not registered.");
-        	new JsonEvtLoopStatusReport( "error", null, "error", "JsonEvtLoopCommand::handleCommand: User is not registered, aborting");
+        	new JsonEventLoopStatusReport( "error", null, "error", "JsonEventLoopCommand::handleCommand: User is not registered, aborting");
             return 1;
         }
 
         // Start stdin reader thread
-        JsonEvtLoopRequestHandler jhandler = new JsonEvtLoopRequestHandler( m);
+        JsonEventLoopRequestHandler jhandler = new JsonEventLoopRequestHandler( m);
         JsonStdinReader reader = new JsonStdinReader( jhandler);
         Thread jsonStdinReaderThread = new Thread( reader);
         jsonStdinReaderThread.start();
@@ -245,7 +245,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
         // start JsonReceiveMessageHandler and let it run forever
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-        	final Manager.ReceiveMessageHandler handler = new JsonEvtLoopReceiveMessageHandler(m, (resp) -> {
+        	final Manager.ReceiveMessageHandler handler = new JsonEventLoopReceiveMessageHandler(m, (resp) -> {
         		// For future use - utilize this lambda callback to emit responses in correct channel
         		// if that should not happen to be stdout, but for now, just emit json text to stdout
         		resp.emit();
@@ -254,7 +254,7 @@ public class JsonEvtLoopCommand implements LocalCommand {
             return 0;
         } catch (IOException e) {
             System.err.println("Error while receiving messages: " + e.getMessage());
-            new JsonEvtLoopStatusReport( "error", null, "error", "JsonEvtLoopCommand::handleCommand: Error while receiving messages: " + e.getMessage()).emit();
+            new JsonEventLoopStatusReport( "error", null, "error", "JsonEventLoopCommand::handleCommand: Error while receiving messages: " + e.getMessage()).emit();
             return 3;
         } catch (AssertionError e) {
             handleAssertionError(e);

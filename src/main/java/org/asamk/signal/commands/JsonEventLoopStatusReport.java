@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.*;
 
 
 @JsonInclude(Include.NON_NULL)
-public class JsonEvtLoopStatusReport {
+public class JsonEventLoopStatusReport {
 	
 	public int apiVer = 2;
 	public String respType;
@@ -25,18 +25,18 @@ public class JsonEvtLoopStatusReport {
 
 
 	/**
-	 * 		Create new JsonEvtLoopStatusReport object for use for responding signal data envelopes
+	 * 		Create new JsonEventLoopStatusReport object for use for responding signal data envelopes
 	 * 
 	 * @param en Envelope from signal Manager
 	 */
-	public JsonEvtLoopStatusReport( JsonMessageEnvelope en) {
+	public JsonEventLoopStatusReport( JsonMessageEnvelope en) {
 		this.envelope = en;
 		this.respType = "envelope";
 		this.status = "ok";
 		this.reqID = null;
 	}
 	
-	public JsonEvtLoopStatusReport( String respType, JsonNode reqID, JsonNode data) {
+	public JsonEventLoopStatusReport( String respType, JsonNode reqID, JsonNode data) {
 		this.respType = respType;
 		this.status = "ok";
 		this.reqID = reqID;
@@ -44,27 +44,27 @@ public class JsonEvtLoopStatusReport {
 	}
 	
 	/**
-	 * 		Creates new JsonEvtLoopStatusReport object to use for responding to requests
+	 * 		Creates new JsonEventLoopStatusReport object to use for responding to requests
 	 * 
 	 * @param respType Response type (should correspond to request type somehow)
 	 * @param reqID Request ID object as present in the request
 	 * @param status Status of the operation, should be "ok" or "error"
 	 */
-	public JsonEvtLoopStatusReport( String respType, JsonNode reqID, String status) {
+	public JsonEventLoopStatusReport( String respType, JsonNode reqID, String status) {
 		this.respType = respType;
 		this.reqID = reqID;
 		this.status = status;
 	}
 
 	/**
-	 * 		Creates new JsonEvtLoopStatusReport object to use for responding to requests
+	 * 		Creates new JsonEventLoopStatusReport object to use for responding to requests
 	 * 
 	 * @param respType Response type (should correspond to request type somehow)
 	 * @param reqID Request ID object as present in the request
 	 * @param status Status of the operation, should be "ok" or "error"
 	 * @param message Message explaining what went wrong in case of status="error"
 	 */
-	public JsonEvtLoopStatusReport( String respType, JsonNode reqID, String status, String message) {
+	public JsonEventLoopStatusReport( String respType, JsonNode reqID, String status, String message) {
 		this.respType = respType;
 		this.reqID = reqID;
 		this.status = status;
@@ -82,9 +82,9 @@ public class JsonEvtLoopStatusReport {
 			JsonNode n = mpr.valueToTree(this);
 			System.out.println( mpr.writeValueAsString(n));
 		} catch( IllegalArgumentException e) {
-			System.err.println( "JsonEvtLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
+			System.err.println( "JsonEventLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
 		} catch( JsonProcessingException e) {
-			System.err.println( "JsonEvtLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
+			System.err.println( "JsonEventLoopStatusReport: ERROR: Failed to serialize object: " + e.toString());
 		}
 	}
 	
