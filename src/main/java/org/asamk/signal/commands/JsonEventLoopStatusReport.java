@@ -13,15 +13,37 @@ import com.fasterxml.jackson.databind.*;
 
 @JsonInclude(Include.NON_NULL)
 public class JsonEventLoopStatusReport {
+
+	public static final int CURRENT_APIVER = 2;
 	
-	public int apiVer = 2;
+	// statusCode constants
+	public static final int STATUSCODE_UNKNOWN = -1;
+	public static final int STATUSCODE_OK = 0;
+	public static final int STATUSCODE_GENERIC_ERROR = 1;
+	public static final int STATUSCODE_SEND_ERROR = 2;
+	public static final int STATUSCODE_GROUP_ID_FORMAT_ERROR = 3;
+	public static final int STATUSCODE_RECIPIENT_FORMAT_ERROR = 4;
+	public static final int STATUSCODE_REQUEST_FORMAT_ERROR = 5;
+	public static final int STATUSCODE_JSON_PARSE_ERROR = 6;	
+	public static final int STATUSCODE_USER_NOT_REGISTERED_ERROR = 7;	
+	
+	// members
+	@JsonInclude(Include.ALWAYS)
 	public String respType;
 	@JsonInclude(Include.ALWAYS)
 	public JsonNode reqID;
-	public String status;
-	public String message;
+	@JsonInclude(Include.ALWAYS)
+	public int statusCode = STATUSCODE_UNKNOWN;
+	@JsonInclude(Include.NON_NULL)
+	public String errorMessage;
+	@JsonInclude(Include.NON_NULL)
 	public JsonMessageEnvelope envelope;
+	@JsonInclude(Include.NON_NULL)
 	public JsonNode data;
+	@JsonInclude(Include.NON_DEFAULT)
+	public int apiVer = 0;
+	@JsonInclude(Include.NON_NULL)
+	public String attachmentsPath;
 
 
 	/**
@@ -32,13 +54,13 @@ public class JsonEventLoopStatusReport {
 	public JsonEventLoopStatusReport( JsonMessageEnvelope en) {
 		this.envelope = en;
 		this.respType = "envelope";
-		this.status = "ok";
+		this.statusCode = STATUSCODE_OK;
 		this.reqID = null;
 	}
 	
 	public JsonEventLoopStatusReport( String respType, JsonNode reqID, JsonNode data) {
 		this.respType = respType;
-		this.status = "ok";
+		this.statusCode = 0;
 		this.reqID = reqID;
 		this.data = data;
 	}
@@ -50,10 +72,10 @@ public class JsonEventLoopStatusReport {
 	 * @param reqID Request ID object as present in the request
 	 * @param status Status of the operation, should be "ok" or "error"
 	 */
-	public JsonEventLoopStatusReport( String respType, JsonNode reqID, String status) {
+	public JsonEventLoopStatusReport( String respType, JsonNode reqID, int statusCode) {
 		this.respType = respType;
 		this.reqID = reqID;
-		this.status = status;
+		this.statusCode = statusCode;
 	}
 
 	/**
@@ -64,11 +86,11 @@ public class JsonEventLoopStatusReport {
 	 * @param status Status of the operation, should be "ok" or "error"
 	 * @param message Message explaining what went wrong in case of status="error"
 	 */
-	public JsonEventLoopStatusReport( String respType, JsonNode reqID, String status, String message) {
+	public JsonEventLoopStatusReport( String respType, JsonNode reqID, int statusCode, String message) {
 		this.respType = respType;
 		this.reqID = reqID;
-		this.status = status;
-		this.message = message;
+		this.statusCode = statusCode;
+		this.errorMessage = message;
 	}
 
 	/**

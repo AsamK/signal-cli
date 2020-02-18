@@ -41,7 +41,7 @@ public class JsonEventLoopReceiveMessageHandler implements Manager.ReceiveMessag
         //ObjectNode result = jsonProcessor.createObjectNode();
     	JsonEventLoopStatusReport resp = null;
         if (exception != null) {
-        	resp = new JsonEventLoopStatusReport( "error", null, "error", "JsonEventLoopReceiveMessageHandler::handleMessage: Exception: " + exception.toString());
+        	resp = new JsonEventLoopStatusReport( "error", null, JsonEventLoopStatusReport.STATUSCODE_GENERIC_ERROR, "JsonEventLoopReceiveMessageHandler::handleMessage: Exception: " + exception.toString());
             //result.putPOJO("error", new JsonError(exception));
         }
         if (envelope != null) {
@@ -49,7 +49,7 @@ public class JsonEventLoopReceiveMessageHandler implements Manager.ReceiveMessag
         	resp = new JsonEventLoopStatusReport( new JsonMessageEnvelope(envelope, content));
         }
     	if(resp == null) {
-    		new JsonEventLoopStatusReport( "error",  null, "JsonEventLoopReceiveMessageHandler::handleMessage: both exceptino and envelope is null!").emit();
+    		new JsonEventLoopStatusReport( "error", null, JsonEventLoopStatusReport.STATUSCODE_GENERIC_ERROR, "JsonEventLoopReceiveMessageHandler::handleMessage: both exception and envelope is null!").emit();
     	} else {
     		if( this.responseEmitter != null) {
     			this.responseEmitter.emit( resp);
