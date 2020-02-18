@@ -78,23 +78,35 @@ public class JsonEventLoopCommand implements LocalCommand {
     	 */
     	JsonEventLoopStatusReport send_message( JsonNode reqObj, JsonNode reqID) {
 
+    		JsonNode dataMessage = reqObj.get("dataMessage");
+    		if(dataMessage == null) {
+    			return new JsonEventLoopStatusReport("send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_REQUEST_FORMAT_ERROR, "send_message: ERROR: dataMessage attribute missing from request object");
+    		}
+    		
     		// get body text
     		String body_text = null;
-    		if(reqObj.get("messageBody") != null) {
-    			body_text = reqObj.get("messageBody").asText();
+    		if(dataMessage.get("message") != null) {
+    			body_text = dataMessage.get("message").asText();
     		}
     		
     		// parse attachment list
     		List<String> attachments = new ArrayList<String>();
-    		if(reqObj.get("attachments") != null && reqObj.get("attachments").isArray()) {
-    			for( JsonNode node : reqObj.get("attachments")) {
-    				attachments.add(node.asText());
+    		if(dataMessage.get("attachments") != null && dataMessage.get("attachments").isArray()) {
+    			for( JsonNode node : dataMessage.get("attachments")) {
+    				if( node.get("filename") == null) {
+    	    			return new JsonEventLoopStatusReport("send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_REQUEST_FORMAT_ERROR, "send_message: ERROR: 'filename' attribute from attachment object");
+    				}
+    				attachments.add(node.get("filename").asText());
     			}
     		}
     		
-    		if( reqObj.get("recipientNumber") != null) {
+    		if( reqObj.get("recipient") != null) {
+    			JsonNode recipient_obj = reqObj.get("recipient");
+    			if(recipient_obj.get("number") == null) {
+        			return new JsonEventLoopStatusReport("send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_REQUEST_FORMAT_ERROR, "send_message: ERROR: 'recipient' is missing 'number' attribute");    				
+    			}
     			// send message directly to another user
-    			String recipientNumber = reqObj.get("recipientNumber").asText();
+    			String recipientNumber = recipient_obj.get("number").asText();
     			try {
     				m.sendMessage( body_text, attachments, recipientNumber);    			
     			} catch( IOException e) {
@@ -102,9 +114,14 @@ public class JsonEventLoopCommand implements LocalCommand {
     			} catch( EncapsulatedExceptions e) {
     				return new JsonEventLoopStatusReport( "send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_SEND_ERROR, "EncapsulatedException: " + e.toString() );    				
     			}
-    		} else if( reqObj.get("recipientGroupID") != null) {
+    		} else if( dataMessage.get("groupInfo") != null) {
+    			JsonNode groupInfo_obj = dataMessage.get("groupInfo");
+    			if(groupInfo_obj.get("groupId") == null) {
+        			return new JsonEventLoopStatusReport("send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_REQUEST_FORMAT_ERROR, "send_message: ERROR: dataMessage.groupInfo is missing 'groupId' atribute");
+    			}
+    			
     			// send message to group
-    			String recipientGroupID = reqObj.get("recipientGroupID").asText();
+    			String recipientGroupID = groupInfo_obj.get("groupId").asText();
     			try {
     				byte[] recipientGroupID_bytearray = Util.decodeGroupId(recipientGroupID);
     				m.sendGroupMessage( body_text, attachments, recipientGroupID_bytearray);
@@ -116,7 +133,7 @@ public class JsonEventLoopCommand implements LocalCommand {
     				return new JsonEventLoopStatusReport( "send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_SEND_ERROR, "EncapsulatedException: " + e.toString() );    				
     			}
     		} else {
-    			return new JsonEventLoopStatusReport( "send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_RECIPIENT_FORMAT_ERROR, "Neither recipientNumber or recipientGroupID present in request, nothing to do");
+    			return new JsonEventLoopStatusReport( "send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_RECIPIENT_FORMAT_ERROR, "Neither recipient.number or dataMessage.groupInfo.groupId present in request");
     		}
     		
     		return new JsonEventLoopStatusReport("send_message", reqID, JsonEventLoopStatusReport.STATUSCODE_OK);
