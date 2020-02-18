@@ -90,7 +90,7 @@ Send Message Request (to group chat)
 			}
 		],
 		"groupInfo": {
-			"groupId": "FRasdb6mSVwHwetHSX8mkjQ=="
+			"groupId": "FRasdb7mSVwGwetQSX8mkjQ=="
 		}
 	},
 }
@@ -128,7 +128,7 @@ Message Envelope Received, sent to group chat with some attachements present
 				}
 			],
 			"groupInfo": {
-				"groupId": "FRasdb6mSVwHwetHSX8mkjQ==",
+				"groupId": "FRasdb7mSVwGwetQSX8mkjQ==",
 				"members": null,
 				"name": null,
 				"type": "DELIVER"
@@ -141,9 +141,71 @@ Message Envelope Received, sent to group chat with some attachements present
 }
 
 
+List known groups and their properties
+{
+	"reqType": "list_groups"
+}
 
-Alive Request
-Test if signal-cli is still responding
+List groups response
+{
+	"respType":"list_groups",
+	"reqID":null,
+	"statusCode":0,
+	"data": [
+		{
+			"groupId":"+rtjbBy781Tgfpkc9HiNCg==",
+			"name":"test-group",
+			"members": [
+				"+46123445566",
+				"+46222222222",
+				"+4687345232989874",
+			],
+			"color":"blue",
+			"blocked":false,
+			"active":true,
+			"inboxPosition":null,
+			"archived":false
+		}
+	]
+}
+
+
+
+List contacts and their properties
+{
+	"reqType": "list_contacts"
+}
+
+List groups response
+{
+	"respType":"list_contacts",
+	"reqID":null,
+	"statusCode":0,
+	"data": [
+		{
+			"name":"Persons A Full Name",
+			"number":"+46999999",
+			"color":"blue_grey",
+			"profileKey":null,
+			"blocked":false,
+			"inboxPosition":50,
+			"archived":true
+		},
+		{
+			"name":"Persons B Full Name",
+			"number":"+46999444444",
+			"color":"teal",
+			"profileKey":null,
+			"blocked":false,
+			"inboxPosition":0,
+			"archived":true
+		}
+	]
+}
+
+
+
+Alive Request (Test if signal-cli is still responding)
 {
 	"reqType": "alive"
 }
@@ -155,8 +217,7 @@ Alive Response
 }
 
 
-Exit Request		
-Request immediate termination of signal-cli client
+Exit Request (Request immediate termination of signal-cli client)
 {
 	"reqType": "exit"
 }
