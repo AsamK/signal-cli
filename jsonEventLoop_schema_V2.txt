@@ -1,0 +1,200 @@
+
+	------------------------------------------------
+	Description of the jsonEventLoop and JSON schema
+	------------------------------------------------
+
+Purpose: JSON-based asynchronous API for signal-cli.
+
+This mode is not intended to be used directly from the command line, but to 
+provide an easy use API for other scripting languages.
+
+signal-cli listens for JSON requests on stdin. Each JSON request must be
+a single valid JSON object (enclosed in {}), followed by LF. The JSON text
+itself hence must not contain linefeeds (only escaped as \n and no pretty
+printing enabled).
+
+When incoming messages are received from the signal back-end, they are
+in turned JSON encoded and sent out on stdout.
+
+Any error messages or debug information is sent out on stderr as expected.
+
+Start signal-cli with the jsonEventLoop command to start this mode of operation.
+
+
+JSON Schema Version 2 
+=====================
+
+
+JSON Requests are read line by line from STDIN in "jsonEventLoop" mode and the Reponses are
+sent to STDOUT.
+
+Generic Request attributes valid for ALL requests
+{
+	"reqType": "<request-type>",				// MANDATORY: Name of request type
+	"reqID": <integer or string>				// Optional: reqID that will be present in the 
+												// response message for async callers to use as transaction id
+												// (note: for brevity omitted in the examples below)
+}
+Generic Response attributes valid for ALL responses
+{
+	"respType": "<response-type>",				// Name of response type
+	"reqID": <object>,							// Request Identifier as present in the request object
+	"statusCode": <int>,						// Status of the response. 0=OK, >0 = Error code (see Status code list)
+	"errorMessage": <string>					// Text describing error state, only present if statusCode > 0
+}
+
+
+When the jsonEventLoop command is started, it begins with emitting an metadata response
+containing some vital information for the "client" application.
+
+Metadata Response (automatically issued on startup)
+{
+	"respType": "metadata",
+	"apiVer": 2,								// Version of the API signal-cli uses
+	"attachmentsPath": "<path>"					// Absolute path to the directory where attachments are stored by 
+												// signal-cli when downloaded from the server
+}
+
+
+
+Send Message Request (direct message to another recipient)
+{
+	"reqType": "send_message",
+	"recipient": {
+		"number": "<number>"
+	},
+	"dataMessage": {
+		"message": "😋😋😋",
+		"attachments": [
+			{
+				"contentType": "image/jpeg",
+				"filename": "signal-2020-02-09-122846.jpeg"
+			}
+		]
+	},
+}
+
+
+Send Message Request (to group chat)
+{
+	"reqType": "send_message",
+	"dataMessage": {
+		"message": "😋😋😋",
+		"attachments": [
+			{
+				"contentType": "image/jpeg",
+				"filename": "signal-2020-02-09-122846.jpeg"
+			},
+			{
+				"filename": "signal-2020-02-09-122846.jpeg"
+			}
+		],
+		"groupInfo": {
+			"groupId": "FRasdb6mSVwHwetHSX8mkjQ=="
+		}
+	},
+}
+
+
+
+Message Envelope Received, sent to group chat with some attachements present
+{
+	"apiVer": 2,
+	"respType": "envelope",
+	"reqID": null,
+	"status": "ok",
+	"envelope": {
+		"source": "+46123456",
+		"sourceDevice": 1,
+		"relay": null,
+		"timestamp": 1581272926239,
+		"isReceipt": false,
+		"dataMessage": {
+			"timestamp": 1581272926239,
+			"message": "😋😋😋",
+			"expiresInSeconds": 0,
+			"attachments": [
+				{
+					"contentType": "image/jpeg",
+					"filename": "signal-2020-02-09-122846.jpeg",
+					"id": "8983570171695764643",
+					"size": 569218
+				},
+				{
+					"contentType": "image/jpeg",
+					"filename": "signal-2020-02-09-122846.jpeg",
+					"id": "119656560176959856",
+					"size": 311650
+				}
+			],
+			"groupInfo": {
+				"groupId": "FRasdb6mSVwHwetHSX8mkjQ==",
+				"members": null,
+				"name": null,
+				"type": "DELIVER"
+			}
+		},
+		"syncMessage": null,
+		"callMessage": null,
+		"receiptMessage": null
+	}
+}
+
+
+
+Alive Request
+Test if signal-cli is still responding
+{
+	"reqType": "alive"
+}
+
+Alive Response
+{
+	"respType": "alive",
+	"statusCode": 0
+}
+
+
+Exit Request		
+Request immediate termination of signal-cli client
+{
+	"reqType": "exit"
+}
+
+Exit Response to an exit request
+Indicated the exit was due to an exit request as opposed to an error
+{
+	"respType": "exit",
+	"statusCode": 0
+}
+
+Exit Response due to an unrecoverable error
+{
+	"respType": "exit",
+	"statusCode": >0,
+	"errorMessage": "<error-message>"
+}
+
+Generic Error Response
+{
+	"respType": "error",
+	"statusCode": 1,
+	"errorMessage": "<error-message>"
+}
+
+
+Status Code List
+================
+
+	statusCode 	description
+	----------	-------------------------------------
+		0		STATUSCODE_OK 
+		1		STATUSCODE_GENERIC_ERROR
+		2		STATUSCODE_SEND_ERROR
+		3		STATUSCODE_GROUP_ID_FORMAT_ERROR
+		4		STATUSCODE_RECIPIENT_FORMAT_ERROR
+		5		STATUSCODE_REQUEST_FORMAT_ERROR
+		6		STATUSCODE_JSON_PARSE_ERROR
+		7		STATUSCODE_USER_NOT_REGISTERED_ERROR
+
+
