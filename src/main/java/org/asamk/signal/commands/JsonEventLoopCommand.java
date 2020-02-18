@@ -59,7 +59,7 @@ public class JsonEventLoopCommand implements LocalCommand {
     		List<GroupInfo> groups = m.getGroups();
     		ObjectMapper mapper = new ObjectMapper();
     		JsonNode data_obj = mapper.valueToTree(groups);
-    		return new JsonEventLoopStatusReport( "group_list", reqID, data_obj);
+    		return new JsonEventLoopStatusReport( "list_groups", reqID, data_obj);
     	}
     	
     	/**
@@ -69,7 +69,7 @@ public class JsonEventLoopCommand implements LocalCommand {
             List<ContactInfo> contacts = m.getContacts();
             ObjectMapper mpr = new ObjectMapper();
             JsonNode data_obj = mpr.valueToTree(contacts);
-            return new JsonEventLoopStatusReport( "contact_list", reqID, data_obj);
+            return new JsonEventLoopStatusReport( "list_contacts", reqID, data_obj);
     	}
     	
     	/**
