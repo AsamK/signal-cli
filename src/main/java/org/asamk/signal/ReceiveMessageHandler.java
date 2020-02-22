@@ -312,6 +312,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             System.out.println("Profile key update, key length:" + message.getProfileKey().get().length);
         }
 
+        if (message.getReaction().isPresent()) {
+            final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
+            System.out.println("Reaction:");
+            System.out.println(" - Emoji: " + reaction.getEmoji());
+            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber());
+            System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
+            System.out.println(" - Is remove: " + reaction.isRemove());
+        }
+
         if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
