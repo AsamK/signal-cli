@@ -140,6 +140,28 @@ RECIPIENT::
 *-e*, *--endsession*::
 	Clear session state and send end session message.
 
+sendReaction
+~~~~~~~~~~~~
+Send reaction to a previously received or sent message.
+
+RECIPIENT::
+	Specify the recipients’ phone number.
+
+*-g* GROUP, *--group* GROUP::
+	Specify the recipient group ID in base64 encoding.
+
+*-e* EMOJI, *--emoji* EMOJI::
+	Specify the emoji, should be a single unicode grapheme cluster.
+
+*-a* NUMBER, *--target-author* NUMBER::
+	Specify the number of the author of the message to which to react.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+	Specify the timestamp of the message to which to react.
+
+*-r*, *--remove*::
+	Remove a reaction.
+
 receive
 ~~~~~~~
 Query the server for new messages. New messages are printed on standardoutput and

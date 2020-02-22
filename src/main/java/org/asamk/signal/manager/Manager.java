@@ -496,6 +496,26 @@ public class Manager implements Signal {
         sendMessageLegacy(messageBuilder, membersSend);
     }
 
+    public void sendGroupMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
+                                         long targetSentTimestamp, byte[] groupId)
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .withReaction(reaction)
+                .withProfileKey(account.getProfileKey());
+        if (groupId != null) {
+            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
+                    .withId(groupId)
+                    .build();
+            messageBuilder.asGroupMessage(group);
+        }
+        final GroupInfo g = getGroupForSending(groupId);
+        // Don't send group message to ourself
+        final List<String> membersSend = new ArrayList<>(g.members);
+        membersSend.remove(this.username);
+        sendMessageLegacy(messageBuilder, membersSend);
+    }
+
     public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
@@ -666,6 +686,16 @@ public class Manager implements Signal {
             messageBuilder.withAttachments(attachmentPointers);
         }
         messageBuilder.withProfileKey(account.getProfileKey());
+        sendMessageLegacy(messageBuilder, recipients);
+    }
+
+    public void sendMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
+                                    long targetSentTimestamp, List<String> recipients)
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .withReaction(reaction)
+                .withProfileKey(account.getProfileKey());
         sendMessageLegacy(messageBuilder, recipients);
     }
 

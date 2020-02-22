@@ -22,6 +22,7 @@ public class Commands {
         addCommand("removeDevice", new RemoveDeviceCommand());
         addCommand("removePin", new RemovePinCommand());
         addCommand("send", new SendCommand());
+        addCommand("sendReaction", new SendReactionCommand());
         addCommand("sendContacts", new SendContactsCommand());
         addCommand("updateContact", new UpdateContactCommand());
         addCommand("setPin", new SetPinCommand());
