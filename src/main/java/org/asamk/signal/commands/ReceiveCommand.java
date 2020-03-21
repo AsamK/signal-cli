@@ -37,31 +37,24 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
         if (dbusconnection != null) {
             try {
-                dbusconnection.addSigHandler(Signal.MessageReceived.class, new DBusSigHandler<Signal.MessageReceived>() {
-                    @Override
-                    public void handle(Signal.MessageReceived s) {
-                        System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
-                                s.getSender(), DateUtils.formatTimestamp(s.getTimestamp()), s.getMessage()));
-                        if (s.getGroupId().length > 0) {
-                            System.out.println("Group info:");
-                            System.out.println("  Id: " + Base64.encodeBytes(s.getGroupId()));
-                        }
-                        if (s.getAttachments().size() > 0) {
-                            System.out.println("Attachments: ");
-                            for (String attachment : s.getAttachments()) {
-                                System.out.println("-  Stored plaintext in: " + attachment);
-                            }
-                        }
-                        System.out.println();
+                dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
+                    System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
+                            messageReceived.getSender(), DateUtils.formatTimestamp(messageReceived.getTimestamp()), messageReceived.getMessage()));
+                    if (messageReceived.getGroupId().length > 0) {
+                        System.out.println("Group info:");
+                        System.out.println("  Id: " + Base64.encodeBytes(messageReceived.getGroupId()));
                     }
-                });
-                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, new DBusSigHandler<Signal.ReceiptReceived>() {
-                    @Override
-                    public void handle(Signal.ReceiptReceived s) {
-                        System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                                s.getSender(), DateUtils.formatTimestamp(s.getTimestamp())));
+                    if (messageReceived.getAttachments().size() > 0) {
+                        System.out.println("Attachments: ");
+                        for (String attachment : messageReceived.getAttachments()) {
+                            System.out.println("-  Stored plaintext in: " + attachment);
+                        }
                     }
+                    System.out.println();
                 });
+                dbusconnection.addSigHandler(Signal.ReceiptReceived.class,
+                        receiptReceived -> System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
+                        receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp()))));
             } catch (UnsatisfiedLinkError e) {
                 System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
                 return 1;

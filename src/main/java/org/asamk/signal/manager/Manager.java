@@ -260,9 +260,9 @@ public class Manager implements Signal {
         accountManager = getSignalServiceAccountManager();
 
         if (voiceVerification) {
-            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.<String>absent(), Optional.<String>absent());
+            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.absent(), Optional.absent());
         } else {
-            accountManager.requestSmsVerificationCode(false, Optional.<String>absent(), Optional.<String>absent());
+            accountManager.requestSmsVerificationCode(false, Optional.absent(), Optional.absent());
         }
 
         account.setRegistered(false);
@@ -291,7 +291,7 @@ public class Manager implements Signal {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
-        accountManager.setGcmId(Optional.<String>absent());
+        accountManager.setGcmId(Optional.absent());
 
         account.setRegistered(false);
         account.save();
@@ -443,7 +443,7 @@ public class Manager implements Signal {
 
     private SignalServiceMessageSender getMessageSender() {
         return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, null, username, account.getPassword(),
-                account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.<SignalServiceMessageSender.EventListener>absent());
+                account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent());
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -891,7 +891,7 @@ public class Manager implements Signal {
     private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
         List<Optional<UnidentifiedAccessPair>> result = new ArrayList<>(recipients.size());
         for (SignalServiceAddress recipient : recipients) {
-            result.add(Optional.<UnidentifiedAccessPair>absent());
+            result.add(Optional.absent());
         }
         return result;
     }
@@ -1217,16 +1217,13 @@ public class Manager implements Signal {
                 Exception exception = null;
                 final long now = new Date().getTime();
                 try {
-                    envelope = messagePipe.read(timeout, unit, new SignalServiceMessagePipe.MessagePipeCallback() {
-                        @Override
-                        public void onMessage(SignalServiceEnvelope envelope) {
-                            // store message on disk, before acknowledging receipt to the server
-                            try {
-                                File cacheFile = getMessageCacheFile(envelope.getSourceE164().get(), now, envelope.getTimestamp());
-                                Utils.storeEnvelope(envelope, cacheFile);
-                            } catch (IOException e) {
-                                System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
-                            }
+                    envelope = messagePipe.read(timeout, unit, envelope1 -> {
+                        // store message on disk, before acknowledging receipt to the server
+                        try {
+                            File cacheFile = getMessageCacheFile(envelope1.getSourceE164().get(), now, envelope1.getTimestamp());
+                            Utils.storeEnvelope(envelope1, cacheFile);
+                        } catch (IOException e) {
+                            System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
                         }
                     });
                 } catch (TimeoutException e) {
@@ -1633,10 +1630,10 @@ public class Manager implements Signal {
                 if (account.getProfileKey() != null) {
                     // Send our own profile key as well
                     out.write(new DeviceContact(account.getSelfAddress(),
-                            Optional.<String>absent(), Optional.<SignalServiceAttachmentStream>absent(),
-                            Optional.<String>absent(), Optional.<VerifiedMessage>absent(),
+                            Optional.absent(), Optional.absent(),
+                            Optional.absent(), Optional.absent(),
                             Optional.of(account.getProfileKey()),
-                            false, Optional.<Integer>absent(), Optional.<Integer>absent(), false));
+                            false, Optional.absent(), Optional.absent(), false));
                 }
             }
 

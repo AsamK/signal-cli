@@ -61,7 +61,7 @@ public class SendCommand implements DbusCommand {
 
         if (ns.getBoolean("endsession")) {
             try {
-                signal.sendEndSessionMessage(ns.<String>getList("recipient"));
+                signal.sendEndSessionMessage(ns.getList("recipient"));
                 return 0;
             } catch (IOException e) {
                 handleIOException(e);
@@ -98,7 +98,7 @@ public class SendCommand implements DbusCommand {
                 byte[] groupId = Util.decodeGroupId(ns.getString("group"));
                 signal.sendGroupMessage(messageText, attachments, groupId);
             } else {
-                signal.sendMessage(messageText, attachments, ns.<String>getList("recipient"));
+                signal.sendMessage(messageText, attachments, ns.getList("recipient"));
             }
             return 0;
         } catch (IOException e) {

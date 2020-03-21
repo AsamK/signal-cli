@@ -69,7 +69,7 @@ public class SendReactionCommand implements LocalCommand {
                 byte[] groupId = Util.decodeGroupId(ns.getString("group"));
                 m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
-                m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, ns.<String>getList("recipient"));
+                m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, ns.getList("recipient"));
             }
             return 0;
         } catch (IOException e) {
