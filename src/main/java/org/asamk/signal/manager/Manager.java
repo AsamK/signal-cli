@@ -41,6 +41,8 @@ import org.signal.libsignal.metadata.ProtocolLegacyMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.zkgroup.InvalidInputException;
+import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -84,6 +86,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
+import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -125,6 +128,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class Manager implements Signal {
+
+    private static final SignalServiceProfile.Capabilities capabilities = new SignalServiceProfile.Capabilities(false, false);
 
     private final String settingsPath;
     private final String dataPath;
@@ -237,7 +242,7 @@ public class Manager implements Signal {
         if (username == null) {
             account = SignalAccount.createTemporaryAccount(identityKey, registrationId);
         } else {
-            byte[] profileKey = KeyUtils.createProfileKey();
+            ProfileKey profileKey = KeyUtils.createProfileKey();
             account = SignalAccount.create(dataPath, username, identityKey, registrationId, profileKey);
             account.save();
         }
@@ -265,7 +270,7 @@ public class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, capabilities);
     }
 
     public void setProfileName(String name) throws IOException {
@@ -314,9 +319,16 @@ public class Manager implements Signal {
         }
 
         // Create new account with the synced identity
-        byte[] profileKey = ret.getProfileKey();
-        if (profileKey == null) {
+        byte[] profileKeyBytes = ret.getProfileKey();
+        ProfileKey profileKey;
+        if (profileKeyBytes == null) {
             profileKey = KeyUtils.createProfileKey();
+        } else {
+            try {
+                profileKey = new ProfileKey(profileKeyBytes);
+            } catch (InvalidInputException e) {
+                throw new IOException("Received invalid profileKey", e);
+            }
         }
         account = SignalAccount.createLinkedAccount(dataPath, username, account.getPassword(), ret.getDeviceId(), ret.getIdentity(), account.getSignalProtocolStore().getLocalRegistrationId(), account.getSignalingKey(), profileKey);
 
@@ -354,7 +366,7 @@ public class Manager implements Signal {
         IdentityKeyPair identityKeyPair = account.getSignalProtocolStore().getIdentityKeyPair();
         String verificationCode = accountManager.getNewDeviceVerificationCode();
 
-        accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, Optional.of(account.getProfileKey()), verificationCode);
+        accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, Optional.of(account.getProfileKey().serialize()), verificationCode);
         account.setMultiDevice(true);
         account.save();
     }
@@ -396,7 +408,7 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false);
+        accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, capabilities);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.setRegistered(true);
@@ -502,7 +514,7 @@ public class Manager implements Signal {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction)
-                .withProfileKey(account.getProfileKey());
+                .withProfileKey(account.getProfileKey().serialize());
         if (groupId != null) {
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
                     .withId(groupId)
@@ -685,7 +697,7 @@ public class Manager implements Signal {
 
             messageBuilder.withAttachments(attachmentPointers);
         }
-        messageBuilder.withProfileKey(account.getProfileKey());
+        messageBuilder.withProfileKey(account.getProfileKey().serialize());
         sendMessageLegacy(messageBuilder, recipients);
     }
 
@@ -695,7 +707,7 @@ public class Manager implements Signal {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction)
-                .withProfileKey(account.getProfileKey());
+                .withProfileKey(account.getProfileKey().serialize());
         sendMessageLegacy(messageBuilder, recipients);
     }
 
@@ -1117,7 +1129,10 @@ public class Manager implements Signal {
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
             if (source.equals(username)) {
-                this.account.setProfileKey(message.getProfileKey().get());
+                try {
+                    this.account.setProfileKey(new ProfileKey(message.getProfileKey().get()));
+                } catch (InvalidInputException ignored) {
+                }
             }
             ContactInfo contact = account.getContactStore().getContact(source);
             if (contact == null) {
@@ -1413,7 +1428,7 @@ public class Manager implements Signal {
                                     contact.color = c.getColor().get();
                                 }
                                 if (c.getProfileKey().isPresent()) {
-                                    contact.profileKey = Base64.encodeBytes(c.getProfileKey().get());
+                                    contact.profileKey = Base64.encodeBytes(c.getProfileKey().get().serialize());
                                 }
                                 if (c.getVerified().isPresent()) {
                                     final VerifiedMessage verifiedMessage = c.getVerified().get();
@@ -1603,7 +1618,11 @@ public class Manager implements Signal {
                         }
                     }
 
-                    byte[] profileKey = record.profileKey == null ? null : Base64.decode(record.profileKey);
+                    ProfileKey profileKey = null;
+                    try {
+                        profileKey = record.profileKey == null ? null : new ProfileKey(Base64.decode(record.profileKey));
+                    } catch (InvalidInputException ignored) {
+                    }
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,

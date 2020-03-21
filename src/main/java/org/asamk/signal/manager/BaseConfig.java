@@ -37,13 +37,16 @@ public class BaseConfig {
 
     private final static List<Interceptor> interceptors = Collections.singletonList(userAgentInterceptor);
 
+    private final static byte[] zkGroupServerPublicParams = new byte[]{};
+
     final static SignalServiceConfiguration serviceConfiguration = new SignalServiceConfiguration(
             new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
             new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
             new SignalContactDiscoveryUrl[0],
             new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
             new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
-            interceptors
+            interceptors,
+            zkGroupServerPublicParams
     );
 
     private BaseConfig() {

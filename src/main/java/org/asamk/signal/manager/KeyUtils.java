@@ -1,6 +1,8 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.util.RandomUtils;
+import org.signal.zkgroup.InvalidInputException;
+import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.util.Base64;
 
 class KeyUtils {
@@ -12,8 +14,12 @@ class KeyUtils {
         return getSecret(52);
     }
 
-    static byte[] createProfileKey() {
-        return getSecretBytes(32);
+    static ProfileKey createProfileKey() {
+        try {
+            return new ProfileKey(getSecretBytes(32));
+        } catch (InvalidInputException e) {
+            throw new AssertionError("Profile key is guaranteed to be 32 bytes here");
+        }
     }
 
     static String createPassword() {

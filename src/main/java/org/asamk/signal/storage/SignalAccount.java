@@ -16,6 +16,8 @@ import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.storage.threads.JsonThreadStore;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
+import org.signal.zkgroup.InvalidInputException;
+import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -42,7 +44,7 @@ public class SignalAccount {
     private String password;
     private String registrationLockPin;
     private String signalingKey;
-    private byte[] profileKey;
+    private ProfileKey profileKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
 
@@ -70,7 +72,7 @@ public class SignalAccount {
         return account;
     }
 
-    public static SignalAccount create(String dataPath, String username, IdentityKeyPair identityKey, int registrationId, byte[] profileKey) throws IOException {
+    public static SignalAccount create(String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
 
         SignalAccount account = new SignalAccount();
@@ -87,7 +89,7 @@ public class SignalAccount {
         return account;
     }
 
-    public static SignalAccount createLinkedAccount(String dataPath, String username, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, byte[] profileKey) throws IOException {
+    public static SignalAccount createLinkedAccount(String dataPath, String username, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
 
         SignalAccount account = new SignalAccount();
@@ -161,7 +163,11 @@ public class SignalAccount {
             nextSignedPreKeyId = 0;
         }
         if (rootNode.has("profileKey")) {
-            profileKey = Base64.decode(Util.getNotNullNode(rootNode, "profileKey").asText());
+            try {
+                profileKey = new ProfileKey(Base64.decode(Util.getNotNullNode(rootNode, "profileKey").asText()));
+            } catch (InvalidInputException e) {
+                throw new IOException("Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes", e);
+            }
         }
 
         signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
@@ -203,7 +209,7 @@ public class SignalAccount {
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
-                .put("profileKey", Base64.encodeBytes(profileKey))
+                .put("profileKey", Base64.encodeBytes(profileKey.serialize()))
                 .put("registered", registered)
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
@@ -307,11 +313,11 @@ public class SignalAccount {
         this.signalingKey = signalingKey;
     }
 
-    public byte[] getProfileKey() {
+    public ProfileKey getProfileKey() {
         return profileKey;
     }
 
-    public void setProfileKey(final byte[] profileKey) {
+    public void setProfileKey(final ProfileKey profileKey) {
         this.profileKey = profileKey;
     }
 
