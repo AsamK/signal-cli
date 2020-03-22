@@ -1236,6 +1236,7 @@ public class Manager implements Signal {
                 contact.number = source;
             }
             contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
+            account.getContactStore().updateContact(contact);
         }
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
