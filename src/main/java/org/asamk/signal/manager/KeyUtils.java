@@ -30,6 +30,10 @@ class KeyUtils {
         return getSecretBytes(16);
     }
 
+    static byte[] createUnrestrictedUnidentifiedAccess() {
+        return getSecretBytes(16);
+    }
+
     private static String getSecret(int size) {
         byte[] secret = getSecretBytes(size);
         return Base64.encodeBytes(secret);

@@ -41,7 +41,9 @@ import org.signal.libsignal.metadata.ProtocolLegacyMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.zkgroup.InvalidInputException;
+import org.signal.zkgroup.VerificationFailedException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
@@ -61,6 +63,8 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
+import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
+import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
@@ -444,6 +448,25 @@ public class Manager implements Signal {
     private SignalServiceMessageSender getMessageSender() {
         return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, null, username, account.getPassword(),
                 account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent());
+    }
+
+    private SignalServiceProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
+        SignalServiceMessagePipe pipe = unidentifiedMessagePipe != null && unidentifiedAccess.isPresent() ? unidentifiedMessagePipe
+                : messagePipe;
+
+        if (pipe != null) {
+            try {
+                return pipe.getProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).getProfile();
+            } catch (IOException ignored) {
+            }
+        }
+
+        SignalServiceMessageReceiver receiver = getMessageReceiver();
+        try {
+            return receiver.retrieveProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).getProfile();
+        } catch (VerificationFailedException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -874,31 +897,98 @@ public class Manager implements Signal {
         }
     }
 
+    private byte[] getSenderCertificate() throws IOException {
+        byte[] certificate = accountManager.getSenderCertificate();
+        // TODO cache for a day
+        return certificate;
+    }
+
     private byte[] getSelfUnidentifiedAccessKey() {
         return UnidentifiedAccess.deriveAccessKeyFrom(account.getProfileKey());
     }
 
-    private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
-        // TODO implement
-        return null;
+    private static SignalProfile decryptProfile(SignalServiceProfile encryptedProfile, ProfileKey profileKey) throws IOException {
+        ProfileCipher profileCipher = new ProfileCipher(profileKey);
+        try {
+            return new SignalProfile(
+                    encryptedProfile.getIdentityKey(),
+                    encryptedProfile.getName() == null ? null : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName()))),
+                    encryptedProfile.getAvatar(),
+                    encryptedProfile.getUnidentifiedAccess() == null || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess())) ? null : encryptedProfile.getUnidentifiedAccess(),
+                    encryptedProfile.isUnrestrictedUnidentifiedAccess()
+            );
+        } catch (InvalidCiphertextException e) {
+            return null;
+        }
     }
 
-    private Optional<UnidentifiedAccessPair> getAccessForSync() {
-        // TODO implement
-        return Optional.absent();
+    private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) throws IOException {
+        ContactInfo contact = account.getContactStore().getContact(recipient.getNumber().get());
+        if (contact == null || contact.profileKey == null) {
+            return null;
+        }
+        ProfileKey theirProfileKey;
+        try {
+            theirProfileKey = new ProfileKey(Base64.decode(contact.profileKey));
+        } catch (InvalidInputException e) {
+            throw new AssertionError(e);
+        }
+        SignalProfile targetProfile = decryptProfile(getRecipientProfile(recipient, Optional.absent()), theirProfileKey);
+
+        if (targetProfile == null || targetProfile.getUnidentifiedAccess() == null) {
+            return null;
+        }
+
+        if (targetProfile.isUnrestrictedUnidentifiedAccess()) {
+            return KeyUtils.createUnrestrictedUnidentifiedAccess();
+        }
+
+        return UnidentifiedAccess.deriveAccessKeyFrom(theirProfileKey);
     }
 
-    private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
+    private Optional<UnidentifiedAccessPair> getAccessForSync() throws IOException {
+        byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        byte[] selfUnidentifiedAccessCertificate = getSenderCertificate();
+
+        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
+            return Optional.absent();
+        }
+
+        try {
+            return Optional.of(new UnidentifiedAccessPair(
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)
+            ));
+        } catch (InvalidCertificateException e) {
+            return Optional.absent();
+        }
+    }
+
+    private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) throws IOException {
         List<Optional<UnidentifiedAccessPair>> result = new ArrayList<>(recipients.size());
         for (SignalServiceAddress recipient : recipients) {
-            result.add(Optional.absent());
+            result.add(getAccessFor(recipient));
         }
         return result;
     }
 
-    private Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
-        // TODO implement
-        return Optional.absent();
+    private Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) throws IOException {
+        byte[] recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
+        byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        byte[] selfUnidentifiedAccessCertificate = getSenderCertificate();
+
+        if (recipientUnidentifiedAccessKey == null || selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
+            return Optional.absent();
+        }
+
+        try {
+            return Optional.of(new UnidentifiedAccessPair(
+                    new UnidentifiedAccess(recipientUnidentifiedAccessKey, selfUnidentifiedAccessCertificate),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)
+            ));
+        } catch (InvalidCertificateException e) {
+            return Optional.absent();
+        }
     }
 
     private void sendSyncMessage(SignalServiceSyncMessage message)
@@ -945,6 +1035,12 @@ public class Manager implements Signal {
             return Collections.emptyList();
         }
 
+        if (messagePipe == null) {
+            messagePipe = getMessageReceiver().createMessagePipe();
+        }
+        if (unidentifiedMessagePipe == null) {
+            unidentifiedMessagePipe = getMessageReceiver().createUnidentifiedMessagePipe();
+        }
         SignalServiceDataMessage message = null;
         try {
             SignalServiceMessageSender messageSender = getMessageSender();
