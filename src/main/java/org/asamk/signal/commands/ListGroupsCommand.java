@@ -12,13 +12,13 @@ import java.util.List;
 
 public class ListGroupsCommand implements LocalCommand {
 
-    private static void printGroup(GroupInfo group, boolean detailed) {
+    private static void printGroup(GroupInfo group, boolean detailed, String username) {
         if (detailed) {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b Members: %s",
-                    Base64.encodeBytes(group.groupId), group.name, group.active, group.blocked, group.members));
+                    Base64.encodeBytes(group.groupId), group.name, group.members.contains(username), group.blocked, group.members));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId), group.name, group.active, group.blocked));
+                    Base64.encodeBytes(group.groupId), group.name, group.members.contains(username), group.blocked));
         }
     }
 
@@ -40,7 +40,7 @@ public class ListGroupsCommand implements LocalCommand {
         boolean detailed = ns.getBoolean("detailed");
 
         for (GroupInfo group : groups) {
-            printGroup(group, detailed);
+            printGroup(group, detailed, m.getUsername());
         }
         return 0;
     }

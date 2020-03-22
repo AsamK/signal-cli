@@ -20,8 +20,6 @@ public class GroupInfo {
     @JsonProperty
     public Set<String> members = new HashSet<>();
     @JsonProperty
-    public boolean active;
-    @JsonProperty
     public String color;
     @JsonProperty(defaultValue = "false")
     public boolean blocked;
@@ -32,17 +30,23 @@ public class GroupInfo {
 
     private long avatarId;
 
+    @JsonProperty
+    @JsonIgnore
+    private boolean active;
+
     public GroupInfo(byte[] groupId) {
         this.groupId = groupId;
     }
 
-    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked) {
+    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<String> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked, @JsonProperty("inboxPosition") Integer inboxPosition, @JsonProperty("archived") boolean archived) {
         this.groupId = groupId;
         this.name = name;
         this.members.addAll(members);
         this.avatarId = avatarId;
         this.color = color;
         this.blocked = blocked;
+        this.inboxPosition = inboxPosition;
+        this.archived = archived;
     }
 
     @JsonIgnore

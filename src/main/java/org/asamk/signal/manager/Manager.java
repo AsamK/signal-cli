@@ -1450,7 +1450,9 @@ public class Manager implements Signal {
                                     syncGroup.name = g.getName().get();
                                 }
                                 syncGroup.addMembers(g.getMembers());
-                                syncGroup.active = g.isActive();
+                                if (!g.isActive()) {
+                                    syncGroup.members.remove(username);
+                                }
                                 syncGroup.blocked = g.isBlocked();
                                 if (g.getColor().isPresent()) {
                                     syncGroup.color = g.getColor().get();
@@ -1666,7 +1668,7 @@ public class Manager implements Signal {
                     ThreadInfo info = account.getThreadStore().getThread(Base64.encodeBytes(record.groupId));
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
-                            record.active, Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            record.members.contains(username), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
                             Optional.fromNullable(record.color), record.blocked, Optional.fromNullable(record.inboxPosition), record.archived));
                 }
             }
