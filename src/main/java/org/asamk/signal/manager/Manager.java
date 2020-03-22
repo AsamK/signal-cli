@@ -26,6 +26,7 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.helper.GroupHelper;
+import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -82,6 +83,10 @@ import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.KbsPinData;
+import org.whispersystems.signalservice.api.KeyBackupService;
+import org.whispersystems.signalservice.api.KeyBackupServicePinException;
+import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
@@ -96,6 +101,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -138,6 +144,7 @@ import org.whispersystems.signalservice.internal.configuration.SignalServiceConf
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
+import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
@@ -160,6 +167,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyStore;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -193,6 +201,8 @@ public class Manager implements Closeable {
 
     private final SignalServiceConfiguration serviceConfiguration;
     private final String userAgent;
+
+    // TODO make configurable
     private final boolean discoverableByPhoneNumber = true;
     private final boolean unrestrictedUnidentifiedAccess = false;
 
@@ -209,6 +219,7 @@ public class Manager implements Closeable {
     private final UnidentifiedAccessHelper unidentifiedAccessHelper;
     private final ProfileHelper profileHelper;
     private final GroupHelper groupHelper;
+    private PinHelper pinHelper;
 
     Manager(
             SignalAccount account,
@@ -222,8 +233,7 @@ public class Manager implements Closeable {
         this.userAgent = userAgent;
         this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
                 serviceConfiguration)) : null;
-        this.accountManager = createSignalServiceAccountManager();
-        this.groupsV2Api = accountManager.getGroupsV2Api();
+        createSignalServiceAccountManager();
 
         this.account.setResolver(this::resolveSignalServiceAddress);
 
@@ -251,8 +261,8 @@ public class Manager implements Closeable {
         return account.getSelfAddress();
     }
 
-    private SignalServiceAccountManager createSignalServiceAccountManager() {
-        return new SignalServiceAccountManager(serviceConfiguration,
+    private void createSignalServiceAccountManager() {
+        this.accountManager = new SignalServiceAccountManager(serviceConfiguration,
                 new DynamicCredentialsProvider(account.getUuid(),
                         account.getUsername(),
                         account.getPassword(),
@@ -261,6 +271,18 @@ public class Manager implements Closeable {
                 userAgent,
                 groupsV2Operations,
                 timer);
+        this.groupsV2Api = accountManager.getGroupsV2Api();
+        this.pinHelper = new PinHelper(createKeyBackupService());
+    }
+
+    private KeyBackupService createKeyBackupService() {
+        KeyStore keyStore = ServiceConfig.getIasKeyStore();
+
+        return accountManager.getKeyBackupService(keyStore,
+                ServiceConfig.KEY_BACKUP_ENCLAVE_NAME,
+                ServiceConfig.KEY_BACKUP_SERVICE_ID,
+                ServiceConfig.KEY_BACKUP_MRENCLAVE,
+                10);
     }
 
     private IdentityKeyPair getIdentityKeyPair() {
@@ -366,8 +388,7 @@ public class Manager implements Closeable {
 
         // Resetting UUID, because registering doesn't work otherwise
         account.setUuid(null);
-        accountManager = createSignalServiceAccountManager();
-        this.groupsV2Api = accountManager.getGroupsV2Api();
+        createSignalServiceAccountManager();
 
         if (voiceVerification) {
             accountManager.requestVoiceVerificationCode(Locale.getDefault(),
@@ -385,8 +406,9 @@ public class Manager implements Closeable {
         accountManager.setAccountAttributes(account.getSignalingKey(),
                 account.getSignalProtocolStore().getLocalRegistrationId(),
                 true,
-                account.getRegistrationLockPin(),
-                account.getRegistrationLock(),
+                // set legacy pin only if no KBS master key is set
+                account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
+                account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
                 unidentifiedAccessHelper.getSelfUnidentifiedAccessKey(),
                 unrestrictedUnidentifiedAccess,
                 capabilities,
@@ -479,26 +501,39 @@ public class Manager implements Closeable {
         }
     }
 
-    public void verifyAccount(String verificationCode, String pin) throws IOException {
+    public void verifyAccount(
+            String verificationCode,
+            String pin
+    ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
-        // TODO make unrestricted unidentified access configurable
-        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode,
-                account.getSignalingKey(),
-                account.getSignalProtocolStore().getLocalRegistrationId(),
-                true,
-                pin,
-                null,
-                unidentifiedAccessHelper.getSelfUnidentifiedAccessKey(),
-                unrestrictedUnidentifiedAccess,
-                capabilities,
-                discoverableByPhoneNumber);
+        VerifyAccountResponse response;
+        try {
+            response = verifyAccountWithCode(verificationCode, pin, null);
+        } catch (LockedException e) {
+            if (pin == null) {
+                throw e;
+            }
 
-        UUID uuid = UuidUtil.parseOrNull(response.getUuid());
+            KbsPinData registrationLockData = pinHelper.getRegistrationLockData(pin, e);
+            if (registrationLockData == null) {
+                throw e;
+            }
+
+            String registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
+            try {
+                response = verifyAccountWithCode(verificationCode, null, registrationLock);
+            } catch (LockedException _e) {
+                throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
+            }
+            account.setPinMasterKey(registrationLockData.getMasterKey());
+        }
+
         // TODO response.isStorageCapable()
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
+
         account.setRegistered(true);
-        account.setUuid(uuid);
+        account.setUuid(UuidUtil.parseOrNull(response.getUuid()));
         account.setRegistrationLockPin(pin);
         account.getSignalProtocolStore()
                 .saveIdentity(account.getSelfAddress(),
@@ -509,13 +544,40 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    public void setRegistrationLockPin(Optional<String> pin) throws IOException {
+    private VerifyAccountResponse verifyAccountWithCode(
+            final String verificationCode, final String legacyPin, final String registrationLock
+    ) throws IOException {
+        return accountManager.verifyAccountWithCode(verificationCode,
+                account.getSignalingKey(),
+                account.getSignalProtocolStore().getLocalRegistrationId(),
+                true,
+                legacyPin,
+                registrationLock,
+                unidentifiedAccessHelper.getSelfUnidentifiedAccessKey(),
+                unrestrictedUnidentifiedAccess,
+                capabilities,
+                discoverableByPhoneNumber);
+    }
+
+    public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
         if (pin.isPresent()) {
+            final MasterKey masterKey = account.getPinMasterKey() != null
+                    ? account.getPinMasterKey()
+                    : KeyUtils.createMasterKey();
+
+            pinHelper.setRegistrationLockPin(pin.get(), masterKey);
+
             account.setRegistrationLockPin(pin.get());
-            throw new RuntimeException("Not implemented anymore, will be replaced with KBS");
+            account.setPinMasterKey(masterKey);
         } else {
-            account.setRegistrationLockPin(null);
+            // Remove legacy registration lock
             accountManager.removeRegistrationLockV1();
+
+            // Remove KBS Pin
+            pinHelper.removeRegistrationLockPin();
+
+            account.setRegistrationLockPin(null);
+            account.setPinMasterKey(null);
         }
         account.save();
     }

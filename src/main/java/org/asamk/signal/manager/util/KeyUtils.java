@@ -3,6 +3,7 @@ package org.asamk.signal.manager.util;
 import org.asamk.signal.util.RandomUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.util.Base64;
 
 public class KeyUtils {
@@ -28,6 +29,10 @@ public class KeyUtils {
 
     public static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
+    }
+
+    public static MasterKey createMasterKey() {
+        return MasterKey.createNew(RandomUtils.getSecureRandom());
     }
 
     private static String getSecret(int size) {

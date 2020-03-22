@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.IOException;
 
@@ -26,7 +27,7 @@ public class SetPinCommand implements LocalCommand {
             String registrationLockPin = ns.getString("registrationLockPin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
             return 0;
-        } catch (IOException e) {
+        } catch (IOException | UnauthenticatedResponseException e) {
             System.err.println("Set pin error: " + e.getMessage());
             return 3;
         }

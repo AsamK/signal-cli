@@ -4,6 +4,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.whispersystems.signalservice.api.KeyBackupServicePinException;
+import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
@@ -31,6 +33,12 @@ public class VerifyCommand implements LocalCommand {
             System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: "
                     + (e.getTimeRemaining() / 1000 / 60 / 60));
             System.err.println("Use '--pin PIN_CODE' to specify the registration lock PIN");
+            return 1;
+        } catch (KeyBackupServicePinException e) {
+            System.err.println("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+            return 1;
+        } catch (KeyBackupSystemNoDataException e) {
+            System.err.println("Verification failed! No KBS data.");
             return 3;
         } catch (IOException e) {
             System.err.println("Verify error: " + e.getMessage());

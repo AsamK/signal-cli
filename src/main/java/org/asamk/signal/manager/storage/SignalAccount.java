@@ -36,6 +36,7 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
@@ -66,6 +67,7 @@ public class SignalAccount implements Closeable {
     private boolean isMultiDevice = false;
     private String password;
     private String registrationLockPin;
+    private MasterKey pinMasterKey;
     private String signalingKey;
     private ProfileKey profileKey;
     private int preKeyIdOffset;
@@ -217,6 +219,10 @@ public class SignalAccount implements Closeable {
         password = Utils.getNotNullNode(rootNode, "password").asText();
         JsonNode pinNode = rootNode.get("registrationLockPin");
         registrationLockPin = pinNode == null || pinNode.isNull() ? null : pinNode.asText();
+        JsonNode pinMasterKeyNode = rootNode.get("pinMasterKey");
+        pinMasterKey = pinMasterKeyNode == null || pinMasterKeyNode.isNull()
+                ? null
+                : new MasterKey(Base64.decode(pinMasterKeyNode.asText()));
         if (rootNode.has("signalingKey")) {
             signalingKey = Utils.getNotNullNode(rootNode, "signalingKey").asText();
         }
@@ -345,6 +351,7 @@ public class SignalAccount implements Closeable {
                 .put("isMultiDevice", isMultiDevice)
                 .put("password", password)
                 .put("registrationLockPin", registrationLockPin)
+                .put("pinMasterKey", pinMasterKey == null ? null : Base64.encodeBytes(pinMasterKey.serialize()))
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
@@ -456,12 +463,16 @@ public class SignalAccount implements Closeable {
         return registrationLockPin;
     }
 
-    public String getRegistrationLock() {
-        return null; // TODO implement KBS
-    }
-
     public void setRegistrationLockPin(final String registrationLockPin) {
         this.registrationLockPin = registrationLockPin;
+    }
+
+    public MasterKey getPinMasterKey() {
+        return pinMasterKey;
+    }
+
+    public void setPinMasterKey(final MasterKey pinMasterKey) {
+        this.pinMasterKey = pinMasterKey;
     }
 
     public String getSignalingKey() {
