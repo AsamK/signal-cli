@@ -92,13 +92,14 @@ public class SignalAccount {
         return account;
     }
 
-    public static SignalAccount createLinkedAccount(String dataPath, String username, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
+    public static SignalAccount createLinkedAccount(String dataPath, String username, UUID uuid, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
 
         SignalAccount account = new SignalAccount();
         account.openFileChannel(getFileName(dataPath, username));
 
         account.username = username;
+        account.uuid = uuid;
         account.password = password;
         account.profileKey = profileKey;
         account.deviceId = deviceId;
@@ -140,6 +141,14 @@ public class SignalAccount {
             rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
         }
 
+        JsonNode uuidNode = rootNode.get("uuid");
+        if (uuidNode != null && !uuidNode.isNull()) {
+            try {
+                uuid = UUID.fromString(uuidNode.asText());
+            } catch (IllegalArgumentException e) {
+                throw new IOException("Config file contains an invalid uuid, needs to be a valid UUID", e);
+            }
+        }
         JsonNode node = rootNode.get("deviceId");
         if (node != null) {
             deviceId = node.asInt();
@@ -218,6 +227,7 @@ public class SignalAccount {
         }
         ObjectNode rootNode = jsonProcessor.createObjectNode();
         rootNode.put("username", username)
+                .put("uuid", uuid == null ? null : uuid.toString())
                 .put("deviceId", deviceId)
                 .put("isMultiDevice", isMultiDevice)
                 .put("password", password)
@@ -290,6 +300,10 @@ public class SignalAccount {
 
     public UUID getUuid() {
         return uuid;
+    }
+
+    public void setUuid(final UUID uuid) {
+        this.uuid = uuid;
     }
 
     public SignalServiceAddress getSelfAddress() {

@@ -137,6 +137,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipEntry;
@@ -176,7 +177,7 @@ public class Manager implements Signal {
     }
 
     private SignalServiceAccountManager getSignalServiceAccountManager() {
-        return new SignalServiceAccountManager(BaseConfig.serviceConfiguration, null, account.getUsername(), account.getPassword(), account.getDeviceId(), BaseConfig.USER_AGENT, timer);
+        return new SignalServiceAccountManager(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), BaseConfig.USER_AGENT, timer);
     }
 
     private IdentityKey getIdentity() {
@@ -215,9 +216,15 @@ public class Manager implements Signal {
 
         accountManager = getSignalServiceAccountManager();
         try {
-            if (account.isRegistered() && accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
-                refreshPreKeys();
-                account.save();
+            if (account.isRegistered()) {
+                if (accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
+                    refreshPreKeys();
+                    account.save();
+                }
+                if (account.getUuid() == null) {
+                    account.setUuid(accountManager.getOwnUuid());
+                    account.save();
+                }
             }
         } catch (AuthorizationFailedException e) {
             System.err.println("Authorization failed, was the number registered elsewhere?");
@@ -345,7 +352,7 @@ public class Manager implements Signal {
                 throw new IOException("Received invalid profileKey", e);
             }
         }
-        account = SignalAccount.createLinkedAccount(dataPath, username, account.getPassword(), ret.getDeviceId(), ret.getIdentity(), account.getSignalProtocolStore().getLocalRegistrationId(), account.getSignalingKey(), profileKey);
+        account = SignalAccount.createLinkedAccount(dataPath, username, ret.getUuid(), account.getPassword(), ret.getDeviceId(), ret.getIdentity(), account.getSignalProtocolStore().getLocalRegistrationId(), account.getSignalingKey(), profileKey);
 
         refreshPreKeys();
 
@@ -423,10 +430,11 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, capabilities);
+        UUID uuid = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, capabilities);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.setRegistered(true);
+        account.setUuid(uuid);
         account.setRegistrationLockPin(pin);
 
         refreshPreKeys();

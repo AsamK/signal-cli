@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_4'
+    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_5'
     compile 'org.bouncycastle:bcprov-jdk15on:1.64'
     compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     compile 'org.freedesktop.dbus:dbus-java:2.7.0'
