@@ -129,6 +129,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                             String dest = sentTranscriptMessage.getDestination().get().getNumber().get();
                             ContactInfo destContact = m.getContact(dest);
                             to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
+                        } else if (sentTranscriptMessage.getRecipients().size() > 0) {
+                            StringBuilder toBuilder = new StringBuilder();
+                            for (SignalServiceAddress dest : sentTranscriptMessage.getRecipients()) {
+                                ContactInfo destContact = m.getContact(dest.getNumber().get());
+                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ").append(dest.getNumber().get()).append(" ");
+                            }
+                            to = toBuilder.toString();
                         } else {
                             to = "Unknown";
                         }
