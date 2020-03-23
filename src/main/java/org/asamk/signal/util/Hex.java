@@ -9,6 +9,15 @@ public class Hex {
     private Hex() {
     }
 
+    public static String toString(byte[] bytes) {
+        StringBuffer buf = new StringBuffer();
+        for (final byte aByte : bytes) {
+            appendHexChar(buf, aByte);
+            buf.append(" ");
+        }
+        return buf.toString();
+    }
+
     public static String toStringCondensed(byte[] bytes) {
         StringBuffer buf = new StringBuffer();
         for (final byte aByte : bytes) {
@@ -20,7 +29,6 @@ public class Hex {
     private static void appendHexChar(StringBuffer buf, int b) {
         buf.append(HEX_DIGITS[(b >> 4) & 0xf]);
         buf.append(HEX_DIGITS[b & 0xf]);
-        buf.append(" ");
     }
 
     public static byte[] toByteArray(String s) {

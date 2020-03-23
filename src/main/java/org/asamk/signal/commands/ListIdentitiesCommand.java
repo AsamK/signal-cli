@@ -18,7 +18,7 @@ public class ListIdentitiesCommand implements LocalCommand {
     private static void printIdentityFingerprint(Manager m, String theirUsername, JsonIdentityKeyStore.Identity theirId) {
         String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirUsername, theirId.getIdentityKey()));
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirUsername,
-                theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toStringCondensed(theirId.getFingerprint()), digits));
+                theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toString(theirId.getFingerprint()), digits));
     }
 
     @Override
