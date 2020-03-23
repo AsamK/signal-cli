@@ -109,7 +109,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
                             ContactInfo fromContact = m.getContact(rm.getSender().getNumber().get());
-                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
+                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber().get() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
                     if (syncMessage.getRequest().isPresent()) {
@@ -144,7 +144,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Blocked numbers:");
                         final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
                         for (SignalServiceAddress address : blockedList.getAddresses()) {
-                            System.out.println(" - " + address.getNumber());
+                            System.out.println(" - " + address.getNumber().get());
                         }
                     }
                     if (syncMessage.getVerified().isPresent()) {
@@ -168,7 +168,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getViewOnceOpen().isPresent()) {
                         final ViewOnceOpenMessage viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
                         System.out.println("Received sync message with view once open message:");
-                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber());
+                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber().get());
                         System.out.println(" - Timestamp:" + viewOnceOpenMessage.getTimestamp());
                     }
                     if (syncMessage.getStickerPackOperations().isPresent()) {
@@ -322,7 +322,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber());
+            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber().get());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
@@ -330,7 +330,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
-            System.out.println(" Author: " + quote.getAuthor().getNumber());
+            System.out.println(" Author: " + quote.getAuthor().getNumber().get());
             System.out.println(" Text: " + quote.getText());
             if (quote.getAttachments().size() > 0) {
                 System.out.println(" Attachments: ");

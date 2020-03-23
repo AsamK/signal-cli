@@ -13,13 +13,13 @@ import java.util.List;
 
 public interface Signal extends DBusInterface {
 
-    void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
+    void sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException;
 
-    void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException;
+    void sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException;
 
-    void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions;
+    void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, InvalidNumberException;
 
-    void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException;
+    void sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException, InvalidNumberException;
 
     String getContactName(String number) throws InvalidNumberException;
 
@@ -35,7 +35,7 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId);
 
-    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException;
+    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException;
 
     boolean isRegistered();
 

@@ -55,7 +55,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
      *
      * @param name        User name, i.e. phone number
      * @param identityKey The user's public key
-     * @param trustLevel
+     * @param trustLevel  Level of trust: untrusted, trusted, trusted and verified
      * @param added       Added timestamp, if null and the key is newly added, the current time is used.
      */
     public boolean saveIdentity(String name, IdentityKey identityKey, TrustLevel trustLevel, Date added) {

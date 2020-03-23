@@ -32,6 +32,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Collection;
+import java.util.UUID;
 
 public class SignalAccount {
 
@@ -39,6 +40,7 @@ public class SignalAccount {
     private FileChannel fileChannel;
     private FileLock lock;
     private String username;
+    private UUID uuid;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private boolean isMultiDevice = false;
     private String password;
@@ -277,8 +279,12 @@ public class SignalAccount {
         return username;
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
     public SignalServiceAddress getSelfAddress() {
-        return new SignalServiceAddress(null, username);
+        return new SignalServiceAddress(uuid, username);
     }
 
     public int getDeviceId() {

@@ -171,10 +171,6 @@ public class Manager implements Signal {
         return username;
     }
 
-    private SignalServiceAddress getSelfAddress() {
-        return new SignalServiceAddress(null, username);
-    }
-
     private SignalServiceAccountManager getSignalServiceAccountManager() {
         return new SignalServiceAccountManager(BaseConfig.serviceConfiguration, null, account.getUsername(), account.getPassword(), account.getDeviceId(), BaseConfig.USER_AGENT, timer);
     }
@@ -453,11 +449,11 @@ public class Manager implements Signal {
     }
 
     private SignalServiceMessageReceiver getMessageReceiver() {
-        return new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, null, username, account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer);
+        return new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer);
     }
 
     private SignalServiceMessageSender getMessageSender() {
-        return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, null, username, account.getPassword(),
+        return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
                 account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent());
     }
 
@@ -504,7 +500,7 @@ public class Manager implements Signal {
             throw new GroupNotFoundException(groupId);
         }
         for (String member : g.members) {
-            if (member.equals(this.username)) {
+            if (member.equals(account.getUsername())) {
                 return g;
             }
         }
@@ -518,7 +514,7 @@ public class Manager implements Signal {
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
@@ -536,15 +532,15 @@ public class Manager implements Signal {
 
         final GroupInfo g = getGroupForSending(groupId);
 
+        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
         // Don't send group message to ourself
-        final List<String> membersSend = new ArrayList<>(g.members);
-        membersSend.remove(this.username);
+        membersSend.remove(account.getSelfAddress());
         sendMessageLegacy(messageBuilder, membersSend);
     }
 
     public void sendGroupMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
                                          long targetSentTimestamp, byte[] groupId)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction)
@@ -556,13 +552,13 @@ public class Manager implements Signal {
             messageBuilder.asGroupMessage(group);
         }
         final GroupInfo g = getGroupForSending(groupId);
+        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
         // Don't send group message to ourself
-        final List<String> membersSend = new ArrayList<>(g.members);
-        membersSend.remove(this.username);
+        membersSend.remove(account.getSelfAddress());
         sendMessageLegacy(messageBuilder, membersSend);
     }
 
-    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, InvalidNumberException {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
@@ -571,18 +567,18 @@ public class Manager implements Signal {
                 .asGroupMessage(group);
 
         final GroupInfo g = getGroupForSending(groupId);
-        g.members.remove(this.username);
+        g.members.remove(account.getUsername());
         account.getGroupStore().updateGroup(g);
 
-        sendMessageLegacy(messageBuilder, g.members);
+        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(g.members));
     }
 
-    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
             g = new GroupInfo(KeyUtils.createGroupId());
-            g.members.add(username);
+            g.members.add(account.getUsername());
         } else {
             g = getGroupForSending(groupId);
         }
@@ -594,13 +590,7 @@ public class Manager implements Signal {
         if (members != null) {
             Set<String> newMembers = new HashSet<>();
             for (String member : members) {
-                try {
-                    member = Utils.canonicalizeNumber(member, username);
-                } catch (InvalidNumberException e) {
-                    System.err.println("Failed to add member \"" + member + "\" to group: " + e.getMessage());
-                    System.err.println("Aborting…");
-                    System.exit(1);
-                }
+                member = Utils.canonicalizeNumber(member, account.getUsername());
                 if (g.members.contains(member)) {
                     continue;
                 }
@@ -629,29 +619,27 @@ public class Manager implements Signal {
 
         SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
 
+        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
         // Don't send group message to ourself
-        final List<String> membersSend = new ArrayList<>(g.members);
-        membersSend.remove(this.username);
+        membersSend.remove(account.getSelfAddress());
         sendMessageLegacy(messageBuilder, membersSend);
         return g.groupId;
     }
 
-    private void sendUpdateGroupMessage(byte[] groupId, String recipient) throws IOException, EncapsulatedExceptions {
+    private void sendUpdateGroupMessage(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
         if (groupId == null) {
             return;
         }
         GroupInfo g = getGroupForSending(groupId);
 
-        if (!g.members.contains(recipient)) {
+        if (!g.members.contains(recipient.getNumber().get())) {
             return;
         }
 
         SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        final List<String> membersSend = new ArrayList<>();
-        membersSend.add(recipient);
-        sendMessageLegacy(messageBuilder, membersSend);
+        sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfo g) {
@@ -680,7 +668,7 @@ public class Manager implements Signal {
         return messageBuilder;
     }
 
-    private void sendGroupInfoRequest(byte[] groupId, String recipient) throws IOException, EncapsulatedExceptions {
+    private void sendGroupInfoRequest(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
         if (groupId == null) {
             return;
         }
@@ -697,14 +685,12 @@ public class Manager implements Signal {
         }
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        final List<String> membersSend = new ArrayList<>();
-        membersSend.add(recipient);
-        sendMessageLegacy(messageBuilder, membersSend);
+        sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
     }
 
     @Override
     public void sendMessage(String message, List<String> attachments, String recipient)
-            throws EncapsulatedExceptions, AttachmentInvalidException, IOException {
+            throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException {
         List<String> recipients = new ArrayList<>(1);
         recipients.add(recipient);
         sendMessage(message, attachments, recipients);
@@ -713,7 +699,7 @@ public class Manager implements Signal {
     @Override
     public void sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             List<SignalServiceAttachment> attachmentStreams = Utils.getSignalServiceAttachments(attachments);
@@ -732,30 +718,30 @@ public class Manager implements Signal {
             messageBuilder.withAttachments(attachmentPointers);
         }
         messageBuilder.withProfileKey(account.getProfileKey().serialize());
-        sendMessageLegacy(messageBuilder, recipients);
+        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
     public void sendMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
                                     long targetSentTimestamp, List<String> recipients)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction)
                 .withProfileKey(account.getProfileKey().serialize());
-        sendMessageLegacy(messageBuilder, recipients);
+        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
     @Override
-    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions {
+    public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, InvalidNumberException {
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage();
 
-        sendMessageLegacy(messageBuilder, recipients);
+        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
     @Override
     public String getContactName(String number) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
         ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
         if (contact == null) {
             return "";
@@ -766,7 +752,7 @@ public class Manager implements Signal {
 
     @Override
     public void setContactName(String number, String name) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
         ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
         if (contact == null) {
             contact = new ContactInfo();
@@ -782,7 +768,7 @@ public class Manager implements Signal {
 
     @Override
     public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
-        number = Utils.canonicalizeNumber(number, username);
+        number = Utils.canonicalizeNumber(number, account.getUsername());
         ContactInfo contact = account.getContactStore().getContact(number);
         if (contact == null) {
             contact = new ContactInfo();
@@ -840,7 +826,7 @@ public class Manager implements Signal {
     }
 
     @Override
-    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
         if (groupId.length == 0) {
             groupId = null;
         }
@@ -858,9 +844,6 @@ public class Manager implements Signal {
 
     /**
      * Change the expiration timer for a thread (number of groupId)
-     *
-     * @param numberOrGroupId
-     * @param messageExpirationTimer
      */
     public void setExpirationTimer(String numberOrGroupId, int messageExpirationTimer) {
         ThreadInfo thread = account.getThreadStore().getThread(numberOrGroupId);
@@ -953,7 +936,7 @@ public class Manager implements Signal {
                 stickers);
     }
 
-    private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException, StickerPackInvalidException {
+    private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException {
         InputStream inputStream;
         if (zip != null) {
             inputStream = zip.getInputStream(zip.getEntry("manifest.json"));
@@ -1121,7 +1104,7 @@ public class Manager implements Signal {
     /**
      * This method throws an EncapsulatedExceptions exception instead of returning a list of SendMessageResult.
      */
-    private void sendMessageLegacy(SignalServiceDataMessage.Builder messageBuilder, Collection<String> recipients)
+    private void sendMessageLegacy(SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients)
             throws EncapsulatedExceptions, IOException {
         List<SendMessageResult> results = sendMessage(messageBuilder, recipients);
 
@@ -1143,14 +1126,24 @@ public class Manager implements Signal {
         }
     }
 
-    private List<SendMessageResult> sendMessage(SignalServiceDataMessage.Builder messageBuilder, Collection<String> recipients)
-            throws IOException {
-        Set<SignalServiceAddress> recipientsTS = Utils.getSignalServiceAddresses(recipients, username);
-        if (recipientsTS == null) {
-            account.save();
-            return Collections.emptyList();
-        }
+    private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
+        final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
+        final String username = account.getUsername();
 
+        for (String number : numbers) {
+            String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+            if (canonicalizedNumber.equals(username)) {
+                signalServiceAddresses.add(account.getSelfAddress());
+            } else {
+                // TODO get corresponding uuid
+                signalServiceAddresses.add(new SignalServiceAddress(null, canonicalizedNumber));
+            }
+        }
+        return signalServiceAddresses;
+    }
+
+    private List<SendMessageResult> sendMessage(SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients)
+            throws IOException {
         if (messagePipe == null) {
             messagePipe = getMessageReceiver().createMessagePipe();
         }
@@ -1165,7 +1158,7 @@ public class Manager implements Signal {
             if (message.getGroupInfo().isPresent()) {
                 try {
                     final boolean isRecipientUpdate = false;
-                    List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipientsTS), getAccessFor(recipientsTS), isRecipientUpdate, message);
+                    List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipients), getAccessFor(recipients), isRecipientUpdate, message);
                     for (SendMessageResult r : result) {
                         if (r.getIdentityFailure() != null) {
                             account.getSignalProtocolStore().saveIdentity(r.getAddress().getNumber().get(), r.getIdentityFailure().getIdentityKey(), TrustLevel.UNTRUSTED);
@@ -1176,8 +1169,8 @@ public class Manager implements Signal {
                     account.getSignalProtocolStore().saveIdentity(e.getIdentifier(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                     return Collections.emptyList();
                 }
-            } else if (recipientsTS.size() == 1 && recipientsTS.contains(getSelfAddress())) {
-                SignalServiceAddress recipient = getSelfAddress();
+            } else if (recipients.size() == 1 && recipients.contains(account.getSelfAddress())) {
+                SignalServiceAddress recipient = account.getSelfAddress();
                 final Optional<UnidentifiedAccessPair> unidentifiedAccess = getAccessFor(recipient);
                 SentTranscriptMessage transcript = new SentTranscriptMessage(Optional.of(recipient),
                         message.getTimestamp(),
@@ -1187,7 +1180,7 @@ public class Manager implements Signal {
                         false);
                 SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
-                List<SendMessageResult> results = new ArrayList<>(recipientsTS.size());
+                List<SendMessageResult> results = new ArrayList<>(recipients.size());
                 try {
                     messageSender.sendMessage(syncMessage, unidentifiedAccess);
                 } catch (UntrustedIdentityException e) {
@@ -1197,8 +1190,8 @@ public class Manager implements Signal {
                 return results;
             } else {
                 // Send to all individually, so sync messages are sent correctly
-                List<SendMessageResult> results = new ArrayList<>(recipientsTS.size());
-                for (SignalServiceAddress address : recipientsTS) {
+                List<SendMessageResult> results = new ArrayList<>(recipients.size());
+                for (SignalServiceAddress address : recipients) {
                     ThreadInfo thread = account.getThreadStore().getThread(address.getNumber().get());
                     if (thread != null) {
                         messageBuilder.withExpiration(thread.messageExpirationTime);
@@ -1218,7 +1211,7 @@ public class Manager implements Signal {
             }
         } finally {
             if (message != null && message.isEndSession()) {
-                for (SignalServiceAddress recipient : recipientsTS) {
+                for (SignalServiceAddress recipient : recipients) {
                     handleEndSession(recipient.getNumber().get());
                 }
             }
@@ -1227,7 +1220,7 @@ public class Manager implements Signal {
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException, UnsupportedDataMessageException {
-        SignalServiceCipher cipher = new SignalServiceCipher(getSelfAddress(), account.getSignalProtocolStore(), Utils.getCertificateValidator());
+        SignalServiceCipher cipher = new SignalServiceCipher(account.getSelfAddress(), account.getSignalProtocolStore(), Utils.getCertificateValidator());
         try {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
@@ -1241,7 +1234,7 @@ public class Manager implements Signal {
         account.getSignalProtocolStore().deleteAllSessions(source);
     }
 
-    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, String source, SignalServiceAddress destination, boolean ignoreAttachments) {
+    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, SignalServiceAddress source, SignalServiceAddress destination, boolean ignoreAttachments) {
         String threadId;
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
@@ -1291,7 +1284,7 @@ public class Manager implements Signal {
                             e.printStackTrace();
                         }
                     } else {
-                        group.members.remove(source);
+                        group.members.remove(source.getNumber().get());
                         account.getGroupStore().updateGroup(group);
                     }
                     break;
@@ -1311,11 +1304,11 @@ public class Manager implements Signal {
             if (isSync) {
                 threadId = destination.getNumber().get();
             } else {
-                threadId = source;
+                threadId = source.getNumber().get();
             }
         }
         if (message.isEndSession()) {
-            handleEndSession(isSync ? destination.getNumber().get() : source);
+            handleEndSession(isSync ? destination.getNumber().get() : source.getNumber().get());
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             ThreadInfo thread = account.getThreadStore().getThread(threadId);
@@ -1340,16 +1333,16 @@ public class Manager implements Signal {
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
-            if (source.equals(username)) {
+            if (source.equals(account.getSelfAddress())) {
                 try {
                     this.account.setProfileKey(new ProfileKey(message.getProfileKey().get()));
                 } catch (InvalidInputException ignored) {
                 }
             }
-            ContactInfo contact = account.getContactStore().getContact(source);
+            ContactInfo contact = account.getContactStore().getContact(source.getNumber().get());
             if (contact == null) {
                 contact = new ContactInfo();
-                contact.number = source;
+                contact.number = source.getNumber().get();
             }
             contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
             account.getContactStore().updateContact(contact);
@@ -1516,14 +1509,14 @@ public class Manager implements Signal {
             }
             if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
-                handleSignalServiceDataMessage(message, false, sender.getNumber().get(), getSelfAddress(), ignoreAttachments);
+                handleSignalServiceDataMessage(message, false, sender, account.getSelfAddress(), ignoreAttachments);
             }
             if (content.getSyncMessage().isPresent()) {
                 account.setMultiDevice(true);
                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
                     SentTranscriptMessage message = syncMessage.getSent().get();
-                    handleSignalServiceDataMessage(message.getMessage(), true, sender.getNumber().get(), message.getDestination().orNull(), ignoreAttachments);
+                    handleSignalServiceDataMessage(message.getMessage(), true, sender, message.getDestination().orNull(), ignoreAttachments);
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();
@@ -1567,7 +1560,10 @@ public class Manager implements Signal {
                                 }
                                 syncGroup.addMembers(g.getMembers());
                                 if (!g.isActive()) {
-                                    syncGroup.members.remove(username);
+                                    syncGroup.members.remove(account.getUsername());
+                                } else {
+                                    // Add ourself to the member set as it's marked as active
+                                    syncGroup.members.add(account.getUsername());
                                 }
                                 syncGroup.blocked = g.isBlocked();
                                 if (g.getColor().isPresent()) {
@@ -1784,7 +1780,7 @@ public class Manager implements Signal {
                     ThreadInfo info = account.getThreadStore().getThread(Base64.encodeBytes(record.groupId));
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
-                            record.members.contains(username), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            record.members.contains(account.getUsername()), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
                             Optional.fromNullable(record.color), record.blocked, Optional.fromNullable(record.inboxPosition), record.archived));
                 }
             }
@@ -1910,7 +1906,7 @@ public class Manager implements Signal {
     }
 
     public Pair<String, List<JsonIdentityKeyStore.Identity>> getIdentities(String number) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
+        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
         return new Pair<>(canonicalizedNumber, account.getSignalProtocolStore().getIdentities(canonicalizedNumber));
     }
 
@@ -1995,7 +1991,7 @@ public class Manager implements Signal {
     }
 
     public String computeSafetyNumber(String theirUsername, IdentityKey theirIdentityKey) {
-        return Utils.computeSafetyNumber(username, getIdentity(), theirUsername, theirIdentityKey);
+        return Utils.computeSafetyNumber(account.getUsername(), getIdentity(), theirUsername, theirIdentityKey);
     }
 
     public interface ReceiveMessageHandler {

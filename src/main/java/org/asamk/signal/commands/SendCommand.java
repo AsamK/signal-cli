@@ -13,6 +13,7 @@ import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -25,6 +26,7 @@ import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
 import static org.asamk.signal.util.ErrorUtils.handleIOException;
+import static org.asamk.signal.util.ErrorUtils.handleInvalidNumberException;
 import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class SendCommand implements DbusCommand {
@@ -74,6 +76,9 @@ public class SendCommand implements DbusCommand {
                 return 1;
             } catch (DBusExecutionException e) {
                 handleDBusExecutionException(e);
+                return 1;
+            } catch (InvalidNumberException e) {
+                handleInvalidNumberException(e);
                 return 1;
             }
         }
@@ -125,6 +130,9 @@ public class SendCommand implements DbusCommand {
             return 1;
         } catch (GroupIdFormatException e) {
             handleGroupIdFormatException(e);
+            return 1;
+        } catch (InvalidNumberException e) {
+            handleInvalidNumberException(e);
             return 1;
         }
     }

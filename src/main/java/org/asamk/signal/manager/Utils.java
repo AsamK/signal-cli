@@ -35,12 +35,9 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
@@ -149,27 +146,8 @@ class Utils {
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }
 
-    static Set<SignalServiceAddress> getSignalServiceAddresses(Collection<String> recipients, String localNumber) {
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient, localNumber));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                return null;
-            }
-        }
-        return recipientsTS;
-    }
-
     static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {
         return PhoneNumberFormatter.formatNumber(number, localNumber);
-    }
-
-    private static SignalServiceAddress getPushAddress(String number, String localNumber) throws InvalidNumberException {
-        String e164number = canonicalizeNumber(number, localNumber);
-        return new SignalServiceAddress(null, e164number);
     }
 
     static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
