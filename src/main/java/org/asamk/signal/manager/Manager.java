@@ -171,6 +171,10 @@ public class Manager implements Signal {
         return username;
     }
 
+    public SignalServiceAddress getSelfAddress() {
+        return account.getSelfAddress();
+    }
+
     private SignalServiceAccountManager getSignalServiceAccountManager() {
         return new SignalServiceAccountManager(BaseConfig.serviceConfiguration, null, account.getUsername(), account.getPassword(), account.getDeviceId(), BaseConfig.USER_AGENT, timer);
     }
@@ -499,12 +503,10 @@ public class Manager implements Signal {
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
-        for (String member : g.members) {
-            if (member.equals(account.getUsername())) {
-                return g;
-            }
+        if (!g.isMember(account.getSelfAddress())) {
+            throw new NotAGroupMemberException(groupId, g.name);
         }
-        throw new NotAGroupMemberException(groupId, g.name);
+        return g;
     }
 
     public List<GroupInfo> getGroups() {
@@ -514,7 +516,7 @@ public class Manager implements Signal {
     @Override
     public void sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
@@ -532,15 +534,12 @@ public class Manager implements Signal {
 
         final GroupInfo g = getGroupForSending(groupId);
 
-        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
-        // Don't send group message to ourself
-        membersSend.remove(account.getSelfAddress());
-        sendMessageLegacy(messageBuilder, membersSend);
+        sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
     public void sendGroupMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
                                          long targetSentTimestamp, byte[] groupId)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction)
@@ -552,13 +551,10 @@ public class Manager implements Signal {
             messageBuilder.asGroupMessage(group);
         }
         final GroupInfo g = getGroupForSending(groupId);
-        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
-        // Don't send group message to ourself
-        membersSend.remove(account.getSelfAddress());
-        sendMessageLegacy(messageBuilder, membersSend);
+        sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, InvalidNumberException {
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
@@ -567,18 +563,18 @@ public class Manager implements Signal {
                 .asGroupMessage(group);
 
         final GroupInfo g = getGroupForSending(groupId);
-        g.members.remove(account.getUsername());
+        g.removeMember(account.getSelfAddress());
         account.getGroupStore().updateGroup(g);
 
-        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(g.members));
+        sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<String> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
+    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<SignalServiceAddress> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
             g = new GroupInfo(KeyUtils.createGroupId());
-            g.members.add(account.getUsername());
+            g.addMembers(Collections.singleton(account.getSelfAddress()));
         } else {
             g = getGroupForSending(groupId);
         }
@@ -588,25 +584,26 @@ public class Manager implements Signal {
         }
 
         if (members != null) {
-            Set<String> newMembers = new HashSet<>();
-            for (String member : members) {
-                member = Utils.canonicalizeNumber(member, account.getUsername());
-                if (g.members.contains(member)) {
+            final Set<String> newE164Members = new HashSet<>();
+            for (SignalServiceAddress member : members) {
+                if (g.isMember(member) || !member.getNumber().isPresent()) {
                     continue;
                 }
-                newMembers.add(member);
-                g.members.add(member);
+                newE164Members.add(member.getNumber().get());
             }
-            final List<ContactTokenDetails> contacts = accountManager.getContacts(newMembers);
-            if (contacts.size() != newMembers.size()) {
+
+            final List<ContactTokenDetails> contacts = accountManager.getContacts(newE164Members);
+            if (contacts.size() != newE164Members.size()) {
                 // Some of the new members are not registered on Signal
                 for (ContactTokenDetails contact : contacts) {
-                    newMembers.remove(contact.getNumber());
+                    newE164Members.remove(contact.getNumber());
                 }
-                System.err.println("Failed to add members " + Util.join(", ", newMembers) + " to group: Not registered on Signal");
+                System.err.println("Failed to add members " + Util.join(", ", newE164Members) + " to group: Not registered on Signal");
                 System.err.println("Aborting…");
                 System.exit(1);
             }
+
+            g.addMembers(members);
         }
 
         if (avatarFile != null) {
@@ -619,10 +616,7 @@ public class Manager implements Signal {
 
         SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
 
-        final Collection<SignalServiceAddress> membersSend = getSignalServiceAddresses(g.members);
-        // Don't send group message to ourself
-        membersSend.remove(account.getSelfAddress());
-        sendMessageLegacy(messageBuilder, membersSend);
+        sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
         return g.groupId;
     }
 
@@ -632,7 +626,7 @@ public class Manager implements Signal {
         }
         GroupInfo g = getGroupForSending(groupId);
 
-        if (!g.members.contains(recipient.getNumber().get())) {
+        if (!g.isMember(recipient)) {
             return;
         }
 
@@ -819,9 +813,9 @@ public class Manager implements Signal {
     public List<String> getGroupMembers(byte[] groupId) {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         } else {
-            return new ArrayList<>(group.members);
+            return new ArrayList<>(group.getMembersE164());
         }
     }
 
@@ -839,7 +833,7 @@ public class Manager implements Signal {
         if (avatar.isEmpty()) {
             avatar = null;
         }
-        return sendUpdateGroupMessage(groupId, name, members, avatar);
+        return sendUpdateGroupMessage(groupId, name, members == null ? null : getSignalServiceAddresses(members), avatar);
     }
 
     /**
@@ -1284,7 +1278,7 @@ public class Manager implements Signal {
                             e.printStackTrace();
                         }
                     } else {
-                        group.members.remove(source.getNumber().get());
+                        group.removeMember(source);
                         account.getGroupStore().updateGroup(group);
                     }
                     break;
@@ -1559,10 +1553,10 @@ public class Manager implements Signal {
                                 }
                                 syncGroup.addMembers(g.getMembers());
                                 if (!g.isActive()) {
-                                    syncGroup.members.remove(account.getUsername());
+                                    syncGroup.removeMember(account.getSelfAddress());
                                 } else {
                                     // Add ourself to the member set as it's marked as active
-                                    syncGroup.members.add(account.getUsername());
+                                    syncGroup.addMembers(Collections.singleton(account.getSelfAddress()));
                                 }
                                 syncGroup.blocked = g.isBlocked();
                                 if (g.getColor().isPresent()) {
@@ -1778,7 +1772,7 @@ public class Manager implements Signal {
                     ThreadInfo info = account.getThreadStore().getThread(Base64.encodeBytes(record.groupId));
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
-                            record.members.contains(account.getUsername()), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            record.isMember(account.getSelfAddress()), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
                             Optional.fromNullable(record.color), record.blocked, Optional.fromNullable(record.inboxPosition), record.archived));
                 }
             }
