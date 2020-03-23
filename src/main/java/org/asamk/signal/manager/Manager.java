@@ -31,7 +31,6 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
-import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
@@ -527,12 +526,10 @@ public class Manager implements Signal {
                     .build();
             messageBuilder.asGroupMessage(group);
         }
-        ThreadInfo thread = account.getThreadStore().getThread(Base64.encodeBytes(groupId));
-        if (thread != null) {
-            messageBuilder.withExpiration(thread.messageExpirationTime);
-        }
 
         final GroupInfo g = getGroupForSending(groupId);
+
+        messageBuilder.withExpiration(g.messageExpirationTime);
 
         sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
@@ -651,15 +648,9 @@ public class Manager implements Signal {
             }
         }
 
-        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build());
-
-        ThreadInfo thread = account.getThreadStore().getThread(Base64.encodeBytes(g.groupId));
-        if (thread != null) {
-            messageBuilder.withExpiration(thread.messageExpirationTime);
-        }
-
-        return messageBuilder;
+        return SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build())
+                .withExpiration(g.messageExpirationTime);
     }
 
     private void sendGroupInfoRequest(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
@@ -672,11 +663,6 @@ public class Manager implements Signal {
 
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build());
-
-        ThreadInfo thread = account.getThreadStore().getThread(Base64.encodeBytes(groupId));
-        if (thread != null) {
-            messageBuilder.withExpiration(thread.messageExpirationTime);
-        }
 
         // Send group info request message to the recipient who sent us a message with this groupId
         sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
@@ -837,12 +823,21 @@ public class Manager implements Signal {
     }
 
     /**
-     * Change the expiration timer for a thread (number of groupId)
+     * Change the expiration timer for a contact
      */
-    public void setExpirationTimer(String numberOrGroupId, int messageExpirationTimer) {
-        ThreadInfo thread = account.getThreadStore().getThread(numberOrGroupId);
-        thread.messageExpirationTime = messageExpirationTimer;
-        account.getThreadStore().updateThread(thread);
+    public void setExpirationTimer(SignalServiceAddress address, int messageExpirationTimer) {
+        ContactInfo c = account.getContactStore().getContact(address);
+        c.messageExpirationTime = messageExpirationTimer;
+        account.getContactStore().updateContact(c);
+    }
+
+    /**
+     * Change the expiration timer for a group
+     */
+    public void setExpirationTimer(byte[] groupId, int messageExpirationTimer) {
+        GroupInfo g = account.getGroupStore().getGroup(groupId);
+        g.messageExpirationTime = messageExpirationTimer;
+        account.getGroupStore().updateGroup(g);
     }
 
     /**
@@ -1186,9 +1181,9 @@ public class Manager implements Signal {
                 // Send to all individually, so sync messages are sent correctly
                 List<SendMessageResult> results = new ArrayList<>(recipients.size());
                 for (SignalServiceAddress address : recipients) {
-                    ThreadInfo thread = account.getThreadStore().getThread(address.getNumber().get());
-                    if (thread != null) {
-                        messageBuilder.withExpiration(thread.messageExpirationTime);
+                    ContactInfo contact = account.getContactStore().getContact(address);
+                    if (contact != null) {
+                        messageBuilder.withExpiration(contact.messageExpirationTime);
                     } else {
                         messageBuilder.withExpiration(0);
                     }
@@ -1229,10 +1224,8 @@ public class Manager implements Signal {
     }
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, SignalServiceAddress source, SignalServiceAddress destination, boolean ignoreAttachments) {
-        String threadId;
         if (message.getGroupInfo().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupInfo().get();
-            threadId = Base64.encodeBytes(groupInfo.getGroupId());
             GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
             switch (groupInfo.getType()) {
                 case UPDATE:
@@ -1294,25 +1287,30 @@ public class Manager implements Signal {
                     }
                     break;
             }
-        } else {
-            if (isSync) {
-                threadId = destination.getNumber().get();
-            } else {
-                threadId = source.getNumber().get();
-            }
         }
         if (message.isEndSession()) {
             handleEndSession(isSync ? destination.getNumber().get() : source.getNumber().get());
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
-            ThreadInfo thread = account.getThreadStore().getThread(threadId);
-            if (thread == null) {
-                thread = new ThreadInfo();
-                thread.id = threadId;
-            }
-            if (thread.messageExpirationTime != message.getExpiresInSeconds()) {
-                thread.messageExpirationTime = message.getExpiresInSeconds();
-                account.getThreadStore().updateThread(thread);
+            if (message.getGroupInfo().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+                GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
+                if (group == null) {
+                    group = new GroupInfo(groupInfo.getGroupId());
+                }
+                if (group.messageExpirationTime != message.getExpiresInSeconds()) {
+                    group.messageExpirationTime = message.getExpiresInSeconds();
+                    account.getGroupStore().updateGroup(group);
+                }
+            } else {
+                ContactInfo contact = account.getContactStore().getContact(isSync ? destination : source);
+                if (contact == null) {
+                    contact = new ContactInfo(isSync ? destination : source);
+                }
+                if (contact.messageExpirationTime != message.getExpiresInSeconds()) {
+                    contact.messageExpirationTime = message.getExpiresInSeconds();
+                    account.getContactStore().updateContact(contact);
+                }
             }
         }
         if (message.getAttachments().isPresent() && !ignoreAttachments) {
@@ -1635,13 +1633,7 @@ public class Manager implements Signal {
                                     account.getSignalProtocolStore().saveIdentity(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                                 }
                                 if (c.getExpirationTimer().isPresent()) {
-                                    ThreadInfo thread = account.getThreadStore().getThread(c.getAddress().getNumber().get());
-                                    if (thread == null) {
-                                        thread = new ThreadInfo();
-                                        thread.id = c.getAddress().getNumber().get();
-                                    }
-                                    thread.messageExpirationTime = c.getExpirationTimer().get();
-                                    account.getThreadStore().updateThread(thread);
+                                    contact.messageExpirationTime = c.getExpirationTimer().get();
                                 }
                                 contact.blocked = c.isBlocked();
                                 contact.inboxPosition = c.getInboxPosition().orNull();
@@ -1769,10 +1761,9 @@ public class Manager implements Signal {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
                 DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(fos);
                 for (GroupInfo record : account.getGroupStore().getGroups()) {
-                    ThreadInfo info = account.getThreadStore().getThread(Base64.encodeBytes(record.groupId));
                     out.write(new DeviceGroup(record.groupId, Optional.fromNullable(record.name),
                             new ArrayList<>(record.getMembers()), createGroupAvatarAttachment(record.groupId),
-                            record.isMember(account.getSelfAddress()), Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            record.isMember(account.getSelfAddress()), Optional.of(record.messageExpirationTime),
                             Optional.fromNullable(record.color), record.blocked, Optional.fromNullable(record.inboxPosition), record.archived));
                 }
             }
@@ -1805,7 +1796,6 @@ public class Manager implements Signal {
                 DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : account.getContactStore().getContacts()) {
                     VerifiedMessage verifiedMessage = null;
-                    ThreadInfo info = account.getThreadStore().getThread(record.number);
                     if (getIdentities().containsKey(record.number)) {
                         JsonIdentityKeyStore.Identity currentIdentity = null;
                         for (JsonIdentityKeyStore.Identity id : getIdentities().get(record.number)) {
@@ -1826,7 +1816,7 @@ public class Manager implements Signal {
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
-                            Optional.fromNullable(info != null ? info.messageExpirationTime : null),
+                            Optional.of(record.messageExpirationTime),
                             Optional.fromNullable(record.inboxPosition), record.archived));
                 }
 

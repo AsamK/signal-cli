@@ -37,6 +37,8 @@ public class GroupInfo {
     public Set<SignalServiceAddress> members = new HashSet<>();
     @JsonProperty
     public String color;
+    @JsonProperty(defaultValue = "0")
+    public int messageExpirationTime;
     @JsonProperty(defaultValue = "false")
     public boolean blocked;
     @JsonProperty
@@ -54,7 +56,7 @@ public class GroupInfo {
         this.groupId = groupId;
     }
 
-    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<SignalServiceAddress> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked, @JsonProperty("inboxPosition") Integer inboxPosition, @JsonProperty("archived") boolean archived) {
+    public GroupInfo(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<SignalServiceAddress> members, @JsonProperty("avatarId") long avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked, @JsonProperty("inboxPosition") Integer inboxPosition, @JsonProperty("archived") boolean archived, @JsonProperty("messageExpirationTime") int messageExpirationTime) {
         this.groupId = groupId;
         this.name = name;
         this.members.addAll(members);
@@ -63,6 +65,7 @@ public class GroupInfo {
         this.blocked = blocked;
         this.inboxPosition = inboxPosition;
         this.archived = archived;
+        this.messageExpirationTime = messageExpirationTime;
     }
 
     @JsonIgnore

@@ -21,6 +21,9 @@ public class ContactInfo {
     @JsonProperty
     public String color;
 
+    @JsonProperty(defaultValue = "0")
+    public int messageExpirationTime;
+
     @JsonProperty
     public String profileKey;
 

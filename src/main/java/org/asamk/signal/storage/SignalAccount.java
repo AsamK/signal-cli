@@ -10,10 +10,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
+import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
-import org.asamk.signal.storage.threads.JsonThreadStore;
+import org.asamk.signal.storage.threads.LegacyJsonThreadStore;
+import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.zkgroup.InvalidInputException;
@@ -55,7 +58,6 @@ public class SignalAccount {
     private JsonSignalProtocolStore signalProtocolStore;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
-    private JsonThreadStore threadStore;
 
     private SignalAccount() {
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
@@ -84,7 +86,6 @@ public class SignalAccount {
         account.profileKey = profileKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore();
-        account.threadStore = new JsonThreadStore();
         account.contactStore = new JsonContactsStore();
         account.registered = false;
 
@@ -104,7 +105,6 @@ public class SignalAccount {
         account.signalingKey = signalingKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore();
-        account.threadStore = new JsonThreadStore();
         account.contactStore = new JsonContactsStore();
         account.registered = true;
         account.isMultiDevice = true;
@@ -191,10 +191,24 @@ public class SignalAccount {
         }
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
-            threadStore = jsonProcessor.convertValue(threadStoreNode, JsonThreadStore.class);
-        }
-        if (threadStore == null) {
-            threadStore = new JsonThreadStore();
+            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
+            // Migrate thread info to group and contact store
+            for (ThreadInfo thread : threadStore.getThreads()) {
+                try {
+                    ContactInfo contactInfo = contactStore.getContact(new SignalServiceAddress(null, thread.id));
+                    if (contactInfo != null) {
+                        contactInfo.messageExpirationTime = thread.messageExpirationTime;
+                        contactStore.updateContact(contactInfo);
+                    } else {
+                        GroupInfo groupInfo = groupStore.getGroup(Base64.decode(thread.id));
+                        if (groupInfo != null) {
+                            groupInfo.messageExpirationTime = thread.messageExpirationTime;
+                            groupStore.updateGroup(groupInfo);
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
         }
     }
 
@@ -216,7 +230,6 @@ public class SignalAccount {
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
-                .putPOJO("threadStore", threadStore)
         ;
         try {
             synchronized (fileChannel) {
@@ -269,10 +282,6 @@ public class SignalAccount {
 
     public JsonContactsStore getContactStore() {
         return contactStore;
-    }
-
-    public JsonThreadStore getThreadStore() {
-        return threadStore;
     }
 
     public String getUsername() {

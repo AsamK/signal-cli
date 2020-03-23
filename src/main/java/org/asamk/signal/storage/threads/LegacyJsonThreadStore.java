@@ -18,12 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JsonThreadStore {
+public class LegacyJsonThreadStore {
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     @JsonProperty("threads")
-    @JsonSerialize(using = JsonThreadStore.MapToListSerializer.class)
+    @JsonSerialize(using = MapToListSerializer.class)
     @JsonDeserialize(using = ThreadsDeserializer.class)
     private Map<String, ThreadInfo> threads = new HashMap<>();
 
