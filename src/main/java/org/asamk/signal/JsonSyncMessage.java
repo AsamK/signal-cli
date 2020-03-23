@@ -4,14 +4,13 @@ import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 enum JsonSyncMessageType {
-  CONTACTS_SYNC,
-  GROUPS_SYNC,
-  REQUEST_SYNC
+    CONTACTS_SYNC,
+    GROUPS_SYNC,
+    REQUEST_SYNC
 }
 
 class JsonSyncMessage {
@@ -22,25 +21,25 @@ class JsonSyncMessage {
     JsonSyncMessageType type;
 
     JsonSyncMessage(SignalServiceSyncMessage syncMessage) {
-       if (syncMessage.getSent().isPresent()) {
-           this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get());
-       }
-       if (syncMessage.getBlockedList().isPresent()) {
-           this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
-           for (SignalServiceAddress address : syncMessage.getBlockedList().get().getAddresses()) {
-               this.blockedNumbers.add(address.getNumber().get());
-           }
-       }
-       if (syncMessage.getRead().isPresent()) {
-           this.readMessages = syncMessage.getRead().get();
-       }
+        if (syncMessage.getSent().isPresent()) {
+            this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get());
+        }
+        if (syncMessage.getBlockedList().isPresent()) {
+            this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
+            for (SignalServiceAddress address : syncMessage.getBlockedList().get().getAddresses()) {
+                this.blockedNumbers.add(address.getNumber().get());
+            }
+        }
+        if (syncMessage.getRead().isPresent()) {
+            this.readMessages = syncMessage.getRead().get();
+        }
 
-       if (syncMessage.getContacts().isPresent()) {
-           this.type = JsonSyncMessageType.CONTACTS_SYNC;
-       } else if (syncMessage.getGroups().isPresent()) {
-           this.type = JsonSyncMessageType.GROUPS_SYNC;
-       } else if (syncMessage.getRequest().isPresent()) {
-           this.type = JsonSyncMessageType.REQUEST_SYNC;
-       }
-   }
+        if (syncMessage.getContacts().isPresent()) {
+            this.type = JsonSyncMessageType.CONTACTS_SYNC;
+        } else if (syncMessage.getGroups().isPresent()) {
+            this.type = JsonSyncMessageType.GROUPS_SYNC;
+        } else if (syncMessage.getRequest().isPresent()) {
+            this.type = JsonSyncMessageType.REQUEST_SYNC;
+        }
+    }
 }

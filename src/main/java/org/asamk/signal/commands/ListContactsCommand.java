@@ -5,9 +5,11 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
+
 import java.util.List;
 
 public class ListContactsCommand implements LocalCommand {
+
     @Override
     public void attachToSubparser(final Subparser subparser) {
     }
