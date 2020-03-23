@@ -80,6 +80,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload.StickerInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
@@ -666,6 +667,14 @@ public class Manager implements Signal {
 
         // Send group info request message to the recipient who sent us a message with this groupId
         sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
+    }
+
+    private void sendReceipt(SignalServiceAddress remoteAddress, long messageId) throws IOException, UntrustedIdentityException {
+        SignalServiceReceiptMessage receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
+                Collections.singletonList(messageId),
+                System.currentTimeMillis());
+
+        getMessageSender().sendReceipt(remoteAddress, getAccessFor(remoteAddress), receiptMessage);
     }
 
     @Override
@@ -1500,6 +1509,15 @@ public class Manager implements Signal {
             }
             if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
+
+                if (content.isNeedsReceipt()) {
+                    try {
+                        sendReceipt(sender, message.getTimestamp());
+                    } catch (IOException | UntrustedIdentityException e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 handleSignalServiceDataMessage(message, false, sender, account.getSelfAddress(), ignoreAttachments);
             }
             if (content.getSyncMessage().isPresent()) {
