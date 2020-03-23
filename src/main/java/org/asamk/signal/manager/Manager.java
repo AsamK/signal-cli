@@ -81,8 +81,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifest;
-import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifest.StickerInfo;
+import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
+import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload.StickerInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
@@ -108,13 +108,10 @@ import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
-import org.whispersystems.signalservice.internal.push.StickerUploadAttributes;
-import org.whispersystems.signalservice.internal.push.StickerUploadAttributesResponse;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -123,6 +120,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -131,7 +130,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -870,8 +868,42 @@ public class Manager implements Signal {
         account.getThreadStore().updateThread(thread);
     }
 
+    /**
+     * Upload the sticker pack from path.
+     *
+     * @param path Path can be a path to a manifest.json file or to a zip file that contains a manifest.json file
+     * @return if successful, returns the URL to install the sticker pack in the signal app
+     */
     public String uploadStickerPack(String path) throws IOException, StickerPackInvalidException {
-        JsonStickerPack pack = parseStickerPack(path);
+        SignalServiceStickerManifestUpload manifest = getSignalServiceStickerManifestUpload(path);
+
+        SignalServiceMessageSender messageSender = getMessageSender();
+
+        byte[] packKey = KeyUtils.createStickerUploadKey();
+        String packId = messageSender.uploadStickerManifest(manifest, packKey);
+
+        try {
+            return new URI("https", "signal.art", "/addstickers/", "pack_id=" + URLEncoder.encode(packId, "utf-8") + "&pack_key=" + URLEncoder.encode(Hex.toStringCondensed(packKey), "utf-8"))
+                    .toString();
+        } catch (URISyntaxException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private SignalServiceStickerManifestUpload getSignalServiceStickerManifestUpload(final String path) throws IOException, StickerPackInvalidException {
+        ZipFile zip = null;
+        String rootPath = null;
+
+        final File file = new File(path);
+        if (file.getName().endsWith(".zip")) {
+            zip = new ZipFile(file);
+        } else if (file.getName().equals("manifest.json")) {
+            rootPath = file.getParent();
+        } else {
+            throw new StickerPackInvalidException("Could not find manifest.json");
+        }
+
+        JsonStickerPack pack = parseStickerPack(rootPath, zip);
 
         if (pack.stickers == null) {
             throw new StickerPackInvalidException("Must set a 'stickers' field.");
@@ -882,124 +914,63 @@ public class Manager implements Signal {
         }
 
         List<StickerInfo> stickers = new ArrayList<>(pack.stickers.size());
-        for (int i = 0; i < pack.stickers.size(); i++) {
-            if (pack.stickers.get(i).file == null) {
+        for (JsonStickerPack.JsonSticker sticker : pack.stickers) {
+            if (sticker.file == null) {
                 throw new StickerPackInvalidException("Must set a 'file' field on each sticker.");
             }
-            if (!stickerDataContainsPath(path, pack.stickers.get(i).file)) {
-                throw new StickerPackInvalidException("Could not find find " + pack.stickers.get(i).file);
+
+            Pair<InputStream, Long> data;
+            try {
+                data = getInputStreamAndLength(rootPath, zip, sticker.file);
+            } catch (IOException ignored) {
+                throw new StickerPackInvalidException("Could not find find " + sticker.file);
             }
 
-            StickerInfo stickerInfo = new StickerInfo(i, Optional.fromNullable(pack.stickers.get(i).emoji).or(""));
+            StickerInfo stickerInfo = new StickerInfo(data.first(), data.second(), Optional.fromNullable(sticker.emoji).or(""));
             stickers.add(stickerInfo);
         }
 
-        boolean uniqueCover = false;
-        StickerInfo cover = stickers.get(0);
+        StickerInfo cover = null;
         if (pack.cover != null) {
             if (pack.cover.file == null) {
                 throw new StickerPackInvalidException("Must set a 'file' field on the cover.");
             }
-            if (!stickerDataContainsPath(path, pack.cover.file)) {
-                throw new StickerPackInvalidException("Could not find find cover " + pack.cover.file);
+
+            Pair<InputStream, Long> data;
+            try {
+                data = getInputStreamAndLength(rootPath, zip, pack.cover.file);
+            } catch (IOException ignored) {
+                throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
             }
 
-            uniqueCover = true;
-            cover = new StickerInfo(pack.stickers.size(), Optional.fromNullable(pack.cover.emoji).or(""));
+            cover = new StickerInfo(data.first(), data.second(), Optional.fromNullable(pack.cover.emoji).or(""));
         }
 
-        SignalServiceStickerManifest manifest = new SignalServiceStickerManifest(
-                Optional.fromNullable(pack.title).or(""),
-                Optional.fromNullable(pack.author).or(""),
+        return new SignalServiceStickerManifestUpload(
+                pack.title,
+                pack.author,
                 cover,
                 stickers);
-
-        SignalServiceMessageSender messageSender = new SignalServiceMessageSender(
-                BaseConfig.serviceConfiguration,
-                null,
-                username,
-                account.getPassword(),
-                account.getDeviceId(),
-                account.getSignalProtocolStore(),
-                BaseConfig.USER_AGENT,
-                account.isMultiDevice(),
-                Optional.fromNullable(messagePipe),
-                Optional.fromNullable(unidentifiedMessagePipe),
-                Optional.<SignalServiceMessageSender.EventListener>absent());
-
-        System.out.println("Starting upload process...");
-        Pair<byte[], StickerUploadAttributesResponse> responsePair = messageSender.getStickerUploadAttributes(stickers.size() + (uniqueCover ? 1 : 0));
-        byte[] packKey = responsePair.first();
-        StickerUploadAttributesResponse response = responsePair.second();
-
-        System.out.println("Uploading manifest...");
-        messageSender.uploadStickerManifest(manifest, packKey, response.getManifest());
-
-        Map<Integer, StickerUploadAttributes> attrById = new HashMap<>();
-
-        for (StickerUploadAttributes attr : response.getStickers()) {
-            attrById.put(attr.getId(), attr);
-        }
-
-        for (int i = 0; i < pack.stickers.size(); i++) {
-            System.out.println("Uploading sticker " + (i+1) + "/" + pack.stickers.size() + "...");
-            StickerUploadAttributes attr = attrById.get(i);
-            if (attr == null) {
-                throw new StickerPackInvalidException("Upload attributes missing for id " + i);
-            }
-
-            byte[] data = readStickerDataFromPath(path, pack.stickers.get(i).file);
-            messageSender.uploadSticker(new ByteArrayInputStream(data), data.length, packKey, attr);
-        }
-
-        if (uniqueCover) {
-            System.out.println("Uploading unique cover...");
-            StickerUploadAttributes attr = attrById.get(pack.stickers.size());
-            if (attr == null) {
-                throw new StickerPackInvalidException("Upload attributes missing for cover with id " + pack.stickers.size());
-            }
-
-            byte[] data = readStickerDataFromPath(path, pack.cover.file);
-            messageSender.uploadSticker(new ByteArrayInputStream(data), data.length, packKey, attr);
-        }
-
-        return "https://signal.art/addstickers/#pack_id=" + response.getPackId() + "&pack_key=" + Hex.toStringCondensed(packKey).replaceAll(" ", "");
     }
 
-    private static byte[] readStickerDataFromPath(String rootPath, String subFile) throws IOException, StickerPackInvalidException {
-        if (rootPath.endsWith(".zip")) {
-            ZipFile zip = new ZipFile(rootPath);
-            ZipEntry entry = zip.getEntry(subFile);
-            return IOUtils.readFully(zip.getInputStream(entry));
-        } else if (rootPath.endsWith(".json")) {
-            String dir = new File(rootPath).getParent();
-            FileInputStream fis = new FileInputStream(new File(dir, subFile));
-            return IOUtils.readFully(fis);
+    private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException, StickerPackInvalidException {
+        InputStream inputStream;
+        if (zip != null) {
+            inputStream = zip.getInputStream(zip.getEntry("manifest.json"));
         } else {
-            throw new StickerPackInvalidException("Must point to either a ZIP or JSON file.");
+            inputStream = new FileInputStream((new File(rootPath, "manifest.json")));
         }
+        return new ObjectMapper().readValue(inputStream, JsonStickerPack.class);
     }
 
-    private static boolean stickerDataContainsPath(String rootPath, String subFile) throws IOException {
-        if (rootPath.endsWith(".zip")) {
-            ZipFile zip = new ZipFile(rootPath);
-            return zip.getEntry(subFile) != null;
-        } else if (rootPath.endsWith(".json")) {
-            String dir = new File(rootPath).getParent();
-            return new File(dir, subFile).exists();
+    private static Pair<InputStream, Long> getInputStreamAndLength(final String rootPath, final ZipFile zip, final String subfile) throws IOException {
+        if (zip != null) {
+            final ZipEntry entry = zip.getEntry(subfile);
+            return new Pair<>(zip.getInputStream(entry), entry.getSize());
         } else {
-            return false;
+            final File file = new File(rootPath, subfile);
+            return new Pair<>(new FileInputStream(file), file.length());
         }
-    }
-
-    private static JsonStickerPack parseStickerPack(String rootPath) throws IOException, StickerPackInvalidException {
-        if (!stickerDataContainsPath(rootPath, "manifest.json")) {
-            throw new StickerPackInvalidException("Could not find manifest.json");
-        }
-
-        String json = new String(readStickerDataFromPath(rootPath, "manifest.json"));
-
-        return new ObjectMapper().readValue(json, JsonStickerPack.class);
     }
 
     private void requestSyncGroups() throws IOException {

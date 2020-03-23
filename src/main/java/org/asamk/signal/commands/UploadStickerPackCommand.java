@@ -21,8 +21,6 @@ public class UploadStickerPackCommand implements LocalCommand {
         try {
             String path = ns.getString("path");
             String url = m.uploadStickerPack(path);
-            System.out.println("");
-            System.out.println("Upload complete! Sticker pack URL:");
             System.out.println(url);
             return 0;
         } catch (IOException e) {
