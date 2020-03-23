@@ -742,7 +742,7 @@ public class Manager implements Signal {
     @Override
     public String getContactName(String number) throws InvalidNumberException {
         String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
-        ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
+        ContactInfo contact = account.getContactStore().getContact(new SignalServiceAddress(null, canonicalizedNumber));
         if (contact == null) {
             return "";
         } else {
@@ -753,10 +753,10 @@ public class Manager implements Signal {
     @Override
     public void setContactName(String number, String name) throws InvalidNumberException {
         String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
-        ContactInfo contact = account.getContactStore().getContact(canonicalizedNumber);
+        final SignalServiceAddress address = new SignalServiceAddress(null, canonicalizedNumber);
+        ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
-            contact = new ContactInfo();
-            contact.number = canonicalizedNumber;
+            contact = new ContactInfo(address);
             System.err.println("Add contact " + canonicalizedNumber + " named " + name);
         } else {
             System.err.println("Updating contact " + canonicalizedNumber + " name " + contact.name + " -> " + name);
@@ -769,10 +769,10 @@ public class Manager implements Signal {
     @Override
     public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
         number = Utils.canonicalizeNumber(number, account.getUsername());
-        ContactInfo contact = account.getContactStore().getContact(number);
+        final SignalServiceAddress address = new SignalServiceAddress(null, number);
+        ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
-            contact = new ContactInfo();
-            contact.number = number;
+            contact = new ContactInfo(address);
             System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + number);
         } else {
             System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + number);
@@ -1022,7 +1022,7 @@ public class Manager implements Signal {
     }
 
     private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) throws IOException {
-        ContactInfo contact = account.getContactStore().getContact(recipient.getNumber().get());
+        ContactInfo contact = account.getContactStore().getContact(recipient);
         if (contact == null || contact.profileKey == null) {
             return null;
         }
@@ -1339,10 +1339,9 @@ public class Manager implements Signal {
                 } catch (InvalidInputException ignored) {
                 }
             }
-            ContactInfo contact = account.getContactStore().getContact(source.getNumber().get());
+            ContactInfo contact = account.getContactStore().getContact(source);
             if (contact == null) {
-                contact = new ContactInfo();
-                contact.number = source.getNumber().get();
+                contact = new ContactInfo(source);
             }
             contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
             account.getContactStore().updateContact(contact);
@@ -1624,10 +1623,9 @@ public class Manager implements Signal {
                                 if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
                                     account.setProfileKey(c.getProfileKey().get());
                                 }
-                                ContactInfo contact = account.getContactStore().getContact(c.getAddress().getNumber().get());
+                                ContactInfo contact = account.getContactStore().getContact(c.getAddress());
                                 if (contact == null) {
-                                    contact = new ContactInfo();
-                                    contact.number = c.getAddress().getNumber().get();
+                                    contact = new ContactInfo(c.getAddress());
                                 }
                                 if (c.getName().isPresent()) {
                                     contact.name = c.getName().get();
@@ -1894,7 +1892,7 @@ public class Manager implements Signal {
     }
 
     public ContactInfo getContact(String number) {
-        return account.getContactStore().getContact(number);
+        return account.getContactStore().getContact(new SignalServiceAddress(null, number));
     }
 
     public GroupInfo getGroup(byte[] groupId) {

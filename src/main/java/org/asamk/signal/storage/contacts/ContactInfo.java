@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.UUID;
+
 public class ContactInfo {
 
     @JsonProperty
@@ -12,6 +14,9 @@ public class ContactInfo {
 
     @JsonProperty
     public String number;
+
+    @JsonProperty
+    public UUID uuid;
 
     @JsonProperty
     public String color;
@@ -28,8 +33,16 @@ public class ContactInfo {
     @JsonProperty(defaultValue = "false")
     public boolean archived;
 
+    public ContactInfo() {
+    }
+
+    public ContactInfo(SignalServiceAddress address) {
+        this.number = address.getNumber().orNull();
+        this.uuid = address.getUuid().orNull();
+    }
+
     @JsonIgnore
     public SignalServiceAddress getAddress() {
-        return new SignalServiceAddress(null, number);
+        return new SignalServiceAddress(uuid, number);
     }
 }
