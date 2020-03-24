@@ -99,7 +99,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
@@ -215,20 +214,15 @@ public class Manager implements Signal {
         migrateLegacyConfigs();
 
         accountManager = getSignalServiceAccountManager();
-        try {
-            if (account.isRegistered()) {
-                if (accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
-                    refreshPreKeys();
-                    account.save();
-                }
-                if (account.getUuid() == null) {
-                    account.setUuid(accountManager.getOwnUuid());
-                    account.save();
-                }
+        if (account.isRegistered()) {
+            if (accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
+                refreshPreKeys();
+                account.save();
             }
-        } catch (AuthorizationFailedException e) {
-            System.err.println("Authorization failed, was the number registered elsewhere?");
-            throw e;
+            if (account.getUuid() == null) {
+                account.setUuid(accountManager.getOwnUuid());
+                account.save();
+            }
         }
     }
 
@@ -279,6 +273,7 @@ public class Manager implements Signal {
             createNewIdentity();
         }
         account.setPassword(KeyUtils.createPassword());
+        account.setUuid(null);
         accountManager = getSignalServiceAccountManager();
 
         if (voiceVerification) {
