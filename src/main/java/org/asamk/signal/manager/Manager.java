@@ -258,6 +258,8 @@ public class Manager implements Signal {
         if (username == null) {
             account = SignalAccount.createTemporaryAccount(identityKey, registrationId);
         } else {
+            account.getSignalProtocolStore().saveIdentity(username, identityKey.getPublicKey(), TrustLevel.TRUSTED_VERIFIED);
+
             ProfileKey profileKey = KeyUtils.createProfileKey();
             account = SignalAccount.create(dataPath, username, identityKey, registrationId, profileKey);
             account.save();
