@@ -1342,18 +1342,24 @@ public class Manager implements Signal {
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
-            if (source.equals(account.getSelfAddress())) {
+            if (source.matches(account.getSelfAddress())) {
                 try {
                     this.account.setProfileKey(new ProfileKey(message.getProfileKey().get()));
                 } catch (InvalidInputException ignored) {
                 }
+                ContactInfo contact = account.getContactStore().getContact(source);
+                if (contact != null) {
+                    contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
+                    account.getContactStore().updateContact(contact);
+                }
+            } else {
+                ContactInfo contact = account.getContactStore().getContact(source);
+                if (contact == null) {
+                    contact = new ContactInfo(source);
+                }
+                contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
+                account.getContactStore().updateContact(contact);
             }
-            ContactInfo contact = account.getContactStore().getContact(source);
-            if (contact == null) {
-                contact = new ContactInfo(source);
-            }
-            contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
-            account.getContactStore().updateContact(contact);
         }
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
