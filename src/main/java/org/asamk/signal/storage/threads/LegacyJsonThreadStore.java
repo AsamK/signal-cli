@@ -27,14 +27,6 @@ public class LegacyJsonThreadStore {
     @JsonDeserialize(using = ThreadsDeserializer.class)
     private Map<String, ThreadInfo> threads = new HashMap<>();
 
-    public void updateThread(ThreadInfo thread) {
-        threads.put(thread.id, thread);
-    }
-
-    public ThreadInfo getThread(String id) {
-        return threads.get(id);
-    }
-
     public List<ThreadInfo> getThreads() {
         return new ArrayList<>(threads.values());
     }
