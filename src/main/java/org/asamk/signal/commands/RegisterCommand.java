@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
 
 import java.io.IOException;
 
@@ -22,6 +23,9 @@ public class RegisterCommand implements LocalCommand {
         try {
             m.register(ns.getBoolean("voice"));
             return 0;
+        } catch (CaptchaRequiredException e) {
+            System.err.println("Captcha required for verification (" + e.getMessage() + ")");
+            return 1;
         } catch (IOException e) {
             System.err.println("Request verify error: " + e.getMessage());
             return 3;
