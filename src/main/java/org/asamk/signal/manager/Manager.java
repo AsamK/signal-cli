@@ -1138,8 +1138,11 @@ public class Manager implements Signal {
             if (canonicalizedNumber.equals(username)) {
                 signalServiceAddresses.add(account.getSelfAddress());
             } else {
-                // TODO get corresponding uuid
-                signalServiceAddresses.add(new SignalServiceAddress(null, canonicalizedNumber));
+                SignalServiceAddress address = new SignalServiceAddress(null, canonicalizedNumber);
+                ContactInfo contact = account.getContactStore().getContact(address);
+                signalServiceAddresses.add(contact == null
+                        ? address
+                        : contact.getAddress());
             }
         }
         return signalServiceAddresses;
