@@ -548,8 +548,7 @@ public class Manager implements Signal {
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withReaction(reaction)
-                .withProfileKey(account.getProfileKey().serialize());
+                .withReaction(reaction);
         if (groupId != null) {
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
                     .withId(groupId)
@@ -714,7 +713,6 @@ public class Manager implements Signal {
 
             messageBuilder.withAttachments(attachmentPointers);
         }
-        messageBuilder.withProfileKey(account.getProfileKey().serialize());
         sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
@@ -723,8 +721,7 @@ public class Manager implements Signal {
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withReaction(reaction)
-                .withProfileKey(account.getProfileKey().serialize());
+                .withReaction(reaction);
         sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
@@ -1201,8 +1198,10 @@ public class Manager implements Signal {
                     ContactInfo contact = account.getContactStore().getContact(address);
                     if (contact != null) {
                         messageBuilder.withExpiration(contact.messageExpirationTime);
+                        messageBuilder.withProfileKey(account.getProfileKey().serialize());
                     } else {
                         messageBuilder.withExpiration(0);
+                        messageBuilder.withProfileKey(null);
                     }
                     message = messageBuilder.build();
                     try {
