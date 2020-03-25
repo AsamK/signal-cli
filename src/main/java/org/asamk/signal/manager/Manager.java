@@ -997,7 +997,9 @@ public class Manager implements Signal {
     }
 
     private byte[] getSenderCertificate() throws IOException {
-        byte[] certificate = accountManager.getSenderCertificate();
+        // TODO support UUID capable sender certificates
+        // byte[] certificate = accountManager.getSenderCertificate();
+        byte[] certificate = accountManager.getSenderCertificateLegacy();
         // TODO cache for a day
         return certificate;
     }
