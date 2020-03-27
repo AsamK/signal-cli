@@ -203,6 +203,9 @@ public class SignalAccount {
             LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
             // Migrate thread info to group and contact store
             for (ThreadInfo thread : threadStore.getThreads()) {
+                if (thread.id == null || thread.id.isEmpty()) {
+                    continue;
+                }
                 try {
                     ContactInfo contactInfo = contactStore.getContact(new SignalServiceAddress(null, thread.id));
                     if (contactInfo != null) {
