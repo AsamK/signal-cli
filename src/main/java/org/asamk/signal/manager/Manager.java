@@ -1243,14 +1243,17 @@ public class Manager implements Signal {
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, ProtocolUntrustedIdentityException, SelfSendException, UnsupportedDataMessageException {
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, org.whispersystems.libsignal.UntrustedIdentityException {
         SignalServiceCipher cipher = new SignalServiceCipher(account.getSelfAddress(), account.getSignalProtocolStore(), Utils.getCertificateValidator());
         try {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
-            // TODO We don't get the new untrusted identity from ProtocolUntrustedIdentityException anymore ... we need to get it from somewhere else
-//            account.getSignalProtocolStore().saveIdentity(e.getSender(), e.getUntrustedIdentity(), TrustLevel.UNTRUSTED);
-            throw e;
+            if (e.getCause() instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
+                org.whispersystems.libsignal.UntrustedIdentityException identityException = (org.whispersystems.libsignal.UntrustedIdentityException) e.getCause();
+                account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(identityException.getName()), identityException.getUntrustedIdentity(), TrustLevel.UNTRUSTED);
+                throw identityException;
+            }
+            throw new AssertionError(e);
         }
     }
 
@@ -1489,7 +1492,7 @@ public class Manager implements Signal {
                 if (!isMessageBlocked(envelope, content)) {
                     handler.handleMessage(envelope, content, exception);
                 }
-                if (!(exception instanceof ProtocolUntrustedIdentityException)) {
+                if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
                     File cacheFile = null;
                     try {
                         cacheFile = getMessageCacheFile(envelope.getSourceE164().get(), now, envelope.getTimestamp());

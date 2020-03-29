@@ -5,7 +5,6 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
-import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
@@ -70,11 +69,6 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
                     System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getName() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getName() + "' to mark it as trusted");
                     System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getName() + "' to trust it without verification");
-                } else if (exception instanceof ProtocolUntrustedIdentityException) {
-                    ProtocolUntrustedIdentityException e = (ProtocolUntrustedIdentityException) exception;
-                    System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
-                    System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getSender() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getSender() + "' to mark it as trusted");
-                    System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getSender() + "' to trust it without verification");
                 } else {
                     System.out.println("Exception: " + exception.getMessage() + " (" + exception.getClass().getSimpleName() + ")");
                 }
