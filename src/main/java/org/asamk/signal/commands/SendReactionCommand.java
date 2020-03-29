@@ -9,7 +9,6 @@ import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -63,7 +62,7 @@ public class SendReactionCommand implements LocalCommand {
 
         String emoji = ns.getString("emoji");
         boolean isRemove = ns.getBoolean("remove");
-        SignalServiceAddress targetAuthor = new SignalServiceAddress(null, ns.getString("target_author"));
+        String targetAuthor = ns.getString("target_author");
         long targetTimestamp = ns.getLong("target_timestamp");
 
         try {

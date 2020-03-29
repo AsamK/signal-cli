@@ -106,6 +106,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.Hex;
@@ -133,7 +134,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -143,8 +143,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Manager implements Signal {
-
-    private static final SignalServiceProfile.Capabilities capabilities = new SignalServiceProfile.Capabilities(false, false);
 
     private final String settingsPath;
     private final String dataPath;
@@ -192,6 +190,10 @@ public class Manager implements Signal {
     }
 
     private String getMessageCachePath(String sender) {
+        if (sender == null || sender.isEmpty()) {
+            return getMessageCachePath();
+        }
+
         return getMessageCachePath() + "/" + sender.replace("/", "_");
     }
 
@@ -210,6 +212,7 @@ public class Manager implements Signal {
             return;
         }
         account = SignalAccount.load(dataPath, username);
+        account.setResolver(this::resolveSignalServiceAddress);
 
         migrateLegacyConfigs();
 
@@ -257,11 +260,11 @@ public class Manager implements Signal {
         int registrationId = KeyHelper.generateRegistrationId(false);
         if (username == null) {
             account = SignalAccount.createTemporaryAccount(identityKey, registrationId);
+            account.setResolver(this::resolveSignalServiceAddress);
         } else {
-            account.getSignalProtocolStore().saveIdentity(username, identityKey.getPublicKey(), TrustLevel.TRUSTED_VERIFIED);
-
             ProfileKey profileKey = KeyUtils.createProfileKey();
             account = SignalAccount.create(dataPath, username, identityKey, registrationId, profileKey);
+            account.setResolver(this::resolveSignalServiceAddress);
             account.save();
         }
     }
@@ -289,7 +292,7 @@ public class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, capabilities);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
     }
 
     public void setProfileName(String name) throws IOException {
@@ -350,6 +353,7 @@ public class Manager implements Signal {
             }
         }
         account = SignalAccount.createLinkedAccount(dataPath, username, ret.getUuid(), account.getPassword(), ret.getDeviceId(), ret.getIdentity(), account.getSignalProtocolStore().getLocalRegistrationId(), account.getSignalingKey(), profileKey);
+        account.setResolver(this::resolveSignalServiceAddress);
 
         refreshPreKeys();
 
@@ -427,12 +431,13 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        UUID uuid = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, capabilities);
+        UUID uuid = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.setRegistered(true);
         account.setUuid(uuid);
         account.setRegistrationLockPin(pin);
+        account.getSignalProtocolStore().saveIdentity(account.getSelfAddress(), account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(), TrustLevel.TRUSTED_VERIFIED);
 
         refreshPreKeys();
         account.save();
@@ -540,10 +545,10 @@ public class Manager implements Signal {
         sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    public void sendGroupMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
+    public void sendGroupMessageReaction(String emoji, boolean remove, String targetAuthor,
                                          long targetSentTimestamp, byte[] groupId)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException {
-        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
+            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
+        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, canonicalizeAndResolveSignalServiceAddress(targetAuthor), targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction);
         if (groupId != null) {
@@ -713,10 +718,10 @@ public class Manager implements Signal {
         sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
-    public void sendMessageReaction(String emoji, boolean remove, SignalServiceAddress targetAuthor,
+    public void sendMessageReaction(String emoji, boolean remove, String targetAuthor,
                                     long targetSentTimestamp, List<String> recipients)
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
-        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, targetAuthor, targetSentTimestamp);
+        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, canonicalizeAndResolveSignalServiceAddress(targetAuthor), targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction);
         sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
@@ -732,8 +737,7 @@ public class Manager implements Signal {
 
     @Override
     public String getContactName(String number) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
-        ContactInfo contact = account.getContactStore().getContact(new SignalServiceAddress(null, canonicalizedNumber));
+        ContactInfo contact = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
         if (contact == null) {
             return "";
         } else {
@@ -743,14 +747,13 @@ public class Manager implements Signal {
 
     @Override
     public void setContactName(String number, String name) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
-        final SignalServiceAddress address = new SignalServiceAddress(null, canonicalizedNumber);
+        final SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(number);
         ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
-            System.err.println("Add contact " + canonicalizedNumber + " named " + name);
+            System.err.println("Add contact " + contact.number + " named " + name);
         } else {
-            System.err.println("Updating contact " + canonicalizedNumber + " name " + contact.name + " -> " + name);
+            System.err.println("Updating contact " + contact.number + " name " + contact.name + " -> " + name);
         }
         contact.name = name;
         account.getContactStore().updateContact(contact);
@@ -759,14 +762,16 @@ public class Manager implements Signal {
 
     @Override
     public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
-        number = Utils.canonicalizeNumber(number, account.getUsername());
-        final SignalServiceAddress address = new SignalServiceAddress(null, number);
+        setContactBlocked(canonicalizeAndResolveSignalServiceAddress(number), blocked);
+    }
+
+    private void setContactBlocked(SignalServiceAddress address, boolean blocked) {
         ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
-            System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + number);
+            System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + address.getNumber().orNull());
         } else {
-            System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + number);
+            System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + address.getNumber().orNull());
         }
         contact.blocked = blocked;
         account.getContactStore().updateContact(contact);
@@ -996,10 +1001,16 @@ public class Manager implements Signal {
         }
     }
 
-    private byte[] getSenderCertificate() throws IOException {
+    private byte[] getSenderCertificate() {
         // TODO support UUID capable sender certificates
         // byte[] certificate = accountManager.getSenderCertificate();
-        byte[] certificate = accountManager.getSenderCertificateLegacy();
+        byte[] certificate;
+        try {
+            certificate = accountManager.getSenderCertificateLegacy();
+        } catch (IOException e) {
+            System.err.println("Failed to get sender certificate: " + e);
+            return null;
+        }
         // TODO cache for a day
         return certificate;
     }
@@ -1023,7 +1034,7 @@ public class Manager implements Signal {
         }
     }
 
-    private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) throws IOException {
+    private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
         ContactInfo contact = account.getContactStore().getContact(recipient);
         if (contact == null || contact.profileKey == null) {
             return null;
@@ -1031,10 +1042,16 @@ public class Manager implements Signal {
         ProfileKey theirProfileKey;
         try {
             theirProfileKey = new ProfileKey(Base64.decode(contact.profileKey));
-        } catch (InvalidInputException e) {
+        } catch (InvalidInputException | IOException e) {
             throw new AssertionError(e);
         }
-        SignalProfile targetProfile = decryptProfile(getRecipientProfile(recipient, Optional.absent()), theirProfileKey);
+        SignalProfile targetProfile;
+        try {
+            targetProfile = decryptProfile(getRecipientProfile(recipient, Optional.absent()), theirProfileKey);
+        } catch (IOException e) {
+            System.err.println("Failed to get recipient profile: " + e);
+            return null;
+        }
 
         if (targetProfile == null || targetProfile.getUnidentifiedAccess() == null) {
             return null;
@@ -1047,7 +1064,7 @@ public class Manager implements Signal {
         return UnidentifiedAccess.deriveAccessKeyFrom(theirProfileKey);
     }
 
-    private Optional<UnidentifiedAccessPair> getAccessForSync() throws IOException {
+    private Optional<UnidentifiedAccessPair> getAccessForSync() {
         byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
         byte[] selfUnidentifiedAccessCertificate = getSenderCertificate();
 
@@ -1065,7 +1082,7 @@ public class Manager implements Signal {
         }
     }
 
-    private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) throws IOException {
+    private List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
         List<Optional<UnidentifiedAccessPair>> result = new ArrayList<>(recipients.size());
         for (SignalServiceAddress recipient : recipients) {
             result.add(getAccessFor(recipient));
@@ -1073,7 +1090,7 @@ public class Manager implements Signal {
         return result;
     }
 
-    private Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) throws IOException {
+    private Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
         byte[] recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
         byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
         byte[] selfUnidentifiedAccessCertificate = getSenderCertificate();
@@ -1092,13 +1109,23 @@ public class Manager implements Signal {
         }
     }
 
+    private Optional<UnidentifiedAccess> getUnidentifiedAccess(SignalServiceAddress recipient) {
+        Optional<UnidentifiedAccessPair> unidentifiedAccess = getAccessFor(recipient);
+
+        if (unidentifiedAccess.isPresent()) {
+            return unidentifiedAccess.get().getTargetUnidentifiedAccess();
+        }
+
+        return Optional.absent();
+    }
+
     private void sendSyncMessage(SignalServiceSyncMessage message)
             throws IOException, UntrustedIdentityException {
         SignalServiceMessageSender messageSender = getMessageSender();
         try {
             messageSender.sendMessage(message, getAccessForSync());
         } catch (UntrustedIdentityException e) {
-            account.getSignalProtocolStore().saveIdentity(e.getIdentifier(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+            account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
             throw e;
         }
     }
@@ -1116,11 +1143,11 @@ public class Manager implements Signal {
 
         for (SendMessageResult result : results) {
             if (result.isUnregisteredFailure()) {
-                unregisteredUsers.add(new UnregisteredUserException(result.getAddress().getNumber().get(), null));
+                unregisteredUsers.add(new UnregisteredUserException(result.getAddress().getLegacyIdentifier(), null));
             } else if (result.isNetworkFailure()) {
-                networkExceptions.add(new NetworkFailureException(result.getAddress().getNumber().get(), null));
+                networkExceptions.add(new NetworkFailureException(result.getAddress().getLegacyIdentifier(), null));
             } else if (result.getIdentityFailure() != null) {
-                untrustedIdentities.add(new UntrustedIdentityException("Untrusted", result.getAddress().getNumber().get(), result.getIdentityFailure().getIdentityKey()));
+                untrustedIdentities.add(new UntrustedIdentityException("Untrusted", result.getAddress().getLegacyIdentifier(), result.getIdentityFailure().getIdentityKey()));
             }
         }
         if (!untrustedIdentities.isEmpty() || !unregisteredUsers.isEmpty() || !networkExceptions.isEmpty()) {
@@ -1130,19 +1157,9 @@ public class Manager implements Signal {
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
         final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
-        final String username = account.getUsername();
 
         for (String number : numbers) {
-            String canonicalizedNumber = Utils.canonicalizeNumber(number, username);
-            if (canonicalizedNumber.equals(username)) {
-                signalServiceAddresses.add(account.getSelfAddress());
-            } else {
-                SignalServiceAddress address = new SignalServiceAddress(null, canonicalizedNumber);
-                ContactInfo contact = account.getContactStore().getContact(address);
-                signalServiceAddresses.add(contact == null
-                        ? address
-                        : contact.getAddress());
-            }
+            signalServiceAddresses.add(canonicalizeAndResolveSignalServiceAddress(number));
         }
         return signalServiceAddresses;
     }
@@ -1166,12 +1183,12 @@ public class Manager implements Signal {
                     List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipients), getAccessFor(recipients), isRecipientUpdate, message);
                     for (SendMessageResult r : result) {
                         if (r.getIdentityFailure() != null) {
-                            account.getSignalProtocolStore().saveIdentity(r.getAddress().getNumber().get(), r.getIdentityFailure().getIdentityKey(), TrustLevel.UNTRUSTED);
+                            account.getSignalProtocolStore().saveIdentity(r.getAddress(), r.getIdentityFailure().getIdentityKey(), TrustLevel.UNTRUSTED);
                         }
                     }
                     return result;
                 } catch (UntrustedIdentityException e) {
-                    account.getSignalProtocolStore().saveIdentity(e.getIdentifier(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+                    account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                     return Collections.emptyList();
                 }
             } else if (recipients.size() == 1 && recipients.contains(account.getSelfAddress())) {
@@ -1189,7 +1206,7 @@ public class Manager implements Signal {
                 try {
                     messageSender.sendMessage(syncMessage, unidentifiedAccess);
                 } catch (UntrustedIdentityException e) {
-                    account.getSignalProtocolStore().saveIdentity(e.getIdentifier(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+                    account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                     results.add(SendMessageResult.identityFailure(recipient, e.getIdentityKey()));
                 }
                 return results;
@@ -1210,7 +1227,7 @@ public class Manager implements Signal {
                         SendMessageResult result = messageSender.sendMessage(address, getAccessFor(address), message);
                         results.add(result);
                     } catch (UntrustedIdentityException e) {
-                        account.getSignalProtocolStore().saveIdentity(e.getIdentifier(), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+                        account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                         results.add(SendMessageResult.identityFailure(address, e.getIdentityKey()));
                     }
                 }
@@ -1219,7 +1236,7 @@ public class Manager implements Signal {
         } finally {
             if (message != null && message.isEndSession()) {
                 for (SignalServiceAddress recipient : recipients) {
-                    handleEndSession(recipient.getNumber().get());
+                    handleEndSession(recipient);
                 }
             }
             account.save();
@@ -1237,7 +1254,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void handleEndSession(String source) {
+    private void handleEndSession(SignalServiceAddress source) {
         account.getSignalProtocolStore().deleteAllSessions(source);
     }
 
@@ -1307,7 +1324,7 @@ public class Manager implements Signal {
             }
         }
         if (message.isEndSession()) {
-            handleEndSession(isSync ? destination.getNumber().get() : source.getNumber().get());
+            handleEndSession(isSync ? destination : source);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupInfo().isPresent()) {
@@ -1384,6 +1401,7 @@ public class Manager implements Signal {
         }
         for (final File dir : Objects.requireNonNull(cachePath.listFiles())) {
             if (!dir.isDirectory()) {
+                retryFailedReceivedMessage(handler, ignoreAttachments, dir);
                 continue;
             }
 
@@ -1391,35 +1409,39 @@ public class Manager implements Signal {
                 if (!fileEntry.isFile()) {
                     continue;
                 }
-                SignalServiceEnvelope envelope;
-                try {
-                    envelope = Utils.loadEnvelope(fileEntry);
-                    if (envelope == null) {
-                        continue;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    continue;
-                }
-                SignalServiceContent content = null;
-                if (!envelope.isReceipt()) {
-                    try {
-                        content = decryptMessage(envelope);
-                    } catch (Exception e) {
-                        continue;
-                    }
-                    handleMessage(envelope, content, ignoreAttachments);
-                }
-                account.save();
-                handler.handleMessage(envelope, content, null);
-                try {
-                    Files.delete(fileEntry.toPath());
-                } catch (IOException e) {
-                    System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
-                }
+                retryFailedReceivedMessage(handler, ignoreAttachments, fileEntry);
             }
             // Try to delete directory if empty
             dir.delete();
+        }
+    }
+
+    private void retryFailedReceivedMessage(final ReceiveMessageHandler handler, final boolean ignoreAttachments, final File fileEntry) {
+        SignalServiceEnvelope envelope;
+        try {
+            envelope = Utils.loadEnvelope(fileEntry);
+            if (envelope == null) {
+                return;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        SignalServiceContent content = null;
+        if (!envelope.isReceipt()) {
+            try {
+                content = decryptMessage(envelope);
+            } catch (Exception e) {
+                return;
+            }
+            handleMessage(envelope, content, ignoreAttachments);
+        }
+        account.save();
+        handler.handleMessage(envelope, content, null);
+        try {
+            Files.delete(fileEntry.toPath());
+        } catch (IOException e) {
+            System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
         }
     }
 
@@ -1496,7 +1518,7 @@ public class Manager implements Signal {
         } else {
             return false;
         }
-        ContactInfo sourceContact = getContact(source.getNumber().get());
+        ContactInfo sourceContact = account.getContactStore().getContact(source);
         if (sourceContact != null && sourceContact.blocked) {
             return true;
         }
@@ -1617,13 +1639,7 @@ public class Manager implements Signal {
                 if (syncMessage.getBlockedList().isPresent()) {
                     final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
                     for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
-                        if (address.getNumber().isPresent()) {
-                            try {
-                                setContactBlocked(address.getNumber().get(), true);
-                            } catch (InvalidNumberException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        setContactBlocked(address, true);
                     }
                     for (byte[] groupId : blockedListMessage.getGroupIds()) {
                         try {
@@ -1663,7 +1679,7 @@ public class Manager implements Signal {
                                 }
                                 if (c.getVerified().isPresent()) {
                                     final VerifiedMessage verifiedMessage = c.getVerified().get();
-                                    account.getSignalProtocolStore().saveIdentity(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
+                                    account.getSignalProtocolStore().setIdentityTrustLevel(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                                 }
                                 if (c.getExpirationTimer().isPresent()) {
                                     contact.messageExpirationTime = c.getExpirationTimer().get();
@@ -1692,7 +1708,7 @@ public class Manager implements Signal {
                 }
                 if (syncMessage.getVerified().isPresent()) {
                     final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
-                    account.getSignalProtocolStore().saveIdentity(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
+                    account.getSignalProtocolStore().setIdentityTrustLevel(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                 }
                 if (syncMessage.getConfiguration().isPresent()) {
                     // TODO
@@ -1829,16 +1845,9 @@ public class Manager implements Signal {
                 DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : account.getContactStore().getContacts()) {
                     VerifiedMessage verifiedMessage = null;
-                    if (getIdentities().containsKey(record.number)) {
-                        JsonIdentityKeyStore.Identity currentIdentity = null;
-                        for (JsonIdentityKeyStore.Identity id : getIdentities().get(record.number)) {
-                            if (currentIdentity == null || id.getDateAdded().after(currentIdentity.getDateAdded())) {
-                                currentIdentity = id;
-                            }
-                        }
-                        if (currentIdentity != null) {
-                            verifiedMessage = new VerifiedMessage(record.getAddress(), currentIdentity.getIdentityKey(), currentIdentity.getTrustLevel().toVerifiedState(), currentIdentity.getDateAdded().getTime());
-                        }
+                    JsonIdentityKeyStore.Identity currentIdentity = account.getSignalProtocolStore().getIdentity(record.getAddress());
+                    if (currentIdentity != null) {
+                        verifiedMessage = new VerifiedMessage(record.getAddress(), currentIdentity.getIdentityKey(), currentIdentity.getTrustLevel().toVerifiedState(), currentIdentity.getDateAdded().getTime());
                     }
 
                     ProfileKey profileKey = null;
@@ -1909,20 +1918,19 @@ public class Manager implements Signal {
     }
 
     public ContactInfo getContact(String number) {
-        return account.getContactStore().getContact(new SignalServiceAddress(null, number));
+        return account.getContactStore().getContact(Util.getSignalServiceAddressFromIdentifier(number));
     }
 
     public GroupInfo getGroup(byte[] groupId) {
         return account.getGroupStore().getGroup(groupId);
     }
 
-    public Map<String, List<JsonIdentityKeyStore.Identity>> getIdentities() {
+    public List<JsonIdentityKeyStore.Identity> getIdentities() {
         return account.getSignalProtocolStore().getIdentities();
     }
 
-    public Pair<String, List<JsonIdentityKeyStore.Identity>> getIdentities(String number) throws InvalidNumberException {
-        String canonicalizedNumber = Utils.canonicalizeNumber(number, account.getUsername());
-        return new Pair<>(canonicalizedNumber, account.getSignalProtocolStore().getIdentities(canonicalizedNumber));
+    public List<JsonIdentityKeyStore.Identity> getIdentities(String number) throws InvalidNumberException {
+        return account.getSignalProtocolStore().getIdentities(canonicalizeAndResolveSignalServiceAddress(number));
     }
 
     /**
@@ -1931,8 +1939,9 @@ public class Manager implements Signal {
      * @param name        username of the identity
      * @param fingerprint Fingerprint
      */
-    public boolean trustIdentityVerified(String name, byte[] fingerprint) {
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(name);
+    public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
+        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
+        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
@@ -1941,9 +1950,9 @@ public class Manager implements Signal {
                 continue;
             }
 
-            account.getSignalProtocolStore().saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            account.getSignalProtocolStore().setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             try {
-                sendVerifiedMessage(new SignalServiceAddress(null, name), id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+                sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
                 e.printStackTrace();
             }
@@ -1959,19 +1968,20 @@ public class Manager implements Signal {
      * @param name         username of the identity
      * @param safetyNumber Safety number
      */
-    public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) {
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(name);
+    public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
+        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
+        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
         for (JsonIdentityKeyStore.Identity id : ids) {
-            if (!safetyNumber.equals(computeSafetyNumber(name, id.getIdentityKey()))) {
+            if (!safetyNumber.equals(computeSafetyNumber(address, id.getIdentityKey()))) {
                 continue;
             }
 
-            account.getSignalProtocolStore().saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+            account.getSignalProtocolStore().setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             try {
-                sendVerifiedMessage(new SignalServiceAddress(null, name), id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+                sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
                 e.printStackTrace();
             }
@@ -1987,15 +1997,16 @@ public class Manager implements Signal {
      * @param name username of the identity
      */
     public boolean trustIdentityAllKeys(String name) {
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(name);
+        SignalServiceAddress address = resolveSignalServiceAddress(name);
+        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
         for (JsonIdentityKeyStore.Identity id : ids) {
             if (id.getTrustLevel() == TrustLevel.UNTRUSTED) {
-                account.getSignalProtocolStore().saveIdentity(name, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
+                account.getSignalProtocolStore().setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
                 try {
-                    sendVerifiedMessage(new SignalServiceAddress(null, name), id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
+                    sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
                 } catch (IOException | UntrustedIdentityException e) {
                     e.printStackTrace();
                 }
@@ -2005,8 +2016,26 @@ public class Manager implements Signal {
         return true;
     }
 
-    public String computeSafetyNumber(String theirUsername, IdentityKey theirIdentityKey) {
-        return Utils.computeSafetyNumber(account.getUsername(), getIdentity(), theirUsername, theirIdentityKey);
+    public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+        return Utils.computeSafetyNumber(account.getSelfAddress(), getIdentity(), theirAddress, theirIdentityKey);
+    }
+
+    public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
+        String canonicalizedNumber = UuidUtil.isUuid(identifier) ? identifier : Util.canonicalizeNumber(identifier, account.getUsername());
+        return resolveSignalServiceAddress(canonicalizedNumber);
+    }
+
+    public SignalServiceAddress resolveSignalServiceAddress(String identifier) {
+        SignalServiceAddress address = Util.getSignalServiceAddressFromIdentifier(identifier);
+        if (address.matches(account.getSelfAddress())) {
+            return account.getSelfAddress();
+        }
+
+        ContactInfo contactInfo = account.getContactStore().getContact(address);
+        if (contactInfo == null) {
+            return address;
+        }
+        return contactInfo.getAddress();
     }
 
     public interface ReceiveMessageHandler {

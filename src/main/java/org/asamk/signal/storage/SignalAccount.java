@@ -15,6 +15,7 @@ import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
+import org.asamk.signal.storage.protocol.SignalServiceAddressResolver;
 import org.asamk.signal.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
@@ -271,6 +272,10 @@ public class SignalAccount {
             lock = fileChannel.lock();
             System.err.println("Config file lock acquired.");
         }
+    }
+
+    public void setResolver(final SignalServiceAddressResolver resolver) {
+        signalProtocolStore.setResolver(resolver);
     }
 
     public void addPreKeys(Collection<PreKeyRecord> records) {

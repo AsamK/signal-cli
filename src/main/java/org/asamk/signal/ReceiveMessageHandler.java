@@ -158,7 +158,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync message with verified identities:");
                         final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
                         System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
-                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey()));
+                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
                         System.out.println("   " + safetyNumber);
                     }
                     if (syncMessage.getConfiguration().isPresent()) {
