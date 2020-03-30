@@ -35,7 +35,7 @@ class KeyUtils {
     }
 
     static byte[] createStickerUploadKey() {
-        return getSecretBytes(64);
+        return getSecretBytes(32);
     }
 
     private static String getSecret(int size) {
