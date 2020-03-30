@@ -254,8 +254,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getBody().isPresent()) {
             System.out.println("Body: " + message.getBody().get());
         }
-        if (message.getGroupInfo().isPresent()) {
-            SignalServiceGroup groupInfo = message.getGroupInfo().get();
+        if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
+            SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
             System.out.println("Group info:");
             System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
             if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {

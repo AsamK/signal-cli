@@ -1177,7 +1177,7 @@ public class Manager implements Signal {
             SignalServiceMessageSender messageSender = getMessageSender();
 
             message = messageBuilder.build();
-            if (message.getGroupInfo().isPresent()) {
+            if (message.getGroupContext().isPresent()) {
                 try {
                     final boolean isRecipientUpdate = false;
                     List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipients), getAccessFor(recipients), isRecipientUpdate, message);
@@ -1262,8 +1262,8 @@ public class Manager implements Signal {
     }
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, SignalServiceAddress source, SignalServiceAddress destination, boolean ignoreAttachments) {
-        if (message.getGroupInfo().isPresent()) {
-            SignalServiceGroup groupInfo = message.getGroupInfo().get();
+        if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
+            SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
             GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
             switch (groupInfo.getType()) {
                 case UPDATE:
@@ -1330,8 +1330,8 @@ public class Manager implements Signal {
             handleEndSession(isSync ? destination : source);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
-            if (message.getGroupInfo().isPresent()) {
-                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+            if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
                 GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
                 if (group == null) {
                     group = new GroupInfo(groupInfo.getGroupId());
@@ -1528,8 +1528,8 @@ public class Manager implements Signal {
 
         if (content != null && content.getDataMessage().isPresent()) {
             SignalServiceDataMessage message = content.getDataMessage().get();
-            if (message.getGroupInfo().isPresent()) {
-                SignalServiceGroup groupInfo = message.getGroupInfo().get();
+            if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
+                SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
                 GroupInfo group = getGroup(groupInfo.getGroupId());
                 if (groupInfo.getType() == SignalServiceGroup.Type.DELIVER && group != null && group.blocked) {
                     return true;

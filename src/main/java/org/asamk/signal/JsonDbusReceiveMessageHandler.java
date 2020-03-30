@@ -40,8 +40,8 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
             SignalServiceDataMessage message = content.getDataMessage().get();
 
             if (!message.isEndSession() &&
-                    !(message.getGroupInfo().isPresent() &&
-                            message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
+                    !(message.getGroupContext().isPresent() &&
+                            message.getGroupContext().get().getGroupV1Type() != SignalServiceGroup.Type.DELIVER)) {
                 List<String> attachments = new ArrayList<>();
                 if (message.getAttachments().isPresent()) {
                     for (SignalServiceAttachment attachment : message.getAttachments().get()) {
@@ -56,7 +56,8 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                             objectPath,
                             message.getTimestamp(),
                             envelope.isUnidentifiedSender() || !envelope.hasSource() ? content.getSender().getNumber().get() : envelope.getSourceE164().get(),
-                            message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
+                            message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()
+                                    ? message.getGroupContext().get().getGroupV1().get().getGroupId() : new byte[0],
                             message.getBody().isPresent() ? message.getBody().get() : "",
                             attachments));
                 } catch (DBusException e) {
