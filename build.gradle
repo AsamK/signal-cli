@@ -7,7 +7,7 @@ targetCompatibility = JavaVersion.VERSION_1_8
 
 mainClassName = 'org.asamk.signal.Main'
 
-version = '0.6.5'
+version = '0.6.6'
 
 compileJava.options.encoding = 'UTF-8'
 
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_3'
+    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_7'
     compile 'org.bouncycastle:bcprov-jdk15on:1.64'
     compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     compile 'org.freedesktop.dbus:dbus-java:2.7.0'

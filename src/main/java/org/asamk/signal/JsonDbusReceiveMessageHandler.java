@@ -47,14 +47,15 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     System.out.println(message.getBody().get());
 
                 if (!message.isEndSession() &&
-                        !(message.getGroupInfo().isPresent() &&
-                                message.getGroupInfo().get().getType() != SignalServiceGroup.Type.DELIVER)) {
+                        !(message.getGroupContext().isPresent() &&
+                                message.getGroupContext().get().getGroupV1Type() != SignalServiceGroup.Type.DELIVER)) {
                     try {
                         conn.sendSignal(new Signal.MessageReceived(
                                 objectPath,
                                 message.getTimestamp(),
                                 envelope.isUnidentifiedSender() || !envelope.hasSource() ? content.getSender().getNumber().get() : envelope.getSourceE164().get(),
-                                message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
+                                message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()
+                                        ? message.getGroupContext().get().getGroupV1().get().getGroupId() : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
                                 JsonDbusReceiveMessageHandler.getAttachments(message, m)));
                     } catch (DBusException e) {
@@ -66,7 +67,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 if (sync_message.getSent().isPresent()) {
                     SentTranscriptMessage transcript = sync_message.getSent().get();
 
-                    if (!envelope.isUnidentifiedSender() && envelope.hasSource() && (transcript.getDestination().isPresent() || transcript.getMessage().getGroupInfo().isPresent())) {
+                    if (!envelope.isUnidentifiedSender() && envelope.hasSource() && (transcript.getDestination().isPresent() || transcript.getMessage().getGroupContext().isPresent())) {
                         SignalServiceDataMessage message = transcript.getMessage();
 
                         try {
@@ -75,7 +76,8 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                                     transcript.getTimestamp(),
                                     envelope.getSourceAddress().getNumber().get(),
                                     transcript.getDestination().isPresent() ? transcript.getDestination().get().getNumber().get() : "",
-                                    message.getGroupInfo().isPresent() ? message.getGroupInfo().get().getGroupId() : new byte[0],
+                                    message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()
+                                            ? message.getGroupContext().get().getGroupV1().get().getGroupId() : new byte[0],
                                     message.getBody().isPresent() ? message.getBody().get() : "",
                                     JsonDbusReceiveMessageHandler.getAttachments(message, m)));
                         } catch (DBusException e) {

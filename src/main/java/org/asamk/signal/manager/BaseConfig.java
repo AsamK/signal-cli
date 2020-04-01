@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
@@ -48,6 +49,8 @@ public class BaseConfig {
             interceptors,
             zkGroupServerPublicParams
     );
+
+    static final SignalServiceProfile.Capabilities capabilities = new SignalServiceProfile.Capabilities(false, false);
 
     private BaseConfig() {
     }

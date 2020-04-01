@@ -18,22 +18,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JsonThreadStore {
+public class LegacyJsonThreadStore {
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     @JsonProperty("threads")
-    @JsonSerialize(using = JsonThreadStore.MapToListSerializer.class)
+    @JsonSerialize(using = MapToListSerializer.class)
     @JsonDeserialize(using = ThreadsDeserializer.class)
     private Map<String, ThreadInfo> threads = new HashMap<>();
-
-    public void updateThread(ThreadInfo thread) {
-        threads.put(thread.id, thread);
-    }
-
-    public ThreadInfo getThread(String id) {
-        return threads.get(id);
-    }
 
     public List<ThreadInfo> getThreads() {
         return new ArrayList<>(threads.values());

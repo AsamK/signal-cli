@@ -38,6 +38,7 @@ import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
@@ -105,6 +106,12 @@ public class Main {
                 ts = m;
                 try {
                     m.init();
+                } catch (AuthorizationFailedException e) {
+                    if (!"register".equals(ns.getString("command"))) {
+                        // Register command should still be possible, if current authorization fails
+                        System.err.println("Authorization failed, was the number registered elsewhere?");
+                        return 2;
+                    }
                 } catch (Exception e) {
                     System.err.println("Error loading state file: " + e.getMessage());
                     return 2;

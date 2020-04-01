@@ -287,6 +287,34 @@ sendContacts
 Send a synchronization message with the local contacts list to all linked devices.
 This command should only be used if this is the master device.
 
+uploadStickerPack
+~~~~~~~~~~~~~~~~~
+Upload a new sticker pack, consisting of a manifest file and the stickers in WebP
+format (maximum size for a sticker file is 100KiB).
+The required manifest.json has the following format:
+
+```json
+{
+  "title": "<STICKER_PACK_TITLE>",
+  "author": "<STICKER_PACK_AUTHOR>",
+  "cover": { // Optional cover, by default the first sticker is used as cover
+    "file": "<name of webp file, mandatory>",
+    "emoji": "<optional>"
+  },
+  "stickers": [
+    {
+      "file": "<name of webp file, mandatory>",
+      "emoji": "<optional>"
+    }
+    ...
+  ]
+}
+```
+
+PATH::
+	The path of the manifest.json or a zip file containing the sticker pack you
+	wish to upload.
+
 daemon
 ~~~~~~
 signal-cli can run in daemon mode and provides an experimental dbus interface. For

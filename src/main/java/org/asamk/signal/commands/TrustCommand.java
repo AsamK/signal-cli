@@ -6,7 +6,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Hex;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.Locale;
 
@@ -50,13 +52,25 @@ public class TrustCommand implements LocalCommand {
                         System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
                         return 1;
                     }
-                    boolean res = m.trustIdentityVerified(number, fingerprintBytes);
+                    boolean res;
+                    try {
+                        res = m.trustIdentityVerified(number, fingerprintBytes);
+                    } catch (InvalidNumberException e) {
+                        ErrorUtils.handleInvalidNumberException(e);
+                        return 1;
+                    }
                     if (!res) {
                         System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
                         return 1;
                     }
                 } else if (fingerprint.length() == 60) {
-                    boolean res = m.trustIdentityVerifiedSafetyNumber(number, fingerprint);
+                    boolean res;
+                    try {
+                        res = m.trustIdentityVerifiedSafetyNumber(number, fingerprint);
+                    } catch (InvalidNumberException e) {
+                        ErrorUtils.handleInvalidNumberException(e);
+                        return 1;
+                    }
                     if (!res) {
                         System.err.println("Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
                         return 1;

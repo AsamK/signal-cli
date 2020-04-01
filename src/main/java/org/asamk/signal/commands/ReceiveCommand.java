@@ -10,7 +10,6 @@ import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
 import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.util.Base64;
 
@@ -54,7 +53,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 });
                 dbusconnection.addSigHandler(Signal.ReceiptReceived.class,
                         receiptReceived -> System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                        receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp()))));
+                            receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp()))));
                 dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
                     System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",
                             syncReceived.getSource(), syncReceived.getDestination(), DateUtils.formatTimestamp(syncReceived.getTimestamp()), syncReceived.getMessage()));

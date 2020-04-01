@@ -8,6 +8,7 @@ import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 
@@ -56,6 +57,12 @@ public class ErrorUtils {
     }
 
     public static void handleGroupIdFormatException(GroupIdFormatException e) {
+        System.err.println(e.getMessage());
+        System.err.println("Aborting sending.");
+    }
+
+    public static void handleInvalidNumberException(InvalidNumberException e) {
+        System.err.println("Failed to parse recipient: " + e.getMessage());
         System.err.println(e.getMessage());
         System.err.println("Aborting sending.");
     }

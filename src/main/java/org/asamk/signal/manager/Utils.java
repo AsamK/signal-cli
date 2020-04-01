@@ -13,9 +13,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.util.Base64;
 
 import java.io.BufferedInputStream;
@@ -35,12 +34,10 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
@@ -149,38 +146,19 @@ class Utils {
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }
 
-    static Set<SignalServiceAddress> getSignalServiceAddresses(Collection<String> recipients, String localNumber) {
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient, localNumber));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                return null;
-            }
-        }
-        return recipientsTS;
-    }
-
-    static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {
-        return PhoneNumberFormatter.formatNumber(number, localNumber);
-    }
-
-    private static SignalServiceAddress getPushAddress(String number, String localNumber) throws InvalidNumberException {
-        String e164number = canonicalizeNumber(number, localNumber);
-        return new SignalServiceAddress(null, e164number);
-    }
-
     static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
         try (FileInputStream f = new FileInputStream(file)) {
             DataInputStream in = new DataInputStream(f);
             int version = in.readInt();
-            if (version > 2) {
+            if (version > 3) {
                 return null;
             }
             int type = in.readInt();
             String source = in.readUTF();
+            UUID sourceUuid = null;
+            if (version >= 3) {
+                sourceUuid = UuidUtil.parseOrNull(in.readUTF());
+            }
             int sourceDevice = in.readInt();
             if (version == 1) {
                 // read legacy relay field
@@ -208,16 +186,20 @@ class Utils {
                     uuid = null;
                 }
             }
-            return new SignalServiceEnvelope(type, Optional.of(new SignalServiceAddress(null, source)), sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
+            Optional<SignalServiceAddress> addressOptional = sourceUuid == null && source.isEmpty()
+                    ? Optional.absent()
+                    : Optional.of(new SignalServiceAddress(sourceUuid, source));
+            return new SignalServiceEnvelope(type, addressOptional, sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
         }
     }
 
     static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (FileOutputStream f = new FileOutputStream(file)) {
             try (DataOutputStream out = new DataOutputStream(f)) {
-                out.writeInt(2); // version
+                out.writeInt(3); // version
                 out.writeInt(envelope.getType());
-                out.writeUTF(envelope.getSourceE164().get());
+                out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
+                out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
                 out.writeInt(envelope.getSourceDevice());
                 out.writeLong(envelope.getTimestamp());
                 if (envelope.hasContent()) {
@@ -256,10 +238,25 @@ class Utils {
         return outputFile;
     }
 
-    static String computeSafetyNumber(String ownUsername, IdentityKey ownIdentityKey, String theirUsername, IdentityKey theirIdentityKey) {
-        // Version 1: E164 user
-        // Version 2: UUID user
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(1, ownUsername.getBytes(), ownIdentityKey, theirUsername.getBytes(), theirIdentityKey);
+    static String computeSafetyNumber(SignalServiceAddress ownAddress, IdentityKey ownIdentityKey, SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+        int version;
+        byte[] ownId;
+        byte[] theirId;
+
+        if (BaseConfig.capabilities.isUuid()
+                && ownAddress.getUuid().isPresent() && theirAddress.getUuid().isPresent()) {
+            // Version 2: UUID user
+            version = 2;
+            ownId = UuidUtil.toByteArray(ownAddress.getUuid().get());
+            theirId = UuidUtil.toByteArray(theirAddress.getUuid().get());
+        } else {
+            // Version 1: E164 user
+            version = 1;
+            ownId = ownAddress.getNumber().get().getBytes();
+            theirId = theirAddress.getNumber().get().getBytes();
+        }
+
+        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(version, ownId, ownIdentityKey, theirId, theirIdentityKey);
         return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 

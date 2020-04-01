@@ -2,6 +2,7 @@ package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.GroupIdFormatException;
 import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;

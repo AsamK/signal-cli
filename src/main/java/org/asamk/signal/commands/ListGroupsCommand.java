@@ -6,19 +6,20 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.groups.GroupInfo;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
 import java.util.List;
 
 public class ListGroupsCommand implements LocalCommand {
 
-    private static void printGroup(GroupInfo group, boolean detailed, String username) {
+    private static void printGroup(GroupInfo group, boolean detailed, SignalServiceAddress address) {
         if (detailed) {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b Members: %s",
-                    Base64.encodeBytes(group.groupId), group.name, group.members.contains(username), group.blocked, group.members));
+                    Base64.encodeBytes(group.groupId), group.name, group.isMember(address), group.blocked, group.getMembersE164()));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId), group.name, group.members.contains(username), group.blocked));
+                    Base64.encodeBytes(group.groupId), group.name, group.isMember(address), group.blocked));
         }
     }
 
@@ -40,7 +41,7 @@ public class ListGroupsCommand implements LocalCommand {
         boolean detailed = ns.getBoolean("detailed");
 
         for (GroupInfo group : groups) {
-            printGroup(group, detailed, m.getUsername());
+            printGroup(group, detailed, m.getSelfAddress());
         }
         return 0;
     }

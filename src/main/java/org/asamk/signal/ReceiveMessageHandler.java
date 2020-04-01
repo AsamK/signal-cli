@@ -5,7 +5,6 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
-import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
@@ -70,11 +69,6 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
                     System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getName() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getName() + "' to mark it as trusted");
                     System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getName() + "' to trust it without verification");
-                } else if (exception instanceof ProtocolUntrustedIdentityException) {
-                    ProtocolUntrustedIdentityException e = (ProtocolUntrustedIdentityException) exception;
-                    System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
-                    System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getSender() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getSender() + "' to mark it as trusted");
-                    System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getSender() + "' to trust it without verification");
                 } else {
                     System.out.println("Exception: " + exception.getMessage() + " (" + exception.getClass().getSimpleName() + ")");
                 }
@@ -109,7 +103,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
                             ContactInfo fromContact = m.getContact(rm.getSender().getNumber().get());
-                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
+                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber().get() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
                     if (syncMessage.getRequest().isPresent()) {
@@ -129,6 +123,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                             String dest = sentTranscriptMessage.getDestination().get().getNumber().get();
                             ContactInfo destContact = m.getContact(dest);
                             to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
+                        } else if (sentTranscriptMessage.getRecipients().size() > 0) {
+                            StringBuilder toBuilder = new StringBuilder();
+                            for (SignalServiceAddress dest : sentTranscriptMessage.getRecipients()) {
+                                ContactInfo destContact = m.getContact(dest.getNumber().get());
+                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ").append(dest.getNumber().get()).append(" ");
+                            }
+                            to = toBuilder.toString();
                         } else {
                             to = "Unknown";
                         }
@@ -144,14 +145,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Blocked numbers:");
                         final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
                         for (SignalServiceAddress address : blockedList.getAddresses()) {
-                            System.out.println(" - " + address.getNumber());
+                            System.out.println(" - " + address.getNumber().get());
                         }
                     }
                     if (syncMessage.getVerified().isPresent()) {
                         System.out.println("Received sync message with verified identities:");
                         final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
                         System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
-                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination().getNumber().get(), verifiedMessage.getIdentityKey()));
+                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
                         System.out.println("   " + safetyNumber);
                     }
                     if (syncMessage.getConfiguration().isPresent()) {
@@ -168,7 +169,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getViewOnceOpen().isPresent()) {
                         final ViewOnceOpenMessage viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
                         System.out.println("Received sync message with view once open message:");
-                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber());
+                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber().get());
                         System.out.println(" - Timestamp:" + viewOnceOpenMessage.getTimestamp());
                     }
                     if (syncMessage.getStickerPackOperations().isPresent()) {
@@ -253,8 +254,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getBody().isPresent()) {
             System.out.println("Body: " + message.getBody().get());
         }
-        if (message.getGroupInfo().isPresent()) {
-            SignalServiceGroup groupInfo = message.getGroupInfo().get();
+        if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
+            SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
             System.out.println("Group info:");
             System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
             if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {
@@ -322,7 +323,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber());
+            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber().get());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
@@ -330,7 +331,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
-            System.out.println(" Author: " + quote.getAuthor().getNumber());
+            System.out.println(" Author: " + quote.getAuthor().getNumber().get());
             System.out.println(" Text: " + quote.getText());
             if (quote.getAttachments().size() > 0) {
                 System.out.println(" Attachments: ");

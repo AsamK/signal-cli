@@ -9,8 +9,8 @@ import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 
@@ -19,6 +19,7 @@ import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
 import static org.asamk.signal.util.ErrorUtils.handleIOException;
+import static org.asamk.signal.util.ErrorUtils.handleInvalidNumberException;
 import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class SendReactionCommand implements LocalCommand {
@@ -61,7 +62,7 @@ public class SendReactionCommand implements LocalCommand {
 
         String emoji = ns.getString("emoji");
         boolean isRemove = ns.getBoolean("remove");
-        SignalServiceAddress targetAuthor = new SignalServiceAddress(null, ns.getString("target_author"));
+        String targetAuthor = ns.getString("target_author");
         long targetTimestamp = ns.getLong("target_timestamp");
 
         try {
@@ -89,6 +90,9 @@ public class SendReactionCommand implements LocalCommand {
             return 1;
         } catch (GroupIdFormatException e) {
             handleGroupIdFormatException(e);
+            return 1;
+        } catch (InvalidNumberException e) {
+            handleInvalidNumberException(e);
             return 1;
         }
     }
