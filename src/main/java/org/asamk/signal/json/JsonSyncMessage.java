@@ -1,5 +1,6 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
+import org.asamk.Signal;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -41,5 +42,9 @@ class JsonSyncMessage {
         } else if (syncMessage.getRequest().isPresent()) {
             this.type = JsonSyncMessageType.REQUEST_SYNC;
         }
+    }
+
+    JsonSyncMessage(Signal.SyncMessageReceived messageReceived) {
+        sentMessage = new JsonSyncDataMessage(messageReceived);
     }
 }

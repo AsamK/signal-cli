@@ -1,10 +1,10 @@
-package org.asamk.signal;
+package org.asamk.signal.manager;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class JsonStickerPack {
+class JsonStickerPack {
 
     @JsonProperty
     public String title;

@@ -1,10 +1,11 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
+import org.asamk.Signal;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-class JsonMessageEnvelope {
+public class JsonMessageEnvelope {
 
     String source;
     int sourceDevice;
@@ -43,5 +44,23 @@ class JsonMessageEnvelope {
                 this.receiptMessage = new JsonReceiptMessage(content.getReceiptMessage().get());
             }
         }
+    }
+
+    public JsonMessageEnvelope(Signal.MessageReceived messageReceived) {
+        source = messageReceived.getSender();
+        timestamp = messageReceived.getTimestamp();
+        dataMessage = new JsonDataMessage(messageReceived);
+    }
+
+    public JsonMessageEnvelope(Signal.ReceiptReceived receiptReceived) {
+        source = receiptReceived.getSender();
+        timestamp = receiptReceived.getTimestamp();
+        isReceipt = true;
+    }
+
+    public JsonMessageEnvelope(Signal.SyncMessageReceived messageReceived) {
+        source = messageReceived.getSource();
+        timestamp = messageReceived.getTimestamp();
+        syncMessage = new JsonSyncMessage(messageReceived);
     }
 }

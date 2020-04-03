@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.asamk.Signal;
 import org.asamk.signal.AttachmentInvalidException;
 import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.JsonStickerPack;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.StickerPackInvalidException;
 import org.asamk.signal.TrustLevel;

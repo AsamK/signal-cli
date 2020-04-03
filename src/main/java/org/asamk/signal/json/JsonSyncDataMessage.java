@@ -1,5 +1,6 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
+import org.asamk.Signal;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 
 class JsonSyncDataMessage extends JsonDataMessage {
@@ -11,5 +12,10 @@ class JsonSyncDataMessage extends JsonDataMessage {
         if (transcriptMessage.getDestination().isPresent()) {
             this.destination = transcriptMessage.getDestination().get().getNumber().get();
         }
+    }
+
+    JsonSyncDataMessage(Signal.SyncMessageReceived messageReceived) {
+        super(messageReceived);
+        destination = messageReceived.getDestination();
     }
 }

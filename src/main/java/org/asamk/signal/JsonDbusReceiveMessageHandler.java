@@ -9,9 +9,9 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +40,24 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 e.printStackTrace();
             }
         } else if (content != null) {
-            if (content.getDataMessage().isPresent()) {
+            if (content.getReceiptMessage().isPresent()) {
+                final SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
+                if (receiptMessage.isDeliveryReceipt()) {
+                    final String sender = !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceE164().get() : content.getSender().getNumber().get();
+                    for (long timestamp : receiptMessage.getTimestamps()) {
+                        try {
+                            conn.sendSignal(new Signal.ReceiptReceived(
+                                    objectPath,
+                                    timestamp,
+                                    sender
+                            ));
+                        } catch (DBusException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } else if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
-
-                if (message.getBody().isPresent())
-                    System.out.println(message.getBody().get());
 
                 if (!message.isEndSession() &&
                         !(message.getGroupContext().isPresent() &&

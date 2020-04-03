@@ -1,11 +1,13 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
+import org.asamk.Signal;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class JsonDataMessage {
 
@@ -33,5 +35,25 @@ class JsonDataMessage {
         } else {
             this.attachments = new ArrayList<>();
         }
+    }
+
+    public JsonDataMessage(Signal.MessageReceived messageReceived) {
+        timestamp = messageReceived.getTimestamp();
+        message = messageReceived.getMessage();
+        groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
+        attachments = messageReceived.getAttachments()
+                .stream()
+                .map(JsonAttachment::new)
+                .collect(Collectors.toList());
+    }
+
+    public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {
+        timestamp = messageReceived.getTimestamp();
+        message = messageReceived.getMessage();
+        groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
+        attachments = messageReceived.getAttachments()
+                .stream()
+                .map(JsonAttachment::new)
+                .collect(Collectors.toList());
     }
 }
