@@ -96,4 +96,47 @@ public interface Signal extends DBusInterface {
             return sender;
         }
     }
+
+    class SyncMessageReceived extends DBusSignal {
+        private long timestamp;
+        private String source;
+        private String destination;
+        private byte[] groupId;
+        private String message;
+        private List<String> attachments;
+
+        public SyncMessageReceived(String objectpath, long timestamp, String source, String destination, byte[] groupId, String message, List<String> attachments) throws DBusException {
+            super(objectpath, timestamp, source, destination, groupId, message, attachments);
+            this.timestamp = timestamp;
+            this.source = source;
+            this.destination = destination;
+            this.groupId = groupId;
+            this.message = message;
+            this.attachments = attachments;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public String getDestination() {
+            return destination;
+        }
+
+        public byte[] getGroupId() {
+            return groupId;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public List<String> getAttachments() {
+            return attachments;
+        }
+    }
 }

@@ -53,7 +53,22 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 });
                 dbusconnection.addSigHandler(Signal.ReceiptReceived.class,
                         receiptReceived -> System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                                receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp()))));
+                            receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp()))));
+                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
+                    System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",
+                            syncReceived.getSource(), syncReceived.getDestination(), DateUtils.formatTimestamp(syncReceived.getTimestamp()), syncReceived.getMessage()));
+                    if (syncReceived.getGroupId().length > 0) {
+                        System.out.println("Group info:");
+                        System.out.println("  Id: " + Base64.encodeBytes(syncReceived.getGroupId()));
+                    }
+                    if (syncReceived.getAttachments().size() > 0) {
+                        System.out.println("Attachments: ");
+                        for (String attachment : syncReceived.getAttachments()) {
+                            System.out.println("-  Stored plaintext in: " + attachment);
+                        }
+                    }
+                    System.out.println();
+                });
             } catch (UnsatisfiedLinkError e) {
                 System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
                 return 1;
