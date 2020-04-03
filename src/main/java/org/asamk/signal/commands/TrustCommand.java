@@ -23,8 +23,8 @@ public class TrustCommand implements LocalCommand {
         mutTrust.addArgument("-a", "--trust-all-known-keys")
                 .help("Trust all known keys of this user, only use this for testing.")
                 .action(Arguments.storeTrue());
-        mutTrust.addArgument("-v", "--verified-fingerprint")
-                .help("Specify the fingerprint of the key, only use this option if you have verified the fingerprint.");
+        mutTrust.addArgument("-v", "--verified-safety-number", "--verified-fingerprint")
+                .help("Specify the safety number of the key, only use this option if you have verified the safety number.");
     }
 
     @Override
@@ -41,13 +41,13 @@ public class TrustCommand implements LocalCommand {
                 return 1;
             }
         } else {
-            String fingerprint = ns.getString("verified_fingerprint");
-            if (fingerprint != null) {
-                fingerprint = fingerprint.replaceAll(" ", "");
-                if (fingerprint.length() == 66) {
+            String safetyNumber = ns.getString("verified_safety_number");
+            if (safetyNumber != null) {
+                safetyNumber = safetyNumber.replaceAll(" ", "");
+                if (safetyNumber.length() == 66) {
                     byte[] fingerprintBytes;
                     try {
-                        fingerprintBytes = Hex.toByteArray(fingerprint.toLowerCase(Locale.ROOT));
+                        fingerprintBytes = Hex.toByteArray(safetyNumber.toLowerCase(Locale.ROOT));
                     } catch (Exception e) {
                         System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
                         return 1;
@@ -63,10 +63,10 @@ public class TrustCommand implements LocalCommand {
                         System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
                         return 1;
                     }
-                } else if (fingerprint.length() == 60) {
+                } else if (safetyNumber.length() == 60) {
                     boolean res;
                     try {
-                        res = m.trustIdentityVerifiedSafetyNumber(number, fingerprint);
+                        res = m.trustIdentityVerifiedSafetyNumber(number, safetyNumber);
                     } catch (InvalidNumberException e) {
                         ErrorUtils.handleInvalidNumberException(e);
                         return 1;
@@ -76,11 +76,11 @@ public class TrustCommand implements LocalCommand {
                         return 1;
                     }
                 } else {
-                    System.err.println("Fingerprint has invalid format, either specify the old hex fingerprint or the new safety number");
+                    System.err.println("Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
                     return 1;
                 }
             } else {
-                System.err.println("You need to specify the fingerprint you have verified with -v FINGERPRINT");
+                System.err.println("You need to specify the fingerprint/safety number you have verified with -v SAFETY_NUMBER");
                 return 1;
             }
         }

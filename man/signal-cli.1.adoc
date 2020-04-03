@@ -226,9 +226,9 @@ number::
 *-a*, *--trust-all-known-keys*::
 	Trust all known keys of this user, only use this for testing.
 
-*-v* VERIFIED_FINGERPRINT, *--verified-fingerprint* VERIFIED_FINGERPRINT::
-	Specify the safety number or fingerprint of the key, only use this option if you have verified
-	the fingerprint.
+*-v* VERIFIED_SAFETY_NUMBER, *--verified-safety-number* VERIFIED_SAFETY_NUMBER::
+	Specify the safety number of the key, only use this option if you have verified
+	the safety number.
 
 updateProfile
 ~~~~~~~~~~~~~
@@ -355,7 +355,7 @@ Send a message to a group::
 	signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
 
 Trust new key, after having verified it::
-    signal-cli -u USERNAME trust -v FINGER_PRINT NUMBER
+    signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
 
 Trust new key, without having verified it. Only use this if you don't care about security::
     signal-cli -u USERNAME trust -a NUMBER
