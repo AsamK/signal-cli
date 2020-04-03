@@ -62,6 +62,10 @@ class JsonSessionStore implements SessionStore {
         return new SessionRecord();
     }
 
+    public synchronized List<SessionInfo> getSessions() {
+        return sessions;
+    }
+
     @Override
     public synchronized List<Integer> getSubDeviceSessions(String name) {
         SignalServiceAddress serviceAddress = resolveSignalServiceAddress(name);
@@ -158,7 +162,7 @@ class JsonSessionStore implements SessionStore {
         }
     }
 
-    public static class JsonPreKeyStoreSerializer extends JsonSerializer<JsonSessionStore> {
+    public static class JsonSessionStoreSerializer extends JsonSerializer<JsonSessionStore> {
 
         @Override
         public void serialize(JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {

@@ -103,6 +103,9 @@ public class GroupInfo {
 
     public void addMembers(Collection<SignalServiceAddress> addresses) {
         for (SignalServiceAddress address : addresses) {
+            if (this.members.contains(address)) {
+                continue;
+            }
             removeMember(address);
             this.members.add(address);
         }

@@ -14,7 +14,10 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
+import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
+import org.asamk.signal.storage.protocol.RecipientStore;
+import org.asamk.signal.storage.protocol.SessionInfo;
 import org.asamk.signal.storage.protocol.SignalServiceAddressResolver;
 import org.asamk.signal.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
@@ -37,6 +40,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SignalAccount {
 
@@ -59,6 +63,7 @@ public class SignalAccount {
     private JsonSignalProtocolStore signalProtocolStore;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
+    private RecipientStore recipientStore;
 
     private SignalAccount() {
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
@@ -88,6 +93,7 @@ public class SignalAccount {
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore();
         account.contactStore = new JsonContactsStore();
+        account.recipientStore = new RecipientStore();
         account.registered = false;
 
         return account;
@@ -108,6 +114,7 @@ public class SignalAccount {
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore();
         account.contactStore = new JsonContactsStore();
+        account.recipientStore = new RecipientStore();
         account.registered = true;
         account.isMultiDevice = true;
 
@@ -199,6 +206,35 @@ public class SignalAccount {
         if (contactStore == null) {
             contactStore = new JsonContactsStore();
         }
+
+        JsonNode recipientStoreNode = rootNode.get("recipientStore");
+        if (recipientStoreNode != null) {
+            recipientStore = jsonProcessor.convertValue(recipientStoreNode, RecipientStore.class);
+        }
+        if (recipientStore == null) {
+            recipientStore = new RecipientStore();
+
+            recipientStore.resolveServiceAddress(getSelfAddress());
+
+            for (ContactInfo contact : contactStore.getContacts()) {
+                recipientStore.resolveServiceAddress(contact.getAddress());
+            }
+
+            for (GroupInfo group : groupStore.getGroups()) {
+                group.members = group.members.stream()
+                        .map(m -> recipientStore.resolveServiceAddress(m))
+                        .collect(Collectors.toSet());
+            }
+
+            for (SessionInfo session : signalProtocolStore.getSessions()) {
+                session.address = recipientStore.resolveServiceAddress(session.address);
+            }
+
+            for (JsonIdentityKeyStore.Identity identity : signalProtocolStore.getIdentities()) {
+                identity.setAddress(recipientStore.resolveServiceAddress(identity.getAddress()));
+            }
+        }
+
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
             LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
@@ -244,6 +280,7 @@ public class SignalAccount {
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
+                .putPOJO("recipientStore", recipientStore)
         ;
         try {
             synchronized (fileChannel) {
@@ -300,6 +337,10 @@ public class SignalAccount {
 
     public JsonContactsStore getContactStore() {
         return contactStore;
+    }
+
+    public RecipientStore getRecipientStore() {
+        return recipientStore;
     }
 
     public String getUsername() {

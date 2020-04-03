@@ -139,6 +139,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -1287,7 +1288,10 @@ public class Manager implements Signal {
                     }
 
                     if (groupInfo.getMembers().isPresent()) {
-                        group.addMembers(groupInfo.getMembers().get());
+                        group.addMembers(groupInfo.getMembers().get()
+                                .stream()
+                                .map(this::resolveSignalServiceAddress)
+                                .collect(Collectors.toSet()));
                     }
 
                     account.getGroupStore().updateGroup(group);
@@ -1326,8 +1330,9 @@ public class Manager implements Signal {
                     break;
             }
         }
+        final SignalServiceAddress conversationPartnerAddress = isSync ? destination : source;
         if (message.isEndSession()) {
-            handleEndSession(isSync ? destination : source);
+            handleEndSession(conversationPartnerAddress);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
@@ -1341,9 +1346,9 @@ public class Manager implements Signal {
                     account.getGroupStore().updateGroup(group);
                 }
             } else {
-                ContactInfo contact = account.getContactStore().getContact(isSync ? destination : source);
+                ContactInfo contact = account.getContactStore().getContact(conversationPartnerAddress);
                 if (contact == null) {
-                    contact = new ContactInfo(isSync ? destination : source);
+                    contact = new ContactInfo(conversationPartnerAddress);
                 }
                 if (contact.messageExpirationTime != message.getExpiresInSeconds()) {
                     contact.messageExpirationTime = message.getExpiresInSeconds();
@@ -1607,7 +1612,10 @@ public class Manager implements Signal {
                                 if (g.getName().isPresent()) {
                                     syncGroup.name = g.getName().get();
                                 }
-                                syncGroup.addMembers(g.getMembers());
+                                syncGroup.addMembers(g.getMembers()
+                                        .stream()
+                                        .map(this::resolveSignalServiceAddress)
+                                        .collect(Collectors.toSet()));
                                 if (!g.isActive()) {
                                     syncGroup.removeMember(account.getSelfAddress());
                                 } else {
@@ -1642,7 +1650,7 @@ public class Manager implements Signal {
                 if (syncMessage.getBlockedList().isPresent()) {
                     final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
                     for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
-                        setContactBlocked(address, true);
+                        setContactBlocked(resolveSignalServiceAddress(address), true);
                     }
                     for (byte[] groupId : blockedListMessage.getGroupIds()) {
                         try {
@@ -1667,9 +1675,10 @@ public class Manager implements Signal {
                                 if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
                                     account.setProfileKey(c.getProfileKey().get());
                                 }
-                                ContactInfo contact = account.getContactStore().getContact(c.getAddress());
+                                final SignalServiceAddress address = resolveSignalServiceAddress(c.getAddress());
+                                ContactInfo contact = account.getContactStore().getContact(address);
                                 if (contact == null) {
-                                    contact = new ContactInfo(c.getAddress());
+                                    contact = new ContactInfo(address);
                                 }
                                 if (c.getName().isPresent()) {
                                     contact.name = c.getName().get();
@@ -1711,7 +1720,7 @@ public class Manager implements Signal {
                 }
                 if (syncMessage.getVerified().isPresent()) {
                     final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
-                    account.getSignalProtocolStore().setIdentityTrustLevel(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
+                    account.getSignalProtocolStore().setIdentityTrustLevel(resolveSignalServiceAddress(verifiedMessage.getDestination()), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                 }
                 if (syncMessage.getConfiguration().isPresent()) {
                     // TODO
@@ -2030,15 +2039,16 @@ public class Manager implements Signal {
 
     public SignalServiceAddress resolveSignalServiceAddress(String identifier) {
         SignalServiceAddress address = Util.getSignalServiceAddressFromIdentifier(identifier);
+
+        return resolveSignalServiceAddress(address);
+    }
+
+    public SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address) {
         if (address.matches(account.getSelfAddress())) {
             return account.getSelfAddress();
         }
 
-        ContactInfo contactInfo = account.getContactStore().getContact(address);
-        if (contactInfo == null) {
-            return address;
-        }
-        return contactInfo.getAddress();
+        return account.getRecipientStore().resolveServiceAddress(address);
     }
 
     public interface ReceiveMessageHandler {

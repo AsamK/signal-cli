@@ -252,6 +252,9 @@ class Utils {
         } else {
             // Version 1: E164 user
             version = 1;
+            if (!ownAddress.getNumber().isPresent() || !theirAddress.getNumber().isPresent()) {
+                return "INVALID ID";
+            }
             ownId = ownAddress.getNumber().get().getBytes();
             theirId = theirAddress.getNumber().get().getBytes();
         }

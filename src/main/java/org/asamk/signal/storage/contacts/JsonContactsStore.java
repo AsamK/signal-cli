@@ -27,6 +27,12 @@ public class JsonContactsStore {
     public ContactInfo getContact(SignalServiceAddress address) {
         for (ContactInfo contact : contacts) {
             if (contact.getAddress().matches(address)) {
+                if (contact.uuid == null) {
+                    contact.uuid = address.getUuid().orNull();
+                } else if (contact.number == null) {
+                    contact.number = address.getNumber().orNull();
+                }
+
                 return contact;
             }
         }

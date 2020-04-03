@@ -26,7 +26,7 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
 
     @JsonProperty("sessionStore")
     @JsonDeserialize(using = JsonSessionStore.JsonSessionStoreDeserializer.class)
-    @JsonSerialize(using = JsonSessionStore.JsonPreKeyStoreSerializer.class)
+    @JsonSerialize(using = JsonSessionStore.JsonSessionStoreSerializer.class)
     private JsonSessionStore sessionStore;
 
     @JsonProperty("signedPreKeyStore")
@@ -129,6 +129,10 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
     @Override
     public SessionRecord loadSession(SignalProtocolAddress address) {
         return sessionStore.loadSession(address);
+    }
+
+    public List<SessionInfo> getSessions() {
+        return sessionStore.getSessions();
     }
 
     @Override
