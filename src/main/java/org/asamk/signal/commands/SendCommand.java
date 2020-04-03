@@ -99,12 +99,14 @@ public class SendCommand implements DbusCommand {
             if (attachments == null) {
                 attachments = new ArrayList<>();
             }
+            long timestamp;
             if (ns.getString("group") != null) {
                 byte[] groupId = Util.decodeGroupId(ns.getString("group"));
-                signal.sendGroupMessage(messageText, attachments, groupId);
+                timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
             } else {
-                signal.sendMessage(messageText, attachments, ns.getList("recipient"));
+                timestamp = signal.sendMessage(messageText, attachments, ns.getList("recipient"));
             }
+            System.out.println(timestamp);
             return 0;
         } catch (IOException e) {
             handleIOException(e);

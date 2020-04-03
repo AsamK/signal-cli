@@ -525,7 +525,7 @@ public class Manager implements Signal {
     }
 
     @Override
-    public void sendGroupMessage(String messageText, List<String> attachments,
+    public long sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
             throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
@@ -543,7 +543,7 @@ public class Manager implements Signal {
 
         messageBuilder.withExpiration(g.messageExpirationTime);
 
-        sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+        return sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
     public void sendGroupMessageReaction(String emoji, boolean remove, String targetAuthor,
@@ -688,15 +688,15 @@ public class Manager implements Signal {
     }
 
     @Override
-    public void sendMessage(String message, List<String> attachments, String recipient)
+    public long sendMessage(String message, List<String> attachments, String recipient)
             throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException {
         List<String> recipients = new ArrayList<>(1);
         recipients.add(recipient);
-        sendMessage(message, attachments, recipients);
+        return sendMessage(message, attachments, recipients);
     }
 
     @Override
-    public void sendMessage(String messageText, List<String> attachments,
+    public long sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
@@ -716,7 +716,7 @@ public class Manager implements Signal {
 
             messageBuilder.withAttachments(attachmentPointers);
         }
-        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
+        return sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
     public void sendMessageReaction(String emoji, boolean remove, String targetAuthor,
@@ -1134,8 +1134,10 @@ public class Manager implements Signal {
     /**
      * This method throws an EncapsulatedExceptions exception instead of returning a list of SendMessageResult.
      */
-    private void sendMessageLegacy(SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients)
+    private long sendMessageLegacy(SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients)
             throws EncapsulatedExceptions, IOException {
+        final long timestamp = System.currentTimeMillis();
+        messageBuilder.withTimestamp(timestamp);
         List<SendMessageResult> results = sendMessage(messageBuilder, recipients);
 
         List<UntrustedIdentityException> untrustedIdentities = new LinkedList<>();
@@ -1154,6 +1156,7 @@ public class Manager implements Signal {
         if (!untrustedIdentities.isEmpty() || !unregisteredUsers.isEmpty() || !networkExceptions.isEmpty()) {
             throw new EncapsulatedExceptions(untrustedIdentities, unregisteredUsers, networkExceptions);
         }
+        return timestamp;
     }
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
