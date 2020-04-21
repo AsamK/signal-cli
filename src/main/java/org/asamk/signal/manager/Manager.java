@@ -732,7 +732,15 @@ public class Manager implements Signal {
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage();
 
-        sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
+        final Collection<SignalServiceAddress> signalServiceAddresses = getSignalServiceAddresses(recipients);
+        try {
+            sendMessageLegacy(messageBuilder, signalServiceAddresses);
+        } catch (Exception e) {
+            for (SignalServiceAddress address : signalServiceAddresses) {
+                handleEndSession(address);
+            }
+            throw e;
+        }
     }
 
     @Override
