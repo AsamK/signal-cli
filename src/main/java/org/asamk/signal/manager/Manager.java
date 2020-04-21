@@ -1560,7 +1560,7 @@ public class Manager implements Signal {
                 if (content.isNeedsReceipt()) {
                     try {
                         sendReceipt(sender, message.getTimestamp());
-                    } catch (IOException | UntrustedIdentityException e) {
+                    } catch (IOException | UntrustedIdentityException | IllegalArgumentException e) {
                         e.printStackTrace();
                     }
                 }
@@ -1579,21 +1579,21 @@ public class Manager implements Signal {
                     if (rm.isContactsRequest()) {
                         try {
                             sendContacts();
-                        } catch (UntrustedIdentityException | IOException e) {
+                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
                             e.printStackTrace();
                         }
                     }
                     if (rm.isGroupsRequest()) {
                         try {
                             sendGroups();
-                        } catch (UntrustedIdentityException | IOException e) {
+                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
                             e.printStackTrace();
                         }
                     }
                     if (rm.isBlockedListRequest()) {
                         try {
                             sendBlockedList();
-                        } catch (UntrustedIdentityException | IOException e) {
+                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
                             e.printStackTrace();
                         }
                     }
