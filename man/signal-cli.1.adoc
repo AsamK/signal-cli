@@ -5,276 +5,268 @@ vim:set ts=4 sw=4 tw=82 noet:
 
 = signal-cli (1)
 
-Name
-----
+== Name
+
 signal-cli - A commandline and dbus interface for the Signal messenger
 
-Synopsis
---------
+== Synopsis
+
 *signal-cli* [--config CONFIG] [-h | -v | -u USERNAME | --dbus | --dbus-system] command [command-options]
 
-Description
------------
+== Description
 
-signal-cli is a commandline interface for libsignal-service-java. It supports
-registering, verifying, sending and receiving messages. For registering you need a
-phone number where you can receive SMS or incoming calls.
-signal-cli was primarily developed to be used on servers to notify admins of
-important events. For this use-case, it has a dbus interface, that can be used to
-send messages from any programming language that has dbus bindings.
+signal-cli is a commandline interface for libsignal-service-java.
+It supports registering, verifying, sending and receiving messages.
+For registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli was primarily developed to be used on servers to notify admins of important events.
+For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
-Options
--------
+== Options
 
 *-h*, *--help*::
-	Show help message and quit.
+Show help message and quit.
 
 *-v*, *--version*::
-	Print the version and quit.
+Print the version and quit.
 
 *--config* CONFIG::
-	Set the path, where to store the config.
-	Make sure you have full read/write access to the given directory.
-	(Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
+Set the path, where to store the config.
+Make sure you have full read/write access to the given directory.
+(Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
 
 *-u* USERNAME, *--username* USERNAME::
-	Specify your phone number, that will be your identifier.
-	The phone number must include the country calling code, i.e. the number must
-	start with a "+" sign.
+Specify your phone number, that will be your identifier.
+The phone number must include the country calling code, i.e. the number must start with a "+" sign.
 
 *--dbus*::
-	Make request via user dbus.
+Make request via user dbus.
 
 *--dbus-system*::
-	Make request via system dbus.
+Make request via system dbus.
 
-Commands
---------
+== Commands
 
-register
-~~~~~~~~
-Register a phone number with SMS or voice verification. Use the verify command to
-complete the verification.
+=== register
+
+Register a phone number with SMS or voice verification.
+Use the verify command to complete the verification.
 
 *-v*, *--voice*::
-	The verification should be done over voice, not SMS.
+The verification should be done over voice, not SMS.
 
-verify
-~~~~~~
+=== verify
+
 Verify the number using the code received via SMS or voice.
 
 VERIFICATIONCODE::
-	The verification code.
+The verification code.
 
 *-p* PIN, *--pin* PIN::
-	The registration lock PIN, that was set by the user. Only required if a PIN was set.
+The registration lock PIN, that was set by the user.
+Only required if a PIN was set.
 
-unregister
-~~~~~~~~~~
+=== unregister
+
 Disable push support for this device, i.e. this device won't receive any more messages.
 If this is the master device, other users can't send messages to this number anymore.
 Use "updateAccount" to undo this.
 To remove a linked device, use "removeDevice" from the master device.
 
-updateAccount
-~~~~~~~~~~~~~
+=== updateAccount
+
 Update the account attributes on the signal server.
 Can fix problems with receiving messages.
 
-setPin
-~~~~~~
+=== setPin
+
 Set a registration lock pin, to prevent others from registering this number.
 
 REGISTRATION_LOCK_PIN::
-    The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
+The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
 
-removePin
-~~~~~~~~~
+=== removePin
+
 Remove the registration lock pin.
 
-link
-~~~~
-Link to an existing device, instead of registering a new number.  This shows a
-"tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can
-just use this URI. If you want to link to an Android/iOS device, create a QR code
-with the URI (e.g. with qrencode) and scan that in the Signal app.
+=== link
+
+Link to an existing device, instead of registering a new number.
+This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI. If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
 
 *-n* NAME, *--name* NAME::
-	Optionally specify a name to describe this new device. By default "cli" will
-	be used.
+Optionally specify a name to describe this new device.
+By default "cli" will be used.
 
-addDevice
-~~~~~~~~~
-Link another device to this device. Only works, if this is the master device.
+=== addDevice
+
+Link another device to this device.
+Only works, if this is the master device.
 
 *--uri* URI::
-	Specify the uri contained in the QR code shown by the new device.                                                            
+Specify the uri contained in the QR code shown by the new device.
 
-listDevices
-~~~~~~~~~~~
+=== listDevices
+
 Show a list of connected devices.
 
-removeDevice
-~~~~~~~~~~~~
-Remove a connected device. Only works, if this is the master device.
+=== removeDevice
+
+Remove a connected device.
+Only works, if this is the master device.
 
 *-d* DEVICEID, *--deviceId* DEVICEID::
-	Specify the device you want to remove. Use listDevices to see the deviceIds.
+Specify the device you want to remove.
+Use listDevices to see the deviceIds.
 
-send
-~~~~
+=== send
+
 Send a message to another user or group.
 
 RECIPIENT::
-	Specify the recipients’ phone number.
+Specify the recipients’ phone number.
 
 *-g* GROUP, *--group* GROUP::
-	Specify the recipient group ID in base64 encoding.
+Specify the recipient group ID in base64 encoding.
 
 *-m* MESSAGE, *--message* MESSAGE::
-	Specify the message, if missing, standard input is used.
+Specify the message, if missing, standard input is used.
 
 *-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
-	Add one or more files as attachment.
+Add one or more files as attachment.
 
 *-e*, *--endsession*::
-	Clear session state and send end session message.
+Clear session state and send end session message.
 
-sendReaction
-~~~~~~~~~~~~
+=== sendReaction
+
 Send reaction to a previously received or sent message.
 
 RECIPIENT::
-	Specify the recipients’ phone number.
+Specify the recipients’ phone number.
 
 *-g* GROUP, *--group* GROUP::
-	Specify the recipient group ID in base64 encoding.
+Specify the recipient group ID in base64 encoding.
 
 *-e* EMOJI, *--emoji* EMOJI::
-	Specify the emoji, should be a single unicode grapheme cluster.
+Specify the emoji, should be a single unicode grapheme cluster.
 
 *-a* NUMBER, *--target-author* NUMBER::
-	Specify the number of the author of the message to which to react.
+Specify the number of the author of the message to which to react.
 
 *-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
-	Specify the timestamp of the message to which to react.
+Specify the timestamp of the message to which to react.
 
 *-r*, *--remove*::
-	Remove a reaction.
+Remove a reaction.
 
-receive
-~~~~~~~
-Query the server for new messages. New messages are printed on standardoutput and
-attachments are downloaded to the config directory.
+=== receive
+
+Query the server for new messages.
+New messages are printed on standardoutput and attachments are downloaded to the config directory.
 
 *-t* TIMEOUT, *--timeout* TIMEOUT::
-	Number of seconds to wait for new messages (negative values disable timeout).
-	Default is 5 seconds.
+Number of seconds to wait for new messages (negative values disable timeout).
+Default is 5 seconds.
 *--ignore-attachments*::
-	Don’t download attachments of received messages.
+Don’t download attachments of received messages.
 *--json*::
-	Output received messages in json format, one object per line.
+Output received messages in json format, one object per line.
 
-updateGroup
-~~~~~~~~~~~
+=== updateGroup
+
 Create or update a group.
 
 *-g* GROUP, *--group* GROUP::
-	Specify the recipient group ID in base64 encoding. If not specified, a new
-	group with a new random ID is generated.
+Specify the recipient group ID in base64 encoding.
+If not specified, a new group with a new random ID is generated.
 
 *-n* NAME, *--name* NAME::
-	Specify the new group name.
+Specify the new group name.
 
 *-a* AVATAR, *--avatar* AVATAR::
-	Specify a new group avatar image file.
+Specify a new group avatar image file.
 
 *-m* [MEMBER [MEMBER ...]], *--member* [MEMBER [MEMBER ...]]::
-	Specify one or more members to add to the group.
+Specify one or more members to add to the group.
 
-quitGroup
-~~~~~~~~~
+=== quitGroup
+
 Send a quit group message to all group members and remove self from member list.
 
 *-g* GROUP, *--group* GROUP::
-	Specify the recipient group ID in base64 encoding.
+Specify the recipient group ID in base64 encoding.
 
-listGroups
-~~~~~~~~~~~
+=== listGroups
+
 Show a list of known groups.
 
 *-d*, *--detailed*::
-	Include the list of members of each group.
+Include the list of members of each group.
 
-listIdentities
-~~~~~~~~~~~~~~
-List all known identity keys and their trust status, fingerprint and safety
-number.
+=== listIdentities
+
+List all known identity keys and their trust status, fingerprint and safety number.
 
 *-n* NUMBER, *--number* NUMBER::
-	Only show identity keys for the given phone number.
+Only show identity keys for the given phone number.
 
-trust
-~~~~~
-Set the trust level of a given number. The first time a key for a number is seen,
-it is trusted by default (TOFU). If the key changes, the new key must be trusted
-manually.
+=== trust
+
+Set the trust level of a given number.
+The first time a key for a number is seen, it is trusted by default (TOFU).
+If the key changes, the new key must be trusted manually.
 
 number::
-	Specify the phone number, for which to set the trust.
+Specify the phone number, for which to set the trust.
 
 *-a*, *--trust-all-known-keys*::
-	Trust all known keys of this user, only use this for testing.
+Trust all known keys of this user, only use this for testing.
 
 *-v* VERIFIED_SAFETY_NUMBER, *--verified-safety-number* VERIFIED_SAFETY_NUMBER::
-	Specify the safety number of the key, only use this option if you have verified
-	the safety number.
+Specify the safety number of the key, only use this option if you have verified the safety number.
 
-updateProfile
-~~~~~~~~~~~~~
+=== updateProfile
+
 Update the name and/or avatar image visible by message recipients for the current users.
-The profile is stored encrypted on the Signal servers. The decryption key is sent
-with every outgoing messages (excluding group messages).
+The profile is stored encrypted on the Signal servers.
+The decryption key is sent with every outgoing messages (excluding group messages).
 
 *--name*::
-	New name visible by message recipients.
+New name visible by message recipients.
 
 *--avatar*::
-	Path to the new avatar visible by message recipients.
+Path to the new avatar visible by message recipients.
 
 *--remove-avatar*::
-	Remove the avatar visible by message recipients.
+Remove the avatar visible by message recipients.
 
-updateContact
-~~~~~~~~~~~~~
-Update the info associated to a number on our contact list. This change is only
-local but can be synchronized to other devices by using `sendContacts` (see
-below).
+=== updateContact
+
+Update the info associated to a number on our contact list.
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 If the contact doesn't exist yet, it will be added.
 
 NUMBER::
-	Specify the contact phone number.
+Specify the contact phone number.
 
 *-n*, *--name*::
-	Specify the new name for this contact.
+Specify the new name for this contact.
 
-block
-~~~~~
-Block the given contacts or groups (no messages will be received). This change is only
-local but can be synchronized to other devices by using `sendContacts` (see
-below).
+=== block
+
+Block the given contacts or groups (no messages will be received).
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 
 [CONTACT [CONTACT ...]]::
-	Specify the phone numbers of contacts that should be blocked.
+Specify the phone numbers of contacts that should be blocked.
 
 *-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
-	Specify the group IDs that should be blocked in base64 encoding.
+Specify the group IDs that should be blocked in base64 encoding.
 
-unblock
-~~~~~~~
-Unblock the given contacts or groups (messages will be received again). This change is only
-local but can be synchronized to other devices by using `sendContacts` (see
-below).
+=== unblock
+
+Unblock the given contacts or groups (messages will be received again).
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 
 [CONTACT [CONTACT ...]]::
 Specify the phone numbers of contacts that should be unblocked.
@@ -282,18 +274,18 @@ Specify the phone numbers of contacts that should be unblocked.
 *-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
 Specify the group IDs that should be unblocked in base64 encoding.
 
-sendContacts
-~~~~~~~~~~~~
+=== sendContacts
+
 Send a synchronization message with the local contacts list to all linked devices.
 This command should only be used if this is the master device.
 
-uploadStickerPack
-~~~~~~~~~~~~~~~~~
-Upload a new sticker pack, consisting of a manifest file and the stickers in WebP
-format (maximum size for a sticker file is 100KiB).
+=== uploadStickerPack
+
+Upload a new sticker pack, consisting of a manifest file and the stickers in WebP format (maximum size for a sticker file is 100KiB).
 The required manifest.json has the following format:
 
-```json
+[source,json]
+----
 {
   "title": "<STICKER_PACK_TITLE>",
   "author": "<STICKER_PACK_AUTHOR>",
@@ -309,61 +301,57 @@ The required manifest.json has the following format:
     ...
   ]
 }
-```
+----
 
 PATH::
-	The path of the manifest.json or a zip file containing the sticker pack you
-	wish to upload.
+The path of the manifest.json or a zip file containing the sticker pack you wish to upload.
 
-daemon
-~~~~~~
-signal-cli can run in daemon mode and provides an experimental dbus interface. For
-dbus support you need jni/unix-java.so installed on your system (Debian:
+=== daemon
+
+signal-cli can run in daemon mode and provides an experimental dbus interface.
+For dbus support you need jni/unix-java.so installed on your system (Debian:
 libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
 
 *--system*::
-	Use DBus system bus instead of user bus.
+Use DBus system bus instead of user bus.
 *--ignore-attachments*::
-	Don’t download attachments of received messages.
+Don’t download attachments of received messages.
 
-
-Examples
---------
+== Examples
 
 Register a number (with SMS verification)::
-    signal-cli -u USERNAME register
+signal-cli -u USERNAME register
 
 Verify the number using the code received via SMS or voice::
-    signal-cli -u USERNAME verify CODE
+signal-cli -u USERNAME verify CODE
 
 Send a message to one or more recipients::
-    signal-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+signal-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 Pipe the message content from another process::
-    uname -a | signal-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
+uname -a | signal-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
 
 Create a group::
-	signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
 
 Add member to a group::
-	signal-cli -u USERNAME updateGroup -g GROUP_ID -m "NEW_MEMBER"
+signal-cli -u USERNAME updateGroup -g GROUP_ID -m "NEW_MEMBER"
 
 Leave a group::
-	signal-cli -u USERNAME quitGroup -g GROUP_ID
+signal-cli -u USERNAME quitGroup -g GROUP_ID
 
 Send a message to a group::
-	signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
 
 Trust new key, after having verified it::
-    signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
+signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
 
 Trust new key, without having verified it. Only use this if you don't care about security::
-    signal-cli -u USERNAME trust -a NUMBER
+signal-cli -u USERNAME trust -a NUMBER
 
-Files
------
-The password and cryptographic keys are created when registering and stored in the
-current users home directory, the directory can be changed with *--config*:
+== Files
+
+The password and cryptographic keys are created when registering and stored in the current users home directory, the directory can be changed with *--config*:
 
 `$XDG_DATA_HOME/signal-cli/` (`$HOME/.local/share/signal-cli/`)
 
@@ -373,10 +361,8 @@ For legacy users, the old config directories are used as a fallback:
 
     $HOME/.config/textsecure/
 
+== Authors
 
-Authors
--------
-
-Maintained by AsamK <asamk@gmx.de>, who is assisted by other open
-source contributors. For more information about signal-cli development, see
+Maintained by AsamK <asamk@gmx.de>, who is assisted by other open source contributors.
+For more information about signal-cli development, see
 <https://github.com/AsamK/signal-cli>.
