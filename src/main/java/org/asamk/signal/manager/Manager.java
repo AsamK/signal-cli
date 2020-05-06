@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.Signal;
 import org.asamk.signal.AttachmentInvalidException;
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.StickerPackInvalidException;
@@ -1823,6 +1824,11 @@ public class Manager implements Signal {
     @Override
     public boolean isRemote() {
         return false;
+    }
+
+    @Override
+    public String getObjectPath() {
+        return null;
     }
 
     private void sendGroups() throws IOException, UntrustedIdentityException {

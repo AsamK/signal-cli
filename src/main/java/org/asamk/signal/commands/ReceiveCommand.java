@@ -16,7 +16,7 @@ import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.util.Base64;
 

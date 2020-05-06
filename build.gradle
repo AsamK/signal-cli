@@ -13,9 +13,6 @@ compileJava.options.encoding = 'UTF-8'
 
 repositories {
     mavenLocal()
-    maven {
-        url "https://raw.github.com/AsamK/maven/master/releases/"
-    }
     mavenCentral()
 }
 
@@ -23,7 +20,8 @@ dependencies {
     compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_7'
     compile 'org.bouncycastle:bcprov-jdk15on:1.64'
     compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
-    compile 'org.freedesktop.dbus:dbus-java:2.7.0'
+    compile 'com.github.hypfvieh:dbus-java:3.2.0'
+    compile 'org.slf4j:slf4j-nop:1.7.30'
 }
 
 jar {

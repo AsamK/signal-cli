@@ -36,7 +36,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -76,11 +76,11 @@ public class Main {
             if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
                 try {
                     m = null;
-                    int busType;
+                    DBusConnection.DBusBusType busType;
                     if (ns.getBoolean("dbus_system")) {
-                        busType = DBusConnection.SYSTEM;
+                        busType = DBusConnection.DBusBusType.SYSTEM;
                     } else {
-                        busType = DBusConnection.SESSION;
+                        busType = DBusConnection.DBusBusType.SESSION;
                     }
                     dBusConn = DBusConnection.getConnection(busType);
                     ts = dBusConn.getRemoteObject(

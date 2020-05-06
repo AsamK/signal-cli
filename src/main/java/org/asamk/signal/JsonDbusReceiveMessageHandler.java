@@ -2,7 +2,7 @@ package org.asamk.signal;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
@@ -31,7 +31,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
     static void sendReceivedMessageToDbus(SignalServiceEnvelope envelope, SignalServiceContent content, DBusConnection conn, final String objectPath, Manager m) {
         if (envelope.isReceipt()) {
             try {
-                conn.sendSignal(new Signal.ReceiptReceived(
+                conn.sendMessage(new Signal.ReceiptReceived(
                         objectPath,
                         envelope.getTimestamp(),
                         !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceE164().get() : content.getSender().getNumber().get()
@@ -46,7 +46,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     final String sender = !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceE164().get() : content.getSender().getNumber().get();
                     for (long timestamp : receiptMessage.getTimestamps()) {
                         try {
-                            conn.sendSignal(new Signal.ReceiptReceived(
+                            conn.sendMessage(new Signal.ReceiptReceived(
                                     objectPath,
                                     timestamp,
                                     sender
@@ -63,7 +63,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         !(message.getGroupContext().isPresent() &&
                                 message.getGroupContext().get().getGroupV1Type() != SignalServiceGroup.Type.DELIVER)) {
                     try {
-                        conn.sendSignal(new Signal.MessageReceived(
+                        conn.sendMessage(new Signal.MessageReceived(
                                 objectPath,
                                 message.getTimestamp(),
                                 envelope.isUnidentifiedSender() || !envelope.hasSource() ? content.getSender().getNumber().get() : envelope.getSourceE164().get(),
@@ -84,7 +84,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         SignalServiceDataMessage message = transcript.getMessage();
 
                         try {
-                            conn.sendSignal(new Signal.SyncMessageReceived(
+                            conn.sendMessage(new Signal.SyncMessageReceived(
                                     objectPath,
                                     transcript.getTimestamp(),
                                     envelope.getSourceAddress().getNumber().get(),

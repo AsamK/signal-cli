@@ -7,7 +7,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.io.IOException;
@@ -41,11 +41,11 @@ public class DaemonCommand implements LocalCommand {
         DBusConnection conn = null;
         try {
             try {
-                int busType;
+                DBusConnection.DBusBusType busType;
                 if (ns.getBoolean("system")) {
-                    busType = DBusConnection.SYSTEM;
+                    busType = DBusConnection.DBusBusType.SYSTEM;
                 } else {
-                    busType = DBusConnection.SESSION;
+                    busType = DBusConnection.DBusBusType.SESSION;
                 }
                 conn = DBusConnection.getConnection(busType);
                 conn.exportObject(SIGNAL_OBJECTPATH, m);

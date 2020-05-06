@@ -2,9 +2,9 @@ package org.asamk;
 
 import org.asamk.signal.AttachmentInvalidException;
 import org.asamk.signal.GroupNotFoundException;
-import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.messages.DBusSignal;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -98,6 +98,7 @@ public interface Signal extends DBusInterface {
     }
 
     class SyncMessageReceived extends DBusSignal {
+
         private long timestamp;
         private String source;
         private String destination;
