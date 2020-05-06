@@ -15,6 +15,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
 import org.whispersystems.util.Base64;
 
 import java.io.BufferedInputStream;
@@ -76,10 +77,12 @@ class Utils {
         final long attachmentSize = attachmentFile.length();
         final String mime = getFileMimeType(attachmentFile);
         // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
+        final long uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null, null);
+        final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, uploadTimestamp, caption, blurHash, null, null, resumableUploadSpec);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {

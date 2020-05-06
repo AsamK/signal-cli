@@ -15,7 +15,7 @@ class JsonAttachment {
 
         final SignalServiceAttachmentPointer pointer = attachment.asPointer();
         if (attachment.isPointer()) {
-            this.id = String.valueOf(pointer.getId());
+            this.id = String.valueOf(pointer.getRemoteId());
             if (pointer.getFileName().isPresent()) {
                 this.filename = pointer.getFileName().get();
             }

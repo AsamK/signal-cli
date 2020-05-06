@@ -358,12 +358,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
         if (attachment.isPointer()) {
             final SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            System.out.println("  Id: " + pointer.getId() + " Key length: " + pointer.getKey().length);
+            System.out.println("  Id: " + pointer.getRemoteId() + " Key length: " + pointer.getKey().length);
             System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
             System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
             System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
             System.out.println("  Dimensions: " + pointer.getWidth() + "x" + pointer.getHeight());
-            File file = m.getAttachmentFile(pointer.getId());
+            File file = m.getAttachmentFile(pointer.getRemoteId());
             if (file.exists()) {
                 System.out.println("  Stored plaintext in: " + file);
             }

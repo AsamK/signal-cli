@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.Signal;
 import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.DbusConfig;
 import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.StickerPackInvalidException;
@@ -47,6 +46,7 @@ import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
+import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
@@ -75,6 +75,7 @@ import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -100,6 +101,7 @@ import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -109,6 +111,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
+import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
@@ -125,11 +128,13 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -236,7 +241,7 @@ public class Manager implements Signal {
         if (JsonGroupStore.groupsWithLegacyAvatarId.size() > 0) {
             for (GroupInfo g : JsonGroupStore.groupsWithLegacyAvatarId) {
                 File avatarFile = getGroupAvatarFile(g.groupId);
-                File attachmentFile = getAttachmentFile(g.getAvatarId());
+                File attachmentFile = getAttachmentFile(new SignalServiceAttachmentRemoteId(g.getAvatarId()));
                 if (!avatarFile.exists() && attachmentFile.exists()) {
                     try {
                         IOUtils.createPrivateDirectories(avatarsPath);
@@ -432,8 +437,10 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        UUID uuid = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
+        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
 
+        UUID uuid = UuidUtil.parseOrNull(response.getUuid());
+        // TODO response.isStorageCapable()
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.setRegistered(true);
         account.setUuid(uuid);
@@ -450,7 +457,7 @@ public class Manager implements Signal {
             throw new RuntimeException("Not implemented anymore, will be replaced with KBS");
         } else {
             account.setRegistrationLockPin(null);
-            accountManager.removeV1Pin();
+            accountManager.removeRegistrationLockV1();
         }
         account.save();
     }
@@ -464,12 +471,17 @@ public class Manager implements Signal {
     }
 
     private SignalServiceMessageReceiver getMessageReceiver() {
-        return new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer);
+        // TODO implement ZkGroup support
+        final ClientZkProfileOperations clientZkProfileOperations = null;
+        return new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer, clientZkProfileOperations);
     }
 
     private SignalServiceMessageSender getMessageSender() {
+        // TODO implement ZkGroup support
+        final ClientZkProfileOperations clientZkProfileOperations = null;
+        final boolean attachmentsV3 = false;
         return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
-                account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent());
+                account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations);
     }
 
     private SignalServiceProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
@@ -1288,8 +1300,8 @@ public class Manager implements Signal {
                         if (avatar.isPointer()) {
                             try {
                                 retrieveGroupAvatarAttachment(avatar.asPointer(), group.groupId);
-                            } catch (IOException | InvalidMessageException e) {
-                                System.err.println("Failed to retrieve group avatar (" + avatar.asPointer().getId() + "): " + e.getMessage());
+                            } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                                System.err.println("Failed to retrieve group avatar (" + avatar.asPointer().getRemoteId() + "): " + e.getMessage());
                             }
                         }
                     }
@@ -1372,8 +1384,8 @@ public class Manager implements Signal {
                 if (attachment.isPointer()) {
                     try {
                         retrieveAttachment(attachment.asPointer());
-                    } catch (IOException | InvalidMessageException e) {
-                        System.err.println("Failed to retrieve attachment (" + attachment.asPointer().getId() + "): " + e.getMessage());
+                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                        System.err.println("Failed to retrieve attachment (" + attachment.asPointer().getRemoteId() + "): " + e.getMessage());
                     }
                 }
             }
@@ -1405,8 +1417,8 @@ public class Manager implements Signal {
                     SignalServiceAttachmentPointer attachment = preview.getImage().get().asPointer();
                     try {
                         retrieveAttachment(attachment);
-                    } catch (IOException | InvalidMessageException e) {
-                        System.err.println("Failed to retrieve attachment (" + attachment.getId() + "): " + e.getMessage());
+                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                        System.err.println("Failed to retrieve attachment (" + attachment.getRemoteId() + "): " + e.getMessage());
                     }
                 }
             }
@@ -1482,7 +1494,8 @@ public class Manager implements Signal {
                     envelope = messagePipe.read(timeout, unit, envelope1 -> {
                         // store message on disk, before acknowledging receipt to the server
                         try {
-                            File cacheFile = getMessageCacheFile(envelope1.getSourceE164().get(), now, envelope1.getTimestamp());
+                            String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
+                            File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
                             Utils.storeEnvelope(envelope1, cacheFile);
                         } catch (IOException e) {
                             System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
@@ -1744,7 +1757,7 @@ public class Manager implements Signal {
         return new File(avatarsPath, "contact-" + number);
     }
 
-    private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException {
+    private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException, MissingConfigurationException {
         IOUtils.createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
@@ -1759,7 +1772,7 @@ public class Manager implements Signal {
         return new File(avatarsPath, "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
     }
 
-    private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException {
+    private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException, MissingConfigurationException {
         IOUtils.createPrivateDirectories(avatarsPath);
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
@@ -1770,16 +1783,16 @@ public class Manager implements Signal {
         }
     }
 
-    public File getAttachmentFile(long attachmentId) {
-        return new File(attachmentsPath, attachmentId + "");
+    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
+        return new File(attachmentsPath, attachmentId.toString());
     }
 
-    private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException {
+    private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException, MissingConfigurationException {
         IOUtils.createPrivateDirectories(attachmentsPath);
-        return retrieveAttachment(pointer, getAttachmentFile(pointer.getId()), true);
+        return retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()), true);
     }
 
-    private File retrieveAttachment(SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview) throws IOException, InvalidMessageException {
+    private File retrieveAttachment(SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview) throws IOException, InvalidMessageException, MissingConfigurationException {
         if (storePreview && pointer.getPreview().isPresent()) {
             File previewFile = new File(outputFile + ".preview");
             try (OutputStream output = new FileOutputStream(previewFile)) {
@@ -1816,7 +1829,7 @@ public class Manager implements Signal {
         return outputFile;
     }
 
-    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException {
+    private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException, MissingConfigurationException {
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
         return messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE);
     }

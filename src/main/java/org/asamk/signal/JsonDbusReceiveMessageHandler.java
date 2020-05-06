@@ -107,7 +107,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
         if (message.getAttachments().isPresent()) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                 if (attachment.isPointer()) {
-                    attachments.add(m.getAttachmentFile(attachment.asPointer().getId()).getAbsolutePath());
+                    attachments.add(m.getAttachmentFile(attachment.asPointer().getRemoteId()).getAbsolutePath());
                 }
             }
         }
