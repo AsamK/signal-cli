@@ -31,7 +31,7 @@ Important: The USERNAME (your phone number) must include the country calling cod
         
   You can register Signal using a land line number. In this case you can skip SMS verification process and jump directly to the voice call verification by adding the --voice switch at the end of above register command.
 
-* Verify the number using the code received via SMS or voice
+* Verify the number using the code received via SMS or voice, optionally add `--pin PIN_CODE` if you've added a pin code to your account
 
         signal-cli -u USERNAME verify CODE
 
