@@ -1329,13 +1329,7 @@ public class Manager implements Signal {
                     }
                     break;
                 case QUIT:
-                    if (group == null) {
-                        try {
-                            sendGroupInfoRequest(groupInfo.getGroupId(), source);
-                        } catch (IOException | EncapsulatedExceptions e) {
-                            e.printStackTrace();
-                        }
-                    } else {
+                    if (group != null) {
                         group.removeMember(source);
                         account.getGroupStore().updateGroup(group);
                     }
