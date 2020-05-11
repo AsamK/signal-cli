@@ -121,15 +121,6 @@ public class SignalAccount {
         return account;
     }
 
-    public static SignalAccount createTemporaryAccount(IdentityKeyPair identityKey, int registrationId) {
-        SignalAccount account = new SignalAccount();
-
-        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
-        account.registered = false;
-
-        return account;
-    }
-
     public static String getFileName(String dataPath, String username) {
         return dataPath + "/" + username;
     }

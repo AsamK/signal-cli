@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.UserAlreadyExists;
-import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.ProvisioningManager;
 import org.whispersystems.libsignal.InvalidKeyException;
 
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
-public class LinkCommand implements LocalCommand {
+public class LinkCommand implements ProvisioningCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -21,15 +21,15 @@ public class LinkCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public int handleCommand(final Namespace ns, final ProvisioningManager m) {
         String deviceName = ns.getString("name");
         if (deviceName == null) {
             deviceName = "cli";
         }
         try {
             System.out.println(m.getDeviceLinkUri());
-            m.finishDeviceLink(deviceName);
-            System.out.println("Associated with: " + m.getUsername());
+            String username = m.finishDeviceLink(deviceName);
+            System.out.println("Associated with: " + username);
         } catch (TimeoutException e) {
             System.err.println("Link request timed out, please try again.");
             return 3;

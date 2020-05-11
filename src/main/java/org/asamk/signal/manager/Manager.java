@@ -24,7 +24,6 @@ import org.asamk.signal.GroupNotFoundException;
 import org.asamk.signal.NotAGroupMemberException;
 import org.asamk.signal.StickerPackInvalidException;
 import org.asamk.signal.TrustLevel;
-import org.asamk.signal.UserAlreadyExists;
 import org.asamk.signal.storage.SignalAccount;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -149,44 +148,40 @@ import java.util.zip.ZipFile;
 
 public class Manager implements Signal {
 
-    private final String settingsPath;
-    private final String dataPath;
-    private final String attachmentsPath;
-    private final String avatarsPath;
     private final SleepTimer timer = new UptimeSleepTimer();
     private final SignalServiceConfiguration serviceConfiguration;
     private final String userAgent;
 
-    private SignalAccount account;
-    private String username;
+    private final SignalAccount account;
+    private final PathConfig pathConfig;
     private SignalServiceAccountManager accountManager;
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
 
-    public Manager(String username, String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
-        this.username = username;
-        this.settingsPath = settingsPath;
-        this.dataPath = this.settingsPath + "/data";
-        this.attachmentsPath = this.settingsPath + "/attachments";
-        this.avatarsPath = this.settingsPath + "/avatars";
+    public Manager(SignalAccount account, PathConfig pathConfig, SignalServiceConfiguration serviceConfiguration, String userAgent) {
+        this.account = account;
+        this.pathConfig = pathConfig;
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
+        this.accountManager = createSignalServiceAccountManager();
+
+        this.account.setResolver(this::resolveSignalServiceAddress);
     }
 
     public String getUsername() {
-        return username;
+        return account.getUsername();
     }
 
     public SignalServiceAddress getSelfAddress() {
         return account.getSelfAddress();
     }
 
-    private SignalServiceAccountManager getSignalServiceAccountManager() {
+    private SignalServiceAccountManager createSignalServiceAccountManager() {
         return new SignalServiceAccountManager(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), userAgent, timer);
     }
 
-    private IdentityKey getIdentity() {
-        return account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey();
+    private IdentityKeyPair getIdentityKeyPair() {
+        return account.getSignalProtocolStore().getIdentityKeyPair();
     }
 
     public int getDeviceId() {
@@ -194,7 +189,7 @@ public class Manager implements Signal {
     }
 
     private String getMessageCachePath() {
-        return this.dataPath + "/" + username + ".d/msg-cache";
+        return pathConfig.getDataPath() + "/" + account.getUsername() + ".d/msg-cache";
     }
 
     private String getMessageCachePath(String sender) {
@@ -211,30 +206,28 @@ public class Manager implements Signal {
         return new File(cachePath + "/" + now + "_" + timestamp);
     }
 
-    public boolean userHasKeys() {
-        return account != null && account.getSignalProtocolStore() != null;
-    }
+    public static Manager init(String username, String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) throws IOException {
+        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
 
-    public void init() throws IOException {
-        if (!SignalAccount.userExists(dataPath, username)) {
-            return;
+        if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
+            IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
+            int registrationId = KeyHelper.generateRegistrationId(false);
+
+            ProfileKey profileKey = KeyUtils.createProfileKey();
+            SignalAccount account = SignalAccount.create(pathConfig.getDataPath(), username, identityKey, registrationId, profileKey);
+            account.save();
+
+            return new Manager(account, pathConfig, serviceConfiguration, userAgent);
         }
-        account = SignalAccount.load(dataPath, username);
-        account.setResolver(this::resolveSignalServiceAddress);
 
-        migrateLegacyConfigs();
+        SignalAccount account = SignalAccount.load(pathConfig.getDataPath(), username);
 
-        accountManager = getSignalServiceAccountManager();
-        if (account.isRegistered()) {
-            if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-                refreshPreKeys();
-                account.save();
-            }
-            if (account.getUuid() == null) {
-                account.setUuid(accountManager.getOwnUuid());
-                account.save();
-            }
-        }
+        Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
+
+        m.migrateLegacyConfigs();
+        m.checkAccountState();
+
+        return m;
     }
 
     private void migrateLegacyConfigs() {
@@ -246,7 +239,7 @@ public class Manager implements Signal {
                 File attachmentFile = getAttachmentFile(new SignalServiceAttachmentRemoteId(g.getAvatarId()));
                 if (!avatarFile.exists() && attachmentFile.exists()) {
                     try {
-                        IOUtils.createPrivateDirectories(avatarsPath);
+                        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
                         Files.copy(attachmentFile.toPath(), avatarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     } catch (Exception e) {
                         // Ignore
@@ -263,31 +256,29 @@ public class Manager implements Signal {
         }
     }
 
-    private void createNewIdentity() throws IOException {
-        IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
-        int registrationId = KeyHelper.generateRegistrationId(false);
-        if (username == null) {
-            account = SignalAccount.createTemporaryAccount(identityKey, registrationId);
-            account.setResolver(this::resolveSignalServiceAddress);
-        } else {
-            ProfileKey profileKey = KeyUtils.createProfileKey();
-            account = SignalAccount.create(dataPath, username, identityKey, registrationId, profileKey);
-            account.setResolver(this::resolveSignalServiceAddress);
-            account.save();
+    private void checkAccountState() throws IOException {
+        if (account.isRegistered()) {
+            if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+                refreshPreKeys();
+                account.save();
+            }
+            if (account.getUuid() == null) {
+                account.setUuid(accountManager.getOwnUuid());
+                account.save();
+            }
         }
     }
 
     public boolean isRegistered() {
-        return account != null && account.isRegistered();
+        return account.isRegistered();
     }
 
     public void register(boolean voiceVerification) throws IOException {
-        if (account == null) {
-            createNewIdentity();
-        }
         account.setPassword(KeyUtils.createPassword());
+
+        // Resetting UUID, because registering doesn't work otherwise
         account.setUuid(null);
-        accountManager = getSignalServiceAccountManager();
+        accountManager = createSignalServiceAccountManager();
 
         if (voiceVerification) {
             accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.absent(), Optional.absent());
@@ -327,52 +318,6 @@ public class Manager implements Signal {
         account.save();
     }
 
-    public String getDeviceLinkUri() throws TimeoutException, IOException {
-        if (account == null) {
-            createNewIdentity();
-        }
-        account.setPassword(KeyUtils.createPassword());
-        accountManager = getSignalServiceAccountManager();
-        String uuid = accountManager.getNewDeviceUuid();
-
-        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(uuid, getIdentity().getPublicKey()));
-    }
-
-    public void finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
-        account.setSignalingKey(KeyUtils.createSignalingKey());
-        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(account.getSignalProtocolStore().getIdentityKeyPair(), account.getSignalingKey(), false, true, account.getSignalProtocolStore().getLocalRegistrationId(), deviceName);
-
-        username = ret.getNumber();
-        // TODO do this check before actually registering
-        if (SignalAccount.userExists(dataPath, username)) {
-            throw new UserAlreadyExists(username, SignalAccount.getFileName(dataPath, username));
-        }
-
-        // Create new account with the synced identity
-        byte[] profileKeyBytes = ret.getProfileKey();
-        ProfileKey profileKey;
-        if (profileKeyBytes == null) {
-            profileKey = KeyUtils.createProfileKey();
-        } else {
-            try {
-                profileKey = new ProfileKey(profileKeyBytes);
-            } catch (InvalidInputException e) {
-                throw new IOException("Received invalid profileKey", e);
-            }
-        }
-        account = SignalAccount.createLinkedAccount(dataPath, username, ret.getUuid(), account.getPassword(), ret.getDeviceId(), ret.getIdentity(), account.getSignalProtocolStore().getLocalRegistrationId(), account.getSignalingKey(), profileKey);
-        account.setResolver(this::resolveSignalServiceAddress);
-
-        refreshPreKeys();
-
-        requestSyncGroups();
-        requestSyncContacts();
-        requestSyncBlocked();
-        requestSyncConfiguration();
-
-        account.save();
-    }
-
     public List<DeviceInfo> getLinkedDevices() throws IOException {
         List<DeviceInfo> devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
@@ -394,7 +339,7 @@ public class Manager implements Signal {
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
-        IdentityKeyPair identityKeyPair = account.getSignalProtocolStore().getIdentityKeyPair();
+        IdentityKeyPair identityKeyPair = getIdentityKeyPair();
         String verificationCode = accountManager.getNewDeviceVerificationCode();
 
         accountManager.addDevice(deviceIdentifier, deviceKey, identityKeyPair, Optional.of(account.getProfileKey().serialize()), verificationCode);
@@ -447,7 +392,7 @@ public class Manager implements Signal {
         account.setRegistered(true);
         account.setUuid(uuid);
         account.setRegistrationLockPin(pin);
-        account.getSignalProtocolStore().saveIdentity(account.getSelfAddress(), account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(), TrustLevel.TRUSTED_VERIFIED);
+        account.getSignalProtocolStore().saveIdentity(account.getSelfAddress(), getIdentityKeyPair().getPublicKey(), TrustLevel.TRUSTED_VERIFIED);
 
         refreshPreKeys();
         account.save();
@@ -464,12 +409,12 @@ public class Manager implements Signal {
         account.save();
     }
 
-    private void refreshPreKeys() throws IOException {
+    void refreshPreKeys() throws IOException {
         List<PreKeyRecord> oneTimePreKeys = generatePreKeys();
-        final IdentityKeyPair identityKeyPair = account.getSignalProtocolStore().getIdentityKeyPair();
+        final IdentityKeyPair identityKeyPair = getIdentityKeyPair();
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
-        accountManager.setPreKeys(getIdentity(), signedPreKeyRecord, oneTimePreKeys);
+        accountManager.setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
     private SignalServiceMessageReceiver getMessageReceiver() {
@@ -629,7 +574,7 @@ public class Manager implements Signal {
         }
 
         if (avatarFile != null) {
-            IOUtils.createPrivateDirectories(avatarsPath);
+            IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
             File aFile = getGroupAvatarFile(g.groupId);
             Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
@@ -984,7 +929,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void requestSyncGroups() throws IOException {
+    void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
@@ -994,7 +939,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void requestSyncContacts() throws IOException {
+    void requestSyncContacts() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
@@ -1004,7 +949,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void requestSyncBlocked() throws IOException {
+    void requestSyncBlocked() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
@@ -1014,7 +959,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void requestSyncConfiguration() throws IOException {
+    void requestSyncConfiguration() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION).build();
         SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
@@ -1750,11 +1695,11 @@ public class Manager implements Signal {
     }
 
     private File getContactAvatarFile(String number) {
-        return new File(avatarsPath, "contact-" + number);
+        return new File(pathConfig.getAvatarsPath(), "contact-" + number);
     }
 
     private File retrieveContactAvatarAttachment(SignalServiceAttachment attachment, String number) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(avatarsPath);
+        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getContactAvatarFile(number), false);
@@ -1765,11 +1710,11 @@ public class Manager implements Signal {
     }
 
     private File getGroupAvatarFile(byte[] groupId) {
-        return new File(avatarsPath, "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
+        return new File(pathConfig.getAvatarsPath(), "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
     }
 
     private File retrieveGroupAvatarAttachment(SignalServiceAttachment attachment, byte[] groupId) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(avatarsPath);
+        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
             return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
@@ -1780,11 +1725,11 @@ public class Manager implements Signal {
     }
 
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(attachmentsPath, attachmentId.toString());
+        return new File(pathConfig.getAttachmentsPath(), attachmentId.toString());
     }
 
     private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(attachmentsPath);
+        IOUtils.createPrivateDirectories(pathConfig.getAttachmentsPath());
         return retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()), true);
     }
 
@@ -2054,7 +1999,11 @@ public class Manager implements Signal {
     }
 
     public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        return Utils.computeSafetyNumber(account.getSelfAddress(), getIdentity(), theirAddress, theirIdentityKey);
+        return Utils.computeSafetyNumber(account.getSelfAddress(), getIdentityKeyPair().getPublicKey(), theirAddress, theirIdentityKey);
+    }
+
+    void saveAccount() {
+        account.save();
     }
 
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {

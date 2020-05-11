@@ -31,7 +31,9 @@ import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
+import org.asamk.signal.commands.ProvisioningCommand;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.ServiceConfig;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
@@ -69,13 +71,13 @@ public class Main {
 
     private static int handleCommands(Namespace ns) {
         final String username = ns.getString("username");
-        Manager m;
+        Manager m = null;
+        ProvisioningManager pm = null;
         Signal ts;
         DBusConnection dBusConn = null;
         try {
             if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
                 try {
-                    m = null;
                     DBusConnection.DBusBusType busType;
                     if (ns.getBoolean("dbus_system")) {
                         busType = DBusConnection.DBusBusType.SYSTEM;
@@ -102,19 +104,23 @@ public class Main {
                     dataPath = getDefaultDataPath();
                 }
 
-                m = new Manager(username, dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
-                ts = m;
-                try {
-                    m.init();
-                } catch (AuthorizationFailedException e) {
-                    if (!"register".equals(ns.getString("command"))) {
-                        // Register command should still be possible, if current authorization fails
-                        System.err.println("Authorization failed, was the number registered elsewhere?");
+                if (username == null) {
+                    pm = new ProvisioningManager(dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
+                    ts = null;
+                } else {
+                    try {
+                        m = Manager.init(username, dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
+                    } catch (AuthorizationFailedException e) {
+                        if (!"register".equals(ns.getString("command"))) {
+                            // Register command should still be possible, if current authorization fails
+                            System.err.println("Authorization failed, was the number registered elsewhere?");
+                            return 2;
+                        }
+                    } catch (Throwable e) {
+                        System.err.println("Error loading state file: " + e.getMessage());
                         return 2;
                     }
-                } catch (Exception e) {
-                    System.err.println("Error loading state file: " + e.getMessage());
-                    return 2;
+                    ts = m;
                 }
             }
 
@@ -135,6 +141,8 @@ public class Main {
                 } else {
                     if (command instanceof LocalCommand) {
                         return ((LocalCommand) command).handleCommand(ns, m);
+                    } else if (command instanceof ProvisioningCommand) {
+                        return ((ProvisioningCommand) command).handleCommand(ns, pm);
                     } else if (command instanceof DbusCommand) {
                         return ((DbusCommand) command).handleCommand(ns, ts);
                     } else {

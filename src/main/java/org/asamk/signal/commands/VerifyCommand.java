@@ -20,10 +20,6 @@ public class VerifyCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.userHasKeys()) {
-            System.err.println("User has no keys, first call register.");
-            return 1;
-        }
         if (m.isRegistered()) {
             System.err.println("User registration is already verified");
             return 1;

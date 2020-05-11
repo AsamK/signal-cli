@@ -1,0 +1,102 @@
+/*
+  Copyright (C) 2015-2020 AsamK and contributors
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.asamk.signal.manager;
+
+import org.asamk.signal.UserAlreadyExists;
+import org.asamk.signal.storage.SignalAccount;
+import org.signal.zkgroup.InvalidInputException;
+import org.signal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.util.KeyHelper;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.SleepTimer;
+import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
+
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+public class ProvisioningManager {
+
+    private final PathConfig pathConfig;
+    private final SignalServiceConfiguration serviceConfiguration;
+    private final String userAgent;
+
+    private final SignalServiceAccountManager accountManager;
+    private final IdentityKeyPair identityKey;
+    private final int registrationId;
+    private final String password;
+
+    public ProvisioningManager(String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
+        this.pathConfig = PathConfig.createDefault(settingsPath);
+        this.serviceConfiguration = serviceConfiguration;
+        this.userAgent = userAgent;
+
+        identityKey = KeyHelper.generateIdentityKeyPair();
+        registrationId = KeyHelper.generateRegistrationId(false);
+        password = KeyUtils.createPassword();
+        final SleepTimer timer = new UptimeSleepTimer();
+        accountManager = new SignalServiceAccountManager(serviceConfiguration, null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID, userAgent, timer);
+    }
+
+    public String getDeviceLinkUri() throws TimeoutException, IOException {
+        String deviceUuid = accountManager.getNewDeviceUuid();
+
+        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()));
+    }
+
+    public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
+        String signalingKey = KeyUtils.createSignalingKey();
+        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(identityKey, signalingKey, false, true, registrationId, deviceName);
+
+        String username = ret.getNumber();
+        // TODO do this check before actually registering
+        if (SignalAccount.userExists(pathConfig.getDataPath(), username)) {
+            throw new UserAlreadyExists(username, SignalAccount.getFileName(pathConfig.getDataPath(), username));
+        }
+
+        // Create new account with the synced identity
+        byte[] profileKeyBytes = ret.getProfileKey();
+        ProfileKey profileKey;
+        if (profileKeyBytes == null) {
+            profileKey = KeyUtils.createProfileKey();
+        } else {
+            try {
+                profileKey = new ProfileKey(profileKeyBytes);
+            } catch (InvalidInputException e) {
+                throw new IOException("Received invalid profileKey", e);
+            }
+        }
+        SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(), username, ret.getUuid(), password, ret.getDeviceId(), ret.getIdentity(), registrationId, signalingKey, profileKey);
+        account.save();
+
+        Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
+
+        m.refreshPreKeys();
+
+        m.requestSyncGroups();
+        m.requestSyncContacts();
+        m.requestSyncBlocked();
+        m.requestSyncConfiguration();
+
+        m.saveAccount();
+
+        return username;
+    }
+}
