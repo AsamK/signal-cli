@@ -97,7 +97,7 @@ class Utils {
 
     static CertificateValidator getCertificateValidator() {
         try {
-            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(BaseConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(ServiceConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
             return new CertificateValidator(unidentifiedSenderTrustRoot);
         } catch (InvalidKeyException | IOException e) {
             throw new AssertionError(e);
@@ -246,7 +246,7 @@ class Utils {
         byte[] ownId;
         byte[] theirId;
 
-        if (BaseConfig.capabilities.isUuid()
+        if (ServiceConfig.capabilities.isUuid()
                 && ownAddress.getUuid().isPresent() && theirAddress.getUuid().isPresent()) {
             // Version 2: UUID user
             version = 2;

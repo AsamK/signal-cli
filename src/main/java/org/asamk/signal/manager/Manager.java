@@ -109,6 +109,7 @@ import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
@@ -128,13 +129,11 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,6 +154,8 @@ public class Manager implements Signal {
     private final String attachmentsPath;
     private final String avatarsPath;
     private final SleepTimer timer = new UptimeSleepTimer();
+    private final SignalServiceConfiguration serviceConfiguration;
+    private final String userAgent;
 
     private SignalAccount account;
     private String username;
@@ -162,13 +163,14 @@ public class Manager implements Signal {
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
 
-    public Manager(String username, String settingsPath) {
+    public Manager(String username, String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
         this.username = username;
         this.settingsPath = settingsPath;
         this.dataPath = this.settingsPath + "/data";
         this.attachmentsPath = this.settingsPath + "/attachments";
         this.avatarsPath = this.settingsPath + "/avatars";
-
+        this.serviceConfiguration = serviceConfiguration;
+        this.userAgent = userAgent;
     }
 
     public String getUsername() {
@@ -180,7 +182,7 @@ public class Manager implements Signal {
     }
 
     private SignalServiceAccountManager getSignalServiceAccountManager() {
-        return new SignalServiceAccountManager(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), BaseConfig.USER_AGENT, timer);
+        return new SignalServiceAccountManager(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), userAgent, timer);
     }
 
     private IdentityKey getIdentity() {
@@ -224,7 +226,7 @@ public class Manager implements Signal {
 
         accountManager = getSignalServiceAccountManager();
         if (account.isRegistered()) {
-            if (accountManager.getPreKeysCount() < BaseConfig.PREKEY_MINIMUM_COUNT) {
+            if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
                 refreshPreKeys();
                 account.save();
             }
@@ -298,7 +300,7 @@ public class Manager implements Signal {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities);
     }
 
     public void setProfileName(String name) throws IOException {
@@ -401,10 +403,10 @@ public class Manager implements Signal {
     }
 
     private List<PreKeyRecord> generatePreKeys() {
-        List<PreKeyRecord> records = new ArrayList<>(BaseConfig.PREKEY_BATCH_SIZE);
+        List<PreKeyRecord> records = new ArrayList<>(ServiceConfig.PREKEY_BATCH_SIZE);
 
         final int offset = account.getPreKeyIdOffset();
-        for (int i = 0; i < BaseConfig.PREKEY_BATCH_SIZE; i++) {
+        for (int i = 0; i < ServiceConfig.PREKEY_BATCH_SIZE; i++) {
             int preKeyId = (offset + i) % Medium.MAX_VALUE;
             ECKeyPair keyPair = Curve.generateKeyPair();
             PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
@@ -437,7 +439,7 @@ public class Manager implements Signal {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, BaseConfig.capabilities);
+        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities);
 
         UUID uuid = UuidUtil.parseOrNull(response.getUuid());
         // TODO response.isStorageCapable()
@@ -473,15 +475,15 @@ public class Manager implements Signal {
     private SignalServiceMessageReceiver getMessageReceiver() {
         // TODO implement ZkGroup support
         final ClientZkProfileOperations clientZkProfileOperations = null;
-        return new SignalServiceMessageReceiver(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), account.getSignalingKey(), BaseConfig.USER_AGENT, null, timer, clientZkProfileOperations);
+        return new SignalServiceMessageReceiver(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), account.getSignalingKey(), userAgent, null, timer, clientZkProfileOperations);
     }
 
     private SignalServiceMessageSender getMessageSender() {
         // TODO implement ZkGroup support
         final ClientZkProfileOperations clientZkProfileOperations = null;
         final boolean attachmentsV3 = false;
-        return new SignalServiceMessageSender(BaseConfig.serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
-                account.getDeviceId(), account.getSignalProtocolStore(), BaseConfig.USER_AGENT, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations);
+        return new SignalServiceMessageSender(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
+                account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations);
     }
 
     private SignalServiceProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
@@ -1801,7 +1803,7 @@ public class Manager implements Signal {
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
 
         File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE)) {
+        try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE)) {
             try (OutputStream output = new FileOutputStream(outputFile)) {
                 byte[] buffer = new byte[4096];
                 int read;
@@ -1825,7 +1827,7 @@ public class Manager implements Signal {
 
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException, MissingConfigurationException {
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
-        return messageReceiver.retrieveAttachment(pointer, tmpFile, BaseConfig.MAX_ATTACHMENT_SIZE);
+        return messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
     }
 
     @Override

@@ -31,8 +31,8 @@ import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
-import org.asamk.signal.manager.BaseConfig;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.ServiceConfig;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -102,7 +102,7 @@ public class Main {
                     dataPath = getDefaultDataPath();
                 }
 
-                m = new Manager(username, dataPath);
+                m = new Manager(username, dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
                 ts = m;
                 try {
                     m.init();
