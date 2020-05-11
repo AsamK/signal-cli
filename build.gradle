@@ -17,11 +17,11 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_8'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.64'
-    compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
-    compile 'com.github.hypfvieh:dbus-java:3.2.0'
-    compile 'org.slf4j:slf4j-nop:1.7.30'
+    implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_8'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.65'
+    implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
+    implementation 'com.github.hypfvieh:dbus-java:3.2.1'
+    implementation 'org.slf4j:slf4j-nop:1.7.30'
 }
 
 jar {
@@ -39,5 +39,38 @@ run {
         // allow passing command-line arguments to the main application e.g.:
         // $ gradle run -PappArgs="['-u', '+...', 'daemon', '--json']"
         args Eval.me(appArgs)
+    }
+}
+
+// Find any 3rd party libraries which have released new versions
+// to the central Maven repo since we last upgraded.
+task checkLibVersions {
+    doLast {
+        def checked = [:]
+        allprojects {
+            configurations.each { configuration ->
+                configuration.allDependencies.each { dependency ->
+                    def version = dependency.version
+                    if (!checked[dependency]) {
+                        def group = dependency.group
+                        def path = group.replace('.', '/')
+                        def name = dependency.name
+                        def url = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
+                        try {
+                            def metadata = new XmlSlurper().parseText(url.toURL().text)
+                            def newest = metadata.versioning.latest;
+                            if ("$version" != "$newest") {
+                                println "UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}"
+                            }
+                        } catch (FileNotFoundException e) {
+                            logger.debug "Unable to download $url: $e.message"
+                        } catch (org.xml.sax.SAXParseException e) {
+                            logger.debug "Unable to parse $url: $e.message"
+                        }
+                        checked[dependency] = true
+                    }
+                }
+            }
+        }
     }
 }
