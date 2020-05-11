@@ -699,6 +699,7 @@ public class Manager implements Signal {
             for (SignalServiceAddress address : signalServiceAddresses) {
                 handleEndSession(address);
             }
+            account.save();
             throw e;
         }
     }
