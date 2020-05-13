@@ -115,6 +115,7 @@ import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -146,7 +147,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class Manager implements Signal {
+public class Manager implements Signal, Closeable {
 
     private final SleepTimer timer = new UptimeSleepTimer();
     private final SignalServiceConfiguration serviceConfiguration;
@@ -225,7 +226,6 @@ public class Manager implements Signal {
         Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
 
         m.migrateLegacyConfigs();
-        m.checkAccountState();
 
         return m;
     }
@@ -256,7 +256,7 @@ public class Manager implements Signal {
         }
     }
 
-    private void checkAccountState() throws IOException {
+    public void checkAccountState() throws IOException {
         if (account.isRegistered()) {
             if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
                 refreshPreKeys();
@@ -1422,63 +1422,56 @@ public class Manager implements Signal {
         retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
 
-        try {
-            if (messagePipe == null) {
-                messagePipe = messageReceiver.createMessagePipe();
-            }
+        if (messagePipe == null) {
+            messagePipe = messageReceiver.createMessagePipe();
+        }
 
-            while (true) {
-                SignalServiceEnvelope envelope;
-                SignalServiceContent content = null;
-                Exception exception = null;
-                final long now = new Date().getTime();
-                try {
-                    envelope = messagePipe.read(timeout, unit, envelope1 -> {
-                        // store message on disk, before acknowledging receipt to the server
-                        try {
-                            String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
-                            File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
-                            Utils.storeEnvelope(envelope1, cacheFile);
-                        } catch (IOException e) {
-                            System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
-                        }
-                    });
-                } catch (TimeoutException e) {
-                    if (returnOnTimeout)
-                        return;
-                    continue;
-                } catch (InvalidVersionException e) {
-                    System.err.println("Ignoring error: " + e.getMessage());
-                    continue;
-                }
-                if (!envelope.isReceipt()) {
+        while (true) {
+            SignalServiceEnvelope envelope;
+            SignalServiceContent content = null;
+            Exception exception = null;
+            final long now = new Date().getTime();
+            try {
+                envelope = messagePipe.read(timeout, unit, envelope1 -> {
+                    // store message on disk, before acknowledging receipt to the server
                     try {
-                        content = decryptMessage(envelope);
-                    } catch (Exception e) {
-                        exception = e;
-                    }
-                    handleMessage(envelope, content, ignoreAttachments);
-                }
-                account.save();
-                if (!isMessageBlocked(envelope, content)) {
-                    handler.handleMessage(envelope, content, exception);
-                }
-                if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
-                    File cacheFile = null;
-                    try {
-                        cacheFile = getMessageCacheFile(envelope.getSourceE164().get(), now, envelope.getTimestamp());
-                        Files.delete(cacheFile.toPath());
-                        // Try to delete directory if empty
-                        new File(getMessageCachePath()).delete();
+                        String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
+                        File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
+                        Utils.storeEnvelope(envelope1, cacheFile);
                     } catch (IOException e) {
-                        System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
+                        System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
                     }
-                }
+                });
+            } catch (TimeoutException e) {
+                if (returnOnTimeout)
+                    return;
+                continue;
+            } catch (InvalidVersionException e) {
+                System.err.println("Ignoring error: " + e.getMessage());
+                continue;
             }
-        } finally {
-            if (messagePipe != null) {
-                messagePipe.shutdown();
-                messagePipe = null;
+            if (!envelope.isReceipt()) {
+                try {
+                    content = decryptMessage(envelope);
+                } catch (Exception e) {
+                    exception = e;
+                }
+                handleMessage(envelope, content, ignoreAttachments);
+            }
+            account.save();
+            if (!isMessageBlocked(envelope, content)) {
+                handler.handleMessage(envelope, content, exception);
+            }
+            if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
+                File cacheFile = null;
+                try {
+                    cacheFile = getMessageCacheFile(envelope.getSourceE164().get(), now, envelope.getTimestamp());
+                    Files.delete(cacheFile.toPath());
+                    // Try to delete directory if empty
+                    new File(getMessageCachePath()).delete();
+                } catch (IOException e) {
+                    System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
+                }
             }
         }
     }
@@ -2024,6 +2017,21 @@ public class Manager implements Signal {
         }
 
         return account.getRecipientStore().resolveServiceAddress(address);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (messagePipe != null) {
+            messagePipe.shutdown();
+            messagePipe = null;
+        }
+
+        if (unidentifiedMessagePipe != null) {
+            unidentifiedMessagePipe.shutdown();
+            unidentifiedMessagePipe = null;
+        }
+
+        account.close();
     }
 
     public interface ReceiveMessageHandler {
