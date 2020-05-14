@@ -15,6 +15,10 @@ public class UpdateContactCommand implements LocalCommand {
         subparser.addArgument("-n", "--name")
                 .required(true)
                 .help("New contact name");
+        subparser.addArgument("-e", "--expiration")
+                .required(false)
+                .type(int.class)
+                .help("Specify expiration time of messages");
         subparser.help("Update the details of a given contact");
     }
 
@@ -30,6 +34,12 @@ public class UpdateContactCommand implements LocalCommand {
 
         try {
             m.setContactName(number, name);
+
+            int expiration = 0;
+            if (ns.getInt("expiration") != null) {
+                expiration = ns.getInt("expiration");
+                m.setExpirationTimer(number, expiration);
+            }
         } catch (InvalidNumberException e) {
             System.out.println("Invalid contact number: " + e.getMessage());
         }

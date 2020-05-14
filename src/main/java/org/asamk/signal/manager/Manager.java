@@ -810,10 +810,12 @@ public class Manager implements Signal {
     /**
      * Change the expiration timer for a contact
      */
-    public void setExpirationTimer(SignalServiceAddress address, int messageExpirationTimer) {
-        ContactInfo c = account.getContactStore().getContact(address);
+    public void setExpirationTimer(String number, int messageExpirationTimer) throws InvalidNumberException {
+        ContactInfo c = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
         c.messageExpirationTime = messageExpirationTimer;
+        System.err.println("Set message expiration " + c.number + " -> " + c.messageExpirationTime + " seconds");
         account.getContactStore().updateContact(c);
+        account.save();
     }
 
     /**
