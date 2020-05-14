@@ -41,11 +41,11 @@ public interface Signal extends DBusInterface {
 
     class MessageReceived extends DBusSignal {
 
-        private long timestamp;
-        private String sender;
-        private byte[] groupId;
-        private String message;
-        private List<String> attachments;
+        private final long timestamp;
+        private final String sender;
+        private final byte[] groupId;
+        private final String message;
+        private final List<String> attachments;
 
         public MessageReceived(String objectpath, long timestamp, String sender, byte[] groupId, String message, List<String> attachments) throws DBusException {
             super(objectpath, timestamp, sender, groupId, message, attachments);
@@ -79,8 +79,8 @@ public interface Signal extends DBusInterface {
 
     class ReceiptReceived extends DBusSignal {
 
-        private long timestamp;
-        private String sender;
+        private final long timestamp;
+        private final String sender;
 
         public ReceiptReceived(String objectpath, long timestamp, String sender) throws DBusException {
             super(objectpath, timestamp, sender);
@@ -99,12 +99,12 @@ public interface Signal extends DBusInterface {
 
     class SyncMessageReceived extends DBusSignal {
 
-        private long timestamp;
-        private String source;
-        private String destination;
-        private byte[] groupId;
-        private String message;
-        private List<String> attachments;
+        private final long timestamp;
+        private final String source;
+        private final String destination;
+        private final byte[] groupId;
+        private final String message;
+        private final List<String> attachments;
 
         public SyncMessageReceived(String objectpath, long timestamp, String source, String destination, byte[] groupId, String message, List<String> attachments) throws DBusException {
             super(objectpath, timestamp, source, destination, groupId, message, attachments);
