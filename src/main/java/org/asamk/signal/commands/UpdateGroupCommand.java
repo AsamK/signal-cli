@@ -4,25 +4,16 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.AttachmentInvalidException;
-import org.asamk.signal.manager.GroupNotFoundException;
-import org.asamk.signal.manager.NotAGroupMemberException;
 import org.asamk.signal.util.GroupIdFormatException;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.util.Base64;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
+import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
-import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
-import static org.asamk.signal.util.ErrorUtils.handleInvalidNumberException;
-import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class UpdateGroupCommand implements DbusCommand {
 
@@ -46,52 +37,48 @@ public class UpdateGroupCommand implements DbusCommand {
             return 1;
         }
 
-        try {
-            byte[] groupId = null;
-            if (ns.getString("group") != null) {
+        byte[] groupId = null;
+        if (ns.getString("group") != null) {
+            try {
                 groupId = Util.decodeGroupId(ns.getString("group"));
+            } catch (GroupIdFormatException e) {
+                handleGroupIdFormatException(e);
+                return 1;
             }
-            if (groupId == null) {
-                groupId = new byte[0];
-            }
-            String groupName = ns.getString("name");
-            if (groupName == null) {
-                groupName = "";
-            }
-            List<String> groupMembers = ns.getList("member");
-            if (groupMembers == null) {
-                groupMembers = new ArrayList<>();
-            }
-            String groupAvatar = ns.getString("avatar");
-            if (groupAvatar == null) {
-                groupAvatar = "";
-            }
+        }
+        if (groupId == null) {
+            groupId = new byte[0];
+        }
+
+        String groupName = ns.getString("name");
+        if (groupName == null) {
+            groupName = "";
+        }
+
+        List<String> groupMembers = ns.getList("member");
+        if (groupMembers == null) {
+            groupMembers = new ArrayList<>();
+        }
+
+        String groupAvatar = ns.getString("avatar");
+        if (groupAvatar == null) {
+            groupAvatar = "";
+        }
+
+        try {
             byte[] newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
                 System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
             }
             return 0;
-        } catch (IOException e) {
-            handleIOException(e);
-            return 3;
-        } catch (AttachmentInvalidException e) {
+        } catch (AssertionError e) {
+            handleAssertionError(e);
+            return 1;
+        } catch (Signal.Error.AttachmentInvalid e) {
             System.err.println("Failed to add avatar attachment for group\": " + e.getMessage());
-            System.err.println("Aborting sending.");
             return 1;
-        } catch (GroupNotFoundException e) {
-            handleGroupNotFoundException(e);
-            return 1;
-        } catch (NotAGroupMemberException e) {
-            handleNotAGroupMemberException(e);
-            return 1;
-        } catch (EncapsulatedExceptions e) {
-            handleEncapsulatedExceptions(e);
-            return 3;
-        } catch (GroupIdFormatException e) {
-            handleGroupIdFormatException(e);
-            return 1;
-        } catch (InvalidNumberException e) {
-            handleInvalidNumberException(e);
+        } catch (DBusExecutionException e) {
+            System.err.println("Failed to send message: " + e.getMessage());
             return 1;
         }
     }

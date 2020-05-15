@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
+import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -48,7 +49,7 @@ public class DaemonCommand implements LocalCommand {
                     busType = DBusConnection.DBusBusType.SESSION;
                 }
                 conn = DBusConnection.getConnection(busType);
-                conn.exportObject(SIGNAL_OBJECTPATH, m);
+                conn.exportObject(SIGNAL_OBJECTPATH, new DbusSignalImpl(m));
                 conn.requestBusName(SIGNAL_BUSNAME);
             } catch (UnsatisfiedLinkError e) {
                 System.err.println("Missing native library dependency for dbus service: " + e.getMessage());

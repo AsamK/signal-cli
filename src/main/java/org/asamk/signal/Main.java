@@ -32,6 +32,7 @@ import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
+import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.ServiceConfig;
@@ -179,7 +180,7 @@ public class Main {
             if (command instanceof LocalCommand) {
                 return ((LocalCommand) command).handleCommand(ns, m);
             } else if (command instanceof DbusCommand) {
-                return ((DbusCommand) command).handleCommand(ns, m);
+                return ((DbusCommand) command).handleCommand(ns, new DbusSignalImpl(m));
             } else if (command instanceof ExtendedDbusCommand) {
                 System.err.println(commandKey + " only works via dbus");
             }

@@ -18,7 +18,6 @@ package org.asamk.signal.manager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.asamk.Signal;
 import org.asamk.signal.storage.SignalAccount;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -142,7 +141,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class Manager implements Signal, Closeable {
+public class Manager implements Closeable {
 
     private final SleepTimer timer = new UptimeSleepTimer();
     private final SignalServiceConfiguration serviceConfiguration;
@@ -478,7 +477,6 @@ public class Manager implements Signal, Closeable {
         return account.getGroupStore().getGroups();
     }
 
-    @Override
     public long sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
             throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
@@ -641,15 +639,6 @@ public class Manager implements Signal, Closeable {
         getMessageSender().sendReceipt(remoteAddress, getAccessFor(remoteAddress), receiptMessage);
     }
 
-    @Override
-    public long sendMessage(String message, List<String> attachments, String recipient)
-            throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException {
-        List<String> recipients = new ArrayList<>(1);
-        recipients.add(recipient);
-        return sendMessage(message, attachments, recipients);
-    }
-
-    @Override
     public long sendMessage(String messageText, List<String> attachments,
                             List<String> recipients)
             throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
@@ -682,7 +671,6 @@ public class Manager implements Signal, Closeable {
         sendMessageLegacy(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
-    @Override
     public void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, InvalidNumberException {
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asEndSessionMessage();
@@ -699,7 +687,6 @@ public class Manager implements Signal, Closeable {
         }
     }
 
-    @Override
     public String getContactName(String number) throws InvalidNumberException {
         ContactInfo contact = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
         if (contact == null) {
@@ -709,7 +696,6 @@ public class Manager implements Signal, Closeable {
         }
     }
 
-    @Override
     public void setContactName(String number, String name) throws InvalidNumberException {
         final SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(number);
         ContactInfo contact = account.getContactStore().getContact(address);
@@ -724,7 +710,6 @@ public class Manager implements Signal, Closeable {
         account.save();
     }
 
-    @Override
     public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
         setContactBlocked(canonicalizeAndResolveSignalServiceAddress(number), blocked);
     }
@@ -742,7 +727,6 @@ public class Manager implements Signal, Closeable {
         account.save();
     }
 
-    @Override
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) throws GroupNotFoundException {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
@@ -755,37 +739,6 @@ public class Manager implements Signal, Closeable {
         }
     }
 
-    @Override
-    public List<byte[]> getGroupIds() {
-        List<GroupInfo> groups = getGroups();
-        List<byte[]> ids = new ArrayList<>(groups.size());
-        for (GroupInfo group : groups) {
-            ids.add(group.groupId);
-        }
-        return ids;
-    }
-
-    @Override
-    public String getGroupName(byte[] groupId) {
-        GroupInfo group = getGroup(groupId);
-        if (group == null) {
-            return "";
-        } else {
-            return group.name;
-        }
-    }
-
-    @Override
-    public List<String> getGroupMembers(byte[] groupId) {
-        GroupInfo group = getGroup(groupId);
-        if (group == null) {
-            return Collections.emptyList();
-        } else {
-            return new ArrayList<>(group.getMembersE164());
-        }
-    }
-
-    @Override
     public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         if (groupId.length == 0) {
             groupId = null;
@@ -1762,16 +1715,6 @@ public class Manager implements Signal, Closeable {
     private InputStream retrieveAttachmentAsStream(SignalServiceAttachmentPointer pointer, File tmpFile) throws IOException, InvalidMessageException, MissingConfigurationException {
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
         return messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
-    }
-
-    @Override
-    public boolean isRemote() {
-        return false;
-    }
-
-    @Override
-    public String getObjectPath() {
-        return null;
     }
 
     private void sendGroups() throws IOException, UntrustedIdentityException {

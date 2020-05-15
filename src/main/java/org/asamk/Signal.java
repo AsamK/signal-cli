@@ -1,33 +1,33 @@
 package org.asamk;
 
-import org.asamk.signal.manager.AttachmentInvalidException;
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
-import java.io.IOException;
 import java.util.List;
 
+/**
+ * DBus interface for the org.asamk.Signal service.
+ * Including emitted Signals and returned Errors.
+ */
 public interface Signal extends DBusInterface {
 
-    long sendMessage(String message, List<String> attachments, String recipient) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException;
+    long sendMessage(String message, List<String> attachments, String recipient) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber;
 
-    long sendMessage(String message, List<String> attachments, List<String> recipients) throws EncapsulatedExceptions, AttachmentInvalidException, IOException, InvalidNumberException;
+    long sendMessage(String message, List<String> attachments, List<String> recipients) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
-    void sendEndSessionMessage(List<String> recipients) throws IOException, EncapsulatedExceptions, InvalidNumberException;
+    void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
-    long sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, IOException;
+    long sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.UnregisteredUser, Error.UntrustedIdentity;
 
-    String getContactName(String number) throws InvalidNumberException;
+    String getContactName(String number) throws Error.InvalidNumber;
 
-    void setContactName(String number, String name) throws InvalidNumberException;
+    void setContactName(String number, String name) throws Error.InvalidNumber;
 
-    void setContactBlocked(String number, boolean blocked) throws InvalidNumberException;
+    void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
-    void setGroupBlocked(byte[] groupId, boolean blocked) throws GroupNotFoundException;
+    void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound;
 
     List<byte[]> getGroupIds();
 
@@ -35,7 +35,7 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId);
 
-    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException;
+    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.UnregisteredUser, Error.UntrustedIdentity;
 
     boolean isRegistered();
 
@@ -138,6 +138,51 @@ public interface Signal extends DBusInterface {
 
         public List<String> getAttachments() {
             return attachments;
+        }
+    }
+
+    interface Error {
+
+        class AttachmentInvalid extends DBusExecutionException {
+
+            public AttachmentInvalid(final String message) {
+                super(message);
+            }
+        }
+
+        class Failure extends DBusExecutionException {
+
+            public Failure(final String message) {
+                super(message);
+            }
+        }
+
+        class GroupNotFound extends DBusExecutionException {
+
+            public GroupNotFound(final String message) {
+                super(message);
+            }
+        }
+
+        class InvalidNumber extends DBusExecutionException {
+
+            public InvalidNumber(final String message) {
+                super(message);
+            }
+        }
+
+        class UnregisteredUser extends DBusExecutionException {
+
+            public UnregisteredUser(final String message) {
+                super(message);
+            }
+        }
+
+        class UntrustedIdentity extends DBusExecutionException {
+
+            public UntrustedIdentity(final String message) {
+                super(message);
+            }
         }
     }
 }
