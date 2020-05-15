@@ -83,19 +83,22 @@ public class ProvisioningManager {
                 throw new IOException("Received invalid profileKey", e);
             }
         }
-        SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(), username, ret.getUuid(), password, ret.getDeviceId(), ret.getIdentity(), registrationId, signalingKey, profileKey);
-        account.save();
 
-        Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
+        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(), username, ret.getUuid(), password, ret.getDeviceId(), ret.getIdentity(), registrationId, signalingKey, profileKey)) {
+            account.save();
 
-        m.refreshPreKeys();
+            try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {
 
-        m.requestSyncGroups();
-        m.requestSyncContacts();
-        m.requestSyncBlocked();
-        m.requestSyncConfiguration();
+                m.refreshPreKeys();
 
-        m.saveAccount();
+                m.requestSyncGroups();
+                m.requestSyncContacts();
+                m.requestSyncBlocked();
+                m.requestSyncConfiguration();
+
+                m.saveAccount();
+            }
+        }
 
         return username;
     }

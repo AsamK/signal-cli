@@ -29,9 +29,11 @@ import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
+import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -42,11 +44,11 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SignalAccount {
+public class SignalAccount implements Closeable {
 
     private final ObjectMapper jsonProcessor = new ObjectMapper();
-    private FileChannel fileChannel;
-    private FileLock lock;
+    private final FileChannel fileChannel;
+    private final FileLock lock;
     private String username;
     private UUID uuid;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
@@ -65,7 +67,9 @@ public class SignalAccount {
     private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
 
-    private SignalAccount() {
+    private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
+        this.fileChannel = fileChannel;
+        this.lock = lock;
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
         jsonProcessor.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
         jsonProcessor.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
@@ -75,18 +79,28 @@ public class SignalAccount {
     }
 
     public static SignalAccount load(String dataPath, String username) throws IOException {
-        SignalAccount account = new SignalAccount();
-        IOUtils.createPrivateDirectories(dataPath);
-        account.openFileChannel(getFileName(dataPath, username));
-        account.load();
-        return account;
+        final String fileName = getFileName(dataPath, username);
+        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
+        try {
+            SignalAccount account = new SignalAccount(pair.first(), pair.second());
+            account.load();
+            return account;
+        } catch (Throwable e) {
+            pair.second().close();
+            pair.first().close();
+            throw e;
+        }
     }
 
     public static SignalAccount create(String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
+        String fileName = getFileName(dataPath, username);
+        if (!new File(fileName).exists()) {
+            IOUtils.createPrivateFile(fileName);
+        }
 
-        SignalAccount account = new SignalAccount();
-        account.openFileChannel(getFileName(dataPath, username));
+        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
+        SignalAccount account = new SignalAccount(pair.first(), pair.second());
 
         account.username = username;
         account.profileKey = profileKey;
@@ -101,9 +115,13 @@ public class SignalAccount {
 
     public static SignalAccount createLinkedAccount(String dataPath, String username, UUID uuid, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
+        String fileName = getFileName(dataPath, username);
+        if (!new File(fileName).exists()) {
+            IOUtils.createPrivateFile(fileName);
+        }
 
-        SignalAccount account = new SignalAccount();
-        account.openFileChannel(getFileName(dataPath, username));
+        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
+        SignalAccount account = new SignalAccount(pair.first(), pair.second());
 
         account.username = username;
         account.uuid = uuid;
@@ -285,21 +303,15 @@ public class SignalAccount {
         }
     }
 
-    private void openFileChannel(String fileName) throws IOException {
-        if (fileChannel != null) {
-            return;
-        }
-
-        if (!new File(fileName).exists()) {
-            IOUtils.createPrivateFile(fileName);
-        }
-        fileChannel = new RandomAccessFile(new File(fileName), "rw").getChannel();
-        lock = fileChannel.tryLock();
+    private static Pair<FileChannel, FileLock> openFileChannel(String fileName) throws IOException {
+        FileChannel fileChannel = new RandomAccessFile(new File(fileName), "rw").getChannel();
+        FileLock lock = fileChannel.tryLock();
         if (lock == null) {
             System.err.println("Config file is in use by another instance, waiting…");
             lock = fileChannel.lock();
             System.err.println("Config file lock acquired.");
         }
+        return new Pair<>(fileChannel, lock);
     }
 
     public void setResolver(final SignalServiceAddressResolver resolver) {
@@ -412,5 +424,13 @@ public class SignalAccount {
 
     public void setMultiDevice(final boolean multiDevice) {
         isMultiDevice = multiDevice;
+    }
+
+    @Override
+    public void close() throws IOException {
+        synchronized (fileChannel) {
+            lock.close();
+            fileChannel.close();
+        }
     }
 }
