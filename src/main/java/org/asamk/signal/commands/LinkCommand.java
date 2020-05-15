@@ -3,8 +3,8 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.UserAlreadyExists;
 import org.asamk.signal.manager.ProvisioningManager;
+import org.asamk.signal.manager.UserAlreadyExists;
 import org.whispersystems.libsignal.InvalidKeyException;
 
 import java.io.IOException;

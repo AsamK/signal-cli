@@ -2,7 +2,6 @@ package org.asamk.signal.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.asamk.signal.GroupIdFormatException;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;

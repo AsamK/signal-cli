@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.manager;
 
 public class UserAlreadyExists extends Exception {
 

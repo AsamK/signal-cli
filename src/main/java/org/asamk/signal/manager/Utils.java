@@ -1,6 +1,5 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.AttachmentInvalidException;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;

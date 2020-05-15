@@ -1,8 +1,7 @@
 package org.asamk.signal.util;
 
-import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
+import org.asamk.signal.manager.GroupNotFoundException;
+import org.asamk.signal.manager.NotAGroupMemberException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;

@@ -5,10 +5,10 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
+import org.asamk.signal.manager.AttachmentInvalidException;
+import org.asamk.signal.manager.GroupNotFoundException;
+import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.signal.util.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;

@@ -3,8 +3,8 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.StickerPackInvalidException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.StickerPackInvalidException;
 
 import java.io.IOException;
 

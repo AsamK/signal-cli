@@ -19,11 +19,6 @@ package org.asamk.signal.manager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.Signal;
-import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
-import org.asamk.signal.StickerPackInvalidException;
-import org.asamk.signal.TrustLevel;
 import org.asamk.signal.storage.SignalAccount;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -486,7 +481,7 @@ public class Manager implements Signal, Closeable {
     @Override
     public long sendGroupMessage(String messageText, List<String> attachments,
                                  byte[] groupId)
-            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+            throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
@@ -507,7 +502,7 @@ public class Manager implements Signal, Closeable {
 
     public void sendGroupMessageReaction(String emoji, boolean remove, String targetAuthor,
                                          long targetSentTimestamp, byte[] groupId)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
+            throws IOException, EncapsulatedExceptions, InvalidNumberException, NotAGroupMemberException, GroupNotFoundException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, canonicalizeAndResolveSignalServiceAddress(targetAuthor), targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction);
@@ -521,7 +516,7 @@ public class Manager implements Signal, Closeable {
         sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions {
+    public void sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, EncapsulatedExceptions, NotAGroupMemberException {
         SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupId)
                 .build();
@@ -536,7 +531,7 @@ public class Manager implements Signal, Closeable {
         sendMessageLegacy(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<SignalServiceAddress> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException {
+    private byte[] sendUpdateGroupMessage(byte[] groupId, String name, Collection<SignalServiceAddress> members, String avatarFile) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         GroupInfo g;
         if (groupId == null) {
             // Create new group
@@ -587,7 +582,7 @@ public class Manager implements Signal, Closeable {
         return g.groupId;
     }
 
-    private void sendUpdateGroupMessage(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
+    private void sendUpdateGroupMessage(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         if (groupId == null) {
             return;
         }
@@ -603,7 +598,7 @@ public class Manager implements Signal, Closeable {
         sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
     }
 
-    private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfo g) {
+    private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfo g) throws AttachmentInvalidException {
         SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.groupId)
                 .withName(g.name)
@@ -680,7 +675,7 @@ public class Manager implements Signal, Closeable {
 
     public void sendMessageReaction(String emoji, boolean remove, String targetAuthor,
                                     long targetSentTimestamp, List<String> recipients)
-            throws IOException, EncapsulatedExceptions, AttachmentInvalidException, InvalidNumberException {
+            throws IOException, EncapsulatedExceptions, InvalidNumberException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji, remove, canonicalizeAndResolveSignalServiceAddress(targetAuthor), targetSentTimestamp);
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withReaction(reaction);
@@ -791,7 +786,7 @@ public class Manager implements Signal, Closeable {
     }
 
     @Override
-    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException {
+    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         if (groupId.length == 0) {
             groupId = null;
         }
@@ -1286,9 +1281,9 @@ public class Manager implements Signal, Closeable {
                     if (group != null) {
                         try {
                             sendUpdateGroupMessage(groupInfo.getGroupId(), source);
-                        } catch (IOException | EncapsulatedExceptions e) {
+                        } catch (IOException | EncapsulatedExceptions | AttachmentInvalidException e) {
                             e.printStackTrace();
-                        } catch (NotAGroupMemberException e) {
+                        } catch (GroupNotFoundException | NotAGroupMemberException e) {
                             // We have left this group, so don't send a group update message
                         }
                     }

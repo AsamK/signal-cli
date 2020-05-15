@@ -1,7 +1,7 @@
 package org.asamk;
 
-import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.GroupNotFoundException;
+import org.asamk.signal.manager.AttachmentInvalidException;
+import org.asamk.signal.manager.GroupNotFoundException;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
