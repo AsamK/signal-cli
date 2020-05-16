@@ -252,6 +252,10 @@ Specify the contact phone number.
 *-n*, *--name*::
 Specify the new name for this contact.
 
+*-e*, *--expiration*::
+Set expiration time of messages (seconds).
+By default expiration is set to 0, no expiration.
+
 === block
 
 Block the given contacts or groups (no messages will be received).
