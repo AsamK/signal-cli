@@ -813,7 +813,6 @@ public class Manager implements Signal, Closeable {
     public void setExpirationTimer(String number, int messageExpirationTimer) throws InvalidNumberException {
         ContactInfo c = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
         c.messageExpirationTime = messageExpirationTimer;
-        System.err.println("Set message expiration " + c.number + " -> " + c.messageExpirationTime + " seconds");
         account.getContactStore().updateContact(c);
         account.save();
     }
