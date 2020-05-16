@@ -3,6 +3,8 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import java.io.IOException;
+
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -41,6 +43,9 @@ public class UpdateContactCommand implements LocalCommand {
             }
         } catch (InvalidNumberException e) {
             System.out.println("Invalid contact number: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Update contact error: " + e.getMessage());
+            return 3;
         }
 
         return 0;
