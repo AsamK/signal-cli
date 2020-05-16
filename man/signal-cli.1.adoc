@@ -254,7 +254,7 @@ Specify the new name for this contact.
 
 *-e*, *--expiration*::
 Set expiration time of messages (seconds).
-By default expiration is set to 0, no expiration.
+To disable expiration set expiration time to 0.
 
 === block
 
