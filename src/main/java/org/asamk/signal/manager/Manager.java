@@ -758,10 +758,23 @@ public class Manager implements Closeable {
     /**
      * Change the expiration timer for a contact
      */
-    public void setExpirationTimer(SignalServiceAddress address, int messageExpirationTimer) {
-        ContactInfo c = account.getContactStore().getContact(address);
-        c.messageExpirationTime = messageExpirationTimer;
-        account.getContactStore().updateContact(c);
+    public void setExpirationTimer(SignalServiceAddress address, int messageExpirationTimer) throws IOException {
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder();
+        ContactInfo contact = account.getContactStore().getContact(address);
+        contact.messageExpirationTime = messageExpirationTimer;
+        account.getContactStore().updateContact(contact);
+        account.save();
+        messageBuilder.withExpiration(messageExpirationTimer);
+        messageBuilder.asExpirationUpdate();
+        sendMessage(messageBuilder, Collections.singleton(address));
+    }
+
+    /**
+     * Change the expiration timer for a contact
+     */
+    public void setExpirationTimer(String number, int messageExpirationTimer) throws IOException, InvalidNumberException {
+        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(number);
+        setExpirationTimer(address, messageExpirationTimer);
     }
 
     /**
