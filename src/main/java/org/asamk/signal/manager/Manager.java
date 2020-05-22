@@ -1110,11 +1110,10 @@ public class Manager implements Closeable {
         }
         SignalServiceDataMessage message = null;
         try {
-            SignalServiceMessageSender messageSender = getMessageSender();
-
             message = messageBuilder.build();
             if (message.getGroupContext().isPresent()) {
                 try {
+                    SignalServiceMessageSender messageSender = getMessageSender();
                     final boolean isRecipientUpdate = false;
                     List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipients), getAccessFor(recipients), isRecipientUpdate, message);
                     for (SendMessageResult r : result) {
@@ -1127,25 +1126,6 @@ public class Manager implements Closeable {
                     account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
                     return Collections.emptyList();
                 }
-            } else if (recipients.size() == 1 && recipients.contains(account.getSelfAddress())) {
-                SignalServiceAddress recipient = account.getSelfAddress();
-                final Optional<UnidentifiedAccessPair> unidentifiedAccess = getAccessFor(recipient);
-                SentTranscriptMessage transcript = new SentTranscriptMessage(Optional.of(recipient),
-                        message.getTimestamp(),
-                        message,
-                        message.getExpiresInSeconds(),
-                        Collections.singletonMap(recipient, unidentifiedAccess.isPresent()),
-                        false);
-                SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
-
-                List<SendMessageResult> results = new ArrayList<>(recipients.size());
-                try {
-                    messageSender.sendMessage(syncMessage, unidentifiedAccess);
-                } catch (UntrustedIdentityException e) {
-                    account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
-                    results.add(SendMessageResult.identityFailure(recipient, e.getIdentityKey()));
-                }
-                return results;
             } else {
                 // Send to all individually, so sync messages are sent correctly
                 List<SendMessageResult> results = new ArrayList<>(recipients.size());
@@ -1159,12 +1139,10 @@ public class Manager implements Closeable {
                         messageBuilder.withProfileKey(null);
                     }
                     message = messageBuilder.build();
-                    try {
-                        SendMessageResult result = messageSender.sendMessage(address, getAccessFor(address), message);
-                        results.add(result);
-                    } catch (UntrustedIdentityException e) {
-                        account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
-                        results.add(SendMessageResult.identityFailure(address, e.getIdentityKey()));
+                    if (address.matches(account.getSelfAddress())) {
+                        results.add(sendSelfMessage(message));
+                    } else {
+                        results.add(sendMessage(address, message));
                     }
                 }
                 return results;
@@ -1176,6 +1154,40 @@ public class Manager implements Closeable {
                 }
             }
             account.save();
+        }
+    }
+
+    private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
+        SignalServiceMessageSender messageSender = getMessageSender();
+
+        SignalServiceAddress recipient = account.getSelfAddress();
+
+        final Optional<UnidentifiedAccessPair> unidentifiedAccess = getAccessFor(recipient);
+        SentTranscriptMessage transcript = new SentTranscriptMessage(Optional.of(recipient),
+                message.getTimestamp(),
+                message,
+                message.getExpiresInSeconds(),
+                Collections.singletonMap(recipient, unidentifiedAccess.isPresent()),
+                false);
+        SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
+
+        try {
+            messageSender.sendMessage(syncMessage, unidentifiedAccess);
+            return SendMessageResult.success(recipient, unidentifiedAccess.isPresent(), false);
+        } catch (UntrustedIdentityException e) {
+            account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+            return SendMessageResult.identityFailure(recipient, e.getIdentityKey());
+        }
+    }
+
+    private SendMessageResult sendMessage(SignalServiceAddress address, SignalServiceDataMessage message) throws IOException {
+        SignalServiceMessageSender messageSender = getMessageSender();
+
+        try {
+            return messageSender.sendMessage(address, getAccessFor(address), message);
+        } catch (UntrustedIdentityException e) {
+            account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
+            return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
     }
 
