@@ -1411,6 +1411,11 @@ public class Manager implements Closeable {
                 System.err.println("Ignoring error: " + e.getMessage());
                 continue;
             }
+            if (envelope.hasSource()) {
+                // Store uuid if we don't have it already
+                SignalServiceAddress source = envelope.getSourceAddress();
+                resolveSignalServiceAddress(source);
+            }
             if (!envelope.isReceipt()) {
                 try {
                     content = decryptMessage(envelope);
@@ -1472,6 +1477,9 @@ public class Manager implements Closeable {
             } else {
                 sender = content.getSender();
             }
+            // Store uuid if we don't have it already
+            resolveSignalServiceAddress(sender);
+
             if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
 
