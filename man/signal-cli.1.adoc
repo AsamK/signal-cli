@@ -313,8 +313,6 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus interface.
-For dbus support you need jni/unix-java.so installed on your system (Debian:
-libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
 
 *--system*::
 Use DBus system bus instead of user bus.
