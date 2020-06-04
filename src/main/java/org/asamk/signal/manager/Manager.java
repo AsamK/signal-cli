@@ -1402,13 +1402,15 @@ public class Manager implements Closeable {
             messagePipe = messageReceiver.createMessagePipe();
         }
 
+        boolean hasCaughtUpWithOldMessages = false;
+
         while (true) {
             SignalServiceEnvelope envelope;
             SignalServiceContent content = null;
             Exception exception = null;
             final long now = new Date().getTime();
             try {
-                envelope = messagePipe.read(timeout, unit, envelope1 -> {
+                Optional<SignalServiceEnvelope> result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     // store message on disk, before acknowledging receipt to the server
                     try {
                         String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
@@ -1418,6 +1420,15 @@ public class Manager implements Closeable {
                         System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
                     }
                 });
+                if (result.isPresent()) {
+                    envelope = result.get();
+                } else {
+                    // Received indicator that server queue is empty
+                    hasCaughtUpWithOldMessages = true;
+
+                    // Continue to wait another timeout for new messages
+                    continue;
+                }
             } catch (TimeoutException e) {
                 if (returnOnTimeout)
                     return;
