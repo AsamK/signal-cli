@@ -9,7 +9,9 @@ import org.whispersystems.signalservice.internal.configuration.SignalKeyBackupSe
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalStorageUrl;
+import org.whispersystems.util.Base64;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +36,7 @@ public class ServiceConfig {
 
     private final static Optional<Dns> dns = Optional.absent();
 
-    private final static byte[] zkGroupServerPublicParams = new byte[]{};
+    private final static String zkGroupServerPublicParamsHex = "AMhf5ywVwITZMsff/eCyudZx9JDmkkkbV6PInzG4p8x3VqVJSFiMvnvlEKWuRob/1eaIetR31IYeAbm0NdOuHH8Qi+Rexi1wLlpzIo1gstHWBfZzy1+qHRV5A4TqPp15YzBPm0WSggW6PbSn+F4lf57VCnHF7p8SvzAA2ZZJPYJURt8X7bbg+H3i+PEjH9DXItNEqs2sNcug37xZQDLm7X0=";
 
     static final SignalServiceProfile.Capabilities capabilities = new SignalServiceProfile.Capabilities(false, false, false);
 
@@ -45,6 +47,13 @@ public class ServiceConfig {
                         .build());
 
         final List<Interceptor> interceptors = Collections.singletonList(userAgentInterceptor);
+
+        final byte[] zkGroupServerPublicParams;
+        try {
+            zkGroupServerPublicParams = Base64.decode(zkGroupServerPublicParamsHex);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
 
         return new SignalServiceConfiguration(
                 new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
