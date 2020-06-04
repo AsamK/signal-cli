@@ -43,6 +43,7 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,14 +103,16 @@ public class Main {
                 dataPath = getDefaultDataPath();
             }
 
+            final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT);
+
             if (username == null) {
-                ProvisioningManager pm = new ProvisioningManager(dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
+                ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
                 return handleCommands(ns, pm);
             }
 
             Manager manager;
             try {
-                manager = Manager.init(username, dataPath, ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT), BaseConfig.USER_AGENT);
+                manager = Manager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
             } catch (Throwable e) {
                 System.err.println("Error loading state file: " + e.getMessage());
                 return 2;
