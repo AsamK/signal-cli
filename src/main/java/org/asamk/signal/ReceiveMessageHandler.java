@@ -114,6 +114,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         if (syncMessage.getRequest().get().isGroupsRequest()) {
                             System.out.println(" - groups request");
                         }
+                        if (syncMessage.getRequest().get().isBlockedListRequest()) {
+                            System.out.println(" - blocked list request");
+                        }
+                        if (syncMessage.getRequest().get().isConfigurationRequest()) {
+                            System.out.println(" - configuration request");
+                        }
+                        if (syncMessage.getRequest().get().isKeysRequest()) {
+                            System.out.println(" - keys request");
+                        }
                     }
                     if (syncMessage.getSent().isPresent()) {
                         System.out.println("Received sync sent message");
