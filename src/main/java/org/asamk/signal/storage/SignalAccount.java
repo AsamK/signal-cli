@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Collection;
@@ -429,7 +430,10 @@ public class SignalAccount implements Closeable {
     @Override
     public void close() throws IOException {
         synchronized (fileChannel) {
-            lock.close();
+            try {
+                lock.close();
+            } catch (ClosedChannelException ignored) {
+            }
             fileChannel.close();
         }
     }
