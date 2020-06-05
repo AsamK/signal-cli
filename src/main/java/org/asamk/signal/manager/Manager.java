@@ -580,7 +580,7 @@ public class Manager implements Closeable {
         return g.groupId;
     }
 
-    private void sendUpdateGroupMessage(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
+    void sendUpdateGroupMessage(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         if (groupId == null) {
             return;
         }
@@ -616,7 +616,7 @@ public class Manager implements Closeable {
                 .withExpiration(g.messageExpirationTime);
     }
 
-    private void sendGroupInfoRequest(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
+    void sendGroupInfoRequest(byte[] groupId, SignalServiceAddress recipient) throws IOException, EncapsulatedExceptions {
         if (groupId == null) {
             return;
         }
@@ -631,7 +631,7 @@ public class Manager implements Closeable {
         sendMessageLegacy(messageBuilder, Collections.singleton(recipient));
     }
 
-    private void sendReceipt(SignalServiceAddress remoteAddress, long messageId) throws IOException, UntrustedIdentityException {
+    void sendReceipt(SignalServiceAddress remoteAddress, long messageId) throws IOException, UntrustedIdentityException {
         SignalServiceReceiptMessage receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
                 Collections.singletonList(messageId),
                 System.currentTimeMillis());
@@ -1209,7 +1209,8 @@ public class Manager implements Closeable {
         account.getSignalProtocolStore().deleteAllSessions(source);
     }
 
-    private void handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, SignalServiceAddress source, SignalServiceAddress destination, boolean ignoreAttachments) {
+    private List<HandleAction> handleSignalServiceDataMessage(SignalServiceDataMessage message, boolean isSync, SignalServiceAddress source, SignalServiceAddress destination, boolean ignoreAttachments) {
+        List<HandleAction> actions = new ArrayList<>();
         if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
             SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
             GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
@@ -1244,12 +1245,8 @@ public class Manager implements Closeable {
                     account.getGroupStore().updateGroup(group);
                     break;
                 case DELIVER:
-                    if (group == null) {
-                        try {
-                            sendGroupInfoRequest(groupInfo.getGroupId(), source);
-                        } catch (IOException | EncapsulatedExceptions e) {
-                            e.printStackTrace();
-                        }
+                    if (group == null && !isSync) {
+                        actions.add(new SendGroupInfoRequestAction(source, groupInfo.getGroupId()));
                     }
                     break;
                 case QUIT:
@@ -1259,14 +1256,8 @@ public class Manager implements Closeable {
                     }
                     break;
                 case REQUEST_INFO:
-                    if (group != null) {
-                        try {
-                            sendUpdateGroupMessage(groupInfo.getGroupId(), source);
-                        } catch (IOException | EncapsulatedExceptions | AttachmentInvalidException e) {
-                            e.printStackTrace();
-                        } catch (GroupNotFoundException | NotAGroupMemberException e) {
-                            // We have left this group, so don't send a group update message
-                        }
+                    if (group != null && !isSync) {
+                        actions.add(new SendGroupUpdateAction(source, group.groupId));
                     }
                     break;
             }
@@ -1341,6 +1332,7 @@ public class Manager implements Closeable {
                 }
             }
         }
+        return actions;
     }
 
     private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
@@ -1383,7 +1375,14 @@ public class Manager implements Closeable {
             } catch (Exception e) {
                 return;
             }
-            handleMessage(envelope, content, ignoreAttachments);
+            List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
+            for (HandleAction action : actions) {
+                try {
+                    action.execute(this);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
         }
         account.save();
         handler.handleMessage(envelope, content, null);
@@ -1397,6 +1396,8 @@ public class Manager implements Closeable {
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
+
+        Set<HandleAction> queuedActions = null;
 
         if (messagePipe == null) {
             messagePipe = messageReceiver.createMessagePipe();
@@ -1426,6 +1427,18 @@ public class Manager implements Closeable {
                     // Received indicator that server queue is empty
                     hasCaughtUpWithOldMessages = true;
 
+                    if (queuedActions != null) {
+                        for (HandleAction action : queuedActions) {
+                            try {
+                                action.execute(this);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        queuedActions.clear();
+                        queuedActions = null;
+                    }
+
                     // Continue to wait another timeout for new messages
                     continue;
                 }
@@ -1448,7 +1461,21 @@ public class Manager implements Closeable {
                 } catch (Exception e) {
                     exception = e;
                 }
-                handleMessage(envelope, content, ignoreAttachments);
+                List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
+                if (hasCaughtUpWithOldMessages) {
+                    for (HandleAction action : actions) {
+                        try {
+                            action.execute(this);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    if (queuedActions == null) {
+                        queuedActions = new HashSet<>();
+                    }
+                    queuedActions.addAll(actions);
+                }
             }
             account.save();
             if (!isMessageBlocked(envelope, content)) {
@@ -1495,7 +1522,8 @@ public class Manager implements Closeable {
         return false;
     }
 
-    private void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
+    private List<HandleAction> handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments) {
+        List<HandleAction> actions = new ArrayList<>();
         if (content != null) {
             SignalServiceAddress sender;
             if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
@@ -1510,44 +1538,28 @@ public class Manager implements Closeable {
                 SignalServiceDataMessage message = content.getDataMessage().get();
 
                 if (content.isNeedsReceipt()) {
-                    try {
-                        sendReceipt(sender, message.getTimestamp());
-                    } catch (IOException | UntrustedIdentityException | IllegalArgumentException e) {
-                        e.printStackTrace();
-                    }
+                    actions.add(new SendReceiptAction(sender, message.getTimestamp()));
                 }
 
-                handleSignalServiceDataMessage(message, false, sender, account.getSelfAddress(), ignoreAttachments);
+                actions.addAll(handleSignalServiceDataMessage(message, false, sender, account.getSelfAddress(), ignoreAttachments));
             }
             if (content.getSyncMessage().isPresent()) {
                 account.setMultiDevice(true);
                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
                     SentTranscriptMessage message = syncMessage.getSent().get();
-                    handleSignalServiceDataMessage(message.getMessage(), true, sender, message.getDestination().orNull(), ignoreAttachments);
+                    actions.addAll(handleSignalServiceDataMessage(message.getMessage(), true, sender, message.getDestination().orNull(), ignoreAttachments));
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();
                     if (rm.isContactsRequest()) {
-                        try {
-                            sendContacts();
-                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
-                            e.printStackTrace();
-                        }
+                        actions.add(SendSyncContactsAction.create());
                     }
                     if (rm.isGroupsRequest()) {
-                        try {
-                            sendGroups();
-                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
-                            e.printStackTrace();
-                        }
+                        actions.add(SendSyncGroupsAction.create());
                     }
                     if (rm.isBlockedListRequest()) {
-                        try {
-                            sendBlockedList();
-                        } catch (UntrustedIdentityException | IOException | IllegalArgumentException e) {
-                            e.printStackTrace();
-                        }
+                        actions.add(SendSyncBlockedListAction.create());
                     }
                     // TODO Handle rm.isConfigurationRequest();
                 }
@@ -1681,6 +1693,7 @@ public class Manager implements Closeable {
                 }
             }
         }
+        return actions;
     }
 
     private File getContactAvatarFile(String number) {
@@ -1764,7 +1777,7 @@ public class Manager implements Closeable {
         return messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
     }
 
-    private void sendGroups() throws IOException, UntrustedIdentityException {
+    void sendGroups() throws IOException, UntrustedIdentityException {
         File groupsFile = IOUtils.createTempFile();
 
         try {
@@ -1853,7 +1866,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private void sendBlockedList() throws IOException, UntrustedIdentityException {
+    void sendBlockedList() throws IOException, UntrustedIdentityException {
         List<SignalServiceAddress> addresses = new ArrayList<>();
         for (ContactInfo record : account.getContactStore().getContacts()) {
             if (record.blocked) {
