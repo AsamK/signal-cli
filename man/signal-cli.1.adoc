@@ -103,7 +103,7 @@ Link another device to this device.
 Only works, if this is the master device.
 
 *--uri* URI::
-Specify the uri contained in the QR code shown by the new device.
+Specify the uri contained in the QR code shown by the new device. You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
 
 === listDevices
 
