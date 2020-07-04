@@ -425,7 +425,7 @@ public class Manager implements Closeable {
                 account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations);
     }
 
-    private SignalServiceProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
+    private SignalServiceProfile getEncryptedRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
         SignalServiceMessagePipe pipe = unidentifiedMessagePipe != null && unidentifiedAccess.isPresent() ? unidentifiedMessagePipe
                 : messagePipe;
 
@@ -442,6 +442,10 @@ public class Manager implements Closeable {
         } catch (VerificationFailedException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private SignalProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess, ProfileKey profileKey) throws IOException {
+        return decryptProfile(getEncryptedRecipientProfile(address, unidentifiedAccess), profileKey);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -980,7 +984,7 @@ public class Manager implements Closeable {
         }
         SignalProfile targetProfile;
         try {
-            targetProfile = decryptProfile(getRecipientProfile(recipient, Optional.absent()), theirProfileKey);
+            targetProfile = getRecipientProfile(recipient, Optional.absent(), theirProfileKey);
         } catch (IOException e) {
             System.err.println("Failed to get recipient profile: " + e);
             return null;
