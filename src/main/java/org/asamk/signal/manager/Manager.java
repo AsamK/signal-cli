@@ -754,7 +754,7 @@ public class Manager implements Closeable {
         if (name.isEmpty()) {
             name = null;
         }
-        if (members.size() == 0) {
+        if (members.isEmpty()) {
             members = null;
         }
         if (avatar.isEmpty()) {
