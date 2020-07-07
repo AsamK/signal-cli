@@ -152,6 +152,26 @@ public class SignalAccount implements Closeable {
         return !(!f.exists() || f.isDirectory());
     }
 
+    public static String getSingleUser(String dataPath) {
+        File folder = new File(dataPath);
+        File[] listOfFiles = folder.listFiles();
+        if (listOfFiles == null || listOfFiles.length <= 0) {
+            System.err.println("No user account found");
+            return null;
+        }
+        String user = null;
+        for (int i = 0; i < listOfFiles.length; i++) {
+            if (listOfFiles[i].isFile()) {
+                if (user != null) {
+                    System.err.println("Too many user accounts found");
+                    return null; // too many users
+                }
+                user = listOfFiles[i].getName();
+            }
+        }
+        return user;
+    }
+
     private void load() throws IOException {
         JsonNode rootNode;
         synchronized (fileChannel) {

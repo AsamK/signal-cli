@@ -26,6 +26,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import net.sourceforge.argparse4j.inf.Subparsers;
 
 import org.asamk.Signal;
+import org.asamk.signal.storage.SignalAccount;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.DbusCommand;
@@ -36,6 +37,7 @@ import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.ServiceConfig;
+import org.asamk.signal.manager.PathConfig;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -73,7 +75,7 @@ public class Main {
     }
 
     private static int handleCommands(Namespace ns) {
-        final String username = ns.getString("username");
+        String username = ns.getString("username");
 
         if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
             try {
@@ -101,6 +103,16 @@ public class Main {
             String dataPath = ns.getString("config");
             if (isEmpty(dataPath)) {
                 dataPath = getDefaultDataPath();
+            }
+
+            if (ns.getBoolean("singleuser")) {
+                String completeDataPath = PathConfig.createDefault(dataPath).getDataPath();
+                username = SignalAccount.getSingleUser(completeDataPath);
+                if (username == null) {
+                    System.exit(1);
+                }
+                System.out.println("Assuming username: " + username);
+                ns.getAttrs().put("username", username);
             }
 
             final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT);
@@ -234,6 +246,9 @@ public class Main {
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username")
                 .help("Specify your phone number, that will be used for verification.");
+        mut.addArgument("--singleuser")
+                .help("Can be used if only one user account exists on this machine.")
+                .action(Arguments.storeTrue());
         mut.addArgument("--dbus")
                 .help("Make request via user dbus.")
                 .action(Arguments.storeTrue());
@@ -267,7 +282,7 @@ public class Main {
                 System.err.println("You cannot specify a username (phone number) when linking");
                 System.exit(2);
             }
-        } else if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system")) {
+        } else if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system") && !ns.getBoolean("singleuser")) {
             if (ns.getString("username") == null) {
                 parser.printUsage();
                 System.err.println("You need to specify a username (phone number)");

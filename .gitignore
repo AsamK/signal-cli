@@ -10,3 +10,6 @@ local.properties
 .project
 .settings/
 out/
+.vscode
+testme
+buildcontainer
