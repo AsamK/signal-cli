@@ -23,7 +23,7 @@ You can find further instructions on the Wiki:
 
 ## Usage
 
-Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.
+Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
 
 * Register a number (with SMS verification)
 
