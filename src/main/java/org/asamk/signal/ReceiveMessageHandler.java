@@ -200,7 +200,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     SignalServiceCallMessage callMessage = content.getCallMessage().get();
                     if (callMessage.getAnswerMessage().isPresent()) {
                         AnswerMessage answerMessage = callMessage.getAnswerMessage().get();
-                        System.out.println("Answer message: " + answerMessage.getId() + ": " + answerMessage.getDescription());
+                        System.out.println("Answer message: " + answerMessage.getId() + ": " + answerMessage.getSdp());
                     }
                     if (callMessage.getBusyMessage().isPresent()) {
                         BusyMessage busyMessage = callMessage.getBusyMessage().get();
@@ -218,7 +218,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     }
                     if (callMessage.getOfferMessage().isPresent()) {
                         OfferMessage offerMessage = callMessage.getOfferMessage().get();
-                        System.out.println("Offer message: " + offerMessage.getId() + ": " + offerMessage.getDescription());
+                        System.out.println("Offer message: " + offerMessage.getId() + ": " + offerMessage.getSdp());
                     }
                 }
                 if (content.getReceiptMessage().isPresent()) {

@@ -38,7 +38,6 @@ import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.zkgroup.InvalidInputException;
-import org.signal.zkgroup.VerificationFailedException;
 import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
@@ -135,6 +134,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -288,18 +289,10 @@ public class Manager implements Closeable {
         accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities);
     }
 
-    public void setProfileName(String name) throws IOException {
-        accountManager.setProfileName(account.getProfileKey(), name);
-    }
-
-    public void setProfileAvatar(File avatar) throws IOException {
-        final StreamDetails streamDetails = Utils.createStreamDetailsFromFile(avatar);
-        accountManager.setProfileAvatar(account.getProfileKey(), streamDetails);
-        streamDetails.getStream().close();
-    }
-
-    public void removeProfileAvatar() throws IOException {
-        accountManager.setProfileAvatar(account.getProfileKey(), null);
+    public void setProfile(String name, File avatar) throws IOException {
+        try (final StreamDetails streamDetails = avatar == null ? null : Utils.createStreamDetailsFromFile(avatar)) {
+            accountManager.setVersionedProfile(account.getUuid(), account.getProfileKey(), name, streamDetails);
+        }
     }
 
     public void unregister() throws IOException {
@@ -421,8 +414,9 @@ public class Manager implements Closeable {
         // TODO implement ZkGroup support
         final ClientZkProfileOperations clientZkProfileOperations = null;
         final boolean attachmentsV3 = false;
+        final ExecutorService executor = null;
         return new SignalServiceMessageSender(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
-                account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations);
+                account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations, executor);
     }
 
     private SignalServiceProfile getEncryptedRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
@@ -431,16 +425,16 @@ public class Manager implements Closeable {
 
         if (pipe != null) {
             try {
-                return pipe.getProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).getProfile();
-            } catch (IOException ignored) {
+                return pipe.getProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).get(10, TimeUnit.SECONDS).getProfile();
+            } catch (IOException | InterruptedException | ExecutionException | TimeoutException ignored) {
             }
         }
 
         SignalServiceMessageReceiver receiver = getMessageReceiver();
         try {
-            return receiver.retrieveProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).getProfile();
-        } catch (VerificationFailedException e) {
-            throw new AssertionError(e);
+            return receiver.retrieveProfile(address, Optional.absent(), unidentifiedAccess, SignalServiceProfile.RequestType.PROFILE).get(10, TimeUnit.SECONDS).getProfile();
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new IOException("Failed to retrieve profile", e);
         }
     }
 

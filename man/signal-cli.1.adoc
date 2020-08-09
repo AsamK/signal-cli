@@ -227,7 +227,7 @@ Specify the safety number of the key, only use this option if you have verified 
 
 === updateProfile
 
-Update the name and/or avatar image visible by message recipients for the current users.
+Update the name and avatar image visible by message recipients for the current users.
 The profile is stored encrypted on the Signal servers.
 The decryption key is sent with every outgoing messages (excluding group messages).
 

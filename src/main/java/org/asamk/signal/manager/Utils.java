@@ -75,13 +75,13 @@ class Utils {
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
         final String mime = getFileMimeType(attachmentFile);
-        // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
+        // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final long uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
         final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, uploadTimestamp, caption, blurHash, null, null, resumableUploadSpec);
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, false, preview, 0, 0, uploadTimestamp, caption, blurHash, null, null, resumableUploadSpec);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
@@ -152,7 +152,7 @@ class Utils {
         try (FileInputStream f = new FileInputStream(file)) {
             DataInputStream in = new DataInputStream(f);
             int version = in.readInt();
-            if (version > 3) {
+            if (version > 4) {
                 return null;
             }
             int type = in.readInt();
@@ -179,26 +179,30 @@ class Utils {
                 legacyMessage = new byte[legacyMessageLen];
                 in.readFully(legacyMessage);
             }
-            long serverTimestamp = 0;
+            long serverReceivedTimestamp = 0;
             String uuid = null;
-            if (version == 2) {
-                serverTimestamp = in.readLong();
+            if (version >= 2) {
+                serverReceivedTimestamp = in.readLong();
                 uuid = in.readUTF();
                 if ("".equals(uuid)) {
                     uuid = null;
                 }
             }
+            long serverDeliveredTimestamp = 0;
+            if (version >= 4) {
+                serverDeliveredTimestamp = in.readLong();
+            }
             Optional<SignalServiceAddress> addressOptional = sourceUuid == null && source.isEmpty()
                     ? Optional.absent()
                     : Optional.of(new SignalServiceAddress(sourceUuid, source));
-            return new SignalServiceEnvelope(type, addressOptional, sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
+            return new SignalServiceEnvelope(type, addressOptional, sourceDevice, timestamp, legacyMessage, content, serverReceivedTimestamp, serverDeliveredTimestamp, uuid);
         }
     }
 
     static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (FileOutputStream f = new FileOutputStream(file)) {
             try (DataOutputStream out = new DataOutputStream(f)) {
-                out.writeInt(3); // version
+                out.writeInt(4); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
@@ -216,9 +220,10 @@ class Utils {
                 } else {
                     out.writeInt(0);
                 }
-                out.writeLong(envelope.getServerTimestamp());
+                out.writeLong(envelope.getServerReceivedTimestamp());
                 String uuid = envelope.getUuid();
                 out.writeUTF(uuid == null ? "" : uuid);
+                out.writeLong(envelope.getServerDeliveredTimestamp());
             }
         }
     }
