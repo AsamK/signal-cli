@@ -699,9 +699,6 @@ public class Manager implements Closeable {
         ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
-            System.err.println("Add contact " + contact.number + " named " + name);
-        } else {
-            System.err.println("Updating contact " + contact.number + " name " + contact.name + " -> " + name);
         }
         contact.name = name;
         account.getContactStore().updateContact(contact);
@@ -716,9 +713,6 @@ public class Manager implements Closeable {
         ContactInfo contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
-            System.err.println("Adding and " + (blocked ? "blocking" : "unblocking") + " contact " + address.getNumber().orNull());
-        } else {
-            System.err.println((blocked ? "Blocking" : "Unblocking") + " contact " + address.getNumber().orNull());
         }
         contact.blocked = blocked;
         account.getContactStore().updateContact(contact);
@@ -729,12 +723,11 @@ public class Manager implements Closeable {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
             throw new GroupNotFoundException(groupId);
-        } else {
-            System.err.println((blocked ? "Blocking" : "Unblocking") + " group " + Base64.encodeBytes(groupId));
-            group.blocked = blocked;
-            account.getGroupStore().updateGroup(group);
-            account.save();
         }
+
+        group.blocked = blocked;
+        account.getGroupStore().updateGroup(group);
+        account.save();
     }
 
     public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws IOException, EncapsulatedExceptions, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
