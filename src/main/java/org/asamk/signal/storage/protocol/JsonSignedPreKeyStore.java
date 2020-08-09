@@ -87,7 +87,7 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
                     try {
                         preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
                     } catch (IOException e) {
-                        System.out.println(String.format("Error while decoding prekey for: %s", preKeyId));
+                        System.err.println(String.format("Error while decoding prekey for: %s", preKeyId));
                     }
                 }
             }

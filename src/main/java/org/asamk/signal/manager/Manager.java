@@ -556,9 +556,7 @@ public class Manager implements Closeable {
                 for (ContactTokenDetails contact : contacts) {
                     newE164Members.remove(contact.getNumber());
                 }
-                System.err.println("Failed to add members " + Util.join(", ", newE164Members) + " to group: Not registered on Signal");
-                System.err.println("Aborting…");
-                System.exit(1);
+                throw new IOException("Failed to add members " + Util.join(", ", newE164Members) + " to group: Not registered on Signal");
             }
 
             g.addMembers(members);

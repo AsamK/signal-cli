@@ -153,7 +153,7 @@ class JsonSessionStore implements SessionStore {
                         SessionInfo sessionInfo = new SessionInfo(serviceAddress, deviceId, Base64.decode(record));
                         sessionStore.sessions.add(sessionInfo);
                     } catch (IOException e) {
-                        System.out.println(String.format("Error while decoding session for: %s", sessionName));
+                        System.err.println(String.format("Error while decoding session for: %s", sessionName));
                     }
                 }
             }

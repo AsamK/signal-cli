@@ -43,7 +43,7 @@ public class ListIdentitiesCommand implements LocalCommand {
                     printIdentityFingerprint(m, id);
                 }
             } catch (InvalidNumberException e) {
-                System.out.println("Invalid number: " + e.getMessage());
+                System.err.println("Invalid number: " + e.getMessage());
             }
         }
         return 0;
