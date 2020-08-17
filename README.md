@@ -18,7 +18,7 @@ sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
 You can find further instructions on the Wiki:
-- [Install on Ubuntu](https://github.com/AsamK/signal-cli/wiki/HowToUbuntu)
+- [Quickstart](https://github.com/AsamK/signal-cli/wiki/Quickstart)
 - [DBus Service](https://github.com/AsamK/signal-cli/wiki/DBus-service)
 
 ## Usage
