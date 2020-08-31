@@ -11,7 +11,7 @@ public class SecurityProvider extends Provider {
     private static final String info = "Security Provider v1.0";
 
     public SecurityProvider() {
-        super(PROVIDER_NAME, 1.0, info);
+        super(PROVIDER_NAME, "1.0", info);
         put("SecureRandom.DEFAULT", DefaultRandom.class.getName());
 
         // Workaround for BKS truststore
