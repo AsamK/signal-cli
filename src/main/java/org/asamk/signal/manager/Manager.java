@@ -22,6 +22,8 @@ import org.asamk.signal.storage.SignalAccount;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
+import org.asamk.signal.storage.profiles.SignalProfile;
+import org.asamk.signal.storage.profiles.SignalProfileEntry;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
@@ -442,6 +444,18 @@ public class Manager implements Closeable {
     }
 
     private SignalProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess, ProfileKey profileKey) throws IOException {
+        SignalProfileEntry profileEntry = account.getProfileStore().getProfile(address);
+        long now = new Date().getTime();
+        // Profiles are cache for 24h before retrieving them again
+        if (profileEntry == null || profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000) {
+            SignalProfile profile = retrieveRecipientProfile(address, unidentifiedAccess, profileKey);
+            profileEntry = new SignalProfileEntry(profileKey, now, profile);
+            account.getProfileStore().updateProfile(address, profileEntry);
+        }
+        return profileEntry.getProfile();
+    }
+
+    private SignalProfile retrieveRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess, ProfileKey profileKey) throws IOException {
         final SignalServiceProfile encryptedProfile = getEncryptedRecipientProfile(address, unidentifiedAccess);
 
         File avatarFile = null;

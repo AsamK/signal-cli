@@ -14,6 +14,7 @@ import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.JsonGroupStore;
+import org.asamk.signal.storage.profiles.ProfileStore;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
 import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.storage.protocol.RecipientStore;
@@ -67,6 +68,7 @@ public class SignalAccount implements Closeable {
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
+    private ProfileStore profileStore;
 
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
@@ -109,6 +111,7 @@ public class SignalAccount implements Closeable {
         account.groupStore = new JsonGroupStore();
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
+        account.profileStore = new ProfileStore();
         account.registered = false;
 
         return account;
@@ -134,6 +137,7 @@ public class SignalAccount implements Closeable {
         account.groupStore = new JsonGroupStore();
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
+        account.profileStore = new ProfileStore();
         account.registered = true;
         account.isMultiDevice = true;
 
@@ -245,6 +249,14 @@ public class SignalAccount implements Closeable {
             }
         }
 
+        JsonNode profileStoreNode = rootNode.get("profileStore");
+        if (profileStoreNode != null) {
+            profileStore = jsonProcessor.convertValue(profileStoreNode, ProfileStore.class);
+        }
+        if (profileStore == null) {
+            profileStore = new ProfileStore();
+        }
+
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
             LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
@@ -291,6 +303,7 @@ public class SignalAccount implements Closeable {
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
                 .putPOJO("recipientStore", recipientStore)
+                .putPOJO("profileStore", profileStore)
         ;
         try {
             synchronized (fileChannel) {
@@ -345,6 +358,10 @@ public class SignalAccount implements Closeable {
 
     public RecipientStore getRecipientStore() {
         return recipientStore;
+    }
+
+    public ProfileStore getProfileStore() {
+        return profileStore;
     }
 
     public String getUsername() {

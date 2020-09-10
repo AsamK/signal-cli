@@ -1,4 +1,6 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.storage.profiles;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 
@@ -6,22 +8,36 @@ import java.io.File;
 
 public class SignalProfile {
 
+    @JsonProperty
     private final String identityKey;
 
+    @JsonProperty
     private final String name;
 
     private final File avatarFile;
 
+    @JsonProperty
     private final String unidentifiedAccess;
 
+    @JsonProperty
     private final boolean unrestrictedUnidentifiedAccess;
 
+    @JsonProperty
     private final SignalServiceProfile.Capabilities capabilities;
 
     public SignalProfile(final String identityKey, final String name, final File avatarFile, final String unidentifiedAccess, final boolean unrestrictedUnidentifiedAccess, final SignalServiceProfile.Capabilities capabilities) {
         this.identityKey = identityKey;
         this.name = name;
         this.avatarFile = avatarFile;
+        this.unidentifiedAccess = unidentifiedAccess;
+        this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
+        this.capabilities = capabilities;
+    }
+
+    public SignalProfile(@JsonProperty("identityKey") final String identityKey, @JsonProperty("name") final String name, @JsonProperty("unidentifiedAccess") final String unidentifiedAccess, @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess, @JsonProperty("capabilities") final SignalServiceProfile.Capabilities capabilities) {
+        this.identityKey = identityKey;
+        this.name = name;
+        this.avatarFile = null;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
         this.capabilities = capabilities;

@@ -26,9 +26,6 @@ public class RecipientStore {
     @JsonSerialize(using = RecipientStoreSerializer.class)
     private final Set<SignalServiceAddress> addresses = new HashSet<>();
 
-    public RecipientStore() {
-    }
-
     public SignalServiceAddress resolveServiceAddress(SignalServiceAddress serviceAddress) {
         if (addresses.contains(serviceAddress)) {
             // If the Set already contains the exact address with UUID and Number,
