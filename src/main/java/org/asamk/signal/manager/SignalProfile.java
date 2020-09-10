@@ -1,23 +1,30 @@
 package org.asamk.signal.manager;
 
+import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
+
+import java.io.File;
+
 public class SignalProfile {
 
     private final String identityKey;
 
     private final String name;
 
-    private final String avatar;
+    private final File avatarFile;
 
     private final String unidentifiedAccess;
 
     private final boolean unrestrictedUnidentifiedAccess;
 
-    public SignalProfile(final String identityKey, final String name, final String avatar, final String unidentifiedAccess, final boolean unrestrictedUnidentifiedAccess) {
+    private final SignalServiceProfile.Capabilities capabilities;
+
+    public SignalProfile(final String identityKey, final String name, final File avatarFile, final String unidentifiedAccess, final boolean unrestrictedUnidentifiedAccess, final SignalServiceProfile.Capabilities capabilities) {
         this.identityKey = identityKey;
         this.name = name;
-        this.avatar = avatar;
+        this.avatarFile = avatarFile;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
+        this.capabilities = capabilities;
     }
 
     public String getIdentityKey() {
@@ -28,8 +35,8 @@ public class SignalProfile {
         return name;
     }
 
-    public String getAvatar() {
-        return avatar;
+    public File getAvatarFile() {
+        return avatarFile;
     }
 
     public String getUnidentifiedAccess() {
@@ -40,14 +47,19 @@ public class SignalProfile {
         return unrestrictedUnidentifiedAccess;
     }
 
+    public SignalServiceProfile.Capabilities getCapabilities() {
+        return capabilities;
+    }
+
     @Override
     public String toString() {
         return "SignalProfile{" +
                 "identityKey='" + identityKey + '\'' +
                 ", name='" + name + '\'' +
-                ", avatar='" + avatar + '\'' +
+                ", avatarFile=" + avatarFile +
                 ", unidentifiedAccess='" + unidentifiedAccess + '\'' +
                 ", unrestrictedUnidentifiedAccess=" + unrestrictedUnidentifiedAccess +
+                ", capabilities=" + capabilities +
                 '}';
     }
 }

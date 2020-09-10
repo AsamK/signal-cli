@@ -142,6 +142,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.asamk.signal.manager.ServiceConfig.capabilities;
+
 public class Manager implements Closeable {
 
     private final SleepTimer timer = new UptimeSleepTimer();
@@ -287,7 +289,7 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities, discoverableByPhoneNumber);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, capabilities, discoverableByPhoneNumber);
     }
 
     public void setProfile(String name, File avatar) throws IOException {
@@ -372,7 +374,7 @@ public class Manager implements Closeable {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities, discoverableByPhoneNumber);
+        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, capabilities, discoverableByPhoneNumber);
 
         UUID uuid = UuidUtil.parseOrNull(response.getUuid());
         // TODO response.isStorageCapable()
@@ -440,7 +442,27 @@ public class Manager implements Closeable {
     }
 
     private SignalProfile getRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess, ProfileKey profileKey) throws IOException {
-        return decryptProfile(getEncryptedRecipientProfile(address, unidentifiedAccess), profileKey);
+        final SignalServiceProfile encryptedProfile = getEncryptedRecipientProfile(address, unidentifiedAccess);
+
+        File avatarFile = null;
+        try {
+            avatarFile = encryptedProfile.getAvatar() == null ? null : retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
+        } catch (AssertionError e) {
+            System.err.println("Failed to retrieve profile avatar: " + e.getMessage());
+        }
+
+        ProfileCipher profileCipher = new ProfileCipher(profileKey);
+        try {
+            return new SignalProfile(
+                    encryptedProfile.getIdentityKey(),
+                    encryptedProfile.getName() == null ? null : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName()))),
+                    avatarFile,
+                    encryptedProfile.getUnidentifiedAccess() == null || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess())) ? null : encryptedProfile.getUnidentifiedAccess(),
+                    encryptedProfile.isUnrestrictedUnidentifiedAccess(),
+                    encryptedProfile.getCapabilities());
+        } catch (InvalidCiphertextException e) {
+            return null;
+        }
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
@@ -942,21 +964,6 @@ public class Manager implements Closeable {
 
     private byte[] getSelfUnidentifiedAccessKey() {
         return UnidentifiedAccess.deriveAccessKeyFrom(account.getProfileKey());
-    }
-
-    private static SignalProfile decryptProfile(SignalServiceProfile encryptedProfile, ProfileKey profileKey) throws IOException {
-        ProfileCipher profileCipher = new ProfileCipher(profileKey);
-        try {
-            return new SignalProfile(
-                    encryptedProfile.getIdentityKey(),
-                    encryptedProfile.getName() == null ? null : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName()))),
-                    encryptedProfile.getAvatar(),
-                    encryptedProfile.getUnidentifiedAccess() == null || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess())) ? null : encryptedProfile.getUnidentifiedAccess(),
-                    encryptedProfile.isUnrestrictedUnidentifiedAccess()
-            );
-        } catch (InvalidCiphertextException e) {
-            return null;
-        }
     }
 
     private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
@@ -1718,6 +1725,29 @@ public class Manager implements Closeable {
         }
     }
 
+    private File getProfileAvatarFile(SignalServiceAddress address) {
+        return new File(pathConfig.getAvatarsPath(), "profile-" + address.getLegacyIdentifier());
+    }
+
+    private File retrieveProfileAvatar(SignalServiceAddress address, String avatarPath, ProfileKey profileKey) throws IOException {
+        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
+        SignalServiceMessageReceiver receiver = getMessageReceiver();
+        File outputFile = getProfileAvatarFile(address);
+
+        File tmpFile = IOUtils.createTempFile();
+        try (InputStream input = receiver.retrieveProfileAvatar(avatarPath, tmpFile, profileKey, ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
+            // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
+            IOUtils.copyStreamToFile(input, outputFile, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
+        } finally {
+            try {
+                Files.delete(tmpFile.toPath());
+            } catch (IOException e) {
+                System.err.println("Failed to delete received avatar temp file “" + tmpFile + "”: " + e.getMessage());
+            }
+        }
+        return outputFile;
+    }
+
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
         return new File(pathConfig.getAttachmentsPath(), attachmentId.toString());
     }
@@ -1743,17 +1773,7 @@ public class Manager implements Closeable {
 
         File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE)) {
-            try (OutputStream output = new FileOutputStream(outputFile)) {
-                byte[] buffer = new byte[4096];
-                int read;
-
-                while ((read = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, read);
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return null;
-            }
+            IOUtils.copyStreamToFile(input, outputFile);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());

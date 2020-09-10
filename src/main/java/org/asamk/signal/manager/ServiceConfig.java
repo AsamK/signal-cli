@@ -26,6 +26,7 @@ public class ServiceConfig {
     final static int PREKEY_MINIMUM_COUNT = 20;
     final static int PREKEY_BATCH_SIZE = 100;
     final static int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
+    final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
 
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static String CDN_URL = "https://cdn.signal.org";
