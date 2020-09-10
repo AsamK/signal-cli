@@ -75,7 +75,6 @@ public class SignalAccount implements Closeable {
         this.lock = lock;
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
         jsonProcessor.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print, you can disable it.
-        jsonProcessor.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
         jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonProcessor.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
