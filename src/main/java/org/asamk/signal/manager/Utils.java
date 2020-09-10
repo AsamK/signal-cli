@@ -58,7 +58,7 @@ class Utils {
         return signalServiceAttachments;
     }
 
-    private static String getFileMimeType(File file) throws IOException {
+    static String getFileMimeType(File file, String defaultMimeType) throws IOException {
         String mime = Files.probeContentType(file.toPath());
         if (mime == null) {
             try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
@@ -66,7 +66,7 @@ class Utils {
             }
         }
         if (mime == null) {
-            mime = "application/octet-stream";
+            return defaultMimeType;
         }
         return mime;
     }
@@ -74,7 +74,7 @@ class Utils {
     static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
-        final String mime = getFileMimeType(attachmentFile);
+        final String mime = getFileMimeType(attachmentFile, "application/octet-stream");
         // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final long uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();

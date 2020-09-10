@@ -153,6 +153,7 @@ public class Manager implements Closeable {
     private SignalServiceAccountManager accountManager;
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
+    private boolean discoverableByPhoneNumber = true;
 
     public Manager(SignalAccount account, PathConfig pathConfig, SignalServiceConfiguration serviceConfiguration, String userAgent) {
         this.account = account;
@@ -286,7 +287,7 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities);
+        accountManager.setAccountAttributes(account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, account.getRegistrationLockPin(), account.getRegistrationLock(), getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities, discoverableByPhoneNumber);
     }
 
     public void setProfile(String name, File avatar) throws IOException {
@@ -371,7 +372,7 @@ public class Manager implements Closeable {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
         // TODO make unrestricted unidentified access configurable
-        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities);
+        VerifyAccountResponse response = accountManager.verifyAccountWithCode(verificationCode, account.getSignalingKey(), account.getSignalProtocolStore().getLocalRegistrationId(), true, pin, null, getSelfUnidentifiedAccessKey(), false, ServiceConfig.capabilities, discoverableByPhoneNumber);
 
         UUID uuid = UuidUtil.parseOrNull(response.getUuid());
         // TODO response.isStorageCapable()
@@ -836,7 +837,8 @@ public class Manager implements Closeable {
                 throw new StickerPackInvalidException("Could not find find " + sticker.file);
             }
 
-            StickerInfo stickerInfo = new StickerInfo(data.first(), data.second(), Optional.fromNullable(sticker.emoji).or(""));
+            String contentType = Utils.getFileMimeType(new File(sticker.file), null);
+            StickerInfo stickerInfo = new StickerInfo(data.first(), data.second(), Optional.fromNullable(sticker.emoji).or(""), contentType);
             stickers.add(stickerInfo);
         }
 
@@ -853,7 +855,8 @@ public class Manager implements Closeable {
                 throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
             }
 
-            cover = new StickerInfo(data.first(), data.second(), Optional.fromNullable(pack.cover.emoji).or(""));
+            String contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
+            cover = new StickerInfo(data.first(), data.second(), Optional.fromNullable(pack.cover.emoji).or(""), contentType);
         }
 
         return new SignalServiceStickerManifestUpload(
@@ -925,10 +928,10 @@ public class Manager implements Closeable {
 
     private byte[] getSenderCertificate() {
         // TODO support UUID capable sender certificates
-        // byte[] certificate = accountManager.getSenderCertificate();
+        // byte[] certificate = accountManager.getSenderCertificateForPhoneNumberPrivacy();
         byte[] certificate;
         try {
-            certificate = accountManager.getSenderCertificateLegacy();
+            certificate = accountManager.getSenderCertificate();
         } catch (IOException e) {
             System.err.println("Failed to get sender certificate: " + e);
             return null;
