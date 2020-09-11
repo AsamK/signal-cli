@@ -462,8 +462,8 @@ public class Manager implements Closeable {
         // Profiles are cache for 24h before retrieving them again
         if (profileEntry == null || profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000) {
             SignalProfile profile = retrieveRecipientProfile(address, unidentifiedAccess, profileKey);
-            profileEntry = new SignalProfileEntry(profileKey, now, profile);
-            account.getProfileStore().updateProfile(address, profileEntry);
+            account.getProfileStore().updateProfile(address, profileKey, now, profile);
+            return profile;
         }
         return profileEntry.getProfile();
     }

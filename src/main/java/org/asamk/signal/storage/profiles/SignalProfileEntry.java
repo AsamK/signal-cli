@@ -1,19 +1,27 @@
 package org.asamk.signal.storage.profiles;
 
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class SignalProfileEntry {
 
-    private ProfileKey profileKey;
+    private final SignalServiceAddress serviceAddress;
 
-    private long lastUpdateTimestamp;
+    private final ProfileKey profileKey;
 
-    private SignalProfile profile;
+    private final long lastUpdateTimestamp;
 
-    public SignalProfileEntry(final ProfileKey profileKey, final long lastUpdateTimestamp, final SignalProfile profile) {
+    private final SignalProfile profile;
+
+    public SignalProfileEntry(final SignalServiceAddress serviceAddress, final ProfileKey profileKey, final long lastUpdateTimestamp, final SignalProfile profile) {
+        this.serviceAddress = serviceAddress;
         this.profileKey = profileKey;
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.profile = profile;
+    }
+
+    public SignalServiceAddress getServiceAddress() {
+        return serviceAddress;
     }
 
     public ProfileKey getProfileKey() {

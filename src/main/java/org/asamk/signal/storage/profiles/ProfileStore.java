@@ -19,8 +19,9 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.util.Base64;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 public class ProfileStore {
@@ -30,23 +31,36 @@ public class ProfileStore {
     @JsonProperty("profiles")
     @JsonDeserialize(using = ProfileStoreDeserializer.class)
     @JsonSerialize(using = ProfileStoreSerializer.class)
-    private final Map<SignalServiceAddress, SignalProfileEntry> profiles = new HashMap<>();
+    private final List<SignalProfileEntry> profiles = new ArrayList<>();
 
     public SignalProfileEntry getProfile(SignalServiceAddress serviceAddress) {
-        return profiles.get(serviceAddress);
+        for (SignalProfileEntry entry : profiles) {
+            if (entry.getServiceAddress().matches(serviceAddress)) {
+                return entry;
+            }
+        }
+        return null;
     }
 
-    public void updateProfile(SignalServiceAddress serviceAddress, SignalProfileEntry profile) {
-        profiles.put(serviceAddress, profile);
+    public void updateProfile(SignalServiceAddress serviceAddress, ProfileKey profileKey, long now, SignalProfile profile) {
+        SignalProfileEntry newEntry = new SignalProfileEntry(serviceAddress, profileKey, now, profile);
+        for (int i = 0; i < profiles.size(); i++) {
+            if (profiles.get(i).getServiceAddress().matches(serviceAddress)) {
+                profiles.set(i, newEntry);
+                return;
+            }
+        }
+
+        profiles.add(newEntry);
     }
 
-    public static class ProfileStoreDeserializer extends JsonDeserializer<Map<SignalServiceAddress, SignalProfileEntry>> {
+    public static class ProfileStoreDeserializer extends JsonDeserializer<List<SignalProfileEntry>> {
 
         @Override
-        public Map<SignalServiceAddress, SignalProfileEntry> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public List<SignalProfileEntry> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            Map<SignalServiceAddress, SignalProfileEntry> addresses = new HashMap<>();
+            List<SignalProfileEntry> addresses = new ArrayList<>();
 
             if (node.isArray()) {
                 for (JsonNode entry : node) {
@@ -64,7 +78,7 @@ public class ProfileStore {
                     }
                     long lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
                     SignalProfile profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
-                    addresses.put(serviceAddress, new SignalProfileEntry(profileKey, lastUpdateTimestamp, profile));
+                    addresses.add(new SignalProfileEntry(serviceAddress, profileKey, lastUpdateTimestamp, profile));
                 }
             }
 
@@ -72,14 +86,13 @@ public class ProfileStore {
         }
     }
 
-    public static class ProfileStoreSerializer extends JsonSerializer<Map<SignalServiceAddress, SignalProfileEntry>> {
+    public static class ProfileStoreSerializer extends JsonSerializer<List<SignalProfileEntry>> {
 
         @Override
-        public void serialize(Map<SignalServiceAddress, SignalProfileEntry> profiles, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(List<SignalProfileEntry> profiles, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeStartArray();
-            for (Map.Entry<SignalServiceAddress, SignalProfileEntry> entry : profiles.entrySet()) {
-                final SignalServiceAddress address = entry.getKey();
-                final SignalProfileEntry profileEntry = entry.getValue();
+            for (SignalProfileEntry profileEntry : profiles) {
+                final SignalServiceAddress address = profileEntry.getServiceAddress();
                 json.writeStartObject();
                 if (address.getNumber().isPresent()) {
                     json.writeStringField("name", address.getNumber().get());
