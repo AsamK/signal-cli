@@ -34,6 +34,8 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -305,11 +307,16 @@ public class SignalAccount implements Closeable {
                 .putPOJO("profileStore", profileStore)
         ;
         try {
-            synchronized (fileChannel) {
-                fileChannel.position(0);
-                jsonProcessor.writeValue(Channels.newOutputStream(fileChannel), rootNode);
-                fileChannel.truncate(fileChannel.position());
-                fileChannel.force(false);
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                // Write to memory first to prevent corrupting the file in case of serialization errors
+                jsonProcessor.writeValue(output, rootNode);
+                ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+                synchronized (fileChannel) {
+                    fileChannel.position(0);
+                    input.transferTo(Channels.newOutputStream(fileChannel));
+                    fileChannel.truncate(fileChannel.position());
+                    fileChannel.force(false);
+                }
             }
         } catch (Exception e) {
             System.err.println(String.format("Error saving file: %s", e.getMessage()));
