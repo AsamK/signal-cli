@@ -23,10 +23,13 @@ import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
+import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
+import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -51,7 +54,17 @@ public class ProvisioningManager {
         registrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         final SleepTimer timer = new UptimeSleepTimer();
-        accountManager = new SignalServiceAccountManager(serviceConfiguration, null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID, userAgent, timer);
+        GroupsV2Operations groupsV2Operations;
+        try {
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceConfiguration));
+        } catch (Throwable ignored) {
+            groupsV2Operations = null;
+        }
+        accountManager = new SignalServiceAccountManager(serviceConfiguration,
+                new DynamicCredentialsProvider(null, null, password, null, SignalServiceAddress.DEFAULT_DEVICE_ID),
+                userAgent,
+                groupsV2Operations,
+                timer);
     }
 
     public String getDeviceLinkUri() throws TimeoutException, IOException {

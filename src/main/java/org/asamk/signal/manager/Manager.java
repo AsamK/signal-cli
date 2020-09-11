@@ -66,6 +66,8 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
+import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
+import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -107,6 +109,7 @@ import org.whispersystems.signalservice.internal.configuration.SignalServiceConf
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
+import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
@@ -178,7 +181,17 @@ public class Manager implements Closeable {
     }
 
     private SignalServiceAccountManager createSignalServiceAccountManager() {
-        return new SignalServiceAccountManager(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(), account.getDeviceId(), userAgent, timer);
+        GroupsV2Operations groupsV2Operations;
+        try {
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceConfiguration));
+        } catch (Throwable ignored) {
+            groupsV2Operations = null;
+        }
+        return new SignalServiceAccountManager(serviceConfiguration,
+                new DynamicCredentialsProvider(account.getUuid(), account.getUsername(), account.getPassword(), null, account.getDeviceId()),
+                userAgent,
+                groupsV2Operations,
+                timer);
     }
 
     private IdentityKeyPair getIdentityKeyPair() {
