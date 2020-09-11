@@ -190,7 +190,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                 JsonNode trustedKeysNode = node.get("trustedKeys");
                 if (trustedKeysNode.isArray()) {
                     for (JsonNode trustedKey : trustedKeysNode) {
-                        String trustedKeyName = trustedKey.has("name")
+                        String trustedKeyName = trustedKey.hasNonNull("name")
                                 ? trustedKey.get("name").asText()
                                 : null;
 

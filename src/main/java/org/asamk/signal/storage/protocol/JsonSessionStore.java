@@ -133,7 +133,7 @@ class JsonSessionStore implements SessionStore {
 
             if (node.isArray()) {
                 for (JsonNode session : node) {
-                    String sessionName = session.has("name")
+                    String sessionName = session.hasNonNull("name")
                             ? session.get("name").asText()
                             : null;
                     if (UuidUtil.isUuid(sessionName)) {

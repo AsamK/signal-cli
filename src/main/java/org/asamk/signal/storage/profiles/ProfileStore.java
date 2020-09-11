@@ -36,8 +36,8 @@ public class ProfileStore {
         return profiles.get(serviceAddress);
     }
 
-    public SignalProfileEntry updateProfile(SignalServiceAddress serviceAddress, SignalProfileEntry profile) {
-        return profiles.put(serviceAddress, profile);
+    public void updateProfile(SignalServiceAddress serviceAddress, SignalProfileEntry profile) {
+        profiles.put(serviceAddress, profile);
     }
 
     public static class ProfileStoreDeserializer extends JsonDeserializer<Map<SignalServiceAddress, SignalProfileEntry>> {
@@ -49,17 +49,21 @@ public class ProfileStore {
             Map<SignalServiceAddress, SignalProfileEntry> addresses = new HashMap<>();
 
             if (node.isArray()) {
-                for (JsonNode recipient : node) {
-                    String recipientName = recipient.get("name").asText();
-                    UUID uuid = UuidUtil.parseOrThrow(recipient.get("uuid").asText());
-                    final SignalServiceAddress serviceAddress = new SignalServiceAddress(uuid, recipientName);
+                for (JsonNode entry : node) {
+                    String name = entry.hasNonNull("name")
+                            ? entry.get("name").asText()
+                            : null;
+                    UUID uuid = entry.hasNonNull("uuid")
+                            ? UuidUtil.parseOrNull(entry.get("uuid").asText())
+                            : null;
+                    final SignalServiceAddress serviceAddress = new SignalServiceAddress(uuid, name);
                     ProfileKey profileKey = null;
                     try {
-                        profileKey = new ProfileKey(Base64.decode(recipient.get("profileKey").asText()));
+                        profileKey = new ProfileKey(Base64.decode(entry.get("profileKey").asText()));
                     } catch (InvalidInputException ignored) {
                     }
-                    long lastUpdateTimestamp = recipient.get("lastUpdateTimestamp").asLong();
-                    SignalProfile profile = jsonProcessor.treeToValue(recipient.get("profile"), SignalProfile.class);
+                    long lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
+                    SignalProfile profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
                     addresses.put(serviceAddress, new SignalProfileEntry(profileKey, lastUpdateTimestamp, profile));
                 }
             }
@@ -77,8 +81,12 @@ public class ProfileStore {
                 final SignalServiceAddress address = entry.getKey();
                 final SignalProfileEntry profileEntry = entry.getValue();
                 json.writeStartObject();
-                json.writeStringField("name", address.getNumber().get());
-                json.writeStringField("uuid", address.getUuid().get().toString());
+                if (address.getNumber().isPresent()) {
+                    json.writeStringField("name", address.getNumber().get());
+                }
+                if (address.getUuid().isPresent()) {
+                    json.writeStringField("uuid", address.getUuid().get().toString());
+                }
                 json.writeStringField("profileKey", Base64.encodeBytes(profileEntry.getProfileKey().serialize()));
                 json.writeNumberField("lastUpdateTimestamp", profileEntry.getLastUpdateTimestamp());
                 json.writeObjectField("profile", profileEntry.getProfile());
