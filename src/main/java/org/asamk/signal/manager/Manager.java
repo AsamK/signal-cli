@@ -461,8 +461,8 @@ public class Manager implements Closeable {
         File avatarFile = null;
         try {
             avatarFile = encryptedProfile.getAvatar() == null ? null : retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
-        } catch (AssertionError e) {
-            System.err.println("Failed to retrieve profile avatar: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("Failed to retrieve profile avatar, ignoring: " + e.getMessage());
         }
 
         ProfileCipher profileCipher = new ProfileCipher(profileKey);
