@@ -5,9 +5,10 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.asamk.signal.json.JsonError;
+import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -23,7 +24,6 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         this.m = m;
         this.jsonProcessor = new ObjectMapper();
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
-        jsonProcessor.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
         jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }

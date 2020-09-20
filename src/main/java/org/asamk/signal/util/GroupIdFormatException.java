@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.util;
 
 import java.io.IOException;
 

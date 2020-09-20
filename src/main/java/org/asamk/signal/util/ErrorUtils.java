@@ -1,13 +1,12 @@
 package org.asamk.signal.util;
 
-import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.asamk.signal.manager.GroupNotFoundException;
+import org.asamk.signal.manager.NotAGroupMemberException;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 
@@ -50,13 +49,13 @@ public class ErrorUtils {
         System.err.println("Aborting sending.");
     }
 
-    public static void handleDBusExecutionException(DBusExecutionException e) {
-        System.err.println("Cannot connect to dbus: " + e.getMessage());
-        System.err.println("Aborting.");
-    }
-
     public static void handleGroupIdFormatException(GroupIdFormatException e) {
         System.err.println(e.getMessage());
+        System.err.println("Aborting sending.");
+    }
+
+    public static void handleInvalidNumberException(InvalidNumberException e) {
+        System.err.println("Failed to parse recipient: " + e.getMessage());
         System.err.println("Aborting sending.");
     }
 }

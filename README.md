@@ -7,7 +7,7 @@ signal-cli is primarily intended to be used on servers to notify admins of impor
 
 ## Installation
 
-You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/). You need to have at least JRE 7 installed, to run signal-cli.
+You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well. You need to have at least JRE 8 installed, to run signal-cli.
 
 ### Install system-wide on Linux
 See [latest version](https://github.com/AsamK/signal-cli/releases).
@@ -18,12 +18,12 @@ sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
 You can find further instructions on the Wiki:
-- [Install on Ubuntu](https://github.com/AsamK/signal-cli/wiki/HowToUbuntu)
+- [Quickstart](https://github.com/AsamK/signal-cli/wiki/Quickstart)
 - [DBus Service](https://github.com/AsamK/signal-cli/wiki/DBus-service)
 
 ## Usage
 
-Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.
+Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
 
 * Register a number (with SMS verification)
 
@@ -31,7 +31,7 @@ Important: The USERNAME (your phone number) must include the country calling cod
         
   You can register Signal using a land line number. In this case you can skip SMS verification process and jump directly to the voice call verification by adding the --voice switch at the end of above register command.
 
-* Verify the number using the code received via SMS or voice
+* Verify the number using the code received via SMS or voice, optionally add `--pin PIN_CODE` if you've added a pin code to your account
 
         signal-cli -u USERNAME verify CODE
 

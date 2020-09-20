@@ -31,16 +31,22 @@ import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
-import org.asamk.signal.manager.BaseConfig;
+import org.asamk.signal.commands.ProvisioningCommand;
+import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.ProvisioningManager;
+import org.asamk.signal.manager.ServiceConfig;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.Security;
 import java.util.Map;
 
@@ -68,80 +74,122 @@ public class Main {
 
     private static int handleCommands(Namespace ns) {
         final String username = ns.getString("username");
-        Manager m;
-        Signal ts;
-        DBusConnection dBusConn = null;
-        try {
-            if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
-                try {
-                    m = null;
-                    int busType;
-                    if (ns.getBoolean("dbus_system")) {
-                        busType = DBusConnection.SYSTEM;
-                    } else {
-                        busType = DBusConnection.SESSION;
-                    }
-                    dBusConn = DBusConnection.getConnection(busType);
-                    ts = dBusConn.getRemoteObject(
+
+        if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
+            try {
+                DBusConnection.DBusBusType busType;
+                if (ns.getBoolean("dbus_system")) {
+                    busType = DBusConnection.DBusBusType.SYSTEM;
+                } else {
+                    busType = DBusConnection.DBusBusType.SESSION;
+                }
+                try (DBusConnection dBusConn = DBusConnection.getConnection(busType)) {
+                    Signal ts = dBusConn.getRemoteObject(
                             DbusConfig.SIGNAL_BUSNAME, DbusConfig.SIGNAL_OBJECTPATH,
                             Signal.class);
-                } catch (UnsatisfiedLinkError e) {
-                    System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
-                    return 1;
-                } catch (DBusException e) {
-                    e.printStackTrace();
-                    if (dBusConn != null) {
-                        dBusConn.disconnect();
-                    }
-                    return 3;
-                }
-            } else {
-                String dataPath = ns.getString("config");
-                if (isEmpty(dataPath)) {
-                    dataPath = getDefaultDataPath();
-                }
 
-                m = new Manager(username, dataPath);
-                ts = m;
+                    return handleCommands(ns, ts, dBusConn);
+                }
+            } catch (UnsatisfiedLinkError e) {
+                System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
+                return 1;
+            } catch (DBusException | IOException e) {
+                e.printStackTrace();
+                return 3;
+            }
+        } else {
+            String dataPath = ns.getString("config");
+            if (isEmpty(dataPath)) {
+                dataPath = getDefaultDataPath();
+            }
+
+            final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT);
+
+            if (username == null) {
+                ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+                return handleCommands(ns, pm);
+            }
+
+            Manager manager;
+            try {
+                manager = Manager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+            } catch (Throwable e) {
+                System.err.println("Error loading state file: " + e.getMessage());
+                return 2;
+            }
+
+            try (Manager m = manager) {
                 try {
-                    m.init();
-                } catch (Exception e) {
-                    System.err.println("Error loading state file: " + e.getMessage());
+                    m.checkAccountState();
+                } catch (AuthorizationFailedException e) {
+                    if (!"register".equals(ns.getString("command"))) {
+                        // Register command should still be possible, if current authorization fails
+                        System.err.println("Authorization failed, was the number registered elsewhere?");
+                        return 2;
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error while checking account: " + e.getMessage());
                     return 2;
                 }
-            }
 
-            String commandKey = ns.getString("command");
-            final Map<String, Command> commands = Commands.getCommands();
-            if (commands.containsKey(commandKey)) {
-                Command command = commands.get(commandKey);
-
-                if (dBusConn != null) {
-                    if (command instanceof ExtendedDbusCommand) {
-                        return ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
-                    } else if (command instanceof DbusCommand) {
-                        return ((DbusCommand) command).handleCommand(ns, ts);
-                    } else {
-                        System.err.println(commandKey + " is not yet implemented via dbus");
-                        return 1;
-                    }
-                } else {
-                    if (command instanceof LocalCommand) {
-                        return ((LocalCommand) command).handleCommand(ns, m);
-                    } else if (command instanceof DbusCommand) {
-                        return ((DbusCommand) command).handleCommand(ns, ts);
-                    } else {
-                        System.err.println(commandKey + " is only works via dbus");
-                        return 1;
-                    }
-                }
-            }
-            return 0;
-        } finally {
-            if (dBusConn != null) {
-                dBusConn.disconnect();
+                return handleCommands(ns, m);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 3;
             }
         }
+    }
+
+    private static int handleCommands(Namespace ns, Signal ts, DBusConnection dBusConn) {
+        String commandKey = ns.getString("command");
+        final Map<String, Command> commands = Commands.getCommands();
+        if (commands.containsKey(commandKey)) {
+            Command command = commands.get(commandKey);
+
+            if (command instanceof ExtendedDbusCommand) {
+                return ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
+            } else if (command instanceof DbusCommand) {
+                return ((DbusCommand) command).handleCommand(ns, ts);
+            } else {
+                System.err.println(commandKey + " is not yet implemented via dbus");
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    private static int handleCommands(Namespace ns, ProvisioningManager pm) {
+        String commandKey = ns.getString("command");
+        final Map<String, Command> commands = Commands.getCommands();
+        if (commands.containsKey(commandKey)) {
+            Command command = commands.get(commandKey);
+
+            if (command instanceof ProvisioningCommand) {
+                return ((ProvisioningCommand) command).handleCommand(ns, pm);
+            } else {
+                System.err.println(commandKey + " only works with a username");
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    private static int handleCommands(Namespace ns, Manager m) {
+        String commandKey = ns.getString("command");
+        final Map<String, Command> commands = Commands.getCommands();
+        if (commands.containsKey(commandKey)) {
+            Command command = commands.get(commandKey);
+
+            if (command instanceof LocalCommand) {
+                return ((LocalCommand) command).handleCommand(ns, m);
+            } else if (command instanceof DbusCommand) {
+                return ((DbusCommand) command).handleCommand(ns, new DbusSignalImpl(m));
+            } else if (command instanceof ExtendedDbusCommand) {
+                System.err.println(commandKey + " only works via dbus");
+            }
+            return 1;
+        }
+        return 0;
     }
 
     /**

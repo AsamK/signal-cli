@@ -1,5 +1,11 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
@@ -7,10 +13,10 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.Signal;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.ReceiveMessageHandler;
+import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
-import org.freedesktop.dbus.DBusConnection;
-import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.util.Base64;
 
@@ -35,49 +41,102 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
-        if (dbusconnection != null) {
-            try {
-                dbusconnection.addSigHandler(Signal.MessageReceived.class, new DBusSigHandler<Signal.MessageReceived>() {
-                    @Override
-                    public void handle(Signal.MessageReceived s) {
-                        System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
-                                s.getSender(), DateUtils.formatTimestamp(s.getTimestamp()), s.getMessage()));
-                        if (s.getGroupId().length > 0) {
-                            System.out.println("Group info:");
-                            System.out.println("  Id: " + Base64.encodeBytes(s.getGroupId()));
-                        }
-                        if (s.getAttachments().size() > 0) {
-                            System.out.println("Attachments: ");
-                            for (String attachment : s.getAttachments()) {
-                                System.out.println("-  Stored plaintext in: " + attachment);
-                            }
-                        }
+        final ObjectMapper jsonProcessor;
+        if (ns.getBoolean("json")) {
+            jsonProcessor = new ObjectMapper();
+            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
+            jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        } else {
+            jsonProcessor = null;
+        }
+        try {
+            dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
+                if (jsonProcessor != null) {
+                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(messageReceived);
+                    ObjectNode result = jsonProcessor.createObjectNode();
+                    result.putPOJO("envelope", envelope);
+                    try {
+                        jsonProcessor.writeValue(System.out, result);
                         System.out.println();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                });
-                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, new DBusSigHandler<Signal.ReceiptReceived>() {
-                    @Override
-                    public void handle(Signal.ReceiptReceived s) {
-                        System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                                s.getSender(), DateUtils.formatTimestamp(s.getTimestamp())));
+                } else {
+                    System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
+                            messageReceived.getSender(), DateUtils.formatTimestamp(messageReceived.getTimestamp()), messageReceived.getMessage()));
+                    if (messageReceived.getGroupId().length > 0) {
+                        System.out.println("Group info:");
+                        System.out.println("  Id: " + Base64.encodeBytes(messageReceived.getGroupId()));
                     }
-                });
-            } catch (UnsatisfiedLinkError e) {
-                System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
-                return 1;
-            } catch (DBusException e) {
-                e.printStackTrace();
-                return 1;
-            }
-            while (true) {
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    return 0;
+                    if (messageReceived.getAttachments().size() > 0) {
+                        System.out.println("Attachments: ");
+                        for (String attachment : messageReceived.getAttachments()) {
+                            System.out.println("-  Stored plaintext in: " + attachment);
+                        }
+                    }
+                    System.out.println();
                 }
+            });
+
+            dbusconnection.addSigHandler(Signal.ReceiptReceived.class,
+                    receiptReceived -> {
+                        if (jsonProcessor != null) {
+                            JsonMessageEnvelope envelope = new JsonMessageEnvelope(receiptReceived);
+                            ObjectNode result = jsonProcessor.createObjectNode();
+                            result.putPOJO("envelope", envelope);
+                            try {
+                                jsonProcessor.writeValue(System.out, result);
+                                System.out.println();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
+                                    receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp())));
+                        }
+                    });
+
+            dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
+                if (jsonProcessor != null) {
+                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(syncReceived);
+                    ObjectNode result = jsonProcessor.createObjectNode();
+                    result.putPOJO("envelope", envelope);
+                    try {
+                        jsonProcessor.writeValue(System.out, result);
+                        System.out.println();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",
+                            syncReceived.getSource(), syncReceived.getDestination(), DateUtils.formatTimestamp(syncReceived.getTimestamp()), syncReceived.getMessage()));
+                    if (syncReceived.getGroupId().length > 0) {
+                        System.out.println("Group info:");
+                        System.out.println("  Id: " + Base64.encodeBytes(syncReceived.getGroupId()));
+                    }
+                    if (syncReceived.getAttachments().size() > 0) {
+                        System.out.println("Attachments: ");
+                        for (String attachment : syncReceived.getAttachments()) {
+                            System.out.println("-  Stored plaintext in: " + attachment);
+                        }
+                    }
+                    System.out.println();
+                }
+            });
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
+            return 1;
+        } catch (DBusException e) {
+            e.printStackTrace();
+            return 1;
+        }
+        while (true) {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                return 0;
             }
         }
-        return 0;
     }
 
     @Override

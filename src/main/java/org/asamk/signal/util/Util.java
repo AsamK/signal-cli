@@ -2,7 +2,10 @@ package org.asamk.signal.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.asamk.signal.GroupIdFormatException;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.util.Base64;
 
 import java.io.IOException;
@@ -49,6 +52,18 @@ public class Util {
             return Base64.decode(groupId);
         } catch (IOException e) {
             throw new GroupIdFormatException(groupId, e);
+        }
+    }
+
+    public static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {
+        return PhoneNumberFormatter.formatNumber(number, localNumber);
+    }
+
+    public static SignalServiceAddress getSignalServiceAddressFromIdentifier(final String identifier) {
+        if (UuidUtil.isUuid(identifier)) {
+            return new SignalServiceAddress(UuidUtil.parseOrNull(identifier), null);
+        } else {
+            return new SignalServiceAddress(null, identifier);
         }
     }
 }

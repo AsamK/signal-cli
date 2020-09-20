@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 

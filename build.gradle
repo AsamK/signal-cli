@@ -2,28 +2,26 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'eclipse'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 mainClassName = 'org.asamk.signal.Main'
 
-version = '0.6.5'
+version = '0.6.10'
 
 compileJava.options.encoding = 'UTF-8'
 
 repositories {
     mavenLocal()
-    maven {
-        url "https://raw.github.com/AsamK/maven/master/releases/"
-    }
     mavenCentral()
 }
 
 dependencies {
-    compile 'com.github.turasa:signal-service-java:2.15.3_unofficial_1'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.64'
-    compile 'net.sourceforge.argparse4j:argparse4j:0.8.1'
-    compile 'org.freedesktop.dbus:dbus-java:2.7.0'
+    implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_14'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.66'
+    implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
+    implementation 'com.github.hypfvieh:dbus-java:3.2.3'
+    implementation 'org.slf4j:slf4j-nop:1.7.30'
 }
 
 jar {
@@ -46,7 +44,6 @@ run {
 
 // Find any 3rd party libraries which have released new versions
 // to the central Maven repo since we last upgraded.
-// http://daniel.gredler.net/2011/08/08/gradle-keeping-libraries-up-to-date/
 task checkLibVersions {
     doLast {
         def checked = [:]
@@ -54,20 +51,16 @@ task checkLibVersions {
             configurations.each { configuration ->
                 configuration.allDependencies.each { dependency ->
                     def version = dependency.version
-                    if (!version.contains('SNAPSHOT') && !checked[dependency]) {
+                    if (!checked[dependency]) {
                         def group = dependency.group
                         def path = group.replace('.', '/')
                         def name = dependency.name
                         def url = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
                         try {
                             def metadata = new XmlSlurper().parseText(url.toURL().text)
-                            def versions = metadata.versioning.versions.version.collect { it.text() }
-                            versions.removeAll { it.toLowerCase().contains('alpha') }
-                            versions.removeAll { it.toLowerCase().contains('beta') }
-                            versions.removeAll { it.toLowerCase().contains('rc') }
-                            def newest = versions.max()
-                            if (version != newest) {
-                                println "$group:$name $version -> $newest"
+                            def newest = metadata.versioning.latest;
+                            if ("$version" != "$newest") {
+                                println "UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}"
                             }
                         } catch (FileNotFoundException e) {
                             logger.debug "Unable to download $url: $e.message"

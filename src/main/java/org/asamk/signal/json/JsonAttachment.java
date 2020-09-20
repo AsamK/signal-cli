@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -15,7 +15,7 @@ class JsonAttachment {
 
         final SignalServiceAttachmentPointer pointer = attachment.asPointer();
         if (attachment.isPointer()) {
-            this.id = String.valueOf(pointer.getId());
+            this.id = String.valueOf(pointer.getRemoteId());
             if (pointer.getFileName().isPresent()) {
                 this.filename = pointer.getFileName().get();
             }
@@ -23,5 +23,9 @@ class JsonAttachment {
                 this.size = pointer.getSize().get();
             }
         }
+    }
+
+    JsonAttachment(String filename) {
+        this.filename = filename;
     }
 }

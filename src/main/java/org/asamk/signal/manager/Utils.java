@@ -1,6 +1,5 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.AttachmentInvalidException;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -13,9 +12,9 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
+import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
 import org.whispersystems.util.Base64;
 
 import java.io.BufferedInputStream;
@@ -35,12 +34,10 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
@@ -61,7 +58,7 @@ class Utils {
         return signalServiceAttachments;
     }
 
-    private static String getFileMimeType(File file) throws IOException {
+    static String getFileMimeType(File file, String defaultMimeType) throws IOException {
         String mime = Files.probeContentType(file.toPath());
         if (mime == null) {
             try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
@@ -69,7 +66,7 @@ class Utils {
             }
         }
         if (mime == null) {
-            mime = "application/octet-stream";
+            return defaultMimeType;
         }
         return mime;
     }
@@ -77,12 +74,14 @@ class Utils {
     static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
         InputStream attachmentStream = new FileInputStream(attachmentFile);
         final long attachmentSize = attachmentFile.length();
-        final String mime = getFileMimeType(attachmentFile);
-        // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
+        final String mime = getFileMimeType(attachmentFile, "application/octet-stream");
+        // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
+        final long uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, preview, 0, 0, caption, blurHash, null);
+        final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
+        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, false, preview, 0, 0, uploadTimestamp, caption, blurHash, null, null, resumableUploadSpec);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
@@ -97,7 +96,7 @@ class Utils {
 
     static CertificateValidator getCertificateValidator() {
         try {
-            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(BaseConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(ServiceConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
             return new CertificateValidator(unidentifiedSenderTrustRoot);
         } catch (InvalidKeyException | IOException e) {
             throw new AssertionError(e);
@@ -149,38 +148,19 @@ class Utils {
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }
 
-    static Set<SignalServiceAddress> getSignalServiceAddresses(Collection<String> recipients, String localNumber) {
-        Set<SignalServiceAddress> recipientsTS = new HashSet<>(recipients.size());
-        for (String recipient : recipients) {
-            try {
-                recipientsTS.add(getPushAddress(recipient, localNumber));
-            } catch (InvalidNumberException e) {
-                System.err.println("Failed to add recipient \"" + recipient + "\": " + e.getMessage());
-                System.err.println("Aborting sending.");
-                return null;
-            }
-        }
-        return recipientsTS;
-    }
-
-    static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {
-        return PhoneNumberFormatter.formatNumber(number, localNumber);
-    }
-
-    private static SignalServiceAddress getPushAddress(String number, String localNumber) throws InvalidNumberException {
-        String e164number = canonicalizeNumber(number, localNumber);
-        return new SignalServiceAddress(null, e164number);
-    }
-
     static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
         try (FileInputStream f = new FileInputStream(file)) {
             DataInputStream in = new DataInputStream(f);
             int version = in.readInt();
-            if (version > 2) {
+            if (version > 4) {
                 return null;
             }
             int type = in.readInt();
             String source = in.readUTF();
+            UUID sourceUuid = null;
+            if (version >= 3) {
+                sourceUuid = UuidUtil.parseOrNull(in.readUTF());
+            }
             int sourceDevice = in.readInt();
             if (version == 1) {
                 // read legacy relay field
@@ -199,25 +179,33 @@ class Utils {
                 legacyMessage = new byte[legacyMessageLen];
                 in.readFully(legacyMessage);
             }
-            long serverTimestamp = 0;
+            long serverReceivedTimestamp = 0;
             String uuid = null;
-            if (version == 2) {
-                serverTimestamp = in.readLong();
+            if (version >= 2) {
+                serverReceivedTimestamp = in.readLong();
                 uuid = in.readUTF();
                 if ("".equals(uuid)) {
                     uuid = null;
                 }
             }
-            return new SignalServiceEnvelope(type, Optional.of(new SignalServiceAddress(null, source)), sourceDevice, timestamp, legacyMessage, content, serverTimestamp, uuid);
+            long serverDeliveredTimestamp = 0;
+            if (version >= 4) {
+                serverDeliveredTimestamp = in.readLong();
+            }
+            Optional<SignalServiceAddress> addressOptional = sourceUuid == null && source.isEmpty()
+                    ? Optional.absent()
+                    : Optional.of(new SignalServiceAddress(sourceUuid, source));
+            return new SignalServiceEnvelope(type, addressOptional, sourceDevice, timestamp, legacyMessage, content, serverReceivedTimestamp, serverDeliveredTimestamp, uuid);
         }
     }
 
     static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (FileOutputStream f = new FileOutputStream(file)) {
             try (DataOutputStream out = new DataOutputStream(f)) {
-                out.writeInt(2); // version
+                out.writeInt(4); // version
                 out.writeInt(envelope.getType());
-                out.writeUTF(envelope.getSourceE164().get());
+                out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
+                out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
                 out.writeInt(envelope.getSourceDevice());
                 out.writeLong(envelope.getTimestamp());
                 if (envelope.hasContent()) {
@@ -232,9 +220,10 @@ class Utils {
                 } else {
                     out.writeInt(0);
                 }
-                out.writeLong(envelope.getServerTimestamp());
+                out.writeLong(envelope.getServerReceivedTimestamp());
                 String uuid = envelope.getUuid();
                 out.writeUTF(uuid == null ? "" : uuid);
+                out.writeLong(envelope.getServerDeliveredTimestamp());
             }
         }
     }
@@ -256,10 +245,28 @@ class Utils {
         return outputFile;
     }
 
-    static String computeSafetyNumber(String ownUsername, IdentityKey ownIdentityKey, String theirUsername, IdentityKey theirIdentityKey) {
-        // Version 1: E164 user
-        // Version 2: UUID user
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(1, ownUsername.getBytes(), ownIdentityKey, theirUsername.getBytes(), theirIdentityKey);
+    static String computeSafetyNumber(SignalServiceAddress ownAddress, IdentityKey ownIdentityKey, SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+        int version;
+        byte[] ownId;
+        byte[] theirId;
+
+        if (ServiceConfig.capabilities.isUuid()
+                && ownAddress.getUuid().isPresent() && theirAddress.getUuid().isPresent()) {
+            // Version 2: UUID user
+            version = 2;
+            ownId = UuidUtil.toByteArray(ownAddress.getUuid().get());
+            theirId = UuidUtil.toByteArray(theirAddress.getUuid().get());
+        } else {
+            // Version 1: E164 user
+            version = 1;
+            if (!ownAddress.getNumber().isPresent() || !theirAddress.getNumber().isPresent()) {
+                return "INVALID ID";
+            }
+            ownId = ownAddress.getNumber().get().getBytes();
+            theirId = theirAddress.getNumber().get().getBytes();
+        }
+
+        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(version, ownId, ownIdentityKey, theirId, theirIdentityKey);
         return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 

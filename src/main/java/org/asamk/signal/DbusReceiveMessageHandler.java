@@ -1,7 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.signal.manager.Manager;
-import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 

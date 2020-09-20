@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -26,5 +26,9 @@ class JsonGroupInfo {
             this.name = groupInfo.getName().get();
         }
         this.type = groupInfo.getType().toString();
+    }
+
+    JsonGroupInfo(byte[] groupId) {
+        this.groupId = Base64.encodeBytes(groupId);
     }
 }

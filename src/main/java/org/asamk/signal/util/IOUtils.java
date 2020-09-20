@@ -1,8 +1,13 @@
 package org.asamk.signal.util;
 
+import org.whispersystems.signalservice.internal.util.Util;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -33,6 +38,12 @@ public class IOUtils {
             output.write(new String(buffer, 0, n, charset));
         }
         return output.toString();
+    }
+
+    public static byte[] readFully(InputStream in) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Util.copy(in, baos);
+        return baos.toByteArray();
     }
 
     public static void createPrivateDirectories(String directoryPath) throws IOException {
@@ -67,5 +78,20 @@ public class IOUtils {
         }
 
         return System.getProperty("user.home") + "/.local/share";
+    }
+
+    public static void copyStreamToFile(InputStream input, File outputFile) throws IOException {
+        copyStreamToFile(input, outputFile, 8192);
+    }
+
+    public static void copyStreamToFile(InputStream input, File outputFile, int bufferSize) throws IOException {
+        try (OutputStream output = new FileOutputStream(outputFile)) {
+            byte[] buffer = new byte[bufferSize];
+            int read;
+
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+        }
     }
 }

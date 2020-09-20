@@ -5,14 +5,10 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.AttachmentInvalidException;
-import org.asamk.signal.GroupIdFormatException;
-import org.asamk.signal.GroupNotFoundException;
-import org.asamk.signal.NotAGroupMemberException;
+import org.asamk.signal.util.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -20,12 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleDBusExecutionException;
-import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
-import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
-import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 
 public class SendCommand implements DbusCommand {
 
@@ -61,19 +52,13 @@ public class SendCommand implements DbusCommand {
 
         if (ns.getBoolean("endsession")) {
             try {
-                signal.sendEndSessionMessage(ns.<String>getList("recipient"));
+                signal.sendEndSessionMessage(ns.getList("recipient"));
                 return 0;
-            } catch (IOException e) {
-                handleIOException(e);
-                return 3;
-            } catch (EncapsulatedExceptions e) {
-                handleEncapsulatedExceptions(e);
-                return 3;
             } catch (AssertionError e) {
                 handleAssertionError(e);
                 return 1;
             } catch (DBusExecutionException e) {
-                handleDBusExecutionException(e);
+                System.err.println("Failed to send message: " + e.getMessage());
                 return 1;
             }
         }
@@ -89,42 +74,42 @@ public class SendCommand implements DbusCommand {
             }
         }
 
+        List<String> attachments = ns.getList("attachment");
+        if (attachments == null) {
+            attachments = new ArrayList<>();
+        }
+
         try {
-            List<String> attachments = ns.getList("attachment");
-            if (attachments == null) {
-                attachments = new ArrayList<>();
-            }
             if (ns.getString("group") != null) {
-                byte[] groupId = Util.decodeGroupId(ns.getString("group"));
-                signal.sendGroupMessage(messageText, attachments, groupId);
-            } else {
-                signal.sendMessage(messageText, attachments, ns.<String>getList("recipient"));
+                byte[] groupId;
+                try {
+                    groupId = Util.decodeGroupId(ns.getString("group"));
+                } catch (GroupIdFormatException e) {
+                    handleGroupIdFormatException(e);
+                    return 1;
+                }
+
+                long timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
+                System.out.println(timestamp);
+                return 0;
             }
-            return 0;
-        } catch (IOException e) {
-            handleIOException(e);
-            return 3;
-        } catch (EncapsulatedExceptions e) {
-            handleEncapsulatedExceptions(e);
-            return 3;
         } catch (AssertionError e) {
             handleAssertionError(e);
             return 1;
-        } catch (GroupNotFoundException e) {
-            handleGroupNotFoundException(e);
+        } catch (DBusExecutionException e) {
+            System.err.println("Failed to send message: " + e.getMessage());
             return 1;
-        } catch (NotAGroupMemberException e) {
-            handleNotAGroupMemberException(e);
-            return 1;
-        } catch (AttachmentInvalidException e) {
-            System.err.println("Failed to add attachment: " + e.getMessage());
-            System.err.println("Aborting sending.");
+        }
+
+        try {
+            long timestamp = signal.sendMessage(messageText, attachments, ns.getList("recipient"));
+            System.out.println(timestamp);
+            return 0;
+        } catch (AssertionError e) {
+            handleAssertionError(e);
             return 1;
         } catch (DBusExecutionException e) {
-            handleDBusExecutionException(e);
-            return 1;
-        } catch (GroupIdFormatException e) {
-            handleGroupIdFormatException(e);
+            System.err.println("Failed to send message: " + e.getMessage());
             return 1;
         }
     }

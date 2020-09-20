@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.manager;
 
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 
