@@ -19,7 +19,7 @@ class JsonGroupInfo {
         if (groupInfo.getMembers().isPresent()) {
             this.members = new ArrayList<>(groupInfo.getMembers().get().size());
             for (SignalServiceAddress address : groupInfo.getMembers().get()) {
-                this.members.add(address.getNumber().get());
+                this.members.add(address.getLegacyIdentifier());
             }
         }
         if (groupInfo.getName().isPresent()) {
