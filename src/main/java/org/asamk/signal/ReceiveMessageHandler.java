@@ -47,8 +47,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
-            ContactInfo sourceContact = m.getContact(source.getNumber().get());
-            System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getNumber().get(), envelope.getSourceDevice()));
+            ContactInfo sourceContact = m.getContact(source.getLegacyIdentifier());
+            System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getLegacyIdentifier(), envelope.getSourceDevice()));
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
@@ -76,8 +76,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
-                ContactInfo sourceContact = m.getContact(content.getSender().getNumber().get());
-                System.out.println(String.format("Sender: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender().getNumber().get(), content.getSenderDevice()));
+                ContactInfo sourceContact = m.getContact(content.getSender().getLegacyIdentifier());
+                System.out.println(String.format("Sender: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender().getLegacyIdentifier(), content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
                     handleSignalServiceDataMessage(message);
@@ -102,8 +102,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getRead().isPresent()) {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
-                            ContactInfo fromContact = m.getContact(rm.getSender().getNumber().get());
-                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getNumber().get() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
+                            ContactInfo fromContact = m.getContact(rm.getSender().getLegacyIdentifier());
+                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getLegacyIdentifier() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
                     if (syncMessage.getRequest().isPresent()) {
@@ -129,14 +129,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         final SentTranscriptMessage sentTranscriptMessage = syncMessage.getSent().get();
                         String to;
                         if (sentTranscriptMessage.getDestination().isPresent()) {
-                            String dest = sentTranscriptMessage.getDestination().get().getNumber().get();
+                            String dest = sentTranscriptMessage.getDestination().get().getLegacyIdentifier();
                             ContactInfo destContact = m.getContact(dest);
                             to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
                         } else if (sentTranscriptMessage.getRecipients().size() > 0) {
                             StringBuilder toBuilder = new StringBuilder();
                             for (SignalServiceAddress dest : sentTranscriptMessage.getRecipients()) {
-                                ContactInfo destContact = m.getContact(dest.getNumber().get());
-                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ").append(dest.getNumber().get()).append(" ");
+                                ContactInfo destContact = m.getContact(dest.getLegacyIdentifier());
+                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ").append(dest.getLegacyIdentifier()).append(" ");
                             }
                             to = toBuilder.toString();
                         } else {
@@ -154,7 +154,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Blocked numbers:");
                         final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
                         for (SignalServiceAddress address : blockedList.getAddresses()) {
-                            System.out.println(" - " + address.getNumber().get());
+                            System.out.println(" - " + address.getLegacyIdentifier());
                         }
                     }
                     if (syncMessage.getVerified().isPresent()) {
@@ -178,7 +178,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getViewOnceOpen().isPresent()) {
                         final ViewOnceOpenMessage viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
                         System.out.println("Received sync message with view once open message:");
-                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getNumber().get());
+                        System.out.println(" - Sender:" + viewOnceOpenMessage.getSender().getLegacyIdentifier());
                         System.out.println(" - Timestamp:" + viewOnceOpenMessage.getTimestamp());
                     }
                     if (syncMessage.getStickerPackOperations().isPresent()) {
@@ -280,7 +280,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             System.out.println("  Type: " + groupInfo.getType());
             if (groupInfo.getMembers().isPresent()) {
                 for (SignalServiceAddress member : groupInfo.getMembers().get()) {
-                    System.out.println("  Member: " + member.getNumber().get());
+                    System.out.println("  Member: " + member.getLegacyIdentifier());
                 }
             }
             if (groupInfo.getAvatar().isPresent()) {
@@ -332,7 +332,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getNumber().get());
+            System.out.println(" - Target author: " + reaction.getTargetAuthor().getLegacyIdentifier());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
@@ -340,7 +340,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
-            System.out.println(" Author: " + quote.getAuthor().getNumber().get());
+            System.out.println(" Author: " + quote.getAuthor().getLegacyIdentifier());
             System.out.println(" Text: " + quote.getText());
             if (quote.getAttachments().size() > 0) {
                 System.out.println(" Attachments: ");

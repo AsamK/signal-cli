@@ -20,7 +20,7 @@ public class JsonMessageEnvelope {
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
-            this.source = source.getNumber().get();
+            this.source = source.getLegacyIdentifier();
             this.relay = source.getRelay().isPresent() ? source.getRelay().get() : null;
         }
         this.sourceDevice = envelope.getSourceDevice();
@@ -28,7 +28,7 @@ public class JsonMessageEnvelope {
         this.isReceipt = envelope.isReceipt();
         if (content != null) {
             if (envelope.isUnidentifiedSender()) {
-                this.source = content.getSender().getNumber().get();
+                this.source = content.getSender().getLegacyIdentifier();
                 this.sourceDevice = content.getSenderDevice();
             }
             if (content.getDataMessage().isPresent()) {

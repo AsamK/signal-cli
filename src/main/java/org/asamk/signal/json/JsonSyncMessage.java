@@ -28,7 +28,7 @@ class JsonSyncMessage {
         if (syncMessage.getBlockedList().isPresent()) {
             this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
             for (SignalServiceAddress address : syncMessage.getBlockedList().get().getAddresses()) {
-                this.blockedNumbers.add(address.getNumber().get());
+                this.blockedNumbers.add(address.getLegacyIdentifier());
             }
         }
         if (syncMessage.getRead().isPresent()) {
