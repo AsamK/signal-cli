@@ -332,7 +332,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getLegacyIdentifier());
+            System.out.println(" - Target author: " + reaction.getTargetAuthor().getLegacyIdentifier()); // todo resolve
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
