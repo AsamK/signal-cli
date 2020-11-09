@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
 import org.asamk.Signal;
+//import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class JsonMessageEnvelope {
-
+	// gotta do something so that it actually emits valid json instead of null
+	// or just fix it on the python side i guess 
     String source;
     int sourceDevice;
     String relay;
@@ -16,7 +18,7 @@ public class JsonMessageEnvelope {
     JsonSyncMessage syncMessage;
     JsonCallMessage callMessage;
     JsonReceiptMessage receiptMessage;
-
+	// String typingAction;
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
@@ -43,7 +45,11 @@ public class JsonMessageEnvelope {
             if (content.getReceiptMessage().isPresent()) {
                 this.receiptMessage = new JsonReceiptMessage(content.getReceiptMessage().get());
             }
-        }
+/*            if (content.getTypingMessage().isPresent()) {
+                SignalServiceTypingMessage typingMessage = content.getTypingMessage().get();
+                this.typingAction = content.getTypingMessage().get();
+           }
+*/        }
     }
 
     public JsonMessageEnvelope(Signal.MessageReceived messageReceived) {

@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Arrays;
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 
@@ -102,6 +102,7 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
+            System.out.println(Arrays.toString(ns.getList("recipient").toArray()));
             long timestamp = signal.sendMessage(messageText, attachments, ns.getList("recipient"));
             System.out.println(timestamp);
             return 0;

@@ -222,7 +222,7 @@ public class Main {
         ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
                 .build()
                 .defaultHelp(true)
-                .description("Commandline interface for Signal.")
+                .description("Commandline interface for Signal, patched to support sending messages from stdin and outputing reactions.")
                 .version(BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
 
         parser.addArgument("-v", "--version")

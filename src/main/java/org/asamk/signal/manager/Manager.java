@@ -113,6 +113,7 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -120,10 +121,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -148,6 +151,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.asamk.signal.manager.ServiceConfig.capabilities;
+import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 public class Manager implements Closeable {
 
@@ -1419,6 +1423,108 @@ public class Manager implements Closeable {
         }
     }
 
+    public void receiveMessagesAndReadStdin(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
+        retryFailedReceivedMessages(handler, ignoreAttachments);
+        final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
+
+        Set<HandleAction> queuedActions = null;
+
+        if (messagePipe == null) {
+            messagePipe = messageReceiver.createMessagePipe();
+        }
+
+        boolean hasCaughtUpWithOldMessages = false;
+
+        while (true) {
+            SignalServiceEnvelope envelope;
+            SignalServiceContent content = null;
+            Exception exception = null;
+            final long now = new Date().getTime();
+            try {
+                Optional<SignalServiceEnvelope> result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
+                    // store message on disk, before acknowledging receipt to the server
+                    try {
+                        String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
+                        File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
+                        Utils.storeEnvelope(envelope1, cacheFile);
+                    } catch (IOException e) {
+                        System.err.println("Failed to store encrypted message in disk cache, ignoring: " + e.getMessage());
+                    }
+                });
+                if (result.isPresent()) {
+                    envelope = result.get();
+                } else {
+                    // Received indicator that server queue is empty
+                    hasCaughtUpWithOldMessages = true;
+
+                    if (queuedActions != null) {
+                        for (HandleAction action : queuedActions) {
+                            try {
+                                action.execute(this);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        queuedActions.clear();
+                        queuedActions = null;
+                    }
+
+                    // Continue to wait another timeout for new messages
+                    continue;
+                }
+            } catch (TimeoutException e) {
+                if (returnOnTimeout)
+                    return;
+                continue;
+            } catch (InvalidVersionException e) {
+                System.err.println("Ignoring error: " + e.getMessage());
+                continue;
+            }
+            if (envelope.hasSource()) {
+                // Store uuid if we don't have it already
+                SignalServiceAddress source = envelope.getSourceAddress();
+                resolveSignalServiceAddress(source);
+            }
+            if (!envelope.isReceipt()) {
+                try {
+                    content = decryptMessage(envelope);
+                } catch (Exception e) {
+                    exception = e;
+                }
+                List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
+                if (hasCaughtUpWithOldMessages) {
+                    for (HandleAction action : actions) {
+                        try {
+                            action.execute(this);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    if (queuedActions == null) {
+                        queuedActions = new HashSet<>();
+                    }
+                    queuedActions.addAll(actions);
+                }
+            }
+            account.save();
+            if (!isMessageBlocked(envelope, content)) {
+                handler.handleMessage(envelope, content, exception);
+            }
+            if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
+                File cacheFile = null;
+                try {
+                    String source = envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "";
+                    cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
+                    Files.delete(cacheFile.toPath());
+                    // Try to delete directory if empty
+                    new File(getMessageCachePath()).delete();
+                } catch (IOException e) {
+                    System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
+                }
+            }
+        }
+    }
     public void receiveMessages(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
