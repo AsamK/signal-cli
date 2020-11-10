@@ -46,19 +46,17 @@ class InputReader implements Runnable {
 			try {
     			String in  = br.readLine();
     			String args[] = in.split(":", 2);
-    			// it should really read only one line though
+    			// properly this ought to be json or some sort of serialization to not miss multiline messages
     			if (args.length == 2) {
-        			System.out.println(Arrays.toString(args));
-        			System.out.println(args.length);
         			String message = args[1];
         			List<String> recipients = new ArrayList<String>();
         			recipients.add(args[0]);
         			List<String> attachments = new ArrayList<>();
         			try {
-            			System.out.println("sent " + in);
+            			System.out.println("sent '" + message + "' to " + args[0]);
             			this.m.sendMessage(message, attachments, recipients);
                     } catch (AssertionError | EncapsulatedExceptions| AttachmentInvalidException | InvalidNumberException e) {
-                        System.err.println("aaaaaa (Manager.java ~L1457)");
+                        System.err.println("aaaaaa (DaemonCommand L59)");
                         e.printStackTrace(System.out);
                     }
     			}
