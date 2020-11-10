@@ -1,25 +1,31 @@
+this is patched such that the daemon command reads recipient:message pairs from stdin instead of exporting an object to dbus while outputing json as normal (though it currently also outputs "sent $msg to $recipient" in response to input as well). it also includes reactions in output, and will include quotes. 
+
+note that currently sending multiline messages does not work, lines after the first are ignored.
+
+expect the wiki and builds to be broken for now.
+
 # signal-cli
 
 signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages.
-To be able to link to an existing Signal-Android/signal-cli instance, signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java does not yet support [provisioning as a slave device](https://github.com/WhisperSystems/libsignal-service-java/pull/21).
+To be able to link to an existing Signal-Android/signal-cli instance, signal-cli uses a [patched libsignal-service-java](https://github.com/technillogue/libsignal-service-java), because libsignal-service-java does not yet support [provisioning as a slave device](https://github.com/WhisperSystems/libsignal-service-java/pull/21).
 For registering you need a phone number where you can receive SMS or incoming calls.
 signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 ## Installation
 
-You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well. You need to have at least JRE 11 installed, to run signal-cli.
+You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/technillogue/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well. You need to have at least JRE 11 installed, to run signal-cli.
 
 ### Install system-wide on Linux
-See [latest version](https://github.com/AsamK/signal-cli/releases).
+See [latest version](https://github.com/technillogue/signal-cli/releases).
 ```sh
 export VERSION=<latest version, format "x.y.z">
-wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
+wget https://github.com/technillogue/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
 You can find further instructions on the Wiki:
-- [Quickstart](https://github.com/AsamK/signal-cli/wiki/Quickstart)
-- [DBus Service](https://github.com/AsamK/signal-cli/wiki/DBus-service)
+- [Quickstart](https://github.com/technillogue/signal-cli/wiki/Quickstart)
+- [DBus Service](https://github.com/technillogue/signal-cli/wiki/DBus-service)
 
 ## Usage
 
@@ -47,7 +53,7 @@ Important: The USERNAME (your phone number) must include the country calling cod
 
         signal-cli -u USERNAME receive
 
-For more information read the [man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/AsamK/signal-cli/wiki).
+For more information read the [man page](https://github.com/technillogue/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/technillogue/signal-cli/wiki).
 
 ## Storage
 
@@ -68,7 +74,7 @@ dependencies. If you have a recent gradle version installed, you can replace `./
 
 1. Checkout the source somewhere on your filesystem with
 
-        git clone https://github.com/AsamK/signal-cli.git
+        git clone https://github.com/technillogue/signal-cli.git
 
 2. Execute Gradle:
 
