@@ -12,6 +12,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,22 +35,23 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 conn.sendMessage(new Signal.ReceiptReceived(
                         objectPath,
                         envelope.getTimestamp(),
-                        !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceE164().get() : content.getSender().getNumber().get()
+                        // A receipt envelope always has a source address
+                        envelope.getSourceAddress().getLegacyIdentifier()
                 ));
             } catch (DBusException e) {
                 e.printStackTrace();
             }
         } else if (content != null) {
+            final SignalServiceAddress sender = !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceAddress() : content.getSender();
             if (content.getReceiptMessage().isPresent()) {
                 final SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
                 if (receiptMessage.isDeliveryReceipt()) {
-                    final String sender = !envelope.isUnidentifiedSender() && envelope.hasSource() ? envelope.getSourceE164().get() : content.getSender().getNumber().get();
                     for (long timestamp : receiptMessage.getTimestamps()) {
                         try {
                             conn.sendMessage(new Signal.ReceiptReceived(
                                     objectPath,
                                     timestamp,
-                                    sender
+                                    sender.getLegacyIdentifier()
                             ));
                         } catch (DBusException e) {
                             e.printStackTrace();
@@ -66,7 +68,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         conn.sendMessage(new Signal.MessageReceived(
                                 objectPath,
                                 message.getTimestamp(),
-                                envelope.isUnidentifiedSender() || !envelope.hasSource() ? content.getSender().getNumber().get() : envelope.getSourceE164().get(),
+                                sender.getLegacyIdentifier(),
                                 message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()
                                         ? message.getGroupContext().get().getGroupV1().get().getGroupId() : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
@@ -80,15 +82,15 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 if (sync_message.getSent().isPresent()) {
                     SentTranscriptMessage transcript = sync_message.getSent().get();
 
-                    if (!envelope.isUnidentifiedSender() && envelope.hasSource() && (transcript.getDestination().isPresent() || transcript.getMessage().getGroupContext().isPresent())) {
+                    if (transcript.getDestination().isPresent() || transcript.getMessage().getGroupContext().isPresent()) {
                         SignalServiceDataMessage message = transcript.getMessage();
 
                         try {
                             conn.sendMessage(new Signal.SyncMessageReceived(
                                     objectPath,
                                     transcript.getTimestamp(),
-                                    envelope.getSourceAddress().getNumber().get(),
-                                    transcript.getDestination().isPresent() ? transcript.getDestination().get().getNumber().get() : "",
+                                    sender.getLegacyIdentifier(),
+                                    transcript.getDestination().isPresent() ? transcript.getDestination().get().getLegacyIdentifier() : "",
                                     message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()
                                             ? message.getGroupContext().get().getGroupV1().get().getGroupId() : new byte[0],
                                     message.getBody().isPresent() ? message.getBody().get() : "",

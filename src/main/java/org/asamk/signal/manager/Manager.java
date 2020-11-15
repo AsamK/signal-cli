@@ -1510,7 +1510,8 @@ public class Manager implements Closeable {
             if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
                 File cacheFile = null;
                 try {
-                    cacheFile = getMessageCacheFile(envelope.getSourceE164().get(), now, envelope.getTimestamp());
+                    String source = envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "";
+                    cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
                     Files.delete(cacheFile.toPath());
                     // Try to delete directory if empty
                     new File(getMessageCachePath()).delete();
