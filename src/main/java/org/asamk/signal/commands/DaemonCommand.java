@@ -30,43 +30,42 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 class InputReader implements Runnable {
     private volatile boolean alive = true;
-	private Manager m;
+    private Manager m;
 
     public void terminate() {
-		this.alive = false;
+        this.alive = false;
     }
-	InputReader (final Manager m) {
-    	this.m = m;
-	}
+    InputReader (final Manager m) {
+        this.m = m;
+    }
 
     @Override
     public void run() {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		while (alive) {
-			try {
-    			String in  = br.readLine();
-    			String args[] = in.split(":", 2);
-    			// properly this ought to be json or some sort of serialization to not miss multiline messages
-    			if (args.length == 2) {
-        			String message = args[1];
-        			List<String> recipients = new ArrayList<String>();
-        			recipients.add(args[0]);
-        			List<String> attachments = new ArrayList<>();
-        			try {
-            			System.out.println("sent '" + message + "' to " + args[0]);
-            			this.m.sendMessage(message, attachments, recipients);
-                    } catch (AssertionError | EncapsulatedExceptions| AttachmentInvalidException | InvalidNumberException e) {
-                        System.err.println("aaaaaa (DaemonCommand L59)");
-                        e.printStackTrace(System.out);
-                    }
-    			}
-
-			} catch (IOException e) {
-    			System.err.println(e);
-			}
-			// getMessageSender().sendTyping(signalServiceAddress?, ....)
-
-		}
+        while (alive) {
+            try {
+                String in  = br.readLine();
+                // properly this ought to be json or some sort of serialization to not miss multiline messages
+                if (in != null && in.split(":", 2).length == 2) {
+                    String args[] = in.split(":", 2);
+                    String message = args[1];
+                    List<String> recipients = new ArrayList<String>();
+                    recipients.add(args[0]);
+                    List<String> attachments = new ArrayList<>();
+                    try {
+                            System.out.println("sent '" + message + "' to " + args[0]);
+                            this.m.sendMessage(message, attachments, recipients);
+                                } catch (AssertionError | EncapsulatedExceptions| AttachmentInvalidException | InvalidNumberException e) {
+                                    System.err.println("aaaaaa (DaemonCommand L59)");
+                                    e.printStackTrace(System.err);
+                                }
+                }
+            } catch (IOException e) {
+                System.err.println("aaaaaa (DaemonCommand L64)");
+                System.err.println(e);
+            }
+            // getMessageSender().sendTyping(signalServiceAddress?, ....)
+        }
     }
 }
 
@@ -120,7 +119,7 @@ public class DaemonCommand implements LocalCommand {
                                   ns.getBoolean("json")
                                   ? new JsonReceiveMessageHandler(m)
                                   : new ReceiveMessageHandler(m)
-                					/*true*/);
+                                    /*true*/);
                 return 0;
             } catch (IOException e) {
                 System.err.println("Error while receiving messages: " + e.getMessage());
