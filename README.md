@@ -1,3 +1,13 @@
+This fork changes the daemon command to read commands as JSON from stdin instead of exporting a DBus interface. It also includes reactions in JSON output. 
+
+Currently, only sendMessage is available. The JSON interface is {"command": "sendMessage", "recipient": number, "content": message, "details": {"attachments": []}}. The details field is optional. As far as I can tell, attachments must be full absolute file paths. 
+
+TODOs:
+- acknowledge commands received from stdin in valid JSON output instead of freeform text
+- feature parity with DBus interface and ideally CLI
+- allow typing indicators to be sent and received
+- include quotes in JSON output
+- ideally, expose message IDs referenced by quotes 
 this is patched such that the daemon command reads recipient:message pairs from stdin instead of exporting an object to dbus while outputing json as normal (though it currently also outputs "sent $msg to $recipient" in response to input as well). it also includes reactions in output, and will include quotes. 
 
 note that currently sending multiline messages does not work, lines after the first are ignored.

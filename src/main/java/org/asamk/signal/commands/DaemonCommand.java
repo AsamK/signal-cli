@@ -27,6 +27,16 @@ import static org.asamk.signal.DbusConfig.SIGNAL_OBJECTPATH;
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+class JsonInterface {
+    public String commandName;
+    public String recipient;
+    public String content;
+    public JsonNode details;
+}
+
 
 class InputReader implements Runnable {
     private volatile boolean alive = true;
@@ -42,29 +52,40 @@ class InputReader implements Runnable {
     @Override
     public void run() {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        ObjectMapper jsonProcessor = new ObjectMapper();
 		while (alive) {
 			try {
     			String in  = br.readLine();
-    			String args[] = in.split(":", 2);
-    			// properly this ought to be json or some sort of serialization to not miss multiline messages
-    			if (args.length == 2) {
-        			String message = args[1];
-        			List<String> recipients = new ArrayList<String>();
-        			recipients.add(args[0]);
-        			List<String> attachments = new ArrayList<>();
-        			try {
-            			System.out.println("sent '" + message + "' to " + args[0]);
-            			this.m.sendMessage(message, attachments, recipients);
-                    } catch (AssertionError | EncapsulatedExceptions| AttachmentInvalidException | InvalidNumberException e) {
-                        System.err.println("aaaaaa (DaemonCommand L59)");
-                        e.printStackTrace(System.out);
-                    }
+    			if (in != null) { 
+                    JsonInterface command = jsonProcessor.readValue(in, JsonInterface.class);
+					if (command.commandName.equals("sendMessage")){
+            			List<String> recipients = new ArrayList<String>();
+            			recipients.add(command.recipient);
+            			List<String> attachments = new ArrayList<>();
+						if (command.details != null && command.details.has("attachments") ) {
+                			command.details.get("attachments").forEach(attachment -> {
+                               if (attachment.isTextual()){
+                        			attachments.add(attachment.asText());
+                               }
+                			});
+						}
+            			try {
+                			// verbosity flag? better yet, json acknowledgement with timestamp or message id?
+                			System.out.println("sentMessage '" + command.content + "' to " + command.recipient);
+                			this.m.sendMessage(command.content, attachments, recipients);
+                        } catch (AssertionError | EncapsulatedExceptions| AttachmentInvalidException | InvalidNumberException e) {
+                            System.err.println("error in sending message");
+                            e.printStackTrace(System.out);
+                        }
+        			} /* elif (command.commandName == "sendTyping") {
+        			 getMessageSender().sendTyping(signalServiceAddress?, ....)
+        			}*/
     			}
 
 			} catch (IOException e) {
     			System.err.println(e);
+    			alive = false;
 			}
-			// getMessageSender().sendTyping(signalServiceAddress?, ....)
 
 		}
     }

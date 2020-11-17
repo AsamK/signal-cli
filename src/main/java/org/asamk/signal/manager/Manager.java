@@ -113,7 +113,6 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.util.Base64;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
