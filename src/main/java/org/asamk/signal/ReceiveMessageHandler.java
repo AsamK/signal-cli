@@ -259,6 +259,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message) {
         System.out.println("Message timestamp: " + DateUtils.formatTimestamp(message.getTimestamp()));
+        if (message.isViewOnce()) {
+            System.out.println("=VIEW ONCE=");
+        }
 
         if (message.getBody().isPresent()) {
             System.out.println("Body: " + message.getBody().get());
@@ -352,6 +355,18 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         printAttachment(attachment.getThumbnail());
                     }
                 }
+            }
+        }
+
+        if (message.getRemoteDelete().isPresent()) {
+            final SignalServiceDataMessage.RemoteDelete remoteDelete = message.getRemoteDelete().get();
+            System.out.println("Remote delete message: timestamp = " + remoteDelete.getTargetSentTimestamp());
+        }
+        if (message.getMentions().isPresent()) {
+            final List<SignalServiceDataMessage.Mention> mentions = message.getMentions().get();
+            System.out.println("Mentions: ");
+            for (SignalServiceDataMessage.Mention mention : mentions) {
+                System.out.println("- " + mention.getUuid() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
             }
         }
 
