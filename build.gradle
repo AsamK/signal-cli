@@ -17,8 +17,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_14'
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.66'
+    implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_15'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.67'
     implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     implementation 'com.github.hypfvieh:dbus-java:3.2.3'
     implementation 'org.slf4j:slf4j-nop:1.7.30'

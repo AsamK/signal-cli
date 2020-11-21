@@ -431,10 +431,9 @@ public class Manager implements Closeable {
     private SignalServiceMessageSender getMessageSender() {
         // TODO implement ZkGroup support
         final ClientZkProfileOperations clientZkProfileOperations = null;
-        final boolean attachmentsV3 = false;
         final ExecutorService executor = null;
         return new SignalServiceMessageSender(serviceConfiguration, account.getUuid(), account.getUsername(), account.getPassword(),
-                account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), attachmentsV3, Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations, executor);
+                account.getDeviceId(), account.getSignalProtocolStore(), userAgent, account.isMultiDevice(), Optional.fromNullable(messagePipe), Optional.fromNullable(unidentifiedMessagePipe), Optional.absent(), clientZkProfileOperations, executor, ServiceConfig.MAX_ENVELOPE_SIZE);
     }
 
     private SignalServiceProfile getEncryptedRecipientProfile(SignalServiceAddress address, Optional<UnidentifiedAccess> unidentifiedAccess) throws IOException {
@@ -1198,8 +1197,9 @@ public class Manager implements Closeable {
         SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
         try {
+            long startTime = System.currentTimeMillis();
             messageSender.sendMessage(syncMessage, unidentifiedAccess);
-            return SendMessageResult.success(recipient, unidentifiedAccess.isPresent(), false);
+            return SendMessageResult.success(recipient, unidentifiedAccess.isPresent(), false, System.currentTimeMillis() - startTime);
         } catch (UntrustedIdentityException e) {
             account.getSignalProtocolStore().saveIdentity(resolveSignalServiceAddress(e.getIdentifier()), e.getIdentityKey(), TrustLevel.UNTRUSTED);
             return SendMessageResult.identityFailure(recipient, e.getIdentityKey());

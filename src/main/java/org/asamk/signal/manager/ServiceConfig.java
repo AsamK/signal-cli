@@ -1,7 +1,7 @@
 package org.asamk.signal.manager;
 
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
+import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
@@ -26,6 +26,7 @@ public class ServiceConfig {
     final static int PREKEY_MINIMUM_COUNT = 20;
     final static int PREKEY_BATCH_SIZE = 100;
     final static int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
+    final static int MAX_ENVELOPE_SIZE = 0;
     final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
 
     private final static String URL = "https://textsecure-service.whispersystems.org";
@@ -39,7 +40,7 @@ public class ServiceConfig {
 
     private final static String zkGroupServerPublicParamsHex = "AMhf5ywVwITZMsff/eCyudZx9JDmkkkbV6PInzG4p8x3VqVJSFiMvnvlEKWuRob/1eaIetR31IYeAbm0NdOuHH8Qi+Rexi1wLlpzIo1gstHWBfZzy1+qHRV5A4TqPp15YzBPm0WSggW6PbSn+F4lf57VCnHF7p8SvzAA2ZZJPYJURt8X7bbg+H3i+PEjH9DXItNEqs2sNcug37xZQDLm7X0=";
 
-    static final SignalServiceProfile.Capabilities capabilities = new SignalServiceProfile.Capabilities(false, false, false);
+    static final AccountAttributes.Capabilities capabilities = new AccountAttributes.Capabilities(false, false, false, false);
 
     public static SignalServiceConfiguration createDefaultServiceConfiguration(String userAgent) {
         final Interceptor userAgentInterceptor = chain ->
