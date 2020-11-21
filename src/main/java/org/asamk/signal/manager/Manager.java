@@ -1469,6 +1469,7 @@ public class Manager implements Closeable {
                                 e.printStackTrace();
                             }
                         }
+                        account.save();
                         queuedActions.clear();
                         queuedActions = null;
                     }
