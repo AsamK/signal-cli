@@ -267,6 +267,21 @@ public class Manager implements Closeable {
             account.setProfileKey(KeyUtils.createProfileKey());
             account.save();
         }
+        // Store profile keys only in profile store
+        for (ContactInfo contact : account.getContactStore().getContacts()) {
+            String profileKeyString = contact.profileKey;
+            if (profileKeyString == null) {
+                continue;
+            }
+            final ProfileKey profileKey;
+            try {
+                profileKey = new ProfileKey(Base64.decode(profileKeyString));
+            } catch (InvalidInputException | IOException e) {
+                continue;
+            }
+            contact.profileKey = null;
+            account.getProfileStore().storeProfileKey(contact.getAddress(), profileKey);
+        }
     }
 
     public void checkAccountState() throws IOException {
@@ -993,15 +1008,9 @@ public class Manager implements Closeable {
     }
 
     private byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
-        ContactInfo contact = account.getContactStore().getContact(recipient);
-        if (contact == null || contact.profileKey == null) {
+        ProfileKey theirProfileKey = account.getProfileStore().getProfileKey(recipient);
+        if (theirProfileKey == null) {
             return null;
-        }
-        ProfileKey theirProfileKey;
-        try {
-            theirProfileKey = new ProfileKey(Base64.decode(contact.profileKey));
-        } catch (InvalidInputException | IOException e) {
-            throw new AssertionError(e);
         }
         SignalProfile targetProfile;
         try {
@@ -1326,24 +1335,16 @@ public class Manager implements Closeable {
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
-            if (source.matches(account.getSelfAddress())) {
-                try {
-                    this.account.setProfileKey(new ProfileKey(message.getProfileKey().get()));
-                } catch (InvalidInputException ignored) {
-                }
-                ContactInfo contact = account.getContactStore().getContact(source);
-                if (contact != null) {
-                    contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
-                    account.getContactStore().updateContact(contact);
-                }
-            } else {
-                ContactInfo contact = account.getContactStore().getContact(source);
-                if (contact == null) {
-                    contact = new ContactInfo(source);
-                }
-                contact.profileKey = Base64.encodeBytes(message.getProfileKey().get());
-                account.getContactStore().updateContact(contact);
+            final ProfileKey profileKey;
+            try {
+                profileKey = new ProfileKey(message.getProfileKey().get());
+            } catch (InvalidInputException e) {
+                throw new AssertionError(e);
             }
+            if (source.matches(account.getSelfAddress())) {
+                this.account.setProfileKey(profileKey);
+            }
+            this.account.getProfileStore().storeProfileKey(source, profileKey);
         }
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
@@ -1690,7 +1691,7 @@ public class Manager implements Closeable {
                                     contact.color = c.getColor().get();
                                 }
                                 if (c.getProfileKey().isPresent()) {
-                                    contact.profileKey = Base64.encodeBytes(c.getProfileKey().get().serialize());
+                                    account.getProfileStore().storeProfileKey(address, c.getProfileKey().get());
                                 }
                                 if (c.getVerified().isPresent()) {
                                     final VerifiedMessage verifiedMessage = c.getVerified().get();
@@ -1874,11 +1875,7 @@ public class Manager implements Closeable {
                         verifiedMessage = new VerifiedMessage(record.getAddress(), currentIdentity.getIdentityKey(), currentIdentity.getTrustLevel().toVerifiedState(), currentIdentity.getDateAdded().getTime());
                     }
 
-                    ProfileKey profileKey = null;
-                    try {
-                        profileKey = record.profileKey == null ? null : new ProfileKey(Base64.decode(record.profileKey));
-                    } catch (InvalidInputException ignored) {
-                    }
+                    ProfileKey profileKey = account.getProfileStore().getProfileKey(record.getAddress());
                     out.write(new DeviceContact(record.getAddress(), Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.number), Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage), Optional.fromNullable(profileKey), record.blocked,
