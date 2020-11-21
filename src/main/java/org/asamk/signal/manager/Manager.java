@@ -1398,7 +1398,15 @@ public class Manager implements Closeable {
         if (!envelope.isReceipt()) {
             try {
                 content = decryptMessage(envelope);
-            } catch (Exception e) {
+            } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+                return;
+            } catch (Exception er) {
+                // All other errors are not recoverable, so delete the cached message
+                try {
+                    Files.delete(fileEntry.toPath());
+                } catch (IOException e) {
+                    System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
+                }
                 return;
             }
             List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
@@ -1476,6 +1484,7 @@ public class Manager implements Closeable {
                 System.err.println("Ignoring error: " + e.getMessage());
                 continue;
             }
+
             if (envelope.hasSource()) {
                 // Store uuid if we don't have it already
                 SignalServiceAddress source = envelope.getSourceAddress();
