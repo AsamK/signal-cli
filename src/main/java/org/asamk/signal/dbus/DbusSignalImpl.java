@@ -6,11 +6,10 @@ import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotAGroupMemberException;
 import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
@@ -43,41 +42,28 @@ public class DbusSignalImpl implements Signal {
         return sendMessage(message, attachments, recipients);
     }
 
-    private static DBusExecutionException convertEncapsulatedExceptions(EncapsulatedExceptions e) {
-        if (e.getNetworkExceptions().size() + e.getUnregisteredUserExceptions().size() + e.getUntrustedIdentityExceptions().size() == 1) {
-            if (e.getNetworkExceptions().size() == 1) {
-                NetworkFailureException n = e.getNetworkExceptions().get(0);
-                return new Error.Failure("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
-            } else if (e.getUnregisteredUserExceptions().size() == 1) {
-                UnregisteredUserException n = e.getUnregisteredUserExceptions().get(0);
-                return new Error.UnregisteredUser("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
-            } else if (e.getUntrustedIdentityExceptions().size() == 1) {
-                UntrustedIdentityException n = e.getUntrustedIdentityExceptions().get(0);
-                return new Error.UntrustedIdentity("Untrusted Identity for \"" + n.getIdentifier() + "\": " + n.getMessage());
-            }
+    private static void checkSendMessageResults(long timestamp, List<SendMessageResult> results) throws DBusExecutionException {
+        List<String> errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
+        if (errors.size() == 0) {
+            return;
         }
 
         StringBuilder message = new StringBuilder();
-        message.append("Failed to send (some) messages:").append('\n');
-        for (NetworkFailureException n : e.getNetworkExceptions()) {
-            message.append("Network failure for \"").append(n.getE164number()).append("\": ").append(n.getMessage()).append('\n');
-        }
-        for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
-            message.append("Unregistered user \"").append(n.getE164Number()).append("\": ").append(n.getMessage()).append('\n');
-        }
-        for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
-            message.append("Untrusted Identity for \"").append(n.getIdentifier()).append("\": ").append(n.getMessage()).append('\n');
+        message.append(timestamp).append('\n');
+        message.append("Failed to send (some) messages:\n");
+        for (String error : errors) {
+            message.append(error).append('\n');
         }
 
-        return new Error.Failure(message.toString());
+        throw new Error.Failure(message.toString());
     }
 
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            return m.sendMessage(message, attachments, recipients);
-        } catch (EncapsulatedExceptions e) {
-            throw convertEncapsulatedExceptions(e);
+            final Pair<Long, List<SendMessageResult>> results = m.sendMessage(message, attachments, recipients);
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
         } catch (AttachmentInvalidException e) {
@@ -90,11 +76,10 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
-            m.sendEndSessionMessage(recipients);
+            final Pair<Long, List<SendMessageResult>> results = m.sendEndSessionMessage(recipients);
+            checkSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (EncapsulatedExceptions e) {
-            throw convertEncapsulatedExceptions(e);
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
         }
@@ -103,11 +88,11 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            return m.sendGroupMessage(message, attachments, groupId);
+            Pair<Long, List<SendMessageResult>> results = m.sendGroupMessage(message, attachments, groupId);
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (EncapsulatedExceptions e) {
-            throw convertEncapsulatedExceptions(e);
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
@@ -184,11 +169,11 @@ public class DbusSignalImpl implements Signal {
     @Override
     public byte[] updateGroup(final byte[] groupId, final String name, final List<String> members, final String avatar) {
         try {
-            return m.updateGroup(groupId, name, members, avatar);
+            final Pair<byte[], List<SendMessageResult>> results = m.updateGroup(groupId, name, members, avatar);
+            checkSendMessageResults(0, results.second());
+            return results.first();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (EncapsulatedExceptions e) {
-            throw convertEncapsulatedExceptions(e);
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (InvalidNumberException e) {
