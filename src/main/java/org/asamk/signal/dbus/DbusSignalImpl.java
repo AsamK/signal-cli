@@ -10,12 +10,14 @@ import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DbusSignalImpl implements Signal {
 
@@ -152,7 +154,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return "";
         } else {
-            return group.name;
+            return group.getTitle();
         }
     }
 
@@ -162,7 +164,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return Collections.emptyList();
         } else {
-            return new ArrayList<>(group.getMembersE164());
+            return group.getMembers().stream().map(m::resolveSignalServiceAddress).map(SignalServiceAddress::getLegacyIdentifier).collect(Collectors.toList());
         }
     }
 

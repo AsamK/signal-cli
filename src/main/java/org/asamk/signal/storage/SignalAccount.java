@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.storage.groups.GroupInfoV1;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.profiles.ProfileStore;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
@@ -87,7 +88,7 @@ public class SignalAccount implements Closeable {
         final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
         try {
             SignalAccount account = new SignalAccount(pair.first(), pair.second());
-            account.load();
+            account.load(dataPath);
             return account;
         } catch (Throwable e) {
             pair.second().close();
@@ -109,7 +110,7 @@ public class SignalAccount implements Closeable {
         account.username = username;
         account.profileKey = profileKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
-        account.groupStore = new JsonGroupStore();
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
@@ -135,7 +136,7 @@ public class SignalAccount implements Closeable {
         account.deviceId = deviceId;
         account.signalingKey = signalingKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
-        account.groupStore = new JsonGroupStore();
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
@@ -149,6 +150,10 @@ public class SignalAccount implements Closeable {
         return dataPath + "/" + username;
     }
 
+    private static File getGroupCachePath(String dataPath, String username) {
+        return new File(new File(dataPath, username + ".d"), "group-cache");
+    }
+
     public static boolean userExists(String dataPath, String username) {
         if (username == null) {
             return false;
@@ -157,7 +162,7 @@ public class SignalAccount implements Closeable {
         return !(!f.exists() || f.isDirectory());
     }
 
-    private void load() throws IOException {
+    private void load(String dataPath) throws IOException {
         JsonNode rootNode;
         synchronized (fileChannel) {
             fileChannel.position(0);
@@ -209,9 +214,10 @@ public class SignalAccount implements Closeable {
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
             groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
+            groupStore.groupCachePath = getGroupCachePath(dataPath, username);
         }
         if (groupStore == null) {
-            groupStore = new JsonGroupStore();
+            groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
         JsonNode contactStoreNode = rootNode.get("contactStore");
@@ -236,9 +242,12 @@ public class SignalAccount implements Closeable {
             }
 
             for (GroupInfo group : groupStore.getGroups()) {
-                group.members = group.members.stream()
-                        .map(m -> recipientStore.resolveServiceAddress(m))
-                        .collect(Collectors.toSet());
+                if (group instanceof GroupInfoV1) {
+                    GroupInfoV1 groupInfoV1 = (GroupInfoV1) group;
+                    groupInfoV1.members = groupInfoV1.members.stream()
+                            .map(m -> recipientStore.resolveServiceAddress(m))
+                            .collect(Collectors.toSet());
+                }
             }
 
             for (SessionInfo session : signalProtocolStore.getSessions()) {
@@ -273,8 +282,8 @@ public class SignalAccount implements Closeable {
                         contactStore.updateContact(contactInfo);
                     } else {
                         GroupInfo groupInfo = groupStore.getGroup(Base64.decode(thread.id));
-                        if (groupInfo != null) {
-                            groupInfo.messageExpirationTime = thread.messageExpirationTime;
+                        if (groupInfo instanceof GroupInfoV1) {
+                            ((GroupInfoV1) groupInfo).messageExpirationTime = thread.messageExpirationTime;
                             groupStore.updateGroup(groupInfo);
                         }
                     }

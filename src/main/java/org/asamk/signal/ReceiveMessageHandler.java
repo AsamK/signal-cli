@@ -275,11 +275,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println(" - Action: " + typingMessage.getAction());
                     System.out.println(" - Timestamp: " + DateUtils.formatTimestamp(typingMessage.getTimestamp()));
                     if (typingMessage.getGroupId().isPresent()) {
+                        System.out.println(" - Group Info:");
+                        System.out.println("   Id: " + Base64.encodeBytes(typingMessage.getGroupId().get()));
                         GroupInfo group = m.getGroup(typingMessage.getGroupId().get());
                         if (group != null) {
-                            System.out.println("  Name: " + group.name);
+                            System.out.println("   Name: " + group.getTitle());
                         } else {
-                            System.out.println("  Name: <Unknown group>");
+                            System.out.println("   Name: <Unknown group>");
                         }
                     }
                 }
@@ -310,7 +312,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 } else {
                     GroupInfo group = m.getGroup(groupInfo.getGroupId());
                     if (group != null) {
-                        System.out.println("  Name: " + group.name);
+                        System.out.println("  Name: " + group.getTitle());
                     } else {
                         System.out.println("  Name: <Unknown group>");
                     }
@@ -327,6 +329,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
             } else if (groupContext.getGroupV2().isPresent()) {
                 final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
+                byte[] groupId = m.getGroupId(groupInfo.getMasterKey());
+                System.out.println("  Id: " + Base64.encodeBytes(groupId));
+                GroupInfo group = m.getGroup(groupId);
+                if (group != null) {
+                    System.out.println("  Name: " + group.getTitle());
+                } else {
+                    System.out.println("  Name: <Unknown group>");
+                }
                 System.out.println("  Revision: " + groupInfo.getRevision());
                 System.out.println("  Master key length: " + groupInfo.getMasterKey().serialize().length);
                 System.out.println("  Has signed group change: " + groupInfo.hasSignedGroupChange());
@@ -376,7 +386,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getLegacyIdentifier()); // todo resolve
+            System.out.println(" - Target author: " + m.resolveSignalServiceAddress(reaction.getTargetAuthor()).getLegacyIdentifier());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }

@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.signal.zkgroup.ServerPublicParams;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
@@ -13,7 +14,6 @@ import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,8 +39,26 @@ public class ServiceConfig {
     private final static Optional<Dns> dns = Optional.absent();
 
     private final static String zkGroupServerPublicParamsHex = "AMhf5ywVwITZMsff/eCyudZx9JDmkkkbV6PInzG4p8x3VqVJSFiMvnvlEKWuRob/1eaIetR31IYeAbm0NdOuHH8Qi+Rexi1wLlpzIo1gstHWBfZzy1+qHRV5A4TqPp15YzBPm0WSggW6PbSn+F4lf57VCnHF7p8SvzAA2ZZJPYJURt8X7bbg+H3i+PEjH9DXItNEqs2sNcug37xZQDLm7X0=";
+    private final static byte[] zkGroupServerPublicParams;
 
-    static final AccountAttributes.Capabilities capabilities = new AccountAttributes.Capabilities(false, false, false, false);
+    static final AccountAttributes.Capabilities capabilities;
+
+    static {
+        try {
+            zkGroupServerPublicParams = Base64.decode(zkGroupServerPublicParamsHex);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+
+        boolean zkGroupAvailable;
+        try {
+            new ServerPublicParams(zkGroupServerPublicParams);
+            zkGroupAvailable = true;
+        } catch (Throwable ignored) {
+            zkGroupAvailable = false;
+        }
+        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, false);
+    }
 
     public static SignalServiceConfiguration createDefaultServiceConfiguration(String userAgent) {
         final Interceptor userAgentInterceptor = chain ->
@@ -49,13 +67,6 @@ public class ServiceConfig {
                         .build());
 
         final List<Interceptor> interceptors = Collections.singletonList(userAgentInterceptor);
-
-        final byte[] zkGroupServerPublicParams;
-        try {
-            zkGroupServerPublicParams = Base64.decode(zkGroupServerPublicParamsHex);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
 
         return new SignalServiceConfiguration(
                 new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
@@ -70,10 +81,7 @@ public class ServiceConfig {
     }
 
     private static Map<Integer, SignalCdnUrl[]> makeSignalCdnUrlMapFor(SignalCdnUrl[] cdn0Urls, SignalCdnUrl[] cdn2Urls) {
-        Map<Integer, SignalCdnUrl[]> result = new HashMap<>();
-        result.put(0, cdn0Urls);
-        result.put(2, cdn2Urls);
-        return Collections.unmodifiableMap(result);
+        return Map.of(0, cdn0Urls, 2, cdn2Urls);
     }
 
     private ServiceConfig() {

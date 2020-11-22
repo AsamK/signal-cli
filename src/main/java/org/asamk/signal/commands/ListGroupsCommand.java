@@ -10,16 +10,23 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements LocalCommand {
 
-    private static void printGroup(GroupInfo group, boolean detailed, SignalServiceAddress address) {
+    private static void printGroup(Manager m, GroupInfo group, boolean detailed) {
         if (detailed) {
+            Set<String> members = group.getMembers()
+                    .stream()
+                    .map(m::resolveSignalServiceAddress)
+                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .collect(Collectors.toSet());
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b Members: %s",
-                    Base64.encodeBytes(group.groupId), group.name, group.isMember(address), group.blocked, group.getMembersE164()));
+                    Base64.encodeBytes(group.groupId), group.getTitle(), group.isMember(m.getSelfAddress()), group.isBlocked(), members));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId), group.name, group.isMember(address), group.blocked));
+                    Base64.encodeBytes(group.groupId), group.getTitle(), group.isMember(m.getSelfAddress()), group.isBlocked()));
         }
     }
 
@@ -41,7 +48,7 @@ public class ListGroupsCommand implements LocalCommand {
         boolean detailed = ns.getBoolean("detailed");
 
         for (GroupInfo group : groups) {
-            printGroup(group, detailed, m.getSelfAddress());
+            printGroup(m, group, detailed);
         }
         return 0;
     }
