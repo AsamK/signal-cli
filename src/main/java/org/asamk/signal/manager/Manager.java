@@ -298,7 +298,7 @@ public class Manager implements Closeable {
         return account.isRegistered();
     }
 
-    public void register(boolean voiceVerification) throws IOException {
+    public void register(boolean voiceVerification, String captcha) throws IOException {
         account.setPassword(KeyUtils.createPassword());
 
         // Resetting UUID, because registering doesn't work otherwise
@@ -306,9 +306,9 @@ public class Manager implements Closeable {
         accountManager = createSignalServiceAccountManager();
 
         if (voiceVerification) {
-            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.absent(), Optional.absent());
+            accountManager.requestVoiceVerificationCode(Locale.getDefault(), Optional.fromNullable(captcha), Optional.absent());
         } else {
-            accountManager.requestSmsVerificationCode(false, Optional.absent(), Optional.absent());
+            accountManager.requestSmsVerificationCode(false, Optional.fromNullable(captcha), Optional.absent());
         }
 
         account.setRegistered(false);

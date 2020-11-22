@@ -54,6 +54,12 @@ Use the verify command to complete the verification.
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
 
+*--captcha*::
+The captcha token, required if registration failed with a captcha required error.
+To get the token, go to https://signalcaptchas.org/registration/generate.html
+Check the developer tools for a redirect starting with signalcaptcha://
+Everything after signalcaptcha:// is the captcha token.
+
 === verify
 
 Verify the number using the code received via SMS or voice.
