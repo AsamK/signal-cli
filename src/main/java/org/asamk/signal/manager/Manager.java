@@ -124,6 +124,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -857,7 +858,7 @@ public class Manager implements Closeable {
         String packId = messageSender.uploadStickerManifest(manifest, packKey);
 
         try {
-            return new URI("https", "signal.art", "/addstickers/", "pack_id=" + URLEncoder.encode(packId, "utf-8") + "&pack_key=" + URLEncoder.encode(Hex.toStringCondensed(packKey), "utf-8"))
+            return new URI("https", "signal.art", "/addstickers/", "pack_id=" + URLEncoder.encode(packId, StandardCharsets.UTF_8) + "&pack_key=" + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8))
                     .toString();
         } catch (URISyntaxException e) {
             throw new AssertionError(e);
