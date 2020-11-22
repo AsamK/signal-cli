@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.6.12] - 2020-11-22
 ### Added
 - Show additional message content (view once, remote delete, mention, …) for received messages
 - `--captcha` parameter for `register` command, required for some IP ranges
