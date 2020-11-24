@@ -26,6 +26,7 @@ import org.asamk.signal.storage.groups.GroupInfoV2;
 import org.asamk.signal.storage.profiles.SignalProfile;
 import org.asamk.signal.storage.profiles.SignalProfileEntry;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
+import org.asamk.signal.storage.stickers.Sticker;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
@@ -103,6 +104,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
@@ -871,6 +873,10 @@ public class Manager implements Closeable {
         byte[] packKey = KeyUtils.createStickerUploadKey();
         String packId = messageSender.uploadStickerManifest(manifest, packKey);
 
+        Sticker sticker = new Sticker(Hex.fromStringCondensed(packId), packKey);
+        account.getStickerStore().updateSticker(sticker);
+        account.save();
+
         try {
             return new URI("https", "signal.art", "/addstickers/", "pack_id=" + URLEncoder.encode(packId, StandardCharsets.UTF_8) + "&pack_key=" + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8))
                     .toString();
@@ -1409,6 +1415,14 @@ public class Manager implements Closeable {
                 }
             }
         }
+        if (message.getSticker().isPresent()) {
+            final SignalServiceDataMessage.Sticker messageSticker = message.getSticker().get();
+            Sticker sticker = account.getStickerStore().getSticker(messageSticker.getPackId());
+            if (sticker == null) {
+                sticker = new Sticker(messageSticker.getPackId(), messageSticker.getPackKey());
+                account.getStickerStore().updateSticker(sticker);
+            }
+        }
         return actions;
     }
 
@@ -1647,7 +1661,7 @@ public class Manager implements Closeable {
                     if (rm.isBlockedListRequest()) {
                         actions.add(SendSyncBlockedListAction.create());
                     }
-                    // TODO Handle rm.isConfigurationRequest();
+                    // TODO Handle rm.isConfigurationRequest(); rm.isKeysRequest();
                 }
                 if (syncMessage.getGroups().isPresent()) {
                     File tmpFile = null;
@@ -1772,6 +1786,23 @@ public class Manager implements Closeable {
                 if (syncMessage.getVerified().isPresent()) {
                     final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
                     account.getSignalProtocolStore().setIdentityTrustLevel(resolveSignalServiceAddress(verifiedMessage.getDestination()), verifiedMessage.getIdentityKey(), TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
+                }
+                if (syncMessage.getStickerPackOperations().isPresent()) {
+                    final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
+                    for (StickerPackOperationMessage m : stickerPackOperationMessages) {
+                        if (!m.getPackId().isPresent()) {
+                            continue;
+                        }
+                        Sticker sticker = account.getStickerStore().getSticker(m.getPackId().get());
+                        if (sticker == null) {
+                            if (!m.getPackKey().isPresent()) {
+                                continue;
+                            }
+                            sticker = new Sticker(m.getPackId().get(), m.getPackKey().get());
+                        }
+                        sticker.setInstalled(!m.getType().isPresent() || m.getType().get() == StickerPackOperationMessage.Type.INSTALL);
+                        account.getStickerStore().updateSticker(sticker);
+                    }
                 }
                 if (syncMessage.getConfiguration().isPresent()) {
                     // TODO
