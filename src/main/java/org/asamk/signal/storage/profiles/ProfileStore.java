@@ -20,7 +20,6 @@ import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,11 +41,34 @@ public class ProfileStore {
         return null;
     }
 
+    public ProfileKey getProfileKey(SignalServiceAddress serviceAddress) {
+        for (SignalProfileEntry entry : profiles) {
+            if (entry.getServiceAddress().matches(serviceAddress)) {
+                return entry.getProfileKey();
+            }
+        }
+        return null;
+    }
+
     public void updateProfile(SignalServiceAddress serviceAddress, ProfileKey profileKey, long now, SignalProfile profile) {
         SignalProfileEntry newEntry = new SignalProfileEntry(serviceAddress, profileKey, now, profile);
         for (int i = 0; i < profiles.size(); i++) {
             if (profiles.get(i).getServiceAddress().matches(serviceAddress)) {
                 profiles.set(i, newEntry);
+                return;
+            }
+        }
+
+        profiles.add(newEntry);
+    }
+
+    public void storeProfileKey(SignalServiceAddress serviceAddress, ProfileKey profileKey) {
+        SignalProfileEntry newEntry = new SignalProfileEntry(serviceAddress, profileKey, 0, null);
+        for (int i = 0; i < profiles.size(); i++) {
+            if (profiles.get(i).getServiceAddress().matches(serviceAddress)) {
+                if (!profiles.get(i).getProfileKey().equals(profileKey)) {
+                    profiles.set(i, newEntry);
+                }
                 return;
             }
         }

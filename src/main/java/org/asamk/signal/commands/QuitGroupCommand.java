@@ -8,16 +8,18 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotAGroupMemberException;
 import org.asamk.signal.util.GroupIdFormatException;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
+import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.api.messages.SendMessageResult;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleEncapsulatedExceptions;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
 import static org.asamk.signal.util.ErrorUtils.handleIOException;
 import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
+import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class QuitGroupCommand implements LocalCommand {
 
@@ -36,13 +38,10 @@ public class QuitGroupCommand implements LocalCommand {
         }
 
         try {
-            m.sendQuitGroupMessage(Util.decodeGroupId(ns.getString("group")));
-            return 0;
+            final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(Util.decodeGroupId(ns.getString("group")));
+            return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);
-            return 3;
-        } catch (EncapsulatedExceptions e) {
-            handleEncapsulatedExceptions(e);
             return 3;
         } catch (AssertionError e) {
             handleAssertionError(e);

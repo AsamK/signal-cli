@@ -5,13 +5,14 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.List;
+
 public class JsonMessageEnvelope {
 
     String source;
     int sourceDevice;
     String relay;
     long timestamp;
-    boolean isReceipt;
     JsonDataMessage dataMessage;
     JsonSyncMessage syncMessage;
     JsonCallMessage callMessage;
@@ -25,7 +26,9 @@ public class JsonMessageEnvelope {
         }
         this.sourceDevice = envelope.getSourceDevice();
         this.timestamp = envelope.getTimestamp();
-        this.isReceipt = envelope.isReceipt();
+        if (envelope.isReceipt()) {
+            this.receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
+        }
         if (content != null) {
             if (envelope.isUnidentifiedSender()) {
                 this.source = content.getSender().getLegacyIdentifier();
@@ -55,7 +58,7 @@ public class JsonMessageEnvelope {
     public JsonMessageEnvelope(Signal.ReceiptReceived receiptReceived) {
         source = receiptReceived.getSender();
         timestamp = receiptReceived.getTimestamp();
-        isReceipt = true;
+        receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
     }
 
     public JsonMessageEnvelope(Signal.SyncMessageReceived messageReceived) {

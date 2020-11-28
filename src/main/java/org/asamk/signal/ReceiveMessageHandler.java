@@ -11,6 +11,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
@@ -22,6 +24,8 @@ import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMess
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.MessageRequestResponseMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
@@ -170,6 +174,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         if (configurationMessage.getReadReceipts().isPresent()) {
                             System.out.println(" - Read receipts: " + (configurationMessage.getReadReceipts().get() ? "enabled" : "disabled"));
                         }
+                        if (configurationMessage.getLinkPreviews().isPresent()) {
+                            System.out.println(" - Link previews: " + (configurationMessage.getLinkPreviews().get() ? "enabled" : "disabled"));
+                        }
+                        if (configurationMessage.getTypingIndicators().isPresent()) {
+                            System.out.println(" - Typing indicators: " + (configurationMessage.getTypingIndicators().get() ? "enabled" : "disabled"));
+                        }
+                        if (configurationMessage.getUnidentifiedDeliveryIndicators().isPresent()) {
+                            System.out.println(" - Unidentified Delivery Indicators: " + (configurationMessage.getUnidentifiedDeliveryIndicators().get() ? "enabled" : "disabled"));
+                        }
                     }
                     if (syncMessage.getFetchType().isPresent()) {
                         final SignalServiceSyncMessage.FetchType fetchType = syncMessage.getFetchType().get();
@@ -192,6 +205,26 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                             if (m.getPackKey().isPresent()) {
                                 System.out.println("   packKey: " + Base64.encodeBytes(m.getPackKey().get()));
                             }
+                        }
+                    }
+                    if (syncMessage.getMessageRequestResponse().isPresent()) {
+                        final MessageRequestResponseMessage requestResponseMessage = syncMessage.getMessageRequestResponse().get();
+                        System.out.println("Received message request response:");
+                        System.out.println("  Type: " + requestResponseMessage.getType());
+                        if (requestResponseMessage.getGroupId().isPresent()) {
+                            System.out.println("  Group id: " + Base64.encodeBytes(requestResponseMessage.getGroupId().get()));
+                        }
+                        if (requestResponseMessage.getPerson().isPresent()) {
+                            System.out.println("  Person: " + requestResponseMessage.getPerson().get().getLegacyIdentifier());
+                        }
+                    }
+                    if (syncMessage.getKeys().isPresent()) {
+                        final KeysMessage keysMessage = syncMessage.getKeys().get();
+                        System.out.println("Received sync message with keys:");
+                        if (keysMessage.getStorageService().isPresent()) {
+                            System.out.println("  With storage key length: " + keysMessage.getStorageService().get().serialize().length);
+                        } else {
+                            System.out.println("  With empty storage key");
                         }
                     }
                 }
@@ -242,11 +275,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println(" - Action: " + typingMessage.getAction());
                     System.out.println(" - Timestamp: " + DateUtils.formatTimestamp(typingMessage.getTimestamp()));
                     if (typingMessage.getGroupId().isPresent()) {
+                        System.out.println(" - Group Info:");
+                        System.out.println("   Id: " + Base64.encodeBytes(typingMessage.getGroupId().get()));
                         GroupInfo group = m.getGroup(typingMessage.getGroupId().get());
                         if (group != null) {
-                            System.out.println("  Name: " + group.name);
+                            System.out.println("   Name: " + group.getTitle());
                         } else {
-                            System.out.println("  Name: <Unknown group>");
+                            System.out.println("   Name: <Unknown group>");
                         }
                     }
                 }
@@ -259,38 +294,57 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void handleSignalServiceDataMessage(SignalServiceDataMessage message) {
         System.out.println("Message timestamp: " + DateUtils.formatTimestamp(message.getTimestamp()));
+        if (message.isViewOnce()) {
+            System.out.println("=VIEW ONCE=");
+        }
 
         if (message.getBody().isPresent()) {
             System.out.println("Body: " + message.getBody().get());
         }
-        if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
-            SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
+        if (message.getGroupContext().isPresent()) {
             System.out.println("Group info:");
-            System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
-            if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {
-                System.out.println("  Name: " + groupInfo.getName().get());
-            } else {
-                GroupInfo group = m.getGroup(groupInfo.getGroupId());
+            final SignalServiceGroupContext groupContext = message.getGroupContext().get();
+            if (groupContext.getGroupV1().isPresent()) {
+                SignalServiceGroup groupInfo = groupContext.getGroupV1().get();
+                System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
+                if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {
+                    System.out.println("  Name: " + groupInfo.getName().get());
+                } else {
+                    GroupInfo group = m.getGroup(groupInfo.getGroupId());
+                    if (group != null) {
+                        System.out.println("  Name: " + group.getTitle());
+                    } else {
+                        System.out.println("  Name: <Unknown group>");
+                    }
+                }
+                System.out.println("  Type: " + groupInfo.getType());
+                if (groupInfo.getMembers().isPresent()) {
+                    for (SignalServiceAddress member : groupInfo.getMembers().get()) {
+                        System.out.println("  Member: " + member.getLegacyIdentifier());
+                    }
+                }
+                if (groupInfo.getAvatar().isPresent()) {
+                    System.out.println("  Avatar:");
+                    printAttachment(groupInfo.getAvatar().get());
+                }
+            } else if (groupContext.getGroupV2().isPresent()) {
+                final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
+                byte[] groupId = m.getGroupId(groupInfo.getMasterKey());
+                System.out.println("  Id: " + Base64.encodeBytes(groupId));
+                GroupInfo group = m.getGroup(groupId);
                 if (group != null) {
-                    System.out.println("  Name: " + group.name);
+                    System.out.println("  Name: " + group.getTitle());
                 } else {
                     System.out.println("  Name: <Unknown group>");
                 }
-            }
-            System.out.println("  Type: " + groupInfo.getType());
-            if (groupInfo.getMembers().isPresent()) {
-                for (SignalServiceAddress member : groupInfo.getMembers().get()) {
-                    System.out.println("  Member: " + member.getLegacyIdentifier());
-                }
-            }
-            if (groupInfo.getAvatar().isPresent()) {
-                System.out.println("  Avatar:");
-                printAttachment(groupInfo.getAvatar().get());
+                System.out.println("  Revision: " + groupInfo.getRevision());
+                System.out.println("  Master key length: " + groupInfo.getMasterKey().serialize().length);
+                System.out.println("  Has signed group change: " + groupInfo.hasSignedGroupChange());
             }
         }
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
-            System.out.println("Previes:");
+            System.out.println("Previews:");
             for (SignalServiceDataMessage.Preview preview : previews) {
                 System.out.println(" - Title: " + preview.getTitle());
                 System.out.println(" - Url: " + preview.getUrl());
@@ -332,7 +386,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + reaction.getTargetAuthor().getLegacyIdentifier()); // todo resolve
+            System.out.println(" - Target author: " + m.resolveSignalServiceAddress(reaction.getTargetAuthor()).getLegacyIdentifier());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
@@ -352,6 +406,18 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         printAttachment(attachment.getThumbnail());
                     }
                 }
+            }
+        }
+
+        if (message.getRemoteDelete().isPresent()) {
+            final SignalServiceDataMessage.RemoteDelete remoteDelete = message.getRemoteDelete().get();
+            System.out.println("Remote delete message: timestamp = " + remoteDelete.getTargetSentTimestamp());
+        }
+        if (message.getMentions().isPresent()) {
+            final List<SignalServiceDataMessage.Mention> mentions = message.getMentions().get();
+            System.out.println("Mentions: ");
+            for (SignalServiceDataMessage.Mention mention : mentions) {
+                System.out.println("- " + mention.getUuid() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
             }
         }
 

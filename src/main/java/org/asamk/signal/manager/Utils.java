@@ -27,11 +27,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -107,31 +107,16 @@ class Utils {
         String[] params = query.split("&");
         Map<String, String> map = new HashMap<>();
         for (String param : params) {
-            String name = null;
             final String[] paramParts = param.split("=");
-            try {
-                name = URLDecoder.decode(paramParts[0], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
-            String value = null;
-            try {
-                value = URLDecoder.decode(paramParts[1], "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                // Impossible
-            }
+            String name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
+            String value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
             map.put(name, value);
         }
         return map;
     }
 
     static String createDeviceLinkUri(DeviceLinkInfo info) {
-        try {
-            return "tsdevice:/?uuid=" + URLEncoder.encode(info.deviceIdentifier, "utf-8") + "&pub_key=" + URLEncoder.encode(Base64.encodeBytesWithoutPadding(info.deviceKey.serialize()), "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            // Shouldn't happen
-            return null;
-        }
+        return "tsdevice:/?uuid=" + URLEncoder.encode(info.deviceIdentifier, StandardCharsets.UTF_8) + "&pub_key=" + URLEncoder.encode(Base64.encodeBytesWithoutPadding(info.deviceKey.serialize()), StandardCharsets.UTF_8);
     }
 
     static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws IOException, InvalidKeyException {

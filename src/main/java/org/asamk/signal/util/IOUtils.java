@@ -48,6 +48,10 @@ public class IOUtils {
 
     public static void createPrivateDirectories(String directoryPath) throws IOException {
         final File file = new File(directoryPath);
+        createPrivateDirectories(file);
+    }
+
+    public static void createPrivateDirectories(File file) throws IOException {
         if (file.exists()) {
             return;
         }
