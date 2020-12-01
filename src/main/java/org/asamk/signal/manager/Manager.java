@@ -250,13 +250,15 @@ public class Manager implements Closeable {
         Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
 
         m.migrateLegacyConfigs();
-        m.updateAccountAttributes();
+        if (m.isRegistered()) {
+            m.updateAccountAttributes();
+        }
 
         return m;
     }
 
     private void migrateLegacyConfigs() {
-        if (account.getProfileKey() == null) {
+        if (account.getProfileKey() == null && isRegistered()) {
             // Old config file, creating new profile key
             account.setProfileKey(KeyUtils.createProfileKey());
             account.save();
