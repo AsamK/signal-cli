@@ -24,6 +24,16 @@ public abstract class GroupInfo {
     public abstract Set<SignalServiceAddress> getMembers();
 
     @JsonIgnore
+    public Set<SignalServiceAddress> getPendingMembers() {
+        return Set.of();
+    }
+
+    @JsonIgnore
+    public Set<SignalServiceAddress> getRequestingMembers() {
+        return Set.of();
+    }
+
+    @JsonIgnore
     public abstract boolean isBlocked();
 
     @JsonIgnore

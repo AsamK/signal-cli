@@ -250,9 +250,6 @@ public class Manager implements Closeable {
         Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent);
 
         m.migrateLegacyConfigs();
-        if (m.isRegistered()) {
-            m.updateAccountAttributes();
-        }
 
         return m;
     }
@@ -290,6 +287,7 @@ public class Manager implements Closeable {
                 account.setUuid(accountManager.getOwnUuid());
                 account.save();
             }
+            updateAccountAttributes();
         }
     }
 
