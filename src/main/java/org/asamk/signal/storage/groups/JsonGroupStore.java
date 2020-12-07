@@ -48,7 +48,7 @@ public class JsonGroupStore {
 
     public void updateGroup(GroupInfo group) {
         groups.put(Base64.encodeBytes(group.groupId), group);
-        if (group instanceof GroupInfoV2) {
+        if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() != null) {
             try {
                 IOUtils.createPrivateDirectories(groupCachePath);
                 try (FileOutputStream stream = new FileOutputStream(getGroupFile(group.groupId))) {
@@ -103,7 +103,11 @@ public class JsonGroupStore {
     private static class GroupsSerializer extends JsonSerializer<Map<String, GroupInfo>> {
 
         @Override
-        public void serialize(final Map<String, GroupInfo> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
+        public void serialize(
+                final Map<String, GroupInfo> value,
+                final JsonGenerator jgen,
+                final SerializerProvider provider
+        ) throws IOException {
             final Collection<GroupInfo> groups = value.values();
             jgen.writeStartArray(groups.size());
             for (GroupInfo group : groups) {
@@ -127,7 +131,10 @@ public class JsonGroupStore {
     private static class GroupsDeserializer extends JsonDeserializer<Map<String, GroupInfo>> {
 
         @Override
-        public Map<String, GroupInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public Map<String, GroupInfo> deserialize(
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
+        ) throws IOException {
             Map<String, GroupInfo> groups = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {

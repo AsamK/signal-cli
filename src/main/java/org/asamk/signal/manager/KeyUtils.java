@@ -30,10 +30,6 @@ class KeyUtils {
         return getSecretBytes(16);
     }
 
-    static byte[] createUnrestrictedUnidentifiedAccess() {
-        return getSecretBytes(16);
-    }
-
     static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
     }
