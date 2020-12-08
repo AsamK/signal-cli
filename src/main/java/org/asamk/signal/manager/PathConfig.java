@@ -7,11 +7,7 @@ public class PathConfig {
     private final String avatarsPath;
 
     public static PathConfig createDefault(final String settingsPath) {
-        return new PathConfig(
-                settingsPath + "/data",
-                settingsPath + "/attachments",
-                settingsPath + "/avatars"
-        );
+        return new PathConfig(settingsPath + "/data", settingsPath + "/attachments", settingsPath + "/avatars");
     }
 
     private PathConfig(final String dataPath, final String attachmentsPath, final String avatarsPath) {

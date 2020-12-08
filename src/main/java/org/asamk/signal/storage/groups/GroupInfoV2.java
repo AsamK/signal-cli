@@ -46,7 +46,8 @@ public class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Collections.emptySet();
         }
-        return group.getMembersList().stream()
+        return group.getMembersList()
+                .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
                 .collect(Collectors.toSet());
     }
@@ -56,7 +57,8 @@ public class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Collections.emptySet();
         }
-        return group.getPendingMembersList().stream()
+        return group.getPendingMembersList()
+                .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
                 .collect(Collectors.toSet());
     }
@@ -66,7 +68,8 @@ public class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Collections.emptySet();
         }
-        return group.getRequestingMembersList().stream()
+        return group.getRequestingMembersList()
+                .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
                 .collect(Collectors.toSet());
     }

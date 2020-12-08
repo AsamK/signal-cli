@@ -13,12 +13,8 @@ public class UnblockCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("contact")
-                .help("Contact number")
-                .nargs("*");
-        subparser.addArgument("-g", "--group")
-                .help("Group ID")
-                .nargs("*");
+        subparser.addArgument("contact").help("Contact number").nargs("*");
+        subparser.addArgument("-g", "--group").help("Group ID").nargs("*");
         subparser.help("Unblock the given contacts or groups (messages will be received again)");
     }
 

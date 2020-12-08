@@ -61,26 +61,27 @@ public class ServiceConfig {
     }
 
     public static SignalServiceConfiguration createDefaultServiceConfiguration(String userAgent) {
-        final Interceptor userAgentInterceptor = chain ->
-                chain.proceed(chain.request().newBuilder()
-                        .header("User-Agent", userAgent)
-                        .build());
+        final Interceptor userAgentInterceptor = chain -> chain.proceed(chain.request()
+                .newBuilder()
+                .header("User-Agent", userAgent)
+                .build());
 
         final List<Interceptor> interceptors = Collections.singletonList(userAgentInterceptor);
 
-        return new SignalServiceConfiguration(
-                new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
-                makeSignalCdnUrlMapFor(new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)}, new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
+        return new SignalServiceConfiguration(new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
+                makeSignalCdnUrlMapFor(new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
+                        new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
                 new SignalContactDiscoveryUrl[0],
                 new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
                 interceptors,
                 dns,
-                zkGroupServerPublicParams
-        );
+                zkGroupServerPublicParams);
     }
 
-    private static Map<Integer, SignalCdnUrl[]> makeSignalCdnUrlMapFor(SignalCdnUrl[] cdn0Urls, SignalCdnUrl[] cdn2Urls) {
+    private static Map<Integer, SignalCdnUrl[]> makeSignalCdnUrlMapFor(
+            SignalCdnUrl[] cdn0Urls, SignalCdnUrl[] cdn2Urls
+    ) {
         return Map.of(0, cdn0Urls, 2, cdn2Urls);
     }
 

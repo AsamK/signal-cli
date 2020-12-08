@@ -52,7 +52,18 @@ public class GroupInfoV1 extends GroupInfo {
         return name;
     }
 
-    public GroupInfoV1(@JsonProperty("groupId") byte[] groupId, @JsonProperty("name") String name, @JsonProperty("members") Collection<SignalServiceAddress> members, @JsonProperty("avatarId") long _ignored_avatarId, @JsonProperty("color") String color, @JsonProperty("blocked") boolean blocked, @JsonProperty("inboxPosition") Integer inboxPosition, @JsonProperty("archived") boolean archived, @JsonProperty("messageExpirationTime") int messageExpirationTime, @JsonProperty("active") boolean _ignored_active) {
+    public GroupInfoV1(
+            @JsonProperty("groupId") byte[] groupId,
+            @JsonProperty("name") String name,
+            @JsonProperty("members") Collection<SignalServiceAddress> members,
+            @JsonProperty("avatarId") long _ignored_avatarId,
+            @JsonProperty("color") String color,
+            @JsonProperty("blocked") boolean blocked,
+            @JsonProperty("inboxPosition") Integer inboxPosition,
+            @JsonProperty("archived") boolean archived,
+            @JsonProperty("messageExpirationTime") int messageExpirationTime,
+            @JsonProperty("active") boolean _ignored_active
+    ) {
         super(groupId);
         this.name = name;
         this.members.addAll(members);
@@ -123,7 +134,9 @@ public class GroupInfoV1 extends GroupInfo {
     private static class MembersSerializer extends JsonSerializer<Set<SignalServiceAddress>> {
 
         @Override
-        public void serialize(final Set<SignalServiceAddress> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
+        public void serialize(
+                final Set<SignalServiceAddress> value, final JsonGenerator jgen, final SerializerProvider provider
+        ) throws IOException {
             jgen.writeStartArray(value.size());
             for (SignalServiceAddress address : value) {
                 if (address.getUuid().isPresent()) {
@@ -139,7 +152,9 @@ public class GroupInfoV1 extends GroupInfo {
     private static class MembersDeserializer extends JsonDeserializer<Set<SignalServiceAddress>> {
 
         @Override
-        public Set<SignalServiceAddress> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public Set<SignalServiceAddress> deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             Set<SignalServiceAddress> addresses = new HashSet<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {

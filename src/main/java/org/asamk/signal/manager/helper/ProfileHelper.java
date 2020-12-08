@@ -46,8 +46,7 @@ public final class ProfileHelper {
     }
 
     public ProfileAndCredential retrieveProfileSync(
-            SignalServiceAddress recipient,
-            SignalServiceProfile.RequestType requestType
+            SignalServiceAddress recipient, SignalServiceProfile.RequestType requestType
     ) throws IOException {
         try {
             return retrieveProfile(recipient, requestType).get(10, TimeUnit.SECONDS);
@@ -65,28 +64,31 @@ public final class ProfileHelper {
     }
 
     public ListenableFuture<ProfileAndCredential> retrieveProfile(
-            SignalServiceAddress address,
-            SignalServiceProfile.RequestType requestType
+            SignalServiceAddress address, SignalServiceProfile.RequestType requestType
     ) {
         Optional<UnidentifiedAccess> unidentifiedAccess = getUnidentifiedAccess(address);
         Optional<ProfileKey> profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(address));
 
         if (unidentifiedAccess.isPresent()) {
-            return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address, profileKey, unidentifiedAccess, requestType),
+            return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address,
+                    profileKey,
+                    unidentifiedAccess,
+                    requestType),
                     () -> getSocketRetrievalFuture(address, profileKey, unidentifiedAccess, requestType),
                     () -> getPipeRetrievalFuture(address, profileKey, Optional.absent(), requestType),
                     () -> getSocketRetrievalFuture(address, profileKey, Optional.absent(), requestType)),
                     e -> !(e instanceof NotFoundException));
         } else {
-            return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address, profileKey, Optional.absent(), requestType),
-                    () -> getSocketRetrievalFuture(address, profileKey, Optional.absent(), requestType)),
+            return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address,
+                    profileKey,
+                    Optional.absent(),
+                    requestType), () -> getSocketRetrievalFuture(address, profileKey, Optional.absent(), requestType)),
                     e -> !(e instanceof NotFoundException));
         }
     }
 
     public String decryptName(
-            ProfileKey profileKey,
-            String encryptedName
+            ProfileKey profileKey, String encryptedName
     ) throws InvalidCiphertextException, IOException {
         if (encryptedName == null) {
             return null;

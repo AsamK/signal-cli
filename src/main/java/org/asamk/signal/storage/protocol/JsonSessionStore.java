@@ -126,24 +126,22 @@ class JsonSessionStore implements SessionStore {
     public static class JsonSessionStoreDeserializer extends JsonDeserializer<JsonSessionStore> {
 
         @Override
-        public JsonSessionStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public JsonSessionStore deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             JsonSessionStore sessionStore = new JsonSessionStore();
 
             if (node.isArray()) {
                 for (JsonNode session : node) {
-                    String sessionName = session.hasNonNull("name")
-                            ? session.get("name").asText()
-                            : null;
+                    String sessionName = session.hasNonNull("name") ? session.get("name").asText() : null;
                     if (UuidUtil.isUuid(sessionName)) {
                         // Ignore sessions that were incorrectly created with UUIDs as name
                         continue;
                     }
 
-                    UUID uuid = session.hasNonNull("uuid")
-                            ? UuidUtil.parseOrNull(session.get("uuid").asText())
-                            : null;
+                    UUID uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
                     final SignalServiceAddress serviceAddress = uuid == null
                             ? Util.getSignalServiceAddressFromIdentifier(sessionName)
                             : new SignalServiceAddress(uuid, sessionName);
@@ -165,7 +163,9 @@ class JsonSessionStore implements SessionStore {
     public static class JsonSessionStoreSerializer extends JsonSerializer<JsonSessionStore> {
 
         @Override
-        public void serialize(JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(
+                JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider
+        ) throws IOException {
             json.writeStartArray();
             for (SessionInfo sessionInfo : jsonSessionStore.sessions) {
                 json.writeStartObject();

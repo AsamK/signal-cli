@@ -104,9 +104,7 @@ public class JsonGroupStore {
 
         @Override
         public void serialize(
-                final Map<String, GroupInfo> value,
-                final JsonGenerator jgen,
-                final SerializerProvider provider
+                final Map<String, GroupInfo> value, final JsonGenerator jgen, final SerializerProvider provider
         ) throws IOException {
             final Collection<GroupInfo> groups = value.values();
             jgen.writeStartArray(groups.size());
@@ -132,8 +130,7 @@ public class JsonGroupStore {
 
         @Override
         public Map<String, GroupInfo> deserialize(
-                JsonParser jsonParser,
-                DeserializationContext deserializationContext
+                JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
             Map<String, GroupInfo> groups = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);

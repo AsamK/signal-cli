@@ -29,11 +29,8 @@ public class SendReactionCommand implements LocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send reaction to a previously received or sent message.");
-        subparser.addArgument("-g", "--group")
-                .help("Specify the recipient group ID.");
-        subparser.addArgument("recipient")
-                .help("Specify the recipients' phone number.")
-                .nargs("*");
+        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-e", "--emoji")
                 .required(true)
                 .help("Specify the emoji, should be a single unicode grapheme cluster.");
@@ -44,9 +41,7 @@ public class SendReactionCommand implements LocalCommand {
                 .required(true)
                 .type(long.class)
                 .help("Specify the timestamp of the message to which to react.");
-        subparser.addArgument("-r", "--remove")
-                .help("Remove a reaction.")
-                .action(Arguments.storeTrue());
+        subparser.addArgument("-r", "--remove").help("Remove a reaction.").action(Arguments.storeTrue());
     }
 
     @Override
@@ -73,7 +68,11 @@ public class SendReactionCommand implements LocalCommand {
                 byte[] groupId = Util.decodeGroupId(ns.getString("group"));
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
-                results = m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, ns.getList("recipient"));
+                results = m.sendMessageReaction(emoji,
+                        isRemove,
+                        targetAuthor,
+                        targetTimestamp,
+                        ns.getList("recipient"));
             }
             handleTimestampAndSendMessageResults(results.first(), results.second());
             return 0;

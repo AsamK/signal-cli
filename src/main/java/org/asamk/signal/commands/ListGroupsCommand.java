@@ -35,18 +35,27 @@ public class ListGroupsCommand implements LocalCommand {
                     .map(SignalServiceAddress::getLegacyIdentifier)
                     .collect(Collectors.toSet());
 
-            System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s",
-                    Base64.encodeBytes(group.groupId), group.getTitle(), group.isMember(m.getSelfAddress()), group.isBlocked(), members, pendingMembers, requestingMembers));
+            System.out.println(String.format(
+                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s",
+                    Base64.encodeBytes(group.groupId),
+                    group.getTitle(),
+                    group.isMember(m.getSelfAddress()),
+                    group.isBlocked(),
+                    members,
+                    pendingMembers,
+                    requestingMembers));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId), group.getTitle(), group.isMember(m.getSelfAddress()), group.isBlocked()));
+                    Base64.encodeBytes(group.groupId),
+                    group.getTitle(),
+                    group.isMember(m.getSelfAddress()),
+                    group.isBlocked()));
         }
     }
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--detailed").action(Arguments.storeTrue())
-                .help("List members of each group");
+        subparser.addArgument("-d", "--detailed").action(Arguments.storeTrue()).help("List members of each group");
         subparser.help("List group name and ids");
     }
 

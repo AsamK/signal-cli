@@ -81,7 +81,21 @@ class Utils {
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
         final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream, mime, attachmentSize, Optional.of(attachmentFile.getName()), false, false, preview, 0, 0, uploadTimestamp, caption, blurHash, null, null, resumableUploadSpec);
+        return new SignalServiceAttachmentStream(attachmentStream,
+                mime,
+                attachmentSize,
+                Optional.of(attachmentFile.getName()),
+                false,
+                false,
+                preview,
+                0,
+                0,
+                uploadTimestamp,
+                caption,
+                blurHash,
+                null,
+                null,
+                resumableUploadSpec);
     }
 
     static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
@@ -96,7 +110,8 @@ class Utils {
 
     static CertificateValidator getCertificateValidator() {
         try {
-            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(ServiceConfig.UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+            ECPublicKey unidentifiedSenderTrustRoot = Curve.decodePoint(Base64.decode(ServiceConfig.UNIDENTIFIED_SENDER_TRUST_ROOT),
+                    0);
             return new CertificateValidator(unidentifiedSenderTrustRoot);
         } catch (InvalidKeyException | IOException e) {
             throw new AssertionError(e);
@@ -116,7 +131,11 @@ class Utils {
     }
 
     static String createDeviceLinkUri(DeviceLinkInfo info) {
-        return "tsdevice:/?uuid=" + URLEncoder.encode(info.deviceIdentifier, StandardCharsets.UTF_8) + "&pub_key=" + URLEncoder.encode(Base64.encodeBytesWithoutPadding(info.deviceKey.serialize()), StandardCharsets.UTF_8);
+        return "tsdevice:/?uuid="
+                + URLEncoder.encode(info.deviceIdentifier, StandardCharsets.UTF_8)
+                + "&pub_key="
+                + URLEncoder.encode(Base64.encodeBytesWithoutPadding(info.deviceKey.serialize()),
+                StandardCharsets.UTF_8);
     }
 
     static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws IOException, InvalidKeyException {
@@ -180,7 +199,15 @@ class Utils {
             Optional<SignalServiceAddress> addressOptional = sourceUuid == null && source.isEmpty()
                     ? Optional.absent()
                     : Optional.of(new SignalServiceAddress(sourceUuid, source));
-            return new SignalServiceEnvelope(type, addressOptional, sourceDevice, timestamp, legacyMessage, content, serverReceivedTimestamp, serverDeliveredTimestamp, uuid);
+            return new SignalServiceEnvelope(type,
+                    addressOptional,
+                    sourceDevice,
+                    timestamp,
+                    legacyMessage,
+                    content,
+                    serverReceivedTimestamp,
+                    serverDeliveredTimestamp,
+                    uuid);
         }
     }
 
@@ -230,13 +257,18 @@ class Utils {
         return outputFile;
     }
 
-    static String computeSafetyNumber(SignalServiceAddress ownAddress, IdentityKey ownIdentityKey, SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+    static String computeSafetyNumber(
+            SignalServiceAddress ownAddress,
+            IdentityKey ownIdentityKey,
+            SignalServiceAddress theirAddress,
+            IdentityKey theirIdentityKey
+    ) {
         int version;
         byte[] ownId;
         byte[] theirId;
 
-        if (ServiceConfig.capabilities.isUuid()
-                && ownAddress.getUuid().isPresent() && theirAddress.getUuid().isPresent()) {
+        if (ServiceConfig.capabilities.isUuid() && ownAddress.getUuid().isPresent() && theirAddress.getUuid()
+                .isPresent()) {
             // Version 2: UUID user
             version = 2;
             ownId = UuidUtil.toByteArray(ownAddress.getUuid().get());
@@ -251,7 +283,11 @@ class Utils {
             theirId = theirAddress.getNumber().get().getBytes();
         }
 
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(version, ownId, ownIdentityKey, theirId, theirIdentityKey);
+        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(version,
+                ownId,
+                ownIdentityKey,
+                theirId,
+                theirIdentityKey);
         return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 

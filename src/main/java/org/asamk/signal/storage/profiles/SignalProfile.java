@@ -26,7 +26,14 @@ public class SignalProfile {
     @JsonProperty
     private final Capabilities capabilities;
 
-    public SignalProfile(final String identityKey, final String name, final File avatarFile, final String unidentifiedAccess, final boolean unrestrictedUnidentifiedAccess, final SignalServiceProfile.Capabilities capabilities) {
+    public SignalProfile(
+            final String identityKey,
+            final String name,
+            final File avatarFile,
+            final String unidentifiedAccess,
+            final boolean unrestrictedUnidentifiedAccess,
+            final SignalServiceProfile.Capabilities capabilities
+    ) {
         this.identityKey = identityKey;
         this.name = name;
         this.avatarFile = avatarFile;
@@ -38,7 +45,13 @@ public class SignalProfile {
         this.capabilities.gv2 = capabilities.isGv2();
     }
 
-    public SignalProfile(@JsonProperty("identityKey") final String identityKey, @JsonProperty("name") final String name, @JsonProperty("unidentifiedAccess") final String unidentifiedAccess, @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess, @JsonProperty("capabilities") final Capabilities capabilities) {
+    public SignalProfile(
+            @JsonProperty("identityKey") final String identityKey,
+            @JsonProperty("name") final String name,
+            @JsonProperty("unidentifiedAccess") final String unidentifiedAccess,
+            @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess,
+            @JsonProperty("capabilities") final Capabilities capabilities
+    ) {
         this.identityKey = identityKey;
         this.name = name;
         this.avatarFile = null;
@@ -73,14 +86,23 @@ public class SignalProfile {
 
     @Override
     public String toString() {
-        return "SignalProfile{" +
-                "identityKey='" + identityKey + '\'' +
-                ", name='" + name + '\'' +
-                ", avatarFile=" + avatarFile +
-                ", unidentifiedAccess='" + unidentifiedAccess + '\'' +
-                ", unrestrictedUnidentifiedAccess=" + unrestrictedUnidentifiedAccess +
-                ", capabilities=" + capabilities +
-                '}';
+        return "SignalProfile{"
+                + "identityKey='"
+                + identityKey
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", avatarFile="
+                + avatarFile
+                + ", unidentifiedAccess='"
+                + unidentifiedAccess
+                + '\''
+                + ", unrestrictedUnidentifiedAccess="
+                + unrestrictedUnidentifiedAccess
+                + ", capabilities="
+                + capabilities
+                + '}';
     }
 
     public static class Capabilities {

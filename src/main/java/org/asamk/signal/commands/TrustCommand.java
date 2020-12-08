@@ -16,9 +16,7 @@ public class TrustCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("number")
-                .help("Specify the phone number, for which to set the trust.")
-                .required(true);
+        subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
         MutuallyExclusiveGroup mutTrust = subparser.addMutuallyExclusiveGroup();
         mutTrust.addArgument("-a", "--trust-all-known-keys")
                 .help("Trust all known keys of this user, only use this for testing.")
@@ -49,7 +47,8 @@ public class TrustCommand implements LocalCommand {
                     try {
                         fingerprintBytes = Hex.toByteArray(safetyNumber.toLowerCase(Locale.ROOT));
                     } catch (Exception e) {
-                        System.err.println("Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                        System.err.println(
+                                "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
                         return 1;
                     }
                     boolean res;
@@ -60,7 +59,8 @@ public class TrustCommand implements LocalCommand {
                         return 1;
                     }
                     if (!res) {
-                        System.err.println("Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                        System.err.println(
+                                "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
                         return 1;
                     }
                 } else if (safetyNumber.length() == 60) {
@@ -72,15 +72,18 @@ public class TrustCommand implements LocalCommand {
                         return 1;
                     }
                     if (!res) {
-                        System.err.println("Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                        System.err.println(
+                                "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
                         return 1;
                     }
                 } else {
-                    System.err.println("Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
+                    System.err.println(
+                            "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
                     return 1;
                 }
             } else {
-                System.err.println("You need to specify the fingerprint/safety number you have verified with -v SAFETY_NUMBER");
+                System.err.println(
+                        "You need to specify the fingerprint/safety number you have verified with -v SAFETY_NUMBER");
                 return 1;
             }
         }

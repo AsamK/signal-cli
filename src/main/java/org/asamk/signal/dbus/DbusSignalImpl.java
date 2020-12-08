@@ -45,8 +45,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     private static void checkSendMessageResults(
-            long timestamp,
-            List<SendMessageResult> results
+            long timestamp, List<SendMessageResult> results
     ) throws DBusExecutionException {
         List<String> errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {

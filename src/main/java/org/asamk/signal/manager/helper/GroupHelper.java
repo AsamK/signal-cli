@@ -1,17 +1,11 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.storage.groups.GroupInfo;
-import org.asamk.signal.storage.groups.GroupInfoV1;
-import org.asamk.signal.storage.groups.GroupInfoV2;
 import org.signal.storageservice.protos.groups.Member;
 import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Collection;
@@ -38,23 +32,6 @@ public class GroupHelper {
         this.profileProvider = profileProvider;
         this.selfAddressProvider = selfAddressProvider;
         this.groupsV2Operations = groupsV2Operations;
-    }
-
-    public static void setGroupContext(
-            final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo groupInfo
-    ) {
-        if (groupInfo instanceof GroupInfoV1) {
-            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
-                    .withId(groupInfo.groupId)
-                    .build();
-            messageBuilder.asGroupMessage(group);
-        } else {
-            final GroupInfoV2 groupInfoV2 = (GroupInfoV2) groupInfo;
-            SignalServiceGroupV2 group = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
-                    .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().getRevision())
-                    .build();
-            messageBuilder.asGroupMessage(group);
-        }
     }
 
     public GroupsV2Operations.NewGroup createGroupV2(

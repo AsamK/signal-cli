@@ -37,7 +37,9 @@ public class StickerStore {
     private static class StickersSerializer extends JsonSerializer<Map<byte[], Sticker>> {
 
         @Override
-        public void serialize(final Map<byte[], Sticker> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
+        public void serialize(
+                final Map<byte[], Sticker> value, final JsonGenerator jgen, final SerializerProvider provider
+        ) throws IOException {
             final Collection<Sticker> stickers = value.values();
             jgen.writeStartArray(stickers.size());
             for (Sticker sticker : stickers) {
@@ -54,7 +56,9 @@ public class StickerStore {
     private static class StickersDeserializer extends JsonDeserializer<Map<byte[], Sticker>> {
 
         @Override
-        public Map<byte[], Sticker> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public Map<byte[], Sticker> deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             Map<byte[], Sticker> stickers = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {

@@ -41,19 +41,13 @@ class JsonDataMessage {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        attachments = messageReceived.getAttachments()
-                .stream()
-                .map(JsonAttachment::new)
-                .collect(Collectors.toList());
+        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 
     public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        attachments = messageReceived.getAttachments()
-                .stream()
-                .map(JsonAttachment::new)
-                .collect(Collectors.toList());
+        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 }

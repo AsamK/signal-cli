@@ -24,7 +24,12 @@ public class UnidentifiedAccessHelper {
 
     private final UnidentifiedAccessSenderCertificateProvider senderCertificateProvider;
 
-    public UnidentifiedAccessHelper(final SelfProfileKeyProvider selfProfileKeyProvider, final ProfileKeyProvider profileKeyProvider, final ProfileProvider profileProvider, final UnidentifiedAccessSenderCertificateProvider senderCertificateProvider) {
+    public UnidentifiedAccessHelper(
+            final SelfProfileKeyProvider selfProfileKeyProvider,
+            final ProfileKeyProvider profileKeyProvider,
+            final ProfileProvider profileProvider,
+            final UnidentifiedAccessSenderCertificateProvider senderCertificateProvider
+    ) {
         this.selfProfileKeyProvider = selfProfileKeyProvider;
         this.profileKeyProvider = profileKeyProvider;
         this.profileProvider = profileProvider;
@@ -62,19 +67,16 @@ public class UnidentifiedAccessHelper {
         }
 
         try {
-            return Optional.of(new UnidentifiedAccessPair(
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)
-            ));
+            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(selfUnidentifiedAccessKey,
+                    selfUnidentifiedAccessCertificate),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
         } catch (InvalidCertificateException e) {
             return Optional.absent();
         }
     }
 
     public List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<SignalServiceAddress> recipients) {
-        return recipients.stream()
-                .map(this::getAccessFor)
-                .collect(Collectors.toList());
+        return recipients.stream().map(this::getAccessFor).collect(Collectors.toList());
     }
 
     public Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
@@ -82,15 +84,16 @@ public class UnidentifiedAccessHelper {
         byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
         byte[] selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
 
-        if (recipientUnidentifiedAccessKey == null || selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
+        if (recipientUnidentifiedAccessKey == null
+                || selfUnidentifiedAccessKey == null
+                || selfUnidentifiedAccessCertificate == null) {
             return Optional.absent();
         }
 
         try {
-            return Optional.of(new UnidentifiedAccessPair(
-                    new UnidentifiedAccess(recipientUnidentifiedAccessKey, selfUnidentifiedAccessCertificate),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)
-            ));
+            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
+                    selfUnidentifiedAccessCertificate),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
         } catch (InvalidCertificateException e) {
             return Optional.absent();
         }

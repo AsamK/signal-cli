@@ -42,7 +42,12 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
     public JsonSignalProtocolStore() {
     }
 
-    public JsonSignalProtocolStore(JsonPreKeyStore preKeyStore, JsonSessionStore sessionStore, JsonSignedPreKeyStore signedPreKeyStore, JsonIdentityKeyStore identityKeyStore) {
+    public JsonSignalProtocolStore(
+            JsonPreKeyStore preKeyStore,
+            JsonSessionStore sessionStore,
+            JsonSignedPreKeyStore signedPreKeyStore,
+            JsonIdentityKeyStore identityKeyStore
+    ) {
         this.preKeyStore = preKeyStore;
         this.sessionStore = sessionStore;
         this.signedPreKeyStore = signedPreKeyStore;
@@ -80,7 +85,9 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
         identityKeyStore.saveIdentity(serviceAddress, identityKey, trustLevel, null);
     }
 
-    public void setIdentityTrustLevel(SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel) {
+    public void setIdentityTrustLevel(
+            SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel
+    ) {
         identityKeyStore.setIdentityTrustLevel(serviceAddress, identityKey, trustLevel);
     }
 

@@ -704,7 +704,7 @@ public class Manager implements Closeable {
     ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
         final GroupInfo g = getGroupForSending(groupId);
 
-        GroupHelper.setGroupContext(messageBuilder, g);
+        GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTime());
 
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
