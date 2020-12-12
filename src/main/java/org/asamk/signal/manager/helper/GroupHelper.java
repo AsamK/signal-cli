@@ -1,11 +1,21 @@
 package org.asamk.signal.manager.helper;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;
+import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
+import org.signal.zkgroup.VerificationFailedException;
+import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
+import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2ChangeException;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Collection;
@@ -80,4 +90,33 @@ public class GroupHelper {
                 0);
     }
 
+    public DecryptedGroup getUpdatedDecryptedGroup(
+            DecryptedGroup group, byte[] signedGroupChange, GroupMasterKey groupMasterKey
+    ) {
+        try {
+            final DecryptedGroupChange decryptedGroupChange = getDecryptedGroupChange(signedGroupChange,
+                    groupMasterKey);
+            if (decryptedGroupChange == null) {
+                return null;
+            }
+            return DecryptedGroupUtil.apply(group, decryptedGroupChange);
+        } catch (NotAbleToApplyGroupV2ChangeException e) {
+            return null;
+        }
+    }
+
+    private DecryptedGroupChange getDecryptedGroupChange(byte[] signedGroupChange, GroupMasterKey groupMasterKey) {
+        if (signedGroupChange != null) {
+            GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(GroupSecretParams.deriveFromMasterKey(
+                    groupMasterKey));
+
+            try {
+                return groupOperations.decryptChange(GroupChange.parseFrom(signedGroupChange), true).orNull();
+            } catch (VerificationFailedException | InvalidGroupStateException | InvalidProtocolBufferException e) {
+                return null;
+            }
+        }
+
+        return null;
+    }
 }

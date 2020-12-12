@@ -1534,8 +1534,18 @@ public class Manager implements Closeable {
 
                     if (groupInfoV2.getGroup() == null
                             || groupInfoV2.getGroup().getRevision() < groupContext.getRevision()) {
-                        // TODO check if revision is only 1 behind and a signedGroupChange is available
-                        groupInfoV2.setGroup(getDecryptedGroup(groupSecretParams));
+                        DecryptedGroup group = null;
+                        if (groupContext.hasSignedGroupChange()
+                                && groupInfoV2.getGroup() != null
+                                && groupInfoV2.getGroup().getRevision() + 1 == groupContext.getRevision()) {
+                            group = groupHelper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(),
+                                    groupContext.getSignedGroupChange(),
+                                    groupMasterKey);
+                        }
+                        if (group == null) {
+                            group = getDecryptedGroup(groupSecretParams);
+                        }
+                        groupInfoV2.setGroup(group);
                         account.getGroupStore().updateGroup(groupInfoV2);
                     }
                 }
