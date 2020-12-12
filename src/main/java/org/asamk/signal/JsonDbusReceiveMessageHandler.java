@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.Signal;
+import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -117,7 +118,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
                 groupId = message.getGroupContext().get().getGroupV1().get().getGroupId();
             } else if (message.getGroupContext().get().getGroupV2().isPresent()) {
-                groupId = m.getGroupId(message.getGroupContext().get().getGroupV2().get().getMasterKey());
+                groupId = GroupUtils.getGroupId(message.getGroupContext().get().getGroupV2().get().getMasterKey());
             } else {
                 groupId = null;
             }

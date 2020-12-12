@@ -26,6 +26,9 @@ public class GroupInfoV1 extends GroupInfo {
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     @JsonProperty
+    public byte[] expectedV2Id;
+
+    @JsonProperty
     public String name;
 
     @JsonProperty
@@ -54,6 +57,7 @@ public class GroupInfoV1 extends GroupInfo {
 
     public GroupInfoV1(
             @JsonProperty("groupId") byte[] groupId,
+            @JsonProperty("expectedV2Id") byte[] expectedV2Id,
             @JsonProperty("name") String name,
             @JsonProperty("members") Collection<SignalServiceAddress> members,
             @JsonProperty("avatarId") long _ignored_avatarId,
@@ -65,6 +69,7 @@ public class GroupInfoV1 extends GroupInfo {
             @JsonProperty("active") boolean _ignored_active
     ) {
         super(groupId);
+        this.expectedV2Id = expectedV2Id;
         this.name = name;
         this.members.addAll(members);
         this.color = color;

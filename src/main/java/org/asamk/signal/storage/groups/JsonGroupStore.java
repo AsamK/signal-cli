@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.IOUtils;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
@@ -24,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -60,8 +62,38 @@ public class JsonGroupStore {
         }
     }
 
+    public void deleteGroup(byte[] groupId) {
+        groups.remove(Base64.encodeBytes(groupId));
+    }
+
     public GroupInfo getGroup(byte[] groupId) {
         final GroupInfo group = groups.get(Base64.encodeBytes(groupId));
+        if (group == null & groupId.length == 16) {
+            return getGroupByV1Id(groupId);
+        }
+        loadDecryptedGroup(group);
+        return group;
+    }
+
+    public GroupInfo getGroupByV1Id(byte[] groupIdV1) {
+        GroupInfo group = groups.get(Base64.encodeBytes(groupIdV1));
+        if (group == null) {
+            group = groups.get(Base64.encodeBytes(GroupUtils.getGroupId(GroupUtils.deriveV2MigrationMasterKey(groupIdV1))));
+        }
+        loadDecryptedGroup(group);
+        return group;
+    }
+
+    public GroupInfo getGroupByV2Id(byte[] groupIdV2) {
+        GroupInfo group = groups.get(Base64.encodeBytes(groupIdV2));
+        if (group == null) {
+            for (GroupInfo g : groups.values()) {
+                if (g instanceof GroupInfoV1 && Arrays.equals(groupIdV2, ((GroupInfoV1) g).expectedV2Id)) {
+                    group = g;
+                    break;
+                }
+            }
+        }
         loadDecryptedGroup(group);
         return group;
     }
@@ -147,7 +179,11 @@ public class JsonGroupStore {
                     }
                     g.setBlocked(n.get("blocked").asBoolean(false));
                 } else {
-                    g = jsonProcessor.treeToValue(n, GroupInfoV1.class);
+                    GroupInfoV1 gv1 = jsonProcessor.treeToValue(n, GroupInfoV1.class);
+                    if (gv1.expectedV2Id == null) {
+                        gv1.expectedV2Id = GroupUtils.getGroupId(GroupUtils.deriveV2MigrationMasterKey(gv1.groupId));
+                    }
+                    g = gv1;
                 }
                 groups.put(Base64.encodeBytes(g.groupId), g);
             }

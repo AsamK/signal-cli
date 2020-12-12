@@ -865,7 +865,7 @@ public class Manager implements Closeable {
         GroupInfoV1 g;
         GroupInfo group = getGroupForSending(groupId);
         if (!(group instanceof GroupInfoV1)) {
-            throw new RuntimeException("TODO Not implemented!");
+            throw new RuntimeException("Received an invalid group request for a v2 group!");
         }
         g = (GroupInfoV1) group;
 
@@ -1450,7 +1450,7 @@ public class Manager implements Closeable {
         if (message.getGroupContext().isPresent()) {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
                 SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                GroupInfo group = account.getGroupStore().getGroup(groupInfo.getGroupId());
+                GroupInfo group = account.getGroupStore().getGroupByV1Id(groupInfo.getGroupId());
                 if (group == null || group instanceof GroupInfoV1) {
                     GroupInfoV1 groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
@@ -1505,7 +1505,7 @@ public class Manager implements Closeable {
                             break;
                     }
                 } else {
-                    System.err.println("Received a group v1 message for a v2 group: " + group.getTitle());
+                    // Received a group v1 message for a v2 group
                 }
             }
             if (message.getGroupContext().get().getGroupV2().isPresent()) {
@@ -1515,9 +1515,18 @@ public class Manager implements Closeable {
                 final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
                 byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
-                GroupInfo groupInfo = account.getGroupStore().getGroup(groupId);
+                GroupInfo groupInfo = account.getGroupStore().getGroupByV2Id(groupId);
                 if (groupInfo instanceof GroupInfoV1) {
-                    // TODO upgrade group
+                    // Received a v2 group message for a v2 group, we need to locally migrate the group
+                    account.getGroupStore().deleteGroup(groupInfo.groupId);
+                    GroupInfoV2 groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
+                    groupInfoV2.setGroup(getDecryptedGroup(groupSecretParams));
+                    account.getGroupStore().updateGroup(groupInfoV2);
+                    System.err.println("Locally migrated group "
+                            + Base64.encodeBytes(groupInfo.groupId)
+                            + " to group v2, id: "
+                            + Base64.encodeBytes(groupInfoV2.groupId)
+                            + " !!!");
                 } else if (groupInfo == null || groupInfo instanceof GroupInfoV2) {
                     GroupInfoV2 groupInfoV2 = groupInfo == null
                             ? new GroupInfoV2(groupId, groupMasterKey)
@@ -1526,26 +1535,7 @@ public class Manager implements Closeable {
                     if (groupInfoV2.getGroup() == null
                             || groupInfoV2.getGroup().getRevision() < groupContext.getRevision()) {
                         // TODO check if revision is only 1 behind and a signedGroupChange is available
-                        try {
-                            final GroupsV2AuthorizationString groupsV2AuthorizationString = getGroupAuthForToday(
-                                    groupSecretParams);
-                            final DecryptedGroup group = groupsV2Api.getGroup(groupSecretParams,
-                                    groupsV2AuthorizationString);
-                            groupInfoV2.setGroup(group);
-                            for (DecryptedMember member : group.getMembersList()) {
-                                final SignalServiceAddress address = resolveSignalServiceAddress(new SignalServiceAddress(
-                                        UuidUtil.parseOrThrow(member.getUuid().toByteArray()),
-                                        null));
-                                try {
-                                    account.getProfileStore()
-                                            .storeProfileKey(address,
-                                                    new ProfileKey(member.getProfileKey().toByteArray()));
-                                } catch (InvalidInputException ignored) {
-                                }
-                            }
-                        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
-                            System.err.println("Failed to retrieve Group V2 info, ignoring ...");
-                        }
+                        groupInfoV2.setGroup(getDecryptedGroup(groupSecretParams));
                         account.getGroupStore().updateGroup(groupInfoV2);
                     }
                 }
@@ -1631,6 +1621,26 @@ public class Manager implements Closeable {
             }
         }
         return actions;
+    }
+
+    private DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) {
+        try {
+            final GroupsV2AuthorizationString groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
+            DecryptedGroup group = groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
+            for (DecryptedMember member : group.getMembersList()) {
+                final SignalServiceAddress address = resolveSignalServiceAddress(new SignalServiceAddress(UuidUtil.parseOrThrow(
+                        member.getUuid().toByteArray()), null));
+                try {
+                    account.getProfileStore()
+                            .storeProfileKey(address, new ProfileKey(member.getProfileKey().toByteArray()));
+                } catch (InvalidInputException ignored) {
+                }
+            }
+            return group;
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+            System.err.println("Failed to retrieve Group V2 info, ignoring ...");
+            return null;
+        }
     }
 
     private void retryFailedReceivedMessages(
@@ -2312,11 +2322,6 @@ public class Manager implements Closeable {
 
     public GroupInfo getGroup(byte[] groupId) {
         return account.getGroupStore().getGroup(groupId);
-    }
-
-    public byte[] getGroupId(GroupMasterKey groupMasterKey) {
-        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
-        return groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
     }
 
     public List<JsonIdentityKeyStore.Identity> getIdentities() {

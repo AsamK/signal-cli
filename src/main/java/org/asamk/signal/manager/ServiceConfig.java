@@ -57,7 +57,7 @@ public class ServiceConfig {
         } catch (Throwable ignored) {
             zkGroupAvailable = false;
         }
-        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, false);
+        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, zkGroupAvailable);
     }
 
     public static SignalServiceConfiguration createDefaultServiceConfiguration(String userAgent) {

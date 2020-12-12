@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -380,7 +381,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
             } else if (groupContext.getGroupV2().isPresent()) {
                 final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
-                byte[] groupId = m.getGroupId(groupInfo.getMasterKey());
+                byte[] groupId = GroupUtils.getGroupId(groupInfo.getMasterKey());
                 System.out.println("  Id: " + Base64.encodeBytes(groupId));
                 GroupInfo group = m.getGroup(groupId);
                 if (group != null) {
