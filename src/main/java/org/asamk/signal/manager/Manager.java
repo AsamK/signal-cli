@@ -43,6 +43,7 @@ import org.signal.libsignal.metadata.ProtocolLegacyMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.zkgroup.InvalidInputException;
@@ -213,7 +214,9 @@ public class Manager implements Closeable {
         this.groupHelper = new GroupHelper(this::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
                 account::getSelfAddress,
-                groupsV2Operations);
+                groupsV2Operations,
+                groupsV2Api,
+                this::getGroupAuthForToday);
     }
 
     public String getUsername() {
@@ -752,36 +755,6 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    private GroupInfoV2 createGroupV2(
-            String name, Collection<SignalServiceAddress> members, InputStream avatar
-    ) throws IOException {
-        byte[] avatarBytes = avatar == null ? null : IOUtils.readFully(avatar);
-        final GroupsV2Operations.NewGroup newGroup = groupHelper.createGroupV2(name, members, avatarBytes);
-        final GroupSecretParams groupSecretParams = newGroup.getGroupSecretParams();
-
-        final GroupsV2AuthorizationString groupAuthForToday;
-        final DecryptedGroup decryptedGroup;
-        try {
-            groupAuthForToday = getGroupAuthForToday(groupSecretParams);
-            groupsV2Api.putNewGroup(newGroup, groupAuthForToday);
-            decryptedGroup = groupsV2Api.getGroup(groupSecretParams, groupAuthForToday);
-        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
-            System.err.println("Failed to create V2 group: " + e.getMessage());
-            return null;
-        }
-        if (decryptedGroup == null) {
-            System.err.println("Failed to create V2 group!");
-            return null;
-        }
-
-        final byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
-        final GroupMasterKey masterKey = groupSecretParams.getMasterKey();
-        GroupInfoV2 g = new GroupInfoV2(groupId, masterKey);
-        g.setGroup(decryptedGroup);
-
-        return g;
-    }
-
     private Pair<byte[], List<SendMessageResult>> sendUpdateGroupMessage(
             byte[] groupId, String name, Collection<SignalServiceAddress> members, String avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
@@ -789,8 +762,7 @@ public class Manager implements Closeable {
         SignalServiceDataMessage.Builder messageBuilder;
         if (groupId == null) {
             // Create new group
-            InputStream avatar = avatarFile == null ? null : new FileInputStream(avatarFile);
-            GroupInfoV2 gv2 = createGroupV2(name, members, avatar);
+            GroupInfoV2 gv2 = groupHelper.createGroupV2(name, members, avatarFile);
             if (gv2 == null) {
                 GroupInfoV1 gv1 = new GroupInfoV1(KeyUtils.createGroupId());
                 gv1.addMembers(Collections.singleton(account.getSelfAddress()));
@@ -798,18 +770,41 @@ public class Manager implements Closeable {
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
             } else {
-                messageBuilder = getGroupUpdateMessageBuilder(gv2);
+                messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
                 g = gv2;
             }
         } else {
             GroupInfo group = getGroupForSending(groupId);
-            if (!(group instanceof GroupInfoV1)) {
-                throw new RuntimeException("TODO Not implemented!");
+            if (group instanceof GroupInfoV2) {
+                Pair<DecryptedGroup, GroupChange> groupGroupChangePair = null;
+                if (members != null) {
+                    final Set<SignalServiceAddress> newMembers = new HashSet<>(members);
+                    newMembers.removeAll(group.getMembers());
+                    if (newMembers.size() > 0) {
+                        groupGroupChangePair = groupHelper.updateGroupV2((GroupInfoV2) group, newMembers);
+                    }
+                }
+                if (groupGroupChangePair == null || name != null || avatarFile != null) {
+                    if (groupGroupChangePair != null) {
+                        ((GroupInfoV2) group).setGroup(groupGroupChangePair.first());
+                        messageBuilder = getGroupUpdateMessageBuilder((GroupInfoV2) group,
+                                groupGroupChangePair.second().toByteArray());
+                        sendMessage(messageBuilder, group.getMembersWithout(account.getSelfAddress()));
+                    }
+
+                    groupGroupChangePair = groupHelper.updateGroupV2((GroupInfoV2) group, name, avatarFile);
+                }
+
+                ((GroupInfoV2) group).setGroup(groupGroupChangePair.first());
+                messageBuilder = getGroupUpdateMessageBuilder((GroupInfoV2) group,
+                        groupGroupChangePair.second().toByteArray());
+                g = group;
+            } else {
+                GroupInfoV1 gv1 = (GroupInfoV1) group;
+                updateGroupV1(gv1, name, members, avatarFile);
+                messageBuilder = getGroupUpdateMessageBuilder(gv1);
+                g = gv1;
             }
-            GroupInfoV1 gv1 = (GroupInfoV1) group;
-            updateGroupV1(gv1, name, members, avatarFile);
-            messageBuilder = getGroupUpdateMessageBuilder(gv1);
-            g = gv1;
         }
 
         account.getGroupStore().updateGroup(g);
@@ -899,11 +894,10 @@ public class Manager implements Closeable {
                 .withExpiration(g.getMessageExpirationTime());
     }
 
-    private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g) {
+    private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
         SignalServiceGroupV2.Builder group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
                 .withRevision(g.getGroup().getRevision())
-//                .withSignedGroupChange() // TODO
-                ;
+                .withSignedGroupChange(signedGroupChange);
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
                 .withExpiration(g.getMessageExpirationTime());
@@ -1427,16 +1421,20 @@ public class Manager implements Closeable {
 
     private GroupsV2AuthorizationString getGroupAuthForToday(
             final GroupSecretParams groupSecretParams
-    ) throws IOException, VerificationFailedException {
+    ) throws IOException {
         final int today = currentTimeDays();
         // Returns credentials for the next 7 days
         final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
         // TODO cache credentials until they expire
         AuthCredentialResponse authCredentialResponse = credentials.get(today);
-        return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
-                today,
-                groupSecretParams,
-                authCredentialResponse);
+        try {
+            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
+                    today,
+                    groupSecretParams,
+                    authCredentialResponse);
+        } catch (VerificationFailedException e) {
+            throw new IOException(e);
+        }
     }
 
     private List<HandleAction> handleSignalServiceDataMessage(
