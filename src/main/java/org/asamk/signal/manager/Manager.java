@@ -739,17 +739,24 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
-        SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT).withId(groupId).build();
 
-        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
+        SignalServiceDataMessage.Builder messageBuilder;
 
         final GroupInfo g = getGroupForSending(groupId);
         if (g instanceof GroupInfoV1) {
             GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
+            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
+                    .withId(groupId)
+                    .build();
+            messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
             groupInfoV1.removeMember(account.getSelfAddress());
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
-            throw new RuntimeException("TODO Not implemented!");
+            final GroupInfoV2 groupInfoV2 = (GroupInfoV2) g;
+            final Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.leaveGroup(groupInfoV2);
+            groupInfoV2.setGroup(groupGroupChangePair.first());
+            messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
+            account.getGroupStore().updateGroup(groupInfoV2);
         }
 
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));

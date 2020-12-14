@@ -8,9 +8,12 @@ import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
+import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
+import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
+import org.signal.zkgroup.groups.UuidCiphertext;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -28,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -196,6 +200,40 @@ public class GroupHelper {
         }
 
         return commitChange(groupInfoV2, change);
+    }
+
+    public Pair<DecryptedGroup, GroupChange> leaveGroup(GroupInfoV2 groupInfoV2) throws IOException {
+        List<DecryptedPendingMember> pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
+        final UUID selfUuid = selfAddressProvider.getSelfAddress().getUuid().get();
+        Optional<DecryptedPendingMember> selfPendingMember = DecryptedGroupUtil.findPendingByUuid(pendingMembersList,
+                selfUuid);
+
+        if (selfPendingMember.isPresent()) {
+            return revokeInvites(groupInfoV2, Set.of(selfPendingMember.get()));
+        } else {
+            return ejectMembers(groupInfoV2, Set.of(selfUuid));
+        }
+    }
+
+    public Pair<DecryptedGroup, GroupChange> revokeInvites(
+            GroupInfoV2 groupInfoV2, Set<DecryptedPendingMember> pendingMembers
+    ) throws IOException {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
+        final GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final Set<UuidCiphertext> uuidCipherTexts = pendingMembers.stream().map(member -> {
+            try {
+                return new UuidCiphertext(member.getUuidCipherText().toByteArray());
+            } catch (InvalidInputException e) {
+                throw new AssertionError(e);
+            }
+        }).collect(Collectors.toSet());
+        return commitChange(groupInfoV2, groupOperations.createRemoveInvitationChange(uuidCipherTexts));
+    }
+
+    public Pair<DecryptedGroup, GroupChange> ejectMembers(GroupInfoV2 groupInfoV2, Set<UUID> uuids) throws IOException {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
+        final GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(uuids));
     }
 
     private Pair<DecryptedGroup, GroupChange> commitChange(
