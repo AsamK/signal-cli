@@ -1868,7 +1868,7 @@ public class Manager implements Closeable {
     ) {
         List<HandleAction> actions = new ArrayList<>();
         if (content != null) {
-            SignalServiceAddress sender;
+            final SignalServiceAddress sender;
             if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
                 sender = envelope.getSourceAddress();
             } else {
@@ -1895,11 +1895,14 @@ public class Manager implements Closeable {
                 SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
                     SentTranscriptMessage message = syncMessage.getSent().get();
-                    actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
-                            true,
-                            sender,
-                            message.getDestination().orNull(),
-                            ignoreAttachments));
+                    final SignalServiceAddress destination = message.getDestination().orNull();
+                    if (destination != null) {
+                        actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
+                                true,
+                                sender,
+                                destination,
+                                ignoreAttachments));
+                    }
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();
