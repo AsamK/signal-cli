@@ -4,8 +4,6 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
-import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
-import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
@@ -15,7 +13,6 @@ import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException;
 import org.whispersystems.signalservice.internal.util.concurrent.CascadingFuture;
 import org.whispersystems.signalservice.internal.util.concurrent.ListenableFuture;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -85,17 +82,6 @@ public final class ProfileHelper {
                     requestType), () -> getSocketRetrievalFuture(address, profileKey, Optional.absent(), requestType)),
                     e -> !(e instanceof NotFoundException));
         }
-    }
-
-    public String decryptName(
-            ProfileKey profileKey, String encryptedName
-    ) throws InvalidCiphertextException, IOException {
-        if (encryptedName == null) {
-            return null;
-        }
-
-        ProfileCipher profileCipher = new ProfileCipher(profileKey);
-        return new String(profileCipher.decryptName(Base64.decode(encryptedName)));
     }
 
     private ListenableFuture<ProfileAndCredential> getPipeRetrievalFuture(

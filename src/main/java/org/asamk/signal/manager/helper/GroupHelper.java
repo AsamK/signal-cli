@@ -118,24 +118,7 @@ public class GroupHelper {
             return null;
         }
 
-        final int noUuidCapability = members.stream()
-                .filter(address -> !address.getUuid().isPresent())
-                .collect(Collectors.toUnmodifiableSet())
-                .size();
-        if (noUuidCapability > 0) {
-            System.err.println("Cannot create a V2 group as " + noUuidCapability + " members don't have a UUID.");
-            return null;
-        }
-
-        final int noGv2Capability = members.stream()
-                .map(profileProvider::getProfile)
-                .filter(profile -> !profile.getCapabilities().gv2)
-                .collect(Collectors.toUnmodifiableSet())
-                .size();
-        if (noGv2Capability > 0) {
-            System.err.println("Cannot create a V2 group as " + noGv2Capability + " members don't support Groups V2.");
-            return null;
-        }
+        if (!areMembersValid(members)) return null;
 
         GroupCandidate self = new GroupCandidate(selfAddressProvider.getSelfAddress().getUuid().orNull(),
                 Optional.fromNullable(profileKeyCredential));
@@ -152,6 +135,29 @@ public class GroupHelper {
                 candidates,
                 Member.Role.DEFAULT,
                 0);
+    }
+
+    private boolean areMembersValid(final Collection<SignalServiceAddress> members) {
+        final int noUuidCapability = members.stream()
+                .filter(address -> !address.getUuid().isPresent())
+                .collect(Collectors.toUnmodifiableSet())
+                .size();
+        if (noUuidCapability > 0) {
+            System.err.println("Cannot create a V2 group as " + noUuidCapability + " members don't have a UUID.");
+            return false;
+        }
+
+        final int noGv2Capability = members.stream()
+                .map(profileProvider::getProfile)
+                .filter(profile -> profile != null && !profile.getCapabilities().gv2)
+                .collect(Collectors.toUnmodifiableSet())
+                .size();
+        if (noGv2Capability > 0) {
+            System.err.println("Cannot create a V2 group as " + noGv2Capability + " members don't support Groups V2.");
+            return false;
+        }
+
+        return true;
     }
 
     public Pair<DecryptedGroup, GroupChange> updateGroupV2(
@@ -186,6 +192,8 @@ public class GroupHelper {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
+        if (!areMembersValid(newMembers)) return null;
+
         Set<GroupCandidate> candidates = newMembers.stream()
                 .map(member -> new GroupCandidate(member.getUuid().get(),
                         Optional.fromNullable(profileKeyCredentialProvider.getProfileKeyCredential(member))))
@@ -213,6 +221,27 @@ public class GroupHelper {
         } else {
             return ejectMembers(groupInfoV2, Set.of(selfUuid));
         }
+    }
+
+    public Pair<DecryptedGroup, GroupChange> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
+        final GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+
+        final SignalServiceAddress selfAddress = this.selfAddressProvider.getSelfAddress();
+        final ProfileKeyCredential profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(
+                selfAddress);
+        if (profileKeyCredential == null) {
+            throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
+        }
+
+        final GroupChange.Actions.Builder change = groupOperations.createAcceptInviteChange(profileKeyCredential);
+
+        final Optional<UUID> uuid = selfAddress.getUuid();
+        if (uuid.isPresent()) {
+            change.setSourceUuid(UuidUtil.toByteString(uuid.get()));
+        }
+
+        return commitChange(groupInfoV2, change);
     }
 
     public Pair<DecryptedGroup, GroupChange> revokeInvites(

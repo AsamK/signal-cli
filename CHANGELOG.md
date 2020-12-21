@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Accept group invitation with `updateGroup -g GROUP_ID`
+- Decline group invitation with `quitGroup -g GROUP_ID`
+
 ### Fixed
 - Include group ids for v2 groups in json output
 

@@ -322,6 +322,8 @@ public class Manager implements Closeable {
             contact.profileKey = null;
             account.getProfileStore().storeProfileKey(contact.getAddress(), profileKey);
         }
+        // Ensure our profile key is stored in profile store
+        account.getProfileStore().storeProfileKey(getSelfAddress(), account.getProfileKey());
     }
 
     public void checkAccountState() throws IOException {
@@ -705,6 +707,17 @@ public class Manager implements Closeable {
         return g;
     }
 
+    private GroupInfo getGroupForUpdating(byte[] groupId) throws GroupNotFoundException, NotAGroupMemberException {
+        GroupInfo g = account.getGroupStore().getGroup(groupId);
+        if (g == null) {
+            throw new GroupNotFoundException(groupId);
+        }
+        if (!g.isMember(account.getSelfAddress()) && !g.isPendingMember(account.getSelfAddress())) {
+            throw new NotAGroupMemberException(groupId, g.getTitle());
+        }
+        return g;
+    }
+
     public List<GroupInfo> getGroups() {
         return account.getGroupStore().getGroups();
     }
@@ -749,7 +762,7 @@ public class Manager implements Closeable {
 
         SignalServiceDataMessage.Builder messageBuilder;
 
-        final GroupInfo g = getGroupForSending(groupId);
+        final GroupInfo g = getGroupForUpdating(groupId);
         if (g instanceof GroupInfoV1) {
             GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
@@ -788,31 +801,39 @@ public class Manager implements Closeable {
                 g = gv2;
             }
         } else {
-            GroupInfo group = getGroupForSending(groupId);
+            GroupInfo group = getGroupForUpdating(groupId);
             if (group instanceof GroupInfoV2) {
-                Pair<DecryptedGroup, GroupChange> groupGroupChangePair = null;
+                final GroupInfoV2 groupInfoV2 = (GroupInfoV2) group;
+
+                Pair<Long, List<SendMessageResult>> result = null;
+                if (groupInfoV2.isPendingMember(getSelfAddress())) {
+                    Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.acceptInvite(groupInfoV2);
+                    result = sendUpdateGroupMessage(groupInfoV2,
+                            groupGroupChangePair.first(),
+                            groupGroupChangePair.second());
+                }
+
                 if (members != null) {
                     final Set<SignalServiceAddress> newMembers = new HashSet<>(members);
                     newMembers.removeAll(group.getMembers());
                     if (newMembers.size() > 0) {
-                        groupGroupChangePair = groupHelper.updateGroupV2((GroupInfoV2) group, newMembers);
+                        Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
+                                newMembers);
+                        result = sendUpdateGroupMessage(groupInfoV2,
+                                groupGroupChangePair.first(),
+                                groupGroupChangePair.second());
                     }
                 }
-                if (groupGroupChangePair == null || name != null || avatarFile != null) {
-                    if (groupGroupChangePair != null) {
-                        ((GroupInfoV2) group).setGroup(groupGroupChangePair.first());
-                        messageBuilder = getGroupUpdateMessageBuilder((GroupInfoV2) group,
-                                groupGroupChangePair.second().toByteArray());
-                        sendMessage(messageBuilder, group.getMembersWithout(account.getSelfAddress()));
-                    }
-
-                    groupGroupChangePair = groupHelper.updateGroupV2((GroupInfoV2) group, name, avatarFile);
+                if (result == null || name != null || avatarFile != null) {
+                    Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
+                            name,
+                            avatarFile);
+                    result = sendUpdateGroupMessage(groupInfoV2,
+                            groupGroupChangePair.first(),
+                            groupGroupChangePair.second());
                 }
 
-                ((GroupInfoV2) group).setGroup(groupGroupChangePair.first());
-                messageBuilder = getGroupUpdateMessageBuilder((GroupInfoV2) group,
-                        groupGroupChangePair.second().toByteArray());
-                g = group;
+                return new Pair<>(group.groupId, result.second());
             } else {
                 GroupInfoV1 gv1 = (GroupInfoV1) group;
                 updateGroupV1(gv1, name, members, avatarFile);
@@ -824,8 +845,18 @@ public class Manager implements Closeable {
         account.getGroupStore().updateGroup(g);
 
         final Pair<Long, List<SendMessageResult>> result = sendMessage(messageBuilder,
-                g.getMembersWithout(account.getSelfAddress()));
+                g.getMembersIncludingPendingWithout(account.getSelfAddress()));
         return new Pair<>(g.groupId, result.second());
+    }
+
+    private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
+            GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
+    ) throws IOException {
+        group.setGroup(newDecryptedGroup);
+        final SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(group,
+                groupChange.toByteArray());
+        account.getGroupStore().updateGroup(group);
+        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
     }
 
     private void updateGroupV1(
@@ -1582,6 +1613,9 @@ public class Manager implements Closeable {
                             group = groupHelper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(),
                                     groupContext.getSignedGroupChange(),
                                     groupMasterKey);
+                            if (group != null) {
+                                storeProfileKeysFromMembers(group);
+                            }
                         }
                         if (group == null) {
                             group = getDecryptedGroup(groupSecretParams);
@@ -1678,19 +1712,23 @@ public class Manager implements Closeable {
         try {
             final GroupsV2AuthorizationString groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             DecryptedGroup group = groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
-            for (DecryptedMember member : group.getMembersList()) {
-                final SignalServiceAddress address = resolveSignalServiceAddress(new SignalServiceAddress(UuidUtil.parseOrThrow(
-                        member.getUuid().toByteArray()), null));
-                try {
-                    account.getProfileStore()
-                            .storeProfileKey(address, new ProfileKey(member.getProfileKey().toByteArray()));
-                } catch (InvalidInputException ignored) {
-                }
-            }
+            storeProfileKeysFromMembers(group);
             return group;
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
             System.err.println("Failed to retrieve Group V2 info, ignoring ...");
             return null;
+        }
+    }
+
+    private void storeProfileKeysFromMembers(final DecryptedGroup group) {
+        for (DecryptedMember member : group.getMembersList()) {
+            final SignalServiceAddress address = resolveSignalServiceAddress(new SignalServiceAddress(UuidUtil.parseOrThrow(
+                    member.getUuid().toByteArray()), null));
+            try {
+                account.getProfileStore()
+                        .storeProfileKey(address, new ProfileKey(member.getProfileKey().toByteArray()));
+            } catch (InvalidInputException ignored) {
+            }
         }
     }
 
