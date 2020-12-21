@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.7.1] - 2020-12-21
 ### Added
 - Accept group invitation with `updateGroup -g GROUP_ID`
 - Decline group invitation with `quitGroup -g GROUP_ID`
