@@ -74,8 +74,7 @@ public class SendReactionCommand implements LocalCommand {
                         targetTimestamp,
                         ns.getList("recipient"));
             }
-            handleTimestampAndSendMessageResults(results.first(), results.second());
-            return 0;
+            return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);
             return 3;

@@ -45,6 +45,7 @@ import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
@@ -78,10 +79,10 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
+import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
-import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -849,6 +850,34 @@ public class Manager implements Closeable {
         return new Pair<>(g.groupId, result.second());
     }
 
+    public Pair<byte[], List<SendMessageResult>> joinGroup(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, GroupLinkNotActiveException {
+        return sendJoinGroupMessage(inviteLinkUrl);
+    }
+
+    private Pair<byte[], List<SendMessageResult>> sendJoinGroupMessage(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, GroupLinkNotActiveException {
+        final DecryptedGroupJoinInfo groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
+                inviteLinkUrl.getPassword());
+        final GroupChange groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
+                inviteLinkUrl.getPassword(),
+                groupJoinInfo);
+        final GroupInfoV2 group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
+                groupJoinInfo.getRevision() + 1,
+                groupChange.toByteArray());
+
+        if (group.getGroup() == null) {
+            // Only requested member, can't send update to group members
+            return new Pair<>(group.groupId, List.of());
+        }
+
+        final Pair<Long, List<SendMessageResult>> result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
+
+        return new Pair<>(group.groupId, result.second());
+    }
+
     private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
@@ -1584,48 +1613,12 @@ public class Manager implements Closeable {
                 final SignalServiceGroupV2 groupContext = message.getGroupContext().get().getGroupV2().get();
                 final GroupMasterKey groupMasterKey = groupContext.getMasterKey();
 
-                final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
-
-                byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
-                GroupInfo groupInfo = account.getGroupStore().getGroupByV2Id(groupId);
-                if (groupInfo instanceof GroupInfoV1) {
-                    // Received a v2 group message for a v2 group, we need to locally migrate the group
-                    account.getGroupStore().deleteGroup(groupInfo.groupId);
-                    GroupInfoV2 groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
-                    groupInfoV2.setGroup(getDecryptedGroup(groupSecretParams));
-                    account.getGroupStore().updateGroup(groupInfoV2);
-                    System.err.println("Locally migrated group "
-                            + Base64.encodeBytes(groupInfo.groupId)
-                            + " to group v2, id: "
-                            + Base64.encodeBytes(groupInfoV2.groupId)
-                            + " !!!");
-                } else if (groupInfo == null || groupInfo instanceof GroupInfoV2) {
-                    GroupInfoV2 groupInfoV2 = groupInfo == null
-                            ? new GroupInfoV2(groupId, groupMasterKey)
-                            : (GroupInfoV2) groupInfo;
-
-                    if (groupInfoV2.getGroup() == null
-                            || groupInfoV2.getGroup().getRevision() < groupContext.getRevision()) {
-                        DecryptedGroup group = null;
-                        if (groupContext.hasSignedGroupChange()
-                                && groupInfoV2.getGroup() != null
-                                && groupInfoV2.getGroup().getRevision() + 1 == groupContext.getRevision()) {
-                            group = groupHelper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(),
-                                    groupContext.getSignedGroupChange(),
-                                    groupMasterKey);
-                            if (group != null) {
-                                storeProfileKeysFromMembers(group);
-                            }
-                        }
-                        if (group == null) {
-                            group = getDecryptedGroup(groupSecretParams);
-                        }
-                        groupInfoV2.setGroup(group);
-                        account.getGroupStore().updateGroup(groupInfoV2);
-                    }
-                }
+                getOrMigrateGroup(groupMasterKey,
+                        groupContext.getRevision(),
+                        groupContext.hasSignedGroupChange() ? groupContext.getSignedGroupChange() : null);
             }
         }
+
         final SignalServiceAddress conversationPartnerAddress = isSync ? destination : source;
         if (message.isEndSession()) {
             handleEndSession(conversationPartnerAddress);
@@ -1708,16 +1701,47 @@ public class Manager implements Closeable {
         return actions;
     }
 
-    private DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) {
-        try {
-            final GroupsV2AuthorizationString groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
-            DecryptedGroup group = groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
-            storeProfileKeysFromMembers(group);
-            return group;
-        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
-            System.err.println("Failed to retrieve Group V2 info, ignoring ...");
-            return null;
+    private GroupInfoV2 getOrMigrateGroup(
+            final GroupMasterKey groupMasterKey, final int revision, final byte[] signedGroupChange
+    ) {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+
+        byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
+        GroupInfo groupInfo = account.getGroupStore().getGroupByV2Id(groupId);
+        final GroupInfoV2 groupInfoV2;
+        if (groupInfo instanceof GroupInfoV1) {
+            // Received a v2 group message for a v1 group, we need to locally migrate the group
+            account.getGroupStore().deleteGroup(groupInfo.groupId);
+            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
+            System.err.println("Locally migrated group "
+                    + Base64.encodeBytes(groupInfo.groupId)
+                    + " to group v2, id: "
+                    + Base64.encodeBytes(groupInfoV2.groupId)
+                    + " !!!");
+        } else if (groupInfo instanceof GroupInfoV2) {
+            groupInfoV2 = (GroupInfoV2) groupInfo;
+        } else {
+            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
         }
+
+        if (groupInfoV2.getGroup() == null || groupInfoV2.getGroup().getRevision() < revision) {
+            DecryptedGroup group = null;
+            if (signedGroupChange != null
+                    && groupInfoV2.getGroup() != null
+                    && groupInfoV2.getGroup().getRevision() + 1 == revision) {
+                group = groupHelper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(), signedGroupChange, groupMasterKey);
+            }
+            if (group == null) {
+                group = groupHelper.getDecryptedGroup(groupSecretParams);
+            }
+            if (group != null) {
+                storeProfileKeysFromMembers(group);
+            }
+            groupInfoV2.setGroup(group);
+            account.getGroupStore().updateGroup(groupInfoV2);
+        }
+
+        return groupInfoV2;
     }
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {

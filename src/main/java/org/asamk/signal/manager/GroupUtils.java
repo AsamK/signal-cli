@@ -35,9 +35,9 @@ public class GroupUtils {
         return groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
     }
 
-    public static GroupMasterKey deriveV2MigrationMasterKey(byte[] groupId) {
+    public static GroupMasterKey deriveV2MigrationMasterKey(byte[] groupIdV1) {
         try {
-            return new GroupMasterKey(new HKDFv3().deriveSecrets(groupId,
+            return new GroupMasterKey(new HKDFv3().deriveSecrets(groupIdV1,
                     "GV2 Migration".getBytes(),
                     GroupMasterKey.SIZE));
         } catch (InvalidInputException e) {

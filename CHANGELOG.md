@@ -4,6 +4,7 @@
 ### Added
 - Accept group invitation with `updateGroup -g GROUP_ID`
 - Decline group invitation with `quitGroup -g GROUP_ID`
+- Join group via invitation link `joinGroup --uri https://signal.group/#...`
 
 ### Fixed
 - Include group ids for v2 groups in json output

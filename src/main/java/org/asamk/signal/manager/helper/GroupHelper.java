@@ -2,12 +2,15 @@ package org.asamk.signal.manager.helper;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import org.asamk.signal.manager.GroupLinkPassword;
 import org.asamk.signal.storage.groups.GroupInfoV2;
 import org.asamk.signal.util.IOUtils;
+import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
+import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
@@ -19,6 +22,7 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
+import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
@@ -64,6 +68,27 @@ public class GroupHelper {
         this.groupsV2Operations = groupsV2Operations;
         this.groupsV2Api = groupsV2Api;
         this.groupAuthorizationProvider = groupAuthorizationProvider;
+    }
+
+    public DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) {
+        try {
+            final GroupsV2AuthorizationString groupsV2AuthorizationString = groupAuthorizationProvider.getAuthorizationForToday(
+                    groupSecretParams);
+            return groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+            System.err.println("Failed to retrieve Group V2 info, ignoring ...");
+            return null;
+        }
+    }
+
+    public DecryptedGroupJoinInfo getDecryptedGroupJoinInfo(
+            GroupMasterKey groupMasterKey, GroupLinkPassword password
+    ) throws IOException, GroupLinkNotActiveException {
+        GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+
+        return groupsV2Api.getGroupJoinInfo(groupSecretParams,
+                Optional.fromNullable(password).transform(GroupLinkPassword::serialize),
+                groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams));
     }
 
     public GroupInfoV2 createGroupV2(
@@ -223,6 +248,32 @@ public class GroupHelper {
         }
     }
 
+    public GroupChange joinGroup(
+            GroupMasterKey groupMasterKey,
+            GroupLinkPassword groupLinkPassword,
+            DecryptedGroupJoinInfo decryptedGroupJoinInfo
+    ) throws IOException {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+        final GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+
+        final SignalServiceAddress selfAddress = this.selfAddressProvider.getSelfAddress();
+        final ProfileKeyCredential profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(
+                selfAddress);
+        if (profileKeyCredential == null) {
+            throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
+        }
+
+        boolean requestToJoin = decryptedGroupJoinInfo.getAddFromInviteLink()
+                == AccessControl.AccessRequired.ADMINISTRATOR;
+        GroupChange.Actions.Builder change = requestToJoin
+                ? groupOperations.createGroupJoinRequest(profileKeyCredential)
+                : groupOperations.createGroupJoinDirect(profileKeyCredential);
+
+        change.setSourceUuid(UuidUtil.toByteString(selfAddress.getUuid().get()));
+
+        return commitChange(groupSecretParams, decryptedGroupJoinInfo.getRevision(), change, groupLinkPassword);
+    }
+
     public Pair<DecryptedGroup, GroupChange> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         final GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
@@ -284,11 +335,25 @@ public class GroupHelper {
             throw new IOException(e);
         }
 
-        GroupChange signedGroupChange = groupsV2Api.patchGroup(change.build(),
+        GroupChange signedGroupChange = groupsV2Api.patchGroup(changeActions,
                 groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams),
                 Optional.absent());
 
         return new Pair<>(decryptedGroupState, signedGroupChange);
+    }
+
+    private GroupChange commitChange(
+            GroupSecretParams groupSecretParams,
+            int currentRevision,
+            GroupChange.Actions.Builder change,
+            GroupLinkPassword password
+    ) throws IOException {
+        final int nextRevision = currentRevision + 1;
+        final GroupChange.Actions changeActions = change.setRevision(nextRevision).build();
+
+        return groupsV2Api.patchGroup(changeActions,
+                groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams),
+                Optional.fromNullable(password).transform(GroupLinkPassword::serialize));
     }
 
     public DecryptedGroup getUpdatedDecryptedGroup(

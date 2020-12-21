@@ -22,7 +22,9 @@ public class ErrorUtils {
     }
 
     public static int handleTimestampAndSendMessageResults(long timestamp, List<SendMessageResult> results) {
-        System.out.println(timestamp);
+        if (timestamp != 0) {
+            System.out.println(timestamp);
+        }
         List<String> errors = getErrorMessagesFromSendMessageResults(results);
         return handleSendMessageResultErrors(errors);
     }

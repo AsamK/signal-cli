@@ -16,6 +16,7 @@ public class Commands {
         addCommand("listDevices", new ListDevicesCommand());
         addCommand("listGroups", new ListGroupsCommand());
         addCommand("listIdentities", new ListIdentitiesCommand());
+        addCommand("joinGroup", new JoinGroupCommand());
         addCommand("quitGroup", new QuitGroupCommand());
         addCommand("receive", new ReceiveCommand());
         addCommand("register", new RegisterCommand());
