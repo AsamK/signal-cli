@@ -15,14 +15,17 @@ public class ListIdentitiesCommand implements LocalCommand {
 
     private static void printIdentityFingerprint(Manager m, JsonIdentityKeyStore.Identity theirId) {
         String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
-        System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s", theirId.getAddress().getNumber().orNull(),
-                theirId.getTrustLevel(), theirId.getDateAdded(), Hex.toString(theirId.getFingerprint()), digits));
+        System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s",
+                theirId.getAddress().getNumber().orNull(),
+                theirId.getTrustLevel(),
+                theirId.getDateAdded(),
+                Hex.toString(theirId.getFingerprint()),
+                digits));
     }
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-n", "--number")
-                .help("Only show identity keys for the given phone number.");
+        subparser.addArgument("-n", "--number").help("Only show identity keys for the given phone number.");
     }
 
     @Override

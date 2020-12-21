@@ -13,13 +13,19 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
-    long sendMessage(String message, List<String> attachments, String recipient) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber;
+    long sendMessage(
+            String message, List<String> attachments, String recipient
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber;
 
-    long sendMessage(String message, List<String> attachments, List<String> recipients) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
+    long sendMessage(
+            String message, List<String> attachments, List<String> recipients
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
     void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
-    long sendGroupMessage(String message, List<String> attachments, byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.UnregisteredUser, Error.UntrustedIdentity;
+    long sendGroupMessage(
+            String message, List<String> attachments, byte[] groupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.UnregisteredUser, Error.UntrustedIdentity;
 
     String getContactName(String number) throws Error.InvalidNumber;
 
@@ -35,7 +41,9 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId);
 
-    byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.UnregisteredUser, Error.UntrustedIdentity;
+    byte[] updateGroup(
+            byte[] groupId, String name, List<String> members, String avatar
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.UnregisteredUser, Error.UntrustedIdentity;
 
     boolean isRegistered();
 
@@ -47,7 +55,14 @@ public interface Signal extends DBusInterface {
         private final String message;
         private final List<String> attachments;
 
-        public MessageReceived(String objectpath, long timestamp, String sender, byte[] groupId, String message, List<String> attachments) throws DBusException {
+        public MessageReceived(
+                String objectpath,
+                long timestamp,
+                String sender,
+                byte[] groupId,
+                String message,
+                List<String> attachments
+        ) throws DBusException {
             super(objectpath, timestamp, sender, groupId, message, attachments);
             this.timestamp = timestamp;
             this.sender = sender;
@@ -106,7 +121,15 @@ public interface Signal extends DBusInterface {
         private final String message;
         private final List<String> attachments;
 
-        public SyncMessageReceived(String objectpath, long timestamp, String source, String destination, byte[] groupId, String message, List<String> attachments) throws DBusException {
+        public SyncMessageReceived(
+                String objectpath,
+                long timestamp,
+                String source,
+                String destination,
+                byte[] groupId,
+                String message,
+                List<String> attachments
+        ) throws DBusException {
             super(objectpath, timestamp, source, destination, groupId, message, attachments);
             this.timestamp = timestamp;
             this.source = source;

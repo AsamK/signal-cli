@@ -14,16 +14,11 @@ public class UpdateProfileCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        final MutuallyExclusiveGroup avatarOptions = subparser.addMutuallyExclusiveGroup()
-                .required(true);
-        avatarOptions.addArgument("--avatar")
-                .help("Path to new profile avatar");
-        avatarOptions.addArgument("--remove-avatar")
-                .action(Arguments.storeTrue());
+        final MutuallyExclusiveGroup avatarOptions = subparser.addMutuallyExclusiveGroup().required(true);
+        avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
+        avatarOptions.addArgument("--remove-avatar").action(Arguments.storeTrue());
 
-        subparser.addArgument("--name")
-                .required(true)
-                .help("New profile name");
+        subparser.addArgument("--name").required(true).help("New profile name");
 
         subparser.help("Set a name and avatar image for the user profile");
     }

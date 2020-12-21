@@ -30,8 +30,7 @@ class SendReceiptAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SendReceiptAction that = (SendReceiptAction) o;
-        return timestamp == that.timestamp &&
-                address.equals(that.address);
+        return timestamp == that.timestamp && address.equals(that.address);
     }
 
     @Override
@@ -111,8 +110,7 @@ class SendGroupInfoRequestAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SendGroupInfoRequestAction that = (SendGroupInfoRequestAction) o;
-        return address.equals(that.address) &&
-                Arrays.equals(groupId, that.groupId);
+        return address.equals(that.address) && Arrays.equals(groupId, that.groupId);
     }
 
     @Override
@@ -143,8 +141,7 @@ class SendGroupUpdateAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SendGroupUpdateAction that = (SendGroupUpdateAction) o;
-        return address.equals(that.address) &&
-                Arrays.equals(groupId, that.groupId);
+        return address.equals(that.address) && Arrays.equals(groupId, that.groupId);
     }
 
     @Override

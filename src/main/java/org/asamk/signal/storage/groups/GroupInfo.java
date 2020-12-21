@@ -5,8 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class GroupInfo {
 
@@ -24,6 +25,16 @@ public abstract class GroupInfo {
     public abstract Set<SignalServiceAddress> getMembers();
 
     @JsonIgnore
+    public Set<SignalServiceAddress> getPendingMembers() {
+        return Set.of();
+    }
+
+    @JsonIgnore
+    public Set<SignalServiceAddress> getRequestingMembers() {
+        return Set.of();
+    }
+
+    @JsonIgnore
     public abstract boolean isBlocked();
 
     @JsonIgnore
@@ -34,18 +45,29 @@ public abstract class GroupInfo {
 
     @JsonIgnore
     public Set<SignalServiceAddress> getMembersWithout(SignalServiceAddress address) {
-        Set<SignalServiceAddress> members = new HashSet<>();
-        for (SignalServiceAddress member : getMembers()) {
-            if (!member.matches(address)) {
-                members.add(member);
-            }
-        }
-        return members;
+        return getMembers().stream().filter(member -> !member.matches(address)).collect(Collectors.toSet());
+    }
+
+    @JsonIgnore
+    public Set<SignalServiceAddress> getMembersIncludingPendingWithout(SignalServiceAddress address) {
+        return Stream.concat(getMembers().stream(), getPendingMembers().stream())
+                .filter(member -> !member.matches(address))
+                .collect(Collectors.toSet());
     }
 
     @JsonIgnore
     public boolean isMember(SignalServiceAddress address) {
         for (SignalServiceAddress member : getMembers()) {
+            if (member.matches(address)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @JsonIgnore
+    public boolean isPendingMember(SignalServiceAddress address) {
+        for (SignalServiceAddress member : getPendingMembers()) {
             if (member.matches(address)) {
                 return true;
             }

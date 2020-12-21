@@ -84,8 +84,8 @@ public class Main {
                     busType = DBusConnection.DBusBusType.SESSION;
                 }
                 try (DBusConnection dBusConn = DBusConnection.getConnection(busType)) {
-                    Signal ts = dBusConn.getRemoteObject(
-                            DbusConfig.SIGNAL_BUSNAME, DbusConfig.SIGNAL_OBJECTPATH,
+                    Signal ts = dBusConn.getRemoteObject(DbusConfig.SIGNAL_BUSNAME,
+                            DbusConfig.SIGNAL_OBJECTPATH,
                             Signal.class);
 
                     return handleCommands(ns, ts, dBusConn);
@@ -103,7 +103,8 @@ public class Main {
                 dataPath = getDefaultDataPath();
             }
 
-            final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(BaseConfig.USER_AGENT);
+            final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(
+                    BaseConfig.USER_AGENT);
 
             if (username == null) {
                 ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
@@ -225,23 +226,16 @@ public class Main {
                 .description("Commandline interface for Signal.")
                 .version(BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
 
-        parser.addArgument("-v", "--version")
-                .help("Show package version.")
-                .action(Arguments.version());
+        parser.addArgument("-v", "--version").help("Show package version.").action(Arguments.version());
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
         parser.addArgument("-n", "--busname")
                 .help("Name of the DBus.");
 
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
-        mut.addArgument("-u", "--username")
-                .help("Specify your phone number, that will be used for verification.");
-        mut.addArgument("--dbus")
-                .help("Make request via user dbus.")
-                .action(Arguments.storeTrue());
-        mut.addArgument("--dbus-system")
-                .help("Make request via system dbus.")
-                .action(Arguments.storeTrue());
+        mut.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
+        mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
+        mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
 
         Subparsers subparsers = parser.addSubparsers()
                 .title("subcommands")

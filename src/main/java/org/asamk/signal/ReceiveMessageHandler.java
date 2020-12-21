@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -52,7 +53,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
             ContactInfo sourceContact = m.getContact(source.getLegacyIdentifier());
-            System.out.println(String.format("Envelope from: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getLegacyIdentifier(), envelope.getSourceDevice()));
+            System.out.println(String.format("Envelope from: %s (device: %d)",
+                    (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getLegacyIdentifier(),
+                    envelope.getSourceDevice()));
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
             }
@@ -70,18 +73,35 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (exception != null) {
                 if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
                     org.whispersystems.libsignal.UntrustedIdentityException e = (org.whispersystems.libsignal.UntrustedIdentityException) exception;
-                    System.out.println("The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
-                    System.out.println("Use 'signal-cli -u " + m.getUsername() + " listIdentities -n " + e.getName() + "', verify the key and run 'signal-cli -u " + m.getUsername() + " trust -v \"FINGER_PRINT\" " + e.getName() + "' to mark it as trusted");
-                    System.out.println("If you don't care about security, use 'signal-cli -u " + m.getUsername() + " trust -a " + e.getName() + "' to trust it without verification");
+                    System.out.println(
+                            "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
+                    System.out.println("Use 'signal-cli -u "
+                            + m.getUsername()
+                            + " listIdentities -n "
+                            + e.getName()
+                            + "', verify the key and run 'signal-cli -u "
+                            + m.getUsername()
+                            + " trust -v \"FINGER_PRINT\" "
+                            + e.getName()
+                            + "' to mark it as trusted");
+                    System.out.println("If you don't care about security, use 'signal-cli -u "
+                            + m.getUsername()
+                            + " trust -a "
+                            + e.getName()
+                            + "' to trust it without verification");
                 } else {
-                    System.out.println("Exception: " + exception.getMessage() + " (" + exception.getClass().getSimpleName() + ")");
+                    System.out.println("Exception: " + exception.getMessage() + " (" + exception.getClass()
+                            .getSimpleName() + ")");
                 }
             }
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
                 ContactInfo sourceContact = m.getContact(content.getSender().getLegacyIdentifier());
-                System.out.println(String.format("Sender: %s (device: %d)", (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender().getLegacyIdentifier(), content.getSenderDevice()));
+                System.out.println(String.format("Sender: %s (device: %d)",
+                        (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender()
+                                .getLegacyIdentifier(),
+                        content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
                     handleSignalServiceDataMessage(message);
@@ -107,7 +127,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
                             ContactInfo fromContact = m.getContact(rm.getSender().getLegacyIdentifier());
-                            System.out.println("From: " + (fromContact == null ? "" : "“" + fromContact.name + "” ") + rm.getSender().getLegacyIdentifier() + " Message timestamp: " + DateUtils.formatTimestamp(rm.getTimestamp()));
+                            System.out.println("From: "
+                                    + (fromContact == null ? "" : "“" + fromContact.name + "” ")
+                                    + rm.getSender().getLegacyIdentifier()
+                                    + " Message timestamp: "
+                                    + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
                     }
                     if (syncMessage.getRequest().isPresent()) {
@@ -140,15 +164,19 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                             StringBuilder toBuilder = new StringBuilder();
                             for (SignalServiceAddress dest : sentTranscriptMessage.getRecipients()) {
                                 ContactInfo destContact = m.getContact(dest.getLegacyIdentifier());
-                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ").append(dest.getLegacyIdentifier()).append(" ");
+                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ")
+                                        .append(dest.getLegacyIdentifier())
+                                        .append(" ");
                             }
                             to = toBuilder.toString();
                         } else {
                             to = "Unknown";
                         }
-                        System.out.println("To: " + to + " , Message timestamp: " + DateUtils.formatTimestamp(sentTranscriptMessage.getTimestamp()));
+                        System.out.println("To: " + to + " , Message timestamp: " + DateUtils.formatTimestamp(
+                                sentTranscriptMessage.getTimestamp()));
                         if (sentTranscriptMessage.getExpirationStartTimestamp() > 0) {
-                            System.out.println("Expiration started at: " + DateUtils.formatTimestamp(sentTranscriptMessage.getExpirationStartTimestamp()));
+                            System.out.println("Expiration started at: " + DateUtils.formatTimestamp(
+                                    sentTranscriptMessage.getExpirationStartTimestamp()));
                         }
                         SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
                         handleSignalServiceDataMessage(message);
@@ -164,24 +192,38 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getVerified().isPresent()) {
                         System.out.println("Received sync message with verified identities:");
                         final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
-                        System.out.println(" - " + verifiedMessage.getDestination() + ": " + verifiedMessage.getVerified());
-                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(), verifiedMessage.getIdentityKey()));
+                        System.out.println(" - "
+                                + verifiedMessage.getDestination()
+                                + ": "
+                                + verifiedMessage.getVerified());
+                        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(),
+                                verifiedMessage.getIdentityKey()));
                         System.out.println("   " + safetyNumber);
                     }
                     if (syncMessage.getConfiguration().isPresent()) {
                         System.out.println("Received sync message with configuration:");
                         final ConfigurationMessage configurationMessage = syncMessage.getConfiguration().get();
                         if (configurationMessage.getReadReceipts().isPresent()) {
-                            System.out.println(" - Read receipts: " + (configurationMessage.getReadReceipts().get() ? "enabled" : "disabled"));
+                            System.out.println(" - Read receipts: " + (
+                                    configurationMessage.getReadReceipts().get() ? "enabled" : "disabled"
+                            ));
                         }
                         if (configurationMessage.getLinkPreviews().isPresent()) {
-                            System.out.println(" - Link previews: " + (configurationMessage.getLinkPreviews().get() ? "enabled" : "disabled"));
+                            System.out.println(" - Link previews: " + (
+                                    configurationMessage.getLinkPreviews().get() ? "enabled" : "disabled"
+                            ));
                         }
                         if (configurationMessage.getTypingIndicators().isPresent()) {
-                            System.out.println(" - Typing indicators: " + (configurationMessage.getTypingIndicators().get() ? "enabled" : "disabled"));
+                            System.out.println(" - Typing indicators: " + (
+                                    configurationMessage.getTypingIndicators().get() ? "enabled" : "disabled"
+                            ));
                         }
                         if (configurationMessage.getUnidentifiedDeliveryIndicators().isPresent()) {
-                            System.out.println(" - Unidentified Delivery Indicators: " + (configurationMessage.getUnidentifiedDeliveryIndicators().get() ? "enabled" : "disabled"));
+                            System.out.println(" - Unidentified Delivery Indicators: " + (
+                                    configurationMessage.getUnidentifiedDeliveryIndicators().get()
+                                            ? "enabled"
+                                            : "disabled"
+                            ));
                         }
                     }
                     if (syncMessage.getFetchType().isPresent()) {
@@ -195,7 +237,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println(" - Timestamp:" + viewOnceOpenMessage.getTimestamp());
                     }
                     if (syncMessage.getStickerPackOperations().isPresent()) {
-                        final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
+                        final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations()
+                                .get();
                         System.out.println("Received sync message with sticker pack operations:");
                         for (StickerPackOperationMessage m : stickerPackOperationMessages) {
                             System.out.println(" - " + m.getType().toString());
@@ -208,21 +251,27 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         }
                     }
                     if (syncMessage.getMessageRequestResponse().isPresent()) {
-                        final MessageRequestResponseMessage requestResponseMessage = syncMessage.getMessageRequestResponse().get();
+                        final MessageRequestResponseMessage requestResponseMessage = syncMessage.getMessageRequestResponse()
+                                .get();
                         System.out.println("Received message request response:");
                         System.out.println("  Type: " + requestResponseMessage.getType());
                         if (requestResponseMessage.getGroupId().isPresent()) {
-                            System.out.println("  Group id: " + Base64.encodeBytes(requestResponseMessage.getGroupId().get()));
+                            System.out.println("  Group id: " + Base64.encodeBytes(requestResponseMessage.getGroupId()
+                                    .get()));
                         }
                         if (requestResponseMessage.getPerson().isPresent()) {
-                            System.out.println("  Person: " + requestResponseMessage.getPerson().get().getLegacyIdentifier());
+                            System.out.println("  Person: " + requestResponseMessage.getPerson()
+                                    .get()
+                                    .getLegacyIdentifier());
                         }
                     }
                     if (syncMessage.getKeys().isPresent()) {
                         final KeysMessage keysMessage = syncMessage.getKeys().get();
                         System.out.println("Received sync message with keys:");
                         if (keysMessage.getStorageService().isPresent()) {
-                            System.out.println("  With storage key length: " + keysMessage.getStorageService().get().serialize().length);
+                            System.out.println("  With storage key length: " + keysMessage.getStorageService()
+                                    .get()
+                                    .serialize().length);
                         } else {
                             System.out.println("  With empty storage key");
                         }
@@ -246,7 +295,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (callMessage.getIceUpdateMessages().isPresent()) {
                         List<IceUpdateMessage> iceUpdateMessages = callMessage.getIceUpdateMessages().get();
                         for (IceUpdateMessage iceUpdateMessage : iceUpdateMessages) {
-                            System.out.println("Ice update message: " + iceUpdateMessage.getId() + ", sdp: " + iceUpdateMessage.getSdp());
+                            System.out.println("Ice update message: "
+                                    + iceUpdateMessage.getId()
+                                    + ", sdp: "
+                                    + iceUpdateMessage.getSdp());
                         }
                     }
                     if (callMessage.getOfferMessage().isPresent()) {
@@ -329,7 +381,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
             } else if (groupContext.getGroupV2().isPresent()) {
                 final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
-                byte[] groupId = m.getGroupId(groupInfo.getMasterKey());
+                byte[] groupId = GroupUtils.getGroupId(groupInfo.getMasterKey());
                 System.out.println("  Id: " + Base64.encodeBytes(groupId));
                 GroupInfo group = m.getGroup(groupId);
                 if (group != null) {
@@ -386,7 +438,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
             System.out.println("Reaction:");
             System.out.println(" - Emoji: " + reaction.getEmoji());
-            System.out.println(" - Target author: " + m.resolveSignalServiceAddress(reaction.getTargetAuthor()).getLegacyIdentifier());
+            System.out.println(" - Target author: " + m.resolveSignalServiceAddress(reaction.getTargetAuthor())
+                    .getLegacyIdentifier());
             System.out.println(" - Target timestamp: " + reaction.getTargetSentTimestamp());
             System.out.println(" - Is remove: " + reaction.isRemove());
         }
@@ -417,7 +470,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final List<SignalServiceDataMessage.Mention> mentions = message.getMentions().get();
             System.out.println("Mentions: ");
             for (SignalServiceDataMessage.Mention mention : mentions) {
-                System.out.println("- " + mention.getUuid() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
+                System.out.println("- "
+                        + mention.getUuid()
+                        + ": "
+                        + mention.getStart()
+                        + " (length: "
+                        + mention.getLength()
+                        + ")");
             }
         }
 
@@ -430,12 +489,22 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private void printAttachment(SignalServiceAttachment attachment) {
-        System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (attachment.isStream() ? "Stream" : "") + ")");
+        System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (
+                attachment.isStream() ? "Stream" : ""
+        ) + ")");
         if (attachment.isPointer()) {
             final SignalServiceAttachmentPointer pointer = attachment.asPointer();
             System.out.println("  Id: " + pointer.getRemoteId() + " Key length: " + pointer.getKey().length);
-            System.out.println("  Filename: " + (pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"));
-            System.out.println("  Size: " + (pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>") + (pointer.getPreview().isPresent() ? " (Preview is available: " + pointer.getPreview().get().length + " bytes)" : ""));
+            System.out.println("  Filename: " + (
+                    pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"
+            ));
+            System.out.println("  Size: " + (
+                    pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>"
+            ) + (
+                    pointer.getPreview().isPresent() ? " (Preview is available: "
+                            + pointer.getPreview().get().length
+                            + " bytes)" : ""
+            ));
             System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
             System.out.println("  Dimensions: " + pointer.getWidth() + "x" + pointer.getHeight());
             File file = m.getAttachmentFile(pointer.getRemoteId());

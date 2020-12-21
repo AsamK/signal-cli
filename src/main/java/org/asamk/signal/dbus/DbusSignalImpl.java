@@ -44,7 +44,9 @@ public class DbusSignalImpl implements Signal {
         return sendMessage(message, attachments, recipients);
     }
 
-    private static void checkSendMessageResults(long timestamp, List<SendMessageResult> results) throws DBusExecutionException {
+    private static void checkSendMessageResults(
+            long timestamp, List<SendMessageResult> results
+    ) throws DBusExecutionException {
         List<String> errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {
             return;
@@ -164,13 +166,29 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return Collections.emptyList();
         } else {
-            return group.getMembers().stream().map(m::resolveSignalServiceAddress).map(SignalServiceAddress::getLegacyIdentifier).collect(Collectors.toList());
+            return group.getMembers()
+                    .stream()
+                    .map(m::resolveSignalServiceAddress)
+                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .collect(Collectors.toList());
         }
     }
 
     @Override
-    public byte[] updateGroup(final byte[] groupId, final String name, final List<String> members, final String avatar) {
+    public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) {
         try {
+            if (groupId.length == 0) {
+                groupId = null;
+            }
+            if (name.isEmpty()) {
+                name = null;
+            }
+            if (members.isEmpty()) {
+                members = null;
+            }
+            if (avatar.isEmpty()) {
+                avatar = null;
+            }
             final Pair<byte[], List<SendMessageResult>> results = m.updateGroup(groupId, name, members, avatar);
             checkSendMessageResults(0, results.second());
             return results.first();

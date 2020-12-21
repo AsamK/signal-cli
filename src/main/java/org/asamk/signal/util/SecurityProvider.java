@@ -16,10 +16,13 @@ public class SecurityProvider extends Provider {
 
         // Workaround for BKS truststore
         put("KeyStore.BKS", org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.Std.class.getCanonicalName());
-        put("KeyStore.BKS-V1", org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.Version1.class.getCanonicalName());
-        put("KeyStore.BouncyCastle", org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.BouncyCastleStore.class.getCanonicalName());
+        put("KeyStore.BKS-V1",
+                org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.Version1.class.getCanonicalName());
+        put("KeyStore.BouncyCastle",
+                org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.BouncyCastleStore.class.getCanonicalName());
         put("KeyFactory.X.509", org.bouncycastle.jcajce.provider.asymmetric.x509.KeyFactory.class.getCanonicalName());
-        put("CertificateFactory.X.509", org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory.class.getCanonicalName());
+        put("CertificateFactory.X.509",
+                org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory.class.getCanonicalName());
     }
 
     public static class DefaultRandom extends SecureRandomSpi {

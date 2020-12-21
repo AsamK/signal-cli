@@ -49,7 +49,9 @@ public class RecipientStore {
     public static class RecipientStoreDeserializer extends JsonDeserializer<Set<SignalServiceAddress>> {
 
         @Override
-        public Set<SignalServiceAddress> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public Set<SignalServiceAddress> deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             Set<SignalServiceAddress> addresses = new HashSet<>();
@@ -70,7 +72,9 @@ public class RecipientStore {
     public static class RecipientStoreSerializer extends JsonSerializer<Set<SignalServiceAddress>> {
 
         @Override
-        public void serialize(Set<SignalServiceAddress> addresses, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(
+                Set<SignalServiceAddress> addresses, JsonGenerator json, SerializerProvider serializerProvider
+        ) throws IOException {
             json.writeStartArray();
             for (SignalServiceAddress address : addresses) {
                 json.writeStartObject();

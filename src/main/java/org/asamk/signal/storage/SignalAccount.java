@@ -99,7 +99,9 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    public static SignalAccount create(String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey) throws IOException {
+    public static SignalAccount create(
+            String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
+    ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         String fileName = getFileName(dataPath, username);
         if (!new File(fileName).exists()) {
@@ -122,7 +124,17 @@ public class SignalAccount implements Closeable {
         return account;
     }
 
-    public static SignalAccount createLinkedAccount(String dataPath, String username, UUID uuid, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
+    public static SignalAccount createLinkedAccount(
+            String dataPath,
+            String username,
+            UUID uuid,
+            String password,
+            int deviceId,
+            IdentityKeyPair identityKey,
+            int registrationId,
+            String signalingKey,
+            ProfileKey profileKey
+    ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         String fileName = getFileName(dataPath, username);
         if (!new File(fileName).exists()) {
@@ -209,11 +221,14 @@ public class SignalAccount implements Closeable {
             try {
                 profileKey = new ProfileKey(Base64.decode(Util.getNotNullNode(rootNode, "profileKey").asText()));
             } catch (InvalidInputException e) {
-                throw new IOException("Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes", e);
+                throw new IOException(
+                        "Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes",
+                        e);
             }
         }
 
-        signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
+        signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"),
+                JsonSignalProtocolStore.class);
         registered = Util.getNotNullNode(rootNode, "registered").asBoolean();
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
@@ -281,7 +296,8 @@ public class SignalAccount implements Closeable {
 
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
-            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
+            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode,
+                    LegacyJsonThreadStore.class);
             // Migrate thread info to group and contact store
             for (ThreadInfo thread : threadStore.getThreads()) {
                 if (thread.id == null || thread.id.isEmpty()) {
@@ -326,8 +342,7 @@ public class SignalAccount implements Closeable {
                 .putPOJO("contactStore", contactStore)
                 .putPOJO("recipientStore", recipientStore)
                 .putPOJO("profileStore", profileStore)
-                .putPOJO("stickerStore", stickerStore)
-        ;
+                .putPOJO("stickerStore", stickerStore);
         try {
             try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
                 // Write to memory first to prevent corrupting the file in case of serialization errors

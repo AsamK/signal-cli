@@ -7,7 +7,7 @@ targetCompatibility = JavaVersion.VERSION_11
 
 mainClassName = 'org.asamk.signal.Main'
 
-version = '0.6.12'
+version = '0.7.0'
 
 compileJava.options.encoding = 'UTF-8'
 
@@ -20,7 +20,7 @@ dependencies {
     implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_15'
     implementation 'org.bouncycastle:bcprov-jdk15on:1.67'
     implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
-    implementation 'com.github.hypfvieh:dbus-java:3.2.3'
+    implementation 'com.github.hypfvieh:dbus-java:3.2.4'
     implementation 'org.slf4j:slf4j-nop:1.7.30'
 }
 

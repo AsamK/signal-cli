@@ -60,7 +60,9 @@ class JsonPreKeyStore implements PreKeyStore {
     public static class JsonPreKeyStoreDeserializer extends JsonDeserializer<JsonPreKeyStore> {
 
         @Override
-        public JsonPreKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public JsonPreKeyStore deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             Map<Integer, byte[]> preKeyMap = new HashMap<>();
@@ -86,7 +88,9 @@ class JsonPreKeyStore implements PreKeyStore {
     public static class JsonPreKeyStoreSerializer extends JsonSerializer<JsonPreKeyStore> {
 
         @Override
-        public void serialize(JsonPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(
+                JsonPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider
+        ) throws IOException {
             json.writeStartArray();
             for (Map.Entry<Integer, byte[]> preKey : jsonPreKeyStore.store.entrySet()) {
                 json.writeStartObject();

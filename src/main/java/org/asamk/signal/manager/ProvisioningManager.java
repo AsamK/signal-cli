@@ -70,12 +70,19 @@ public class ProvisioningManager {
     public String getDeviceLinkUri() throws TimeoutException, IOException {
         String deviceUuid = accountManager.getNewDeviceUuid();
 
-        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()));
+        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid,
+                identityKey.getPublicKey().getPublicKey()));
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
         String signalingKey = KeyUtils.createSignalingKey();
-        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(identityKey, signalingKey, false, true, registrationId, deviceName);
+        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(
+                identityKey,
+                signalingKey,
+                false,
+                true,
+                registrationId,
+                deviceName);
 
         String username = ret.getNumber();
         // TODO do this check before actually registering
@@ -96,7 +103,15 @@ public class ProvisioningManager {
             }
         }
 
-        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(), username, ret.getUuid(), password, ret.getDeviceId(), ret.getIdentity(), registrationId, signalingKey, profileKey)) {
+        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
+                username,
+                ret.getUuid(),
+                password,
+                ret.getDeviceId(),
+                ret.getIdentity(),
+                registrationId,
+                signalingKey,
+                profileKey)) {
             account.save();
 
             try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {

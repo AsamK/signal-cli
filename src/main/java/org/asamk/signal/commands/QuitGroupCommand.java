@@ -25,9 +25,7 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-g", "--group")
-                .required(true)
-                .help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group").required(true).help("Specify the recipient group ID.");
     }
 
     @Override
@@ -38,7 +36,8 @@ public class QuitGroupCommand implements LocalCommand {
         }
 
         try {
-            final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(Util.decodeGroupId(ns.getString("group")));
+            final byte[] groupId = Util.decodeGroupId(ns.getString("group"));
+            final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(groupId);
             return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);

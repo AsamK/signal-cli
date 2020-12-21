@@ -19,15 +19,10 @@ public class UpdateGroupCommand implements DbusCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-g", "--group")
-                .help("Specify the recipient group ID.");
-        subparser.addArgument("-n", "--name")
-                .help("Specify the new group name.");
-        subparser.addArgument("-a", "--avatar")
-                .help("Specify a new group avatar image file");
-        subparser.addArgument("-m", "--member")
-                .nargs("*")
-                .help("Specify one or more members to add to the group");
+        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-n", "--name").help("Specify the new group name.");
+        subparser.addArgument("-a", "--avatar").help("Specify a new group avatar image file");
+        subparser.addArgument("-m", "--member").nargs("*").help("Specify one or more members to add to the group");
     }
 
     @Override

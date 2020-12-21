@@ -17,7 +17,8 @@ public class ErrorUtils {
     public static void handleAssertionError(AssertionError e) {
         System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
         e.printStackTrace();
-        System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+        System.err.println(
+                "If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
     }
 
     public static int handleTimestampAndSendMessageResults(long timestamp, List<SendMessageResult> results) {

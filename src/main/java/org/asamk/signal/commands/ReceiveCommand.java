@@ -63,7 +63,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     }
                 } else {
                     System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
-                            messageReceived.getSender(), DateUtils.formatTimestamp(messageReceived.getTimestamp()), messageReceived.getMessage()));
+                            messageReceived.getSender(),
+                            DateUtils.formatTimestamp(messageReceived.getTimestamp()),
+                            messageReceived.getMessage()));
                     if (messageReceived.getGroupId().length > 0) {
                         System.out.println("Group info:");
                         System.out.println("  Id: " + Base64.encodeBytes(messageReceived.getGroupId()));
@@ -78,23 +80,23 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 }
             });
 
-            dbusconnection.addSigHandler(Signal.ReceiptReceived.class,
-                    receiptReceived -> {
-                        if (jsonProcessor != null) {
-                            JsonMessageEnvelope envelope = new JsonMessageEnvelope(receiptReceived);
-                            ObjectNode result = jsonProcessor.createObjectNode();
-                            result.putPOJO("envelope", envelope);
-                            try {
-                                jsonProcessor.writeValue(System.out, result);
-                                System.out.println();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                                    receiptReceived.getSender(), DateUtils.formatTimestamp(receiptReceived.getTimestamp())));
-                        }
-                    });
+            dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
+                if (jsonProcessor != null) {
+                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(receiptReceived);
+                    ObjectNode result = jsonProcessor.createObjectNode();
+                    result.putPOJO("envelope", envelope);
+                    try {
+                        jsonProcessor.writeValue(System.out, result);
+                        System.out.println();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
+                            receiptReceived.getSender(),
+                            DateUtils.formatTimestamp(receiptReceived.getTimestamp())));
+                }
+            });
 
             dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
                 if (jsonProcessor != null) {
@@ -109,7 +111,10 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     }
                 } else {
                     System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",
-                            syncReceived.getSource(), syncReceived.getDestination(), DateUtils.formatTimestamp(syncReceived.getTimestamp()), syncReceived.getMessage()));
+                            syncReceived.getSource(),
+                            syncReceived.getDestination(),
+                            DateUtils.formatTimestamp(syncReceived.getTimestamp()),
+                            syncReceived.getMessage()));
                     if (syncReceived.getGroupId().length > 0) {
                         System.out.println("Group info:");
                         System.out.println("  Id: " + Base64.encodeBytes(syncReceived.getGroupId()));
@@ -156,8 +161,14 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         }
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-            final Manager.ReceiveMessageHandler handler = ns.getBoolean("json") ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m);
-            m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, ignoreAttachments, handler);
+            final Manager.ReceiveMessageHandler handler = ns.getBoolean("json")
+                    ? new JsonReceiveMessageHandler(m)
+                    : new ReceiveMessageHandler(m);
+            m.receiveMessages((long) (timeout * 1000),
+                    TimeUnit.MILLISECONDS,
+                    returnOnTimeout,
+                    ignoreAttachments,
+                    handler);
             return 0;
         } catch (IOException e) {
             System.err.println("Error while receiving messages: " + e.getMessage());

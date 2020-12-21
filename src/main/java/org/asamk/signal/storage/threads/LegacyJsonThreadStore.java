@@ -34,7 +34,9 @@ public class LegacyJsonThreadStore {
     private static class MapToListSerializer extends JsonSerializer<Map<?, ?>> {
 
         @Override
-        public void serialize(final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {
+        public void serialize(
+                final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider
+        ) throws IOException {
             jgen.writeObject(value.values());
         }
     }
@@ -42,7 +44,9 @@ public class LegacyJsonThreadStore {
     private static class ThreadsDeserializer extends JsonDeserializer<Map<String, ThreadInfo>> {
 
         @Override
-        public Map<String, ThreadInfo> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public Map<String, ThreadInfo> deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             Map<String, ThreadInfo> threads = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
