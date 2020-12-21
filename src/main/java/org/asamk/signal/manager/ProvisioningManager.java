@@ -70,6 +70,7 @@ public class ProvisioningManager {
                 new DynamicCredentialsProvider(null, null, password, null, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
     }
 

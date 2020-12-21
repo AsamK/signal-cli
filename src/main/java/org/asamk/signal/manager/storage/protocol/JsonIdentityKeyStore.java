@@ -194,47 +194,43 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            try {
-                int localRegistrationId = node.get("registrationId").asInt();
-                IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.getDecoder()
-                        .decode(node.get("identityKey").asText()));
+            int localRegistrationId = node.get("registrationId").asInt();
+            IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.getDecoder()
+                    .decode(node.get("identityKey").asText()));
 
-                JsonIdentityKeyStore keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
+            JsonIdentityKeyStore keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
 
-                JsonNode trustedKeysNode = node.get("trustedKeys");
-                if (trustedKeysNode.isArray()) {
-                    for (JsonNode trustedKey : trustedKeysNode) {
-                        String trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
+            JsonNode trustedKeysNode = node.get("trustedKeys");
+            if (trustedKeysNode.isArray()) {
+                for (JsonNode trustedKey : trustedKeysNode) {
+                    String trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
 
-                        if (UuidUtil.isUuid(trustedKeyName)) {
-                            // Ignore identities that were incorrectly created with UUIDs as name
-                            continue;
-                        }
+                    if (UuidUtil.isUuid(trustedKeyName)) {
+                        // Ignore identities that were incorrectly created with UUIDs as name
+                        continue;
+                    }
 
-                        UUID uuid = trustedKey.hasNonNull("uuid") ? UuidUtil.parseOrNull(trustedKey.get("uuid")
-                                .asText()) : null;
-                        final SignalServiceAddress serviceAddress = uuid == null
-                                ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
-                                : new SignalServiceAddress(uuid, trustedKeyName);
-                        try {
-                            IdentityKey id = new IdentityKey(Base64.getDecoder()
-                                    .decode(trustedKey.get("identityKey").asText()), 0);
-                            TrustLevel trustLevel = trustedKey.hasNonNull("trustLevel")
-                                    ? TrustLevel.fromInt(trustedKey.get("trustLevel").asInt())
-                                    : TrustLevel.TRUSTED_UNVERIFIED;
-                            Date added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get(
-                                    "addedTimestamp").asLong()) : new Date();
-                            keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
-                        } catch (InvalidKeyException e) {
-                            logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
-                        }
+                    UUID uuid = trustedKey.hasNonNull("uuid")
+                            ? UuidUtil.parseOrNull(trustedKey.get("uuid").asText())
+                            : null;
+                    final SignalServiceAddress serviceAddress = uuid == null
+                            ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
+                            : new SignalServiceAddress(uuid, trustedKeyName);
+                    try {
+                        IdentityKey id = new IdentityKey(Base64.getDecoder()
+                                .decode(trustedKey.get("identityKey").asText()), 0);
+                        TrustLevel trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
+                                "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
+                        Date added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
+                                .asLong()) : new Date();
+                        keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
+                    } catch (InvalidKeyException e) {
+                        logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
                     }
                 }
-
-                return keyStore;
-            } catch (InvalidKeyException e) {
-                throw new IOException(e);
             }
+
+            return keyStore;
         }
     }
 

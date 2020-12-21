@@ -36,8 +36,9 @@ public class ServiceConfig {
     final static int PREKEY_MINIMUM_COUNT = 20;
     final static int PREKEY_BATCH_SIZE = 100;
     final static int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
-    final static int MAX_ENVELOPE_SIZE = 0;
+    final static long MAX_ENVELOPE_SIZE = 0;
     final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
+    final static boolean AUTOMATIC_NETWORK_RETRY = true;
 
     final static String CDS_MRENCLAVE = "c98e00a4e3ff977a56afefe7362a27e4961e4f19e211febfbb19b897e6b80b15";
 

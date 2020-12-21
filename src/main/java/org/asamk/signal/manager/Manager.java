@@ -219,6 +219,7 @@ public class Manager implements Closeable {
                         account.getDeviceId()),
                 userAgent,
                 groupsV2Operations,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
         this.groupsV2Api = accountManager.getGroupsV2Api();
         final KeyBackupService keyBackupService = ServiceConfig.createKeyBackupService(accountManager);
@@ -234,7 +235,8 @@ public class Manager implements Closeable {
                 userAgent,
                 null,
                 timer,
-                clientZkProfileOperations);
+                clientZkProfileOperations,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
 
         this.account.setResolver(this::resolveSignalServiceAddress);
 
@@ -352,10 +354,19 @@ public class Manager implements Closeable {
      *               if it's Optional.absent(), the avatar will be removed
      */
     public void setProfile(String name, Optional<File> avatar) throws IOException {
+        // TODO
+        String about = null;
+        String aboutEmoji = null;
+
         try (final StreamDetails streamDetails = avatar == null
                 ? avatarStore.retrieveProfileAvatar(getSelfAddress())
                 : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
-            accountManager.setVersionedProfile(account.getUuid(), account.getProfileKey(), name, streamDetails);
+            accountManager.setVersionedProfile(account.getUuid(),
+                    account.getProfileKey(),
+                    name,
+                    about,
+                    aboutEmoji,
+                    streamDetails);
         }
 
         if (avatar != null) {
@@ -378,6 +389,7 @@ public class Manager implements Closeable {
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
         accountManager.setGcmId(Optional.absent());
+        accountManager.deleteAccount();
 
         account.setRegistered(false);
         account.save();
@@ -499,7 +511,8 @@ public class Manager implements Closeable {
                 Optional.absent(),
                 clientZkProfileOperations,
                 executor,
-                ServiceConfig.MAX_ENVELOPE_SIZE);
+                ServiceConfig.MAX_ENVELOPE_SIZE,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
 
     private SignalProfile getRecipientProfile(
@@ -1250,7 +1263,7 @@ public class Manager implements Closeable {
     private Map<String, UUID> getRegisteredUsers(final Set<String> numbersMissingUuid) throws IOException {
         try {
             return accountManager.getRegisteredUsers(getIasKeyStore(), numbersMissingUuid, CDS_MRENCLAVE);
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException e) {
+        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }
     }
@@ -1391,10 +1404,13 @@ public class Manager implements Closeable {
             if (e.getCause() instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
                 org.whispersystems.libsignal.UntrustedIdentityException identityException = (org.whispersystems.libsignal.UntrustedIdentityException) e
                         .getCause();
-                account.getSignalProtocolStore()
-                        .saveIdentity(resolveSignalServiceAddress(identityException.getName()),
-                                identityException.getUntrustedIdentity(),
-                                TrustLevel.UNTRUSTED);
+                final IdentityKey untrustedIdentity = identityException.getUntrustedIdentity();
+                if (untrustedIdentity != null) {
+                    account.getSignalProtocolStore()
+                            .saveIdentity(resolveSignalServiceAddress(identityException.getName()),
+                                    untrustedIdentity,
+                                    TrustLevel.UNTRUSTED);
+                }
                 throw identityException;
             }
             throw new AssertionError(e);

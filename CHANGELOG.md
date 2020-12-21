@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+**Attention**: For all functionality an additional native library is now required: [libsignal-client](https://github.com/signalapp/libsignal-client/).
+See https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal for more information.
 
 ## [0.7.4] - 2021-01-19
 ### Changed

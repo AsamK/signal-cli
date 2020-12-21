@@ -318,6 +318,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (receiptMessage.isReadReceipt()) {
                         System.out.println(" - Is read receipt");
                     }
+                    if (receiptMessage.isViewedReceipt()) {
+                        System.out.println(" - Is viewed receipt");
+                    }
                     System.out.println(" - Timestamps:");
                     for (long timestamp : receiptMessage.getTimestamps()) {
                         System.out.println("    " + DateUtils.formatTimestamp(timestamp));
@@ -396,6 +399,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 System.out.println("  Master key length: " + groupInfo.getMasterKey().serialize().length);
                 System.out.println("  Has signed group change: " + groupInfo.hasSignedGroupChange());
             }
+        }
+        if (message.getGroupCallUpdate().isPresent()) {
+            final SignalServiceDataMessage.GroupCallUpdate groupCallUpdate = message.getGroupCallUpdate().get();
+            System.out.println("Group call update:");
+            System.out.println(" - Era id: " + groupCallUpdate.getEraId());
         }
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();

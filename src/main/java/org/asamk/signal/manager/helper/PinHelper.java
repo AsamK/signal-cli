@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.util.PinHashing;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
@@ -82,7 +83,7 @@ public class PinHelper {
                 throw new AssertionError("Null not expected");
             }
             return kbsData;
-        } catch (UnauthenticatedResponseException e) {
+        } catch (UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }
     }

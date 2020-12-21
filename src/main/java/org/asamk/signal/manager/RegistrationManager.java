@@ -70,7 +70,7 @@ public class RegistrationManager implements Closeable {
                 account.getUsername(),
                 account.getPassword(),
                 account.getSignalingKey(),
-                SignalServiceAddress.DEFAULT_DEVICE_ID), userAgent, null, timer);
+                SignalServiceAddress.DEFAULT_DEVICE_ID), userAgent, null, ServiceConfig.AUTOMATIC_NETWORK_RETRY, timer);
         final KeyBackupService keyBackupService = ServiceConfig.createKeyBackupService(accountManager);
         this.pinHelper = new PinHelper(keyBackupService);
     }
