@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -35,15 +36,18 @@ public class ListGroupsCommand implements LocalCommand {
                     .map(SignalServiceAddress::getLegacyIdentifier)
                     .collect(Collectors.toSet());
 
+            final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
+
             System.out.println(String.format(
-                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s",
+                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
                     Base64.encodeBytes(group.groupId),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked(),
                     members,
                     pendingMembers,
-                    requestingMembers));
+                    requestingMembers,
+                    groupInviteLink == null ? '-' : groupInviteLink.getUrl()));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
                     Base64.encodeBytes(group.groupId),

@@ -3,6 +3,7 @@ package org.asamk.signal.storage.groups;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Set;
@@ -20,6 +21,9 @@ public abstract class GroupInfo {
 
     @JsonIgnore
     public abstract String getTitle();
+
+    @JsonIgnore
+    public abstract GroupInviteLinkUrl getGroupInviteLink();
 
     @JsonIgnore
     public abstract Set<SignalServiceAddress> getMembers();

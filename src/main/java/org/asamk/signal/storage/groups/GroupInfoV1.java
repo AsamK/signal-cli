@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;
@@ -53,6 +54,11 @@ public class GroupInfoV1 extends GroupInfo {
     @Override
     public String getTitle() {
         return name;
+    }
+
+    @Override
+    public GroupInviteLinkUrl getGroupInviteLink() {
+        return null;
     }
 
     public GroupInfoV1(

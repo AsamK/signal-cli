@@ -39,7 +39,7 @@ class KeyUtils {
         return Base64.encodeBytes(secret);
     }
 
-    private static byte[] getSecretBytes(int size) {
+    static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
         RandomUtils.getSecureRandom().nextBytes(secret);
         return secret;

@@ -1,5 +1,7 @@
 package org.asamk.signal.storage.groups;
 
+import org.asamk.signal.manager.GroupInviteLinkUrl;
+import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -39,6 +41,19 @@ public class GroupInfoV2 extends GroupInfo {
             return null;
         }
         return this.group.getTitle();
+    }
+
+    @Override
+    public GroupInviteLinkUrl getGroupInviteLink() {
+        if (this.group == null || this.group.getInviteLinkPassword() == null || (
+                this.group.getAccessControl().getAddFromInviteLink() != AccessControl.AccessRequired.ANY
+                        && this.group.getAccessControl().getAddFromInviteLink()
+                        != AccessControl.AccessRequired.ADMINISTRATOR
+        )) {
+            return null;
+        }
+
+        return GroupInviteLinkUrl.forGroup(masterKey, group);
     }
 
     @Override
