@@ -120,6 +120,9 @@ import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
+import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
@@ -142,6 +145,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -151,6 +155,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -161,7 +166,9 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.asamk.signal.manager.ServiceConfig.CDS_MRENCLAVE;
 import static org.asamk.signal.manager.ServiceConfig.capabilities;
+import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
 
 public class Manager implements Closeable {
 
@@ -1279,10 +1286,39 @@ public class Manager implements Closeable {
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
         final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
+        final Set<SignalServiceAddress> missingUuids = new HashSet<>();
 
         for (String number : numbers) {
-            signalServiceAddresses.add(canonicalizeAndResolveSignalServiceAddress(number));
+            final SignalServiceAddress resolvedAddress = canonicalizeAndResolveSignalServiceAddress(number);
+            if (resolvedAddress.getUuid().isPresent()) {
+                signalServiceAddresses.add(resolvedAddress);
+            } else {
+                missingUuids.add(resolvedAddress);
+            }
         }
+
+        Map<String, UUID> registeredUsers;
+        try {
+            registeredUsers = accountManager.getRegisteredUsers(getIasKeyStore(),
+                    missingUuids.stream().map(a -> a.getNumber().get()).collect(Collectors.toSet()),
+                    CDS_MRENCLAVE);
+        } catch (IOException | Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException e) {
+            System.err.println("Failed to resolve uuids from server: " + e.getMessage());
+            registeredUsers = new HashMap<>();
+        }
+
+        for (SignalServiceAddress address : missingUuids) {
+            final String number = address.getNumber().get();
+            if (registeredUsers.containsKey(number)) {
+                final SignalServiceAddress newAddress = resolveSignalServiceAddress(new SignalServiceAddress(
+                        registeredUsers.get(number),
+                        number));
+                signalServiceAddresses.add(newAddress);
+            } else {
+                signalServiceAddresses.add(address);
+            }
+        }
+
         return signalServiceAddresses;
     }
 

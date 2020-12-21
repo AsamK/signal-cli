@@ -13,6 +13,10 @@ import org.whispersystems.signalservice.internal.configuration.SignalStorageUrl;
 import org.whispersystems.util.Base64;
 
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +33,16 @@ public class ServiceConfig {
     final static int MAX_ENVELOPE_SIZE = 0;
     final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
 
+    final static String CDS_MRENCLAVE = "c98e00a4e3ff977a56afefe7362a27e4961e4f19e211febfbb19b897e6b80b15";
+
     private final static String URL = "https://textsecure-service.whispersystems.org";
     private final static String CDN_URL = "https://cdn.signal.org";
     private final static String CDN2_URL = "https://cdn2.signal.org";
+    private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api.directory.signal.org";
     private final static String SIGNAL_KEY_BACKUP_URL = "https://api.backup.signal.org";
     private final static String STORAGE_URL = "https://storage.signal.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
+    private final static TrustStore IAS_TRUST_STORE = new IasTrustStore();
 
     private final static Optional<Dns> dns = Optional.absent();
 
@@ -71,12 +79,27 @@ public class ServiceConfig {
         return new SignalServiceConfiguration(new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
                 makeSignalCdnUrlMapFor(new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
-                new SignalContactDiscoveryUrl[0],
+                new SignalContactDiscoveryUrl[]{new SignalContactDiscoveryUrl(SIGNAL_CONTACT_DISCOVERY_URL,
+                        TRUST_STORE)},
                 new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
                 interceptors,
                 dns,
                 zkGroupServerPublicParams);
+    }
+
+    static KeyStore getIasKeyStore() {
+        try {
+            TrustStore contactTrustStore = IAS_TRUST_STORE;
+
+            KeyStore keyStore = KeyStore.getInstance("BKS");
+            keyStore.load(contactTrustStore.getKeyStoreInputStream(),
+                    contactTrustStore.getKeyStorePassword().toCharArray());
+
+            return keyStore;
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private static Map<Integer, SignalCdnUrl[]> makeSignalCdnUrlMapFor(
