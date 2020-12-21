@@ -4,6 +4,7 @@ import org.asamk.Signal;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +20,14 @@ class JsonDataMessage {
 
     JsonDataMessage(SignalServiceDataMessage dataMessage) {
         this.timestamp = dataMessage.getTimestamp();
-        if (dataMessage.getGroupContext().isPresent() && dataMessage.getGroupContext().get().getGroupV1().isPresent()) {
-            SignalServiceGroup groupInfo = dataMessage.getGroupContext().get().getGroupV1().get();
-            this.groupInfo = new JsonGroupInfo(groupInfo);
+        if (dataMessage.getGroupContext().isPresent()) {
+            if (dataMessage.getGroupContext().get().getGroupV1().isPresent()) {
+                SignalServiceGroup groupInfo = dataMessage.getGroupContext().get().getGroupV1().get();
+                this.groupInfo = new JsonGroupInfo(groupInfo);
+            } else if (dataMessage.getGroupContext().get().getGroupV2().isPresent()) {
+                SignalServiceGroupV2 groupInfo = dataMessage.getGroupContext().get().getGroupV2().get();
+                this.groupInfo = new JsonGroupInfo(groupInfo);
+            }
         }
         if (dataMessage.getBody().isPresent()) {
             this.message = dataMessage.getBody().get();

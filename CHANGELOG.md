@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Include group ids for v2 groups in json output
 
 ## [0.7.0] - 2020-12-15
 ### Added
