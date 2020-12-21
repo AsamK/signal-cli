@@ -88,6 +88,10 @@ public class ServiceConfig {
                 zkGroupServerPublicParams);
     }
 
+    public static AccountAttributes.Capabilities getCapabilities() {
+        return capabilities;
+    }
+
     static KeyStore getIasKeyStore() {
         try {
             TrustStore contactTrustStore = IAS_TRUST_STORE;

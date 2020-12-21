@@ -112,7 +112,7 @@ public class ProfileStore {
                         try {
                             profileKeyCredential = new ProfileKeyCredential(Base64.decode(entry.get(
                                     "profileKeyCredential").asText()));
-                        } catch (InvalidInputException ignored) {
+                        } catch (Throwable ignored) {
                         }
                     }
                     long lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();

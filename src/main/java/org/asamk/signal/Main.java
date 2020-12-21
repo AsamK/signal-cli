@@ -106,6 +106,11 @@ public class Main {
             final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(
                     BaseConfig.USER_AGENT);
 
+            if (!ServiceConfig.getCapabilities().isGv2()) {
+                System.err.println("WARNING: Support for new group V2 is disabled,"
+                        + " because the required native library dependency is missing: libzkgroup");
+            }
+
             if (username == null) {
                 ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
                 return handleCommands(ns, pm);
