@@ -52,7 +52,7 @@ public class ProvisioningManager {
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
 
-        identityKey = KeyHelper.generateIdentityKeyPair();
+        identityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         final SleepTimer timer = new UptimeSleepTimer();

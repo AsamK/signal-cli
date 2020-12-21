@@ -317,7 +317,7 @@ public class Manager implements Closeable {
         PathConfig pathConfig = PathConfig.createDefault(settingsPath);
 
         if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
-            IdentityKeyPair identityKey = KeyHelper.generateIdentityKeyPair();
+            IdentityKeyPair identityKey = KeyUtils.generateIdentityKeyPair();
             int registrationId = KeyHelper.generateRegistrationId(false);
 
             ProfileKey profileKey = KeyUtils.createProfileKey();

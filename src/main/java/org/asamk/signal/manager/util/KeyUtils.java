@@ -3,12 +3,25 @@ package org.asamk.signal.manager.util;
 import org.asamk.signal.util.RandomUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.libsignal.IdentityKey;
+import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECKeyPair;
+import org.whispersystems.libsignal.ecc.ECPrivateKey;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.util.Base64;
 
 public class KeyUtils {
 
     private KeyUtils() {
+    }
+
+    public static IdentityKeyPair generateIdentityKeyPair() {
+        ECKeyPair djbKeyPair = Curve.generateKeyPair();
+        IdentityKey djbIdentityKey = new IdentityKey(djbKeyPair.getPublicKey());
+        ECPrivateKey djbPrivateKey = djbKeyPair.getPrivateKey();
+
+        return new IdentityKeyPair(djbIdentityKey, djbPrivateKey);
     }
 
     public static String createSignalingKey() {
