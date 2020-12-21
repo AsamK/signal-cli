@@ -1928,10 +1928,23 @@ public class Manager implements Closeable {
 
         if (content != null && content.getDataMessage().isPresent()) {
             SignalServiceDataMessage message = content.getDataMessage().get();
-            if (message.getGroupContext().isPresent() && message.getGroupContext().get().getGroupV1().isPresent()) {
-                SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                GroupInfo group = getGroup(groupInfo.getGroupId());
-                return groupInfo.getType() == SignalServiceGroup.Type.DELIVER && group != null && group.isBlocked();
+            if (message.getGroupContext().isPresent()) {
+                GroupInfo group = null;
+                if (message.getGroupContext().get().getGroupV1().isPresent()) {
+                    SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
+                    if (groupInfo.getType() == SignalServiceGroup.Type.DELIVER) {
+                        group = getGroup(groupInfo.getGroupId());
+                    }
+                }
+                if (message.getGroupContext().get().getGroupV2().isPresent()) {
+                    SignalServiceGroupV2 groupContext = message.getGroupContext().get().getGroupV2().get();
+                    final GroupMasterKey groupMasterKey = groupContext.getMasterKey();
+                    byte[] groupId = GroupUtils.getGroupId(groupMasterKey);
+                    group = account.getGroupStore().getGroupByV2Id(groupId);
+                }
+                if (group != null && group.isBlocked()) {
+                    return true;
+                }
             }
         }
         return false;
