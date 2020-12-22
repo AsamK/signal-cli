@@ -25,6 +25,20 @@ class JsonAttachment {
         }
     }
 
+    // Used for the quoted attachments
+    JsonAttachment(SignalServiceAttachment attachment, String filename) {
+        this.contentType = attachment.getContentType();
+
+        final SignalServiceAttachmentPointer pointer = attachment.asPointer();
+        if (attachment.isPointer()) {
+            this.id = String.valueOf(pointer.getRemoteId());
+            this.filename = filename;
+            if (pointer.getSize().isPresent()) {
+                this.size = pointer.getSize().get();
+            }
+        }
+    }
+
     JsonAttachment(String filename) {
         this.filename = filename;
     }

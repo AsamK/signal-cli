@@ -32,6 +32,7 @@ class JsonGroupInfo {
 
     JsonGroupInfo(SignalServiceGroupV2 groupInfo) {
         this.groupId = Base64.encodeBytes(GroupUtils.getGroupId(groupInfo.getMasterKey()));
+        // TODO populate members and name fields
         this.type = groupInfo.hasSignedGroupChange() ? "UPDATE" : "DELIVER";
     }
 

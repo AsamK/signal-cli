@@ -1,6 +1,7 @@
 package org.asamk.signal.json;
 
 import org.asamk.Signal;
+import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -18,7 +19,9 @@ public class JsonMessageEnvelope {
     JsonCallMessage callMessage;
     JsonReceiptMessage receiptMessage;
 
-    public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
+    public JsonMessageEnvelope(
+            SignalServiceEnvelope envelope, SignalServiceContent content, final Manager m
+    ) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
             this.source = source.getLegacyIdentifier();
@@ -35,10 +38,10 @@ public class JsonMessageEnvelope {
                 this.sourceDevice = content.getSenderDevice();
             }
             if (content.getDataMessage().isPresent()) {
-                this.dataMessage = new JsonDataMessage(content.getDataMessage().get());
+                this.dataMessage = new JsonDataMessage(content.getDataMessage().get(), m);
             }
             if (content.getSyncMessage().isPresent()) {
-                this.syncMessage = new JsonSyncMessage(content.getSyncMessage().get());
+                this.syncMessage = new JsonSyncMessage(content.getSyncMessage().get(), m);
             }
             if (content.getCallMessage().isPresent()) {
                 this.callMessage = new JsonCallMessage(content.getCallMessage().get());

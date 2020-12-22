@@ -1,6 +1,7 @@
 package org.asamk.signal.json;
 
 import org.asamk.Signal;
+import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -21,9 +22,9 @@ class JsonSyncMessage {
     List<ReadMessage> readMessages;
     JsonSyncMessageType type;
 
-    JsonSyncMessage(SignalServiceSyncMessage syncMessage) {
+    JsonSyncMessage(SignalServiceSyncMessage syncMessage, final Manager m) {
         if (syncMessage.getSent().isPresent()) {
-            this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get());
+            this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get(), m);
         }
         if (syncMessage.getBlockedList().isPresent()) {
             this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
