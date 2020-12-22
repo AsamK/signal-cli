@@ -73,7 +73,7 @@ class JsonDataMessage {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        reaction = null;    // TEMP until I understand how to do this
+        reaction = null;    // TODO Replace these 3 with the proper commands
         quote = null;
         mentions = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
@@ -83,7 +83,7 @@ class JsonDataMessage {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        reaction = null;    // TEMP until I understand how to do this
+        reaction = null;    // TODO Replace these 3 with the proper commands
         quote = null;
         mentions = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());

@@ -5,7 +5,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 public class JsonMention {
 
-    UUID uuid;    // If possible, it would be nice to resolve this into their phone-number/name. Same for plain-text output
+    UUID uuid;
     int start;
     int length;
 

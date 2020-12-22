@@ -1,5 +1,6 @@
 package org.asamk.signal.json;
 
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 import java.util.ArrayList;
@@ -19,12 +20,18 @@ public class JsonQuote {
 
         if (quote.getAttachments().size() > 0) {
             this.attachments = new ArrayList<>(quote.getAttachments().size());
+
+            SignalServiceAttachmentPointer attachmentPointer;
             for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
-                // We use this constructor to override the filename since the one in the thumbnail is lost
-                this.attachments.add(new JsonAttachment(
-                        quotedAttachment.getThumbnail(),
-                        quotedAttachment.getFileName()
-                ));
+                JsonAttachment recentAttachment = new JsonAttachment(quotedAttachment.getThumbnail());
+
+                // Its possible the name might be missing, if it is then we'll use the other one
+                attachmentPointer = quotedAttachment.getThumbnail().asPointer();
+                if (!attachmentPointer.getFileName().isPresent()) {
+                    recentAttachment.filename = quotedAttachment.getFileName();
+                }
+
+                this.attachments.add(recentAttachment);
             }
         } else {
             this.attachments = new ArrayList<>();
