@@ -10,7 +10,7 @@ public class JsonReaction {
     long targetSentTimestamp;
     boolean isRemove;
 
-    JsonReaction(Reaction reaction, final Manager m){
+    JsonReaction(Reaction reaction, Manager m) {
         this.emoji = reaction.getEmoji();
         this.targetAuthor = m.resolveSignalServiceAddress(reaction.getTargetAuthor()).getLegacyIdentifier();
         this.targetSentTimestamp = reaction.getTargetSentTimestamp();

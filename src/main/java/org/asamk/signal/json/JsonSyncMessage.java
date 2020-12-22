@@ -22,7 +22,7 @@ class JsonSyncMessage {
     List<ReadMessage> readMessages;
     JsonSyncMessageType type;
 
-    JsonSyncMessage(SignalServiceSyncMessage syncMessage, final Manager m) {
+    JsonSyncMessage(SignalServiceSyncMessage syncMessage, Manager m) {
         if (syncMessage.getSent().isPresent()) {
             this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get(), m);
         }

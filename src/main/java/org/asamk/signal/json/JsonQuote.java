@@ -13,7 +13,7 @@ public class JsonQuote {
     String text;
     List<JsonAttachment> attachments;
 
-    JsonQuote(SignalServiceDataMessage.Quote quote){
+    JsonQuote(SignalServiceDataMessage.Quote quote) {
         this.id = quote.getId();
         this.author = quote.getAuthor().getLegacyIdentifier();
         this.text = quote.getText();

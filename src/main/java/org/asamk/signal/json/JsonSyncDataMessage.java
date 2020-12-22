@@ -8,7 +8,7 @@ class JsonSyncDataMessage extends JsonDataMessage {
 
     String destination;
 
-    JsonSyncDataMessage(SentTranscriptMessage transcriptMessage, final Manager m) {
+    JsonSyncDataMessage(SentTranscriptMessage transcriptMessage, Manager m) {
         super(transcriptMessage.getMessage(), m);
         if (transcriptMessage.getDestination().isPresent()) {
             this.destination = transcriptMessage.getDestination().get().getLegacyIdentifier();

@@ -9,7 +9,7 @@ public class JsonMention {
     int start;
     int length;
 
-    JsonMention(SignalServiceDataMessage.Mention mention){
+    JsonMention(SignalServiceDataMessage.Mention mention) {
         this.uuid = mention.getUuid();
         this.start = mention.getStart();
         this.length = mention.getLength();

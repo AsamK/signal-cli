@@ -23,7 +23,7 @@ class JsonDataMessage {
     List<JsonAttachment> attachments;
     JsonGroupInfo groupInfo;
 
-    JsonDataMessage(SignalServiceDataMessage dataMessage, final Manager m) {
+    JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
         this.timestamp = dataMessage.getTimestamp();
         if (dataMessage.getGroupContext().isPresent()) {
             if (dataMessage.getGroupContext().get().getGroupV1().isPresent()) {
@@ -39,17 +39,10 @@ class JsonDataMessage {
         }
         this.expiresInSeconds = dataMessage.getExpiresInSeconds();
         if (dataMessage.getReaction().isPresent()) {
-            if(m == null){
-                System.out.println("ERROR, MANAGER NOT SET");
-            }
-            else {
-                this.reaction = new JsonReaction(dataMessage.getReaction().get(), m);
-            }
+            this.reaction = new JsonReaction(dataMessage.getReaction().get(), m);
         }
         if (dataMessage.getQuote().isPresent()) {
             this.quote = new JsonQuote(dataMessage.getQuote().get());
-        } else {
-            this.quote = null;
         }
         if (dataMessage.getMentions().isPresent()) {
             this.mentions = new ArrayList<>(dataMessage.getMentions().get().size());
