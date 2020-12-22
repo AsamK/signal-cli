@@ -1690,6 +1690,23 @@ public class Manager implements Closeable {
                 }
             }
         }
+        if (message.getQuote().isPresent()) {
+            final SignalServiceDataMessage.Quote quote = message.getQuote().get();
+
+            for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
+                final SignalServiceAttachment attachment = quotedAttachment.getThumbnail();
+                if (attachment != null && attachment.isPointer()) {
+                    try {
+                        retrieveAttachment(attachment.asPointer());
+                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                        System.err.println("Failed to retrieve attachment ("
+                                + attachment.asPointer().getRemoteId()
+                                + "): "
+                                + e.getMessage());
+                    }
+                }
+            }
+        }
         if (message.getSticker().isPresent()) {
             final SignalServiceDataMessage.Sticker messageSticker = message.getSticker().get();
             Sticker sticker = account.getStickerStore().getSticker(messageSticker.getPackId());

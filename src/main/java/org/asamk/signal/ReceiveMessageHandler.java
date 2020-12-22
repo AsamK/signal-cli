@@ -452,9 +452,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (quote.getAttachments().size() > 0) {
                 System.out.println(" Attachments: ");
                 for (SignalServiceDataMessage.Quote.QuotedAttachment attachment : quote.getAttachments()) {
-                    System.out.println("  Filename: " + attachment.getFileName());
-                    System.out.println("  Type: " + attachment.getContentType());
-                    System.out.println("  Thumbnail:");
+                    System.out.println(" - Filename: " + attachment.getFileName());
+                    System.out.println("   Type: " + attachment.getContentType());
+                    System.out.println("   Thumbnail:");
                     if (attachment.getThumbnail() != null) {
                         printAttachment(attachment.getThumbnail());
                     }
