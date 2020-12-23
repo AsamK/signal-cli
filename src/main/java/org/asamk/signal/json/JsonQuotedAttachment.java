@@ -13,8 +13,7 @@ public class JsonQuotedAttachment {
         filename = quotedAttachment.getFileName();
         if (quotedAttachment.getThumbnail() != null) {
             thumbnail = new JsonAttachment(quotedAttachment.getThumbnail());
-        }
-        else {
+        } else {
             thumbnail = null;
         }
     }

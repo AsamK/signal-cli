@@ -2,12 +2,10 @@ package org.asamk.signal.json;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,20 +43,22 @@ class JsonDataMessage {
             this.quote = new JsonQuote(dataMessage.getQuote().get(), m);
         }
         if (dataMessage.getMentions().isPresent()) {
-            this.mentions = new ArrayList<>(dataMessage.getMentions().get().size());
-            for (SignalServiceDataMessage.Mention mention : dataMessage.getMentions().get()) {
-                this.mentions.add(new JsonMention(mention, m));
-            }
+            this.mentions = dataMessage.getMentions()
+                    .get()
+                    .stream()
+                    .map(mention -> new JsonMention(mention, m))
+                    .collect(Collectors.toList());
         } else {
-            this.mentions = new ArrayList<>();
+            this.mentions = List.of();
         }
         if (dataMessage.getAttachments().isPresent()) {
-            this.attachments = new ArrayList<>(dataMessage.getAttachments().get().size());
-            for (SignalServiceAttachment attachment : dataMessage.getAttachments().get()) {
-                this.attachments.add(new JsonAttachment(attachment));
-            }
+            this.attachments = dataMessage.getAttachments()
+                    .get()
+                    .stream()
+                    .map(JsonAttachment::new)
+                    .collect(Collectors.toList());
         } else {
-            this.attachments = new ArrayList<>();
+            this.attachments = List.of();
         }
     }
 

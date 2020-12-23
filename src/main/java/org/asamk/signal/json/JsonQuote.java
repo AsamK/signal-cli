@@ -5,6 +5,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class JsonQuote {
 
@@ -20,23 +21,20 @@ public class JsonQuote {
         this.author = m.resolveSignalServiceAddress(quote.getAuthor()).getLegacyIdentifier();
         this.text = quote.getText();
 
-        if (quote.getMentions().size() > 0) {
-            this.mentions = new ArrayList<>(quote.getMentions().size());
-
-            for (SignalServiceDataMessage.Mention quotedMention: quote.getMentions()){
-                this.mentions.add(new JsonMention(quotedMention, m));
-            }
+        if (quote.getMentions() != null && quote.getMentions().size() > 0) {
+            this.mentions = quote.getMentions()
+                    .stream()
+                    .map(quotedMention -> new JsonMention(quotedMention, m))
+                    .collect(Collectors.toList());
         }
 
         if (quote.getAttachments().size() > 0) {
-            this.attachments = new ArrayList<>(quote.getAttachments().size());
-
-            for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
-                this.attachments.add(new JsonQuotedAttachment(quotedAttachment));
-            }
+            this.attachments = quote.getAttachments()
+                    .stream()
+                    .map(JsonQuotedAttachment::new)
+                    .collect(Collectors.toList());
         } else {
             this.attachments = new ArrayList<>();
         }
     }
-
 }

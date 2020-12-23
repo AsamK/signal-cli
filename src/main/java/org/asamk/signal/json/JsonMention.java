@@ -11,12 +11,9 @@ public class JsonMention {
     int length;
 
     JsonMention(SignalServiceDataMessage.Mention mention, Manager m) {
-        this.name = m.resolveSignalServiceAddress(
-                new SignalServiceAddress(mention.getUuid(), null)
-        ).getLegacyIdentifier();
+        this.name = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null))
+                .getLegacyIdentifier();
         this.start = mention.getStart();
         this.length = mention.getLength();
-
     }
-
 }

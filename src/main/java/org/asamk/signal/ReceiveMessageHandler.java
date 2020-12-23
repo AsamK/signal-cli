@@ -449,7 +449,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             System.out.println("Quote: (" + quote.getId() + ")");
             System.out.println(" Author: " + m.resolveSignalServiceAddress(quote.getAuthor()).getLegacyIdentifier());
             System.out.println(" Text: " + quote.getText());
-            if (quote.getMentions().size() > 0) {
+            if (quote.getMentions() != null && quote.getMentions().size() > 0) {
                 System.out.println(" Mentions: ");
                 for (SignalServiceDataMessage.Mention mention : quote.getMentions()) {
                     printMention(mention, m);
@@ -488,15 +488,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private void printMention(SignalServiceDataMessage.Mention mention, Manager m) {
-        System.out.println("- "
-                + m.resolveSignalServiceAddress(
-                        new SignalServiceAddress(mention.getUuid(), null)
-                ).getLegacyIdentifier()
-                + ": "
-                + mention.getStart()
-                + " (length: "
-                + mention.getLength()
-                + ")");
+        System.out.println("- " + m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null))
+                .getLegacyIdentifier() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
     }
 
     private void printAttachment(SignalServiceAttachment attachment) {
