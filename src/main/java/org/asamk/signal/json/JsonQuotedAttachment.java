@@ -4,12 +4,12 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 public class JsonQuotedAttachment {
 
-    String contextType;
+    String contentType;
     String filename;
     JsonAttachment thumbnail;
 
     JsonQuotedAttachment(SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment) {
-        contextType = quotedAttachment.getContentType();
+        contentType = quotedAttachment.getContentType();
         filename = quotedAttachment.getFileName();
         if (quotedAttachment.getThumbnail() != null) {
             thumbnail = new JsonAttachment(quotedAttachment.getThumbnail());
