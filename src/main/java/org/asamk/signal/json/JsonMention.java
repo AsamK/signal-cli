@@ -1,18 +1,22 @@
 package org.asamk.signal.json;
 
-import java.util.UUID;
+import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class JsonMention {
 
-    UUID uuid;
+    String name;
     int start;
     int length;
 
-    JsonMention(SignalServiceDataMessage.Mention mention) {
-        this.uuid = mention.getUuid();
+    JsonMention(SignalServiceDataMessage.Mention mention, Manager m) {
+        this.name = m.resolveSignalServiceAddress(
+                new SignalServiceAddress(mention.getUuid(), null)
+        ).getLegacyIdentifier();
         this.start = mention.getStart();
         this.length = mention.getLength();
+
     }
 
 }

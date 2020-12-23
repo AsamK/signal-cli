@@ -42,12 +42,12 @@ class JsonDataMessage {
             this.reaction = new JsonReaction(dataMessage.getReaction().get(), m);
         }
         if (dataMessage.getQuote().isPresent()) {
-            this.quote = new JsonQuote(dataMessage.getQuote().get());
+            this.quote = new JsonQuote(dataMessage.getQuote().get(), m);
         }
         if (dataMessage.getMentions().isPresent()) {
             this.mentions = new ArrayList<>(dataMessage.getMentions().get().size());
             for (SignalServiceDataMessage.Mention mention : dataMessage.getMentions().get()) {
-                this.mentions.add(new JsonMention(mention));
+                this.mentions.add(new JsonMention(mention, m));
             }
         } else {
             this.mentions = new ArrayList<>();

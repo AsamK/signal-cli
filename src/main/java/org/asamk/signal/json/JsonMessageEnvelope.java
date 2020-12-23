@@ -19,9 +19,7 @@ public class JsonMessageEnvelope {
     JsonCallMessage callMessage;
     JsonReceiptMessage receiptMessage;
 
-    public JsonMessageEnvelope(
-            SignalServiceEnvelope envelope, SignalServiceContent content, Manager m
-    ) {
+    public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
             this.source = source.getLegacyIdentifier();
