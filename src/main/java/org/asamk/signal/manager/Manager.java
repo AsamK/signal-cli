@@ -1621,7 +1621,7 @@ public class Manager implements Closeable {
         }
 
         final SignalServiceAddress conversationPartnerAddress = isSync ? destination : source;
-        if (message.isEndSession()) {
+        if (conversationPartnerAddress != null && message.isEndSession()) {
             handleEndSession(conversationPartnerAddress);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
@@ -1638,7 +1638,7 @@ public class Manager implements Closeable {
                 } else if (message.getGroupContext().get().getGroupV2().isPresent()) {
                     // disappearing message timer already stored in the DecryptedGroup
                 }
-            } else {
+            } else if (conversationPartnerAddress != null) {
                 ContactInfo contact = account.getContactStore().getContact(conversationPartnerAddress);
                 if (contact == null) {
                     contact = new ContactInfo(conversationPartnerAddress);
@@ -2025,13 +2025,11 @@ public class Manager implements Closeable {
                 if (syncMessage.getSent().isPresent()) {
                     SentTranscriptMessage message = syncMessage.getSent().get();
                     final SignalServiceAddress destination = message.getDestination().orNull();
-                    if (destination != null) {
-                        actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
-                                true,
-                                sender,
-                                destination,
-                                ignoreAttachments));
-                    }
+                    actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
+                            true,
+                            sender,
+                            destination,
+                            ignoreAttachments));
                 }
                 if (syncMessage.getRequest().isPresent()) {
                     RequestMessage rm = syncMessage.getRequest().get();
