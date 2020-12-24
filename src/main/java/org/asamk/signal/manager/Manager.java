@@ -353,12 +353,7 @@ public class Manager implements Closeable {
      * @throws IOException if its unable to check if the user is registered
      */
     public boolean isUserRegistered(String number) throws IOException {
-        ContactTokenDetails details = this.accountManager.getContact(number).orNull();
-        if (details == null) {
-            return false;
-        }
-
-        return true;
+        return this.accountManager.getContact(number).orNull() != null;
     }
 
     public void register(boolean voiceVerification, String captcha) throws IOException {

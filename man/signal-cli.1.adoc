@@ -126,7 +126,7 @@ Use listDevices to see the deviceIds.
 
 === isRegistered
 
-Checks if a list of users are registered on Signal or not.
+Checks if a list of phone numbers are registered on Signal or not.
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
