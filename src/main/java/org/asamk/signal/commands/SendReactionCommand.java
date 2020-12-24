@@ -4,10 +4,11 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.manager.GroupId;
+import org.asamk.signal.manager.GroupIdFormatException;
 import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotAGroupMemberException;
-import org.asamk.signal.util.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
@@ -65,7 +66,7 @@ public class SendReactionCommand implements LocalCommand {
         try {
             final Pair<Long, List<SendMessageResult>> results;
             if (ns.getString("group") != null) {
-                byte[] groupId = Util.decodeGroupId(ns.getString("group"));
+                GroupId groupId = Util.decodeGroupId(ns.getString("group"));
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
                 results = m.sendMessageReaction(emoji,

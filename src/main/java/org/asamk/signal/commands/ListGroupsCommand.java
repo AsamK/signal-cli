@@ -8,7 +8,6 @@ import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.util.Base64;
 
 import java.util.List;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class ListGroupsCommand implements LocalCommand {
 
             System.out.println(String.format(
                     "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
-                    Base64.encodeBytes(group.groupId),
+                    group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked(),
@@ -50,7 +49,7 @@ public class ListGroupsCommand implements LocalCommand {
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl()));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId),
+                    group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked()));

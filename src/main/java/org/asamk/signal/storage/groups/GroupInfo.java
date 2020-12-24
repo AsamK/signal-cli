@@ -1,8 +1,8 @@
 package org.asamk.signal.storage.groups;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.asamk.signal.manager.GroupId;
 import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
@@ -12,12 +12,8 @@ import java.util.stream.Stream;
 
 public abstract class GroupInfo {
 
-    @JsonProperty
-    public final byte[] groupId;
-
-    public GroupInfo(byte[] groupId) {
-        this.groupId = groupId;
-    }
+    @JsonIgnore
+    public abstract GroupId getGroupId();
 
     @JsonIgnore
     public abstract String getTitle();

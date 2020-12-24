@@ -1,5 +1,6 @@
 package org.asamk.signal.util;
 
+import org.asamk.signal.manager.GroupIdFormatException;
 import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.NotAGroupMemberException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;

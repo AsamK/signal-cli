@@ -65,7 +65,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
             } else if (content.getDataMessage().isPresent()) {
                 SignalServiceDataMessage message = content.getDataMessage().get();
 
-                byte[] groupId = getGroupId(m, message);
+                byte[] groupId = getGroupId(message);
                 if (!message.isEndSession() && (
                         groupId == null
                                 || message.getGroupContext().get().getGroupV1Type() == null
@@ -91,7 +91,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                             .getGroupContext()
                             .isPresent()) {
                         SignalServiceDataMessage message = transcript.getMessage();
-                        byte[] groupId = getGroupId(m, message);
+                        byte[] groupId = getGroupId(message);
 
                         try {
                             conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
@@ -112,20 +112,9 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
         }
     }
 
-    private static byte[] getGroupId(final Manager m, final SignalServiceDataMessage message) {
-        byte[] groupId;
-        if (message.getGroupContext().isPresent()) {
-            if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                groupId = message.getGroupContext().get().getGroupV1().get().getGroupId();
-            } else if (message.getGroupContext().get().getGroupV2().isPresent()) {
-                groupId = GroupUtils.getGroupId(message.getGroupContext().get().getGroupV2().get().getMasterKey());
-            } else {
-                groupId = null;
-            }
-        } else {
-            groupId = null;
-        }
-        return groupId;
+    private static byte[] getGroupId(final SignalServiceDataMessage message) {
+        return message.getGroupContext().isPresent() ? GroupUtils.getGroupId(message.getGroupContext().get())
+                .serialize() : null;
     }
 
     static private List<String> getAttachments(SignalServiceDataMessage message, Manager m) {

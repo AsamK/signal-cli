@@ -2,7 +2,9 @@ package org.asamk.signal.manager.helper;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import org.asamk.signal.manager.GroupIdV2;
 import org.asamk.signal.manager.GroupLinkPassword;
+import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.storage.groups.GroupInfoV2;
 import org.asamk.signal.util.IOUtils;
 import org.signal.storageservice.protos.groups.AccessControl;
@@ -117,7 +119,7 @@ public class GroupHelper {
             return null;
         }
 
-        final byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
+        final GroupIdV2 groupId = GroupUtils.getGroupIdV2(groupSecretParams);
         final GroupMasterKey masterKey = groupSecretParams.getMasterKey();
         GroupInfoV2 g = new GroupInfoV2(groupId, masterKey);
         g.setGroup(decryptedGroup);

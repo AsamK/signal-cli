@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import org.asamk.signal.manager.GroupId;
 import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.storage.contacts.ContactInfo;
@@ -328,8 +329,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println(" - Timestamp: " + DateUtils.formatTimestamp(typingMessage.getTimestamp()));
                     if (typingMessage.getGroupId().isPresent()) {
                         System.out.println(" - Group Info:");
-                        System.out.println("   Id: " + Base64.encodeBytes(typingMessage.getGroupId().get()));
-                        GroupInfo group = m.getGroup(typingMessage.getGroupId().get());
+                        final GroupId groupId = GroupId.unknownVersion(typingMessage.getGroupId().get());
+                        System.out.println("   Id: " + groupId.toBase64());
+                        GroupInfo group = m.getGroup(groupId);
                         if (group != null) {
                             System.out.println("   Name: " + group.getTitle());
                         } else {
@@ -356,13 +358,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getGroupContext().isPresent()) {
             System.out.println("Group info:");
             final SignalServiceGroupContext groupContext = message.getGroupContext().get();
+            final GroupId groupId = GroupUtils.getGroupId(groupContext);
             if (groupContext.getGroupV1().isPresent()) {
                 SignalServiceGroup groupInfo = groupContext.getGroupV1().get();
-                System.out.println("  Id: " + Base64.encodeBytes(groupInfo.getGroupId()));
+                System.out.println("  Id: " + groupId.toBase64());
                 if (groupInfo.getType() == SignalServiceGroup.Type.UPDATE && groupInfo.getName().isPresent()) {
                     System.out.println("  Name: " + groupInfo.getName().get());
                 } else {
-                    GroupInfo group = m.getGroup(groupInfo.getGroupId());
+                    GroupInfo group = m.getGroup(groupId);
                     if (group != null) {
                         System.out.println("  Name: " + group.getTitle());
                     } else {
@@ -381,8 +384,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
             } else if (groupContext.getGroupV2().isPresent()) {
                 final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
-                byte[] groupId = GroupUtils.getGroupId(groupInfo.getMasterKey());
-                System.out.println("  Id: " + Base64.encodeBytes(groupId));
+                System.out.println("  Id: " + groupId.toBase64());
                 GroupInfo group = m.getGroup(groupId);
                 if (group != null) {
                     System.out.println("  Name: " + group.getTitle());

@@ -13,7 +13,11 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import org.asamk.signal.manager.GroupId;
+import org.asamk.signal.manager.GroupIdV1;
+import org.asamk.signal.manager.GroupIdV2;
 import org.asamk.signal.manager.GroupInviteLinkUrl;
+import org.asamk.signal.manager.GroupUtils;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;
@@ -26,8 +30,9 @@ public class GroupInfoV1 extends GroupInfo {
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
-    @JsonProperty
-    public byte[] expectedV2Id;
+    private final GroupIdV1 groupId;
+
+    private GroupIdV2 expectedV2Id;
 
     @JsonProperty
     public String name;
@@ -47,18 +52,8 @@ public class GroupInfoV1 extends GroupInfo {
     @JsonProperty(defaultValue = "false")
     public boolean archived;
 
-    public GroupInfoV1(byte[] groupId) {
-        super(groupId);
-    }
-
-    @Override
-    public String getTitle() {
-        return name;
-    }
-
-    @Override
-    public GroupInviteLinkUrl getGroupInviteLink() {
-        return null;
+    public GroupInfoV1(GroupIdV1 groupId) {
+        this.groupId = groupId;
     }
 
     public GroupInfoV1(
@@ -74,8 +69,8 @@ public class GroupInfoV1 extends GroupInfo {
             @JsonProperty("messageExpirationTime") int messageExpirationTime,
             @JsonProperty("active") boolean _ignored_active
     ) {
-        super(groupId);
-        this.expectedV2Id = expectedV2Id;
+        this.groupId = GroupId.v1(groupId);
+        this.expectedV2Id = GroupId.v2(expectedV2Id);
         this.name = name;
         this.members.addAll(members);
         this.color = color;
@@ -83,6 +78,40 @@ public class GroupInfoV1 extends GroupInfo {
         this.inboxPosition = inboxPosition;
         this.archived = archived;
         this.messageExpirationTime = messageExpirationTime;
+    }
+
+    @Override
+    @JsonIgnore
+    public GroupIdV1 getGroupId() {
+        return groupId;
+    }
+
+    @JsonProperty("groupId")
+    private byte[] getGroupIdJackson() {
+        return groupId.serialize();
+    }
+
+    @JsonIgnore
+    public GroupIdV2 getExpectedV2Id() {
+        if (expectedV2Id == null) {
+            expectedV2Id = GroupUtils.getGroupIdV2(groupId);
+        }
+        return expectedV2Id;
+    }
+
+    @JsonProperty("expectedV2Id")
+    private byte[] getExpectedV2IdJackson() {
+        return expectedV2Id.serialize();
+    }
+
+    @Override
+    public String getTitle() {
+        return name;
+    }
+
+    @Override
+    public GroupInviteLinkUrl getGroupInviteLink() {
+        return null;
     }
 
     @JsonIgnore

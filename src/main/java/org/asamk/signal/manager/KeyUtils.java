@@ -26,10 +26,6 @@ class KeyUtils {
         return getSecret(18);
     }
 
-    static byte[] createGroupId() {
-        return getSecretBytes(16);
-    }
-
     static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
     }

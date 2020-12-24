@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.util.GroupIdFormatException;
+import org.asamk.signal.manager.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.util.Base64;
@@ -35,7 +35,7 @@ public class UpdateGroupCommand implements DbusCommand {
         byte[] groupId = null;
         if (ns.getString("group") != null) {
             try {
-                groupId = Util.decodeGroupId(ns.getString("group"));
+                groupId = Util.decodeGroupId(ns.getString("group")).serialize();
             } catch (GroupIdFormatException e) {
                 handleGroupIdFormatException(e);
                 return 1;

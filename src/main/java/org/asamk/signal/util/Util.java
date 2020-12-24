@@ -2,13 +2,13 @@ package org.asamk.signal.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.asamk.signal.manager.GroupId;
+import org.asamk.signal.manager.GroupIdFormatException;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.util.Base64;
 
-import java.io.IOException;
 import java.io.InvalidObjectException;
 
 public class Util {
@@ -48,12 +48,8 @@ public class Util {
         return node;
     }
 
-    public static byte[] decodeGroupId(String groupId) throws GroupIdFormatException {
-        try {
-            return Base64.decode(groupId);
-        } catch (IOException e) {
-            throw new GroupIdFormatException(groupId, e);
-        }
+    public static GroupId decodeGroupId(String groupId) throws GroupIdFormatException {
+        return GroupId.fromBase64(groupId);
     }
 
     public static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {

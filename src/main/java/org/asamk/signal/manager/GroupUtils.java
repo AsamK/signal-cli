@@ -9,6 +9,7 @@ import org.signal.zkgroup.groups.GroupSecretParams;
 import org.whispersystems.libsignal.kdf.HKDFv3;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 
 public class GroupUtils {
@@ -18,7 +19,7 @@ public class GroupUtils {
     ) {
         if (groupInfo instanceof GroupInfoV1) {
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
-                    .withId(groupInfo.groupId)
+                    .withId(groupInfo.getGroupId().serialize())
                     .build();
             messageBuilder.asGroupMessage(group);
         } else {
@@ -30,14 +31,34 @@ public class GroupUtils {
         }
     }
 
-    public static byte[] getGroupId(GroupMasterKey groupMasterKey) {
-        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
-        return groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
+    public static GroupId getGroupId(SignalServiceGroupContext context) {
+        if (context.getGroupV1().isPresent()) {
+            return GroupId.v1(context.getGroupV1().get().getGroupId());
+        } else if (context.getGroupV2().isPresent()) {
+            return getGroupIdV2(context.getGroupV2().get().getMasterKey());
+        } else {
+            return null;
+        }
     }
 
-    public static GroupMasterKey deriveV2MigrationMasterKey(byte[] groupIdV1) {
+    public static GroupIdV2 getGroupIdV2(GroupSecretParams groupSecretParams) {
+        return GroupId.v2(groupSecretParams.getPublicParams().getGroupIdentifier().serialize());
+    }
+
+    public static GroupIdV2 getGroupIdV2(GroupMasterKey groupMasterKey) {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+        return getGroupIdV2(groupSecretParams);
+    }
+
+    public static GroupIdV2 getGroupIdV2(GroupIdV1 groupIdV1) {
+        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(deriveV2MigrationMasterKey(
+                groupIdV1));
+        return getGroupIdV2(groupSecretParams);
+    }
+
+    private static GroupMasterKey deriveV2MigrationMasterKey(GroupIdV1 groupIdV1) {
         try {
-            return new GroupMasterKey(new HKDFv3().deriveSecrets(groupIdV1,
+            return new GroupMasterKey(new HKDFv3().deriveSecrets(groupIdV1.serialize(),
                     "GV2 Migration".getBytes(),
                     GroupMasterKey.SIZE));
         } catch (InvalidInputException e) {

@@ -1,5 +1,6 @@
 package org.asamk.signal.storage.groups;
 
+import org.asamk.signal.manager.GroupIdV2;
 import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
@@ -13,14 +14,20 @@ import java.util.stream.Collectors;
 
 public class GroupInfoV2 extends GroupInfo {
 
+    private final GroupIdV2 groupId;
     private final GroupMasterKey masterKey;
 
     private boolean blocked;
     private DecryptedGroup group; // stored as a file with hexadecimal groupId as name
 
-    public GroupInfoV2(final byte[] groupId, final GroupMasterKey masterKey) {
-        super(groupId);
+    public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey) {
+        this.groupId = groupId;
         this.masterKey = masterKey;
+    }
+
+    @Override
+    public GroupIdV2 getGroupId() {
+        return groupId;
     }
 
     public GroupMasterKey getMasterKey() {

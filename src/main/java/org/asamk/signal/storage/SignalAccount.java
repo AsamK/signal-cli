@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.asamk.signal.manager.GroupId;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
@@ -309,7 +310,7 @@ public class SignalAccount implements Closeable {
                         contactInfo.messageExpirationTime = thread.messageExpirationTime;
                         contactStore.updateContact(contactInfo);
                     } else {
-                        GroupInfo groupInfo = groupStore.getGroup(Base64.decode(thread.id));
+                        GroupInfo groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
                         if (groupInfo instanceof GroupInfoV1) {
                             ((GroupInfoV1) groupInfo).messageExpirationTime = thread.messageExpirationTime;
                             groupStore.updateGroup(groupInfo);

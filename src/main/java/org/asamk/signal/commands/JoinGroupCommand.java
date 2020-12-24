@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.manager.GroupId;
 import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -11,7 +12,6 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,12 +52,12 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
-            final Pair<byte[], List<SendMessageResult>> results = m.joinGroup(linkUrl);
-            byte[] newGroupId = results.first();
+            final Pair<GroupId, List<SendMessageResult>> results = m.joinGroup(linkUrl);
+            GroupId newGroupId = results.first();
             if (!m.getGroup(newGroupId).isMember(m.getSelfAddress())) {
-                System.out.println("Requested to join group \"" + Base64.encodeBytes(newGroupId) + "\"");
+                System.out.println("Requested to join group \"" + newGroupId.toBase64() + "\"");
             } else {
-                System.out.println("Joined group \"" + Base64.encodeBytes(newGroupId) + "\"");
+                System.out.println("Joined group \"" + newGroupId.toBase64() + "\"");
             }
             return handleTimestampAndSendMessageResults(0, results.second());
         } catch (AssertionError e) {

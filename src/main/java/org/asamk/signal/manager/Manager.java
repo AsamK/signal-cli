@@ -679,7 +679,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(byte[] groupId) throws IOException {
+    private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupId groupId) throws IOException {
         File file = getGroupAvatarFile(groupId);
         if (!file.exists()) {
             return Optional.absent();
@@ -697,7 +697,7 @@ public class Manager implements Closeable {
         return Optional.of(Utils.createAttachment(file));
     }
 
-    private GroupInfo getGroupForSending(byte[] groupId) throws GroupNotFoundException, NotAGroupMemberException {
+    private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
         GroupInfo g = account.getGroupStore().getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
@@ -708,7 +708,7 @@ public class Manager implements Closeable {
         return g;
     }
 
-    private GroupInfo getGroupForUpdating(byte[] groupId) throws GroupNotFoundException, NotAGroupMemberException {
+    private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
         GroupInfo g = account.getGroupStore().getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
@@ -724,7 +724,7 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            SignalServiceDataMessage.Builder messageBuilder, byte[] groupId
+            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
     ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
         final GroupInfo g = getGroupForSending(groupId);
 
@@ -735,7 +735,7 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            String messageText, List<String> attachments, byte[] groupId
+            String messageText, List<String> attachments, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withBody(messageText);
@@ -747,7 +747,7 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessageReaction(
-            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, GroupId groupId
     ) throws IOException, InvalidNumberException, NotAGroupMemberException, GroupNotFoundException {
         SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
@@ -759,7 +759,7 @@ public class Manager implements Closeable {
         return sendGroupMessage(messageBuilder, groupId);
     }
 
-    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(byte[] groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
+    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
 
         SignalServiceDataMessage.Builder messageBuilder;
 
@@ -767,7 +767,7 @@ public class Manager implements Closeable {
         if (g instanceof GroupInfoV1) {
             GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
             SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
-                    .withId(groupId)
+                    .withId(groupId.serialize())
                     .build();
             messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
             groupInfoV1.removeMember(account.getSelfAddress());
@@ -783,8 +783,8 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
-    private Pair<byte[], List<SendMessageResult>> sendUpdateGroupMessage(
-            byte[] groupId, String name, Collection<SignalServiceAddress> members, String avatarFile
+    private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
+            GroupId groupId, String name, Collection<SignalServiceAddress> members, String avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         GroupInfo g;
         SignalServiceDataMessage.Builder messageBuilder;
@@ -792,7 +792,7 @@ public class Manager implements Closeable {
             // Create new group
             GroupInfoV2 gv2 = groupHelper.createGroupV2(name, members, avatarFile);
             if (gv2 == null) {
-                GroupInfoV1 gv1 = new GroupInfoV1(KeyUtils.createGroupId());
+                GroupInfoV1 gv1 = new GroupInfoV1(GroupIdV1.createRandom());
                 gv1.addMembers(Collections.singleton(account.getSelfAddress()));
                 updateGroupV1(gv1, name, members, avatarFile);
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
@@ -834,7 +834,7 @@ public class Manager implements Closeable {
                             groupGroupChangePair.second());
                 }
 
-                return new Pair<>(group.groupId, result.second());
+                return new Pair<>(group.getGroupId(), result.second());
             } else {
                 GroupInfoV1 gv1 = (GroupInfoV1) group;
                 updateGroupV1(gv1, name, members, avatarFile);
@@ -847,16 +847,16 @@ public class Manager implements Closeable {
 
         final Pair<Long, List<SendMessageResult>> result = sendMessage(messageBuilder,
                 g.getMembersIncludingPendingWithout(account.getSelfAddress()));
-        return new Pair<>(g.groupId, result.second());
+        return new Pair<>(g.getGroupId(), result.second());
     }
 
-    public Pair<byte[], List<SendMessageResult>> joinGroup(
+    public Pair<GroupId, List<SendMessageResult>> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, GroupLinkNotActiveException {
         return sendJoinGroupMessage(inviteLinkUrl);
     }
 
-    private Pair<byte[], List<SendMessageResult>> sendJoinGroupMessage(
+    private Pair<GroupId, List<SendMessageResult>> sendJoinGroupMessage(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, GroupLinkNotActiveException {
         final DecryptedGroupJoinInfo groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
@@ -870,12 +870,12 @@ public class Manager implements Closeable {
 
         if (group.getGroup() == null) {
             // Only requested member, can't send update to group members
-            return new Pair<>(group.groupId, List.of());
+            return new Pair<>(group.getGroupId(), List.of());
         }
 
         final Pair<Long, List<SendMessageResult>> result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
 
-        return new Pair<>(group.groupId, result.second());
+        return new Pair<>(group.getGroupId(), result.second());
     }
 
     private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
@@ -923,13 +923,13 @@ public class Manager implements Closeable {
 
         if (avatarFile != null) {
             IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-            File aFile = getGroupAvatarFile(g.groupId);
+            File aFile = getGroupAvatarFile(g.getGroupId());
             Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
     Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
-            byte[] groupId, SignalServiceAddress recipient
+            GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
         GroupInfo group = getGroupForSending(groupId);
@@ -950,11 +950,11 @@ public class Manager implements Closeable {
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
         SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
-                .withId(g.groupId)
+                .withId(g.getGroupId().serialize())
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.getMembers()));
 
-        File aFile = getGroupAvatarFile(g.groupId);
+        File aFile = getGroupAvatarFile(g.getGroupId());
         if (aFile.exists()) {
             try {
                 group.withAvatar(Utils.createAttachment(aFile));
@@ -978,10 +978,10 @@ public class Manager implements Closeable {
     }
 
     Pair<Long, List<SendMessageResult>> sendGroupInfoRequest(
-            byte[] groupId, SignalServiceAddress recipient
+            GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException {
         SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO)
-                .withId(groupId);
+                .withId(groupId.serialize());
 
         SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build());
@@ -1087,7 +1087,7 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    public void setGroupBlocked(final byte[] groupId, final boolean blocked) throws GroupNotFoundException {
+    public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
         GroupInfo group = getGroup(groupId);
         if (group == null) {
             throw new GroupNotFoundException(groupId);
@@ -1098,8 +1098,8 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    public Pair<byte[], List<SendMessageResult>> updateGroup(
-            byte[] groupId, String name, List<String> members, String avatar
+    public Pair<GroupId, List<SendMessageResult>> updateGroup(
+            GroupId groupId, String name, List<String> members, String avatar
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return sendUpdateGroupMessage(groupId,
                 name,
@@ -1137,7 +1137,7 @@ public class Manager implements Closeable {
     /**
      * Change the expiration timer for a group
      */
-    public void setExpirationTimer(byte[] groupId, int messageExpirationTimer) {
+    public void setExpirationTimer(GroupId groupId, int messageExpirationTimer) {
         GroupInfo g = account.getGroupStore().getGroup(groupId);
         if (g instanceof GroupInfoV1) {
             GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
@@ -1551,20 +1551,21 @@ public class Manager implements Closeable {
         if (message.getGroupContext().isPresent()) {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
                 SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                GroupInfo group = account.getGroupStore().getGroupByV1Id(groupInfo.getGroupId());
+                GroupIdV1 groupId = GroupId.v1(groupInfo.getGroupId());
+                GroupInfo group = account.getGroupStore().getGroup(groupId);
                 if (group == null || group instanceof GroupInfoV1) {
                     GroupInfoV1 groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
                         case UPDATE: {
                             if (groupV1 == null) {
-                                groupV1 = new GroupInfoV1(groupInfo.getGroupId());
+                                groupV1 = new GroupInfoV1(groupId);
                             }
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 SignalServiceAttachment avatar = groupInfo.getAvatar().get();
                                 if (avatar.isPointer()) {
                                     try {
-                                        retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.groupId);
+                                        retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.getGroupId());
                                     } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
                                         System.err.println("Failed to retrieve group avatar (" + avatar.asPointer()
                                                 .getRemoteId() + "): " + e.getMessage());
@@ -1589,7 +1590,7 @@ public class Manager implements Closeable {
                         }
                         case DELIVER:
                             if (groupV1 == null && !isSync) {
-                                actions.add(new SendGroupInfoRequestAction(source, groupInfo.getGroupId()));
+                                actions.add(new SendGroupInfoRequestAction(source, groupV1.getGroupId()));
                             }
                             break;
                         case QUIT: {
@@ -1601,7 +1602,7 @@ public class Manager implements Closeable {
                         }
                         case REQUEST_INFO:
                             if (groupV1 != null && !isSync) {
-                                actions.add(new SendGroupUpdateAction(source, groupV1.groupId));
+                                actions.add(new SendGroupUpdateAction(source, groupV1.getGroupId()));
                             }
                             break;
                     }
@@ -1627,7 +1628,7 @@ public class Manager implements Closeable {
             if (message.getGroupContext().isPresent()) {
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
                     SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    GroupInfoV1 group = account.getGroupStore().getOrCreateGroupV1(groupInfo.getGroupId());
+                    GroupInfoV1 group = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(groupInfo.getGroupId()));
                     if (group != null) {
                         if (group.messageExpirationTime != message.getExpiresInSeconds()) {
                             group.messageExpirationTime = message.getExpiresInSeconds();
@@ -1723,17 +1724,17 @@ public class Manager implements Closeable {
     ) {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
-        byte[] groupId = groupSecretParams.getPublicParams().getGroupIdentifier().serialize();
-        GroupInfo groupInfo = account.getGroupStore().getGroupByV2Id(groupId);
+        GroupIdV2 groupId = GroupUtils.getGroupIdV2(groupSecretParams);
+        GroupInfo groupInfo = account.getGroupStore().getGroup(groupId);
         final GroupInfoV2 groupInfoV2;
         if (groupInfo instanceof GroupInfoV1) {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
-            account.getGroupStore().deleteGroup(groupInfo.groupId);
+            account.getGroupStore().deleteGroup(groupInfo.getGroupId());
             groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
             System.err.println("Locally migrated group "
-                    + Base64.encodeBytes(groupInfo.groupId)
+                    + groupInfo.getGroupId().toBase64()
                     + " to group v2, id: "
-                    + Base64.encodeBytes(groupInfoV2.groupId)
+                    + groupInfoV2.getGroupId().toBase64()
                     + " !!!");
         } else if (groupInfo instanceof GroupInfoV2) {
             groupInfoV2 = (GroupInfoV2) groupInfo;
@@ -1970,19 +1971,14 @@ public class Manager implements Closeable {
         if (content != null && content.getDataMessage().isPresent()) {
             SignalServiceDataMessage message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
-                GroupInfo group = null;
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
                     SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    if (groupInfo.getType() == SignalServiceGroup.Type.DELIVER) {
-                        group = getGroup(groupInfo.getGroupId());
+                    if (groupInfo.getType() != SignalServiceGroup.Type.DELIVER) {
+                        return false;
                     }
                 }
-                if (message.getGroupContext().get().getGroupV2().isPresent()) {
-                    SignalServiceGroupV2 groupContext = message.getGroupContext().get().getGroupV2().get();
-                    final GroupMasterKey groupMasterKey = groupContext.getMasterKey();
-                    byte[] groupId = GroupUtils.getGroupId(groupMasterKey);
-                    group = account.getGroupStore().getGroupByV2Id(groupId);
-                }
+                GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+                GroupInfo group = account.getGroupStore().getGroup(groupId);
                 if (group != null && group.isBlocked()) {
                     return true;
                 }
@@ -2055,7 +2051,8 @@ public class Manager implements Closeable {
                             DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
                             while ((g = s.read()) != null) {
-                                GroupInfoV1 syncGroup = account.getGroupStore().getOrCreateGroupV1(g.getId());
+                                GroupInfoV1 syncGroup = account.getGroupStore()
+                                        .getOrCreateGroupV1(GroupId.v1(g.getId()));
                                 if (syncGroup != null) {
                                     if (g.getName().isPresent()) {
                                         syncGroup.name = g.getName().get();
@@ -2076,7 +2073,7 @@ public class Manager implements Closeable {
                                     }
 
                                     if (g.getAvatar().isPresent()) {
-                                        retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.groupId);
+                                        retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.getGroupId());
                                     }
                                     syncGroup.inboxPosition = g.getInboxPosition().orNull();
                                     syncGroup.archived = g.isArchived();
@@ -2104,12 +2101,15 @@ public class Manager implements Closeable {
                     for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
                         setContactBlocked(resolveSignalServiceAddress(address), true);
                     }
-                    for (byte[] groupId : blockedListMessage.getGroupIds()) {
+                    for (GroupId groupId : blockedListMessage.getGroupIds()
+                            .stream()
+                            .map(GroupId::unknownVersion)
+                            .collect(Collectors.toSet())) {
                         try {
                             setGroupBlocked(groupId, true);
                         } catch (GroupNotFoundException e) {
                             System.err.println("BlockedListMessage contained groupID that was not found in GroupStore: "
-                                    + Base64.encodeBytes(groupId));
+                                    + groupId.toBase64());
                         }
                     }
                 }
@@ -2229,12 +2229,12 @@ public class Manager implements Closeable {
         }
     }
 
-    private File getGroupAvatarFile(byte[] groupId) {
-        return new File(pathConfig.getAvatarsPath(), "group-" + Base64.encodeBytes(groupId).replace("/", "_"));
+    private File getGroupAvatarFile(GroupId groupId) {
+        return new File(pathConfig.getAvatarsPath(), "group-" + groupId.toBase64().replace("/", "_"));
     }
 
     private File retrieveGroupAvatarAttachment(
-            SignalServiceAttachment attachment, byte[] groupId
+            SignalServiceAttachment attachment, GroupId groupId
     ) throws IOException, InvalidMessageException, MissingConfigurationException {
         IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
         if (attachment.isPointer()) {
@@ -2333,10 +2333,10 @@ public class Manager implements Closeable {
                 for (GroupInfo record : account.getGroupStore().getGroups()) {
                     if (record instanceof GroupInfoV1) {
                         GroupInfoV1 groupInfo = (GroupInfoV1) record;
-                        out.write(new DeviceGroup(groupInfo.groupId,
+                        out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
                                 Optional.fromNullable(groupInfo.name),
                                 new ArrayList<>(groupInfo.getMembers()),
-                                createGroupAvatarAttachment(groupInfo.groupId),
+                                createGroupAvatarAttachment(groupInfo.getGroupId()),
                                 groupInfo.isMember(account.getSelfAddress()),
                                 Optional.of(groupInfo.messageExpirationTime),
                                 Optional.fromNullable(groupInfo.color),
@@ -2442,7 +2442,7 @@ public class Manager implements Closeable {
         List<byte[]> groupIds = new ArrayList<>();
         for (GroupInfo record : account.getGroupStore().getGroups()) {
             if (record.isBlocked()) {
-                groupIds.add(record.groupId);
+                groupIds.add(record.getGroupId().serialize());
             }
         }
         sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
@@ -2466,7 +2466,7 @@ public class Manager implements Closeable {
         return account.getContactStore().getContact(Util.getSignalServiceAddressFromIdentifier(number));
     }
 
-    public GroupInfo getGroup(byte[] groupId) {
+    public GroupInfo getGroup(GroupId groupId) {
         return account.getGroupStore().getGroup(groupId);
     }
 

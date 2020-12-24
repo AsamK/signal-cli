@@ -12,6 +12,9 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import org.asamk.signal.manager.GroupId;
+import org.asamk.signal.manager.GroupIdV1;
+import org.asamk.signal.manager.GroupIdV2;
 import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.IOUtils;
@@ -25,7 +28,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +41,7 @@ public class JsonGroupStore {
     @JsonProperty("groups")
     @JsonSerialize(using = GroupsSerializer.class)
     @JsonDeserialize(using = GroupsDeserializer.class)
-    private final Map<String, GroupInfo> groups = new HashMap<>();
+    private final Map<GroupId, GroupInfo> groups = new HashMap<>();
 
     private JsonGroupStore() {
     }
@@ -49,11 +51,11 @@ public class JsonGroupStore {
     }
 
     public void updateGroup(GroupInfo group) {
-        groups.put(Base64.encodeBytes(group.groupId), group);
+        groups.put(group.getGroupId(), group);
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() != null) {
             try {
                 IOUtils.createPrivateDirectories(groupCachePath);
-                try (FileOutputStream stream = new FileOutputStream(getGroupFile(group.groupId))) {
+                try (FileOutputStream stream = new FileOutputStream(getGroupFile(group.getGroupId()))) {
                     ((GroupInfoV2) group).getGroup().writeTo(stream);
                 }
             } catch (IOException e) {
@@ -62,57 +64,50 @@ public class JsonGroupStore {
         }
     }
 
-    public void deleteGroup(byte[] groupId) {
-        groups.remove(Base64.encodeBytes(groupId));
+    public void deleteGroup(GroupId groupId) {
+        groups.remove(groupId);
     }
 
-    public GroupInfo getGroup(byte[] groupId) {
-        final GroupInfo group = groups.get(Base64.encodeBytes(groupId));
-        if (group == null & groupId.length == 16) {
-            return getGroupByV1Id(groupId);
-        }
-        loadDecryptedGroup(group);
-        return group;
-    }
-
-    public GroupInfo getGroupByV1Id(byte[] groupIdV1) {
-        GroupInfo group = groups.get(Base64.encodeBytes(groupIdV1));
+    public GroupInfo getGroup(GroupId groupId) {
+        GroupInfo group = groups.get(groupId);
         if (group == null) {
-            group = groups.get(Base64.encodeBytes(GroupUtils.getGroupId(GroupUtils.deriveV2MigrationMasterKey(groupIdV1))));
-        }
-        loadDecryptedGroup(group);
-        return group;
-    }
-
-    public GroupInfo getGroupByV2Id(byte[] groupIdV2) {
-        GroupInfo group = groups.get(Base64.encodeBytes(groupIdV2));
-        if (group == null) {
-            for (GroupInfo g : groups.values()) {
-                if (g instanceof GroupInfoV1 && Arrays.equals(groupIdV2, ((GroupInfoV1) g).expectedV2Id)) {
-                    group = g;
-                    break;
-                }
+            if (groupId instanceof GroupIdV1) {
+                group = groups.get(GroupUtils.getGroupIdV2((GroupIdV1) groupId));
+            } else if (groupId instanceof GroupIdV2) {
+                group = getGroupV1ByV2Id((GroupIdV2) groupId);
             }
         }
         loadDecryptedGroup(group);
         return group;
     }
 
+    private GroupInfoV1 getGroupV1ByV2Id(GroupIdV2 groupIdV2) {
+        for (GroupInfo g : groups.values()) {
+            if (g instanceof GroupInfoV1) {
+                final GroupInfoV1 gv1 = (GroupInfoV1) g;
+                if (groupIdV2.equals(gv1.getExpectedV2Id())) {
+                    return gv1;
+                }
+            }
+        }
+        return null;
+    }
+
     private void loadDecryptedGroup(final GroupInfo group) {
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
-            try (FileInputStream stream = new FileInputStream(getGroupFile(group.groupId))) {
+            try (FileInputStream stream = new FileInputStream(getGroupFile(group.getGroupId()))) {
                 ((GroupInfoV2) group).setGroup(DecryptedGroup.parseFrom(stream));
             } catch (IOException ignored) {
             }
         }
     }
 
-    private File getGroupFile(final byte[] groupId) {
-        return new File(groupCachePath, Hex.toStringCondensed(groupId));
+    private File getGroupFile(final GroupId groupId) {
+        return new File(groupCachePath, Hex.toStringCondensed(groupId.serialize()));
     }
 
-    public GroupInfoV1 getOrCreateGroupV1(byte[] groupId) {
-        GroupInfo group = groups.get(Base64.encodeBytes(groupId));
+    public GroupInfoV1 getOrCreateGroupV1(GroupIdV1 groupId) {
+        GroupInfo group = getGroup(groupId);
         if (group instanceof GroupInfoV1) {
             return (GroupInfoV1) group;
         }
@@ -146,7 +141,7 @@ public class JsonGroupStore {
                 } else if (group instanceof GroupInfoV2) {
                     final GroupInfoV2 groupV2 = (GroupInfoV2) group;
                     jgen.writeStartObject();
-                    jgen.writeStringField("groupId", Base64.encodeBytes(groupV2.groupId));
+                    jgen.writeStringField("groupId", groupV2.getGroupId().toBase64());
                     jgen.writeStringField("masterKey", Base64.encodeBytes(groupV2.getMasterKey().serialize()));
                     jgen.writeBooleanField("blocked", groupV2.isBlocked());
                     jgen.writeEndObject();
@@ -158,34 +153,31 @@ public class JsonGroupStore {
         }
     }
 
-    private static class GroupsDeserializer extends JsonDeserializer<Map<String, GroupInfo>> {
+    private static class GroupsDeserializer extends JsonDeserializer<Map<GroupId, GroupInfo>> {
 
         @Override
-        public Map<String, GroupInfo> deserialize(
+        public Map<GroupId, GroupInfo> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            Map<String, GroupInfo> groups = new HashMap<>();
+            Map<GroupId, GroupInfo> groups = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
                 GroupInfo g;
                 if (n.has("masterKey")) {
                     // a v2 group
-                    byte[] groupId = Base64.decode(n.get("groupId").asText());
+                    GroupIdV2 groupId = GroupIdV2.fromBase64(n.get("groupId").asText());
                     try {
                         GroupMasterKey masterKey = new GroupMasterKey(Base64.decode(n.get("masterKey").asText()));
                         g = new GroupInfoV2(groupId, masterKey);
                     } catch (InvalidInputException e) {
-                        throw new AssertionError("Invalid master key for group " + Base64.encodeBytes(groupId));
+                        throw new AssertionError("Invalid master key for group " + groupId.toBase64());
                     }
                     g.setBlocked(n.get("blocked").asBoolean(false));
                 } else {
                     GroupInfoV1 gv1 = jsonProcessor.treeToValue(n, GroupInfoV1.class);
-                    if (gv1.expectedV2Id == null) {
-                        gv1.expectedV2Id = GroupUtils.getGroupId(GroupUtils.deriveV2MigrationMasterKey(gv1.groupId));
-                    }
                     g = gv1;
                 }
-                groups.put(Base64.encodeBytes(g.groupId), g);
+                groups.put(g.getGroupId(), g);
             }
 
             return groups;
