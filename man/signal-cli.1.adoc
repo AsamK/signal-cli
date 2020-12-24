@@ -131,7 +131,7 @@ Checks if a list of phone numbers are registered on Signal or not.
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
 *--json*::
-Output received messages in json format, one object per line.
+Output number registration statuses in json format, one object per line.
 
 === send
 
