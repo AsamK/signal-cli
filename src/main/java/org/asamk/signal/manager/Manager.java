@@ -345,6 +345,22 @@ public class Manager implements Closeable {
         return account.isRegistered();
     }
 
+    /**
+     * This is used for checking if someone else's number is registered on Signal
+     *
+     * @param number The phone number in question
+     * @return True if registered, false otherwise
+     * @throws IOException if its unable to check if the user is registered
+     */
+    public boolean isUserRegistered(String number) throws IOException {
+        ContactTokenDetails details = this.accountManager.getContact(number).orNull();
+        if (details == null) {
+            return false;
+        }
+
+        return true;
+    }
+
     public void register(boolean voiceVerification, String captcha) throws IOException {
         account.setPassword(KeyUtils.createPassword());
 

@@ -124,6 +124,15 @@ Only works, if this is the master device.
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
 
+=== isRegistered
+
+Checks if a list of users are registered on Signal or not.
+
+[NUMBER [NUMBER ...]]::
+One or more numbers to check.
+*--json*::
+Output received messages in json format, one object per line.
+
 === send
 
 Send a message to another user or group.
