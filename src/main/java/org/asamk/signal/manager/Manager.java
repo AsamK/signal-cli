@@ -1754,6 +1754,11 @@ public class Manager implements Closeable {
             }
             if (group != null) {
                 storeProfileKeysFromMembers(group);
+                try {
+                    retrieveGroupAvatar(groupId, groupSecretParams, group.getAvatar());
+                } catch (IOException e) {
+                    System.err.println("Failed to download group avatar, ignoring ...");
+                }
             }
             groupInfoV2.setGroup(group);
             account.getGroupStore().updateGroup(groupInfoV2);
@@ -2244,6 +2249,35 @@ public class Manager implements Closeable {
             SignalServiceAttachmentStream stream = attachment.asStream();
             return Utils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
         }
+    }
+
+    private File retrieveGroupAvatar(
+            GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey
+    ) throws IOException {
+        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
+        SignalServiceMessageReceiver receiver = getOrCreateMessageReceiver();
+        File outputFile = getGroupAvatarFile(groupId);
+        GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+
+        File tmpFile = IOUtils.createTempFile();
+        tmpFile.deleteOnExit();
+        try (InputStream input = receiver.retrieveGroupsV2ProfileAvatar(cdnKey,
+                tmpFile,
+                ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
+            byte[] encryptedData = IOUtils.readFully(input);
+
+            byte[] decryptedData = groupOperations.decryptAvatar(encryptedData);
+            try (OutputStream output = new FileOutputStream(outputFile)) {
+                output.write(decryptedData);
+            }
+        } finally {
+            try {
+                Files.delete(tmpFile.toPath());
+            } catch (IOException e) {
+                System.err.println("Failed to delete received avatar temp file “" + tmpFile + "”: " + e.getMessage());
+            }
+        }
+        return outputFile;
     }
 
     private File getProfileAvatarFile(SignalServiceAddress address) {
