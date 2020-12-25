@@ -58,6 +58,10 @@ public class JsonGroupStore {
                 try (FileOutputStream stream = new FileOutputStream(getGroupFile(group.getGroupId()))) {
                     ((GroupInfoV2) group).getGroup().writeTo(stream);
                 }
+                final File groupFileLegacy = getGroupFileLegacy(group.getGroupId());
+                if (groupFileLegacy.exists()) {
+                    groupFileLegacy.delete();
+                }
             } catch (IOException e) {
                 System.err.println("Failed to cache group, ignoring ...");
             }
@@ -95,15 +99,26 @@ public class JsonGroupStore {
 
     private void loadDecryptedGroup(final GroupInfo group) {
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
-            try (FileInputStream stream = new FileInputStream(getGroupFile(group.getGroupId()))) {
+            File groupFile = getGroupFile(group.getGroupId());
+            if (!groupFile.exists()) {
+                groupFile = getGroupFileLegacy(group.getGroupId());
+            }
+            if (!groupFile.exists()) {
+                return;
+            }
+            try (FileInputStream stream = new FileInputStream(groupFile)) {
                 ((GroupInfoV2) group).setGroup(DecryptedGroup.parseFrom(stream));
             } catch (IOException ignored) {
             }
         }
     }
 
-    private File getGroupFile(final GroupId groupId) {
+    private File getGroupFileLegacy(final GroupId groupId) {
         return new File(groupCachePath, Hex.toStringCondensed(groupId.serialize()));
+    }
+
+    private File getGroupFile(final GroupId groupId) {
+        return new File(groupCachePath, groupId.toBase64().replace("/", "_"));
     }
 
     public GroupInfoV1 getOrCreateGroupV1(GroupIdV1 groupId) {
