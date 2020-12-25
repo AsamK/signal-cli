@@ -816,7 +816,10 @@ public class Manager implements Closeable {
 
                 if (members != null) {
                     final Set<SignalServiceAddress> newMembers = new HashSet<>(members);
-                    newMembers.removeAll(group.getMembers());
+                    newMembers.removeAll(group.getMembers()
+                            .stream()
+                            .map(this::resolveSignalServiceAddress)
+                            .collect(Collectors.toSet()));
                     if (newMembers.size() > 0) {
                         Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
                                 newMembers);
