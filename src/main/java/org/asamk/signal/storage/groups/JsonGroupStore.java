@@ -21,6 +21,8 @@ import org.asamk.signal.util.IOUtils;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.util.Base64;
 
 import java.io.File;
@@ -34,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonGroupStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonGroupStore.class);
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
     public File groupCachePath;
@@ -63,7 +67,7 @@ public class JsonGroupStore {
                     groupFileLegacy.delete();
                 }
             } catch (IOException e) {
-                System.err.println("Failed to cache group, ignoring ...");
+                logger.warn("Failed to cache group, ignoring: {}", e.getMessage());
             }
         }
     }

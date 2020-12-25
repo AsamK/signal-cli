@@ -6,6 +6,7 @@ import org.asamk.signal.manager.GroupIdV2;
 import org.asamk.signal.manager.GroupLinkPassword;
 import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.storage.groups.GroupInfoV2;
+import org.asamk.signal.storage.profiles.SignalProfile;
 import org.asamk.signal.util.IOUtils;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
@@ -20,6 +21,8 @@ import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.groups.UuidCiphertext;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
@@ -43,6 +46,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class GroupHelper {
+
+    final static Logger logger = LoggerFactory.getLogger(GroupHelper.class);
 
     private final ProfileKeyCredentialProvider profileKeyCredentialProvider;
 
@@ -78,7 +83,7 @@ public class GroupHelper {
                     groupSecretParams);
             return groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
-            System.err.println("Failed to retrieve Group V2 info, ignoring ...");
+            logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
             return null;
         }
     }
@@ -111,11 +116,11 @@ public class GroupHelper {
             groupsV2Api.putNewGroup(newGroup, groupAuthForToday);
             decryptedGroup = groupsV2Api.getGroup(groupSecretParams, groupAuthForToday);
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
-            System.err.println("Failed to create V2 group: " + e.getMessage());
+            logger.warn("Failed to create V2 group: {}", e.getMessage());
             return null;
         }
         if (decryptedGroup == null) {
-            System.err.println("Failed to create V2 group!");
+            logger.warn("Failed to create V2 group, unknown error!");
             return null;
         }
 
@@ -141,7 +146,7 @@ public class GroupHelper {
         final ProfileKeyCredential profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(
                 selfAddressProvider.getSelfAddress());
         if (profileKeyCredential == null) {
-            System.err.println("Cannot create a V2 group as self does not have a versioned profile");
+            logger.warn("Cannot create a V2 group as self does not have a versioned profile");
             return null;
         }
 
@@ -165,22 +170,23 @@ public class GroupHelper {
     }
 
     private boolean areMembersValid(final Collection<SignalServiceAddress> members) {
-        final int noUuidCapability = members.stream()
+        final Set<String> noUuidCapability = members.stream()
                 .filter(address -> !address.getUuid().isPresent())
-                .collect(Collectors.toUnmodifiableSet())
-                .size();
-        if (noUuidCapability > 0) {
-            System.err.println("Cannot create a V2 group as " + noUuidCapability + " members don't have a UUID.");
+                .map(SignalServiceAddress::getLegacyIdentifier)
+                .collect(Collectors.toSet());
+        if (noUuidCapability.size() > 0) {
+            logger.warn("Cannot create a V2 group as some members don't have a UUID: {}",
+                    String.join(", ", noUuidCapability));
             return false;
         }
 
-        final int noGv2Capability = members.stream()
+        final Set<SignalProfile> noGv2Capability = members.stream()
                 .map(profileProvider::getProfile)
                 .filter(profile -> profile != null && !profile.getCapabilities().gv2)
-                .collect(Collectors.toUnmodifiableSet())
-                .size();
-        if (noGv2Capability > 0) {
-            System.err.println("Cannot create a V2 group as " + noGv2Capability + " members don't support Groups V2.");
+                .collect(Collectors.toSet());
+        if (noGv2Capability.size() > 0) {
+            logger.warn("Cannot create a V2 group as some members don't support Groups V2: {}",
+                    noGv2Capability.stream().map(SignalProfile::getName).collect(Collectors.joining(", ")));
             return false;
         }
 
@@ -219,7 +225,9 @@ public class GroupHelper {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
-        if (!areMembersValid(newMembers)) return null;
+        if (!areMembersValid(newMembers)) {
+            throw new IOException("Failed to update group");
+        }
 
         Set<GroupCandidate> candidates = newMembers.stream()
                 .map(member -> new GroupCandidate(member.getUuid().get(),

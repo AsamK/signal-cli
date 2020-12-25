@@ -31,6 +31,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -45,7 +46,7 @@ public class ProvisioningManager {
     private final int registrationId;
     private final String password;
 
-    public ProvisioningManager(String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
+    public ProvisioningManager(File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;

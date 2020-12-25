@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.bouncycastle:bcprov-jdk15on:1.67'
     implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     implementation 'com.github.hypfvieh:dbus-java:3.2.4'
-    implementation 'org.slf4j:slf4j-nop:1.7.30'
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
 }
 
 jar {

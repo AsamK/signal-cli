@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SessionStore;
@@ -23,6 +25,8 @@ import java.util.List;
 import java.util.UUID;
 
 class JsonSessionStore implements SessionStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonSessionStore.class);
 
     private final List<SessionInfo> sessions = new ArrayList<>();
 
@@ -51,7 +55,7 @@ class JsonSessionStore implements SessionStore {
                 try {
                     return new SessionRecord(info.sessionRecord);
                 } catch (IOException e) {
-                    System.err.println("Failed to load session, resetting session: " + e);
+                    logger.warn("Failed to load session, resetting session: {}", e.getMessage());
                     final SessionRecord sessionRecord = new SessionRecord();
                     info.sessionRecord = sessionRecord.serialize();
                     return sessionRecord;
@@ -151,7 +155,7 @@ class JsonSessionStore implements SessionStore {
                         SessionInfo sessionInfo = new SessionInfo(serviceAddress, deviceId, Base64.decode(record));
                         sessionStore.sessions.add(sessionInfo);
                     } catch (IOException e) {
-                        System.err.println(String.format("Error while decoding session for: %s", sessionName));
+                        logger.warn("Error while decoding session for {}: {}", sessionName, e.getMessage());
                     }
                 }
             }

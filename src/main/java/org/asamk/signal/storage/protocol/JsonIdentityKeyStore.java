@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class JsonIdentityKeyStore implements IdentityKeyStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonIdentityKeyStore.class);
 
     private final List<Identity> identities = new ArrayList<>();
 
@@ -219,7 +223,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                                     .asLong()) : new Date();
                             keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
                         } catch (InvalidKeyException | IOException e) {
-                            System.out.println(String.format("Error while decoding key for: %s", trustedKeyName));
+                            logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
                         }
                     }
                 }

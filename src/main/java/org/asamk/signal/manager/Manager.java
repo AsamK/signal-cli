@@ -55,6 +55,8 @@ import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -173,6 +175,8 @@ import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
 
 public class Manager implements Closeable {
 
+    final static Logger logger = LoggerFactory.getLogger(Manager.class);
+
     private final SleepTimer timer = new UptimeSleepTimer();
 
     private final SignalServiceConfiguration serviceConfiguration;
@@ -274,7 +278,7 @@ public class Manager implements Closeable {
     }
 
     public static Manager init(
-            String username, String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent
+            String username, File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent
     ) throws IOException {
         PathConfig pathConfig = PathConfig.createDefault(settingsPath);
 
@@ -590,7 +594,7 @@ public class Manager implements Closeable {
             try {
                 profile = retrieveRecipientProfile(address, profileKey);
             } catch (IOException e) {
-                System.err.println("Failed to retrieve profile, ignoring: " + e.getMessage());
+                logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
                 profileEntry.setRequestPending(false);
                 return null;
             }
@@ -613,7 +617,7 @@ public class Manager implements Closeable {
                 profileAndCredential = profileHelper.retrieveProfileSync(address,
                         SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL);
             } catch (IOException e) {
-                System.err.println("Failed to retrieve profile key credential, ignoring: " + e.getMessage());
+                logger.warn("Failed to retrieve profile key credential, ignoring: {}", e.getMessage());
                 return null;
             }
 
@@ -646,7 +650,7 @@ public class Manager implements Closeable {
                     ? null
                     : retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
         } catch (Throwable e) {
-            System.err.println("Failed to retrieve profile avatar, ignoring: " + e.getMessage());
+            logger.warn("Failed to retrieve profile avatar, ignoring: {}", e.getMessage());
         }
 
         ProfileCipher profileCipher = new ProfileCipher(profileKey);
@@ -1327,7 +1331,7 @@ public class Manager implements Closeable {
         try {
             certificate = accountManager.getSenderCertificate();
         } catch (IOException e) {
-            System.err.println("Failed to get sender certificate: " + e);
+            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;
         }
         // TODO cache for a day
@@ -1366,7 +1370,7 @@ public class Manager implements Closeable {
                     missingUuids.stream().map(a -> a.getNumber().get()).collect(Collectors.toSet()),
                     CDS_MRENCLAVE);
         } catch (IOException | Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException e) {
-            System.err.println("Failed to resolve uuids from server: " + e.getMessage());
+            logger.warn("Failed to resolve uuids from server, ignoring: {}", e.getMessage());
             registeredUsers = new HashMap<>();
         }
 
@@ -1570,8 +1574,9 @@ public class Manager implements Closeable {
                                     try {
                                         retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.getGroupId());
                                     } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                                        System.err.println("Failed to retrieve group avatar (" + avatar.asPointer()
-                                                .getRemoteId() + "): " + e.getMessage());
+                                        logger.warn("Failed to retrieve avatar for group {}, ignoring: {}",
+                                                groupId.toBase64(),
+                                                e.getMessage());
                                     }
                                 }
                             }
@@ -1593,7 +1598,7 @@ public class Manager implements Closeable {
                         }
                         case DELIVER:
                             if (groupV1 == null && !isSync) {
-                                actions.add(new SendGroupInfoRequestAction(source, groupV1.getGroupId()));
+                                actions.add(new SendGroupInfoRequestAction(source, groupId));
                             }
                             break;
                         case QUIT: {
@@ -1658,10 +1663,9 @@ public class Manager implements Closeable {
                     try {
                         retrieveAttachment(attachment.asPointer());
                     } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        System.err.println("Failed to retrieve attachment ("
-                                + attachment.asPointer().getRemoteId()
-                                + "): "
-                                + e.getMessage());
+                        logger.warn("Failed to retrieve attachment ({}), ignoring: {}",
+                                attachment.asPointer().getRemoteId(),
+                                e.getMessage());
                     }
                 }
             }
@@ -1686,10 +1690,9 @@ public class Manager implements Closeable {
                     try {
                         retrieveAttachment(attachment);
                     } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        System.err.println("Failed to retrieve attachment ("
-                                + attachment.getRemoteId()
-                                + "): "
-                                + e.getMessage());
+                        logger.warn("Failed to retrieve preview image ({}), ignoring: {}",
+                                attachment.getRemoteId(),
+                                e.getMessage());
                     }
                 }
             }
@@ -1703,10 +1706,9 @@ public class Manager implements Closeable {
                     try {
                         retrieveAttachment(attachment.asPointer());
                     } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        System.err.println("Failed to retrieve attachment ("
-                                + attachment.asPointer().getRemoteId()
-                                + "): "
-                                + e.getMessage());
+                        logger.warn("Failed to retrieve quote attachment thumbnail ({}), ignoring: {}",
+                                attachment.asPointer().getRemoteId(),
+                                e.getMessage());
                     }
                 }
             }
@@ -1734,11 +1736,9 @@ public class Manager implements Closeable {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
             account.getGroupStore().deleteGroup(groupInfo.getGroupId());
             groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
-            System.err.println("Locally migrated group "
-                    + groupInfo.getGroupId().toBase64()
-                    + " to group v2, id: "
-                    + groupInfoV2.getGroupId().toBase64()
-                    + " !!!");
+            logger.info("Locally migrated group {} to group v2, id: {}",
+                    groupInfo.getGroupId().toBase64(),
+                    groupInfoV2.getGroupId().toBase64());
         } else if (groupInfo instanceof GroupInfoV2) {
             groupInfoV2 = (GroupInfoV2) groupInfo;
         } else {
@@ -1757,10 +1757,13 @@ public class Manager implements Closeable {
             }
             if (group != null) {
                 storeProfileKeysFromMembers(group);
-                try {
-                    retrieveGroupAvatar(groupId, groupSecretParams, group.getAvatar());
-                } catch (IOException e) {
-                    System.err.println("Failed to download group avatar, ignoring ...");
+                final String avatar = group.getAvatar();
+                if (avatar != null && !avatar.isEmpty()) {
+                    try {
+                        retrieveGroupAvatar(groupId, groupSecretParams, avatar);
+                    } catch (IOException e) {
+                        logger.warn("Failed to download group avatar, ignoring: {}", e.getMessage());
+                    }
                 }
             }
             groupInfoV2.setGroup(group);
@@ -1830,7 +1833,7 @@ public class Manager implements Closeable {
                 try {
                     Files.delete(fileEntry.toPath());
                 } catch (IOException e) {
-                    System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
+                    logger.warn("Failed to delete cached message file “{}”, ignoring: {}", fileEntry, e.getMessage());
                 }
                 return;
             }
@@ -1848,7 +1851,7 @@ public class Manager implements Closeable {
         try {
             Files.delete(fileEntry.toPath());
         } catch (IOException e) {
-            System.err.println("Failed to delete cached message file “" + fileEntry + "”: " + e.getMessage());
+            logger.warn("Failed to delete cached message file “{}”, ignoring: {}", fileEntry, e.getMessage());
         }
     }
 
@@ -1880,8 +1883,7 @@ public class Manager implements Closeable {
                         File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
                         Utils.storeEnvelope(envelope1, cacheFile);
                     } catch (IOException e) {
-                        System.err.println("Failed to store encrypted message in disk cache, ignoring: "
-                                + e.getMessage());
+                        logger.warn("Failed to store encrypted message in disk cache, ignoring: {}", e.getMessage());
                     }
                 });
                 if (result.isPresent()) {
@@ -1910,7 +1912,7 @@ public class Manager implements Closeable {
                 if (returnOnTimeout) return;
                 continue;
             } catch (InvalidVersionException e) {
-                System.err.println("Ignoring error: " + e.getMessage());
+                logger.warn("Error while receiving messages, ignoring: {}", e.getMessage());
                 continue;
             }
 
@@ -1954,7 +1956,7 @@ public class Manager implements Closeable {
                     // Try to delete directory if empty
                     new File(getMessageCachePath()).delete();
                 } catch (IOException e) {
-                    System.err.println("Failed to delete cached message file “" + cacheFile + "”: " + e.getMessage());
+                    logger.warn("Failed to delete cached message file “{}”, ignoring: {}", cacheFile, e.getMessage());
                 }
             }
         }
@@ -2088,16 +2090,18 @@ public class Manager implements Closeable {
                             }
                         }
                     } catch (Exception e) {
+                        logger.warn("Failed to handle received sync groups “{}”, ignoring: {}",
+                                tmpFile,
+                                e.getMessage());
                         e.printStackTrace();
                     } finally {
                         if (tmpFile != null) {
                             try {
                                 Files.delete(tmpFile.toPath());
                             } catch (IOException e) {
-                                System.err.println("Failed to delete received groups temp file “"
-                                        + tmpFile
-                                        + "”: "
-                                        + e.getMessage());
+                                logger.warn("Failed to delete received groups temp file “{}”, ignoring: {}",
+                                        tmpFile,
+                                        e.getMessage());
                             }
                         }
                     }
@@ -2114,8 +2118,8 @@ public class Manager implements Closeable {
                         try {
                             setGroupBlocked(groupId, true);
                         } catch (GroupNotFoundException e) {
-                            System.err.println("BlockedListMessage contained groupID that was not found in GroupStore: "
-                                    + groupId.toBase64());
+                            logger.warn("BlockedListMessage contained groupID that was not found in GroupStore: {}",
+                                    groupId.toBase64());
                         }
                     }
                 }
@@ -2176,10 +2180,9 @@ public class Manager implements Closeable {
                             try {
                                 Files.delete(tmpFile.toPath());
                             } catch (IOException e) {
-                                System.err.println("Failed to delete received contacts temp file “"
-                                        + tmpFile
-                                        + "”: "
-                                        + e.getMessage());
+                                logger.warn("Failed to delete received contacts temp file “{}”, ignoring: {}",
+                                        tmpFile,
+                                        e.getMessage());
                             }
                         }
                     }
@@ -2275,7 +2278,9 @@ public class Manager implements Closeable {
             try {
                 Files.delete(tmpFile.toPath());
             } catch (IOException e) {
-                System.err.println("Failed to delete received avatar temp file “" + tmpFile + "”: " + e.getMessage());
+                logger.warn("Failed to delete received group avatar temp file “{}”, ignoring: {}",
+                        tmpFile,
+                        e.getMessage());
             }
         }
         return outputFile;
@@ -2303,7 +2308,9 @@ public class Manager implements Closeable {
             try {
                 Files.delete(tmpFile.toPath());
             } catch (IOException e) {
-                System.err.println("Failed to delete received avatar temp file “" + tmpFile + "”: " + e.getMessage());
+                logger.warn("Failed to delete received profile avatar temp file “{}”, ignoring: {}",
+                        tmpFile,
+                        e.getMessage());
             }
         }
         return outputFile;
@@ -2343,10 +2350,9 @@ public class Manager implements Closeable {
             try {
                 Files.delete(tmpFile.toPath());
             } catch (IOException e) {
-                System.err.println("Failed to delete received attachment temp file “"
-                        + tmpFile
-                        + "”: "
-                        + e.getMessage());
+                logger.warn("Failed to delete received attachment temp file “{}”, ignoring: {}",
+                        tmpFile,
+                        e.getMessage());
             }
         }
         return outputFile;
@@ -2397,7 +2403,7 @@ public class Manager implements Closeable {
             try {
                 Files.delete(groupsFile.toPath());
             } catch (IOException e) {
-                System.err.println("Failed to delete groups temp file “" + groupsFile + "”: " + e.getMessage());
+                logger.warn("Failed to delete groups temp file “{}”, ignoring: {}", groupsFile, e.getMessage());
             }
         }
     }
@@ -2462,7 +2468,7 @@ public class Manager implements Closeable {
             try {
                 Files.delete(contactsFile.toPath());
             } catch (IOException e) {
-                System.err.println("Failed to delete contacts temp file “" + contactsFile + "”: " + e.getMessage());
+                logger.warn("Failed to delete contacts temp file “{}”, ignoring: {}", contactsFile, e.getMessage());
             }
         }
     }

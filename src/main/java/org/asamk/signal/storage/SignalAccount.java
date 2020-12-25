@@ -29,6 +29,8 @@ import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -52,6 +54,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SignalAccount implements Closeable {
+
+    final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private final ObjectMapper jsonProcessor = new ObjectMapper();
     private final FileChannel fileChannel;
@@ -357,7 +361,7 @@ public class SignalAccount implements Closeable {
                 }
             }
         } catch (Exception e) {
-            System.err.println(String.format("Error saving file: %s", e.getMessage()));
+            logger.error("Error saving file: {}", e.getMessage());
         }
     }
 
@@ -365,9 +369,9 @@ public class SignalAccount implements Closeable {
         FileChannel fileChannel = new RandomAccessFile(new File(fileName), "rw").getChannel();
         FileLock lock = fileChannel.tryLock();
         if (lock == null) {
-            System.err.println("Config file is in use by another instance, waiting…");
+            logger.info("Config file is in use by another instance, waiting…");
             lock = fileChannel.lock();
-            System.err.println("Config file lock acquired.");
+            logger.info("Config file lock acquired.");
         }
         return new Pair<>(fileChannel, lock);
     }

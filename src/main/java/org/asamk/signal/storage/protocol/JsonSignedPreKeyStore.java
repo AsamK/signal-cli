@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyStore;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 class JsonSignedPreKeyStore implements SignedPreKeyStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonSignedPreKeyStore.class);
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 
@@ -89,7 +93,7 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
                     try {
                         preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
                     } catch (IOException e) {
-                        System.err.println(String.format("Error while decoding prekey for: %s", preKeyId));
+                        logger.warn("Error while decoding prekey for {}: {}", preKeyId, e.getMessage());
                     }
                 }
             }
