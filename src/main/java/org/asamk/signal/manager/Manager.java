@@ -259,22 +259,22 @@ public class Manager implements Closeable {
         return account.getDeviceId();
     }
 
-    private String getMessageCachePath() {
-        return pathConfig.getDataPath() + "/" + account.getUsername() + ".d/msg-cache";
+    private File getMessageCachePath() {
+        return SignalAccount.getMessageCachePath(pathConfig.getDataPath(), account.getUsername());
     }
 
-    private String getMessageCachePath(String sender) {
+    private File getMessageCachePath(String sender) {
         if (sender == null || sender.isEmpty()) {
             return getMessageCachePath();
         }
 
-        return getMessageCachePath() + "/" + sender.replace("/", "_");
+        return new File(getMessageCachePath(), sender.replace("/", "_"));
     }
 
     private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
-        String cachePath = getMessageCachePath(sender);
+        File cachePath = getMessageCachePath(sender);
         IOUtils.createPrivateDirectories(cachePath);
-        return new File(cachePath + "/" + now + "_" + timestamp);
+        return new File(cachePath, now + "_" + timestamp);
     }
 
     public static Manager init(
@@ -1161,7 +1161,7 @@ public class Manager implements Closeable {
      * @param path Path can be a path to a manifest.json file or to a zip file that contains a manifest.json file
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
-    public String uploadStickerPack(String path) throws IOException, StickerPackInvalidException {
+    public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
         SignalServiceStickerManifestUpload manifest = getSignalServiceStickerManifestUpload(path);
 
         SignalServiceMessageSender messageSender = createMessageSender();
@@ -1186,12 +1186,11 @@ public class Manager implements Closeable {
     }
 
     private SignalServiceStickerManifestUpload getSignalServiceStickerManifestUpload(
-            final String path
+            final File file
     ) throws IOException, StickerPackInvalidException {
         ZipFile zip = null;
         String rootPath = null;
 
-        final File file = new File(path);
         if (file.getName().endsWith(".zip")) {
             zip = new ZipFile(file);
         } else if (file.getName().equals("manifest.json")) {
@@ -1788,7 +1787,7 @@ public class Manager implements Closeable {
     private void retryFailedReceivedMessages(
             ReceiveMessageHandler handler, boolean ignoreAttachments
     ) {
-        final File cachePath = new File(getMessageCachePath());
+        final File cachePath = getMessageCachePath();
         if (!cachePath.exists()) {
             return;
         }
@@ -1954,7 +1953,7 @@ public class Manager implements Closeable {
                     cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
                     Files.delete(cacheFile.toPath());
                     // Try to delete directory if empty
-                    new File(getMessageCachePath()).delete();
+                    getMessageCachePath().delete();
                 } catch (IOException e) {
                     logger.warn("Failed to delete cached message file “{}”, ignoring: {}", cacheFile, e.getMessage());
                 }

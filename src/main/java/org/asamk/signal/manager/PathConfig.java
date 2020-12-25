@@ -9,9 +9,9 @@ public class PathConfig {
     private final File avatarsPath;
 
     public static PathConfig createDefault(final File settingsPath) {
-        return new PathConfig(new File(settingsPath, "/data"),
-                new File(settingsPath, "/attachments"),
-                new File(settingsPath, "/avatars"));
+        return new PathConfig(new File(settingsPath, "data"),
+                new File(settingsPath, "attachments"),
+                new File(settingsPath, "avatars"));
     }
 
     private PathConfig(final File dataPath, final File attachmentsPath, final File avatarsPath) {
@@ -20,15 +20,15 @@ public class PathConfig {
         this.avatarsPath = avatarsPath;
     }
 
-    public String getDataPath() {
-        return dataPath.getPath();
+    public File getDataPath() {
+        return dataPath;
     }
 
-    public String getAttachmentsPath() {
-        return attachmentsPath.getPath();
+    public File getAttachmentsPath() {
+        return attachmentsPath;
     }
 
-    public String getAvatarsPath() {
-        return avatarsPath.getPath();
+    public File getAvatarsPath() {
+        return avatarsPath;
     }
 }

@@ -212,17 +212,19 @@ public class Main {
      * @return the data directory to be used by signal-cli.
      */
     private static File getDefaultDataPath() {
-        File dataPath = new File(IOUtils.getDataHomeDir(), "/signal-cli");
+        File dataPath = new File(IOUtils.getDataHomeDir(), "signal-cli");
         if (dataPath.exists()) {
             return dataPath;
         }
 
-        File legacySettingsPath = new File(System.getProperty("user.home"), "/.config/signal");
+        File configPath = new File(System.getProperty("user.home"), ".config");
+
+        File legacySettingsPath = new File(configPath, "signal");
         if (legacySettingsPath.exists()) {
             return legacySettingsPath;
         }
 
-        legacySettingsPath = new File(System.getProperty("user.home"), "/.config/textsecure");
+        legacySettingsPath = new File(configPath, "textsecure");
         if (legacySettingsPath.exists()) {
             return legacySettingsPath;
         }

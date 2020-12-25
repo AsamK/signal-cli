@@ -90,8 +90,8 @@ public class SignalAccount implements Closeable {
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
-    public static SignalAccount load(String dataPath, String username) throws IOException {
-        final String fileName = getFileName(dataPath, username);
+    public static SignalAccount load(File dataPath, String username) throws IOException {
+        final File fileName = getFileName(dataPath, username);
         final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
         try {
             SignalAccount account = new SignalAccount(pair.first(), pair.second());
@@ -105,11 +105,11 @@ public class SignalAccount implements Closeable {
     }
 
     public static SignalAccount create(
-            String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
+            File dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        String fileName = getFileName(dataPath, username);
-        if (!new File(fileName).exists()) {
+        File fileName = getFileName(dataPath, username);
+        if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
@@ -130,7 +130,7 @@ public class SignalAccount implements Closeable {
     }
 
     public static SignalAccount createLinkedAccount(
-            String dataPath,
+            File dataPath,
             String username,
             UUID uuid,
             String password,
@@ -141,8 +141,8 @@ public class SignalAccount implements Closeable {
             ProfileKey profileKey
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        String fileName = getFileName(dataPath, username);
-        if (!new File(fileName).exists()) {
+        File fileName = getFileName(dataPath, username);
+        if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
@@ -167,23 +167,31 @@ public class SignalAccount implements Closeable {
         return account;
     }
 
-    public static String getFileName(String dataPath, String username) {
-        return dataPath + "/" + username;
+    public static File getFileName(File dataPath, String username) {
+        return new File(dataPath, username);
     }
 
-    private static File getGroupCachePath(String dataPath, String username) {
-        return new File(new File(dataPath, username + ".d"), "group-cache");
+    private static File getUserPath(final File dataPath, final String username) {
+        return new File(dataPath, username + ".d");
     }
 
-    public static boolean userExists(String dataPath, String username) {
+    public static File getMessageCachePath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "msg-cache");
+    }
+
+    private static File getGroupCachePath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "group-cache");
+    }
+
+    public static boolean userExists(File dataPath, String username) {
         if (username == null) {
             return false;
         }
-        File f = new File(getFileName(dataPath, username));
+        File f = getFileName(dataPath, username);
         return !(!f.exists() || f.isDirectory());
     }
 
-    private void load(String dataPath) throws IOException {
+    private void load(File dataPath) throws IOException {
         JsonNode rootNode;
         synchronized (fileChannel) {
             fileChannel.position(0);
@@ -365,8 +373,8 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    private static Pair<FileChannel, FileLock> openFileChannel(String fileName) throws IOException {
-        FileChannel fileChannel = new RandomAccessFile(new File(fileName), "rw").getChannel();
+    private static Pair<FileChannel, FileLock> openFileChannel(File fileName) throws IOException {
+        FileChannel fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
         FileLock lock = fileChannel.tryLock();
         if (lock == null) {
             logger.info("Config file is in use by another instance, waiting…");
