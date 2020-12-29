@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.protocol;
+package org.asamk.signal.manager.storage.protocol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -91,11 +91,11 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
         identityKeyStore.setIdentityTrustLevel(serviceAddress, identityKey, trustLevel);
     }
 
-    public List<JsonIdentityKeyStore.Identity> getIdentities() {
+    public List<IdentityInfo> getIdentities() {
         return identityKeyStore.getIdentities();
     }
 
-    public List<JsonIdentityKeyStore.Identity> getIdentities(SignalServiceAddress serviceAddress) {
+    public List<IdentityInfo> getIdentities(SignalServiceAddress serviceAddress) {
         return identityKeyStore.getIdentities(serviceAddress);
     }
 
@@ -109,7 +109,7 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
         return identityKeyStore.getIdentity(address);
     }
 
-    public JsonIdentityKeyStore.Identity getIdentity(SignalServiceAddress serviceAddress) {
+    public IdentityInfo getIdentity(SignalServiceAddress serviceAddress) {
         return identityKeyStore.getIdentity(serviceAddress);
     }
 

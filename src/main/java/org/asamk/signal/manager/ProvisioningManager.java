@@ -16,7 +16,7 @@
  */
 package org.asamk.signal.manager;
 
-import org.asamk.signal.storage.SignalAccount;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKeyPair;

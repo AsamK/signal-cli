@@ -1,4 +1,4 @@
-package org.asamk.signal.storage;
+package org.asamk.signal.manager.storage;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -11,20 +11,20 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.storage.contacts.ContactInfo;
-import org.asamk.signal.storage.contacts.JsonContactsStore;
-import org.asamk.signal.storage.groups.GroupInfo;
-import org.asamk.signal.storage.groups.GroupInfoV1;
-import org.asamk.signal.storage.groups.JsonGroupStore;
-import org.asamk.signal.storage.profiles.ProfileStore;
-import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
-import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
-import org.asamk.signal.storage.protocol.RecipientStore;
-import org.asamk.signal.storage.protocol.SessionInfo;
-import org.asamk.signal.storage.protocol.SignalServiceAddressResolver;
-import org.asamk.signal.storage.stickers.StickerStore;
-import org.asamk.signal.storage.threads.LegacyJsonThreadStore;
-import org.asamk.signal.storage.threads.ThreadInfo;
+import org.asamk.signal.manager.storage.contacts.ContactInfo;
+import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.JsonGroupStore;
+import org.asamk.signal.manager.storage.profiles.ProfileStore;
+import org.asamk.signal.manager.storage.protocol.IdentityInfo;
+import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
+import org.asamk.signal.manager.storage.protocol.RecipientStore;
+import org.asamk.signal.manager.storage.protocol.SessionInfo;
+import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
+import org.asamk.signal.manager.storage.stickers.StickerStore;
+import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
+import org.asamk.signal.manager.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.zkgroup.InvalidInputException;
@@ -286,7 +286,7 @@ public class SignalAccount implements Closeable {
                 session.address = recipientStore.resolveServiceAddress(session.address);
             }
 
-            for (JsonIdentityKeyStore.Identity identity : signalProtocolStore.getIdentities()) {
+            for (IdentityInfo identity : signalProtocolStore.getIdentities()) {
                 identity.setAddress(recipientStore.resolveServiceAddress(identity.getAddress()));
             }
         }

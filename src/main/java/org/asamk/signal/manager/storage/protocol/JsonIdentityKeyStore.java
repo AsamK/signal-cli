@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.protocol;
+package org.asamk.signal.manager.storage.protocol;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -31,7 +31,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
 
     final static Logger logger = LoggerFactory.getLogger(JsonIdentityKeyStore.class);
 
-    private final List<Identity> identities = new ArrayList<>();
+    private final List<IdentityInfo> identities = new ArrayList<>();
 
     private final IdentityKeyPair identityKeyPair;
     private final int localRegistrationId;
@@ -85,7 +85,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public boolean saveIdentity(
             SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel, Date added
     ) {
-        for (Identity id : identities) {
+        for (IdentityInfo id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
             }
@@ -97,7 +97,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             return true;
         }
 
-        identities.add(new Identity(serviceAddress, identityKey, trustLevel, added != null ? added : new Date()));
+        identities.add(new IdentityInfo(serviceAddress, identityKey, trustLevel, added != null ? added : new Date()));
         return false;
     }
 
@@ -111,7 +111,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public void setIdentityTrustLevel(
             SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel
     ) {
-        for (Identity id : identities) {
+        for (IdentityInfo id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
             }
@@ -123,7 +123,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             return;
         }
 
-        identities.add(new Identity(serviceAddress, identityKey, trustLevel, new Date()));
+        identities.add(new IdentityInfo(serviceAddress, identityKey, trustLevel, new Date()));
     }
 
     @Override
@@ -132,7 +132,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
         boolean trustOnFirstUse = true;
 
-        for (Identity id : identities) {
+        for (IdentityInfo id : identities) {
             if (!id.address.matches(serviceAddress)) {
                 continue;
             }
@@ -150,14 +150,14 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
         SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        Identity identity = getIdentity(serviceAddress);
+        IdentityInfo identity = getIdentity(serviceAddress);
         return identity == null ? null : identity.getIdentityKey();
     }
 
-    public Identity getIdentity(SignalServiceAddress serviceAddress) {
+    public IdentityInfo getIdentity(SignalServiceAddress serviceAddress) {
         long maxDate = 0;
-        Identity maxIdentity = null;
-        for (Identity id : this.identities) {
+        IdentityInfo maxIdentity = null;
+        for (IdentityInfo id : this.identities) {
             if (!id.address.matches(serviceAddress)) {
                 continue;
             }
@@ -171,14 +171,14 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         return maxIdentity;
     }
 
-    public List<Identity> getIdentities() {
+    public List<IdentityInfo> getIdentities() {
         // TODO deep copy
         return identities;
     }
 
-    public List<Identity> getIdentities(SignalServiceAddress serviceAddress) {
-        List<Identity> identities = new ArrayList<>();
-        for (Identity identity : this.identities) {
+    public List<IdentityInfo> getIdentities(SignalServiceAddress serviceAddress) {
+        List<IdentityInfo> identities = new ArrayList<>();
+        for (IdentityInfo identity : this.identities) {
             if (identity.address.matches(serviceAddress)) {
                 identities.add(identity);
             }
@@ -246,7 +246,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             json.writeStringField("identityKey",
                     Base64.encodeBytes(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));
             json.writeArrayFieldStart("trustedKeys");
-            for (Identity trustedKey : jsonIdentityKeyStore.identities) {
+            for (IdentityInfo trustedKey : jsonIdentityKeyStore.identities) {
                 json.writeStartObject();
                 if (trustedKey.getAddress().getNumber().isPresent()) {
                     json.writeStringField("name", trustedKey.getAddress().getNumber().get());
@@ -264,53 +264,4 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         }
     }
 
-    public static class Identity {
-
-        SignalServiceAddress address;
-        IdentityKey identityKey;
-        TrustLevel trustLevel;
-        Date added;
-
-        public Identity(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel) {
-            this.address = address;
-            this.identityKey = identityKey;
-            this.trustLevel = trustLevel;
-            this.added = new Date();
-        }
-
-        Identity(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
-            this.address = address;
-            this.identityKey = identityKey;
-            this.trustLevel = trustLevel;
-            this.added = added;
-        }
-
-        public SignalServiceAddress getAddress() {
-            return address;
-        }
-
-        public void setAddress(final SignalServiceAddress address) {
-            this.address = address;
-        }
-
-        boolean isTrusted() {
-            return trustLevel == TrustLevel.TRUSTED_UNVERIFIED || trustLevel == TrustLevel.TRUSTED_VERIFIED;
-        }
-
-        public IdentityKey getIdentityKey() {
-            return this.identityKey;
-        }
-
-        public TrustLevel getTrustLevel() {
-            return this.trustLevel;
-        }
-
-        public Date getDateAdded() {
-            return this.added;
-        }
-
-        public byte[] getFingerprint() {
-            return identityKey.getPublicKey().serialize();
-        }
-    }
 }

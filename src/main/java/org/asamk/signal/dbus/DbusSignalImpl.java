@@ -6,7 +6,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;

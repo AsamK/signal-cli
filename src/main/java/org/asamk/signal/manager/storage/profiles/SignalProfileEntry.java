@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.profiles;
+package org.asamk.signal.manager.storage.profiles;
 
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;

@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.storage.contacts.ContactInfo;
+import org.asamk.signal.manager.storage.contacts.ContactInfo;
 
 import java.util.List;
 

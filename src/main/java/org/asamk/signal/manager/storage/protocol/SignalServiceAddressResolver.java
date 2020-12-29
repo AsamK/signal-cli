@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.protocol;
+package org.asamk.signal.manager.storage.protocol;
 
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 

@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.stickers;
+package org.asamk.signal.manager.storage.stickers;
 
 public class Sticker {
 

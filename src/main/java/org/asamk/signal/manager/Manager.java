@@ -28,15 +28,15 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
-import org.asamk.signal.storage.SignalAccount;
-import org.asamk.signal.storage.contacts.ContactInfo;
-import org.asamk.signal.storage.groups.GroupInfo;
-import org.asamk.signal.storage.groups.GroupInfoV1;
-import org.asamk.signal.storage.groups.GroupInfoV2;
-import org.asamk.signal.storage.profiles.SignalProfile;
-import org.asamk.signal.storage.profiles.SignalProfileEntry;
-import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
-import org.asamk.signal.storage.stickers.Sticker;
+import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.contacts.ContactInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
+import org.asamk.signal.manager.storage.profiles.SignalProfile;
+import org.asamk.signal.manager.storage.profiles.SignalProfileEntry;
+import org.asamk.signal.manager.storage.protocol.IdentityInfo;
+import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
@@ -2422,8 +2422,7 @@ public class Manager implements Closeable {
                 DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
                 for (ContactInfo record : account.getContactStore().getContacts()) {
                     VerifiedMessage verifiedMessage = null;
-                    JsonIdentityKeyStore.Identity currentIdentity = account.getSignalProtocolStore()
-                            .getIdentity(record.getAddress());
+                    IdentityInfo currentIdentity = account.getSignalProtocolStore().getIdentity(record.getAddress());
                     if (currentIdentity != null) {
                         verifiedMessage = new VerifiedMessage(record.getAddress(),
                                 currentIdentity.getIdentityKey(),
@@ -2517,11 +2516,11 @@ public class Manager implements Closeable {
         return account.getGroupStore().getGroup(groupId);
     }
 
-    public List<JsonIdentityKeyStore.Identity> getIdentities() {
+    public List<IdentityInfo> getIdentities() {
         return account.getSignalProtocolStore().getIdentities();
     }
 
-    public List<JsonIdentityKeyStore.Identity> getIdentities(String number) throws InvalidNumberException {
+    public List<IdentityInfo> getIdentities(String number) throws InvalidNumberException {
         return account.getSignalProtocolStore().getIdentities(canonicalizeAndResolveSignalServiceAddress(number));
     }
 
@@ -2533,11 +2532,11 @@ public class Manager implements Closeable {
      */
     public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
         SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
+        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (JsonIdentityKeyStore.Identity id : ids) {
+        for (IdentityInfo id : ids) {
             if (!Arrays.equals(id.getIdentityKey().serialize(), fingerprint)) {
                 continue;
             }
@@ -2563,11 +2562,11 @@ public class Manager implements Closeable {
      */
     public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
         SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
+        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (JsonIdentityKeyStore.Identity id : ids) {
+        for (IdentityInfo id : ids) {
             if (!safetyNumber.equals(computeSafetyNumber(address, id.getIdentityKey()))) {
                 continue;
             }
@@ -2592,11 +2591,11 @@ public class Manager implements Closeable {
      */
     public boolean trustIdentityAllKeys(String name) {
         SignalServiceAddress address = resolveSignalServiceAddress(name);
-        List<JsonIdentityKeyStore.Identity> ids = account.getSignalProtocolStore().getIdentities(address);
+        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (JsonIdentityKeyStore.Identity id : ids) {
+        for (IdentityInfo id : ids) {
             if (id.getTrustLevel() == TrustLevel.UNTRUSTED) {
                 account.getSignalProtocolStore()
                         .setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);

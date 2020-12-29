@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.groups;
+package org.asamk.signal.manager.storage.groups;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

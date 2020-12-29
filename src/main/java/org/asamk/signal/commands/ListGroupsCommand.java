@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.List;

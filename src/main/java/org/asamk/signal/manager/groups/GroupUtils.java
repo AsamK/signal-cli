@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.groups;
 
-import org.asamk.signal.storage.groups.GroupInfo;
-import org.asamk.signal.storage.groups.GroupInfoV1;
-import org.asamk.signal.storage.groups.GroupInfoV2;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;

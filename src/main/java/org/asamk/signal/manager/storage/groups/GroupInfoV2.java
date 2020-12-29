@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.groups;
+package org.asamk.signal.manager.storage.groups;
 
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;

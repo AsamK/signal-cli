@@ -1,4 +1,4 @@
-package org.asamk.signal.storage.stickers;
+package org.asamk.signal.manager.storage.stickers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
