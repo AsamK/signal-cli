@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.asamk.signal.manager.TrustLevel;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
@@ -51,7 +51,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         if (resolver != null) {
             return resolver.resolveSignalServiceAddress(identifier);
         } else {
-            return Util.getSignalServiceAddressFromIdentifier(identifier);
+            return Utils.getSignalServiceAddressFromIdentifier(identifier);
         }
     }
 
@@ -213,7 +213,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                         UUID uuid = trustedKey.hasNonNull("uuid") ? UuidUtil.parseOrNull(trustedKey.get("uuid")
                                 .asText()) : null;
                         final SignalServiceAddress serviceAddress = uuid == null
-                                ? Util.getSignalServiceAddressFromIdentifier(trustedKeyName)
+                                ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
                                 : new SignalServiceAddress(uuid, trustedKeyName);
                         try {
                             IdentityKey id = new IdentityKey(Base64.decode(trustedKey.get("identityKey").asText()), 0);

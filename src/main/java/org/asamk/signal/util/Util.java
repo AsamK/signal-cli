@@ -1,15 +1,7 @@
 package org.asamk.signal.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
-import org.whispersystems.signalservice.api.util.UuidUtil;
-
-import java.io.InvalidObjectException;
 
 public class Util {
 
@@ -26,41 +18,7 @@ public class Util {
         return f.toString();
     }
 
-    public static String join(CharSequence separator, Iterable<? extends CharSequence> list) {
-        StringBuilder buf = new StringBuilder();
-        for (CharSequence str : list) {
-            if (buf.length() > 0) {
-                buf.append(separator);
-            }
-            buf.append(str);
-        }
-
-        return buf.toString();
-    }
-
-    public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
-        JsonNode node = parent.get(name);
-        if (node == null) {
-            throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ",
-                    name));
-        }
-
-        return node;
-    }
-
     public static GroupId decodeGroupId(String groupId) throws GroupIdFormatException {
         return GroupId.fromBase64(groupId);
-    }
-
-    public static String canonicalizeNumber(String number, String localNumber) throws InvalidNumberException {
-        return PhoneNumberFormatter.formatNumber(number, localNumber);
-    }
-
-    public static SignalServiceAddress getSignalServiceAddressFromIdentifier(final String identifier) {
-        if (UuidUtil.isUuid(identifier)) {
-            return new SignalServiceAddress(UuidUtil.parseOrNull(identifier), null);
-        } else {
-            return new SignalServiceAddress(null, identifier);
-        }
     }
 }

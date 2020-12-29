@@ -7,7 +7,7 @@ import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.profiles.SignalProfile;
-import org.asamk.signal.util.IOUtils;
+import org.asamk.signal.manager.util.IOUtils;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;

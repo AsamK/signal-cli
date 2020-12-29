@@ -17,6 +17,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
@@ -71,8 +72,7 @@ public class ProvisioningManager {
     public String getDeviceLinkUri() throws TimeoutException, IOException {
         String deviceUuid = accountManager.getNewDeviceUuid();
 
-        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid,
-                identityKey.getPublicKey().getPublicKey()));
+        return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {

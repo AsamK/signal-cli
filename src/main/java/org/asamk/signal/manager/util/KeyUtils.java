@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.util;
 
 import org.asamk.signal.util.RandomUtils;
 import org.signal.zkgroup.InvalidInputException;
@@ -10,11 +10,11 @@ public class KeyUtils {
     private KeyUtils() {
     }
 
-    static String createSignalingKey() {
+    public static String createSignalingKey() {
         return getSecret(52);
     }
 
-    static ProfileKey createProfileKey() {
+    public static ProfileKey createProfileKey() {
         try {
             return new ProfileKey(getSecretBytes(32));
         } catch (InvalidInputException e) {
@@ -22,11 +22,11 @@ public class KeyUtils {
         }
     }
 
-    static String createPassword() {
+    public static String createPassword() {
         return getSecret(18);
     }
 
-    static byte[] createStickerUploadKey() {
+    public static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
     }
 

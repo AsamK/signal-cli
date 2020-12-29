@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.groups;
 
-import static org.asamk.signal.manager.KeyUtils.getSecretBytes;
+import static org.asamk.signal.manager.util.KeyUtils.getSecretBytes;
 
 public class GroupIdV1 extends GroupId {
 

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.SignalProtocolAddress;
@@ -43,7 +43,7 @@ class JsonSessionStore implements SessionStore {
         if (resolver != null) {
             return resolver.resolveSignalServiceAddress(identifier);
         } else {
-            return Util.getSignalServiceAddressFromIdentifier(identifier);
+            return Utils.getSignalServiceAddressFromIdentifier(identifier);
         }
     }
 
@@ -147,7 +147,7 @@ class JsonSessionStore implements SessionStore {
 
                     UUID uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
                     final SignalServiceAddress serviceAddress = uuid == null
-                            ? Util.getSignalServiceAddressFromIdentifier(sessionName)
+                            ? Utils.getSignalServiceAddressFromIdentifier(sessionName)
                             : new SignalServiceAddress(uuid, sessionName);
                     final int deviceId = session.get("deviceId").asInt();
                     final String record = session.get("record").asText();

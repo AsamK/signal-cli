@@ -1,6 +1,9 @@
 package org.asamk.signal.manager;
 
 import org.signal.zkgroup.ServerPublicParams;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
@@ -102,6 +105,14 @@ public class ServiceConfig {
 
             return keyStore;
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    static ECPublicKey getUnidentifiedSenderTrustRoot() {
+        try {
+            return Curve.decodePoint(Base64.decode(UNIDENTIFIED_SENDER_TRUST_ROOT), 0);
+        } catch (InvalidKeyException | IOException e) {
             throw new AssertionError(e);
         }
     }

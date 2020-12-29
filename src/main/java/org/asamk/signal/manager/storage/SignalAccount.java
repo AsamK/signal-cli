@@ -25,8 +25,8 @@ import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.storage.threads.ThreadInfo;
-import org.asamk.signal.util.IOUtils;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -211,28 +211,28 @@ public class SignalAccount implements Closeable {
             deviceId = node.asInt();
         }
         if (rootNode.has("isMultiDevice")) {
-            isMultiDevice = Util.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
+            isMultiDevice = Utils.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
         }
-        username = Util.getNotNullNode(rootNode, "username").asText();
-        password = Util.getNotNullNode(rootNode, "password").asText();
+        username = Utils.getNotNullNode(rootNode, "username").asText();
+        password = Utils.getNotNullNode(rootNode, "password").asText();
         JsonNode pinNode = rootNode.get("registrationLockPin");
         registrationLockPin = pinNode == null || pinNode.isNull() ? null : pinNode.asText();
         if (rootNode.has("signalingKey")) {
-            signalingKey = Util.getNotNullNode(rootNode, "signalingKey").asText();
+            signalingKey = Utils.getNotNullNode(rootNode, "signalingKey").asText();
         }
         if (rootNode.has("preKeyIdOffset")) {
-            preKeyIdOffset = Util.getNotNullNode(rootNode, "preKeyIdOffset").asInt(0);
+            preKeyIdOffset = Utils.getNotNullNode(rootNode, "preKeyIdOffset").asInt(0);
         } else {
             preKeyIdOffset = 0;
         }
         if (rootNode.has("nextSignedPreKeyId")) {
-            nextSignedPreKeyId = Util.getNotNullNode(rootNode, "nextSignedPreKeyId").asInt();
+            nextSignedPreKeyId = Utils.getNotNullNode(rootNode, "nextSignedPreKeyId").asInt();
         } else {
             nextSignedPreKeyId = 0;
         }
         if (rootNode.has("profileKey")) {
             try {
-                profileKey = new ProfileKey(Base64.decode(Util.getNotNullNode(rootNode, "profileKey").asText()));
+                profileKey = new ProfileKey(Base64.decode(Utils.getNotNullNode(rootNode, "profileKey").asText()));
             } catch (InvalidInputException e) {
                 throw new IOException(
                         "Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes",
@@ -240,9 +240,9 @@ public class SignalAccount implements Closeable {
             }
         }
 
-        signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"),
+        signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 JsonSignalProtocolStore.class);
-        registered = Util.getNotNullNode(rootNode, "registered").asBoolean();
+        registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
             groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);

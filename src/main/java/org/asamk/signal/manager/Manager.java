@@ -37,8 +37,11 @@ import org.asamk.signal.manager.storage.profiles.SignalProfile;
 import org.asamk.signal.manager.storage.profiles.SignalProfileEntry;
 import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.manager.storage.stickers.Sticker;
-import org.asamk.signal.util.IOUtils;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.util.AttachmentUtils;
+import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.MessageCacheUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
 import org.signal.libsignal.metadata.InvalidMetadataVersionException;
 import org.signal.libsignal.metadata.ProtocolDuplicateMessageException;
@@ -50,6 +53,7 @@ import org.signal.libsignal.metadata.ProtocolLegacyMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
@@ -125,6 +129,7 @@ import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
@@ -185,6 +190,7 @@ public class Manager implements Closeable {
     final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
     private final SleepTimer timer = new UptimeSleepTimer();
+    private final CertificateValidator certificateValidator = new CertificateValidator(ServiceConfig.getUnidentifiedSenderTrustRoot());
 
     private final SignalServiceConfiguration serviceConfiguration;
     private final String userAgent;
@@ -419,7 +425,7 @@ public class Manager implements Closeable {
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
-        Utils.DeviceLinkInfo info = Utils.parseDeviceLinkUri(linkUri);
+        DeviceLinkInfo info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
 
         addDevice(info.deviceIdentifier, info.deviceKey);
     }
@@ -696,7 +702,7 @@ public class Manager implements Closeable {
             return Optional.absent();
         }
 
-        return Optional.of(Utils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(file));
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(String number) throws IOException {
@@ -705,7 +711,7 @@ public class Manager implements Closeable {
             return Optional.absent();
         }
 
-        return Optional.of(Utils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(file));
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
@@ -751,7 +757,7 @@ public class Manager implements Closeable {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withBody(messageText);
         if (attachments != null) {
-            messageBuilder.withAttachments(Utils.getSignalServiceAttachments(attachments));
+            messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
         }
 
         return sendGroupMessage(messageBuilder, groupId);
@@ -928,7 +934,7 @@ public class Manager implements Closeable {
                     newE164Members.remove(contact.getNumber());
                 }
                 throw new IOException("Failed to add members "
-                        + Util.join(", ", newE164Members)
+                        + String.join(", ", newE164Members)
                         + " to group: Not registered on Signal");
             }
 
@@ -971,7 +977,7 @@ public class Manager implements Closeable {
         File aFile = getGroupAvatarFile(g.getGroupId());
         if (aFile.exists()) {
             try {
-                group.withAvatar(Utils.createAttachment(aFile));
+                group.withAvatar(AttachmentUtils.createAttachment(aFile));
             } catch (IOException e) {
                 throw new AttachmentInvalidException(aFile.toString(), e);
             }
@@ -1022,7 +1028,7 @@ public class Manager implements Closeable {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .withBody(messageText);
         if (attachments != null) {
-            List<SignalServiceAttachment> attachmentStreams = Utils.getSignalServiceAttachments(attachments);
+            List<SignalServiceAttachment> attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
 
             // Upload attachments here, so we only upload once even for multiple recipients
             SignalServiceMessageSender messageSender = createMessageSender();
@@ -1510,7 +1516,7 @@ public class Manager implements Closeable {
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, org.whispersystems.libsignal.UntrustedIdentityException {
         SignalServiceCipher cipher = new SignalServiceCipher(account.getSelfAddress(),
                 account.getSignalProtocolStore(),
-                Utils.getCertificateValidator());
+                certificateValidator);
         try {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
@@ -1820,7 +1826,7 @@ public class Manager implements Closeable {
     ) {
         SignalServiceEnvelope envelope;
         try {
-            envelope = Utils.loadEnvelope(fileEntry);
+            envelope = MessageCacheUtils.loadEnvelope(fileEntry);
             if (envelope == null) {
                 return;
             }
@@ -1887,7 +1893,7 @@ public class Manager implements Closeable {
                     try {
                         String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
                         File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
-                        Utils.storeEnvelope(envelope1, cacheFile);
+                        MessageCacheUtils.storeEnvelope(envelope1, cacheFile);
                     } catch (IOException e) {
                         logger.warn("Failed to store encrypted message in disk cache, ignoring: {}", e.getMessage());
                     }
@@ -2240,7 +2246,7 @@ public class Manager implements Closeable {
             return retrieveAttachment(pointer, getContactAvatarFile(number), false);
         } else {
             SignalServiceAttachmentStream stream = attachment.asStream();
-            return Utils.retrieveAttachment(stream, getContactAvatarFile(number));
+            return AttachmentUtils.retrieveAttachment(stream, getContactAvatarFile(number));
         }
     }
 
@@ -2257,7 +2263,7 @@ public class Manager implements Closeable {
             return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
         } else {
             SignalServiceAttachmentStream stream = attachment.asStream();
-            return Utils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
+            return AttachmentUtils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
         }
     }
 
@@ -2509,7 +2515,7 @@ public class Manager implements Closeable {
     }
 
     public ContactInfo getContact(String number) {
-        return account.getContactStore().getContact(Util.getSignalServiceAddressFromIdentifier(number));
+        return account.getContactStore().getContact(Utils.getSignalServiceAddressFromIdentifier(number));
     }
 
     public GroupInfo getGroup(GroupId groupId) {
@@ -2613,7 +2619,8 @@ public class Manager implements Closeable {
     public String computeSafetyNumber(
             SignalServiceAddress theirAddress, IdentityKey theirIdentityKey
     ) {
-        return Utils.computeSafetyNumber(account.getSelfAddress(),
+        return Utils.computeSafetyNumber(ServiceConfig.capabilities.isUuid(),
+                account.getSelfAddress(),
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
@@ -2626,12 +2633,12 @@ public class Manager implements Closeable {
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
         String canonicalizedNumber = UuidUtil.isUuid(identifier)
                 ? identifier
-                : Util.canonicalizeNumber(identifier, account.getUsername());
+                : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
         return resolveSignalServiceAddress(canonicalizedNumber);
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(String identifier) {
-        SignalServiceAddress address = Util.getSignalServiceAddressFromIdentifier(identifier);
+        SignalServiceAddress address = Utils.getSignalServiceAddressFromIdentifier(identifier);
 
         return resolveSignalServiceAddress(address);
     }
