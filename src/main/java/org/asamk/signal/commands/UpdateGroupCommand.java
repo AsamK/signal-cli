@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.util.Base64;

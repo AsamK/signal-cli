@@ -1,8 +1,8 @@
 package org.asamk.signal;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;

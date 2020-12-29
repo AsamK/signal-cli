@@ -4,8 +4,8 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 

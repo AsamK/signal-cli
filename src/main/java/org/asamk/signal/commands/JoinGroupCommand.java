@@ -4,9 +4,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupInviteLinkUrl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;

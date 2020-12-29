@@ -2,10 +2,10 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.AttachmentInvalidException;
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;

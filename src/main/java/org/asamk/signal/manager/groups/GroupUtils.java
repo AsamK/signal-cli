@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.groups;
 
 import org.asamk.signal.storage.groups.GroupInfo;
 import org.asamk.signal.storage.groups.GroupInfoV1;

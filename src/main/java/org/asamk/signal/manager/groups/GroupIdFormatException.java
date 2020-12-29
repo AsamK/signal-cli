@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.groups;
 
 public class GroupIdFormatException extends Exception {
 

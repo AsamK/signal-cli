@@ -1,4 +1,6 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.groups;
+
+import org.asamk.signal.manager.KeyUtils;
 
 import java.util.Arrays;
 

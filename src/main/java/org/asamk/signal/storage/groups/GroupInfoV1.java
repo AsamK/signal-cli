@@ -13,11 +13,11 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdV1;
-import org.asamk.signal.manager.GroupIdV2;
-import org.asamk.signal.manager.GroupInviteLinkUrl;
-import org.asamk.signal.manager.GroupUtils;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdV1;
+import org.asamk.signal.manager.groups.GroupIdV2;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;

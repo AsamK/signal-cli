@@ -5,7 +5,7 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.util.Base64;
 
-class KeyUtils {
+public class KeyUtils {
 
     private KeyUtils() {
     }
@@ -35,7 +35,7 @@ class KeyUtils {
         return Base64.encodeBytes(secret);
     }
 
-    static byte[] getSecretBytes(int size) {
+    public static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
         RandomUtils.getSecureRandom().nextBytes(secret);
         return secret;

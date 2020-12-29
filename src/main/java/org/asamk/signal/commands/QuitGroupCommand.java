@@ -3,11 +3,11 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdFormatException;
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.Util;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;

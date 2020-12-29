@@ -1,8 +1,8 @@
 package org.asamk.signal;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;

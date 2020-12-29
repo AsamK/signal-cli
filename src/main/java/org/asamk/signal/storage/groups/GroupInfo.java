@@ -2,8 +2,8 @@ package org.asamk.signal.storage.groups;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Set;

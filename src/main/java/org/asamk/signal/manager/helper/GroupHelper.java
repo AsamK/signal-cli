@@ -2,9 +2,9 @@ package org.asamk.signal.manager.helper;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import org.asamk.signal.manager.GroupIdV2;
-import org.asamk.signal.manager.GroupLinkPassword;
-import org.asamk.signal.manager.GroupUtils;
+import org.asamk.signal.manager.groups.GroupIdV2;
+import org.asamk.signal.manager.groups.GroupLinkPassword;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.storage.groups.GroupInfoV2;
 import org.asamk.signal.storage.profiles.SignalProfile;
 import org.asamk.signal.util.IOUtils;

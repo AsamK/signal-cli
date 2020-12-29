@@ -1,6 +1,6 @@
 package org.asamk.signal.json;
 
-import org.asamk.signal.manager.GroupUtils;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;

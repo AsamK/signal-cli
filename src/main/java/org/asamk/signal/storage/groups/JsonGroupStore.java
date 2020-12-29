@@ -12,10 +12,10 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdV1;
-import org.asamk.signal.manager.GroupIdV2;
-import org.asamk.signal.manager.GroupUtils;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdV1;
+import org.asamk.signal.manager.groups.GroupIdV2;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.IOUtils;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;

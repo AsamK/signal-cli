@@ -1,7 +1,7 @@
 package org.asamk.signal.storage.groups;
 
-import org.asamk.signal.manager.GroupIdV2;
-import org.asamk.signal.manager.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupIdV2;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.groups.GroupMasterKey;
