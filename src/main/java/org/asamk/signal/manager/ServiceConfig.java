@@ -20,7 +20,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +76,7 @@ public class ServiceConfig {
                 .header("User-Agent", userAgent)
                 .build());
 
-        final List<Interceptor> interceptors = Collections.singletonList(userAgentInterceptor);
+        final List<Interceptor> interceptors = List.of(userAgentInterceptor);
 
         return new SignalServiceConfiguration(new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
                 makeSignalCdnUrlMapFor(new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},

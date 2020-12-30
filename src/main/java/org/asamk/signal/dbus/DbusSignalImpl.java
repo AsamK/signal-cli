@@ -16,7 +16,6 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -167,7 +166,7 @@ public class DbusSignalImpl implements Signal {
     public List<String> getGroupMembers(final byte[] groupId) {
         GroupInfo group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
-            return Collections.emptyList();
+            return List.of();
         } else {
             return group.getMembers()
                     .stream()

@@ -164,7 +164,6 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -211,7 +210,7 @@ public class Manager implements Closeable {
     private final ProfileHelper profileHelper;
     private final GroupHelper groupHelper;
 
-    public Manager(
+    Manager(
             SignalAccount account,
             PathConfig pathConfig,
             SignalServiceConfiguration serviceConfiguration,
@@ -810,7 +809,7 @@ public class Manager implements Closeable {
             GroupInfoV2 gv2 = groupHelper.createGroupV2(name, members, avatarFile);
             if (gv2 == null) {
                 GroupInfoV1 gv1 = new GroupInfoV1(GroupIdV1.createRandom());
-                gv1.addMembers(Collections.singleton(account.getSelfAddress()));
+                gv1.addMembers(List.of(account.getSelfAddress()));
                 updateGroupV1(gv1, name, members, avatarFile);
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
@@ -965,7 +964,7 @@ public class Manager implements Closeable {
         SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendMessage(messageBuilder, Collections.singleton(recipient));
+        return sendMessage(messageBuilder, List.of(recipient));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -1007,14 +1006,14 @@ public class Manager implements Closeable {
                 .asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendMessage(messageBuilder, Collections.singleton(recipient));
+        return sendMessage(messageBuilder, List.of(recipient));
     }
 
     void sendReceipt(
             SignalServiceAddress remoteAddress, long messageId
     ) throws IOException, UntrustedIdentityException {
         SignalServiceReceiptMessage receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
-                Collections.singletonList(messageId),
+                List.of(messageId),
                 System.currentTimeMillis());
 
         createMessageSender().sendReceipt(remoteAddress,
@@ -1141,7 +1140,7 @@ public class Manager implements Closeable {
     private void sendExpirationTimerUpdate(SignalServiceAddress address) throws IOException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
                 .asExpirationUpdate();
-        sendMessage(messageBuilder, Collections.singleton(address));
+        sendMessage(messageBuilder, List.of(address));
     }
 
     /**
@@ -1434,7 +1433,7 @@ public class Manager implements Closeable {
                             .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
                                     e.getIdentityKey(),
                                     TrustLevel.UNTRUSTED);
-                    return new Pair<>(timestamp, Collections.emptyList());
+                    return new Pair<>(timestamp, List.of());
                 }
             } else {
                 // Send to all individually, so sync messages are sent correctly
@@ -1477,7 +1476,7 @@ public class Manager implements Closeable {
                 message.getTimestamp(),
                 message,
                 message.getExpiresInSeconds(),
-                Collections.singletonMap(recipient, unidentifiedAccess.isPresent()),
+                Map.of(recipient, unidentifiedAccess.isPresent()),
                 false);
         SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
@@ -2085,7 +2084,7 @@ public class Manager implements Closeable {
                                         syncGroup.removeMember(account.getSelfAddress());
                                     } else {
                                         // Add ourself to the member set as it's marked as active
-                                        syncGroup.addMembers(Collections.singleton(account.getSelfAddress()));
+                                        syncGroup.addMembers(List.of(account.getSelfAddress()));
                                     }
                                     syncGroup.blocked = g.isBlocked();
                                     if (g.getColor().isPresent()) {

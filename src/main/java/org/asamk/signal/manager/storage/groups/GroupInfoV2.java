@@ -8,7 +8,6 @@ import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -66,7 +65,7 @@ public class GroupInfoV2 extends GroupInfo {
     @Override
     public Set<SignalServiceAddress> getMembers() {
         if (this.group == null) {
-            return Collections.emptySet();
+            return Set.of();
         }
         return group.getMembersList()
                 .stream()
@@ -77,7 +76,7 @@ public class GroupInfoV2 extends GroupInfo {
     @Override
     public Set<SignalServiceAddress> getPendingMembers() {
         if (this.group == null) {
-            return Collections.emptySet();
+            return Set.of();
         }
         return group.getPendingMembersList()
                 .stream()
@@ -88,7 +87,7 @@ public class GroupInfoV2 extends GroupInfo {
     @Override
     public Set<SignalServiceAddress> getRequestingMembers() {
         if (this.group == null) {
-            return Collections.emptySet();
+            return Set.of();
         }
         return group.getRequestingMembersList()
                 .stream()
