@@ -1,4 +1,4 @@
-This fork changes the daemon command to read commands as JSON from stdin instead of exporting a DBus interface. It also includes reactions in JSON output. 
+This fork adds a stdio command, which is similar to the daemon --dbus command but read commands as JSON from stdin instead of exporting a DBus interface. It also includes reactions in JSON output. 
 
 Currently, only sendMessage is available. The JSON interface is {"command": "sendMessage", "recipient": number, "content": message, "details": {"attachments": []}}. The details field is optional. As far as I can tell, attachments must be full absolute file paths. 
 
