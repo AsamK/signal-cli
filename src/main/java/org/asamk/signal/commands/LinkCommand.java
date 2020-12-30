@@ -16,8 +16,7 @@ public class LinkCommand implements ProvisioningCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-n", "--name")
-                .help("Specify a name to describe this new device.");
+        subparser.addArgument("-n", "--name").help("Specify a name to describe this new device.");
     }
 
     @Override
@@ -43,7 +42,11 @@ public class LinkCommand implements ProvisioningCommand {
             e.printStackTrace();
             return 2;
         } catch (UserAlreadyExists e) {
-            System.err.println("The user " + e.getUsername() + " already exists\nDelete \"" + e.getFileName() + "\" before trying again.");
+            System.err.println("The user "
+                    + e.getUsername()
+                    + " already exists\nDelete \""
+                    + e.getFileName()
+                    + "\" before trying again.");
             return 1;
         }
         return 0;

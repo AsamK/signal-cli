@@ -1,6 +1,8 @@
 package org.asamk.signal.json;
 
+import org.asamk.signal.manager.GroupUtils;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
 
@@ -26,6 +28,11 @@ class JsonGroupInfo {
             this.name = groupInfo.getName().get();
         }
         this.type = groupInfo.getType().toString();
+    }
+
+    JsonGroupInfo(SignalServiceGroupV2 groupInfo) {
+        this.groupId = GroupUtils.getGroupIdV2(groupInfo.getMasterKey()).toBase64();
+        this.type = groupInfo.hasSignedGroupChange() ? "UPDATE" : "DELIVER";
     }
 
     JsonGroupInfo(byte[] groupId) {

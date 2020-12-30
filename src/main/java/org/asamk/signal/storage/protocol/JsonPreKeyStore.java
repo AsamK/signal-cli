@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.PreKeyStore;
@@ -18,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 class JsonPreKeyStore implements PreKeyStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonPreKeyStore.class);
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 
@@ -60,7 +64,9 @@ class JsonPreKeyStore implements PreKeyStore {
     public static class JsonPreKeyStoreDeserializer extends JsonDeserializer<JsonPreKeyStore> {
 
         @Override
-        public JsonPreKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public JsonPreKeyStore deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             Map<Integer, byte[]> preKeyMap = new HashMap<>();
@@ -70,7 +76,7 @@ class JsonPreKeyStore implements PreKeyStore {
                     try {
                         preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
                     } catch (IOException e) {
-                        System.err.println(String.format("Error while decoding prekey for: %s", preKeyId));
+                        logger.warn("Error while decoding prekey for {}: {}", preKeyId, e.getMessage());
                     }
                 }
             }
@@ -86,7 +92,9 @@ class JsonPreKeyStore implements PreKeyStore {
     public static class JsonPreKeyStoreSerializer extends JsonSerializer<JsonPreKeyStore> {
 
         @Override
-        public void serialize(JsonPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(
+                JsonPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider
+        ) throws IOException {
             json.writeStartArray();
             for (Map.Entry<Integer, byte[]> preKey : jsonPreKeyStore.store.entrySet()) {
                 json.writeStartObject();

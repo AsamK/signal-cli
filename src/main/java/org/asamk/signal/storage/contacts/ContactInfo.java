@@ -7,6 +7,8 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.UUID;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+
 public class ContactInfo {
 
     @JsonProperty
@@ -24,7 +26,7 @@ public class ContactInfo {
     @JsonProperty(defaultValue = "0")
     public int messageExpirationTime;
 
-    @JsonProperty
+    @JsonProperty(access = WRITE_ONLY)
     public String profileKey;
 
     @JsonProperty(defaultValue = "false")

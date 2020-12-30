@@ -31,6 +31,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -45,7 +46,7 @@ public class ProvisioningManager {
     private final int registrationId;
     private final String password;
 
-    public ProvisioningManager(String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
+    public ProvisioningManager(File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
@@ -70,12 +71,19 @@ public class ProvisioningManager {
     public String getDeviceLinkUri() throws TimeoutException, IOException {
         String deviceUuid = accountManager.getNewDeviceUuid();
 
-        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()));
+        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid,
+                identityKey.getPublicKey().getPublicKey()));
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
         String signalingKey = KeyUtils.createSignalingKey();
-        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(identityKey, signalingKey, false, true, registrationId, deviceName);
+        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(
+                identityKey,
+                signalingKey,
+                false,
+                true,
+                registrationId,
+                deviceName);
 
         String username = ret.getNumber();
         // TODO do this check before actually registering
@@ -96,7 +104,15 @@ public class ProvisioningManager {
             }
         }
 
-        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(), username, ret.getUuid(), password, ret.getDeviceId(), ret.getIdentity(), registrationId, signalingKey, profileKey)) {
+        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
+                username,
+                ret.getUuid(),
+                password,
+                ret.getDeviceId(),
+                ret.getIdentity(),
+                registrationId,
+                signalingKey,
+                profileKey)) {
             account.save();
 
             try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {

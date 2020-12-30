@@ -54,6 +54,12 @@ Use the verify command to complete the verification.
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
 
+*--captcha*::
+The captcha token, required if registration failed with a captcha required error.
+To get the token, go to https://signalcaptchas.org/registration/generate.html
+Check the developer tools for a redirect starting with signalcaptcha://
+Everything after signalcaptcha:// is the captcha token.
+
 === verify
 
 Verify the number using the code received via SMS or voice.
@@ -172,9 +178,17 @@ Don’t download attachments of received messages.
 *--json*::
 Output received messages in json format, one object per line.
 
+=== joinGroup
+
+Join a group via an invitation link.
+
+*--uri*::
+The invitation link URI (starts with `https://signal.group/#`)
+
 === updateGroup
 
 Create or update a group.
+If the user is a pending member, this command will accept the group invitation.
 
 *-g* GROUP, *--group* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -192,6 +206,7 @@ Specify one or more members to add to the group.
 === quitGroup
 
 Send a quit group message to all group members and remove self from member list.
+If the user is a pending member, this command will decline the group invitation.
 
 *-g* GROUP, *--group* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -229,7 +244,7 @@ Specify the safety number of the key, only use this option if you have verified 
 
 Update the name and avatar image visible by message recipients for the current users.
 The profile is stored encrypted on the Signal servers.
-The decryption key is sent with every outgoing messages (excluding group messages).
+The decryption key is sent with every outgoing messages to contacts.
 
 *--name*::
 New name visible by message recipients.

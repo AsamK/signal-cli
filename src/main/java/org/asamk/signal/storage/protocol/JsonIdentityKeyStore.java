@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class JsonIdentityKeyStore implements IdentityKeyStore {
+
+    final static Logger logger = LoggerFactory.getLogger(JsonIdentityKeyStore.class);
 
     private final List<Identity> identities = new ArrayList<>();
 
@@ -63,7 +67,10 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
 
     @Override
     public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        return saveIdentity(resolveSignalServiceAddress(address.getName()), identityKey, TrustLevel.TRUSTED_UNVERIFIED, null);
+        return saveIdentity(resolveSignalServiceAddress(address.getName()),
+                identityKey,
+                TrustLevel.TRUSTED_UNVERIFIED,
+                null);
     }
 
     /**
@@ -75,7 +82,9 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
      * @param trustLevel     Level of trust: untrusted, trusted, trusted and verified
      * @param added          Added timestamp, if null and the key is newly added, the current time is used.
      */
-    public boolean saveIdentity(SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
+    public boolean saveIdentity(
+            SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel, Date added
+    ) {
         for (Identity id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
@@ -99,7 +108,9 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
      * @param identityKey    The user's public key
      * @param trustLevel     Level of trust: untrusted, trusted, trusted and verified
      */
-    public void setIdentityTrustLevel(SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel) {
+    public void setIdentityTrustLevel(
+            SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel
+    ) {
         for (Identity id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
@@ -178,7 +189,9 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public static class JsonIdentityKeyStoreDeserializer extends JsonDeserializer<JsonIdentityKeyStore> {
 
         @Override
-        public JsonIdentityKeyStore deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        public JsonIdentityKeyStore deserialize(
+                JsonParser jsonParser, DeserializationContext deserializationContext
+        ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             try {
@@ -190,28 +203,27 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                 JsonNode trustedKeysNode = node.get("trustedKeys");
                 if (trustedKeysNode.isArray()) {
                     for (JsonNode trustedKey : trustedKeysNode) {
-                        String trustedKeyName = trustedKey.hasNonNull("name")
-                                ? trustedKey.get("name").asText()
-                                : null;
+                        String trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
 
                         if (UuidUtil.isUuid(trustedKeyName)) {
                             // Ignore identities that were incorrectly created with UUIDs as name
                             continue;
                         }
 
-                        UUID uuid = trustedKey.hasNonNull("uuid")
-                                ? UuidUtil.parseOrNull(trustedKey.get("uuid").asText())
-                                : null;
+                        UUID uuid = trustedKey.hasNonNull("uuid") ? UuidUtil.parseOrNull(trustedKey.get("uuid")
+                                .asText()) : null;
                         final SignalServiceAddress serviceAddress = uuid == null
                                 ? Util.getSignalServiceAddressFromIdentifier(trustedKeyName)
                                 : new SignalServiceAddress(uuid, trustedKeyName);
                         try {
                             IdentityKey id = new IdentityKey(Base64.decode(trustedKey.get("identityKey").asText()), 0);
-                            TrustLevel trustLevel = trustedKey.has("trustLevel") ? TrustLevel.fromInt(trustedKey.get("trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
-                            Date added = trustedKey.has("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp").asLong()) : new Date();
+                            TrustLevel trustLevel = trustedKey.has("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
+                                    "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
+                            Date added = trustedKey.has("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
+                                    .asLong()) : new Date();
                             keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
                         } catch (InvalidKeyException | IOException e) {
-                            System.out.println(String.format("Error while decoding key for: %s", trustedKeyName));
+                            logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
                         }
                     }
                 }
@@ -226,10 +238,13 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public static class JsonIdentityKeyStoreSerializer extends JsonSerializer<JsonIdentityKeyStore> {
 
         @Override
-        public void serialize(JsonIdentityKeyStore jsonIdentityKeyStore, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(
+                JsonIdentityKeyStore jsonIdentityKeyStore, JsonGenerator json, SerializerProvider serializerProvider
+        ) throws IOException {
             json.writeStartObject();
             json.writeNumberField("registrationId", jsonIdentityKeyStore.getLocalRegistrationId());
-            json.writeStringField("identityKey", Base64.encodeBytes(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));
+            json.writeStringField("identityKey",
+                    Base64.encodeBytes(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));
             json.writeArrayFieldStart("trustedKeys");
             for (Identity trustedKey : jsonIdentityKeyStore.identities) {
                 json.writeStartObject();
@@ -279,8 +294,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         }
 
         boolean isTrusted() {
-            return trustLevel == TrustLevel.TRUSTED_UNVERIFIED ||
-                    trustLevel == TrustLevel.TRUSTED_VERIFIED;
+            return trustLevel == TrustLevel.TRUSTED_UNVERIFIED || trustLevel == TrustLevel.TRUSTED_VERIFIED;
         }
 
         public IdentityKey getIdentityKey() {

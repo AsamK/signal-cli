@@ -2,7 +2,6 @@ package org.asamk.signal.manager;
 
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 interface HandleAction {
@@ -30,8 +29,7 @@ class SendReceiptAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SendReceiptAction that = (SendReceiptAction) o;
-        return timestamp == that.timestamp &&
-                address.equals(that.address);
+        return timestamp == that.timestamp && address.equals(that.address);
     }
 
     @Override
@@ -94,9 +92,9 @@ class SendSyncBlockedListAction implements HandleAction {
 class SendGroupInfoRequestAction implements HandleAction {
 
     private final SignalServiceAddress address;
-    private final byte[] groupId;
+    private final GroupIdV1 groupId;
 
-    public SendGroupInfoRequestAction(final SignalServiceAddress address, final byte[] groupId) {
+    public SendGroupInfoRequestAction(final SignalServiceAddress address, final GroupIdV1 groupId) {
         this.address = address;
         this.groupId = groupId;
     }
@@ -110,15 +108,17 @@ class SendGroupInfoRequestAction implements HandleAction {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         final SendGroupInfoRequestAction that = (SendGroupInfoRequestAction) o;
-        return address.equals(that.address) &&
-                Arrays.equals(groupId, that.groupId);
+
+        if (!address.equals(that.address)) return false;
+        return groupId.equals(that.groupId);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(address);
-        result = 31 * result + Arrays.hashCode(groupId);
+        int result = address.hashCode();
+        result = 31 * result + groupId.hashCode();
         return result;
     }
 }
@@ -126,9 +126,9 @@ class SendGroupInfoRequestAction implements HandleAction {
 class SendGroupUpdateAction implements HandleAction {
 
     private final SignalServiceAddress address;
-    private final byte[] groupId;
+    private final GroupIdV1 groupId;
 
-    public SendGroupUpdateAction(final SignalServiceAddress address, final byte[] groupId) {
+    public SendGroupUpdateAction(final SignalServiceAddress address, final GroupIdV1 groupId) {
         this.address = address;
         this.groupId = groupId;
     }
@@ -142,15 +142,17 @@ class SendGroupUpdateAction implements HandleAction {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         final SendGroupUpdateAction that = (SendGroupUpdateAction) o;
-        return address.equals(that.address) &&
-                Arrays.equals(groupId, that.groupId);
+
+        if (!address.equals(that.address)) return false;
+        return groupId.equals(that.groupId);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(address);
-        result = 31 * result + Arrays.hashCode(groupId);
+        int result = address.hashCode();
+        result = 31 * result + groupId.hashCode();
         return result;
     }
 }

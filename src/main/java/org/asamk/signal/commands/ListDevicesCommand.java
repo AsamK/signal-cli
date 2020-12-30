@@ -25,7 +25,10 @@ public class ListDevicesCommand implements LocalCommand {
         try {
             List<DeviceInfo> devices = m.getLinkedDevices();
             for (DeviceInfo d : devices) {
-                System.out.println("Device " + d.getId() + (d.getId() == m.getDeviceId() ? " (this device)" : "") + ":");
+                System.out.println("Device "
+                        + d.getId()
+                        + (d.getId() == m.getDeviceId() ? " (this device)" : "")
+                        + ":");
                 System.out.println(" Name: " + d.getName());
                 System.out.println(" Created: " + DateUtils.formatTimestamp(d.getCreated()));
                 System.out.println(" Last seen: " + DateUtils.formatTimestamp(d.getLastSeen()));

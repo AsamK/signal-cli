@@ -26,14 +26,6 @@ class KeyUtils {
         return getSecret(18);
     }
 
-    static byte[] createGroupId() {
-        return getSecretBytes(16);
-    }
-
-    static byte[] createUnrestrictedUnidentifiedAccess() {
-        return getSecretBytes(16);
-    }
-
     static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
     }
@@ -43,7 +35,7 @@ class KeyUtils {
         return Base64.encodeBytes(secret);
     }
 
-    private static byte[] getSecretBytes(int size) {
+    static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
         RandomUtils.getSecureRandom().nextBytes(secret);
         return secret;

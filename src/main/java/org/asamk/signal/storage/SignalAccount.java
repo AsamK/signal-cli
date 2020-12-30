@@ -10,9 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.asamk.signal.manager.GroupId;
 import org.asamk.signal.storage.contacts.ContactInfo;
 import org.asamk.signal.storage.contacts.JsonContactsStore;
 import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.storage.groups.GroupInfoV1;
 import org.asamk.signal.storage.groups.JsonGroupStore;
 import org.asamk.signal.storage.profiles.ProfileStore;
 import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
@@ -20,12 +22,15 @@ import org.asamk.signal.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.storage.protocol.RecipientStore;
 import org.asamk.signal.storage.protocol.SessionInfo;
 import org.asamk.signal.storage.protocol.SignalServiceAddressResolver;
+import org.asamk.signal.storage.stickers.StickerStore;
 import org.asamk.signal.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.storage.threads.ThreadInfo;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -50,6 +55,8 @@ import java.util.stream.Collectors;
 
 public class SignalAccount implements Closeable {
 
+    final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
+
     private final ObjectMapper jsonProcessor = new ObjectMapper();
     private final FileChannel fileChannel;
     private final FileLock lock;
@@ -71,6 +78,7 @@ public class SignalAccount implements Closeable {
     private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
     private ProfileStore profileStore;
+    private StickerStore stickerStore;
 
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
@@ -82,12 +90,12 @@ public class SignalAccount implements Closeable {
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
-    public static SignalAccount load(String dataPath, String username) throws IOException {
-        final String fileName = getFileName(dataPath, username);
+    public static SignalAccount load(File dataPath, String username) throws IOException {
+        final File fileName = getFileName(dataPath, username);
         final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
         try {
             SignalAccount account = new SignalAccount(pair.first(), pair.second());
-            account.load();
+            account.load(dataPath);
             return account;
         } catch (Throwable e) {
             pair.second().close();
@@ -96,10 +104,12 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    public static SignalAccount create(String dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey) throws IOException {
+    public static SignalAccount create(
+            File dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
+    ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        String fileName = getFileName(dataPath, username);
-        if (!new File(fileName).exists()) {
+        File fileName = getFileName(dataPath, username);
+        if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
@@ -109,19 +119,30 @@ public class SignalAccount implements Closeable {
         account.username = username;
         account.profileKey = profileKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
-        account.groupStore = new JsonGroupStore();
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
+        account.stickerStore = new StickerStore();
         account.registered = false;
 
         return account;
     }
 
-    public static SignalAccount createLinkedAccount(String dataPath, String username, UUID uuid, String password, int deviceId, IdentityKeyPair identityKey, int registrationId, String signalingKey, ProfileKey profileKey) throws IOException {
+    public static SignalAccount createLinkedAccount(
+            File dataPath,
+            String username,
+            UUID uuid,
+            String password,
+            int deviceId,
+            IdentityKeyPair identityKey,
+            int registrationId,
+            String signalingKey,
+            ProfileKey profileKey
+    ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        String fileName = getFileName(dataPath, username);
-        if (!new File(fileName).exists()) {
+        File fileName = getFileName(dataPath, username);
+        if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
@@ -135,29 +156,42 @@ public class SignalAccount implements Closeable {
         account.deviceId = deviceId;
         account.signalingKey = signalingKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
-        account.groupStore = new JsonGroupStore();
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
+        account.stickerStore = new StickerStore();
         account.registered = true;
         account.isMultiDevice = true;
 
         return account;
     }
 
-    public static String getFileName(String dataPath, String username) {
-        return dataPath + "/" + username;
+    public static File getFileName(File dataPath, String username) {
+        return new File(dataPath, username);
     }
 
-    public static boolean userExists(String dataPath, String username) {
+    private static File getUserPath(final File dataPath, final String username) {
+        return new File(dataPath, username + ".d");
+    }
+
+    public static File getMessageCachePath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "msg-cache");
+    }
+
+    private static File getGroupCachePath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "group-cache");
+    }
+
+    public static boolean userExists(File dataPath, String username) {
         if (username == null) {
             return false;
         }
-        File f = new File(getFileName(dataPath, username));
+        File f = getFileName(dataPath, username);
         return !(!f.exists() || f.isDirectory());
     }
 
-    private void load() throws IOException {
+    private void load(File dataPath) throws IOException {
         JsonNode rootNode;
         synchronized (fileChannel) {
             fileChannel.position(0);
@@ -200,18 +234,22 @@ public class SignalAccount implements Closeable {
             try {
                 profileKey = new ProfileKey(Base64.decode(Util.getNotNullNode(rootNode, "profileKey").asText()));
             } catch (InvalidInputException e) {
-                throw new IOException("Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes", e);
+                throw new IOException(
+                        "Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes",
+                        e);
             }
         }
 
-        signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"), JsonSignalProtocolStore.class);
+        signalProtocolStore = jsonProcessor.convertValue(Util.getNotNullNode(rootNode, "axolotlStore"),
+                JsonSignalProtocolStore.class);
         registered = Util.getNotNullNode(rootNode, "registered").asBoolean();
         JsonNode groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
             groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
+            groupStore.groupCachePath = getGroupCachePath(dataPath, username);
         }
         if (groupStore == null) {
-            groupStore = new JsonGroupStore();
+            groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
         JsonNode contactStoreNode = rootNode.get("contactStore");
@@ -236,9 +274,12 @@ public class SignalAccount implements Closeable {
             }
 
             for (GroupInfo group : groupStore.getGroups()) {
-                group.members = group.members.stream()
-                        .map(m -> recipientStore.resolveServiceAddress(m))
-                        .collect(Collectors.toSet());
+                if (group instanceof GroupInfoV1) {
+                    GroupInfoV1 groupInfoV1 = (GroupInfoV1) group;
+                    groupInfoV1.members = groupInfoV1.members.stream()
+                            .map(m -> recipientStore.resolveServiceAddress(m))
+                            .collect(Collectors.toSet());
+                }
             }
 
             for (SessionInfo session : signalProtocolStore.getSessions()) {
@@ -258,9 +299,18 @@ public class SignalAccount implements Closeable {
             profileStore = new ProfileStore();
         }
 
+        JsonNode stickerStoreNode = rootNode.get("stickerStore");
+        if (stickerStoreNode != null) {
+            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
+        }
+        if (stickerStore == null) {
+            stickerStore = new StickerStore();
+        }
+
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
-            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
+            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode,
+                    LegacyJsonThreadStore.class);
             // Migrate thread info to group and contact store
             for (ThreadInfo thread : threadStore.getThreads()) {
                 if (thread.id == null || thread.id.isEmpty()) {
@@ -272,9 +322,9 @@ public class SignalAccount implements Closeable {
                         contactInfo.messageExpirationTime = thread.messageExpirationTime;
                         contactStore.updateContact(contactInfo);
                     } else {
-                        GroupInfo groupInfo = groupStore.getGroup(Base64.decode(thread.id));
-                        if (groupInfo != null) {
-                            groupInfo.messageExpirationTime = thread.messageExpirationTime;
+                        GroupInfo groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
+                        if (groupInfo instanceof GroupInfoV1) {
+                            ((GroupInfoV1) groupInfo).messageExpirationTime = thread.messageExpirationTime;
                             groupStore.updateGroup(groupInfo);
                         }
                     }
@@ -305,7 +355,7 @@ public class SignalAccount implements Closeable {
                 .putPOJO("contactStore", contactStore)
                 .putPOJO("recipientStore", recipientStore)
                 .putPOJO("profileStore", profileStore)
-        ;
+                .putPOJO("stickerStore", stickerStore);
         try {
             try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
                 // Write to memory first to prevent corrupting the file in case of serialization errors
@@ -319,17 +369,17 @@ public class SignalAccount implements Closeable {
                 }
             }
         } catch (Exception e) {
-            System.err.println(String.format("Error saving file: %s", e.getMessage()));
+            logger.error("Error saving file: {}", e.getMessage());
         }
     }
 
-    private static Pair<FileChannel, FileLock> openFileChannel(String fileName) throws IOException {
-        FileChannel fileChannel = new RandomAccessFile(new File(fileName), "rw").getChannel();
+    private static Pair<FileChannel, FileLock> openFileChannel(File fileName) throws IOException {
+        FileChannel fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
         FileLock lock = fileChannel.tryLock();
         if (lock == null) {
-            System.err.println("Config file is in use by another instance, waiting…");
+            logger.info("Config file is in use by another instance, waiting…");
             lock = fileChannel.lock();
-            System.err.println("Config file lock acquired.");
+            logger.info("Config file lock acquired.");
         }
         return new Pair<>(fileChannel, lock);
     }
@@ -368,6 +418,10 @@ public class SignalAccount implements Closeable {
 
     public ProfileStore getProfileStore() {
         return profileStore;
+    }
+
+    public StickerStore getStickerStore() {
+        return stickerStore;
     }
 
     public String getUsername() {

@@ -1,5 +1,6 @@
 package org.asamk.signal.storage.profiles;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
@@ -23,18 +24,34 @@ public class SignalProfile {
     private final boolean unrestrictedUnidentifiedAccess;
 
     @JsonProperty
-    private final SignalServiceProfile.Capabilities capabilities;
+    private final Capabilities capabilities;
 
-    public SignalProfile(final String identityKey, final String name, final File avatarFile, final String unidentifiedAccess, final boolean unrestrictedUnidentifiedAccess, final SignalServiceProfile.Capabilities capabilities) {
+    public SignalProfile(
+            final String identityKey,
+            final String name,
+            final File avatarFile,
+            final String unidentifiedAccess,
+            final boolean unrestrictedUnidentifiedAccess,
+            final SignalServiceProfile.Capabilities capabilities
+    ) {
         this.identityKey = identityKey;
         this.name = name;
         this.avatarFile = avatarFile;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
-        this.capabilities = capabilities;
+        this.capabilities = new Capabilities();
+        this.capabilities.storage = capabilities.isStorage();
+        this.capabilities.gv1Migration = capabilities.isGv1Migration();
+        this.capabilities.gv2 = capabilities.isGv2();
     }
 
-    public SignalProfile(@JsonProperty("identityKey") final String identityKey, @JsonProperty("name") final String name, @JsonProperty("unidentifiedAccess") final String unidentifiedAccess, @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess, @JsonProperty("capabilities") final SignalServiceProfile.Capabilities capabilities) {
+    public SignalProfile(
+            @JsonProperty("identityKey") final String identityKey,
+            @JsonProperty("name") final String name,
+            @JsonProperty("unidentifiedAccess") final String unidentifiedAccess,
+            @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess,
+            @JsonProperty("capabilities") final Capabilities capabilities
+    ) {
         this.identityKey = identityKey;
         this.name = name;
         this.avatarFile = null;
@@ -63,19 +80,43 @@ public class SignalProfile {
         return unrestrictedUnidentifiedAccess;
     }
 
-    public SignalServiceProfile.Capabilities getCapabilities() {
+    public Capabilities getCapabilities() {
         return capabilities;
     }
 
     @Override
     public String toString() {
-        return "SignalProfile{" +
-                "identityKey='" + identityKey + '\'' +
-                ", name='" + name + '\'' +
-                ", avatarFile=" + avatarFile +
-                ", unidentifiedAccess='" + unidentifiedAccess + '\'' +
-                ", unrestrictedUnidentifiedAccess=" + unrestrictedUnidentifiedAccess +
-                ", capabilities=" + capabilities +
-                '}';
+        return "SignalProfile{"
+                + "identityKey='"
+                + identityKey
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", avatarFile="
+                + avatarFile
+                + ", unidentifiedAccess='"
+                + unidentifiedAccess
+                + '\''
+                + ", unrestrictedUnidentifiedAccess="
+                + unrestrictedUnidentifiedAccess
+                + ", capabilities="
+                + capabilities
+                + '}';
+    }
+
+    public static class Capabilities {
+
+        @JsonIgnore
+        public boolean uuid;
+
+        @JsonProperty
+        public boolean gv2;
+
+        @JsonProperty
+        public boolean storage;
+
+        @JsonProperty
+        public boolean gv1Migration;
     }
 }

@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.StickerPackInvalidException;
 
+import java.io.File;
 import java.io.IOException;
 
 public class UploadStickerPackCommand implements LocalCommand {
@@ -19,7 +20,7 @@ public class UploadStickerPackCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         try {
-            String path = ns.getString("path");
+            File path = new File(ns.getString("path"));
             String url = m.uploadStickerPack(path);
             System.out.println(url);
             return 0;

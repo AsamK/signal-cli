@@ -12,10 +12,8 @@ public class VerifyCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("verificationCode")
-                .help("The verification code you received via sms or voice call.");
-        subparser.addArgument("-p", "--pin")
-                .help("The registration lock PIN, that was set by the user (Optional)");
+        subparser.addArgument("verificationCode").help("The verification code you received via sms or voice call.");
+        subparser.addArgument("-p", "--pin").help("The registration lock PIN, that was set by the user (Optional)");
     }
 
     @Override
@@ -30,7 +28,8 @@ public class VerifyCommand implements LocalCommand {
             m.verifyAccount(verificationCode, pin);
             return 0;
         } catch (LockedException e) {
-            System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: " + (e.getTimeRemaining() / 1000 / 60 / 60));
+            System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: "
+                    + (e.getTimeRemaining() / 1000 / 60 / 60));
             System.err.println("Use '--pin PIN_CODE' to specify the registration lock PIN");
             return 3;
         } catch (IOException e) {

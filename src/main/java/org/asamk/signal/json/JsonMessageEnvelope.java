@@ -2,24 +2,25 @@ package org.asamk.signal.json;
 
 import org.asamk.Signal;
 //import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.List;
+
 public class JsonMessageEnvelope {
-	// gotta do something so that it actually emits valid json instead of null
-	// or just fix it on the python side i guess 
     String source;
     int sourceDevice;
     String relay;
     long timestamp;
-    boolean isReceipt;
     JsonDataMessage dataMessage;
     JsonSyncMessage syncMessage;
     JsonCallMessage callMessage;
     JsonReceiptMessage receiptMessage;
-	// String typingAction;
-    public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content) {
+    // String typingAction;
+
+    public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
             this.source = source.getLegacyIdentifier();
@@ -27,17 +28,19 @@ public class JsonMessageEnvelope {
         }
         this.sourceDevice = envelope.getSourceDevice();
         this.timestamp = envelope.getTimestamp();
-        this.isReceipt = envelope.isReceipt();
+        if (envelope.isReceipt()) {
+            this.receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
+        }
         if (content != null) {
             if (envelope.isUnidentifiedSender()) {
                 this.source = content.getSender().getLegacyIdentifier();
                 this.sourceDevice = content.getSenderDevice();
             }
             if (content.getDataMessage().isPresent()) {
-                this.dataMessage = new JsonDataMessage(content.getDataMessage().get());
+                this.dataMessage = new JsonDataMessage(content.getDataMessage().get(), m);
             }
             if (content.getSyncMessage().isPresent()) {
-                this.syncMessage = new JsonSyncMessage(content.getSyncMessage().get());
+                this.syncMessage = new JsonSyncMessage(content.getSyncMessage().get(), m);
             }
             if (content.getCallMessage().isPresent()) {
                 this.callMessage = new JsonCallMessage(content.getCallMessage().get());
@@ -61,7 +64,7 @@ public class JsonMessageEnvelope {
     public JsonMessageEnvelope(Signal.ReceiptReceived receiptReceived) {
         source = receiptReceived.getSender();
         timestamp = receiptReceived.getTimestamp();
-        isReceipt = true;
+        receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
     }
 
     public JsonMessageEnvelope(Signal.SyncMessageReceived messageReceived) {

@@ -60,7 +60,13 @@ public class DaemonCommand implements LocalCommand {
             }
             boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
             try {
-                m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, ns.getBoolean("json") ? new JsonDbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH) : new DbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH));
+                m.receiveMessages(1,
+                        TimeUnit.HOURS,
+                        false,
+                        ignoreAttachments,
+                        ns.getBoolean("json")
+                                ? new JsonDbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH)
+                                : new DbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH));
                 return 0;
             } catch (IOException e) {
                 System.err.println("Error while receiving messages: " + e.getMessage());

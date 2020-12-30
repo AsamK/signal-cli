@@ -46,8 +46,7 @@ public class IOUtils {
         return baos.toByteArray();
     }
 
-    public static void createPrivateDirectories(String directoryPath) throws IOException {
-        final File file = new File(directoryPath);
+    public static void createPrivateDirectories(File file) throws IOException {
         if (file.exists()) {
             return;
         }
@@ -61,8 +60,8 @@ public class IOUtils {
         }
     }
 
-    public static void createPrivateFile(String path) throws IOException {
-        final Path file = new File(path).toPath();
+    public static void createPrivateFile(File path) throws IOException {
+        final Path file = path.toPath();
         try {
             Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE);
             Files.createFile(file, PosixFilePermissions.asFileAttribute(perms));
@@ -71,13 +70,13 @@ public class IOUtils {
         }
     }
 
-    public static String getDataHomeDir() {
+    public static File getDataHomeDir() {
         String dataHome = System.getenv("XDG_DATA_HOME");
         if (dataHome != null) {
-            return dataHome;
+            return new File(dataHome);
         }
 
-        return System.getProperty("user.home") + "/.local/share";
+        return new File(new File(System.getProperty("user.home"), ".local"), "share");
     }
 
     public static void copyStreamToFile(InputStream input, File outputFile) throws IOException {

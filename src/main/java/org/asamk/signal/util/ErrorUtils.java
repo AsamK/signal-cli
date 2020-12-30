@@ -1,14 +1,14 @@
 package org.asamk.signal.util;
 
+import org.asamk.signal.manager.GroupIdFormatException;
 import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.NotAGroupMemberException;
-import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.push.exceptions.EncapsulatedExceptions;
-import org.whispersystems.signalservice.api.push.exceptions.NetworkFailureException;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ErrorUtils {
 
@@ -18,20 +18,42 @@ public class ErrorUtils {
     public static void handleAssertionError(AssertionError e) {
         System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
         e.printStackTrace();
-        System.err.println("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+        System.err.println(
+                "If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
     }
 
-    public static void handleEncapsulatedExceptions(EncapsulatedExceptions e) {
+    public static int handleTimestampAndSendMessageResults(long timestamp, List<SendMessageResult> results) {
+        if (timestamp != 0) {
+            System.out.println(timestamp);
+        }
+        List<String> errors = getErrorMessagesFromSendMessageResults(results);
+        return handleSendMessageResultErrors(errors);
+    }
+
+    public static List<String> getErrorMessagesFromSendMessageResults(List<SendMessageResult> results) {
+        List<String> errors = new ArrayList<>();
+        for (SendMessageResult result : results) {
+            if (result.isNetworkFailure()) {
+                errors.add(String.format("Network failure for \"%s\"", result.getAddress().getLegacyIdentifier()));
+            } else if (result.isUnregisteredFailure()) {
+                errors.add(String.format("Unregistered user \"%s\"", result.getAddress().getLegacyIdentifier()));
+            } else if (result.getIdentityFailure() != null) {
+                errors.add(String.format("Untrusted Identity for \"%s\"", result.getAddress().getLegacyIdentifier()));
+            }
+        }
+
+        return errors;
+    }
+
+    private static int handleSendMessageResultErrors(List<String> errors) {
+        if (errors.size() == 0) {
+            return 0;
+        }
         System.err.println("Failed to send (some) messages:");
-        for (NetworkFailureException n : e.getNetworkExceptions()) {
-            System.err.println("Network failure for \"" + n.getE164number() + "\": " + n.getMessage());
+        for (String error : errors) {
+            System.err.println(error);
         }
-        for (UnregisteredUserException n : e.getUnregisteredUserExceptions()) {
-            System.err.println("Unregistered user \"" + n.getE164Number() + "\": " + n.getMessage());
-        }
-        for (UntrustedIdentityException n : e.getUntrustedIdentityExceptions()) {
-            System.err.println("Untrusted Identity for \"" + n.getIdentifier() + "\": " + n.getMessage());
-        }
+        return 3;
     }
 
     public static void handleIOException(IOException e) {
