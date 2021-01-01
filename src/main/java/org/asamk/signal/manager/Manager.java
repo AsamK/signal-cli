@@ -346,14 +346,25 @@ public class Manager implements Closeable {
     }
 
     /**
-     * This is used for checking if someone else's number is registered on Signal
+     * This is used for checking a set of phone numbers for registration on Signal
      *
-     * @param number The phone number in question
-     * @return True if registered, false otherwise
-     * @throws IOException if its unable to check if the user is registered
+     * @param numbers The set of phone number in question
+     * @return A map of numbers to booleans. True if registered, false otherwise. Should never be null
+     * @throws IOException if its unable to check if the users are registered
      */
-    public boolean isUserRegistered(String number) throws IOException {
-        return this.accountManager.getContact(number).orNull() != null;
+    public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
+        // Note "contactDetails" has no optionals. It only gives us info on users who are registered
+        List<ContactTokenDetails> contactDetails = this.accountManager.getContacts(numbers);
+
+        // Make the initial map with all numbers set to false for now
+        Map<String, Boolean> usersRegistered = numbers.stream().collect(Collectors.toMap(x -> x, x -> false));
+
+        // Override the contacts we did obtain
+        for (ContactTokenDetails contactDetail : contactDetails) {
+            usersRegistered.put(contactDetail.getNumber(), true);
+        }
+
+        return usersRegistered;
     }
 
     public void register(boolean voiceVerification, String captcha) throws IOException {

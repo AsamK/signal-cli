@@ -13,8 +13,13 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
+import java.util.List;
 
-public class IsRegisteredCommand implements LocalCommand {
+public class GetUserStatusCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -32,33 +37,48 @@ public class IsRegisteredCommand implements LocalCommand {
             return 1;
         }
 
+        // Setup the json object mapper
         ObjectMapper jsonProcessor = new ObjectMapper();
         jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
         jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
-        for (String phone_number : ns.<String>getList("number")) {
+        // Get a map of registration statuses
+        Map<String, Boolean> registered;
+        try {
+            registered = m.areUsersRegistered(new HashSet<>(ns.<String>getList("number")));
+        } catch (IOException e) {
+            System.err.println("Unable to check if users are registered");
+            return 1;
+        }
+
+        // Output
+        if (ns.getBoolean("json")) {
+            List<JsonIsRegistered> objects = new ArrayList<>();
+            for (Map.Entry<String, Boolean> entry : registered.entrySet()) {
+                objects.add(new JsonIsRegistered(entry.getKey(), entry.getValue()));
+            }
+
             try {
-                boolean isRegistered = m.isUserRegistered(phone_number);
-                if (ns.getBoolean("json")) {
-                    JsonIsReceived object = new JsonIsReceived(phone_number, isRegistered);
-                    System.out.println(jsonProcessor.writeValueAsString(object));
-                } else {
-                    System.out.println(phone_number + ": " + isRegistered);
-                }
+                System.out.println(jsonProcessor.writeValueAsString(objects));
             } catch (IOException e) {
                 System.err.println(e.getMessage());
+            }
+
+        } else {
+            for (Map.Entry<String, Boolean> entry : registered.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
             }
         }
 
         return 0;
     }
 
-    private class JsonIsReceived {
+    private class JsonIsRegistered {
         String name;
         boolean isRegistered;
 
-        public JsonIsReceived(String name, boolean isRegistered) {
+        public JsonIsRegistered(String name, boolean isRegistered) {
             this.name = name;
             this.isRegistered = isRegistered;
         }

@@ -124,14 +124,14 @@ Only works, if this is the master device.
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
 
-=== isRegistered
+=== getUserStatus
 
-Checks if a list of phone numbers are registered on Signal or not.
+Uses a list of phone numbers to determine the statuses of those users. Shows if they are registered on the Signal Servers or not.
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
 *--json*::
-Output number registration statuses in json format, one object per line.
+Output the statuses as an array of json objects.
 
 === send
 
