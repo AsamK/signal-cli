@@ -44,7 +44,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         final ObjectMapper jsonProcessor;
         if (ns.getBoolean("json")) {
             jsonProcessor = new ObjectMapper();
-            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
+            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         } else {
             jsonProcessor = null;

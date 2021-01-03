@@ -394,15 +394,11 @@ public class Manager implements Closeable {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
         List<ContactTokenDetails> contactDetails = this.accountManager.getContacts(numbers);
 
-        // Make the initial map with all numbers set to false for now
-        Map<String, Boolean> usersRegistered = numbers.stream().collect(Collectors.toMap(x -> x, x -> false));
+        Set<String> registeredUsers = contactDetails.stream()
+                .map(ContactTokenDetails::getNumber)
+                .collect(Collectors.toSet());
 
-        // Override the contacts we did obtain
-        for (ContactTokenDetails contactDetail : contactDetails) {
-            usersRegistered.put(contactDetail.getNumber(), true);
-        }
-
-        return usersRegistered;
+        return numbers.stream().collect(Collectors.toMap(x -> x, registeredUsers::contains));
     }
 
     public void register(boolean voiceVerification, String captcha) throws IOException {
@@ -524,8 +520,7 @@ public class Manager implements Closeable {
     }
 
     public void verifyAccount(
-            String verificationCode,
-            String pin
+            String verificationCode, String pin
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         verificationCode = verificationCode.replace("-", "");
         account.setSignalingKey(KeyUtils.createSignalingKey());
