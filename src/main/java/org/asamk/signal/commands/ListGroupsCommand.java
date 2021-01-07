@@ -110,11 +110,11 @@ public class ListGroupsCommand implements LocalCommand {
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
             if (detailed) {
-                List<JsonListGroupDetailed> objects = new ArrayList<>();
+                List<JsonGroupDetailed> objects = new ArrayList<>();
                 for (GroupInfo group : groups) {
                     final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
 
-                    objects.add(new JsonListGroupDetailed(group.getGroupId().toBase64(),
+                    objects.add(new JsonGroupDetailed(group.getGroupId().toBase64(),
                             group.getTitle(),
                             group.isMember(m.getSelfAddress()),
                             group.isBlocked(),
@@ -126,8 +126,8 @@ public class ListGroupsCommand implements LocalCommand {
 
                 return printGroupsJson(jsonProcessor, objects);
             } else {
-                List<JsonListGroup> objects = groups.stream().map(
-                        group -> new JsonListGroup(group.getGroupId().toBase64(),
+                List<JsonGroup> objects = groups.stream().map(
+                        group -> new JsonGroup(group.getGroupId().toBase64(),
                                 group.getTitle(),
                                 group.isMember(m.getSelfAddress()),
                                 group.isBlocked()))
@@ -144,14 +144,14 @@ public class ListGroupsCommand implements LocalCommand {
         return 0;
     }
 
-    private static final class JsonListGroup {
+    private static final class JsonGroup {
 
         public String id;
         public String name;
         public boolean isMember;
         public boolean isBlocked;
 
-        public JsonListGroup(String id, String name, boolean isMember, boolean isBlocked) {
+        public JsonGroup(String id, String name, boolean isMember, boolean isBlocked) {
             this.id = id;
             this.name = name;
             this.isMember = isMember;
@@ -159,7 +159,7 @@ public class ListGroupsCommand implements LocalCommand {
         }
     }
 
-    private static final class JsonListGroupDetailed {
+    private static final class JsonGroupDetailed {
 
         public String id;
         public String name;
@@ -171,9 +171,9 @@ public class ListGroupsCommand implements LocalCommand {
         public Set<String> requestingMembers;
         public String groupInviteLink;
 
-        public JsonListGroupDetailed(String id, String name, boolean isMember, boolean isBlocked,
-                                      Set<String> members, Set<String> pendingMembers,
-                                      Set<String> requestingMembers, String groupInviteLink)
+        public JsonGroupDetailed(String id, String name, boolean isMember, boolean isBlocked,
+                                 Set<String> members, Set<String> pendingMembers,
+                                 Set<String> requestingMembers, String groupInviteLink)
         {
             this.id = id;
             this.name = name;
