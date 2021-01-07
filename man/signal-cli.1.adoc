@@ -130,7 +130,7 @@ Uses a list of phone numbers to determine the statuses of those users. Shows if 
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
-*--json*::
+*--j*, *--json*::
 Output the statuses as an array of json objects.
 
 === send
@@ -184,7 +184,7 @@ Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
-*--json*::
+*--j*, *--json*::
 Output received messages in json format, one object per line.
 
 === joinGroup
@@ -222,10 +222,13 @@ Specify the recipient group ID in base64 encoding.
 
 === listGroups
 
-Show a list of known groups.
+Show a list of known groups and related information.
 
 *-d*, *--detailed*::
-Include the list of members of each group.
+Include the list of members of each group and the group invite link.
+
+*--j*, *--json*::
+Output group information as a list of json objects.
 
 === listIdentities
 

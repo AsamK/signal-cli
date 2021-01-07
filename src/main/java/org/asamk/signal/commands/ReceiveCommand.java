@@ -35,7 +35,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
-        subparser.addArgument("--json")
+        subparser.addArgument("-j", "--json")
                 .help("Output received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
