@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Disable registration lock before removing the PIN
+
 ## [0.7.2] - 2020-12-31
 ### Added
 - Implement new registration lock PIN with `setPin` and `removePin` (with KBS)

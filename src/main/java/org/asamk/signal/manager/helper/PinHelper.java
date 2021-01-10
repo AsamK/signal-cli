@@ -33,12 +33,12 @@ public class PinHelper {
 
     public void removeRegistrationLockPin() throws IOException, UnauthenticatedResponseException {
         final KeyBackupService.PinChangeSession pinChangeSession = keyBackupService.newPinChangeSession();
+        pinChangeSession.disableRegistrationLock();
         pinChangeSession.removePin();
     }
 
     public KbsPinData getRegistrationLockData(
-            String pin,
-            LockedException e
+            String pin, LockedException e
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         String basicStorageCredentials = e.getBasicStorageCredentials();
         if (basicStorageCredentials == null) {
@@ -49,8 +49,7 @@ public class PinHelper {
     }
 
     private KbsPinData getRegistrationLockData(
-            String pin,
-            String basicStorageCredentials
+            String pin, String basicStorageCredentials
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         TokenResponse tokenResponse = keyBackupService.getToken(basicStorageCredentials);
         if (tokenResponse == null || tokenResponse.getTries() == 0) {
