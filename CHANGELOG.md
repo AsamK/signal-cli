@@ -4,6 +4,8 @@
 
 ### Fixed
 - Disable registration lock before removing the PIN
+- Fix PIN hash version to match the official clients.
+  If you had previously set a PIN you need to set it again to be able to unlock the registration lock later.
 
 ## [0.7.2] - 2020-12-31
 ### Added
