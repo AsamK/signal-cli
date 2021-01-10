@@ -35,10 +35,6 @@ public class DaemonCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         DBusConnection conn = null;
         try {
             try {

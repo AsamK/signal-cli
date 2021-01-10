@@ -6,6 +6,8 @@ import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.KeyBackupService;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
@@ -107,6 +109,16 @@ public class ServiceConfig {
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
+    }
+
+    static KeyBackupService createKeyBackupService(SignalServiceAccountManager accountManager) {
+        KeyStore keyStore = ServiceConfig.getIasKeyStore();
+
+        return accountManager.getKeyBackupService(keyStore,
+                ServiceConfig.KEY_BACKUP_ENCLAVE_NAME,
+                ServiceConfig.KEY_BACKUP_SERVICE_ID,
+                ServiceConfig.KEY_BACKUP_MRENCLAVE,
+                10);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {

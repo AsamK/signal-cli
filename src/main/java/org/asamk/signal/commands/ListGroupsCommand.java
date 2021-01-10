@@ -64,11 +64,6 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         List<GroupInfo> groups = m.getGroups();
         boolean detailed = ns.getBoolean("detailed");
 

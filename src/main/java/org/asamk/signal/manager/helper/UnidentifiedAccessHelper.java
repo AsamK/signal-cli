@@ -36,7 +36,7 @@ public class UnidentifiedAccessHelper {
         this.senderCertificateProvider = senderCertificateProvider;
     }
 
-    public byte[] getSelfUnidentifiedAccessKey() {
+    private byte[] getSelfUnidentifiedAccessKey() {
         return UnidentifiedAccess.deriveAccessKeyFrom(selfProfileKeyProvider.getProfileKey());
     }
 

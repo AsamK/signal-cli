@@ -21,11 +21,6 @@ public class BlockCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         for (String contact_number : ns.<String>getList("contact")) {
             try {
                 m.setContactBlocked(contact_number, true);

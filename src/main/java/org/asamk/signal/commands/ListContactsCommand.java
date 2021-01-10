@@ -16,10 +16,6 @@ public class ListContactsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         List<ContactInfo> contacts = m.getContacts();
         for (ContactInfo c : contacts) {
             System.out.println(String.format("Number: %s Name: %s  Blocked: %b", c.number, c.name, c.blocked));

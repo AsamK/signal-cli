@@ -17,10 +17,6 @@ public class SendContactsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         try {
             m.sendContacts();
             return 0;

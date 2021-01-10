@@ -31,11 +31,6 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         try {
             final GroupId groupId = Util.decodeGroupId(ns.getString("group"));
             final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(groupId);

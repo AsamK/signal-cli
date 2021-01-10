@@ -146,10 +146,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         double timeout = 5;
         if (ns.getDouble("timeout") != null) {
             timeout = ns.getDouble("timeout");

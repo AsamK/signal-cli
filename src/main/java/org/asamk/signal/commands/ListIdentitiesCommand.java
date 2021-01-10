@@ -30,10 +30,6 @@ public class ListIdentitiesCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         if (ns.get("number") == null) {
             for (IdentityInfo identity : m.getIdentities()) {
                 printIdentityFingerprint(m, identity);

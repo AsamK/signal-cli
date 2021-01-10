@@ -3,14 +3,14 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.RegistrationManager;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
 
-public class VerifyCommand implements LocalCommand {
+public class VerifyCommand implements RegistrationCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -19,11 +19,7 @@ public class VerifyCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (m.isRegistered()) {
-            System.err.println("User registration is already verified");
-            return 1;
-        }
+    public int handleCommand(final Namespace ns, final RegistrationManager m) {
         try {
             String verificationCode = ns.getString("verificationCode");
             String pin = ns.getString("pin");
