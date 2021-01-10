@@ -101,7 +101,7 @@ public class GroupInfoV1 extends GroupInfo {
 
     @JsonProperty("expectedV2Id")
     private byte[] getExpectedV2IdJackson() {
-        return expectedV2Id.serialize();
+        return getExpectedV2Id().serialize();
     }
 
     @Override
