@@ -793,7 +793,7 @@ public class Manager implements Closeable {
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        GroupInfo g = account.getGroupStore().getGroup(groupId);
+        GroupInfo g = getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -804,7 +804,7 @@ public class Manager implements Closeable {
     }
 
     private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        GroupInfo g = account.getGroupStore().getGroup(groupId);
+        GroupInfo g = getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -1236,7 +1236,7 @@ public class Manager implements Closeable {
      * Change the expiration timer for a group
      */
     public void setExpirationTimer(GroupId groupId, int messageExpirationTimer) {
-        GroupInfo g = account.getGroupStore().getGroup(groupId);
+        GroupInfo g = getGroup(groupId);
         if (g instanceof GroupInfoV1) {
             GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
             groupInfoV1.messageExpirationTime = messageExpirationTimer;
@@ -1649,7 +1649,7 @@ public class Manager implements Closeable {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
                 SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
                 GroupIdV1 groupId = GroupId.v1(groupInfo.getGroupId());
-                GroupInfo group = account.getGroupStore().getGroup(groupId);
+                GroupInfo group = getGroup(groupId);
                 if (group == null || group instanceof GroupInfoV1) {
                     GroupInfoV1 groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
@@ -1820,7 +1820,7 @@ public class Manager implements Closeable {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
         GroupIdV2 groupId = GroupUtils.getGroupIdV2(groupSecretParams);
-        GroupInfo groupInfo = account.getGroupStore().getGroup(groupId);
+        GroupInfo groupInfo = getGroup(groupId);
         final GroupInfoV2 groupInfoV2;
         if (groupInfo instanceof GroupInfoV1) {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
@@ -2078,7 +2078,7 @@ public class Manager implements Closeable {
                     }
                 }
                 GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                GroupInfo group = account.getGroupStore().getGroup(groupId);
+                GroupInfo group = getGroup(groupId);
                 if (group != null && group.isBlocked()) {
                     return true;
                 }
@@ -2461,7 +2461,7 @@ public class Manager implements Closeable {
         try {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
                 DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(fos);
-                for (GroupInfo record : account.getGroupStore().getGroups()) {
+                for (GroupInfo record : getGroups()) {
                     if (record instanceof GroupInfoV1) {
                         GroupInfoV1 groupInfo = (GroupInfoV1) record;
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
@@ -2570,7 +2570,7 @@ public class Manager implements Closeable {
             }
         }
         List<byte[]> groupIds = new ArrayList<>();
-        for (GroupInfo record : account.getGroupStore().getGroups()) {
+        for (GroupInfo record : getGroups()) {
             if (record.isBlocked()) {
                 groupIds.add(record.getGroupId().serialize());
             }
@@ -2597,7 +2597,13 @@ public class Manager implements Closeable {
     }
 
     public GroupInfo getGroup(GroupId groupId) {
-        return account.getGroupStore().getGroup(groupId);
+        final GroupInfo group = account.getGroupStore().getGroup(groupId);
+        if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
+            final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
+            ((GroupInfoV2) group).setGroup(groupHelper.getDecryptedGroup(groupSecretParams));
+            account.getGroupStore().updateGroup(group);
+        }
+        return group;
     }
 
     public List<IdentityInfo> getIdentities() {
