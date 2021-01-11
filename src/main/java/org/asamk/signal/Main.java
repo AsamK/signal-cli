@@ -283,6 +283,9 @@ public class Main {
         mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
         mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
 
+        parser.addArgument("-o", "--output").help("Choose to output in plain text or JSON")
+                .choices("plain-text", "json").setDefault("plain-text");
+
         Subparsers subparsers = parser.addSubparsers()
                 .title("subcommands")
                 .dest("command")

@@ -35,14 +35,11 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
-        subparser.addArgument("-j", "--json")
-                .help("Output received messages in json format, one json object per line.")
-                .action(Arguments.storeTrue());
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
         final ObjectMapper jsonProcessor;
-        if (ns.getBoolean("json")) {
+        if (ns.getString("output").equals("json")) {
             jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
@@ -161,7 +158,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         }
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-            final Manager.ReceiveMessageHandler handler = ns.getBoolean("json")
+            final Manager.ReceiveMessageHandler handler = ns.getString("output").equals("json")
                     ? new JsonReceiveMessageHandler(m)
                     : new ReceiveMessageHandler(m);
             m.receiveMessages((long) (timeout * 1000),
