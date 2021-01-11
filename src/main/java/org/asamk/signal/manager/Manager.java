@@ -34,6 +34,7 @@ import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
+import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.profiles.SignalProfile;
 import org.asamk.signal.manager.storage.profiles.SignalProfileEntry;
 import org.asamk.signal.manager.storage.protocol.IdentityInfo;
@@ -41,7 +42,6 @@ import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.asamk.signal.manager.util.MessageCacheUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
 import org.signal.libsignal.metadata.InvalidMetadataVersionException;
@@ -170,7 +170,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -188,7 +187,6 @@ public class Manager implements Closeable {
 
     final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
-    private final SleepTimer timer = new UptimeSleepTimer();
     private final CertificateValidator certificateValidator = new CertificateValidator(ServiceConfig.getUnidentifiedSenderTrustRoot());
 
     private final SignalServiceConfiguration serviceConfiguration;
@@ -222,6 +220,7 @@ public class Manager implements Closeable {
         this.userAgent = userAgent;
         this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
                 serviceConfiguration)) : null;
+        final SleepTimer timer = new UptimeSleepTimer();
         this.accountManager = new SignalServiceAccountManager(serviceConfiguration,
                 new DynamicCredentialsProvider(account.getUuid(),
                         account.getUsername(),
@@ -279,24 +278,6 @@ public class Manager implements Closeable {
 
     public int getDeviceId() {
         return account.getDeviceId();
-    }
-
-    private File getMessageCachePath() {
-        return SignalAccount.getMessageCachePath(pathConfig.getDataPath(), account.getUsername());
-    }
-
-    private File getMessageCachePath(String sender) {
-        if (sender == null || sender.isEmpty()) {
-            return getMessageCachePath();
-        }
-
-        return new File(getMessageCachePath(), sender.replace("/", "_"));
-    }
-
-    private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
-        File cachePath = getMessageCachePath(sender);
-        IOUtils.createPrivateDirectories(cachePath);
-        return new File(cachePath, now + "_" + timestamp);
     }
 
     public static Manager init(
@@ -1727,41 +1708,17 @@ public class Manager implements Closeable {
         }
     }
 
-    private void retryFailedReceivedMessages(
-            ReceiveMessageHandler handler, boolean ignoreAttachments
-    ) {
-        final File cachePath = getMessageCachePath();
-        if (!cachePath.exists()) {
-            return;
-        }
-        for (final File dir : Objects.requireNonNull(cachePath.listFiles())) {
-            if (!dir.isDirectory()) {
-                retryFailedReceivedMessage(handler, ignoreAttachments, dir);
-                continue;
-            }
-
-            for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
-                if (!fileEntry.isFile()) {
-                    continue;
-                }
-                retryFailedReceivedMessage(handler, ignoreAttachments, fileEntry);
-            }
-            // Try to delete directory if empty
-            dir.delete();
+    private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
+        for (CachedMessage cachedMessage : account.getMessageCache().getCachedMessages()) {
+            retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
         }
     }
 
     private void retryFailedReceivedMessage(
-            final ReceiveMessageHandler handler, final boolean ignoreAttachments, final File fileEntry
+            final ReceiveMessageHandler handler, final boolean ignoreAttachments, final CachedMessage cachedMessage
     ) {
-        SignalServiceEnvelope envelope;
-        try {
-            envelope = MessageCacheUtils.loadEnvelope(fileEntry);
-            if (envelope == null) {
-                return;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        SignalServiceEnvelope envelope = cachedMessage.loadEnvelope();
+        if (envelope == null) {
             return;
         }
         SignalServiceContent content = null;
@@ -1772,11 +1729,7 @@ public class Manager implements Closeable {
                 return;
             } catch (Exception er) {
                 // All other errors are not recoverable, so delete the cached message
-                try {
-                    Files.delete(fileEntry.toPath());
-                } catch (IOException e) {
-                    logger.warn("Failed to delete cached message file “{}”, ignoring: {}", fileEntry, e.getMessage());
-                }
+                cachedMessage.delete();
                 return;
             }
             List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
@@ -1790,11 +1743,7 @@ public class Manager implements Closeable {
         }
         account.save();
         handler.handleMessage(envelope, content, null);
-        try {
-            Files.delete(fileEntry.toPath());
-        } catch (IOException e) {
-            logger.warn("Failed to delete cached message file “{}”, ignoring: {}", fileEntry, e.getMessage());
-        }
+        cachedMessage.delete();
     }
 
     public void receiveMessages(
@@ -1808,7 +1757,7 @@ public class Manager implements Closeable {
 
         Set<HandleAction> queuedActions = null;
 
-        getOrCreateMessagePipe();
+        final SignalServiceMessagePipe messagePipe = getOrCreateMessagePipe();
 
         boolean hasCaughtUpWithOldMessages = false;
 
@@ -1816,17 +1765,11 @@ public class Manager implements Closeable {
             SignalServiceEnvelope envelope;
             SignalServiceContent content = null;
             Exception exception = null;
-            final long now = new Date().getTime();
+            final CachedMessage[] cachedMessage = {null};
             try {
                 Optional<SignalServiceEnvelope> result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     // store message on disk, before acknowledging receipt to the server
-                    try {
-                        String source = envelope1.getSourceE164().isPresent() ? envelope1.getSourceE164().get() : "";
-                        File cacheFile = getMessageCacheFile(source, now, envelope1.getTimestamp());
-                        MessageCacheUtils.storeEnvelope(envelope1, cacheFile);
-                    } catch (IOException e) {
-                        logger.warn("Failed to store encrypted message in disk cache, ignoring: {}", e.getMessage());
-                    }
+                    cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1);
                 });
                 if (result.isPresent()) {
                     envelope = result.get();
@@ -1890,15 +1833,8 @@ public class Manager implements Closeable {
                 handler.handleMessage(envelope, content, exception);
             }
             if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
-                File cacheFile = null;
-                try {
-                    String source = envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "";
-                    cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
-                    Files.delete(cacheFile.toPath());
-                    // Try to delete directory if empty
-                    getMessageCachePath().delete();
-                } catch (IOException e) {
-                    logger.warn("Failed to delete cached message file “{}”, ignoring: {}", cacheFile, e.getMessage());
+                if (cachedMessage[0] != null) {
+                    cachedMessage[0].delete();
                 }
             }
         }

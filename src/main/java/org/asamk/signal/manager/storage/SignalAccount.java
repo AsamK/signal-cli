@@ -16,6 +16,7 @@ import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
+import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
@@ -84,6 +85,8 @@ public class SignalAccount implements Closeable {
     private ProfileStore profileStore;
     private StickerStore stickerStore;
 
+    private MessageCache messageCache;
+
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
         this.lock = lock;
@@ -130,6 +133,9 @@ public class SignalAccount implements Closeable {
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
+
+        account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+
         account.registered = false;
 
         return account;
@@ -167,6 +173,9 @@ public class SignalAccount implements Closeable {
         account.recipientStore = new RecipientStore();
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
+
+        account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+
         account.registered = true;
         account.isMultiDevice = true;
 
@@ -342,6 +351,8 @@ public class SignalAccount implements Closeable {
             stickerStore = new StickerStore();
         }
 
+        messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+
         JsonNode threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null) {
             LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode,
@@ -458,6 +469,10 @@ public class SignalAccount implements Closeable {
 
     public StickerStore getStickerStore() {
         return stickerStore;
+    }
+
+    public MessageCache getMessageCache() {
+        return messageCache;
     }
 
     public String getUsername() {
