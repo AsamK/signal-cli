@@ -66,7 +66,7 @@ public class ListGroupsCommand implements LocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("-d", "--detailed").action(Arguments.storeTrue())
-                .help("List the members and group invite links of each group");
+                .help("List the members and group invite links of each group. If output=json, then this is always set");
 
         subparser.help("List group information including names, ids, active status, blocked status and members");
     }
