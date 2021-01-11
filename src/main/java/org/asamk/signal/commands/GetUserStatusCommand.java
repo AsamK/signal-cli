@@ -21,6 +21,9 @@ public class GetUserStatusCommand implements LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("number").help("Phone number").nargs("+");
         subparser.help("Check if the specified phone number/s have been registered");
+        subparser.addArgument("--json")
+                .help("WARNING: This parameter is now deprecated! Please use the \"output\" option instead.\n\nOutput received messages in json format, one json object per line.")
+                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -38,8 +41,14 @@ public class GetUserStatusCommand implements LocalCommand {
             return 1;
         }
 
+        boolean inJson = ns.getString("output").equals("json");
+        if (ns.getBoolean("json")) {
+            inJson = true;
+            System.out.println("WARNING: This parameter is now deprecated! Please use the \"output\" parameter instead.");
+        }
+
         // Output
-        if (ns.getString("output").equals("json")) {
+        if (inJson) {
             List<JsonIsRegistered> objects = registered.entrySet()
                     .stream()
                     .map(entry -> new JsonIsRegistered(entry.getKey(), entry.getValue()))

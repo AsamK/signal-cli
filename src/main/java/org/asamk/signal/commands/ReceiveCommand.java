@@ -35,11 +35,17 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--json")
+                .help("WARNING: This parameter is now deprecated! Please use the \"output\" option instead.\n\nOutput received messages in json format, one json object per line.")
+                .action(Arguments.storeTrue());
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
         final ObjectMapper jsonProcessor;
-        if (ns.getString("output").equals("json")) {
+
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        if (inJson) {
             jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
@@ -143,6 +149,8 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
         double timeout = 5;
         if (ns.getDouble("timeout") != null) {
             timeout = ns.getDouble("timeout");
@@ -154,7 +162,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         }
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-            final Manager.ReceiveMessageHandler handler = ns.getString("output").equals("json")
+            final Manager.ReceiveMessageHandler handler = inJson
                     ? new JsonReceiveMessageHandler(m)
                     : new ReceiveMessageHandler(m);
             m.receiveMessages((long) (timeout * 1000),
