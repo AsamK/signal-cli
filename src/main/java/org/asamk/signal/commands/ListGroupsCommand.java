@@ -91,7 +91,6 @@ public class ListGroupsCommand implements LocalCommand {
                         resolveMembers(m, group.getRequestingMembers()),
                         groupInviteLink == null ? null : groupInviteLink.getUrl()));
             }
-
             return printGroupsJson(jsonProcessor, objects);
         } else {
             boolean detailed = ns.getBoolean("detailed");

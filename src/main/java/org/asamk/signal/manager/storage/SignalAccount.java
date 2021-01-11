@@ -26,6 +26,7 @@ import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.storage.threads.ThreadInfo;
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
@@ -36,6 +37,7 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.util.Base64;
@@ -98,6 +100,8 @@ public class SignalAccount implements Closeable {
         try {
             SignalAccount account = new SignalAccount(pair.first(), pair.second());
             account.load(dataPath);
+            account.migrateLegacyConfigs();
+
             return account;
         } catch (Throwable e) {
             pair.second().close();
@@ -167,6 +171,31 @@ public class SignalAccount implements Closeable {
         account.isMultiDevice = true;
 
         return account;
+    }
+
+    public void migrateLegacyConfigs() {
+        if (getProfileKey() == null && isRegistered()) {
+            // Old config file, creating new profile key
+            setProfileKey(KeyUtils.createProfileKey());
+            save();
+        }
+        // Store profile keys only in profile store
+        for (ContactInfo contact : getContactStore().getContacts()) {
+            String profileKeyString = contact.profileKey;
+            if (profileKeyString == null) {
+                continue;
+            }
+            final ProfileKey profileKey;
+            try {
+                profileKey = new ProfileKey(Base64.decode(profileKeyString));
+            } catch (InvalidInputException | IOException e) {
+                continue;
+            }
+            contact.profileKey = null;
+            getProfileStore().storeProfileKey(contact.getAddress(), profileKey);
+        }
+        // Ensure our profile key is stored in profile store
+        getProfileStore().storeProfileKey(getSelfAddress(), getProfileKey());
     }
 
     public static File getFileName(File dataPath, String username) {
@@ -451,6 +480,10 @@ public class SignalAccount implements Closeable {
         return deviceId;
     }
 
+    public void setDeviceId(final int deviceId) {
+        this.deviceId = deviceId;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -491,6 +524,10 @@ public class SignalAccount implements Closeable {
         this.profileKey = profileKey;
     }
 
+    public byte[] getSelfUnidentifiedAccessKey() {
+        return UnidentifiedAccess.deriveAccessKeyFrom(getProfileKey());
+    }
+
     public int getPreKeyIdOffset() {
         return preKeyIdOffset;
     }
@@ -515,8 +552,19 @@ public class SignalAccount implements Closeable {
         isMultiDevice = multiDevice;
     }
 
+    public boolean isUnrestrictedUnidentifiedAccess() {
+        // TODO make configurable
+        return false;
+    }
+
+    public boolean isDiscoverableByPhoneNumber() {
+        // TODO make configurable
+        return true;
+    }
+
     @Override
     public void close() throws IOException {
+        save();
         synchronized (fileChannel) {
             try {
                 lock.close();

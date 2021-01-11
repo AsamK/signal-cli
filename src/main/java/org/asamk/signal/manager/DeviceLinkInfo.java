@@ -21,7 +21,12 @@ public class DeviceLinkInfo {
     final ECPublicKey deviceKey;
 
     public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws IOException, InvalidKeyException {
-        Map<String, String> query = getQueryMap(linkUri.getRawQuery());
+        final String rawQuery = linkUri.getRawQuery();
+        if (isEmpty(rawQuery)) {
+            throw new RuntimeException("Invalid device link uri");
+        }
+
+        Map<String, String> query = getQueryMap(rawQuery);
         String deviceIdentifier = query.get("uuid");
         String publicKeyEncoded = query.get("pub_key");
 

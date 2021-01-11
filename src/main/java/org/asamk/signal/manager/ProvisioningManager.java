@@ -124,8 +124,10 @@ public class ProvisioningManager {
                 m.requestSyncBlocked();
                 m.requestSyncConfiguration();
 
-                m.saveAccount();
+                m.close(false);
             }
+
+            account.save();
         }
 
         return username;

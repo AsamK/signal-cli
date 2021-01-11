@@ -14,7 +14,7 @@ public final class PinHashing {
     public static HashedPin hashPin(String pin, KeyBackupService.HashSession hashSession) {
         final Argon2Parameters params = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id).withParallelism(1)
                 .withIterations(32)
-                .withVersion(13)
+                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
                 .withMemoryAsKB(16 * 1024)
                 .withSalt(hashSession.hashSalt())
                 .build();

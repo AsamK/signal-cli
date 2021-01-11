@@ -47,11 +47,6 @@ public class SendReactionCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && ns.getString("group") == null) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
