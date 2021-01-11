@@ -73,11 +73,6 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         if (ns.getString("output").equals("json")) {
             final ObjectMapper jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
