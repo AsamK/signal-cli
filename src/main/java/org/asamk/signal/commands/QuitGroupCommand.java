@@ -3,10 +3,11 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
-import org.asamk.signal.util.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.Util;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
@@ -30,13 +31,8 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         try {
-            final byte[] groupId = Util.decodeGroupId(ns.getString("group"));
+            final GroupId groupId = Util.decodeGroupId(ns.getString("group"));
             final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(groupId);
             return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {

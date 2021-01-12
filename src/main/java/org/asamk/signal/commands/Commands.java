@@ -11,11 +11,13 @@ public class Commands {
         addCommand("addDevice", new AddDeviceCommand());
         addCommand("block", new BlockCommand());
         addCommand("daemon", new DaemonCommand());
+        addCommand("getUserStatus", new GetUserStatusCommand());
         addCommand("link", new LinkCommand());
         addCommand("listContacts", new ListContactsCommand());
         addCommand("listDevices", new ListDevicesCommand());
         addCommand("listGroups", new ListGroupsCommand());
         addCommand("listIdentities", new ListIdentitiesCommand());
+        addCommand("joinGroup", new JoinGroupCommand());
         addCommand("quitGroup", new QuitGroupCommand());
         addCommand("receive", new ReceiveCommand());
         addCommand("register", new RegisterCommand());

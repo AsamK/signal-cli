@@ -4,10 +4,11 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
-import org.asamk.signal.util.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.Util;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
@@ -46,11 +47,6 @@ public class SendReactionCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && ns.getString("group") == null) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
@@ -65,7 +61,7 @@ public class SendReactionCommand implements LocalCommand {
         try {
             final Pair<Long, List<SendMessageResult>> results;
             if (ns.getString("group") != null) {
-                byte[] groupId = Util.decodeGroupId(ns.getString("group"));
+                GroupId groupId = Util.decodeGroupId(ns.getString("group"));
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
                 results = m.sendMessageReaction(emoji,
@@ -74,8 +70,7 @@ public class SendReactionCommand implements LocalCommand {
                         targetTimestamp,
                         ns.getList("recipient"));
             }
-            handleTimestampAndSendMessageResults(results.first(), results.second());
-            return 0;
+            return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);
             return 3;

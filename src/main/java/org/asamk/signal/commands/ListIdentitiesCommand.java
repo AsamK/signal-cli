@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
+import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ListIdentitiesCommand implements LocalCommand {
 
-    private static void printIdentityFingerprint(Manager m, JsonIdentityKeyStore.Identity theirId) {
+    private static void printIdentityFingerprint(Manager m, IdentityInfo theirId) {
         String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s",
                 theirId.getAddress().getNumber().orNull(),
@@ -30,19 +30,15 @@ public class ListIdentitiesCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         if (ns.get("number") == null) {
-            for (JsonIdentityKeyStore.Identity identity : m.getIdentities()) {
+            for (IdentityInfo identity : m.getIdentities()) {
                 printIdentityFingerprint(m, identity);
             }
         } else {
             String number = ns.getString("number");
             try {
-                List<JsonIdentityKeyStore.Identity> identities = m.getIdentities(number);
-                for (JsonIdentityKeyStore.Identity id : identities) {
+                List<IdentityInfo> identities = m.getIdentities(number);
+                for (IdentityInfo id : identities) {
                     printIdentityFingerprint(m, id);
                 }
             } catch (InvalidNumberException e) {

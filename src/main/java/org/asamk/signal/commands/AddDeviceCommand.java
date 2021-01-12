@@ -23,10 +23,6 @@ public class AddDeviceCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         try {
             m.addDeviceLink(new URI(ns.getString("uri")));
             return 0;

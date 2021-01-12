@@ -5,9 +5,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.util.Base64;
 
 import java.util.List;
 import java.util.Set;
@@ -35,18 +35,21 @@ public class ListGroupsCommand implements LocalCommand {
                     .map(SignalServiceAddress::getLegacyIdentifier)
                     .collect(Collectors.toSet());
 
+            final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
+
             System.out.println(String.format(
-                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s",
-                    Base64.encodeBytes(group.groupId),
+                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
+                    group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked(),
                     members,
                     pendingMembers,
-                    requestingMembers));
+                    requestingMembers,
+                    groupInviteLink == null ? '-' : groupInviteLink.getUrl()));
         } else {
             System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
-                    Base64.encodeBytes(group.groupId),
+                    group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked()));
@@ -61,11 +64,6 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         List<GroupInfo> groups = m.getGroups();
         boolean detailed = ns.getBoolean("detailed");
 

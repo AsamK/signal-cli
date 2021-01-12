@@ -1,9 +1,26 @@
 # Changelog
 
 ## [Unreleased]
+
+### Fixed
+- Disable registration lock before removing the PIN
+- Fix PIN hash version to match the official clients.
+  If you had previously set a PIN you need to set it again to be able to unlock the registration lock later.
+
+## [0.7.2] - 2020-12-31
+### Added
+- Implement new registration lock PIN with `setPin` and `removePin` (with KBS)
+- Include quotes, mentions and reactions in json output (Thanks @Atomic-Bean)
+
+### Fixed
+- Retrieve avatars for v2 groups
+- Download attachment thumbnail for quoted attachments
+
+## [0.7.1] - 2020-12-21
 ### Added
 - Accept group invitation with `updateGroup -g GROUP_ID`
 - Decline group invitation with `quitGroup -g GROUP_ID`
+- Join group via invitation link `joinGroup --uri https://signal.group/#...`
 
 ### Fixed
 - Include group ids for v2 groups in json output

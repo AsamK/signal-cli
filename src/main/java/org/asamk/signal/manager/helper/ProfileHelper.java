@@ -95,7 +95,17 @@ public final class ProfileHelper {
                 ? unidentifiedPipe
                 : messagePipeProvider.getMessagePipe(false);
         if (pipe != null) {
-            return pipe.getProfile(address, profileKey, unidentifiedAccess, requestType);
+            try {
+                return pipe.getProfile(address, profileKey, unidentifiedAccess, requestType);
+            } catch (NoClassDefFoundError e) {
+                // Native zkgroup lib not available for ProfileKey
+                if (!address.getNumber().isPresent()) {
+                    throw new NotFoundException("Can't request profile without number");
+                }
+                SignalServiceAddress addressWithoutUuid = new SignalServiceAddress(Optional.absent(),
+                        address.getNumber());
+                return pipe.getProfile(addressWithoutUuid, profileKey, unidentifiedAccess, requestType);
+            }
         }
 
         throw new IOException("No pipe available!");
@@ -106,9 +116,18 @@ public final class ProfileHelper {
             Optional<ProfileKey> profileKey,
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
-    ) {
+    ) throws NotFoundException {
         SignalServiceMessageReceiver receiver = messageReceiverProvider.getMessageReceiver();
-        return receiver.retrieveProfile(address, profileKey, unidentifiedAccess, requestType);
+        try {
+            return receiver.retrieveProfile(address, profileKey, unidentifiedAccess, requestType);
+        } catch (NoClassDefFoundError e) {
+            // Native zkgroup lib not available for ProfileKey
+            if (!address.getNumber().isPresent()) {
+                throw new NotFoundException("Can't request profile without number");
+            }
+            SignalServiceAddress addressWithoutUuid = new SignalServiceAddress(Optional.absent(), address.getNumber());
+            return receiver.retrieveProfile(addressWithoutUuid, profileKey, unidentifiedAccess, requestType);
+        }
     }
 
     private Optional<UnidentifiedAccess> getUnidentifiedAccess(SignalServiceAddress recipient) {

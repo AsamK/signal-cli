@@ -1,11 +1,13 @@
 package org.asamk.signal.manager;
 
+import java.io.File;
+
 public class UserAlreadyExists extends Exception {
 
     private final String username;
-    private final String fileName;
+    private final File fileName;
 
-    public UserAlreadyExists(String username, String fileName) {
+    public UserAlreadyExists(String username, File fileName) {
         this.username = username;
         this.fileName = fileName;
     }
@@ -14,7 +16,7 @@ public class UserAlreadyExists extends Exception {
         return username;
     }
 
-    public String getFileName() {
+    public File getFileName() {
         return fileName;
     }
 }

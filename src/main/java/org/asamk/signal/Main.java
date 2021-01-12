@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2015-2020 AsamK and contributors
+  Copyright (C) 2015-2021 AsamK and contributors
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,16 +32,20 @@ import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
+import org.asamk.signal.commands.RegistrationCommand;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.NotRegisteredException;
 import org.asamk.signal.manager.ProvisioningManager;
+import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.ServiceConfig;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
@@ -50,9 +54,9 @@ import java.io.IOException;
 import java.security.Security;
 import java.util.Map;
 
-import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
-
 public class Main {
+
+    final static Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         installSecurityProviderWorkaround();
@@ -62,7 +66,7 @@ public class Main {
             System.exit(1);
         }
 
-        int res = handleCommands(ns);
+        int res = init(ns);
         System.exit(res);
     }
 
@@ -72,125 +76,148 @@ public class Main {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static int handleCommands(Namespace ns) {
-        final String username = ns.getString("username");
+    public static int init(Namespace ns) {
+        Command command = getCommand(ns);
+        if (command == null) {
+            logger.error("Command not implemented!");
+            return 3;
+        }
 
         if (ns.getBoolean("dbus") || ns.getBoolean("dbus_system")) {
-            try {
-                DBusConnection.DBusBusType busType;
-                if (ns.getBoolean("dbus_system")) {
-                    busType = DBusConnection.DBusBusType.SYSTEM;
-                } else {
-                    busType = DBusConnection.DBusBusType.SESSION;
-                }
-                try (DBusConnection dBusConn = DBusConnection.getConnection(busType)) {
-                    Signal ts = dBusConn.getRemoteObject(DbusConfig.SIGNAL_BUSNAME,
-                            DbusConfig.SIGNAL_OBJECTPATH,
-                            Signal.class);
+            return initDbusClient(command, ns, ns.getBoolean("dbus_system"));
+        }
 
-                    return handleCommands(ns, ts, dBusConn);
-                }
-            } catch (UnsatisfiedLinkError e) {
-                System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
-                return 1;
-            } catch (DBusException | IOException e) {
-                e.printStackTrace();
+        final String username = ns.getString("username");
+
+        final File dataPath;
+        String config = ns.getString("config");
+        if (config != null) {
+            dataPath = new File(config);
+        } else {
+            dataPath = getDefaultDataPath();
+        }
+
+        final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(
+                BaseConfig.USER_AGENT);
+
+        if (!ServiceConfig.getCapabilities().isGv2()) {
+            logger.warn("WARNING: Support for new group V2 is disabled,"
+                    + " because the required native library dependency is missing: libzkgroup");
+        }
+
+        if (username == null) {
+            ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+            return handleCommand(command, ns, pm);
+        }
+
+        if (command instanceof RegistrationCommand) {
+            final RegistrationManager manager;
+            try {
+                manager = RegistrationManager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+            } catch (Throwable e) {
+                logger.error("Error loading or creating state file: {}", e.getMessage());
+                return 2;
+            }
+            try (RegistrationManager m = manager) {
+                return handleCommand(command, ns, m);
+            } catch (Exception e) {
+                logger.error("Cleanup failed", e);
                 return 3;
             }
-        } else {
-            String dataPath = ns.getString("config");
-            if (isEmpty(dataPath)) {
-                dataPath = getDefaultDataPath();
-            }
+        }
 
-            final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(
-                    BaseConfig.USER_AGENT);
+        Manager manager;
+        try {
+            manager = Manager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+        } catch (NotRegisteredException e) {
+            System.err.println("User is not registered.");
+            return 1;
+        } catch (Throwable e) {
+            logger.error("Error loading state file: {}", e.getMessage());
+            return 2;
+        }
 
-            if (username == null) {
-                ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
-                return handleCommands(ns, pm);
-            }
-
-            Manager manager;
+        try (Manager m = manager) {
             try {
-                manager = Manager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
-            } catch (Throwable e) {
-                System.err.println("Error loading state file: " + e.getMessage());
+                m.checkAccountState();
+            } catch (IOException e) {
+                logger.error("Error while checking account: {}", e.getMessage());
                 return 2;
             }
 
-            try (Manager m = manager) {
-                try {
-                    m.checkAccountState();
-                } catch (AuthorizationFailedException e) {
-                    if (!"register".equals(ns.getString("command"))) {
-                        // Register command should still be possible, if current authorization fails
-                        System.err.println("Authorization failed, was the number registered elsewhere?");
-                        return 2;
-                    }
-                } catch (IOException e) {
-                    System.err.println("Error while checking account: " + e.getMessage());
-                    return 2;
-                }
-
-                return handleCommands(ns, m);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 3;
-            }
+            return handleCommand(command, ns, m);
+        } catch (IOException e) {
+            logger.error("Cleanup failed", e);
+            return 3;
         }
     }
 
-    private static int handleCommands(Namespace ns, Signal ts, DBusConnection dBusConn) {
-        String commandKey = ns.getString("command");
-        final Map<String, Command> commands = Commands.getCommands();
-        if (commands.containsKey(commandKey)) {
-            Command command = commands.get(commandKey);
-
-            if (command instanceof ExtendedDbusCommand) {
-                return ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
-            } else if (command instanceof DbusCommand) {
-                return ((DbusCommand) command).handleCommand(ns, ts);
+    private static int initDbusClient(final Command command, final Namespace ns, final boolean systemBus) {
+        try {
+            DBusConnection.DBusBusType busType;
+            if (systemBus) {
+                busType = DBusConnection.DBusBusType.SYSTEM;
             } else {
-                System.err.println(commandKey + " is not yet implemented via dbus");
-                return 1;
+                busType = DBusConnection.DBusBusType.SESSION;
             }
+            try (DBusConnection dBusConn = DBusConnection.getConnection(busType)) {
+                Signal ts = dBusConn.getRemoteObject(DbusConfig.SIGNAL_BUSNAME,
+                        DbusConfig.SIGNAL_OBJECTPATH,
+                        Signal.class);
+
+                return handleCommand(command, ns, ts, dBusConn);
+            }
+        } catch (DBusException | IOException e) {
+            logger.error("Dbus client failed", e);
+            return 3;
         }
-        return 0;
     }
 
-    private static int handleCommands(Namespace ns, ProvisioningManager pm) {
+    private static Command getCommand(Namespace ns) {
         String commandKey = ns.getString("command");
         final Map<String, Command> commands = Commands.getCommands();
-        if (commands.containsKey(commandKey)) {
-            Command command = commands.get(commandKey);
-
-            if (command instanceof ProvisioningCommand) {
-                return ((ProvisioningCommand) command).handleCommand(ns, pm);
-            } else {
-                System.err.println(commandKey + " only works with a username");
-                return 1;
-            }
+        if (!commands.containsKey(commandKey)) {
+            return null;
         }
-        return 0;
+        return commands.get(commandKey);
     }
 
-    private static int handleCommands(Namespace ns, Manager m) {
-        String commandKey = ns.getString("command");
-        final Map<String, Command> commands = Commands.getCommands();
-        if (commands.containsKey(commandKey)) {
-            Command command = commands.get(commandKey);
-
-            if (command instanceof LocalCommand) {
-                return ((LocalCommand) command).handleCommand(ns, m);
-            } else if (command instanceof DbusCommand) {
-                return ((DbusCommand) command).handleCommand(ns, new DbusSignalImpl(m));
-            } else if (command instanceof ExtendedDbusCommand) {
-                System.err.println(commandKey + " only works via dbus");
-            }
+    private static int handleCommand(Command command, Namespace ns, Signal ts, DBusConnection dBusConn) {
+        if (command instanceof ExtendedDbusCommand) {
+            return ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
+        } else if (command instanceof DbusCommand) {
+            return ((DbusCommand) command).handleCommand(ns, ts);
+        } else {
+            System.err.println("Command is not yet implemented via dbus");
             return 1;
         }
-        return 0;
+    }
+
+    private static int handleCommand(Command command, Namespace ns, ProvisioningManager pm) {
+        if (command instanceof ProvisioningCommand) {
+            return ((ProvisioningCommand) command).handleCommand(ns, pm);
+        } else {
+            System.err.println("Command only works with a username");
+            return 1;
+        }
+    }
+
+    private static int handleCommand(Command command, Namespace ns, RegistrationManager m) {
+        if (command instanceof RegistrationCommand) {
+            return ((RegistrationCommand) command).handleCommand(ns, m);
+        }
+        return 1;
+    }
+
+    private static int handleCommand(Command command, Namespace ns, Manager m) {
+        if (command instanceof LocalCommand) {
+            return ((LocalCommand) command).handleCommand(ns, m);
+        } else if (command instanceof DbusCommand) {
+            return ((DbusCommand) command).handleCommand(ns, new DbusSignalImpl(m));
+        } else {
+            System.err.println("Command only works via dbus");
+            return 1;
+        }
     }
 
     /**
@@ -200,19 +227,21 @@ public class Main {
      *
      * @return the data directory to be used by signal-cli.
      */
-    private static String getDefaultDataPath() {
-        String dataPath = IOUtils.getDataHomeDir() + "/signal-cli";
-        if (new File(dataPath).exists()) {
+    private static File getDefaultDataPath() {
+        File dataPath = new File(IOUtils.getDataHomeDir(), "signal-cli");
+        if (dataPath.exists()) {
             return dataPath;
         }
 
-        String legacySettingsPath = System.getProperty("user.home") + "/.config/signal";
-        if (new File(legacySettingsPath).exists()) {
+        File configPath = new File(System.getProperty("user.home"), ".config");
+
+        File legacySettingsPath = new File(configPath, "signal");
+        if (legacySettingsPath.exists()) {
             return legacySettingsPath;
         }
 
-        legacySettingsPath = System.getProperty("user.home") + "/.config/textsecure";
-        if (new File(legacySettingsPath).exists()) {
+        legacySettingsPath = new File(configPath, "textsecure");
+        if (legacySettingsPath.exists()) {
             return legacySettingsPath;
         }
 
@@ -220,34 +249,7 @@ public class Main {
     }
 
     private static Namespace parseArgs(String[] args) {
-        ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
-                .build()
-                .defaultHelp(true)
-                .description("Commandline interface for Signal.")
-                .version(BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
-
-        parser.addArgument("-v", "--version").help("Show package version.").action(Arguments.version());
-        parser.addArgument("--config")
-                .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
-        parser.addArgument("-n", "--busname")
-                .help("Name of the DBus.");
-
-        MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
-        mut.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
-        mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
-        mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
-
-        Subparsers subparsers = parser.addSubparsers()
-                .title("subcommands")
-                .dest("command")
-                .description("valid subcommands")
-                .help("additional help");
-
-        final Map<String, Command> commands = Commands.getCommands();
-        for (Map.Entry<String, Command> entry : commands.entrySet()) {
-            Subparser subparser = subparsers.addParser(entry.getKey());
-            entry.getValue().attachToSubparser(subparser);
-        }
+        ArgumentParser parser = buildArgumentParser();
 
         Namespace ns;
         try {
@@ -279,5 +281,37 @@ public class Main {
             System.exit(2);
         }
         return ns;
+    }
+
+    private static ArgumentParser buildArgumentParser() {
+        ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
+                .build()
+                .defaultHelp(true)
+                .description("Commandline interface for Signal.")
+                .version(BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
+
+        parser.addArgument("-v", "--version").help("Show package version.").action(Arguments.version());
+        parser.addArgument("--config")
+                .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
+        parser.addArgument("-n", "--busname")
+                .help("Name of the DBus.");
+
+        MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
+        mut.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
+        mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
+        mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
+
+        Subparsers subparsers = parser.addSubparsers()
+                .title("subcommands")
+                .dest("command")
+                .description("valid subcommands")
+                .help("additional help");
+
+        final Map<String, Command> commands = Commands.getCommands();
+        for (Map.Entry<String, Command> entry : commands.entrySet()) {
+            Subparser subparser = subparsers.addParser(entry.getKey());
+            entry.getValue().attachToSubparser(subparser);
+        }
+        return parser;
     }
 }

@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.storage.profiles.SignalProfile;
+import org.asamk.signal.manager.storage.profiles.SignalProfile;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -36,7 +36,7 @@ public class UnidentifiedAccessHelper {
         this.senderCertificateProvider = senderCertificateProvider;
     }
 
-    public byte[] getSelfUnidentifiedAccessKey() {
+    private byte[] getSelfUnidentifiedAccessKey() {
         return UnidentifiedAccess.deriveAccessKeyFrom(selfProfileKeyProvider.getProfileKey());
     }
 

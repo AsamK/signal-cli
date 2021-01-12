@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2015-2020 AsamK and contributors
+  Copyright (C) 2015-2021 AsamK and contributors
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -16,7 +16,8 @@
  */
 package org.asamk.signal.manager;
 
-import org.asamk.signal.storage.SignalAccount;
+import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
@@ -31,6 +32,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -45,12 +47,12 @@ public class ProvisioningManager {
     private final int registrationId;
     private final String password;
 
-    public ProvisioningManager(String settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
+    public ProvisioningManager(File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
 
-        identityKey = KeyHelper.generateIdentityKeyPair();
+        identityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         final SleepTimer timer = new UptimeSleepTimer();
@@ -70,8 +72,7 @@ public class ProvisioningManager {
     public String getDeviceLinkUri() throws TimeoutException, IOException {
         String deviceUuid = accountManager.getNewDeviceUuid();
 
-        return Utils.createDeviceLinkUri(new Utils.DeviceLinkInfo(deviceUuid,
-                identityKey.getPublicKey().getPublicKey()));
+        return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
@@ -123,8 +124,10 @@ public class ProvisioningManager {
                 m.requestSyncBlocked();
                 m.requestSyncConfiguration();
 
-                m.saveAccount();
+                m.close(false);
             }
+
+            account.save();
         }
 
         return username;

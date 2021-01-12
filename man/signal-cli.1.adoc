@@ -124,6 +124,15 @@ Only works, if this is the master device.
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
 
+=== getUserStatus
+
+Uses a list of phone numbers to determine the statuses of those users. Shows if they are registered on the Signal Servers or not.
+
+[NUMBER [NUMBER ...]]::
+One or more numbers to check.
+*--json*::
+Output the statuses as an array of json objects.
+
 === send
 
 Send a message to another user or group.
@@ -177,6 +186,13 @@ Default is 5 seconds.
 Don’t download attachments of received messages.
 *--json*::
 Output received messages in json format, one object per line.
+
+=== joinGroup
+
+Join a group via an invitation link.
+
+*--uri*::
+The invitation link URI (starts with `https://signal.group/#`)
 
 === updateGroup
 

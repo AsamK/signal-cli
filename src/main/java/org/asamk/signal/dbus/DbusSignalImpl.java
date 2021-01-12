@@ -2,10 +2,11 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.AttachmentInvalidException;
-import org.asamk.signal.manager.GroupNotFoundException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
-import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
@@ -15,7 +16,6 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -92,7 +92,9 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            Pair<Long, List<SendMessageResult>> results = m.sendGroupMessage(message, attachments, groupId);
+            Pair<Long, List<SendMessageResult>> results = m.sendGroupMessage(message,
+                    attachments,
+                    GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
@@ -134,7 +136,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
         try {
-            m.setGroupBlocked(groupId, blocked);
+            m.setGroupBlocked(GroupId.unknownVersion(groupId), blocked);
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
@@ -145,14 +147,14 @@ public class DbusSignalImpl implements Signal {
         List<GroupInfo> groups = m.getGroups();
         List<byte[]> ids = new ArrayList<>(groups.size());
         for (GroupInfo group : groups) {
-            ids.add(group.groupId);
+            ids.add(group.getGroupId().serialize());
         }
         return ids;
     }
 
     @Override
     public String getGroupName(final byte[] groupId) {
-        GroupInfo group = m.getGroup(groupId);
+        GroupInfo group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return "";
         } else {
@@ -162,9 +164,9 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getGroupMembers(final byte[] groupId) {
-        GroupInfo group = m.getGroup(groupId);
+        GroupInfo group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
-            return Collections.emptyList();
+            return List.of();
         } else {
             return group.getMembers()
                     .stream()
@@ -189,9 +191,11 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final Pair<byte[], List<SendMessageResult>> results = m.updateGroup(groupId, name, members, avatar);
+            final Pair<GroupId, List<SendMessageResult>> results = m.updateGroup(groupId == null
+                    ? null
+                    : GroupId.unknownVersion(groupId), name, members, avatar);
             checkSendMessageResults(0, results.second());
-            return results.first();
+            return results.first().serialize();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {

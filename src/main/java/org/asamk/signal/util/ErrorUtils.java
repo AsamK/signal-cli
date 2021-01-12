@@ -1,7 +1,8 @@
 package org.asamk.signal.util;
 
-import org.asamk.signal.manager.GroupNotFoundException;
-import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -22,7 +23,9 @@ public class ErrorUtils {
     }
 
     public static int handleTimestampAndSendMessageResults(long timestamp, List<SendMessageResult> results) {
-        System.out.println(timestamp);
+        if (timestamp != 0) {
+            System.out.println(timestamp);
+        }
         List<String> errors = getErrorMessagesFromSendMessageResults(results);
         return handleSendMessageResultErrors(errors);
     }

@@ -44,7 +44,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         final ObjectMapper jsonProcessor;
         if (ns.getBoolean("json")) {
             jsonProcessor = new ObjectMapper();
-            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY); // disable autodetect
+            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         } else {
             jsonProcessor = null;
@@ -146,10 +146,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         double timeout = 5;
         if (ns.getDouble("timeout") != null) {
             timeout = ns.getDouble("timeout");

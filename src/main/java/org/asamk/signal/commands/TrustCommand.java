@@ -27,10 +27,6 @@ public class TrustCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
         String number = ns.getString("number");
         if (ns.getBoolean("trust_all_known_keys")) {
             boolean res = m.trustIdentityAllKeys(number);

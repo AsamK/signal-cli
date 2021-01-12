@@ -1,30 +1,34 @@
 package org.asamk.signal.manager;
 
+import java.io.File;
+
 public class PathConfig {
 
-    private final String dataPath;
-    private final String attachmentsPath;
-    private final String avatarsPath;
+    private final File dataPath;
+    private final File attachmentsPath;
+    private final File avatarsPath;
 
-    public static PathConfig createDefault(final String settingsPath) {
-        return new PathConfig(settingsPath + "/data", settingsPath + "/attachments", settingsPath + "/avatars");
+    public static PathConfig createDefault(final File settingsPath) {
+        return new PathConfig(new File(settingsPath, "data"),
+                new File(settingsPath, "attachments"),
+                new File(settingsPath, "avatars"));
     }
 
-    private PathConfig(final String dataPath, final String attachmentsPath, final String avatarsPath) {
+    private PathConfig(final File dataPath, final File attachmentsPath, final File avatarsPath) {
         this.dataPath = dataPath;
         this.attachmentsPath = attachmentsPath;
         this.avatarsPath = avatarsPath;
     }
 
-    public String getDataPath() {
+    public File getDataPath() {
         return dataPath;
     }
 
-    public String getAttachmentsPath() {
+    public File getAttachmentsPath() {
         return attachmentsPath;
     }
 
-    public String getAvatarsPath() {
+    public File getAvatarsPath() {
         return avatarsPath;
     }
 }
