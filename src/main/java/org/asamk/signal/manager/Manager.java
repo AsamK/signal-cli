@@ -74,12 +74,9 @@ import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.InvalidVersionException;
-import org.whispersystems.libsignal.ecc.Curve;
-import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
-import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupService;
@@ -299,21 +296,15 @@ public class Manager implements Closeable {
     }
 
     public void checkAccountState() throws IOException {
-        if (account.isRegistered()) {
-            if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-                refreshPreKeys();
-                account.save();
-            }
-            if (account.getUuid() == null) {
-                account.setUuid(accountManager.getOwnUuid());
-                account.save();
-            }
-            updateAccountAttributes();
+        if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+            refreshPreKeys();
+            account.save();
         }
-    }
-
-    public boolean isRegistered() {
-        return account.isRegistered();
+        if (account.getUuid() == null) {
+            account.setUuid(accountManager.getOwnUuid());
+            account.save();
+        }
+        updateAccountAttributes();
     }
 
     /**
@@ -396,43 +387,6 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    private List<PreKeyRecord> generatePreKeys() {
-        List<PreKeyRecord> records = new ArrayList<>(ServiceConfig.PREKEY_BATCH_SIZE);
-
-        final int offset = account.getPreKeyIdOffset();
-        for (int i = 0; i < ServiceConfig.PREKEY_BATCH_SIZE; i++) {
-            int preKeyId = (offset + i) % Medium.MAX_VALUE;
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
-
-            records.add(record);
-        }
-
-        account.addPreKeys(records);
-        account.save();
-
-        return records;
-    }
-
-    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
-        try {
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(),
-                    keyPair.getPublicKey().serialize());
-            SignedPreKeyRecord record = new SignedPreKeyRecord(account.getNextSignedPreKeyId(),
-                    System.currentTimeMillis(),
-                    keyPair,
-                    signature);
-
-            account.addSignedPreKey(record);
-            account.save();
-
-            return record;
-        } catch (InvalidKeyException e) {
-            throw new AssertionError(e);
-        }
-    }
-
     public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
         if (pin.isPresent()) {
             final MasterKey masterKey = account.getPinMasterKey() != null
@@ -462,6 +416,26 @@ public class Manager implements Closeable {
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
         accountManager.setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+    }
+
+    private List<PreKeyRecord> generatePreKeys() {
+        final int offset = account.getPreKeyIdOffset();
+
+        List<PreKeyRecord> records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
+        account.addPreKeys(records);
+        account.save();
+
+        return records;
+    }
+
+    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
+        final int signedPreKeyId = account.getNextSignedPreKeyId();
+
+        SignedPreKeyRecord record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
+        account.addSignedPreKey(record);
+        account.save();
+
+        return record;
     }
 
     private SignalServiceMessagePipe getOrCreateMessagePipe() {
@@ -494,10 +468,6 @@ public class Manager implements Closeable {
                 clientZkProfileOperations,
                 executor,
                 ServiceConfig.MAX_ENVELOPE_SIZE);
-    }
-
-    private SignalServiceProfile getEncryptedRecipientProfile(SignalServiceAddress address) throws IOException {
-        return profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE).getProfile();
     }
 
     private SignalProfile getRecipientProfile(
@@ -560,7 +530,8 @@ public class Manager implements Closeable {
     private SignalProfile retrieveRecipientProfile(
             SignalServiceAddress address, ProfileKey profileKey
     ) throws IOException {
-        final SignalServiceProfile encryptedProfile = getEncryptedRecipientProfile(address);
+        final SignalServiceProfile encryptedProfile = profileHelper.retrieveProfileSync(address,
+                SignalServiceProfile.RequestType.PROFILE).getProfile();
 
         return decryptProfile(address, profileKey, encryptedProfile);
     }
