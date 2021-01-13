@@ -340,7 +340,7 @@ public class Manager implements Closeable {
      *
      * @param numbers The set of phone number in question
      * @return A map of numbers to booleans. True if registered, false otherwise. Should never be null
-     * @throws IOException if its unable to check if the users are registered
+     * @throws IOException if its unable to get the contacts to check if they're registered
      */
     public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered

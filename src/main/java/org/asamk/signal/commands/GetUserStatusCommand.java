@@ -8,6 +8,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -16,6 +18,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GetUserStatusCommand implements LocalCommand {
+
+    // TODO delete later when "json" variable is removed
+    final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -32,6 +37,13 @@ public class GetUserStatusCommand implements LocalCommand {
         ObjectMapper jsonProcessor = new ObjectMapper();
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
+        boolean inJson = ns.getString("output").equals("json");
+
+        // TODO delete later when "json" variable is removed
+        if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+        }
+
         // Get a map of registration statuses
         Map<String, Boolean> registered;
         try {
@@ -39,12 +51,6 @@ public class GetUserStatusCommand implements LocalCommand {
         } catch (IOException e) {
             System.err.println("Unable to check if users are registered");
             return 1;
-        }
-
-        boolean inJson = ns.getString("output").equals("json");
-        if (ns.getBoolean("json")) {
-            inJson = true;
-            System.out.println("WARNING: This parameter is now deprecated! Please use the \"output\" parameter instead.");
         }
 
         // Output
