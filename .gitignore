@@ -10,3 +10,4 @@ local.properties
 .project
 .settings/
 out/
+.DS_Store
