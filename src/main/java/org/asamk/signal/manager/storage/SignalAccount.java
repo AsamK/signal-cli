@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 
 public class SignalAccount implements Closeable {
 
-    final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
+    private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private final ObjectMapper jsonProcessor = new ObjectMapper();
     private final FileChannel fileChannel;

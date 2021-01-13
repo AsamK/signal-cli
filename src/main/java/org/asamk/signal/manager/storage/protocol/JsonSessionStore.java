@@ -26,7 +26,7 @@ import java.util.UUID;
 
 class JsonSessionStore implements SessionStore {
 
-    final static Logger logger = LoggerFactory.getLogger(JsonSessionStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(JsonSessionStore.class);
 
     private final List<SessionInfo> sessions = new ArrayList<>();
 

@@ -30,7 +30,7 @@ import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     // TODO delete later when "json" variable is removed
-    final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
+    private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {

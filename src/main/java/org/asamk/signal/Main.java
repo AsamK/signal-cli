@@ -56,7 +56,7 @@ import java.util.Map;
 
 public class Main {
 
-    final static Logger logger = LoggerFactory.getLogger(Main.class);
+    private final static Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         installSecurityProviderWorkaround();

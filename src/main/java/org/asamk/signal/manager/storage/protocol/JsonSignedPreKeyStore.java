@@ -23,7 +23,7 @@ import java.util.Map;
 
 class JsonSignedPreKeyStore implements SignedPreKeyStore {
 
-    final static Logger logger = LoggerFactory.getLogger(JsonSignedPreKeyStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(JsonSignedPreKeyStore.class);
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 

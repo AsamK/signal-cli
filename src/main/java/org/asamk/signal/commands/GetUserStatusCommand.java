@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class GetUserStatusCommand implements LocalCommand {
 
     // TODO delete later when "json" variable is removed
-    final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
+    private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {

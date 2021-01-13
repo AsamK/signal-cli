@@ -21,7 +21,7 @@ import java.util.Map;
 
 class JsonPreKeyStore implements PreKeyStore {
 
-    final static Logger logger = LoggerFactory.getLogger(JsonPreKeyStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(JsonPreKeyStore.class);
 
     private final Map<Integer, byte[]> store = new HashMap<>();
 

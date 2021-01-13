@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 public class GroupHelper {
 
-    final static Logger logger = LoggerFactory.getLogger(GroupHelper.class);
+    private final static Logger logger = LoggerFactory.getLogger(GroupHelper.class);
 
     private final ProfileKeyCredentialProvider profileKeyCredentialProvider;
 

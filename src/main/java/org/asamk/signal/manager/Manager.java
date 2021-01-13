@@ -182,7 +182,7 @@ import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
 
 public class Manager implements Closeable {
 
-    final static Logger logger = LoggerFactory.getLogger(Manager.class);
+    private final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
     private final CertificateValidator certificateValidator = new CertificateValidator(ServiceConfig.getUnidentifiedSenderTrustRoot());
 
