@@ -11,3 +11,5 @@ local.properties
 .settings/
 out/
 .DS_Store
+bin/
+config/

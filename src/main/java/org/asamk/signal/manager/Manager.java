@@ -484,7 +484,7 @@ public class Manager implements Closeable {
         return unidentifiedMessagePipe;
     }
 
-    private SignalServiceMessageSender createMessageSender() {
+    public SignalServiceMessageSender createMessageSender() {
         final ExecutorService executor = null;
         return new SignalServiceMessageSender(serviceConfiguration,
                 account.getUuid(),
@@ -1208,7 +1208,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
+    public Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
         final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
         final Set<SignalServiceAddress> addressesMissingUuid = new HashSet<>();
 
@@ -1255,7 +1255,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private Pair<Long, List<SendMessageResult>> sendMessage(
+    public Pair<Long, List<SendMessageResult>> sendMessage(
             SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients
     ) throws IOException {
         recipients = recipients.stream().map(this::resolveSignalServiceAddress).collect(Collectors.toSet());
@@ -2186,7 +2186,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private InputStream retrieveAttachmentAsStream(
+    public InputStream retrieveAttachmentAsStream(
             SignalServiceAttachmentPointer pointer, File tmpFile
     ) throws IOException, InvalidMessageException, MissingConfigurationException {
         return messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);

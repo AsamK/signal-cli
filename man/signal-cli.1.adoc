@@ -368,6 +368,16 @@ Use DBus system bus instead of user bus.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
 
+=== TCP daemon
+
+Run the signal-cli in daemon mode accepting commands in JSON format via a TCP socket.
+Detailed information about the JSON format can be found here <https://github.com/AsamK/signal-cli/json_socket.md>
+
+*-p*, *--port*::
+Specify the listening port. Default is `6789`
+*-a*, *--address*::
+Bind socket to specified IP address. Default is `127.0.0.1`
+
 == Examples
 
 Register a number (with SMS verification)::
