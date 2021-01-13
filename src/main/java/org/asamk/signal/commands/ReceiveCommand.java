@@ -20,12 +20,19 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.whispersystems.util.Base64;
 
+// TODO delete later when "json" variable is removed
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
+
+    // TODO delete later when "json" variable is removed
+    final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -36,13 +43,21 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
         subparser.addArgument("--json")
-                .help("Output received messages in json format, one json object per line.")
+                .help("WARNING: This parameter is now deprecated! Please use the \"output\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
         final ObjectMapper jsonProcessor;
+
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+        }
+
+        if (inJson) {
             jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
@@ -146,6 +161,13 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        // TODO delete later when "json" variable is removed
+        if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+        }
+
         double timeout = 5;
         if (ns.getDouble("timeout") != null) {
             timeout = ns.getDouble("timeout");
@@ -157,7 +179,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         }
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-            final Manager.ReceiveMessageHandler handler = ns.getBoolean("json")
+            final Manager.ReceiveMessageHandler handler = inJson
                     ? new JsonReceiveMessageHandler(m)
                     : new ReceiveMessageHandler(m);
             m.receiveMessages((long) (timeout * 1000),

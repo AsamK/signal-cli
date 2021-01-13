@@ -44,6 +44,9 @@ Make request via user dbus.
 *--dbus-system*::
 Make request via system dbus.
 
+*-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
+Specify if you want commands to output in either "plain-text" mode or in "json". Defaults to "plain-text"
+
 == Commands
 
 === register
@@ -126,12 +129,10 @@ Use listDevices to see the deviceIds.
 
 === getUserStatus
 
-Uses a list of phone numbers to determine the statuses of those users. Shows if they are registered on the Signal Servers or not.
+Uses a list of phone numbers to determine the statuses of those users. Shows if they are registered on the Signal Servers or not. In json mode this is outputted as a list of objects.
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
-*--json*::
-Output the statuses as an array of json objects.
 
 === send
 
@@ -177,15 +178,13 @@ Remove a reaction.
 === receive
 
 Query the server for new messages.
-New messages are printed on standardoutput and attachments are downloaded to the config directory.
+New messages are printed on standard output and attachments are downloaded to the config directory. In json mode this is outputted as one json object per line.
 
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
-*--json*::
-Output received messages in json format, one object per line.
 
 === joinGroup
 
@@ -222,10 +221,10 @@ Specify the recipient group ID in base64 encoding.
 
 === listGroups
 
-Show a list of known groups.
+Show a list of known groups and related information. In json mode this is outputted as an list of objects and is always in detailed mode.
 
 *-d*, *--detailed*::
-Include the list of members of each group.
+Include the list of members of each group and the group invite link.
 
 === listIdentities
 
