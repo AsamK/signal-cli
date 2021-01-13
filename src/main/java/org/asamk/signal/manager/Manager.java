@@ -1800,7 +1800,11 @@ public class Manager implements Closeable {
                 }
             }
             account.save();
-            if (!isMessageBlocked(envelope, content)) {
+            if (isMessageBlocked(envelope, content)) {
+                logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
+            } else if (isNotAGroupMember(envelope, content)) {
+                logger.info("Ignoring a message from a non group member: {}", envelope.getTimestamp());
+            } else {
                 handler.handleMessage(envelope, content, exception);
             }
             if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
@@ -1830,15 +1834,40 @@ public class Manager implements Closeable {
         if (content != null && content.getDataMessage().isPresent()) {
             SignalServiceDataMessage message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
+                GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+                GroupInfo group = getGroup(groupId);
+                if (group != null && group.isBlocked()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isNotAGroupMember(
+            SignalServiceEnvelope envelope, SignalServiceContent content
+    ) {
+        SignalServiceAddress source;
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            source = envelope.getSourceAddress();
+        } else if (content != null) {
+            source = content.getSender();
+        } else {
+            return false;
+        }
+
+        if (content != null && content.getDataMessage().isPresent()) {
+            SignalServiceDataMessage message = content.getDataMessage().get();
+            if (message.getGroupContext().isPresent()) {
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
                     SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    if (groupInfo.getType() != SignalServiceGroup.Type.DELIVER) {
+                    if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
                         return false;
                     }
                 }
                 GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
                 GroupInfo group = getGroup(groupId);
-                if (group != null && group.isBlocked()) {
+                if (group != null && !group.isMember(source)) {
                     return true;
                 }
             }
