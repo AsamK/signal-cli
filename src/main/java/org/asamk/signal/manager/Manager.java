@@ -2141,7 +2141,6 @@ public class Manager implements Closeable {
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
         File tmpFile = IOUtils.createTempFile();
-        tmpFile.deleteOnExit();
         try (InputStream input = messageReceiver.retrieveGroupsV2ProfileAvatar(cdnKey,
                 tmpFile,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {

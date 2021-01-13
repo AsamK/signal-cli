@@ -22,7 +22,9 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 public class IOUtils {
 
     public static File createTempFile() throws IOException {
-        return File.createTempFile("signal_tmp_", ".tmp");
+        final File tempFile = File.createTempFile("signal-cli_tmp_", ".tmp");
+        tempFile.deleteOnExit();
+        return tempFile;
     }
 
     public static byte[] readFully(InputStream in) throws IOException {
