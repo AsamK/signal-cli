@@ -27,7 +27,7 @@ public class GetUserStatusCommand implements LocalCommand {
         subparser.addArgument("number").help("Phone number").nargs("+");
         subparser.help("Check if the specified phone number/s have been registered");
         subparser.addArgument("--json")
-                .help("WARNING: This parameter is now deprecated! Please use the \"output\" option instead.\n\nOutput received messages in json format, one json object per line.")
+                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
 
@@ -37,11 +37,11 @@ public class GetUserStatusCommand implements LocalCommand {
         ObjectMapper jsonProcessor = new ObjectMapper();
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
-        boolean inJson = ns.getString("output").equals("json");
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
         // Get a map of registration statuses

@@ -18,11 +18,9 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.whispersystems.util.Base64;
-
-// TODO delete later when "json" variable is removed
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +41,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
         subparser.addArgument("--json")
-                .help("WARNING: This parameter is now deprecated! Please use the \"output\" option instead.\n\nOutput received messages in json format, one json object per line.")
+                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
 
@@ -54,7 +52,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
         if (inJson) {
@@ -165,7 +163,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use \"output\" instead.");
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
         double timeout = 5;

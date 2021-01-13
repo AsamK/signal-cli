@@ -100,7 +100,8 @@ Remove the registration lock pin.
 === link
 
 Link to an existing device, instead of registering a new number.
-This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI. If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
+This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI.
+If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
 
 *-n* NAME, *--name* NAME::
 Optionally specify a name to describe this new device.
@@ -112,7 +113,8 @@ Link another device to this device.
 Only works, if this is the master device.
 
 *--uri* URI::
-Specify the uri contained in the QR code shown by the new device. You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
+Specify the uri contained in the QR code shown by the new device.
+You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
 
 === listDevices
 
@@ -129,7 +131,9 @@ Use listDevices to see the deviceIds.
 
 === getUserStatus
 
-Uses a list of phone numbers to determine the statuses of those users. Shows if they are registered on the Signal Servers or not. In json mode this is outputted as a list of objects.
+Uses a list of phone numbers to determine the statuses of those users.
+Shows if they are registered on the Signal Servers or not.
+In json mode this is outputted as a list of objects.
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
@@ -178,7 +182,8 @@ Remove a reaction.
 === receive
 
 Query the server for new messages.
-New messages are printed on standard output and attachments are downloaded to the config directory. In json mode this is outputted as one json object per line.
+New messages are printed on standard output and attachments are downloaded to the config directory.
+In json mode this is outputted as one json object per line.
 
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 Number of seconds to wait for new messages (negative values disable timeout).
@@ -221,7 +226,8 @@ Specify the recipient group ID in base64 encoding.
 
 === listGroups
 
-Show a list of known groups and related information. In json mode this is outputted as an list of objects and is always in detailed mode.
+Show a list of known groups and related information.
+In json mode this is outputted as an list of objects and is always in detailed mode.
 
 *-d*, *--detailed*::
 Include the list of members of each group and the group invite link.
