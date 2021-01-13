@@ -36,6 +36,7 @@ import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2Change
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,7 +100,7 @@ public class GroupHelper {
     }
 
     public GroupInfoV2 createGroupV2(
-            String name, Collection<SignalServiceAddress> members, String avatarFile
+            String name, Collection<SignalServiceAddress> members, File avatarFile
     ) throws IOException {
         final byte[] avatarBytes = readAvatarBytes(avatarFile);
         final GroupsV2Operations.NewGroup newGroup = buildNewGroupV2(name, members, avatarBytes);
@@ -132,7 +133,7 @@ public class GroupHelper {
         return g;
     }
 
-    private byte[] readAvatarBytes(final String avatarFile) throws IOException {
+    private byte[] readAvatarBytes(final File avatarFile) throws IOException {
         final byte[] avatarBytes;
         try (InputStream avatar = avatarFile == null ? null : new FileInputStream(avatarFile)) {
             avatarBytes = avatar == null ? null : IOUtils.readFully(avatar);
@@ -194,7 +195,7 @@ public class GroupHelper {
     }
 
     public Pair<DecryptedGroup, GroupChange> updateGroupV2(
-            GroupInfoV2 groupInfoV2, String name, String avatarFile
+            GroupInfoV2 groupInfoV2, String name, File avatarFile
     ) throws IOException {
         final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);

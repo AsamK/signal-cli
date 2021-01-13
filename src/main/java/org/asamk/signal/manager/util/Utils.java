@@ -36,10 +36,7 @@ public class Utils {
     public static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
         InputStream stream = new FileInputStream(file);
         final long size = file.length();
-        String mime = Files.probeContentType(file.toPath());
-        if (mime == null) {
-            mime = "application/octet-stream";
-        }
+        final String mime = getFileMimeType(file, "application/octet-stream");
         return new StreamDetails(stream, mime, size);
     }
 

@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.whispersystems.libsignal.util.guava.Optional;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +15,7 @@ public class UpdateProfileCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        final MutuallyExclusiveGroup avatarOptions = subparser.addMutuallyExclusiveGroup().required(true);
+        final MutuallyExclusiveGroup avatarOptions = subparser.addMutuallyExclusiveGroup();
         avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
         avatarOptions.addArgument("--remove-avatar").action(Arguments.storeTrue());
 
@@ -30,7 +31,9 @@ public class UpdateProfileCommand implements LocalCommand {
         boolean removeAvatar = ns.getBoolean("remove_avatar");
 
         try {
-            File avatarFile = removeAvatar ? null : new File(avatarPath);
+            Optional<File> avatarFile = removeAvatar
+                    ? Optional.absent()
+                    : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, avatarFile);
         } catch (IOException e) {
             System.err.println("UpdateAccount error: " + e.getMessage());

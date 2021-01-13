@@ -4,12 +4,10 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,19 +32,23 @@ public class AttachmentUtils {
     }
 
     public static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        InputStream attachmentStream = new FileInputStream(attachmentFile);
-        final long attachmentSize = attachmentFile.length();
-        final String mime = Utils.getFileMimeType(attachmentFile, "application/octet-stream");
+        final StreamDetails streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
+        return createAttachment(streamDetails, Optional.of(attachmentFile.getName()));
+    }
+
+    public static SignalServiceAttachmentStream createAttachment(
+            StreamDetails streamDetails, Optional<String> name
+    ) {
         // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final long uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
         final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
-        return new SignalServiceAttachmentStream(attachmentStream,
-                mime,
-                attachmentSize,
-                Optional.of(attachmentFile.getName()),
+        return new SignalServiceAttachmentStream(streamDetails.getStream(),
+                streamDetails.getContentType(),
+                streamDetails.getLength(),
+                name,
                 false,
                 false,
                 preview,
@@ -60,20 +62,10 @@ public class AttachmentUtils {
                 resumableUploadSpec);
     }
 
-    public static File retrieveAttachment(SignalServiceAttachmentStream stream, File outputFile) throws IOException {
+    public static void retrieveAttachment(
+            SignalServiceAttachmentStream stream, OutputStream output
+    ) throws IOException {
         InputStream input = stream.getInputStream();
-
-        try (OutputStream output = new FileOutputStream(outputFile)) {
-            byte[] buffer = new byte[4096];
-            int read;
-
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return outputFile;
+        IOUtils.copyStream(input, output);
     }
 }

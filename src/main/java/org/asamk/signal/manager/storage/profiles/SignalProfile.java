@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 
-import java.io.File;
-
 public class SignalProfile {
 
     @JsonProperty
@@ -14,8 +12,6 @@ public class SignalProfile {
 
     @JsonProperty
     private final String name;
-
-    private final File avatarFile;
 
     @JsonProperty
     private final String unidentifiedAccess;
@@ -29,14 +25,12 @@ public class SignalProfile {
     public SignalProfile(
             final String identityKey,
             final String name,
-            final File avatarFile,
             final String unidentifiedAccess,
             final boolean unrestrictedUnidentifiedAccess,
             final SignalServiceProfile.Capabilities capabilities
     ) {
         this.identityKey = identityKey;
         this.name = name;
-        this.avatarFile = avatarFile;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
         this.capabilities = new Capabilities();
@@ -54,7 +48,6 @@ public class SignalProfile {
     ) {
         this.identityKey = identityKey;
         this.name = name;
-        this.avatarFile = null;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
         this.capabilities = capabilities;
@@ -66,10 +59,6 @@ public class SignalProfile {
 
     public String getName() {
         return name;
-    }
-
-    public File getAvatarFile() {
-        return avatarFile;
     }
 
     public String getUnidentifiedAccess() {
@@ -94,7 +83,6 @@ public class SignalProfile {
                 + name
                 + '\''
                 + ", avatarFile="
-                + avatarFile
                 + ", unidentifiedAccess='"
                 + unidentifiedAccess
                 + '\''

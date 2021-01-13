@@ -156,8 +156,6 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -204,6 +202,7 @@ public class Manager implements Closeable {
     private final ProfileHelper profileHelper;
     private final GroupHelper groupHelper;
     private final PinHelper pinHelper;
+    private final AvatarStore avatarStore;
 
     Manager(
             SignalAccount account,
@@ -259,6 +258,7 @@ public class Manager implements Closeable {
                 groupsV2Operations,
                 groupsV2Api,
                 this::getGroupAuthForToday);
+        this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
     }
 
     public String getUsername() {
@@ -338,9 +338,24 @@ public class Manager implements Closeable {
                 account.isDiscoverableByPhoneNumber());
     }
 
-    public void setProfile(String name, File avatar) throws IOException {
-        try (final StreamDetails streamDetails = avatar == null ? null : Utils.createStreamDetailsFromFile(avatar)) {
+    /**
+     * @param avatar if avatar is null the image from the local avatar store is used (if present),
+     *               if it's Optional.absent(), the avatar will be removed
+     */
+    public void setProfile(String name, Optional<File> avatar) throws IOException {
+        try (final StreamDetails streamDetails = avatar == null
+                ? avatarStore.retrieveProfileAvatar(getSelfAddress())
+                : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
             accountManager.setVersionedProfile(account.getUuid(), account.getProfileKey(), name, streamDetails);
+        }
+
+        if (avatar != null) {
+            if (avatar.isPresent()) {
+                avatarStore.storeProfileAvatar(getSelfAddress(),
+                        outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
+            } else {
+                avatarStore.deleteProfileAvatar(getSelfAddress());
+            }
         }
     }
 
@@ -539,13 +554,12 @@ public class Manager implements Closeable {
     private SignalProfile decryptProfile(
             final SignalServiceAddress address, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
-        File avatarFile = null;
-        try {
-            avatarFile = encryptedProfile.getAvatar() == null
-                    ? null
-                    : retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
-        } catch (Throwable e) {
-            logger.warn("Failed to retrieve profile avatar, ignoring: {}", e.getMessage());
+        if (encryptedProfile.getAvatar() != null) {
+            try {
+                retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
+            } catch (Throwable e) {
+                logger.warn("Failed to retrieve profile avatar, ignoring: {}", e.getMessage());
+            }
         }
 
         ProfileCipher profileCipher = new ProfileCipher(profileKey);
@@ -569,7 +583,6 @@ public class Manager implements Closeable {
             }
             return new SignalProfile(encryptedProfile.getIdentityKey(),
                     name,
-                    avatarFile,
                     unidentifiedAccess,
                     encryptedProfile.isUnrestrictedUnidentifiedAccess(),
                     encryptedProfile.getCapabilities());
@@ -579,21 +592,21 @@ public class Manager implements Closeable {
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupId groupId) throws IOException {
-        File file = getGroupAvatarFile(groupId);
-        if (!file.exists()) {
+        final StreamDetails streamDetails = avatarStore.retrieveGroupAvatar(groupId);
+        if (streamDetails == null) {
             return Optional.absent();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
-    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(String number) throws IOException {
-        File file = getContactAvatarFile(number);
-        if (!file.exists()) {
+    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
+        final StreamDetails streamDetails = avatarStore.retrieveContactAvatar(address);
+        if (streamDetails == null) {
             return Optional.absent();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
@@ -683,13 +696,15 @@ public class Manager implements Closeable {
     }
 
     private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
-            GroupId groupId, String name, Collection<SignalServiceAddress> members, String avatarFile
+            GroupId groupId, String name, Collection<SignalServiceAddress> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         GroupInfo g;
         SignalServiceDataMessage.Builder messageBuilder;
         if (groupId == null) {
             // Create new group
-            GroupInfoV2 gv2 = groupHelper.createGroupV2(name, members, avatarFile);
+            GroupInfoV2 gv2 = groupHelper.createGroupV2(name == null ? "" : name,
+                    members == null ? List.of() : members,
+                    avatarFile);
             if (gv2 == null) {
                 GroupInfoV1 gv1 = new GroupInfoV1(GroupIdV1.createRandom());
                 gv1.addMembers(List.of(account.getSelfAddress()));
@@ -697,6 +712,10 @@ public class Manager implements Closeable {
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
             } else {
+                if (avatarFile != null) {
+                    avatarStore.storeGroupAvatar(gv2.getGroupId(),
+                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                }
                 messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
                 g = gv2;
             }
@@ -731,6 +750,10 @@ public class Manager implements Closeable {
                     Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
                             name,
                             avatarFile);
+                    if (avatarFile != null) {
+                        avatarStore.storeGroupAvatar(groupInfoV2.getGroupId(),
+                                outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                    }
                     result = sendUpdateGroupMessage(groupInfoV2,
                             groupGroupChangePair.first(),
                             groupGroupChangePair.second());
@@ -794,7 +817,7 @@ public class Manager implements Closeable {
             final GroupInfoV1 g,
             final String name,
             final Collection<SignalServiceAddress> members,
-            final String avatarFile
+            final File avatarFile
     ) throws IOException {
         if (name != null) {
             g.name = name;
@@ -824,9 +847,8 @@ public class Manager implements Closeable {
         }
 
         if (avatarFile != null) {
-            IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-            File aFile = getGroupAvatarFile(g.getGroupId());
-            Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            avatarStore.storeGroupAvatar(g.getGroupId(),
+                    outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
         }
     }
 
@@ -856,13 +878,13 @@ public class Manager implements Closeable {
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.getMembers()));
 
-        File aFile = getGroupAvatarFile(g.getGroupId());
-        if (aFile.exists()) {
-            try {
-                group.withAvatar(AttachmentUtils.createAttachment(aFile));
-            } catch (IOException e) {
-                throw new AttachmentInvalidException(aFile.toString(), e);
+        try {
+            final Optional<SignalServiceAttachmentStream> attachment = createGroupAvatarAttachment(g.getGroupId());
+            if (attachment.isPresent()) {
+                group.withAvatar(attachment.get());
             }
+        } catch (IOException e) {
+            throw new AttachmentInvalidException(g.getGroupId().toBase64(), e);
         }
 
         return SignalServiceDataMessage.newBuilder()
@@ -1001,12 +1023,12 @@ public class Manager implements Closeable {
     }
 
     public Pair<GroupId, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, List<String> members, String avatar
+            GroupId groupId, String name, List<String> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return sendUpdateGroupMessage(groupId,
                 name,
                 members == null ? null : getSignalServiceAddresses(members),
-                avatar);
+                avatarFile);
     }
 
     /**
@@ -1467,7 +1489,7 @@ public class Manager implements Closeable {
                                 if (avatar.isPointer()) {
                                     try {
                                         retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.getGroupId());
-                                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                                    } catch (IOException e) {
                                         logger.warn("Failed to retrieve avatar for group {}, ignoring: {}",
                                                 groupId.toBase64(),
                                                 e.getMessage());
@@ -1556,7 +1578,7 @@ public class Manager implements Closeable {
                 if (attachment.isPointer()) {
                     try {
                         retrieveAttachment(attachment.asPointer());
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                    } catch (IOException e) {
                         logger.warn("Failed to retrieve attachment ({}), ignoring: {}",
                                 attachment.asPointer().getRemoteId(),
                                 e.getMessage());
@@ -1583,7 +1605,7 @@ public class Manager implements Closeable {
                     SignalServiceAttachmentPointer attachment = preview.getImage().get().asPointer();
                     try {
                         retrieveAttachment(attachment);
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                    } catch (IOException e) {
                         logger.warn("Failed to retrieve preview image ({}), ignoring: {}",
                                 attachment.getRemoteId(),
                                 e.getMessage());
@@ -1599,7 +1621,7 @@ public class Manager implements Closeable {
                 if (attachment != null && attachment.isPointer()) {
                     try {
                         retrieveAttachment(attachment.asPointer());
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
+                    } catch (IOException e) {
                         logger.warn("Failed to retrieve quote attachment thumbnail ({}), ignoring: {}",
                                 attachment.asPointer().getRemoteId(),
                                 e.getMessage());
@@ -2047,7 +2069,7 @@ public class Manager implements Closeable {
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
-                                    retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
+                                    retrieveContactAvatarAttachment(c.getAvatar().get(), contact.getAddress());
                                 }
                             }
                         }
@@ -2099,45 +2121,21 @@ public class Manager implements Closeable {
         return actions;
     }
 
-    private File getContactAvatarFile(String number) {
-        return new File(pathConfig.getAvatarsPath(), "contact-" + number);
+    private void retrieveContactAvatarAttachment(
+            SignalServiceAttachment attachment, SignalServiceAddress address
+    ) throws IOException {
+        avatarStore.storeContactAvatar(address, outputStream -> retrieveAttachment(attachment, outputStream));
     }
 
-    private File retrieveContactAvatarAttachment(
-            SignalServiceAttachment attachment, String number
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        if (attachment.isPointer()) {
-            SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            return retrieveAttachment(pointer, getContactAvatarFile(number), false);
-        } else {
-            SignalServiceAttachmentStream stream = attachment.asStream();
-            return AttachmentUtils.retrieveAttachment(stream, getContactAvatarFile(number));
-        }
-    }
-
-    private File getGroupAvatarFile(GroupId groupId) {
-        return new File(pathConfig.getAvatarsPath(), "group-" + groupId.toBase64().replace("/", "_"));
-    }
-
-    private File retrieveGroupAvatarAttachment(
+    private void retrieveGroupAvatarAttachment(
             SignalServiceAttachment attachment, GroupId groupId
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        if (attachment.isPointer()) {
-            SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
-        } else {
-            SignalServiceAttachmentStream stream = attachment.asStream();
-            return AttachmentUtils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
-        }
+    ) throws IOException {
+        avatarStore.storeGroupAvatar(groupId, outputStream -> retrieveAttachment(attachment, outputStream));
     }
 
-    private File retrieveGroupAvatar(
+    private void retrieveGroupAvatar(
             GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey
     ) throws IOException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        File outputFile = getGroupAvatarFile(groupId);
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
         File tmpFile = IOUtils.createTempFile();
@@ -2147,9 +2145,7 @@ public class Manager implements Closeable {
             byte[] encryptedData = IOUtils.readFully(input);
 
             byte[] decryptedData = groupOperations.decryptAvatar(encryptedData);
-            try (OutputStream output = new FileOutputStream(outputFile)) {
-                output.write(decryptedData);
-            }
+            avatarStore.storeGroupAvatar(groupId, outputStream -> outputStream.write(decryptedData));
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2159,26 +2155,20 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
-    private File getProfileAvatarFile(SignalServiceAddress address) {
-        return new File(pathConfig.getAvatarsPath(), "profile-" + address.getLegacyIdentifier());
-    }
-
-    private File retrieveProfileAvatar(
+    private void retrieveProfileAvatar(
             SignalServiceAddress address, String avatarPath, ProfileKey profileKey
     ) throws IOException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        File outputFile = getProfileAvatarFile(address);
-
         File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveProfileAvatar(avatarPath,
                 tmpFile,
                 profileKey,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
-            // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
-            IOUtils.copyStreamToFile(input, outputFile, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
+            avatarStore.storeProfileAvatar(address, outputStream -> {
+                // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
+                IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
+            });
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2188,37 +2178,57 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
         return new File(pathConfig.getAttachmentsPath(), attachmentId.toString());
     }
 
-    private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException, MissingConfigurationException {
+    private void retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException {
         IOUtils.createPrivateDirectories(pathConfig.getAttachmentsPath());
-        return retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()), true);
+        retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()));
     }
 
-    private File retrieveAttachment(
-            SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        if (storePreview && pointer.getPreview().isPresent()) {
+    private void retrieveAttachment(
+            SignalServiceAttachmentPointer pointer, File outputFile
+    ) throws IOException {
+        if (pointer.getPreview().isPresent()) {
             File previewFile = new File(outputFile + ".preview");
             try (OutputStream output = new FileOutputStream(previewFile)) {
                 byte[] preview = pointer.getPreview().get();
                 output.write(preview, 0, preview.length);
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return null;
+                logger.warn("Failed to retrieve attachment preview, ignoring: {}", e.getMessage());
             }
         }
 
+        try (OutputStream output = new FileOutputStream(outputFile)) {
+            retrieveAttachment(pointer, output);
+        }
+    }
+
+    private void retrieveAttachment(
+            final SignalServiceAttachment attachment, final OutputStream outputStream
+    ) throws IOException {
+        if (attachment.isPointer()) {
+            SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            retrieveAttachment(pointer, outputStream);
+        } else {
+            SignalServiceAttachmentStream stream = attachment.asStream();
+            AttachmentUtils.retrieveAttachment(stream, outputStream);
+        }
+    }
+
+    private void retrieveAttachment(
+            SignalServiceAttachmentPointer pointer, OutputStream outputStream
+    ) throws IOException {
         File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveAttachment(pointer,
                 tmpFile,
                 ServiceConfig.MAX_ATTACHMENT_SIZE)) {
-            IOUtils.copyStreamToFile(input, outputFile);
+            IOUtils.copyStream(input, outputStream);
+        } catch (MissingConfigurationException | InvalidMessageException e) {
+            throw new IOException(e);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2228,7 +2238,6 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
     private InputStream retrieveAttachmentAsStream(
@@ -2299,7 +2308,7 @@ public class Manager implements Closeable {
                     ProfileKey profileKey = account.getProfileStore().getProfileKey(record.getAddress());
                     out.write(new DeviceContact(record.getAddress(),
                             Optional.fromNullable(record.name),
-                            createContactAvatarAttachment(record.number),
+                            createContactAvatarAttachment(record.getAddress()),
                             Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage),
                             Optional.fromNullable(profileKey),
@@ -2490,10 +2499,6 @@ public class Manager implements Closeable {
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
-    }
-
-    void saveAccount() {
-        account.save();
     }
 
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
