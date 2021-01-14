@@ -21,6 +21,9 @@ For registering you need a phone number where you can receive SMS or incoming ca
 signal-cli was primarily developed to be used on servers to notify admins of important events.
 For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
+For some functionality the Signal protocol requires that all messages have been received from the server.
+The `receive` command should be regularly executed. In daemon mode messages are continuously received.
+
 == Options
 
 *-h*, *--help*::
