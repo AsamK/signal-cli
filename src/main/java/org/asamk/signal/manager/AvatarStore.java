@@ -72,7 +72,7 @@ public class AvatarStore {
     }
 
     private File getContactAvatarFile(SignalServiceAddress address) {
-        return new File(avatarsPath, "contact-" + address);
+        return new File(avatarsPath, "contact-" + address.getLegacyIdentifier());
     }
 
     private File getProfileAvatarFile(SignalServiceAddress address) {
