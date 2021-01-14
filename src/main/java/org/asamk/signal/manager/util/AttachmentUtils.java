@@ -9,8 +9,6 @@ import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,12 +58,5 @@ public class AttachmentUtils {
                 null,
                 null,
                 resumableUploadSpec);
-    }
-
-    public static void retrieveAttachment(
-            SignalServiceAttachmentStream stream, OutputStream output
-    ) throws IOException {
-        InputStream input = stream.getInputStream();
-        IOUtils.copyStream(input, output);
     }
 }

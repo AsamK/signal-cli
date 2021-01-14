@@ -146,7 +146,6 @@ import org.whispersystems.util.Base64;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -188,7 +187,6 @@ public class Manager implements Closeable {
     private final String userAgent;
 
     private SignalAccount account;
-    private final PathConfig pathConfig;
     private final SignalServiceAccountManager accountManager;
     private final GroupsV2Api groupsV2Api;
     private final GroupsV2Operations groupsV2Operations;
@@ -203,6 +201,7 @@ public class Manager implements Closeable {
     private final GroupHelper groupHelper;
     private final PinHelper pinHelper;
     private final AvatarStore avatarStore;
+    private final AttachmentStore attachmentStore;
 
     Manager(
             SignalAccount account,
@@ -211,7 +210,6 @@ public class Manager implements Closeable {
             String userAgent
     ) {
         this.account = account;
-        this.pathConfig = pathConfig;
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
         this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
@@ -259,6 +257,7 @@ public class Manager implements Closeable {
                 groupsV2Api,
                 this::getGroupAuthForToday);
         this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
+        this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
     }
 
     public String getUsername() {
@@ -497,17 +496,20 @@ public class Manager implements Closeable {
         if (!profileEntry.isRequestPending() && (
                 profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000
         )) {
-            ProfileKey profileKey = profileEntry.getProfileKey();
             profileEntry.setRequestPending(true);
-            SignalProfile profile;
+            final SignalServiceProfile encryptedProfile;
             try {
-                profile = retrieveRecipientProfile(address, profileKey);
+                encryptedProfile = profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE)
+                        .getProfile();
             } catch (IOException e) {
                 logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
-                profileEntry.setRequestPending(false);
                 return null;
+            } finally {
+                profileEntry.setRequestPending(false);
             }
-            profileEntry.setRequestPending(false);
+
+            ProfileKey profileKey = profileEntry.getProfileKey();
+            SignalProfile profile = decryptProfile(address, profileKey, encryptedProfile);
             account.getProfileStore()
                     .updateProfile(address, profileKey, now, profile, profileEntry.getProfileKeyCredential());
             return profile;
@@ -542,24 +544,11 @@ public class Manager implements Closeable {
         return profileEntry.getProfileKeyCredential();
     }
 
-    private SignalProfile retrieveRecipientProfile(
-            SignalServiceAddress address, ProfileKey profileKey
-    ) throws IOException {
-        final SignalServiceProfile encryptedProfile = profileHelper.retrieveProfileSync(address,
-                SignalServiceProfile.RequestType.PROFILE).getProfile();
-
-        return decryptProfile(address, profileKey, encryptedProfile);
-    }
-
     private SignalProfile decryptProfile(
             final SignalServiceAddress address, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
         if (encryptedProfile.getAvatar() != null) {
-            try {
-                retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
-            } catch (Throwable e) {
-                logger.warn("Failed to retrieve profile avatar, ignoring: {}", e.getMessage());
-            }
+            downloadProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
         }
 
         ProfileCipher profileCipher = new ProfileCipher(profileKey);
@@ -1482,15 +1471,7 @@ public class Manager implements Closeable {
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 SignalServiceAttachment avatar = groupInfo.getAvatar().get();
-                                if (avatar.isPointer()) {
-                                    try {
-                                        retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.getGroupId());
-                                    } catch (IOException e) {
-                                        logger.warn("Failed to retrieve avatar for group {}, ignoring: {}",
-                                                groupId.toBase64(),
-                                                e.getMessage());
-                                    }
-                                }
+                                downloadGroupAvatar(avatar, groupV1.getGroupId());
                             }
 
                             if (groupInfo.getName().isPresent()) {
@@ -1571,15 +1552,7 @@ public class Manager implements Closeable {
         }
         if (message.getAttachments().isPresent() && !ignoreAttachments) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                if (attachment.isPointer()) {
-                    try {
-                        retrieveAttachment(attachment.asPointer());
-                    } catch (IOException e) {
-                        logger.warn("Failed to retrieve attachment ({}), ignoring: {}",
-                                attachment.asPointer().getRemoteId(),
-                                e.getMessage());
-                    }
-                }
+                downloadAttachment(attachment);
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
@@ -1597,15 +1570,8 @@ public class Manager implements Closeable {
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
             for (SignalServiceDataMessage.Preview preview : previews) {
-                if (preview.getImage().isPresent() && preview.getImage().get().isPointer()) {
-                    SignalServiceAttachmentPointer attachment = preview.getImage().get().asPointer();
-                    try {
-                        retrieveAttachment(attachment);
-                    } catch (IOException e) {
-                        logger.warn("Failed to retrieve preview image ({}), ignoring: {}",
-                                attachment.getRemoteId(),
-                                e.getMessage());
-                    }
+                if (preview.getImage().isPresent()) {
+                    downloadAttachment(preview.getImage().get());
                 }
             }
         }
@@ -1613,15 +1579,9 @@ public class Manager implements Closeable {
             final SignalServiceDataMessage.Quote quote = message.getQuote().get();
 
             for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
-                final SignalServiceAttachment attachment = quotedAttachment.getThumbnail();
-                if (attachment != null && attachment.isPointer()) {
-                    try {
-                        retrieveAttachment(attachment.asPointer());
-                    } catch (IOException e) {
-                        logger.warn("Failed to retrieve quote attachment thumbnail ({}), ignoring: {}",
-                                attachment.asPointer().getRemoteId(),
-                                e.getMessage());
-                    }
+                final SignalServiceAttachment thumbnail = quotedAttachment.getThumbnail();
+                if (thumbnail != null) {
+                    downloadAttachment(thumbnail);
                 }
             }
         }
@@ -1671,11 +1631,7 @@ public class Manager implements Closeable {
                 storeProfileKeysFromMembers(group);
                 final String avatar = group.getAvatar();
                 if (avatar != null && !avatar.isEmpty()) {
-                    try {
-                        retrieveGroupAvatar(groupId, groupSecretParams, avatar);
-                    } catch (IOException e) {
-                        logger.warn("Failed to download group avatar, ignoring: {}", e.getMessage());
-                    }
+                    downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
             groupInfoV2.setGroup(group);
@@ -1949,9 +1905,9 @@ public class Manager implements Closeable {
                     File tmpFile = null;
                     try {
                         tmpFile = IOUtils.createTempFile();
-                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(syncMessage.getGroups()
-                                .get()
-                                .asPointer(), tmpFile)) {
+                        final SignalServiceAttachment groupsMessage = syncMessage.getGroups().get();
+                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(),
+                                tmpFile)) {
                             DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
                             while ((g = s.read()) != null) {
@@ -1977,7 +1933,7 @@ public class Manager implements Closeable {
                                     }
 
                                     if (g.getAvatar().isPresent()) {
-                                        retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.getGroupId());
+                                        downloadGroupAvatar(g.getAvatar().get(), syncGroup.getGroupId());
                                     }
                                     syncGroup.inboxPosition = g.getInboxPosition().orNull();
                                     syncGroup.archived = g.isArchived();
@@ -2065,7 +2021,7 @@ public class Manager implements Closeable {
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
-                                    retrieveContactAvatarAttachment(c.getAvatar().get(), contact.getAddress());
+                                    downloadContactAvatar(c.getAvatar().get(), contact.getAddress());
                                 }
                             }
                         }
@@ -2117,20 +2073,72 @@ public class Manager implements Closeable {
         return actions;
     }
 
-    private void retrieveContactAvatarAttachment(
-            SignalServiceAttachment attachment, SignalServiceAddress address
-    ) throws IOException {
-        avatarStore.storeContactAvatar(address, outputStream -> retrieveAttachment(attachment, outputStream));
+    private void downloadContactAvatar(SignalServiceAttachment avatar, SignalServiceAddress address) {
+        try {
+            avatarStore.storeContactAvatar(address, outputStream -> retrieveAttachment(avatar, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for contact {}, ignoring: {}", address, e.getMessage());
+        }
     }
 
-    private void retrieveGroupAvatarAttachment(
-            SignalServiceAttachment attachment, GroupId groupId
-    ) throws IOException {
-        avatarStore.storeGroupAvatar(groupId, outputStream -> retrieveAttachment(attachment, outputStream));
+    private void downloadGroupAvatar(SignalServiceAttachment avatar, GroupId groupId) {
+        try {
+            avatarStore.storeGroupAvatar(groupId, outputStream -> retrieveAttachment(avatar, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
+        }
     }
 
-    private void retrieveGroupAvatar(
-            GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey
+    private void downloadGroupAvatar(GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey) {
+        try {
+            avatarStore.storeGroupAvatar(groupId,
+                    outputStream -> retrieveGroupV2Avatar(groupSecretParams, cdnKey, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
+        }
+    }
+
+    private void downloadProfileAvatar(
+            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
+    ) {
+        try {
+            avatarStore.storeProfileAvatar(address,
+                    outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
+        } catch (Throwable e) {
+            logger.warn("Failed to download profile avatar, ignoring: {}", e.getMessage());
+        }
+    }
+
+    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
+        return attachmentStore.getAttachmentFile(attachmentId);
+    }
+
+    private void downloadAttachment(final SignalServiceAttachment attachment) {
+        if (!attachment.isPointer()) {
+            logger.warn("Invalid state, can't store an attachment stream.");
+        }
+
+        SignalServiceAttachmentPointer pointer = attachment.asPointer();
+        if (pointer.getPreview().isPresent()) {
+            final byte[] preview = pointer.getPreview().get();
+            try {
+                attachmentStore.storeAttachmentPreview(pointer.getRemoteId(),
+                        outputStream -> outputStream.write(preview, 0, preview.length));
+            } catch (IOException e) {
+                logger.warn("Failed to download attachment preview, ignoring: {}", e.getMessage());
+            }
+        }
+
+        try {
+            attachmentStore.storeAttachment(pointer.getRemoteId(),
+                    outputStream -> retrieveAttachmentPointer(pointer, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
+        }
+    }
+
+    private void retrieveGroupV2Avatar(
+            GroupSecretParams groupSecretParams, String cdnKey, OutputStream outputStream
     ) throws IOException {
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
@@ -2141,7 +2149,7 @@ public class Manager implements Closeable {
             byte[] encryptedData = IOUtils.readFully(input);
 
             byte[] decryptedData = groupOperations.decryptAvatar(encryptedData);
-            avatarStore.storeGroupAvatar(groupId, outputStream -> outputStream.write(decryptedData));
+            outputStream.write(decryptedData);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2154,17 +2162,15 @@ public class Manager implements Closeable {
     }
 
     private void retrieveProfileAvatar(
-            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
+            String avatarPath, ProfileKey profileKey, OutputStream outputStream
     ) throws IOException {
         File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveProfileAvatar(avatarPath,
                 tmpFile,
                 profileKey,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
-            avatarStore.storeProfileAvatar(address, outputStream -> {
-                // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
-                IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
-            });
+            // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
+            IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2176,52 +2182,23 @@ public class Manager implements Closeable {
         }
     }
 
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(pathConfig.getAttachmentsPath(), attachmentId.toString());
-    }
-
-    private void retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException {
-        IOUtils.createPrivateDirectories(pathConfig.getAttachmentsPath());
-        retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()));
-    }
-
-    private void retrieveAttachment(
-            SignalServiceAttachmentPointer pointer, File outputFile
-    ) throws IOException {
-        if (pointer.getPreview().isPresent()) {
-            File previewFile = new File(outputFile + ".preview");
-            try (OutputStream output = new FileOutputStream(previewFile)) {
-                byte[] preview = pointer.getPreview().get();
-                output.write(preview, 0, preview.length);
-            } catch (FileNotFoundException e) {
-                logger.warn("Failed to retrieve attachment preview, ignoring: {}", e.getMessage());
-            }
-        }
-
-        try (OutputStream output = new FileOutputStream(outputFile)) {
-            retrieveAttachment(pointer, output);
-        }
-    }
-
     private void retrieveAttachment(
             final SignalServiceAttachment attachment, final OutputStream outputStream
     ) throws IOException {
         if (attachment.isPointer()) {
             SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            retrieveAttachment(pointer, outputStream);
+            retrieveAttachmentPointer(pointer, outputStream);
         } else {
             SignalServiceAttachmentStream stream = attachment.asStream();
-            AttachmentUtils.retrieveAttachment(stream, outputStream);
+            IOUtils.copyStream(stream.getInputStream(), outputStream);
         }
     }
 
-    private void retrieveAttachment(
+    private void retrieveAttachmentPointer(
             SignalServiceAttachmentPointer pointer, OutputStream outputStream
     ) throws IOException {
         File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveAttachment(pointer,
-                tmpFile,
-                ServiceConfig.MAX_ATTACHMENT_SIZE)) {
+        try (InputStream input = retrieveAttachmentAsStream(pointer, tmpFile)) {
             IOUtils.copyStream(input, outputStream);
         } catch (MissingConfigurationException | InvalidMessageException e) {
             throw new IOException(e);
