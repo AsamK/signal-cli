@@ -1342,16 +1342,12 @@ public class Manager implements Closeable {
                 }
             } else {
                 // Send to all individually, so sync messages are sent correctly
+                messageBuilder.withProfileKey(account.getProfileKey().serialize());
                 List<SendMessageResult> results = new ArrayList<>(recipients.size());
                 for (SignalServiceAddress address : recipients) {
-                    ContactInfo contact = account.getContactStore().getContact(address);
-                    if (contact != null) {
-                        messageBuilder.withExpiration(contact.messageExpirationTime);
-                        messageBuilder.withProfileKey(account.getProfileKey().serialize());
-                    } else {
-                        messageBuilder.withExpiration(0);
-                        messageBuilder.withProfileKey(null);
-                    }
+                    final ContactInfo contact = account.getContactStore().getContact(address);
+                    final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
+                    messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
                     if (address.matches(account.getSelfAddress())) {
                         results.add(sendSelfMessage(message));
