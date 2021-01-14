@@ -16,8 +16,6 @@
  */
 package org.asamk.signal.manager;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
@@ -42,6 +40,8 @@ import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.ProfileUtils;
+import org.asamk.signal.manager.util.StickerUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
 import org.signal.libsignal.metadata.InvalidMetadataVersionException;
@@ -84,8 +84,6 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
-import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
-import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -107,7 +105,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
-import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload.StickerInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
@@ -141,7 +138,6 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
-import org.whispersystems.util.Base64;
 
 import java.io.Closeable;
 import java.io.File;
@@ -170,8 +166,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.asamk.signal.manager.ServiceConfig.CDS_MRENCLAVE;
 import static org.asamk.signal.manager.ServiceConfig.capabilities;
@@ -492,7 +486,7 @@ public class Manager implements Closeable {
             return null;
         }
         long now = new Date().getTime();
-        // Profiles are cache for 24h before retrieving them again
+        // Profiles are cached for 24h before retrieving them again
         if (!profileEntry.isRequestPending() && (
                 profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000
         )) {
@@ -508,8 +502,8 @@ public class Manager implements Closeable {
                 profileEntry.setRequestPending(false);
             }
 
-            ProfileKey profileKey = profileEntry.getProfileKey();
-            SignalProfile profile = decryptProfile(address, profileKey, encryptedProfile);
+            final ProfileKey profileKey = profileEntry.getProfileKey();
+            final SignalProfile profile = decryptProfileAndDownloadAvatar(address, profileKey, encryptedProfile);
             account.getProfileStore()
                     .updateProfile(address, profileKey, now, profile, profileEntry.getProfileKeyCredential());
             return profile;
@@ -534,7 +528,7 @@ public class Manager implements Closeable {
 
             long now = new Date().getTime();
             final ProfileKeyCredential profileKeyCredential = profileAndCredential.getProfileKeyCredential().orNull();
-            final SignalProfile profile = decryptProfile(address,
+            final SignalProfile profile = decryptProfileAndDownloadAvatar(address,
                     profileEntry.getProfileKey(),
                     profileAndCredential.getProfile());
             account.getProfileStore()
@@ -544,40 +538,14 @@ public class Manager implements Closeable {
         return profileEntry.getProfileKeyCredential();
     }
 
-    private SignalProfile decryptProfile(
+    private SignalProfile decryptProfileAndDownloadAvatar(
             final SignalServiceAddress address, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
         if (encryptedProfile.getAvatar() != null) {
             downloadProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
         }
 
-        ProfileCipher profileCipher = new ProfileCipher(profileKey);
-        try {
-            String name;
-            try {
-                name = encryptedProfile.getName() == null
-                        ? null
-                        : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName())));
-            } catch (IOException e) {
-                name = null;
-            }
-            String unidentifiedAccess;
-            try {
-                unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null
-                        || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess()))
-                        ? null
-                        : encryptedProfile.getUnidentifiedAccess();
-            } catch (IOException e) {
-                unidentifiedAccess = null;
-            }
-            return new SignalProfile(encryptedProfile.getIdentityKey(),
-                    name,
-                    unidentifiedAccess,
-                    encryptedProfile.isUnrestrictedUnidentifiedAccess(),
-                    encryptedProfile.getCapabilities());
-        } catch (InvalidCiphertextException e) {
-            return null;
-        }
+        return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupId groupId) throws IOException {
@@ -625,17 +593,6 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
-    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
-        final GroupInfo g = getGroupForSending(groupId);
-
-        GroupUtils.setGroupContext(messageBuilder, g);
-        messageBuilder.withExpiration(g.getMessageExpirationTime());
-
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
             String messageText, List<String> attachments, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
@@ -660,8 +617,18 @@ public class Manager implements Closeable {
         return sendGroupMessage(messageBuilder, groupId);
     }
 
-    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
+    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
+            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
+    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
+        final GroupInfo g = getGroupForSending(groupId);
 
+        GroupUtils.setGroupContext(messageBuilder, g);
+        messageBuilder.withExpiration(g.getMessageExpirationTime());
+
+        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+    }
+
+    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
         SignalServiceDataMessage.Builder messageBuilder;
 
         final GroupInfo g = getGroupForUpdating(groupId);
@@ -682,6 +649,15 @@ public class Manager implements Closeable {
         }
 
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+    }
+
+    public Pair<GroupId, List<SendMessageResult>> updateGroup(
+            GroupId groupId, String name, List<String> members, File avatarFile
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
+        return sendUpdateGroupMessage(groupId,
+                name,
+                members == null ? null : getSignalServiceAddresses(members),
+                avatarFile);
     }
 
     private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
@@ -764,44 +740,6 @@ public class Manager implements Closeable {
         return new Pair<>(g.getGroupId(), result.second());
     }
 
-    public Pair<GroupId, List<SendMessageResult>> joinGroup(
-            GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, GroupLinkNotActiveException {
-        return sendJoinGroupMessage(inviteLinkUrl);
-    }
-
-    private Pair<GroupId, List<SendMessageResult>> sendJoinGroupMessage(
-            GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, GroupLinkNotActiveException {
-        final DecryptedGroupJoinInfo groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
-                inviteLinkUrl.getPassword());
-        final GroupChange groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
-                inviteLinkUrl.getPassword(),
-                groupJoinInfo);
-        final GroupInfoV2 group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
-                groupJoinInfo.getRevision() + 1,
-                groupChange.toByteArray());
-
-        if (group.getGroup() == null) {
-            // Only requested member, can't send update to group members
-            return new Pair<>(group.getGroupId(), List.of());
-        }
-
-        final Pair<Long, List<SendMessageResult>> result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
-
-        return new Pair<>(group.getGroupId(), result.second());
-    }
-
-    private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
-            GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
-    ) throws IOException {
-        group.setGroup(newDecryptedGroup);
-        final SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(group,
-                groupChange.toByteArray());
-        account.getGroupStore().updateGroup(group);
-        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
-    }
-
     private void updateGroupV1(
             final GroupInfoV1 g,
             final String name,
@@ -841,7 +779,67 @@ public class Manager implements Closeable {
         }
     }
 
-    Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
+    public Pair<GroupId, List<SendMessageResult>> joinGroup(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, GroupLinkNotActiveException {
+        return sendJoinGroupMessage(inviteLinkUrl);
+    }
+
+    private Pair<GroupId, List<SendMessageResult>> sendJoinGroupMessage(
+            GroupInviteLinkUrl inviteLinkUrl
+    ) throws IOException, GroupLinkNotActiveException {
+        final DecryptedGroupJoinInfo groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
+                inviteLinkUrl.getPassword());
+        final GroupChange groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
+                inviteLinkUrl.getPassword(),
+                groupJoinInfo);
+        final GroupInfoV2 group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
+                groupJoinInfo.getRevision() + 1,
+                groupChange.toByteArray());
+
+        if (group.getGroup() == null) {
+            // Only requested member, can't send update to group members
+            return new Pair<>(group.getGroupId(), List.of());
+        }
+
+        final Pair<Long, List<SendMessageResult>> result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
+
+        return new Pair<>(group.getGroupId(), result.second());
+    }
+
+    private static int currentTimeDays() {
+        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
+    }
+
+    private GroupsV2AuthorizationString getGroupAuthForToday(
+            final GroupSecretParams groupSecretParams
+    ) throws IOException {
+        final int today = currentTimeDays();
+        // Returns credentials for the next 7 days
+        final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
+        // TODO cache credentials until they expire
+        AuthCredentialResponse authCredentialResponse = credentials.get(today);
+        try {
+            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
+                    today,
+                    groupSecretParams,
+                    authCredentialResponse);
+        } catch (VerificationFailedException e) {
+            throw new IOException(e);
+        }
+    }
+
+    private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
+            GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
+    ) throws IOException {
+        group.setGroup(newDecryptedGroup);
+        final SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(group,
+                groupChange.toByteArray());
+        account.getGroupStore().updateGroup(group);
+        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
+    }
+
+    Pair<Long, List<SendMessageResult>> sendGroupInfoMessage(
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
@@ -1011,15 +1009,6 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    public Pair<GroupId, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, List<String> members, File avatarFile
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
-        return sendUpdateGroupMessage(groupId,
-                name,
-                members == null ? null : getSignalServiceAddresses(members),
-                avatarFile);
-    }
-
     /**
      * Change the expiration timer for a contact
      */
@@ -1068,7 +1057,7 @@ public class Manager implements Closeable {
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
     public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
-        SignalServiceStickerManifestUpload manifest = getSignalServiceStickerManifestUpload(path);
+        SignalServiceStickerManifestUpload manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
         SignalServiceMessageSender messageSender = createMessageSender();
 
@@ -1091,96 +1080,6 @@ public class Manager implements Closeable {
         }
     }
 
-    private SignalServiceStickerManifestUpload getSignalServiceStickerManifestUpload(
-            final File file
-    ) throws IOException, StickerPackInvalidException {
-        ZipFile zip = null;
-        String rootPath = null;
-
-        if (file.getName().endsWith(".zip")) {
-            zip = new ZipFile(file);
-        } else if (file.getName().equals("manifest.json")) {
-            rootPath = file.getParent();
-        } else {
-            throw new StickerPackInvalidException("Could not find manifest.json");
-        }
-
-        JsonStickerPack pack = parseStickerPack(rootPath, zip);
-
-        if (pack.stickers == null) {
-            throw new StickerPackInvalidException("Must set a 'stickers' field.");
-        }
-
-        if (pack.stickers.isEmpty()) {
-            throw new StickerPackInvalidException("Must include stickers.");
-        }
-
-        List<StickerInfo> stickers = new ArrayList<>(pack.stickers.size());
-        for (JsonStickerPack.JsonSticker sticker : pack.stickers) {
-            if (sticker.file == null) {
-                throw new StickerPackInvalidException("Must set a 'file' field on each sticker.");
-            }
-
-            Pair<InputStream, Long> data;
-            try {
-                data = getInputStreamAndLength(rootPath, zip, sticker.file);
-            } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + sticker.file);
-            }
-
-            String contentType = Utils.getFileMimeType(new File(sticker.file), null);
-            StickerInfo stickerInfo = new StickerInfo(data.first(),
-                    data.second(),
-                    Optional.fromNullable(sticker.emoji).or(""),
-                    contentType);
-            stickers.add(stickerInfo);
-        }
-
-        StickerInfo cover = null;
-        if (pack.cover != null) {
-            if (pack.cover.file == null) {
-                throw new StickerPackInvalidException("Must set a 'file' field on the cover.");
-            }
-
-            Pair<InputStream, Long> data;
-            try {
-                data = getInputStreamAndLength(rootPath, zip, pack.cover.file);
-            } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
-            }
-
-            String contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
-            cover = new StickerInfo(data.first(),
-                    data.second(),
-                    Optional.fromNullable(pack.cover.emoji).or(""),
-                    contentType);
-        }
-
-        return new SignalServiceStickerManifestUpload(pack.title, pack.author, cover, stickers);
-    }
-
-    private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException {
-        InputStream inputStream;
-        if (zip != null) {
-            inputStream = zip.getInputStream(zip.getEntry("manifest.json"));
-        } else {
-            inputStream = new FileInputStream((new File(rootPath, "manifest.json")));
-        }
-        return new ObjectMapper().readValue(inputStream, JsonStickerPack.class);
-    }
-
-    private static Pair<InputStream, Long> getInputStreamAndLength(
-            final String rootPath, final ZipFile zip, final String subfile
-    ) throws IOException {
-        if (zip != null) {
-            final ZipEntry entry = zip.getEntry(subfile);
-            return new Pair<>(zip.getInputStream(entry), entry.getSize());
-        } else {
-            final File file = new File(rootPath, subfile);
-            return new Pair<>(new FileInputStream(file), file.length());
-        }
-    }
-
     void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
@@ -1189,7 +1088,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1201,7 +1100,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1213,7 +1112,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1225,7 +1124,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1426,28 +1325,6 @@ public class Manager implements Closeable {
         account.getSignalProtocolStore().deleteAllSessions(source);
     }
 
-    private static int currentTimeDays() {
-        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
-    }
-
-    private GroupsV2AuthorizationString getGroupAuthForToday(
-            final GroupSecretParams groupSecretParams
-    ) throws IOException {
-        final int today = currentTimeDays();
-        // Returns credentials for the next 7 days
-        final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
-        // TODO cache credentials until they expire
-        AuthCredentialResponse authCredentialResponse = credentials.get(today);
-        try {
-            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
-                    today,
-                    groupSecretParams,
-                    authCredentialResponse);
-        } catch (VerificationFailedException e) {
-            throw new IOException(e);
-        }
-    }
-
     private List<HandleAction> handleSignalServiceDataMessage(
             SignalServiceDataMessage message,
             boolean isSync,
@@ -1503,7 +1380,7 @@ public class Manager implements Closeable {
                         }
                         case REQUEST_INFO:
                             if (groupV1 != null && !isSync) {
-                                actions.add(new SendGroupUpdateAction(source, groupV1.getGroupId()));
+                                actions.add(new SendGroupInfoAction(source, groupV1.getGroupId()));
                             }
                             break;
                     }
@@ -1682,7 +1559,7 @@ public class Manager implements Closeable {
                 try {
                     action.execute(this);
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logger.warn("Message action failed.", e);
                 }
             }
         }
@@ -1727,7 +1604,7 @@ public class Manager implements Closeable {
                             try {
                                 action.execute(this);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                logger.warn("Message action failed.", e);
                             }
                         }
                         account.save();
@@ -1763,7 +1640,7 @@ public class Manager implements Closeable {
                         try {
                             action.execute(this);
                         } catch (Throwable e) {
-                            e.printStackTrace();
+                            logger.warn("Message action failed.", e);
                         }
                     }
                 } else {
@@ -1945,7 +1822,6 @@ public class Manager implements Closeable {
                         logger.warn("Failed to handle received sync groups “{}”, ignoring: {}",
                                 tmpFile,
                                 e.getMessage());
-                        e.printStackTrace();
                     } finally {
                         if (tmpFile != null) {
                             try {
@@ -2026,7 +1902,9 @@ public class Manager implements Closeable {
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.warn("Failed to handle received sync contacts “{}”, ignoring: {}",
+                                tmpFile,
+                                e.getMessage());
                     } finally {
                         if (tmpFile != null) {
                             try {
@@ -2400,7 +2278,7 @@ public class Manager implements Closeable {
             try {
                 sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
-                e.printStackTrace();
+                logger.warn("Failed to send verification sync message: {}", e.getMessage());
             }
             account.save();
             return true;
@@ -2430,7 +2308,7 @@ public class Manager implements Closeable {
             try {
                 sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
-                e.printStackTrace();
+                logger.warn("Failed to send verification sync message: {}", e.getMessage());
             }
             account.save();
             return true;
@@ -2456,7 +2334,7 @@ public class Manager implements Closeable {
                 try {
                     sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
                 } catch (IOException | UntrustedIdentityException e) {
-                    e.printStackTrace();
+                    logger.warn("Failed to send verification sync message: {}", e.getMessage());
                 }
             }
         }

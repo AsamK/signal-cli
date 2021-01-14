@@ -138,6 +138,8 @@ public class SignalAccount implements Closeable {
 
         account.registered = false;
 
+        account.migrateLegacyConfigs();
+
         return account;
     }
 
@@ -178,6 +180,8 @@ public class SignalAccount implements Closeable {
 
         account.registered = true;
         account.isMultiDevice = true;
+
+        account.migrateLegacyConfigs();
 
         return account;
     }
