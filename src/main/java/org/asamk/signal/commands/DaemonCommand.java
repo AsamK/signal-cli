@@ -10,6 +10,8 @@ import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +22,8 @@ import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 public class DaemonCommand implements LocalCommand {
 
+    private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
+
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("--system")
@@ -29,12 +33,19 @@ public class DaemonCommand implements LocalCommand {
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
         subparser.addArgument("--json")
-                .help("Output received messages in json format, one json object per line.")
+                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        // TODO delete later when "json" variable is removed
+        if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
+        }
+
         DBusConnection conn = null;
         try {
             try {
@@ -60,7 +71,7 @@ public class DaemonCommand implements LocalCommand {
                         TimeUnit.HOURS,
                         false,
                         ignoreAttachments,
-                        ns.getBoolean("json")
+                        inJson
                                 ? new JsonDbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH)
                                 : new DbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH));
                 return 0;
