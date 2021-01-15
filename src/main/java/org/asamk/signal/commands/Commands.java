@@ -42,6 +42,13 @@ public class Commands {
         return commands;
     }
 
+    public static Command getCommand(String commandKey) {
+        if (!commands.containsKey(commandKey)) {
+            return null;
+        }
+        return commands.get(commandKey);
+    }
+
     private static void addCommand(String name, Command command) {
         commands.put(name, command);
     }

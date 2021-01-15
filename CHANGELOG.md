@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- `--verbose` flag to increase log level
 
 ### Fixed
 - Disable registration lock before removing the PIN

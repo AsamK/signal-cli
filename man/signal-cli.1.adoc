@@ -32,6 +32,9 @@ Show help message and quit.
 *-v*, *--version*::
 Print the version and quit.
 
+*--verbose*::
+Raise log level and include lib signal logs.
+
 *--config* CONFIG::
 Set the path, where to store the config.
 Make sure you have full read/write access to the given directory.
