@@ -42,7 +42,7 @@ public class Main {
 
         // Configuring the logger needs to happen before any logger is initialized
         if (isVerbose(args)) {
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
+            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
             System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "false");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
