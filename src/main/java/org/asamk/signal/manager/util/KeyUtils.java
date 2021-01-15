@@ -5,11 +5,18 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPrivateKey;
+import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.util.Base64;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyUtils {
 
@@ -22,6 +29,31 @@ public class KeyUtils {
         ECPrivateKey djbPrivateKey = djbKeyPair.getPrivateKey();
 
         return new IdentityKeyPair(djbIdentityKey, djbPrivateKey);
+    }
+
+    public static List<PreKeyRecord> generatePreKeyRecords(final int offset, final int batchSize) {
+        List<PreKeyRecord> records = new ArrayList<>(batchSize);
+        for (int i = 0; i < batchSize; i++) {
+            int preKeyId = (offset + i) % Medium.MAX_VALUE;
+            ECKeyPair keyPair = Curve.generateKeyPair();
+            PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
+
+            records.add(record);
+        }
+        return records;
+    }
+
+    public static SignedPreKeyRecord generateSignedPreKeyRecord(
+            final IdentityKeyPair identityKeyPair, final int signedPreKeyId
+    ) {
+        ECKeyPair keyPair = Curve.generateKeyPair();
+        byte[] signature;
+        try {
+            signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
+        } catch (InvalidKeyException e) {
+            throw new AssertionError(e);
+        }
+        return new SignedPreKeyRecord(signedPreKeyId, System.currentTimeMillis(), keyPair, signature);
     }
 
     public static String createSignalingKey() {

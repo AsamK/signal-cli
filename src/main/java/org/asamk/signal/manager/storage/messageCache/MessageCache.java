@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 public class MessageCache {
 
-    final static Logger logger = LoggerFactory.getLogger(MessageCache.class);
+    private final static Logger logger = LoggerFactory.getLogger(MessageCache.class);
 
     private final File messageCachePath;
 

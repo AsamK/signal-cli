@@ -16,8 +16,6 @@
  */
 package org.asamk.signal.manager;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
@@ -42,6 +40,8 @@ import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.ProfileUtils;
+import org.asamk.signal.manager.util.StickerUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.InvalidMetadataMessageException;
 import org.signal.libsignal.metadata.InvalidMetadataVersionException;
@@ -74,12 +74,9 @@ import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.InvalidVersionException;
-import org.whispersystems.libsignal.ecc.Curve;
-import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
-import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupService;
@@ -87,8 +84,6 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
-import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
-import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -110,7 +105,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
-import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload.StickerInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
@@ -144,12 +138,10 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
-import org.whispersystems.util.Base64;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,8 +151,6 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,8 +166,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.asamk.signal.manager.ServiceConfig.CDS_MRENCLAVE;
 import static org.asamk.signal.manager.ServiceConfig.capabilities;
@@ -185,7 +173,7 @@ import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
 
 public class Manager implements Closeable {
 
-    final static Logger logger = LoggerFactory.getLogger(Manager.class);
+    private final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
     private final CertificateValidator certificateValidator = new CertificateValidator(ServiceConfig.getUnidentifiedSenderTrustRoot());
 
@@ -193,7 +181,6 @@ public class Manager implements Closeable {
     private final String userAgent;
 
     private SignalAccount account;
-    private final PathConfig pathConfig;
     private final SignalServiceAccountManager accountManager;
     private final GroupsV2Api groupsV2Api;
     private final GroupsV2Operations groupsV2Operations;
@@ -207,6 +194,8 @@ public class Manager implements Closeable {
     private final ProfileHelper profileHelper;
     private final GroupHelper groupHelper;
     private final PinHelper pinHelper;
+    private final AvatarStore avatarStore;
+    private final AttachmentStore attachmentStore;
 
     Manager(
             SignalAccount account,
@@ -215,7 +204,6 @@ public class Manager implements Closeable {
             String userAgent
     ) {
         this.account = account;
-        this.pathConfig = pathConfig;
         this.serviceConfiguration = serviceConfiguration;
         this.userAgent = userAgent;
         this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
@@ -262,6 +250,8 @@ public class Manager implements Closeable {
                 groupsV2Operations,
                 groupsV2Api,
                 this::getGroupAuthForToday);
+        this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
+        this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
     }
 
     public String getUsername() {
@@ -299,21 +289,15 @@ public class Manager implements Closeable {
     }
 
     public void checkAccountState() throws IOException {
-        if (account.isRegistered()) {
-            if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-                refreshPreKeys();
-                account.save();
-            }
-            if (account.getUuid() == null) {
-                account.setUuid(accountManager.getOwnUuid());
-                account.save();
-            }
-            updateAccountAttributes();
+        if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+            refreshPreKeys();
+            account.save();
         }
-    }
-
-    public boolean isRegistered() {
-        return account.isRegistered();
+        if (account.getUuid() == null) {
+            account.setUuid(accountManager.getOwnUuid());
+            account.save();
+        }
+        updateAccountAttributes();
     }
 
     /**
@@ -321,7 +305,7 @@ public class Manager implements Closeable {
      *
      * @param numbers The set of phone number in question
      * @return A map of numbers to booleans. True if registered, false otherwise. Should never be null
-     * @throws IOException if its unable to check if the users are registered
+     * @throws IOException if its unable to get the contacts to check if they're registered
      */
     public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
@@ -347,9 +331,24 @@ public class Manager implements Closeable {
                 account.isDiscoverableByPhoneNumber());
     }
 
-    public void setProfile(String name, File avatar) throws IOException {
-        try (final StreamDetails streamDetails = avatar == null ? null : Utils.createStreamDetailsFromFile(avatar)) {
+    /**
+     * @param avatar if avatar is null the image from the local avatar store is used (if present),
+     *               if it's Optional.absent(), the avatar will be removed
+     */
+    public void setProfile(String name, Optional<File> avatar) throws IOException {
+        try (final StreamDetails streamDetails = avatar == null
+                ? avatarStore.retrieveProfileAvatar(getSelfAddress())
+                : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
             accountManager.setVersionedProfile(account.getUuid(), account.getProfileKey(), name, streamDetails);
+        }
+
+        if (avatar != null) {
+            if (avatar.isPresent()) {
+                avatarStore.storeProfileAvatar(getSelfAddress(),
+                        outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
+            } else {
+                avatarStore.deleteProfileAvatar(getSelfAddress());
+            }
         }
     }
 
@@ -396,43 +395,6 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    private List<PreKeyRecord> generatePreKeys() {
-        List<PreKeyRecord> records = new ArrayList<>(ServiceConfig.PREKEY_BATCH_SIZE);
-
-        final int offset = account.getPreKeyIdOffset();
-        for (int i = 0; i < ServiceConfig.PREKEY_BATCH_SIZE; i++) {
-            int preKeyId = (offset + i) % Medium.MAX_VALUE;
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
-
-            records.add(record);
-        }
-
-        account.addPreKeys(records);
-        account.save();
-
-        return records;
-    }
-
-    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
-        try {
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            byte[] signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(),
-                    keyPair.getPublicKey().serialize());
-            SignedPreKeyRecord record = new SignedPreKeyRecord(account.getNextSignedPreKeyId(),
-                    System.currentTimeMillis(),
-                    keyPair,
-                    signature);
-
-            account.addSignedPreKey(record);
-            account.save();
-
-            return record;
-        } catch (InvalidKeyException e) {
-            throw new AssertionError(e);
-        }
-    }
-
     public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
         if (pin.isPresent()) {
             final MasterKey masterKey = account.getPinMasterKey() != null
@@ -462,6 +424,26 @@ public class Manager implements Closeable {
         SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
         accountManager.setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+    }
+
+    private List<PreKeyRecord> generatePreKeys() {
+        final int offset = account.getPreKeyIdOffset();
+
+        List<PreKeyRecord> records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
+        account.addPreKeys(records);
+        account.save();
+
+        return records;
+    }
+
+    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
+        final int signedPreKeyId = account.getNextSignedPreKeyId();
+
+        SignedPreKeyRecord record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
+        account.addSignedPreKey(record);
+        account.save();
+
+        return record;
     }
 
     private SignalServiceMessagePipe getOrCreateMessagePipe() {
@@ -496,10 +478,6 @@ public class Manager implements Closeable {
                 ServiceConfig.MAX_ENVELOPE_SIZE);
     }
 
-    private SignalServiceProfile getEncryptedRecipientProfile(SignalServiceAddress address) throws IOException {
-        return profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE).getProfile();
-    }
-
     private SignalProfile getRecipientProfile(
             SignalServiceAddress address
     ) {
@@ -508,21 +486,24 @@ public class Manager implements Closeable {
             return null;
         }
         long now = new Date().getTime();
-        // Profiles are cache for 24h before retrieving them again
+        // Profiles are cached for 24h before retrieving them again
         if (!profileEntry.isRequestPending() && (
                 profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000
         )) {
-            ProfileKey profileKey = profileEntry.getProfileKey();
             profileEntry.setRequestPending(true);
-            SignalProfile profile;
+            final SignalServiceProfile encryptedProfile;
             try {
-                profile = retrieveRecipientProfile(address, profileKey);
+                encryptedProfile = profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE)
+                        .getProfile();
             } catch (IOException e) {
                 logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
-                profileEntry.setRequestPending(false);
                 return null;
+            } finally {
+                profileEntry.setRequestPending(false);
             }
-            profileEntry.setRequestPending(false);
+
+            final ProfileKey profileKey = profileEntry.getProfileKey();
+            final SignalProfile profile = decryptProfileAndDownloadAvatar(address, profileKey, encryptedProfile);
             account.getProfileStore()
                     .updateProfile(address, profileKey, now, profile, profileEntry.getProfileKeyCredential());
             return profile;
@@ -547,7 +528,7 @@ public class Manager implements Closeable {
 
             long now = new Date().getTime();
             final ProfileKeyCredential profileKeyCredential = profileAndCredential.getProfileKeyCredential().orNull();
-            final SignalProfile profile = decryptProfile(address,
+            final SignalProfile profile = decryptProfileAndDownloadAvatar(address,
                     profileEntry.getProfileKey(),
                     profileAndCredential.getProfile());
             account.getProfileStore()
@@ -557,72 +538,32 @@ public class Manager implements Closeable {
         return profileEntry.getProfileKeyCredential();
     }
 
-    private SignalProfile retrieveRecipientProfile(
-            SignalServiceAddress address, ProfileKey profileKey
-    ) throws IOException {
-        final SignalServiceProfile encryptedProfile = getEncryptedRecipientProfile(address);
-
-        return decryptProfile(address, profileKey, encryptedProfile);
-    }
-
-    private SignalProfile decryptProfile(
+    private SignalProfile decryptProfileAndDownloadAvatar(
             final SignalServiceAddress address, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
-        File avatarFile = null;
-        try {
-            avatarFile = encryptedProfile.getAvatar() == null
-                    ? null
-                    : retrieveProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
-        } catch (Throwable e) {
-            logger.warn("Failed to retrieve profile avatar, ignoring: {}", e.getMessage());
+        if (encryptedProfile.getAvatar() != null) {
+            downloadProfileAvatar(address, encryptedProfile.getAvatar(), profileKey);
         }
 
-        ProfileCipher profileCipher = new ProfileCipher(profileKey);
-        try {
-            String name;
-            try {
-                name = encryptedProfile.getName() == null
-                        ? null
-                        : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName())));
-            } catch (IOException e) {
-                name = null;
-            }
-            String unidentifiedAccess;
-            try {
-                unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null
-                        || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess()))
-                        ? null
-                        : encryptedProfile.getUnidentifiedAccess();
-            } catch (IOException e) {
-                unidentifiedAccess = null;
-            }
-            return new SignalProfile(encryptedProfile.getIdentityKey(),
-                    name,
-                    avatarFile,
-                    unidentifiedAccess,
-                    encryptedProfile.isUnrestrictedUnidentifiedAccess(),
-                    encryptedProfile.getCapabilities());
-        } catch (InvalidCiphertextException e) {
-            return null;
-        }
+        return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupId groupId) throws IOException {
-        File file = getGroupAvatarFile(groupId);
-        if (!file.exists()) {
+        final StreamDetails streamDetails = avatarStore.retrieveGroupAvatar(groupId);
+        if (streamDetails == null) {
             return Optional.absent();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
-    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(String number) throws IOException {
-        File file = getContactAvatarFile(number);
-        if (!file.exists()) {
+    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
+        final StreamDetails streamDetails = avatarStore.retrieveContactAvatar(address);
+        if (streamDetails == null) {
             return Optional.absent();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(file));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
@@ -652,17 +593,6 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
-    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
-        final GroupInfo g = getGroupForSending(groupId);
-
-        GroupUtils.setGroupContext(messageBuilder, g);
-        messageBuilder.withExpiration(g.getMessageExpirationTime());
-
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
             String messageText, List<String> attachments, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
@@ -687,8 +617,18 @@ public class Manager implements Closeable {
         return sendGroupMessage(messageBuilder, groupId);
     }
 
-    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
+    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
+            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
+    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
+        final GroupInfo g = getGroupForSending(groupId);
 
+        GroupUtils.setGroupContext(messageBuilder, g);
+        messageBuilder.withExpiration(g.getMessageExpirationTime());
+
+        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+    }
+
+    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
         SignalServiceDataMessage.Builder messageBuilder;
 
         final GroupInfo g = getGroupForUpdating(groupId);
@@ -711,14 +651,25 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
     }
 
+    public Pair<GroupId, List<SendMessageResult>> updateGroup(
+            GroupId groupId, String name, List<String> members, File avatarFile
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
+        return sendUpdateGroupMessage(groupId,
+                name,
+                members == null ? null : getSignalServiceAddresses(members),
+                avatarFile);
+    }
+
     private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
-            GroupId groupId, String name, Collection<SignalServiceAddress> members, String avatarFile
+            GroupId groupId, String name, Collection<SignalServiceAddress> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         GroupInfo g;
         SignalServiceDataMessage.Builder messageBuilder;
         if (groupId == null) {
             // Create new group
-            GroupInfoV2 gv2 = groupHelper.createGroupV2(name, members, avatarFile);
+            GroupInfoV2 gv2 = groupHelper.createGroupV2(name == null ? "" : name,
+                    members == null ? List.of() : members,
+                    avatarFile);
             if (gv2 == null) {
                 GroupInfoV1 gv1 = new GroupInfoV1(GroupIdV1.createRandom());
                 gv1.addMembers(List.of(account.getSelfAddress()));
@@ -726,6 +677,10 @@ public class Manager implements Closeable {
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
             } else {
+                if (avatarFile != null) {
+                    avatarStore.storeGroupAvatar(gv2.getGroupId(),
+                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                }
                 messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
                 g = gv2;
             }
@@ -760,6 +715,10 @@ public class Manager implements Closeable {
                     Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
                             name,
                             avatarFile);
+                    if (avatarFile != null) {
+                        avatarStore.storeGroupAvatar(groupInfoV2.getGroupId(),
+                                outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                    }
                     result = sendUpdateGroupMessage(groupInfoV2,
                             groupGroupChangePair.first(),
                             groupGroupChangePair.second());
@@ -779,6 +738,45 @@ public class Manager implements Closeable {
         final Pair<Long, List<SendMessageResult>> result = sendMessage(messageBuilder,
                 g.getMembersIncludingPendingWithout(account.getSelfAddress()));
         return new Pair<>(g.getGroupId(), result.second());
+    }
+
+    private void updateGroupV1(
+            final GroupInfoV1 g,
+            final String name,
+            final Collection<SignalServiceAddress> members,
+            final File avatarFile
+    ) throws IOException {
+        if (name != null) {
+            g.name = name;
+        }
+
+        if (members != null) {
+            final Set<String> newE164Members = new HashSet<>();
+            for (SignalServiceAddress member : members) {
+                if (g.isMember(member) || !member.getNumber().isPresent()) {
+                    continue;
+                }
+                newE164Members.add(member.getNumber().get());
+            }
+
+            final List<ContactTokenDetails> contacts = accountManager.getContacts(newE164Members);
+            if (contacts.size() != newE164Members.size()) {
+                // Some of the new members are not registered on Signal
+                for (ContactTokenDetails contact : contacts) {
+                    newE164Members.remove(contact.getNumber());
+                }
+                throw new IOException("Failed to add members "
+                        + String.join(", ", newE164Members)
+                        + " to group: Not registered on Signal");
+            }
+
+            g.addMembers(members);
+        }
+
+        if (avatarFile != null) {
+            avatarStore.storeGroupAvatar(g.getGroupId(),
+                    outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+        }
     }
 
     public Pair<GroupId, List<SendMessageResult>> joinGroup(
@@ -809,6 +807,28 @@ public class Manager implements Closeable {
         return new Pair<>(group.getGroupId(), result.second());
     }
 
+    private static int currentTimeDays() {
+        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
+    }
+
+    private GroupsV2AuthorizationString getGroupAuthForToday(
+            final GroupSecretParams groupSecretParams
+    ) throws IOException {
+        final int today = currentTimeDays();
+        // Returns credentials for the next 7 days
+        final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
+        // TODO cache credentials until they expire
+        AuthCredentialResponse authCredentialResponse = credentials.get(today);
+        try {
+            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
+                    today,
+                    groupSecretParams,
+                    authCredentialResponse);
+        } catch (VerificationFailedException e) {
+            throw new IOException(e);
+        }
+    }
+
     private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
@@ -819,47 +839,7 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
     }
 
-    private void updateGroupV1(
-            final GroupInfoV1 g,
-            final String name,
-            final Collection<SignalServiceAddress> members,
-            final String avatarFile
-    ) throws IOException {
-        if (name != null) {
-            g.name = name;
-        }
-
-        if (members != null) {
-            final Set<String> newE164Members = new HashSet<>();
-            for (SignalServiceAddress member : members) {
-                if (g.isMember(member) || !member.getNumber().isPresent()) {
-                    continue;
-                }
-                newE164Members.add(member.getNumber().get());
-            }
-
-            final List<ContactTokenDetails> contacts = accountManager.getContacts(newE164Members);
-            if (contacts.size() != newE164Members.size()) {
-                // Some of the new members are not registered on Signal
-                for (ContactTokenDetails contact : contacts) {
-                    newE164Members.remove(contact.getNumber());
-                }
-                throw new IOException("Failed to add members "
-                        + String.join(", ", newE164Members)
-                        + " to group: Not registered on Signal");
-            }
-
-            g.addMembers(members);
-        }
-
-        if (avatarFile != null) {
-            IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-            File aFile = getGroupAvatarFile(g.getGroupId());
-            Files.copy(Paths.get(avatarFile), aFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
-
-    Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
+    Pair<Long, List<SendMessageResult>> sendGroupInfoMessage(
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
@@ -885,13 +865,13 @@ public class Manager implements Closeable {
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.getMembers()));
 
-        File aFile = getGroupAvatarFile(g.getGroupId());
-        if (aFile.exists()) {
-            try {
-                group.withAvatar(AttachmentUtils.createAttachment(aFile));
-            } catch (IOException e) {
-                throw new AttachmentInvalidException(aFile.toString(), e);
+        try {
+            final Optional<SignalServiceAttachmentStream> attachment = createGroupAvatarAttachment(g.getGroupId());
+            if (attachment.isPresent()) {
+                group.withAvatar(attachment.get());
             }
+        } catch (IOException e) {
+            throw new AttachmentInvalidException(g.getGroupId().toBase64(), e);
         }
 
         return SignalServiceDataMessage.newBuilder()
@@ -1029,15 +1009,6 @@ public class Manager implements Closeable {
         account.save();
     }
 
-    public Pair<GroupId, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, List<String> members, String avatar
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
-        return sendUpdateGroupMessage(groupId,
-                name,
-                members == null ? null : getSignalServiceAddresses(members),
-                avatar);
-    }
-
     /**
      * Change the expiration timer for a contact
      */
@@ -1086,7 +1057,7 @@ public class Manager implements Closeable {
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
     public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
-        SignalServiceStickerManifestUpload manifest = getSignalServiceStickerManifestUpload(path);
+        SignalServiceStickerManifestUpload manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
         SignalServiceMessageSender messageSender = createMessageSender();
 
@@ -1109,96 +1080,6 @@ public class Manager implements Closeable {
         }
     }
 
-    private SignalServiceStickerManifestUpload getSignalServiceStickerManifestUpload(
-            final File file
-    ) throws IOException, StickerPackInvalidException {
-        ZipFile zip = null;
-        String rootPath = null;
-
-        if (file.getName().endsWith(".zip")) {
-            zip = new ZipFile(file);
-        } else if (file.getName().equals("manifest.json")) {
-            rootPath = file.getParent();
-        } else {
-            throw new StickerPackInvalidException("Could not find manifest.json");
-        }
-
-        JsonStickerPack pack = parseStickerPack(rootPath, zip);
-
-        if (pack.stickers == null) {
-            throw new StickerPackInvalidException("Must set a 'stickers' field.");
-        }
-
-        if (pack.stickers.isEmpty()) {
-            throw new StickerPackInvalidException("Must include stickers.");
-        }
-
-        List<StickerInfo> stickers = new ArrayList<>(pack.stickers.size());
-        for (JsonStickerPack.JsonSticker sticker : pack.stickers) {
-            if (sticker.file == null) {
-                throw new StickerPackInvalidException("Must set a 'file' field on each sticker.");
-            }
-
-            Pair<InputStream, Long> data;
-            try {
-                data = getInputStreamAndLength(rootPath, zip, sticker.file);
-            } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + sticker.file);
-            }
-
-            String contentType = Utils.getFileMimeType(new File(sticker.file), null);
-            StickerInfo stickerInfo = new StickerInfo(data.first(),
-                    data.second(),
-                    Optional.fromNullable(sticker.emoji).or(""),
-                    contentType);
-            stickers.add(stickerInfo);
-        }
-
-        StickerInfo cover = null;
-        if (pack.cover != null) {
-            if (pack.cover.file == null) {
-                throw new StickerPackInvalidException("Must set a 'file' field on the cover.");
-            }
-
-            Pair<InputStream, Long> data;
-            try {
-                data = getInputStreamAndLength(rootPath, zip, pack.cover.file);
-            } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
-            }
-
-            String contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
-            cover = new StickerInfo(data.first(),
-                    data.second(),
-                    Optional.fromNullable(pack.cover.emoji).or(""),
-                    contentType);
-        }
-
-        return new SignalServiceStickerManifestUpload(pack.title, pack.author, cover, stickers);
-    }
-
-    private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException {
-        InputStream inputStream;
-        if (zip != null) {
-            inputStream = zip.getInputStream(zip.getEntry("manifest.json"));
-        } else {
-            inputStream = new FileInputStream((new File(rootPath, "manifest.json")));
-        }
-        return new ObjectMapper().readValue(inputStream, JsonStickerPack.class);
-    }
-
-    private static Pair<InputStream, Long> getInputStreamAndLength(
-            final String rootPath, final ZipFile zip, final String subfile
-    ) throws IOException {
-        if (zip != null) {
-            final ZipEntry entry = zip.getEntry(subfile);
-            return new Pair<>(zip.getInputStream(entry), entry.getSize());
-        } else {
-            final File file = new File(rootPath, subfile);
-            return new Pair<>(new FileInputStream(file), file.length());
-        }
-    }
-
     void requestSyncGroups() throws IOException {
         SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
@@ -1207,7 +1088,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1219,7 +1100,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1231,7 +1112,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1243,7 +1124,7 @@ public class Manager implements Closeable {
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
-            e.printStackTrace();
+            throw new AssertionError(e);
         }
     }
 
@@ -1349,16 +1230,12 @@ public class Manager implements Closeable {
                 }
             } else {
                 // Send to all individually, so sync messages are sent correctly
+                messageBuilder.withProfileKey(account.getProfileKey().serialize());
                 List<SendMessageResult> results = new ArrayList<>(recipients.size());
                 for (SignalServiceAddress address : recipients) {
-                    ContactInfo contact = account.getContactStore().getContact(address);
-                    if (contact != null) {
-                        messageBuilder.withExpiration(contact.messageExpirationTime);
-                        messageBuilder.withProfileKey(account.getProfileKey().serialize());
-                    } else {
-                        messageBuilder.withExpiration(0);
-                        messageBuilder.withProfileKey(null);
-                    }
+                    final ContactInfo contact = account.getContactStore().getContact(address);
+                    final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
+                    messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
                     if (address.matches(account.getSelfAddress())) {
                         results.add(sendSelfMessage(message));
@@ -1448,28 +1325,6 @@ public class Manager implements Closeable {
         account.getSignalProtocolStore().deleteAllSessions(source);
     }
 
-    private static int currentTimeDays() {
-        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
-    }
-
-    private GroupsV2AuthorizationString getGroupAuthForToday(
-            final GroupSecretParams groupSecretParams
-    ) throws IOException {
-        final int today = currentTimeDays();
-        // Returns credentials for the next 7 days
-        final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
-        // TODO cache credentials until they expire
-        AuthCredentialResponse authCredentialResponse = credentials.get(today);
-        try {
-            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
-                    today,
-                    groupSecretParams,
-                    authCredentialResponse);
-        } catch (VerificationFailedException e) {
-            throw new IOException(e);
-        }
-    }
-
     private List<HandleAction> handleSignalServiceDataMessage(
             SignalServiceDataMessage message,
             boolean isSync,
@@ -1493,15 +1348,7 @@ public class Manager implements Closeable {
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 SignalServiceAttachment avatar = groupInfo.getAvatar().get();
-                                if (avatar.isPointer()) {
-                                    try {
-                                        retrieveGroupAvatarAttachment(avatar.asPointer(), groupV1.getGroupId());
-                                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                                        logger.warn("Failed to retrieve avatar for group {}, ignoring: {}",
-                                                groupId.toBase64(),
-                                                e.getMessage());
-                                    }
-                                }
+                                downloadGroupAvatar(avatar, groupV1.getGroupId());
                             }
 
                             if (groupInfo.getName().isPresent()) {
@@ -1533,7 +1380,7 @@ public class Manager implements Closeable {
                         }
                         case REQUEST_INFO:
                             if (groupV1 != null && !isSync) {
-                                actions.add(new SendGroupUpdateAction(source, groupV1.getGroupId()));
+                                actions.add(new SendGroupInfoAction(source, groupV1.getGroupId()));
                             }
                             break;
                     }
@@ -1582,15 +1429,7 @@ public class Manager implements Closeable {
         }
         if (message.getAttachments().isPresent() && !ignoreAttachments) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                if (attachment.isPointer()) {
-                    try {
-                        retrieveAttachment(attachment.asPointer());
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        logger.warn("Failed to retrieve attachment ({}), ignoring: {}",
-                                attachment.asPointer().getRemoteId(),
-                                e.getMessage());
-                    }
-                }
+                downloadAttachment(attachment);
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
@@ -1608,15 +1447,8 @@ public class Manager implements Closeable {
         if (message.getPreviews().isPresent()) {
             final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
             for (SignalServiceDataMessage.Preview preview : previews) {
-                if (preview.getImage().isPresent() && preview.getImage().get().isPointer()) {
-                    SignalServiceAttachmentPointer attachment = preview.getImage().get().asPointer();
-                    try {
-                        retrieveAttachment(attachment);
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        logger.warn("Failed to retrieve preview image ({}), ignoring: {}",
-                                attachment.getRemoteId(),
-                                e.getMessage());
-                    }
+                if (preview.getImage().isPresent()) {
+                    downloadAttachment(preview.getImage().get());
                 }
             }
         }
@@ -1624,15 +1456,9 @@ public class Manager implements Closeable {
             final SignalServiceDataMessage.Quote quote = message.getQuote().get();
 
             for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
-                final SignalServiceAttachment attachment = quotedAttachment.getThumbnail();
-                if (attachment != null && attachment.isPointer()) {
-                    try {
-                        retrieveAttachment(attachment.asPointer());
-                    } catch (IOException | InvalidMessageException | MissingConfigurationException e) {
-                        logger.warn("Failed to retrieve quote attachment thumbnail ({}), ignoring: {}",
-                                attachment.asPointer().getRemoteId(),
-                                e.getMessage());
-                    }
+                final SignalServiceAttachment thumbnail = quotedAttachment.getThumbnail();
+                if (thumbnail != null) {
+                    downloadAttachment(thumbnail);
                 }
             }
         }
@@ -1682,11 +1508,7 @@ public class Manager implements Closeable {
                 storeProfileKeysFromMembers(group);
                 final String avatar = group.getAvatar();
                 if (avatar != null && !avatar.isEmpty()) {
-                    try {
-                        retrieveGroupAvatar(groupId, groupSecretParams, avatar);
-                    } catch (IOException e) {
-                        logger.warn("Failed to download group avatar, ignoring: {}", e.getMessage());
-                    }
+                    downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
             groupInfoV2.setGroup(group);
@@ -1737,7 +1559,7 @@ public class Manager implements Closeable {
                 try {
                     action.execute(this);
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logger.warn("Message action failed.", e);
                 }
             }
         }
@@ -1782,7 +1604,7 @@ public class Manager implements Closeable {
                             try {
                                 action.execute(this);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                logger.warn("Message action failed.", e);
                             }
                         }
                         account.save();
@@ -1818,7 +1640,7 @@ public class Manager implements Closeable {
                         try {
                             action.execute(this);
                         } catch (Throwable e) {
-                            e.printStackTrace();
+                            logger.warn("Message action failed.", e);
                         }
                     }
                 } else {
@@ -1829,7 +1651,11 @@ public class Manager implements Closeable {
                 }
             }
             account.save();
-            if (!isMessageBlocked(envelope, content)) {
+            if (isMessageBlocked(envelope, content)) {
+                logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
+            } else if (isNotAGroupMember(envelope, content)) {
+                logger.info("Ignoring a message from a non group member: {}", envelope.getTimestamp());
+            } else {
                 handler.handleMessage(envelope, content, exception);
             }
             if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
@@ -1859,15 +1685,40 @@ public class Manager implements Closeable {
         if (content != null && content.getDataMessage().isPresent()) {
             SignalServiceDataMessage message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
+                GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+                GroupInfo group = getGroup(groupId);
+                if (group != null && group.isBlocked()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isNotAGroupMember(
+            SignalServiceEnvelope envelope, SignalServiceContent content
+    ) {
+        SignalServiceAddress source;
+        if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
+            source = envelope.getSourceAddress();
+        } else if (content != null) {
+            source = content.getSender();
+        } else {
+            return false;
+        }
+
+        if (content != null && content.getDataMessage().isPresent()) {
+            SignalServiceDataMessage message = content.getDataMessage().get();
+            if (message.getGroupContext().isPresent()) {
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
                     SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    if (groupInfo.getType() != SignalServiceGroup.Type.DELIVER) {
+                    if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
                         return false;
                     }
                 }
                 GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
                 GroupInfo group = getGroup(groupId);
-                if (group != null && group.isBlocked()) {
+                if (group != null && !group.isMember(source)) {
                     return true;
                 }
             }
@@ -1931,9 +1782,9 @@ public class Manager implements Closeable {
                     File tmpFile = null;
                     try {
                         tmpFile = IOUtils.createTempFile();
-                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(syncMessage.getGroups()
-                                .get()
-                                .asPointer(), tmpFile)) {
+                        final SignalServiceAttachment groupsMessage = syncMessage.getGroups().get();
+                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(),
+                                tmpFile)) {
                             DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
                             while ((g = s.read()) != null) {
@@ -1959,7 +1810,7 @@ public class Manager implements Closeable {
                                     }
 
                                     if (g.getAvatar().isPresent()) {
-                                        retrieveGroupAvatarAttachment(g.getAvatar().get(), syncGroup.getGroupId());
+                                        downloadGroupAvatar(g.getAvatar().get(), syncGroup.getGroupId());
                                     }
                                     syncGroup.inboxPosition = g.getInboxPosition().orNull();
                                     syncGroup.archived = g.isArchived();
@@ -1971,7 +1822,6 @@ public class Manager implements Closeable {
                         logger.warn("Failed to handle received sync groups “{}”, ignoring: {}",
                                 tmpFile,
                                 e.getMessage());
-                        e.printStackTrace();
                     } finally {
                         if (tmpFile != null) {
                             try {
@@ -2047,12 +1897,14 @@ public class Manager implements Closeable {
                                 account.getContactStore().updateContact(contact);
 
                                 if (c.getAvatar().isPresent()) {
-                                    retrieveContactAvatarAttachment(c.getAvatar().get(), contact.number);
+                                    downloadContactAvatar(c.getAvatar().get(), contact.getAddress());
                                 }
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.warn("Failed to handle received sync contacts “{}”, ignoring: {}",
+                                tmpFile,
+                                e.getMessage());
                     } finally {
                         if (tmpFile != null) {
                             try {
@@ -2099,58 +1951,83 @@ public class Manager implements Closeable {
         return actions;
     }
 
-    private File getContactAvatarFile(String number) {
-        return new File(pathConfig.getAvatarsPath(), "contact-" + number);
-    }
-
-    private File retrieveContactAvatarAttachment(
-            SignalServiceAttachment attachment, String number
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        if (attachment.isPointer()) {
-            SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            return retrieveAttachment(pointer, getContactAvatarFile(number), false);
-        } else {
-            SignalServiceAttachmentStream stream = attachment.asStream();
-            return AttachmentUtils.retrieveAttachment(stream, getContactAvatarFile(number));
+    private void downloadContactAvatar(SignalServiceAttachment avatar, SignalServiceAddress address) {
+        try {
+            avatarStore.storeContactAvatar(address, outputStream -> retrieveAttachment(avatar, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for contact {}, ignoring: {}", address, e.getMessage());
         }
     }
 
-    private File getGroupAvatarFile(GroupId groupId) {
-        return new File(pathConfig.getAvatarsPath(), "group-" + groupId.toBase64().replace("/", "_"));
-    }
-
-    private File retrieveGroupAvatarAttachment(
-            SignalServiceAttachment attachment, GroupId groupId
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        if (attachment.isPointer()) {
-            SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            return retrieveAttachment(pointer, getGroupAvatarFile(groupId), false);
-        } else {
-            SignalServiceAttachmentStream stream = attachment.asStream();
-            return AttachmentUtils.retrieveAttachment(stream, getGroupAvatarFile(groupId));
+    private void downloadGroupAvatar(SignalServiceAttachment avatar, GroupId groupId) {
+        try {
+            avatarStore.storeGroupAvatar(groupId, outputStream -> retrieveAttachment(avatar, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
         }
     }
 
-    private File retrieveGroupAvatar(
-            GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey
+    private void downloadGroupAvatar(GroupId groupId, GroupSecretParams groupSecretParams, String cdnKey) {
+        try {
+            avatarStore.storeGroupAvatar(groupId,
+                    outputStream -> retrieveGroupV2Avatar(groupSecretParams, cdnKey, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
+        }
+    }
+
+    private void downloadProfileAvatar(
+            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
+    ) {
+        try {
+            avatarStore.storeProfileAvatar(address,
+                    outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
+        } catch (Throwable e) {
+            logger.warn("Failed to download profile avatar, ignoring: {}", e.getMessage());
+        }
+    }
+
+    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
+        return attachmentStore.getAttachmentFile(attachmentId);
+    }
+
+    private void downloadAttachment(final SignalServiceAttachment attachment) {
+        if (!attachment.isPointer()) {
+            logger.warn("Invalid state, can't store an attachment stream.");
+        }
+
+        SignalServiceAttachmentPointer pointer = attachment.asPointer();
+        if (pointer.getPreview().isPresent()) {
+            final byte[] preview = pointer.getPreview().get();
+            try {
+                attachmentStore.storeAttachmentPreview(pointer.getRemoteId(),
+                        outputStream -> outputStream.write(preview, 0, preview.length));
+            } catch (IOException e) {
+                logger.warn("Failed to download attachment preview, ignoring: {}", e.getMessage());
+            }
+        }
+
+        try {
+            attachmentStore.storeAttachment(pointer.getRemoteId(),
+                    outputStream -> retrieveAttachmentPointer(pointer, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
+        }
+    }
+
+    private void retrieveGroupV2Avatar(
+            GroupSecretParams groupSecretParams, String cdnKey, OutputStream outputStream
     ) throws IOException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        File outputFile = getGroupAvatarFile(groupId);
         GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
         File tmpFile = IOUtils.createTempFile();
-        tmpFile.deleteOnExit();
         try (InputStream input = messageReceiver.retrieveGroupsV2ProfileAvatar(cdnKey,
                 tmpFile,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
             byte[] encryptedData = IOUtils.readFully(input);
 
             byte[] decryptedData = groupOperations.decryptAvatar(encryptedData);
-            try (OutputStream output = new FileOutputStream(outputFile)) {
-                output.write(decryptedData);
-            }
+            outputStream.write(decryptedData);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2160,26 +2037,18 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
-    private File getProfileAvatarFile(SignalServiceAddress address) {
-        return new File(pathConfig.getAvatarsPath(), "profile-" + address.getLegacyIdentifier());
-    }
-
-    private File retrieveProfileAvatar(
-            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
+    private void retrieveProfileAvatar(
+            String avatarPath, ProfileKey profileKey, OutputStream outputStream
     ) throws IOException {
-        IOUtils.createPrivateDirectories(pathConfig.getAvatarsPath());
-        File outputFile = getProfileAvatarFile(address);
-
         File tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveProfileAvatar(avatarPath,
                 tmpFile,
                 profileKey,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
             // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
-            IOUtils.copyStreamToFile(input, outputFile, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
+            IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2189,37 +2058,28 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(pathConfig.getAttachmentsPath(), attachmentId.toString());
-    }
-
-    private File retrieveAttachment(SignalServiceAttachmentPointer pointer) throws IOException, InvalidMessageException, MissingConfigurationException {
-        IOUtils.createPrivateDirectories(pathConfig.getAttachmentsPath());
-        return retrieveAttachment(pointer, getAttachmentFile(pointer.getRemoteId()), true);
-    }
-
-    private File retrieveAttachment(
-            SignalServiceAttachmentPointer pointer, File outputFile, boolean storePreview
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        if (storePreview && pointer.getPreview().isPresent()) {
-            File previewFile = new File(outputFile + ".preview");
-            try (OutputStream output = new FileOutputStream(previewFile)) {
-                byte[] preview = pointer.getPreview().get();
-                output.write(preview, 0, preview.length);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return null;
-            }
+    private void retrieveAttachment(
+            final SignalServiceAttachment attachment, final OutputStream outputStream
+    ) throws IOException {
+        if (attachment.isPointer()) {
+            SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            retrieveAttachmentPointer(pointer, outputStream);
+        } else {
+            SignalServiceAttachmentStream stream = attachment.asStream();
+            IOUtils.copyStream(stream.getInputStream(), outputStream);
         }
+    }
 
+    private void retrieveAttachmentPointer(
+            SignalServiceAttachmentPointer pointer, OutputStream outputStream
+    ) throws IOException {
         File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveAttachment(pointer,
-                tmpFile,
-                ServiceConfig.MAX_ATTACHMENT_SIZE)) {
-            IOUtils.copyStreamToFile(input, outputFile);
+        try (InputStream input = retrieveAttachmentAsStream(pointer, tmpFile)) {
+            IOUtils.copyStream(input, outputStream);
+        } catch (MissingConfigurationException | InvalidMessageException e) {
+            throw new IOException(e);
         } finally {
             try {
                 Files.delete(tmpFile.toPath());
@@ -2229,7 +2089,6 @@ public class Manager implements Closeable {
                         e.getMessage());
             }
         }
-        return outputFile;
     }
 
     private InputStream retrieveAttachmentAsStream(
@@ -2300,7 +2159,7 @@ public class Manager implements Closeable {
                     ProfileKey profileKey = account.getProfileStore().getProfileKey(record.getAddress());
                     out.write(new DeviceContact(record.getAddress(),
                             Optional.fromNullable(record.name),
-                            createContactAvatarAttachment(record.number),
+                            createContactAvatarAttachment(record.getAddress()),
                             Optional.fromNullable(record.color),
                             Optional.fromNullable(verifiedMessage),
                             Optional.fromNullable(profileKey),
@@ -2419,7 +2278,7 @@ public class Manager implements Closeable {
             try {
                 sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
-                e.printStackTrace();
+                logger.warn("Failed to send verification sync message: {}", e.getMessage());
             }
             account.save();
             return true;
@@ -2449,7 +2308,7 @@ public class Manager implements Closeable {
             try {
                 sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
             } catch (IOException | UntrustedIdentityException e) {
-                e.printStackTrace();
+                logger.warn("Failed to send verification sync message: {}", e.getMessage());
             }
             account.save();
             return true;
@@ -2475,7 +2334,7 @@ public class Manager implements Closeable {
                 try {
                     sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
                 } catch (IOException | UntrustedIdentityException e) {
-                    e.printStackTrace();
+                    logger.warn("Failed to send verification sync message: {}", e.getMessage());
                 }
             }
         }
@@ -2491,10 +2350,6 @@ public class Manager implements Closeable {
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
-    }
-
-    void saveAccount() {
-        account.save();
     }
 
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {

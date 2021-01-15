@@ -124,19 +124,19 @@ class SendGroupInfoRequestAction implements HandleAction {
     }
 }
 
-class SendGroupUpdateAction implements HandleAction {
+class SendGroupInfoAction implements HandleAction {
 
     private final SignalServiceAddress address;
     private final GroupIdV1 groupId;
 
-    public SendGroupUpdateAction(final SignalServiceAddress address, final GroupIdV1 groupId) {
+    public SendGroupInfoAction(final SignalServiceAddress address, final GroupIdV1 groupId) {
         this.address = address;
         this.groupId = groupId;
     }
 
     @Override
     public void execute(Manager m) throws Throwable {
-        m.sendUpdateGroupMessage(groupId, address);
+        m.sendGroupInfoMessage(groupId, address);
     }
 
     @Override
@@ -144,7 +144,7 @@ class SendGroupUpdateAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final SendGroupUpdateAction that = (SendGroupUpdateAction) o;
+        final SendGroupInfoAction that = (SendGroupInfoAction) o;
 
         if (!address.equals(that.address)) return false;
         return groupId.equals(that.groupId);

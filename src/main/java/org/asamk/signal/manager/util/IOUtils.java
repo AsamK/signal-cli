@@ -1,10 +1,8 @@
 package org.asamk.signal.manager.util;
 
-import org.whispersystems.signalservice.internal.util.Util;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,12 +20,14 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 public class IOUtils {
 
     public static File createTempFile() throws IOException {
-        return File.createTempFile("signal_tmp_", ".tmp");
+        final File tempFile = File.createTempFile("signal-cli_tmp_", ".tmp");
+        tempFile.deleteOnExit();
+        return tempFile;
     }
 
     public static byte[] readFully(InputStream in) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Util.copy(in, baos);
+        IOUtils.copyStream(in, baos);
         return baos.toByteArray();
     }
 
@@ -55,18 +55,22 @@ public class IOUtils {
         }
     }
 
-    public static void copyStreamToFile(InputStream input, File outputFile) throws IOException {
-        copyStreamToFile(input, outputFile, 8192);
+    public static void copyFileToStream(File inputFile, OutputStream output) throws IOException {
+        try (InputStream inputStream = new FileInputStream(inputFile)) {
+            copyStream(inputStream, output);
+        }
     }
 
-    public static void copyStreamToFile(InputStream input, File outputFile, int bufferSize) throws IOException {
-        try (OutputStream output = new FileOutputStream(outputFile)) {
-            byte[] buffer = new byte[bufferSize];
-            int read;
+    public static void copyStream(InputStream input, OutputStream output) throws IOException {
+        copyStream(input, output, 4096);
+    }
 
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
-            }
+    public static void copyStream(InputStream input, OutputStream output, int bufferSize) throws IOException {
+        byte[] buffer = new byte[bufferSize];
+        int read;
+
+        while ((read = input.read(buffer)) != -1) {
+            output.write(buffer, 0, read);
         }
     }
 }

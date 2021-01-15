@@ -19,6 +19,7 @@ class JsonDataMessage {
     JsonQuote quote;
     List<JsonMention> mentions;
     List<JsonAttachment> attachments;
+    JsonSticker sticker;
     JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
@@ -60,15 +61,19 @@ class JsonDataMessage {
         } else {
             this.attachments = List.of();
         }
+        if (dataMessage.getSticker().isPresent()) {
+            this.sticker = new JsonSticker(dataMessage.getSticker().get());
+        }
     }
 
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        reaction = null;    // TODO Replace these 3 with the proper commands
+        reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
+        sticker = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 
@@ -76,9 +81,10 @@ class JsonDataMessage {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
-        reaction = null;    // TODO Replace these 3 with the proper commands
+        reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
+        sticker = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 }

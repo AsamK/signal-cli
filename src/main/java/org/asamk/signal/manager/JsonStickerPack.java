@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-class JsonStickerPack {
+public class JsonStickerPack {
 
     @JsonProperty
     public String title;

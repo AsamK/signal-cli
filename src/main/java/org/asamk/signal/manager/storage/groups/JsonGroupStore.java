@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class JsonGroupStore {
 
-    final static Logger logger = LoggerFactory.getLogger(JsonGroupStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(JsonGroupStore.class);
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
     public File groupCachePath;

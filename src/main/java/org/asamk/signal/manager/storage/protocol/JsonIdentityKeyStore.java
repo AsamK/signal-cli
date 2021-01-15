@@ -29,7 +29,7 @@ import java.util.UUID;
 
 public class JsonIdentityKeyStore implements IdentityKeyStore {
 
-    final static Logger logger = LoggerFactory.getLogger(JsonIdentityKeyStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(JsonIdentityKeyStore.class);
 
     private final List<IdentityInfo> identities = new ArrayList<>();
 

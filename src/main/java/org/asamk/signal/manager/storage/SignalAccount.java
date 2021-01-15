@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 
 public class SignalAccount implements Closeable {
 
-    final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
+    private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private final ObjectMapper jsonProcessor = new ObjectMapper();
     private final FileChannel fileChannel;
@@ -138,6 +138,8 @@ public class SignalAccount implements Closeable {
 
         account.registered = false;
 
+        account.migrateLegacyConfigs();
+
         return account;
     }
 
@@ -178,6 +180,8 @@ public class SignalAccount implements Closeable {
 
         account.registered = true;
         account.isMultiDevice = true;
+
+        account.migrateLegacyConfigs();
 
         return account;
     }

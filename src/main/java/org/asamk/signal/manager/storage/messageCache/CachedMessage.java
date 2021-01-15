@@ -11,7 +11,7 @@ import java.nio.file.Files;
 
 public final class CachedMessage {
 
-    final static Logger logger = LoggerFactory.getLogger(CachedMessage.class);
+    private final static Logger logger = LoggerFactory.getLogger(CachedMessage.class);
 
     private final File file;
 

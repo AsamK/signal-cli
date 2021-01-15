@@ -8,6 +8,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -17,12 +19,15 @@ import java.util.stream.Collectors;
 
 public class GetUserStatusCommand implements LocalCommand {
 
+    // TODO delete later when "json" variable is removed
+    private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
+
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("number").help("Phone number").nargs("+");
         subparser.help("Check if the specified phone number/s have been registered");
         subparser.addArgument("--json")
-                .help("Output received messages in json format, one json object per line.")
+                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
     }
 
@@ -31,6 +36,13 @@ public class GetUserStatusCommand implements LocalCommand {
         // Setup the json object mapper
         ObjectMapper jsonProcessor = new ObjectMapper();
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        // TODO delete later when "json" variable is removed
+        if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
+        }
 
         // Get a map of registration statuses
         Map<String, Boolean> registered;
@@ -42,7 +54,7 @@ public class GetUserStatusCommand implements LocalCommand {
         }
 
         // Output
-        if (ns.getBoolean("json")) {
+        if (inJson) {
             List<JsonIsRegistered> objects = registered.entrySet()
                     .stream()
                     .map(entry -> new JsonIsRegistered(entry.getKey(), entry.getValue()))
