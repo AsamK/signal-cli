@@ -141,12 +141,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     System.out.println();
                 }
             });
-        } catch (UnsatisfiedLinkError e) {
-            System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
-            return 1;
         } catch (DBusException e) {
             e.printStackTrace();
-            return 1;
+            return 2;
         }
         while (true) {
             try {

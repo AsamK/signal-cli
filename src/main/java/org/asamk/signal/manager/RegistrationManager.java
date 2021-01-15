@@ -37,11 +37,12 @@ import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
-public class RegistrationManager implements AutoCloseable {
+public class RegistrationManager implements Closeable {
 
     private SignalAccount account;
     private final PathConfig pathConfig;
@@ -184,7 +185,7 @@ public class RegistrationManager implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         if (account != null) {
             account.close();
             account = null;

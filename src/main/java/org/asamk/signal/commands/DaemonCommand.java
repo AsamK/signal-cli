@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
 import org.asamk.signal.dbus.DbusSignalImpl;
@@ -14,13 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.asamk.signal.DbusConfig.SIGNAL_BUSNAME;
-import static org.asamk.signal.DbusConfig.SIGNAL_OBJECTPATH;
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
-public class DaemonCommand implements LocalCommand {
+public class DaemonCommand implements MultiLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
@@ -46,46 +45,98 @@ public class DaemonCommand implements LocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        DBusConnection conn = null;
-        try {
-            try {
-                DBusConnection.DBusBusType busType;
-                if (ns.getBoolean("system")) {
-                    busType = DBusConnection.DBusBusType.SYSTEM;
-                } else {
-                    busType = DBusConnection.DBusBusType.SESSION;
-                }
-                conn = DBusConnection.getConnection(busType);
-                conn.exportObject(SIGNAL_OBJECTPATH, new DbusSignalImpl(m));
-                conn.requestBusName(SIGNAL_BUSNAME);
-            } catch (UnsatisfiedLinkError e) {
-                System.err.println("Missing native library dependency for dbus service: " + e.getMessage());
-                return 1;
-            } catch (DBusException e) {
-                e.printStackTrace();
-                return 2;
-            }
-            boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
-            try {
-                m.receiveMessages(1,
-                        TimeUnit.HOURS,
-                        false,
-                        ignoreAttachments,
-                        inJson
-                                ? new JsonDbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH)
-                                : new DbusReceiveMessageHandler(m, conn, SIGNAL_OBJECTPATH));
-                return 0;
-            } catch (IOException e) {
-                System.err.println("Error while receiving messages: " + e.getMessage());
-                return 3;
-            } catch (AssertionError e) {
-                handleAssertionError(e);
-                return 1;
-            }
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+
+        DBusConnection.DBusBusType busType;
+        if (ns.getBoolean("system")) {
+            busType = DBusConnection.DBusBusType.SYSTEM;
+        } else {
+            busType = DBusConnection.DBusBusType.SESSION;
         }
+
+        try (DBusConnection conn = DBusConnection.getConnection(busType)) {
+            String objectPath = DbusConfig.getObjectPath();
+            Thread t = run(conn, objectPath, m, ignoreAttachments, inJson);
+
+            conn.requestBusName(DbusConfig.getBusname());
+
+            try {
+                t.join();
+            } catch (InterruptedException ignored) {
+            }
+            return 0;
+        } catch (DBusException | IOException e) {
+            logger.error("Dbus command failed", e);
+            return 2;
+        }
+    }
+
+    @Override
+    public int handleCommand(final Namespace ns, final List<Manager> managers) {
+        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+
+        // TODO delete later when "json" variable is removed
+        if (ns.getBoolean("json")) {
+            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
+        }
+
+        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+
+        DBusConnection.DBusBusType busType;
+        if (ns.getBoolean("system")) {
+            busType = DBusConnection.DBusBusType.SYSTEM;
+        } else {
+            busType = DBusConnection.DBusBusType.SESSION;
+        }
+
+        try (DBusConnection conn = DBusConnection.getConnection(busType)) {
+            List<Thread> receiveThreads = new ArrayList<>();
+            for (Manager m : managers) {
+                String objectPath = DbusConfig.getObjectPath(m.getUsername());
+                Thread thread = run(conn, objectPath, m, ignoreAttachments, inJson);
+                receiveThreads.add(thread);
+            }
+
+            conn.requestBusName(DbusConfig.getBusname());
+
+            for (Thread t : receiveThreads) {
+                try {
+                    t.join();
+                } catch (InterruptedException ignored) {
+                }
+            }
+            return 0;
+        } catch (DBusException | IOException e) {
+            logger.error("Dbus command failed", e);
+            return 2;
+        }
+    }
+
+    private Thread run(
+            DBusConnection conn, String objectPath, Manager m, boolean ignoreAttachments, boolean inJson
+    ) throws DBusException {
+        conn.exportObject(objectPath, new DbusSignalImpl(m));
+
+        final Thread thread = new Thread(() -> {
+            while (true) {
+                try {
+                    m.receiveMessages(1,
+                            TimeUnit.HOURS,
+                            false,
+                            ignoreAttachments,
+                            inJson
+                                    ? new JsonDbusReceiveMessageHandler(m, conn, objectPath)
+                                    : new DbusReceiveMessageHandler(m, conn, objectPath));
+                } catch (IOException e) {
+                    logger.warn("Receiving messages failed, retrying", e);
+                }
+            }
+        });
+
+        logger.info("Exported dbus object: " + objectPath);
+
+        thread.start();
+
+        return thread;
     }
 }

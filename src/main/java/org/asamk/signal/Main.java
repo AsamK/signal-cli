@@ -30,7 +30,6 @@ import org.asamk.signal.commands.Commands;
 import org.asamk.signal.manager.LibSignalLogger;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.security.Security;
 import java.util.Map;
@@ -57,7 +56,7 @@ public class Main {
 
         Namespace ns = parseArgs(args);
         if (ns == null) {
-            System.exit(1);
+            System.exit(2);
         }
 
         int res = new Cli(ns).init();
@@ -92,24 +91,6 @@ public class Main {
         } catch (ArgumentParserException e) {
             parser.handleError(e);
             return null;
-        }
-
-        if ("link".equals(ns.getString("command"))) {
-            if (ns.getString("username") != null) {
-                parser.printUsage();
-                System.err.println("You cannot specify a username (phone number) when linking");
-                System.exit(2);
-            }
-        } else if (!ns.getBoolean("dbus") && !ns.getBoolean("dbus_system")) {
-            if (ns.getString("username") == null) {
-                parser.printUsage();
-                System.err.println("You need to specify a username (phone number)");
-                System.exit(2);
-            }
-            if (!PhoneNumberFormatter.isValidNumber(ns.getString("username"), null)) {
-                System.err.println("Invalid username (phone number), make sure you include the country code.");
-                System.exit(2);
-            }
         }
 
         if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
@@ -152,8 +133,9 @@ public class Main {
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 
+        parser.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
+
         MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
-        mut.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
         mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
         mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
 

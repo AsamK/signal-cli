@@ -50,7 +50,7 @@ public class GetUserStatusCommand implements LocalCommand {
             registered = m.areUsersRegistered(new HashSet<>(ns.getList("number")));
         } catch (IOException e) {
             System.err.println("Unable to check if users are registered");
-            return 1;
+            return 3;
         }
 
         // Output

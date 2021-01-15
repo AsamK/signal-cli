@@ -23,7 +23,10 @@ public class SetPinCommand implements LocalCommand {
             String registrationLockPin = ns.getString("registrationLockPin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
             return 0;
-        } catch (IOException | UnauthenticatedResponseException e) {
+        } catch (UnauthenticatedResponseException e) {
+            System.err.println("Set pin error: " + e.getMessage());
+            return 2;
+        } catch (IOException e) {
             System.err.println("Set pin error: " + e.getMessage());
             return 3;
         }

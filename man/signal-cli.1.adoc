@@ -44,6 +44,11 @@ Make sure you have full read/write access to the given directory.
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
 
+This flag must not be given for the `link` command.
+It is optional for the `daemon` command.
+For all other commands it is only optional if there is exactly one local user in the
+config directory.
+
 *--dbus*::
 Make request via user dbus.
 
@@ -352,6 +357,8 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus interface.
+If no `-u` username is given, all local users will be exported as separate dbus
+objects under the same bus name.
 
 *--system*::
 Use DBus system bus instead of user bus.
@@ -389,6 +396,11 @@ signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
 
 Trust new key, without having verified it. Only use this if you don't care about security::
 signal-cli -u USERNAME trust -a NUMBER
+
+== Exit codes
+* *1*: Error is probably caused and fixable by the user
+* *2*: Some unexpected error
+* *3*: Server or IO error
 
 == Files
 

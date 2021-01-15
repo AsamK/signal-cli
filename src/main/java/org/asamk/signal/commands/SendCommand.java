@@ -8,6 +8,7 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
+import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class SendCommand implements DbusCommand {
                 return 1;
             } catch (DBusExecutionException e) {
                 System.err.println("Failed to send message: " + e.getMessage());
-                return 1;
+                return 2;
             }
         }
 
@@ -89,7 +90,7 @@ public class SendCommand implements DbusCommand {
             return 1;
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
-            return 1;
+            return 2;
         }
 
         try {
@@ -99,9 +100,12 @@ public class SendCommand implements DbusCommand {
         } catch (AssertionError e) {
             handleAssertionError(e);
             return 1;
+        } catch (UnknownObject e) {
+            System.err.println("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
+            return 1;
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
-            return 1;
+            return 2;
         }
     }
 }

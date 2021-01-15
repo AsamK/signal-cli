@@ -1,5 +1,10 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
@@ -8,11 +13,6 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 public class ListGroupsCommand implements LocalCommand {
 
     private static Set<String> resolveMembers(Manager m, Set<SignalServiceAddress> addresses) {
-        return addresses.stream().map(m::resolveSignalServiceAddress)
+        return addresses.stream()
+                .map(m::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getLegacyIdentifier)
                 .collect(Collectors.toSet());
     }
@@ -34,7 +35,7 @@ public class ListGroupsCommand implements LocalCommand {
             System.out.println();
         } catch (IOException e) {
             System.err.println(e.getMessage());
-            return 1;
+            return 3;
         }
 
         return 0;
@@ -65,7 +66,8 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--detailed").action(Arguments.storeTrue())
+        subparser.addArgument("-d", "--detailed")
+                .action(Arguments.storeTrue())
                 .help("List the members and group invite links of each group. If output=json, then this is always set");
 
         subparser.help("List group information including names, ids, active status, blocked status and members");
@@ -114,10 +116,16 @@ public class ListGroupsCommand implements LocalCommand {
         public Set<String> requestingMembers;
         public String groupInviteLink;
 
-        public JsonGroup(String id, String name, boolean isMember, boolean isBlocked,
-                         Set<String> members, Set<String> pendingMembers,
-                         Set<String> requestingMembers, String groupInviteLink)
-        {
+        public JsonGroup(
+                String id,
+                String name,
+                boolean isMember,
+                boolean isBlocked,
+                Set<String> members,
+                Set<String> pendingMembers,
+                Set<String> requestingMembers,
+                String groupInviteLink
+        ) {
             this.id = id;
             this.name = name;
             this.isMember = isMember;

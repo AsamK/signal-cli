@@ -20,7 +20,10 @@ public class SendContactsCommand implements LocalCommand {
         try {
             m.sendContacts();
             return 0;
-        } catch (IOException | UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
+            System.err.println("SendContacts error: " + e.getMessage());
+            return 2;
+        } catch (IOException e) {
             System.err.println("SendContacts error: " + e.getMessage());
             return 3;
         }

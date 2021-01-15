@@ -29,7 +29,7 @@ public class UploadStickerPackCommand implements LocalCommand {
             return 3;
         } catch (StickerPackInvalidException e) {
             System.err.println("Invalid sticker pack: " + e.getMessage());
-            return 3;
+            return 1;
         }
     }
 }

@@ -3,7 +3,6 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -35,15 +34,15 @@ public class JoinGroupCommand implements LocalCommand {
             linkUrl = GroupInviteLinkUrl.fromUri(uri);
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException e) {
             System.err.println("Group link is invalid: " + e.getMessage());
-            return 2;
+            return 1;
         } catch (GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
             System.err.println("Group link was created with an incompatible version: " + e.getMessage());
-            return 2;
+            return 1;
         }
 
         if (linkUrl == null) {
             System.err.println("Link is not a signal group invitation link");
-            return 2;
+            return 1;
         }
 
         try {
@@ -64,16 +63,13 @@ public class JoinGroupCommand implements LocalCommand {
         } catch (IOException e) {
             e.printStackTrace();
             handleIOException(e);
-            return 1;
-        } catch (Signal.Error.AttachmentInvalid e) {
-            System.err.println("Failed to add avatar attachment for group\": " + e.getMessage());
-            return 1;
+            return 3;
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
-            return 1;
+            return 2;
         } catch (GroupLinkNotActiveException e) {
             System.err.println("Group link is not valid: " + e.getMessage());
-            return 2;
+            return 1;
         }
     }
 }

@@ -20,7 +20,10 @@ public class RemovePinCommand implements LocalCommand {
         try {
             m.setRegistrationLockPin(Optional.absent());
             return 0;
-        } catch (IOException | UnauthenticatedResponseException e) {
+        } catch (UnauthenticatedResponseException e) {
+            System.err.println("Remove pin error: " + e.getMessage());
+            return 2;
+        } catch (IOException e) {
             System.err.println("Remove pin error: " + e.getMessage());
             return 3;
         }

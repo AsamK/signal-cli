@@ -288,6 +288,22 @@ public class Manager implements Closeable {
         return new Manager(account, pathConfig, serviceConfiguration, userAgent);
     }
 
+    public static List<String> getAllLocalUsernames(File settingsPath) {
+        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
+        final File dataPath = pathConfig.getDataPath();
+        final File[] files = dataPath.listFiles();
+
+        if (files == null) {
+            return List.of();
+        }
+
+        return Arrays.stream(files)
+                .filter(File::isFile)
+                .map(File::getName)
+                .filter(file -> PhoneNumberFormatter.isValidNumber(file, null))
+                .collect(Collectors.toList());
+    }
+
     public void checkAccountState() throws IOException {
         if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             refreshPreKeys();

@@ -69,7 +69,7 @@ public class UpdateGroupCommand implements DbusCommand {
             return 1;
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
-            return 1;
+            return 2;
         }
     }
 }
