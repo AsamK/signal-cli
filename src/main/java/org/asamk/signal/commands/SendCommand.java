@@ -33,11 +33,6 @@ public class SendCommand implements DbusCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Signal signal) {
-        if (!signal.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && (
                 ns.getBoolean("endsession") || ns.getString("group") == null
         )) {

@@ -27,11 +27,6 @@ public class UpdateGroupCommand implements DbusCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Signal signal) {
-        if (!signal.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
         byte[] groupId = null;
         if (ns.getString("group") != null) {
             try {
