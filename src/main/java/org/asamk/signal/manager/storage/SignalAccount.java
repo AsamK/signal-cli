@@ -358,7 +358,7 @@ public class SignalAccount implements Closeable {
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
 
         JsonNode threadStoreNode = rootNode.get("threadStore");
-        if (threadStoreNode != null) {
+        if (threadStoreNode != null && !threadStoreNode.isNull()) {
             LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode,
                     LegacyJsonThreadStore.class);
             // Migrate thread info to group and contact store
