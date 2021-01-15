@@ -1,7 +1,8 @@
 package org.asamk.signal.json;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.util.Base64;
+
+import java.util.Base64;
 
 public class JsonSticker {
 
@@ -10,8 +11,8 @@ public class JsonSticker {
     int stickerId;
 
     public JsonSticker(SignalServiceDataMessage.Sticker sticker) {
-        this.packId = Base64.encodeBytes(sticker.getPackId());
-        this.packKey = Base64.encodeBytes(sticker.getPackKey());
+        this.packId = Base64.getEncoder().encodeToString(sticker.getPackId());
+        this.packKey = Base64.getEncoder().encodeToString(sticker.getPackKey());
         this.stickerId = sticker.getStickerId();
         // TODO also download sticker image ??
     }

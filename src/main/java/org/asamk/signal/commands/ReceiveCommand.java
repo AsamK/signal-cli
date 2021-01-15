@@ -20,9 +20,9 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
@@ -81,7 +81,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                             messageReceived.getMessage()));
                     if (messageReceived.getGroupId().length > 0) {
                         System.out.println("Group info:");
-                        System.out.println("  Id: " + Base64.encodeBytes(messageReceived.getGroupId()));
+                        System.out.println("  Id: " + Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
                     }
                     if (messageReceived.getAttachments().size() > 0) {
                         System.out.println("Attachments: ");
@@ -130,7 +130,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                             syncReceived.getMessage()));
                     if (syncReceived.getGroupId().length > 0) {
                         System.out.println("Group info:");
-                        System.out.println("  Id: " + Base64.encodeBytes(syncReceived.getGroupId()));
+                        System.out.println("  Id: " + Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
                     }
                     if (syncReceived.getAttachments().size() > 0) {
                         System.out.println("Attachments: ");

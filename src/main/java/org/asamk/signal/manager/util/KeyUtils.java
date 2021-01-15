@@ -13,9 +13,9 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
-import org.whispersystems.util.Base64;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 public class KeyUtils {
@@ -82,7 +82,7 @@ public class KeyUtils {
 
     private static String getSecret(int size) {
         byte[] secret = getSecretBytes(size);
-        return Base64.encodeBytes(secret);
+        return Base64.getEncoder().encodeToString(secret);
     }
 
     public static byte[] getSecretBytes(int size) {

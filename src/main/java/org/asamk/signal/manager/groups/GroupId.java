@@ -1,8 +1,7 @@
 package org.asamk.signal.manager.groups;
 
-import org.whispersystems.util.Base64;
-
 import java.util.Arrays;
+import java.util.Base64;
 
 public abstract class GroupId {
 
@@ -43,7 +42,7 @@ public abstract class GroupId {
     }
 
     public String toBase64() {
-        return Base64.encodeBytes(id);
+        return Base64.getEncoder().encodeToString(id);
     }
 
     @Override

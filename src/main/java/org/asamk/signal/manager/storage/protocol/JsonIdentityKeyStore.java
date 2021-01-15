@@ -19,10 +19,10 @@ import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.IdentityKeyStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -196,7 +196,8 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
 
             try {
                 int localRegistrationId = node.get("registrationId").asInt();
-                IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.decode(node.get("identityKey").asText()));
+                IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.getDecoder()
+                        .decode(node.get("identityKey").asText()));
 
                 JsonIdentityKeyStore keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
 
@@ -216,13 +217,14 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                                 ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
                                 : new SignalServiceAddress(uuid, trustedKeyName);
                         try {
-                            IdentityKey id = new IdentityKey(Base64.decode(trustedKey.get("identityKey").asText()), 0);
+                            IdentityKey id = new IdentityKey(Base64.getDecoder()
+                                    .decode(trustedKey.get("identityKey").asText()), 0);
                             TrustLevel trustLevel = trustedKey.has("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
                                     "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
                             Date added = trustedKey.has("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
                                     .asLong()) : new Date();
                             keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
-                        } catch (InvalidKeyException | IOException e) {
+                        } catch (InvalidKeyException e) {
                             logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
                         }
                     }
@@ -244,7 +246,13 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             json.writeStartObject();
             json.writeNumberField("registrationId", jsonIdentityKeyStore.getLocalRegistrationId());
             json.writeStringField("identityKey",
-                    Base64.encodeBytes(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));
+                    Base64.getEncoder().encodeToString(jsonIdentityKeyStore.getIdentityKeyPair().serialize()));
+            json.writeStringField("identityPrivateKey",
+                    Base64.getEncoder()
+                            .encodeToString(jsonIdentityKeyStore.getIdentityKeyPair().getPrivateKey().serialize()));
+            json.writeStringField("identityPublicKey",
+                    Base64.getEncoder()
+                            .encodeToString(jsonIdentityKeyStore.getIdentityKeyPair().getPublicKey().serialize()));
             json.writeArrayFieldStart("trustedKeys");
             for (IdentityInfo trustedKey : jsonIdentityKeyStore.identities) {
                 json.writeStartObject();
@@ -254,7 +262,8 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                 if (trustedKey.getAddress().getUuid().isPresent()) {
                     json.writeStringField("uuid", trustedKey.getAddress().getUuid().get().toString());
                 }
-                json.writeStringField("identityKey", Base64.encodeBytes(trustedKey.identityKey.serialize()));
+                json.writeStringField("identityKey",
+                        Base64.getEncoder().encodeToString(trustedKey.identityKey.serialize()));
                 json.writeNumberField("trustLevel", trustedKey.trustLevel.ordinal());
                 json.writeNumberField("addedTimestamp", trustedKey.added.getTime());
                 json.writeEndObject();
@@ -263,5 +272,4 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             json.writeEndObject();
         }
     }
-
 }

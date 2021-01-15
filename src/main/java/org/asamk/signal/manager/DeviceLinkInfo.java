@@ -3,13 +3,12 @@ package org.asamk.signal.manager;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.util.Base64;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +19,7 @@ public class DeviceLinkInfo {
     final String deviceIdentifier;
     final ECPublicKey deviceKey;
 
-    public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws IOException, InvalidKeyException {
+    public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidKeyException {
         final String rawQuery = linkUri.getRawQuery();
         if (isEmpty(rawQuery)) {
             throw new RuntimeException("Invalid device link uri");
@@ -34,7 +33,13 @@ public class DeviceLinkInfo {
             throw new RuntimeException("Invalid device link uri");
         }
 
-        ECPublicKey deviceKey = Curve.decodePoint(Base64.decode(publicKeyEncoded), 0);
+        final byte[] publicKeyBytes;
+        try {
+            publicKeyBytes = Base64.getDecoder().decode(publicKeyEncoded);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid device link uri", e);
+        }
+        ECPublicKey deviceKey = Curve.decodePoint(publicKeyBytes, 0);
 
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }
@@ -57,9 +62,10 @@ public class DeviceLinkInfo {
     }
 
     public String createDeviceLinkUri() {
+        final String deviceKeyString = Base64.getEncoder().encodeToString(deviceKey.serialize()).replace("=", "");
         return "tsdevice:/?uuid="
                 + URLEncoder.encode(deviceIdentifier, StandardCharsets.UTF_8)
                 + "&pub_key="
-                + URLEncoder.encode(Base64.encodeBytesWithoutPadding(deviceKey.serialize()), StandardCharsets.UTF_8);
+                + URLEncoder.encode(deviceKeyString, StandardCharsets.UTF_8);
     }
 }

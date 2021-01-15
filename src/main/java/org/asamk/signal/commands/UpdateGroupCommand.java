@@ -7,9 +7,9 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.util.Base64;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
@@ -58,7 +58,7 @@ public class UpdateGroupCommand implements DbusCommand {
         try {
             byte[] newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                System.out.println("Creating new group \"" + Base64.encodeBytes(newGroupId) + "\" …");
+                System.out.println("Creating new group \"" + Base64.getEncoder().encodeToString(newGroupId) + "\" …");
             }
             return 0;
         } catch (AssertionError e) {

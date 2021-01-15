@@ -6,21 +6,17 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.whispersystems.util.Base64;
-
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class StickerStore {
-
-    private static final ObjectMapper jsonProcessor = new ObjectMapper();
 
     @JsonSerialize(using = StickersSerializer.class)
     @JsonDeserialize(using = StickersDeserializer.class)
@@ -44,8 +40,8 @@ public class StickerStore {
             jgen.writeStartArray(stickers.size());
             for (Sticker sticker : stickers) {
                 jgen.writeStartObject();
-                jgen.writeStringField("packId", Base64.encodeBytes(sticker.getPackId()));
-                jgen.writeStringField("packKey", Base64.encodeBytes(sticker.getPackKey()));
+                jgen.writeStringField("packId", Base64.getEncoder().encodeToString(sticker.getPackId()));
+                jgen.writeStringField("packKey", Base64.getEncoder().encodeToString(sticker.getPackKey()));
                 jgen.writeBooleanField("installed", sticker.isInstalled());
                 jgen.writeEndObject();
             }
@@ -62,8 +58,8 @@ public class StickerStore {
             Map<byte[], Sticker> stickers = new HashMap<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
-                byte[] packId = Base64.decode(n.get("packId").asText());
-                byte[] packKey = Base64.decode(n.get("packKey").asText());
+                byte[] packId = Base64.getDecoder().decode(n.get("packId").asText());
+                byte[] packKey = Base64.getDecoder().decode(n.get("packKey").asText());
                 boolean installed = n.get("installed").asBoolean(false);
                 stickers.put(packId, new Sticker(packId, packKey, installed));
             }

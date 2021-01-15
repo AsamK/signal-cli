@@ -4,9 +4,9 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.util.Base64;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 class JsonGroupInfo {
@@ -17,7 +17,7 @@ class JsonGroupInfo {
     String type;
 
     JsonGroupInfo(SignalServiceGroup groupInfo) {
-        this.groupId = Base64.encodeBytes(groupInfo.getGroupId());
+        this.groupId = Base64.getEncoder().encodeToString(groupInfo.getGroupId());
         if (groupInfo.getMembers().isPresent()) {
             this.members = new ArrayList<>(groupInfo.getMembers().get().size());
             for (SignalServiceAddress address : groupInfo.getMembers().get()) {
@@ -36,6 +36,6 @@ class JsonGroupInfo {
     }
 
     JsonGroupInfo(byte[] groupId) {
-        this.groupId = Base64.encodeBytes(groupId);
+        this.groupId = Base64.getEncoder().encodeToString(groupId);
     }
 }

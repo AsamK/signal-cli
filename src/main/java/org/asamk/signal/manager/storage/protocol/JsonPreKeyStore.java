@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.PreKeyStore;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,12 +72,9 @@ class JsonPreKeyStore implements PreKeyStore {
             Map<Integer, byte[]> preKeyMap = new HashMap<>();
             if (node.isArray()) {
                 for (JsonNode preKey : node) {
-                    Integer preKeyId = preKey.get("id").asInt();
-                    try {
-                        preKeyMap.put(preKeyId, Base64.decode(preKey.get("record").asText()));
-                    } catch (IOException e) {
-                        logger.warn("Error while decoding prekey for {}: {}", preKeyId, e.getMessage());
-                    }
+                    final int preKeyId = preKey.get("id").asInt();
+                    final byte[] preKeyRecord = Base64.getDecoder().decode(preKey.get("record").asText());
+                    preKeyMap.put(preKeyId, preKeyRecord);
                 }
             }
 
@@ -85,7 +82,6 @@ class JsonPreKeyStore implements PreKeyStore {
             keyStore.addPreKeys(preKeyMap);
 
             return keyStore;
-
         }
     }
 
@@ -99,7 +95,7 @@ class JsonPreKeyStore implements PreKeyStore {
             for (Map.Entry<Integer, byte[]> preKey : jsonPreKeyStore.store.entrySet()) {
                 json.writeStartObject();
                 json.writeNumberField("id", preKey.getKey());
-                json.writeStringField("record", Base64.encodeBytes(preKey.getValue()));
+                json.writeStringField("record", Base64.getEncoder().encodeToString(preKey.getValue()));
                 json.writeEndObject();
             }
             json.writeEndArray();

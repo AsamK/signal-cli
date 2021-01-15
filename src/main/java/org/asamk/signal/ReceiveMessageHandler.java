@@ -36,9 +36,9 @@ import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage
 import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMessage;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.util.Base64;
 
 import java.io.File;
+import java.util.Base64;
 import java.util.List;
 
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
@@ -244,10 +244,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         for (StickerPackOperationMessage m : stickerPackOperationMessages) {
                             System.out.println(" - " + m.getType().toString());
                             if (m.getPackId().isPresent()) {
-                                System.out.println("   packId: " + Base64.encodeBytes(m.getPackId().get()));
+                                System.out.println("   packId: " + Base64.getEncoder()
+                                        .encodeToString(m.getPackId().get()));
                             }
                             if (m.getPackKey().isPresent()) {
-                                System.out.println("   packKey: " + Base64.encodeBytes(m.getPackKey().get()));
+                                System.out.println("   packKey: " + Base64.getEncoder()
+                                        .encodeToString(m.getPackKey().get()));
                             }
                         }
                     }
@@ -257,8 +259,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         System.out.println("Received message request response:");
                         System.out.println("  Type: " + requestResponseMessage.getType());
                         if (requestResponseMessage.getGroupId().isPresent()) {
-                            System.out.println("  Group id: " + Base64.encodeBytes(requestResponseMessage.getGroupId()
-                                    .get()));
+                            System.out.println("  Group id: " + Base64.getEncoder()
+                                    .encodeToString(requestResponseMessage.getGroupId().get()));
                         }
                         if (requestResponseMessage.getPerson().isPresent()) {
                             System.out.println("  Person: " + requestResponseMessage.getPerson()
@@ -418,8 +420,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getSticker().isPresent()) {
             final SignalServiceDataMessage.Sticker sticker = message.getSticker().get();
             System.out.println("Sticker:");
-            System.out.println(" - Pack id: " + Base64.encodeBytes(sticker.getPackId()));
-            System.out.println(" - Pack key: " + Base64.encodeBytes(sticker.getPackKey()));
+            System.out.println(" - Pack id: " + Base64.getEncoder().encodeToString(sticker.getPackId()));
+            System.out.println(" - Pack key: " + Base64.getEncoder().encodeToString(sticker.getPackKey()));
             System.out.println(" - Sticker id: " + sticker.getStickerId());
             // TODO also download sticker image ??
         }

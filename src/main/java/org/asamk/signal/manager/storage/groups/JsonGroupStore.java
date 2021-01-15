@@ -23,13 +23,13 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.util.Base64;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -161,7 +161,8 @@ public class JsonGroupStore {
                     final GroupInfoV2 groupV2 = (GroupInfoV2) group;
                     jgen.writeStartObject();
                     jgen.writeStringField("groupId", groupV2.getGroupId().toBase64());
-                    jgen.writeStringField("masterKey", Base64.encodeBytes(groupV2.getMasterKey().serialize()));
+                    jgen.writeStringField("masterKey",
+                            Base64.getEncoder().encodeToString(groupV2.getMasterKey().serialize()));
                     jgen.writeBooleanField("blocked", groupV2.isBlocked());
                     jgen.writeEndObject();
                 } else {
@@ -186,15 +187,15 @@ public class JsonGroupStore {
                     // a v2 group
                     GroupIdV2 groupId = GroupIdV2.fromBase64(n.get("groupId").asText());
                     try {
-                        GroupMasterKey masterKey = new GroupMasterKey(Base64.decode(n.get("masterKey").asText()));
+                        GroupMasterKey masterKey = new GroupMasterKey(Base64.getDecoder()
+                                .decode(n.get("masterKey").asText()));
                         g = new GroupInfoV2(groupId, masterKey);
-                    } catch (InvalidInputException e) {
+                    } catch (InvalidInputException | IllegalArgumentException e) {
                         throw new AssertionError("Invalid master key for group " + groupId.toBase64());
                     }
                     g.setBlocked(n.get("blocked").asBoolean(false));
                 } else {
-                    GroupInfoV1 gv1 = jsonProcessor.treeToValue(n, GroupInfoV1.class);
-                    g = gv1;
+                    g = jsonProcessor.treeToValue(n, GroupInfoV1.class);
                 }
                 groups.put(g.getGroupId(), g);
             }

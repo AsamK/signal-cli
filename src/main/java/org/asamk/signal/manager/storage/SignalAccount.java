@@ -41,7 +41,6 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -53,6 +52,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -200,8 +200,8 @@ public class SignalAccount implements Closeable {
             }
             final ProfileKey profileKey;
             try {
-                profileKey = new ProfileKey(Base64.decode(profileKeyString));
-            } catch (InvalidInputException | IOException e) {
+                profileKey = new ProfileKey(Base64.getDecoder().decode(profileKeyString));
+            } catch (InvalidInputException ignored) {
                 continue;
             }
             contact.profileKey = null;
@@ -264,7 +264,7 @@ public class SignalAccount implements Closeable {
         JsonNode pinMasterKeyNode = rootNode.get("pinMasterKey");
         pinMasterKey = pinMasterKeyNode == null || pinMasterKeyNode.isNull()
                 ? null
-                : new MasterKey(Base64.decode(pinMasterKeyNode.asText()));
+                : new MasterKey(Base64.getDecoder().decode(pinMasterKeyNode.asText()));
         if (rootNode.has("signalingKey")) {
             signalingKey = Utils.getNotNullNode(rootNode, "signalingKey").asText();
         }
@@ -280,7 +280,8 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.has("profileKey")) {
             try {
-                profileKey = new ProfileKey(Base64.decode(Utils.getNotNullNode(rootNode, "profileKey").asText()));
+                profileKey = new ProfileKey(Base64.getDecoder()
+                        .decode(Utils.getNotNullNode(rootNode, "profileKey").asText()));
             } catch (InvalidInputException e) {
                 throw new IOException(
                         "Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes",
@@ -395,11 +396,12 @@ public class SignalAccount implements Closeable {
                 .put("isMultiDevice", isMultiDevice)
                 .put("password", password)
                 .put("registrationLockPin", registrationLockPin)
-                .put("pinMasterKey", pinMasterKey == null ? null : Base64.encodeBytes(pinMasterKey.serialize()))
+                .put("pinMasterKey",
+                        pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
-                .put("profileKey", Base64.encodeBytes(profileKey.serialize()))
+                .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
                 .put("registered", registered)
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)

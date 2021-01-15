@@ -16,10 +16,10 @@ import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SessionStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -150,13 +150,9 @@ class JsonSessionStore implements SessionStore {
                             ? Utils.getSignalServiceAddressFromIdentifier(sessionName)
                             : new SignalServiceAddress(uuid, sessionName);
                     final int deviceId = session.get("deviceId").asInt();
-                    final String record = session.get("record").asText();
-                    try {
-                        SessionInfo sessionInfo = new SessionInfo(serviceAddress, deviceId, Base64.decode(record));
-                        sessionStore.sessions.add(sessionInfo);
-                    } catch (IOException e) {
-                        logger.warn("Error while decoding session for {}: {}", sessionName, e.getMessage());
-                    }
+                    final byte[] record = Base64.getDecoder().decode(session.get("record").asText());
+                    SessionInfo sessionInfo = new SessionInfo(serviceAddress, deviceId, record);
+                    sessionStore.sessions.add(sessionInfo);
                 }
             }
 
@@ -180,7 +176,7 @@ class JsonSessionStore implements SessionStore {
                     json.writeStringField("uuid", sessionInfo.address.getUuid().get().toString());
                 }
                 json.writeNumberField("deviceId", sessionInfo.deviceId);
-                json.writeStringField("record", Base64.encodeBytes(sessionInfo.sessionRecord));
+                json.writeStringField("record", Base64.getEncoder().encodeToString(sessionInfo.sessionRecord));
                 json.writeEndObject();
             }
             json.writeEndArray();

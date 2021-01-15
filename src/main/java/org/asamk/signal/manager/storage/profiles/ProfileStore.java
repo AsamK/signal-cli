@@ -17,10 +17,10 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.util.Base64;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -104,14 +104,14 @@ public class ProfileStore {
                     final SignalServiceAddress serviceAddress = new SignalServiceAddress(uuid, name);
                     ProfileKey profileKey = null;
                     try {
-                        profileKey = new ProfileKey(Base64.decode(entry.get("profileKey").asText()));
+                        profileKey = new ProfileKey(Base64.getDecoder().decode(entry.get("profileKey").asText()));
                     } catch (InvalidInputException ignored) {
                     }
                     ProfileKeyCredential profileKeyCredential = null;
                     if (entry.hasNonNull("profileKeyCredential")) {
                         try {
-                            profileKeyCredential = new ProfileKeyCredential(Base64.decode(entry.get(
-                                    "profileKeyCredential").asText()));
+                            profileKeyCredential = new ProfileKeyCredential(Base64.getDecoder()
+                                    .decode(entry.get("profileKeyCredential").asText()));
                         } catch (Throwable ignored) {
                         }
                     }
@@ -145,12 +145,13 @@ public class ProfileStore {
                 if (address.getUuid().isPresent()) {
                     json.writeStringField("uuid", address.getUuid().get().toString());
                 }
-                json.writeStringField("profileKey", Base64.encodeBytes(profileEntry.getProfileKey().serialize()));
+                json.writeStringField("profileKey",
+                        Base64.getEncoder().encodeToString(profileEntry.getProfileKey().serialize()));
                 json.writeNumberField("lastUpdateTimestamp", profileEntry.getLastUpdateTimestamp());
                 json.writeObjectField("profile", profileEntry.getProfile());
                 if (profileEntry.getProfileKeyCredential() != null) {
                     json.writeStringField("profileKeyCredential",
-                            Base64.encodeBytes(profileEntry.getProfileKeyCredential().serialize()));
+                            Base64.getEncoder().encodeToString(profileEntry.getProfileKeyCredential().serialize()));
                 }
                 json.writeEndObject();
             }

@@ -5,9 +5,8 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
-import org.whispersystems.util.Base64;
 
-import java.io.IOException;
+import java.util.Base64;
 
 public class ProfileUtils {
 
@@ -20,17 +19,18 @@ public class ProfileUtils {
             try {
                 name = encryptedProfile.getName() == null
                         ? null
-                        : new String(profileCipher.decryptName(Base64.decode(encryptedProfile.getName())));
-            } catch (IOException e) {
+                        : new String(profileCipher.decryptName(Base64.getDecoder().decode(encryptedProfile.getName())));
+            } catch (IllegalArgumentException e) {
                 name = null;
             }
             String unidentifiedAccess;
             try {
                 unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null
-                        || !profileCipher.verifyUnidentifiedAccess(Base64.decode(encryptedProfile.getUnidentifiedAccess()))
+                        || !profileCipher.verifyUnidentifiedAccess(Base64.getDecoder()
+                        .decode(encryptedProfile.getUnidentifiedAccess()))
                         ? null
                         : encryptedProfile.getUnidentifiedAccess();
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 unidentifiedAccess = null;
             }
             return new SignalProfile(encryptedProfile.getIdentityKey(),
