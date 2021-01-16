@@ -325,11 +325,9 @@ public class Manager implements Closeable {
      */
     public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
-        List<ContactTokenDetails> contactDetails = this.accountManager.getContacts(numbers);
+        Map<String, UUID> contactDetails = getRegisteredUsers(numbers);
 
-        Set<String> registeredUsers = contactDetails.stream()
-                .map(ContactTokenDetails::getNumber)
-                .collect(Collectors.toSet());
+        Set<String> registeredUsers = contactDetails.keySet();
 
         return numbers.stream().collect(Collectors.toMap(x -> x, registeredUsers::contains));
     }
@@ -1184,28 +1182,29 @@ public class Manager implements Closeable {
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
         final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
-        final Set<SignalServiceAddress> missingUuids = new HashSet<>();
+        final Set<SignalServiceAddress> addressesMissingUuid = new HashSet<>();
 
         for (String number : numbers) {
             final SignalServiceAddress resolvedAddress = canonicalizeAndResolveSignalServiceAddress(number);
             if (resolvedAddress.getUuid().isPresent()) {
                 signalServiceAddresses.add(resolvedAddress);
             } else {
-                missingUuids.add(resolvedAddress);
+                addressesMissingUuid.add(resolvedAddress);
             }
         }
 
+        final Set<String> numbersMissingUuid = addressesMissingUuid.stream()
+                .map(a -> a.getNumber().get())
+                .collect(Collectors.toSet());
         Map<String, UUID> registeredUsers;
         try {
-            registeredUsers = accountManager.getRegisteredUsers(getIasKeyStore(),
-                    missingUuids.stream().map(a -> a.getNumber().get()).collect(Collectors.toSet()),
-                    CDS_MRENCLAVE);
-        } catch (IOException | Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException e) {
+            registeredUsers = getRegisteredUsers(numbersMissingUuid);
+        } catch (IOException e) {
             logger.warn("Failed to resolve uuids from server, ignoring: {}", e.getMessage());
-            registeredUsers = new HashMap<>();
+            registeredUsers = Map.of();
         }
 
-        for (SignalServiceAddress address : missingUuids) {
+        for (SignalServiceAddress address : addressesMissingUuid) {
             final String number = address.getNumber().get();
             if (registeredUsers.containsKey(number)) {
                 final SignalServiceAddress newAddress = resolveSignalServiceAddress(new SignalServiceAddress(
@@ -1218,6 +1217,14 @@ public class Manager implements Closeable {
         }
 
         return signalServiceAddresses;
+    }
+
+    private Map<String, UUID> getRegisteredUsers(final Set<String> numbersMissingUuid) throws IOException {
+        try {
+            return accountManager.getRegisteredUsers(getIasKeyStore(), numbersMissingUuid, CDS_MRENCLAVE);
+        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException e) {
+            throw new IOException(e);
+        }
     }
 
     private Pair<Long, List<SendMessageResult>> sendMessage(
