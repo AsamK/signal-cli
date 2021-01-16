@@ -47,28 +47,32 @@ public class SendReactionCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && ns.getString("group") == null) {
+        final List<String> recipients = ns.getList("recipient");
+        final String groupIdString = ns.getString("group");
+
+        final boolean noRecipients = recipients == null || recipients.isEmpty();
+        if (noRecipients && groupIdString == null) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
             return 1;
         }
+        if (!noRecipients && groupIdString != null) {
+            System.err.println("You cannot specify recipients by phone number and groups at the same time");
+            return 1;
+        }
 
-        String emoji = ns.getString("emoji");
-        boolean isRemove = ns.getBoolean("remove");
-        String targetAuthor = ns.getString("target_author");
-        long targetTimestamp = ns.getLong("target_timestamp");
+        final String emoji = ns.getString("emoji");
+        final boolean isRemove = ns.getBoolean("remove");
+        final String targetAuthor = ns.getString("target_author");
+        final long targetTimestamp = ns.getLong("target_timestamp");
 
         try {
             final Pair<Long, List<SendMessageResult>> results;
-            if (ns.getString("group") != null) {
-                GroupId groupId = Util.decodeGroupId(ns.getString("group"));
+            if (groupIdString != null) {
+                GroupId groupId = Util.decodeGroupId(groupIdString);
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
-                results = m.sendMessageReaction(emoji,
-                        isRemove,
-                        targetAuthor,
-                        targetTimestamp,
-                        ns.getList("recipient"));
+                results = m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
             return handleTimestampAndSendMessageResults(results.first(), results.second());
         } catch (IOException e) {

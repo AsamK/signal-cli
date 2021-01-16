@@ -34,17 +34,24 @@ public class SendCommand implements DbusCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Signal signal) {
-        if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && (
-                ns.getBoolean("endsession") || ns.getString("group") == null
-        )) {
+        final List<String> recipients = ns.getList("recipient");
+        final Boolean isEndSession = ns.getBoolean("endsession");
+        final String groupIdString = ns.getString("group");
+
+        final boolean noRecipients = recipients == null || recipients.isEmpty();
+        if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null)) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
             return 1;
         }
+        if (!noRecipients && groupIdString != null) {
+            System.err.println("You cannot specify recipients by phone number and groups at the same time");
+            return 1;
+        }
 
-        if (ns.getBoolean("endsession")) {
+        if (isEndSession) {
             try {
-                signal.sendEndSessionMessage(ns.getList("recipient"));
+                signal.sendEndSessionMessage(recipients);
                 return 0;
             } catch (AssertionError e) {
                 handleAssertionError(e);
@@ -72,10 +79,10 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
-            if (ns.getString("group") != null) {
+            if (groupIdString != null) {
                 byte[] groupId;
                 try {
-                    groupId = Util.decodeGroupId(ns.getString("group")).serialize();
+                    groupId = Util.decodeGroupId(groupIdString).serialize();
                 } catch (GroupIdFormatException e) {
                     handleGroupIdFormatException(e);
                     return 1;
@@ -94,7 +101,7 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
-            long timestamp = signal.sendMessage(messageText, attachments, ns.getList("recipient"));
+            long timestamp = signal.sendMessage(messageText, attachments, recipients);
             System.out.println(timestamp);
             return 0;
         } catch (AssertionError e) {

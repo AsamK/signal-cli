@@ -93,11 +93,6 @@ public class Main {
             return null;
         }
 
-        if (ns.getList("recipient") != null && !ns.getList("recipient").isEmpty() && ns.getString("group") != null) {
-            System.err.println("You cannot specify recipients by phone number and groups at the same time");
-            System.exit(2);
-        }
-
         return ns;
     }
 
