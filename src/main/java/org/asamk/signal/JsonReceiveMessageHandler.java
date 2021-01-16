@@ -1,45 +1,42 @@
 package org.asamk.signal;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.asamk.signal.json.JsonError;
 import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
-    final Manager m;
-    private final ObjectMapper jsonProcessor;
+    private final static Logger logger = LoggerFactory.getLogger(JsonReceiveMessageHandler.class);
+
+    protected final Manager m;
+    private final JsonWriter jsonWriter;
 
     public JsonReceiveMessageHandler(Manager m) {
         this.m = m;
-        this.jsonProcessor = new ObjectMapper();
-        jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        jsonWriter = new JsonWriter(System.out);
     }
 
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-        ObjectNode result = jsonProcessor.createObjectNode();
+        final Map<String, Object> object = new HashMap<>();
         if (exception != null) {
-            result.putPOJO("error", new JsonError(exception));
+            object.put("error", new JsonError(exception));
         }
         if (envelope != null) {
-            result.putPOJO("envelope", new JsonMessageEnvelope(envelope, content, m));
+            object.put("envelope", new JsonMessageEnvelope(envelope, content, m));
         }
         try {
-            jsonProcessor.writeValue(System.out, result);
-            System.out.println();
+            jsonWriter.write(object);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to write json object: {}", e.getMessage());
         }
     }
 }

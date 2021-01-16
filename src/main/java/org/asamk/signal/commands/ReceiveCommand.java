@@ -1,17 +1,12 @@
 package org.asamk.signal.commands;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.JsonReceiveMessageHandler;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.json.JsonMessageEnvelope;
@@ -24,13 +19,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
-    // TODO delete later when "json" variable is removed
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
     @Override
@@ -47,8 +42,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
-        final ObjectMapper jsonProcessor;
-
         boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
@@ -56,24 +49,16 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        if (inJson) {
-            jsonProcessor = new ObjectMapper();
-            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-            jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-        } else {
-            jsonProcessor = null;
-        }
+        final JsonWriter jsonWriter = inJson ? new JsonWriter(System.out) : null;
         try {
             dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
-                if (jsonProcessor != null) {
+                if (jsonWriter != null) {
                     JsonMessageEnvelope envelope = new JsonMessageEnvelope(messageReceived);
-                    ObjectNode result = jsonProcessor.createObjectNode();
-                    result.putPOJO("envelope", envelope);
+                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
                     try {
-                        jsonProcessor.writeValue(System.out, result);
-                        System.out.println();
+                        jsonWriter.write(object);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error("Failed to write json object: {}", e.getMessage());
                     }
                 } else {
                     System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
@@ -95,15 +80,13 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             });
 
             dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
-                if (jsonProcessor != null) {
+                if (jsonWriter != null) {
                     JsonMessageEnvelope envelope = new JsonMessageEnvelope(receiptReceived);
-                    ObjectNode result = jsonProcessor.createObjectNode();
-                    result.putPOJO("envelope", envelope);
+                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
                     try {
-                        jsonProcessor.writeValue(System.out, result);
-                        System.out.println();
+                        jsonWriter.write(object);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error("Failed to write json object: {}", e.getMessage());
                     }
                 } else {
                     System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
@@ -113,15 +96,13 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             });
 
             dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
-                if (jsonProcessor != null) {
+                if (jsonWriter != null) {
                     JsonMessageEnvelope envelope = new JsonMessageEnvelope(syncReceived);
-                    ObjectNode result = jsonProcessor.createObjectNode();
-                    result.putPOJO("envelope", envelope);
+                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
                     try {
-                        jsonProcessor.writeValue(System.out, result);
-                        System.out.println();
+                        jsonWriter.write(object);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error("Failed to write json object: {}", e.getMessage());
                     }
                 } else {
                     System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",

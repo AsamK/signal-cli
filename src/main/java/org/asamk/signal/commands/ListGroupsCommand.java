@@ -1,18 +1,16 @@
 package org.asamk.signal.commands;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;
@@ -23,23 +21,13 @@ import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements LocalCommand {
 
+    private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
+
     private static Set<String> resolveMembers(Manager m, Set<SignalServiceAddress> addresses) {
         return addresses.stream()
                 .map(m::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getLegacyIdentifier)
                 .collect(Collectors.toSet());
-    }
-
-    private static int printGroupsJson(ObjectMapper jsonProcessor, List<?> objects) {
-        try {
-            jsonProcessor.writeValue(System.out, objects);
-            System.out.println();
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            return 3;
-        }
-
-        return 0;
     }
 
     private static void printGroupPlainText(Manager m, GroupInfo group, boolean detailed) {
@@ -77,15 +65,13 @@ public class ListGroupsCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         if (ns.get("output") == OutputType.JSON) {
-            final ObjectMapper jsonProcessor = new ObjectMapper();
-            jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-            jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+            final JsonWriter jsonWriter = new JsonWriter(System.out);
 
-            List<JsonGroup> objects = new ArrayList<>();
+            List<JsonGroup> jsonGroups = new ArrayList<>();
             for (GroupInfo group : m.getGroups()) {
                 final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
 
-                objects.add(new JsonGroup(group.getGroupId().toBase64(),
+                jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
                         group.isMember(m.getSelfAddress()),
                         group.isBlocked(),
@@ -94,7 +80,15 @@ public class ListGroupsCommand implements LocalCommand {
                         resolveMembers(m, group.getRequestingMembers()),
                         groupInviteLink == null ? null : groupInviteLink.getUrl()));
             }
-            return printGroupsJson(jsonProcessor, objects);
+
+            try {
+                jsonWriter.write(jsonGroups);
+            } catch (IOException e) {
+                logger.error("Failed to write json object: {}", e.getMessage());
+                return 3;
+            }
+
+            return 0;
         } else {
             boolean detailed = ns.getBoolean("detailed");
             for (GroupInfo group : m.getGroups()) {
