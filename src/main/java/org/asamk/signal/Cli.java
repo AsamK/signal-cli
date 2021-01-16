@@ -91,6 +91,12 @@ public class Cli {
             return 1;
         }
 
+        OutputType outputType = ns.get("output");
+        if (!command.getSupportedOutputTypes().contains(outputType)) {
+            logger.error("Command doesn't support output type {}", outputType.toString());
+            return 1;
+        }
+
         String username = ns.getString("username");
 
         final boolean useDbus = ns.getBoolean("dbus");

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DaemonCommand implements MultiLocalCommand {
@@ -35,6 +36,11 @@ public class DaemonCommand implements MultiLocalCommand {
         subparser.addArgument("--json")
                 .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
+    }
+
+    @Override
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     @Override

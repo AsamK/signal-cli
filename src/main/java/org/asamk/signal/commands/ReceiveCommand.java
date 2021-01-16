@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
@@ -39,6 +40,11 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         subparser.addArgument("--json")
                 .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());
+    }
+
+    @Override
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {

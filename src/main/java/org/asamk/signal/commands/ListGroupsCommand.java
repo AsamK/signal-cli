@@ -63,6 +63,11 @@ public class ListGroupsCommand implements LocalCommand {
     }
 
     @Override
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    }
+
+    @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         if (ns.get("output") == OutputType.JSON) {
             final JsonWriter jsonWriter = new JsonWriter(System.out);
