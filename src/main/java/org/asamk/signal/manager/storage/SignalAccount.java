@@ -585,7 +585,9 @@ public class SignalAccount implements Closeable {
 
     @Override
     public void close() throws IOException {
-        save();
+        if (fileChannel.isOpen()) {
+            save();
+        }
         synchronized (fileChannel) {
             try {
                 lock.close();
