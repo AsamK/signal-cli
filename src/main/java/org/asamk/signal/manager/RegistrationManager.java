@@ -112,7 +112,6 @@ public class RegistrationManager implements AutoCloseable {
             accountManager.requestSmsVerificationCode(false, Optional.fromNullable(captcha), Optional.absent());
         }
 
-        account.setRegistered(false);
         account.save();
     }
 

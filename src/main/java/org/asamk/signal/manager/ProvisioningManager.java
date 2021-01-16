@@ -20,6 +20,8 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.KeyHelper;
@@ -37,6 +39,8 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class ProvisioningManager {
+
+    private final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
     private final PathConfig pathConfig;
     private final SignalServiceConfiguration serviceConfiguration;
@@ -117,12 +121,22 @@ public class ProvisioningManager {
 
             try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {
 
-                m.refreshPreKeys();
+                try {
+                    m.refreshPreKeys();
+                } catch (Exception e) {
+                    logger.error("Failed to refresh prekeys.");
+                    throw e;
+                }
 
-                m.requestSyncGroups();
-                m.requestSyncContacts();
-                m.requestSyncBlocked();
-                m.requestSyncConfiguration();
+                try {
+                    m.requestSyncGroups();
+                    m.requestSyncContacts();
+                    m.requestSyncBlocked();
+                    m.requestSyncConfiguration();
+                } catch (Exception e) {
+                    logger.error("Failed to request sync messages from linked device.");
+                    throw e;
+                }
 
                 m.close(false);
             }
