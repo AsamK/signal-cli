@@ -12,6 +12,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.JsonReceiveMessageHandler;
+import org.asamk.signal.OutputType;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
@@ -48,7 +49,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
         final ObjectMapper jsonProcessor;
 
-        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -156,7 +157,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {

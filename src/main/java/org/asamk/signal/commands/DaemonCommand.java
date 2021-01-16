@@ -7,6 +7,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
+import org.asamk.signal.OutputType;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -38,7 +39,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -73,7 +74,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final List<Manager> managers) {
-        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {

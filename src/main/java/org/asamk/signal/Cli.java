@@ -65,8 +65,8 @@ public class Cli {
 
         parser.addArgument("-o", "--output")
                 .help("Choose to output in plain text or JSON")
-                .choices("plain-text", "json")
-                .setDefault("plain-text");
+                .type(Arguments.enumStringType(OutputType.class))
+                .setDefault(OutputType.PLAIN_TEXT);
 
         Subparsers subparsers = parser.addSubparsers().title("subcommands").dest("command");
 

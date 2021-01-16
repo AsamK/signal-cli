@@ -9,6 +9,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputType;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
@@ -75,7 +76,7 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        if (ns.getString("output").equals("json")) {
+        if (ns.get("output") == OutputType.JSON) {
             final ObjectMapper jsonProcessor = new ObjectMapper();
             jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);

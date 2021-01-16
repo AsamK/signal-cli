@@ -7,6 +7,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputType;
 import org.asamk.signal.manager.Manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ public class GetUserStatusCommand implements LocalCommand {
         ObjectMapper jsonProcessor = new ObjectMapper();
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
-        boolean inJson = ns.getString("output").equals("json") || ns.getBoolean("json");
+        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
