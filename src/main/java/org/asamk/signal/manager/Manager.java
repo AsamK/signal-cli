@@ -953,7 +953,7 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
-    public Pair<Long, List<SendMessageResult>> sendSelfMessage(
+    public Pair<Long, SendMessageResult> sendSelfMessage(
             String messageText, List<String> attachments
     ) throws IOException, AttachmentInvalidException {
         final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
@@ -1278,7 +1278,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private Pair<Long, List<SendMessageResult>> sendSelfMessage(
+    private Pair<Long, SendMessageResult> sendSelfMessage(
             SignalServiceDataMessage.Builder messageBuilder
     ) throws IOException {
         final long timestamp = System.currentTimeMillis();
@@ -1294,7 +1294,7 @@ public class Manager implements Closeable {
 
             SignalServiceDataMessage message = messageBuilder.build();
             final SendMessageResult result = sendSelfMessage(message);
-            return new Pair<>(timestamp, List.of(result));
+            return new Pair<>(timestamp, result);
         } finally {
             account.save();
         }

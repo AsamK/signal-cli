@@ -45,9 +45,30 @@ public class DbusSignalImpl implements Signal {
         return sendMessage(message, attachments, recipients);
     }
 
+    private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
+        String error = ErrorUtils.getErrorMessageFromSendMessageResult(result);
+
+        if (error == null) {
+            return;
+        }
+
+        final String message = timestamp + "\nFailed to send message:\n" + error + '\n';
+
+        if (result.getIdentityFailure() != null) {
+            throw new Error.UntrustedIdentity(message);
+        } else {
+            throw new Error.Failure(message);
+        }
+    }
+
     private static void checkSendMessageResults(
             long timestamp, List<SendMessageResult> results
     ) throws DBusExecutionException {
+        if (results.size() == 1) {
+            checkSendMessageResult(timestamp, results.get(0));
+            return;
+        }
+
         List<String> errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {
             return;
@@ -81,10 +102,10 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.UnregisteredUser, Error.UntrustedIdentity {
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final Pair<Long, List<SendMessageResult>> results = m.sendSelfMessage(message, attachments);
-            checkSendMessageResults(results.first(), results.second());
+            final Pair<Long, SendMessageResult> results = m.sendSelfMessage(message, attachments);
+            checkSendMessageResult(results.first(), results.second());
             return results.first();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());

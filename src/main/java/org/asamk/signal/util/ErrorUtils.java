@@ -33,16 +33,24 @@ public class ErrorUtils {
     public static List<String> getErrorMessagesFromSendMessageResults(List<SendMessageResult> results) {
         List<String> errors = new ArrayList<>();
         for (SendMessageResult result : results) {
-            if (result.isNetworkFailure()) {
-                errors.add(String.format("Network failure for \"%s\"", result.getAddress().getLegacyIdentifier()));
-            } else if (result.isUnregisteredFailure()) {
-                errors.add(String.format("Unregistered user \"%s\"", result.getAddress().getLegacyIdentifier()));
-            } else if (result.getIdentityFailure() != null) {
-                errors.add(String.format("Untrusted Identity for \"%s\"", result.getAddress().getLegacyIdentifier()));
+            String error = getErrorMessageFromSendMessageResult(result);
+            if (error != null) {
+                errors.add(error);
             }
         }
 
         return errors;
+    }
+
+    public static String getErrorMessageFromSendMessageResult(SendMessageResult result) {
+        if (result.isNetworkFailure()) {
+            return String.format("Network failure for \"%s\"", result.getAddress().getLegacyIdentifier());
+        } else if (result.isUnregisteredFailure()) {
+            return String.format("Unregistered user \"%s\"", result.getAddress().getLegacyIdentifier());
+        } else if (result.getIdentityFailure() != null) {
+            return String.format("Untrusted Identity for \"%s\"", result.getAddress().getLegacyIdentifier());
+        }
+        return null;
     }
 
     private static int handleSendMessageResultErrors(List<String> errors) {

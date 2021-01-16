@@ -66,6 +66,9 @@ public class SendCommand implements DbusCommand {
             } catch (AssertionError e) {
                 handleAssertionError(e);
                 return 1;
+            } catch (Signal.Error.UntrustedIdentity e) {
+                System.err.println("Failed to send message: " + e.getMessage());
+                return 4;
             } catch (DBusExecutionException e) {
                 System.err.println("Failed to send message: " + e.getMessage());
                 return 2;
@@ -118,6 +121,9 @@ public class SendCommand implements DbusCommand {
             } catch (AssertionError e) {
                 handleAssertionError(e);
                 return 1;
+            } catch (Signal.Error.UntrustedIdentity e) {
+                System.err.println("Failed to send message: " + e.getMessage());
+                return 4;
             } catch (DBusExecutionException e) {
                 System.err.println("Failed to send note to self message: " + e.getMessage());
                 return 2;
@@ -134,6 +140,9 @@ public class SendCommand implements DbusCommand {
         } catch (UnknownObject e) {
             System.err.println("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
             return 1;
+        } catch (Signal.Error.UntrustedIdentity e) {
+            System.err.println("Failed to send message: " + e.getMessage());
+            return 4;
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
             return 2;

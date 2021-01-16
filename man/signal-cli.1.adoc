@@ -404,6 +404,7 @@ signal-cli -u USERNAME trust -a NUMBER
 * *1*: Error is probably caused and fixable by the user
 * *2*: Some unexpected error
 * *3*: Server or IO error
+* *4*: Sending failed due to untrusted key
 
 == Files
 

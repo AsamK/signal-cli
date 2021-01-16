@@ -15,21 +15,21 @@ public interface Signal extends DBusInterface {
 
     long sendMessage(
             String message, List<String> attachments, String recipient
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber;
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendMessage(
             String message, List<String> attachments, List<String> recipients
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendNoteToSelfMessage(
             String message, List<String> attachments
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.UnregisteredUser, Error.UntrustedIdentity;
+    ) throws Error.AttachmentInvalid, Error.Failure;
 
-    void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
+    void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendGroupMessage(
             String message, List<String> attachments, byte[] groupId
-    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.UnregisteredUser, Error.UntrustedIdentity;
+    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid;
 
     String getContactName(String number) throws Error.InvalidNumber;
 
@@ -47,7 +47,7 @@ public interface Signal extends DBusInterface {
 
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.UnregisteredUser, Error.UntrustedIdentity;
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
 
     boolean isRegistered();
 
@@ -194,13 +194,6 @@ public interface Signal extends DBusInterface {
         class InvalidNumber extends DBusExecutionException {
 
             public InvalidNumber(final String message) {
-                super(message);
-            }
-        }
-
-        class UnregisteredUser extends DBusExecutionException {
-
-            public UnregisteredUser(final String message) {
                 super(message);
             }
         }
