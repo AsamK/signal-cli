@@ -37,9 +37,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class Cli {
+public class App {
 
-    private final static Logger logger = LoggerFactory.getLogger(Cli.class);
+    private final static Logger logger = LoggerFactory.getLogger(App.class);
 
     private final Namespace ns;
 
@@ -79,7 +79,7 @@ public class Cli {
         return parser;
     }
 
-    public Cli(final Namespace ns) {
+    public App(final Namespace ns) {
         this.ns = ns;
     }
 

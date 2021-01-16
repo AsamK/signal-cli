@@ -36,11 +36,11 @@ public class Main {
         // Configuring the logger needs to happen before any logger is initialized
         configureLogging(isVerbose(args));
 
-        ArgumentParser parser = Cli.buildArgumentParser();
+        ArgumentParser parser = App.buildArgumentParser();
 
         Namespace ns = parser.parseArgsOrFail(args);
 
-        int res = new Cli(ns).init();
+        int res = new App(ns).init();
         System.exit(res);
     }
 
