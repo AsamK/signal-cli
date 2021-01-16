@@ -953,6 +953,17 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
+    public Pair<Long, List<SendMessageResult>> sendSelfMessage(
+            String messageText, List<String> attachments
+    ) throws IOException, AttachmentInvalidException {
+        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
+                .withBody(messageText);
+        if (attachments != null) {
+            messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
+        }
+        return sendSelfMessage(messageBuilder);
+    }
+
     public Pair<Long, List<SendMessageResult>> sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {
@@ -1253,11 +1264,7 @@ public class Manager implements Closeable {
                     final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
                     messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
-                    if (address.matches(account.getSelfAddress())) {
-                        results.add(sendSelfMessage(message));
-                    } else {
-                        results.add(sendMessage(address, message));
-                    }
+                    results.add(sendMessage(address, message));
                 }
                 return new Pair<>(timestamp, results);
             }
@@ -1267,6 +1274,28 @@ public class Manager implements Closeable {
                     handleEndSession(recipient);
                 }
             }
+            account.save();
+        }
+    }
+
+    private Pair<Long, List<SendMessageResult>> sendSelfMessage(
+            SignalServiceDataMessage.Builder messageBuilder
+    ) throws IOException {
+        final long timestamp = System.currentTimeMillis();
+        messageBuilder.withTimestamp(timestamp);
+        getOrCreateMessagePipe();
+        getOrCreateUnidentifiedMessagePipe();
+        try {
+            final SignalServiceAddress address = getSelfAddress();
+
+            final ContactInfo contact = account.getContactStore().getContact(address);
+            final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
+            messageBuilder.withExpiration(expirationTime);
+
+            SignalServiceDataMessage message = messageBuilder.build();
+            final SendMessageResult result = sendSelfMessage(message);
+            return new Pair<>(timestamp, List.of(result));
+        } finally {
             account.save();
         }
     }

@@ -1,6 +1,7 @@
 package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.impl.Arguments;
+import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -13,7 +14,6 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
@@ -23,8 +23,13 @@ public class SendCommand implements DbusCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
+        final MutuallyExclusiveGroup mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
+        mutuallyExclusiveGroup.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        mutuallyExclusiveGroup.addArgument("--note-to-self")
+                .help("Send the message to self without notification.")
+                .action(Arguments.storeTrue());
+
         subparser.addArgument("-m", "--message").help("Specify the message, if missing standard input is used.");
         subparser.addArgument("-a", "--attachment").nargs("*").help("Add file as attachment");
         subparser.addArgument("-e", "--endsession")
@@ -37,15 +42,20 @@ public class SendCommand implements DbusCommand {
         final List<String> recipients = ns.getList("recipient");
         final Boolean isEndSession = ns.getBoolean("endsession");
         final String groupIdString = ns.getString("group");
+        final Boolean isNoteToSelf = ns.getBoolean("note_to_self");
 
         final boolean noRecipients = recipients == null || recipients.isEmpty();
-        if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null)) {
+        if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null && !isNoteToSelf)) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
             return 1;
         }
         if (!noRecipients && groupIdString != null) {
             System.err.println("You cannot specify recipients by phone number and groups at the same time");
+            return 1;
+        }
+        if (!noRecipients && isNoteToSelf) {
+            System.err.println("You cannot specify recipients by phone number and not to self at the same time");
             return 1;
         }
 
@@ -75,11 +85,11 @@ public class SendCommand implements DbusCommand {
 
         List<String> attachments = ns.getList("attachment");
         if (attachments == null) {
-            attachments = new ArrayList<>();
+            attachments = List.of();
         }
 
-        try {
-            if (groupIdString != null) {
+        if (groupIdString != null) {
+            try {
                 byte[] groupId;
                 try {
                     groupId = Util.decodeGroupId(groupIdString).serialize();
@@ -91,13 +101,27 @@ public class SendCommand implements DbusCommand {
                 long timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
                 System.out.println(timestamp);
                 return 0;
+            } catch (AssertionError e) {
+                handleAssertionError(e);
+                return 1;
+            } catch (DBusExecutionException e) {
+                System.err.println("Failed to send group message: " + e.getMessage());
+                return 2;
             }
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            return 1;
-        } catch (DBusExecutionException e) {
-            System.err.println("Failed to send message: " + e.getMessage());
-            return 2;
+        }
+
+        if (isNoteToSelf) {
+            try {
+                long timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
+                System.out.println(timestamp);
+                return 0;
+            } catch (AssertionError e) {
+                handleAssertionError(e);
+                return 1;
+            } catch (DBusExecutionException e) {
+                System.err.println("Failed to send note to self message: " + e.getMessage());
+                return 2;
+            }
         }
 
         try {

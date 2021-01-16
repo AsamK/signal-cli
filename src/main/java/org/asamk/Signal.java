@@ -21,6 +21,10 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
+    long sendNoteToSelfMessage(
+            String message, List<String> attachments
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.UnregisteredUser, Error.UntrustedIdentity;
+
     void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UnregisteredUser, Error.UntrustedIdentity;
 
     long sendGroupMessage(

@@ -3,6 +3,11 @@
 ## [Unreleased]
 ### Added
 - `--verbose` flag to increase log level
+- `--note-to-self` flag for `send` command to send a note to linked devices
+
+### Changed
+- Messages sent to self number will be sent as normal Signal messages again, to
+  send a sync message, use the new `--note-to-self` flag
 
 ### Fixed
 - Disable registration lock before removing the PIN

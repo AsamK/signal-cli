@@ -79,6 +79,21 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public long sendNoteToSelfMessage(
+            final String message, final List<String> attachments
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.UnregisteredUser, Error.UntrustedIdentity {
+        try {
+            final Pair<Long, List<SendMessageResult>> results = m.sendSelfMessage(message, attachments);
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
+        } catch (AttachmentInvalidException e) {
+            throw new Error.AttachmentInvalid(e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
             final Pair<Long, List<SendMessageResult>> results = m.sendEndSessionMessage(recipients);
