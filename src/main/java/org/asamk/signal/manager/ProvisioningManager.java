@@ -40,7 +40,7 @@ import java.util.concurrent.TimeoutException;
 
 public class ProvisioningManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(Manager.class);
+    private final static Logger logger = LoggerFactory.getLogger(ProvisioningManager.class);
 
     private final PathConfig pathConfig;
     private final SignalServiceConfiguration serviceConfiguration;

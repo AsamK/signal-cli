@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 public class Cli {
 
-    private final static Logger logger = LoggerFactory.getLogger(Main.class);
+    private final static Logger logger = LoggerFactory.getLogger(Cli.class);
 
     private final Namespace ns;
 

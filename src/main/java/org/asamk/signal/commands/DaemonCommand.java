@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DaemonCommand implements MultiLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
+    private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
