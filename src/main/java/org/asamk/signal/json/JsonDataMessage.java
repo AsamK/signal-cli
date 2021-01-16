@@ -69,7 +69,7 @@ class JsonDataMessage {
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
-        groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
+        groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
@@ -80,7 +80,7 @@ class JsonDataMessage {
     public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
-        groupInfo = new JsonGroupInfo(messageReceived.getGroupId());
+        groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
