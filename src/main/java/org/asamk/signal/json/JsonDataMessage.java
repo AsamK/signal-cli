@@ -50,6 +50,10 @@ class JsonDataMessage {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonRemoteDelete remoteDelete;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
@@ -84,6 +88,8 @@ class JsonDataMessage {
         } else {
             this.mentions = List.of();
         }
+        remoteDelete = dataMessage.getRemoteDelete().isPresent() ? new JsonRemoteDelete(dataMessage.getRemoteDelete()
+                .get()) : null;
         if (dataMessage.getAttachments().isPresent()) {
             this.attachments = dataMessage.getAttachments()
                     .get()
@@ -102,6 +108,7 @@ class JsonDataMessage {
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         expiresInSeconds = null;
         viewOnce = null;
+        remoteDelete = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
@@ -115,6 +122,7 @@ class JsonDataMessage {
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         expiresInSeconds = null;
         viewOnce = null;
+        remoteDelete = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
