@@ -41,6 +41,10 @@ public class JsonMessageEnvelope {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonReceiptMessage receiptMessage;
 
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonTypingMessage typingMessage;
+
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
@@ -64,6 +68,9 @@ public class JsonMessageEnvelope {
         } else {
             this.receiptMessage = null;
         }
+        this.typingMessage = content != null && content.getTypingMessage().isPresent()
+                ? new JsonTypingMessage(content.getTypingMessage().get())
+                : null;
 
         this.dataMessage = content != null && content.getDataMessage().isPresent()
                 ? new JsonDataMessage(content.getDataMessage().get(), m)
@@ -85,6 +92,7 @@ public class JsonMessageEnvelope {
         dataMessage = new JsonDataMessage(messageReceived);
         syncMessage = null;
         callMessage = null;
+        typingMessage = null;
     }
 
     public JsonMessageEnvelope(Signal.ReceiptReceived receiptReceived) {
@@ -96,6 +104,7 @@ public class JsonMessageEnvelope {
         dataMessage = null;
         syncMessage = null;
         callMessage = null;
+        typingMessage = null;
     }
 
     public JsonMessageEnvelope(Signal.SyncMessageReceived messageReceived) {
@@ -107,5 +116,6 @@ public class JsonMessageEnvelope {
         dataMessage = null;
         syncMessage = new JsonSyncMessage(messageReceived);
         callMessage = null;
+        typingMessage = null;
     }
 }
