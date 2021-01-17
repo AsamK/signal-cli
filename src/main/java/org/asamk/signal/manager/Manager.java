@@ -363,6 +363,11 @@ public class Manager implements Closeable {
                 avatarStore.deleteProfileAvatar(getSelfAddress());
             }
         }
+
+        try {
+            sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
+        } catch (UntrustedIdentityException ignored) {
+        }
     }
 
     public void unregister() throws IOException {
@@ -494,6 +499,12 @@ public class Manager implements Closeable {
     private SignalProfile getRecipientProfile(
             SignalServiceAddress address
     ) {
+        return getRecipientProfile(address, false);
+    }
+
+    private SignalProfile getRecipientProfile(
+            SignalServiceAddress address, boolean force
+    ) {
         SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry == null) {
             return null;
@@ -501,7 +512,9 @@ public class Manager implements Closeable {
         long now = new Date().getTime();
         // Profiles are cached for 24h before retrieving them again
         if (!profileEntry.isRequestPending() && (
-                profileEntry.getProfile() == null || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000
+                force
+                        || profileEntry.getProfile() == null
+                        || now - profileEntry.getLastUpdateTimestamp() > 24 * 60 * 60 * 1000
         )) {
             profileEntry.setRequestPending(true);
             final SignalServiceProfile encryptedProfile;
@@ -1990,6 +2003,14 @@ public class Manager implements Closeable {
                         sticker.setInstalled(!m.getType().isPresent()
                                 || m.getType().get() == StickerPackOperationMessage.Type.INSTALL);
                         account.getStickerStore().updateSticker(sticker);
+                    }
+                }
+                if (syncMessage.getFetchType().isPresent()) {
+                    switch (syncMessage.getFetchType().get()) {
+                        case LOCAL_PROFILE:
+                            getRecipientProfile(getSelfAddress(), true);
+                        case STORAGE_MANIFEST:
+                            // TODO
                     }
                 }
                 if (syncMessage.getConfiguration().isPresent()) {
