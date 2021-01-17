@@ -1,13 +1,16 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
@@ -17,23 +20,57 @@ enum JsonSyncMessageType {
 
 class JsonSyncMessage {
 
-    JsonSyncDataMessage sentMessage;
-    List<String> blockedNumbers;
-    List<ReadMessage> readMessages;
-    JsonSyncMessageType type;
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonSyncDataMessage sentMessage;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<String> blockedNumbers;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<String> blockedGroupIds;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonSyncReadMessage> readMessages;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonSyncMessageType type;
 
     JsonSyncMessage(SignalServiceSyncMessage syncMessage, Manager m) {
-        if (syncMessage.getSent().isPresent()) {
-            this.sentMessage = new JsonSyncDataMessage(syncMessage.getSent().get(), m);
-        }
+        this.sentMessage = syncMessage.getSent().isPresent()
+                ? new JsonSyncDataMessage(syncMessage.getSent().get(), m)
+                : null;
         if (syncMessage.getBlockedList().isPresent()) {
-            this.blockedNumbers = new ArrayList<>(syncMessage.getBlockedList().get().getAddresses().size());
-            for (SignalServiceAddress address : syncMessage.getBlockedList().get().getAddresses()) {
-                this.blockedNumbers.add(address.getLegacyIdentifier());
-            }
+            final Base64.Encoder base64 = Base64.getEncoder();
+            this.blockedNumbers = syncMessage.getBlockedList()
+                    .get()
+                    .getAddresses()
+                    .stream()
+                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .collect(Collectors.toList());
+            this.blockedGroupIds = syncMessage.getBlockedList()
+                    .get()
+                    .getGroupIds()
+                    .stream()
+                    .map(base64::encodeToString)
+                    .collect(Collectors.toList());
+        } else {
+            this.blockedNumbers = null;
+            this.blockedGroupIds = null;
         }
         if (syncMessage.getRead().isPresent()) {
-            this.readMessages = syncMessage.getRead().get();
+            this.readMessages = syncMessage.getRead()
+                    .get()
+                    .stream()
+                    .map(message -> new JsonSyncReadMessage(message.getSender().getLegacyIdentifier(),
+                            message.getTimestamp()))
+                    .collect(Collectors.toList());
+        } else {
+            this.readMessages = null;
         }
 
         if (syncMessage.getContacts().isPresent()) {
@@ -42,10 +79,16 @@ class JsonSyncMessage {
             this.type = JsonSyncMessageType.GROUPS_SYNC;
         } else if (syncMessage.getRequest().isPresent()) {
             this.type = JsonSyncMessageType.REQUEST_SYNC;
+        } else {
+            this.type = null;
         }
     }
 
     JsonSyncMessage(Signal.SyncMessageReceived messageReceived) {
-        sentMessage = new JsonSyncDataMessage(messageReceived);
+        this.sentMessage = new JsonSyncDataMessage(messageReceived);
+        this.blockedNumbers = null;
+        this.blockedGroupIds = null;
+        this.readMessages = null;
+        this.type = null;
     }
 }

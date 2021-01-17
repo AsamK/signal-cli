@@ -20,7 +20,7 @@ public class JsonWriter {
         this.writer = new OutputStreamWriter(writer, StandardCharsets.UTF_8);
 
         objectMapper = new ObjectMapper();
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
         objectMapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 

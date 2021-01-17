@@ -1,9 +1,13 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 
 import java.util.List;
@@ -11,38 +15,61 @@ import java.util.stream.Collectors;
 
 class JsonDataMessage {
 
-    long timestamp;
-    String message;
-    int expiresInSeconds;
+    @JsonProperty
+    final long timestamp;
 
-    JsonReaction reaction;
-    JsonQuote quote;
-    List<JsonMention> mentions;
-    List<JsonAttachment> attachments;
-    JsonSticker sticker;
-    JsonGroupInfo groupInfo;
+    @JsonProperty
+    final String message;
+
+    @JsonProperty
+    final Integer expiresInSeconds;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonReaction reaction;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonQuote quote;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonMention> mentions;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonAttachment> attachments;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonSticker sticker;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
         this.timestamp = dataMessage.getTimestamp();
         if (dataMessage.getGroupContext().isPresent()) {
-            if (dataMessage.getGroupContext().get().getGroupV1().isPresent()) {
-                SignalServiceGroup groupInfo = dataMessage.getGroupContext().get().getGroupV1().get();
+            final SignalServiceGroupContext groupContext = dataMessage.getGroupContext().get();
+            if (groupContext.getGroupV1().isPresent()) {
+                SignalServiceGroup groupInfo = groupContext.getGroupV1().get();
                 this.groupInfo = new JsonGroupInfo(groupInfo);
-            } else if (dataMessage.getGroupContext().get().getGroupV2().isPresent()) {
-                SignalServiceGroupV2 groupInfo = dataMessage.getGroupContext().get().getGroupV2().get();
+            } else if (groupContext.getGroupV2().isPresent()) {
+                SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
                 this.groupInfo = new JsonGroupInfo(groupInfo);
+            } else {
+                this.groupInfo = null;
             }
+        } else {
+            this.groupInfo = null;
         }
-        if (dataMessage.getBody().isPresent()) {
-            this.message = dataMessage.getBody().get();
-        }
+        this.message = dataMessage.getBody().orNull();
         this.expiresInSeconds = dataMessage.getExpiresInSeconds();
-        if (dataMessage.getReaction().isPresent()) {
-            this.reaction = new JsonReaction(dataMessage.getReaction().get(), m);
-        }
-        if (dataMessage.getQuote().isPresent()) {
-            this.quote = new JsonQuote(dataMessage.getQuote().get(), m);
-        }
+        this.reaction = dataMessage.getReaction().isPresent()
+                ? new JsonReaction(dataMessage.getReaction().get(), m)
+                : null;
+        this.quote = dataMessage.getQuote().isPresent() ? new JsonQuote(dataMessage.getQuote().get(), m) : null;
         if (dataMessage.getMentions().isPresent()) {
             this.mentions = dataMessage.getMentions()
                     .get()
@@ -61,15 +88,14 @@ class JsonDataMessage {
         } else {
             this.attachments = List.of();
         }
-        if (dataMessage.getSticker().isPresent()) {
-            this.sticker = new JsonSticker(dataMessage.getSticker().get());
-        }
+        this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
     }
 
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
+        expiresInSeconds = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
@@ -81,6 +107,7 @@ class JsonDataMessage {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
+        expiresInSeconds = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
