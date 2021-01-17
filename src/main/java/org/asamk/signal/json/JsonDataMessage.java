@@ -26,6 +26,10 @@ class JsonDataMessage {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    final Boolean viewOnce;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonReaction reaction;
 
     @JsonProperty
@@ -66,6 +70,7 @@ class JsonDataMessage {
         }
         this.message = dataMessage.getBody().orNull();
         this.expiresInSeconds = dataMessage.getExpiresInSeconds();
+        this.viewOnce = dataMessage.isViewOnce();
         this.reaction = dataMessage.getReaction().isPresent()
                 ? new JsonReaction(dataMessage.getReaction().get(), m)
                 : null;
@@ -96,6 +101,7 @@ class JsonDataMessage {
         message = messageReceived.getMessage();
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         expiresInSeconds = null;
+        viewOnce = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
@@ -108,6 +114,7 @@ class JsonDataMessage {
         message = messageReceived.getMessage();
         groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
         expiresInSeconds = null;
+        viewOnce = null;
         reaction = null;    // TODO Replace these 4 with the proper commands
         quote = null;
         mentions = null;
