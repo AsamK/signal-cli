@@ -20,6 +20,7 @@ public class JsonMessageEnvelope {
     final Integer sourceDevice;
 
     @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     final String relay;
 
     @JsonProperty
