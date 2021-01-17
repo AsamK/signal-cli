@@ -121,7 +121,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOper
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
-import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -773,12 +772,10 @@ public class Manager implements Closeable {
                 newE164Members.add(member.getNumber().get());
             }
 
-            final List<ContactTokenDetails> contacts = accountManager.getContacts(newE164Members);
-            if (contacts.size() != newE164Members.size()) {
+            final Map<String, UUID> registeredUsers = getRegisteredUsers(newE164Members);
+            if (registeredUsers.size() != newE164Members.size()) {
                 // Some of the new members are not registered on Signal
-                for (ContactTokenDetails contact : contacts) {
-                    newE164Members.remove(contact.getNumber());
-                }
+                newE164Members.removeAll(registeredUsers.keySet());
                 throw new IOException("Failed to add members "
                         + String.join(", ", newE164Members)
                         + " to group: Not registered on Signal");
