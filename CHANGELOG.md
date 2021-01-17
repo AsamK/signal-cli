@@ -1,18 +1,31 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.7.3] - 2021-01-17
 ### Added
-- `--verbose` flag to increase log level
+- `getUserStatus` command to check if a user is registered on Signal (Thanks @Atomic-Bean)
+- Global `--verbose` flag to increase log level
+- Global `--output=json` flag, currently supported by `receive`, `daemon`, `getUserStatus`, `listGroups`
 - `--note-to-self` flag for `send` command to send a note to linked devices
+- More info for received messages in json output: stickers, viewOnce, typing, remoteDelete
 
 ### Changed
+- signal-cli can now be used without the username `-u` flag
+  For daemon command all local users will be exposed as dbus objects.
+  If only one local user exists, all other commands will use that user,
+  otherwise a user has to be specified.
 - Messages sent to self number will be sent as normal Signal messages again, to
   send a sync message, use the new `--note-to-self` flag
+- Ignore messages with group context sent by non group member
+- Profile key is sent along with all direct messages
+- In json output unnecessary fields that are null are now omitted
 
 ### Fixed
 - Disable registration lock before removing the PIN
 - Fix PIN hash version to match the official clients.
   If you had previously set a PIN you need to set it again to be able to unlock the registration lock later.
+- Issue with saving account file after linking
 
 ## [0.7.2] - 2020-12-31
 ### Added
