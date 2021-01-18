@@ -1,6 +1,9 @@
-apply plugin: 'java'
-apply plugin: 'application'
-apply plugin: 'eclipse'
+plugins {
+    id 'java'
+    id 'application'
+    id 'eclipse'
+    id 'org.mikeneck.graalvm-native-image' version 'v1.0.0'
+}
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
@@ -22,6 +25,27 @@ dependencies {
     implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
     implementation 'com.github.hypfvieh:dbus-java:3.2.4'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
+}
+
+nativeImage {
+  mainClass = mainClassName
+  executableName = 'signal-cli'
+  arguments(
+    "--no-fallback",
+    "--allow-incomplete-classpath",
+    "--report-unsupported-elements-at-runtime",
+    "--enable-url-protocols=http,https",
+    "--enable-https",
+    "--enable-all-security-services",
+    "-J-Djavax.net.ssl.trustStore=/root/graalvm-ce-java11-20.3.0/lib/security/cacerts",
+    "-J-Djavax.net.ssl.trustAnchors=/root/graalvm-ce-java11-20.3.0/lib/security/cacerts",
+    "-J-Djavax.net.ssl.trustStorePassword=changeit",
+    "-Djavax.net.ssl.trustStore=/root/graalvm-ce-java11-20.3.0/lib/security/cacerts",
+    "-Djavax.net.ssl.trustAnchors=/root/graalvm-ce-java11-20.3.0/lib/security/cacerts",
+    "-Djavax.net.ssl.trustStorePassword=changeit",
+    "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
+    "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json"
+  )
 }
 
 jar {
