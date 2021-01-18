@@ -415,6 +415,9 @@ public class Manager implements Closeable {
     }
 
     public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
+        if (!account.isMasterDevice()) {
+            throw new RuntimeException("Only master device can set a PIN");
+        }
         if (pin.isPresent()) {
             final MasterKey masterKey = account.getPinMasterKey() != null
                     ? account.getPinMasterKey()

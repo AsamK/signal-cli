@@ -505,6 +505,10 @@ public class SignalAccount implements Closeable {
         this.deviceId = deviceId;
     }
 
+    public boolean isMasterDevice() {
+        return deviceId == SignalServiceAddress.DEFAULT_DEVICE_ID;
+    }
+
     public String getPassword() {
         return password;
     }
