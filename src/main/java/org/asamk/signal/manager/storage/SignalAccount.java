@@ -41,6 +41,7 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.storage.StorageKey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -71,6 +72,7 @@ public class SignalAccount implements Closeable {
     private String password;
     private String registrationLockPin;
     private MasterKey pinMasterKey;
+    private StorageKey storageKey;
     private String signalingKey;
     private ProfileKey profileKey;
     private int preKeyIdOffset;
@@ -265,6 +267,10 @@ public class SignalAccount implements Closeable {
         pinMasterKey = pinMasterKeyNode == null || pinMasterKeyNode.isNull()
                 ? null
                 : new MasterKey(Base64.getDecoder().decode(pinMasterKeyNode.asText()));
+        JsonNode storageKeyNode = rootNode.get("storageKey");
+        storageKey = storageKeyNode == null || storageKeyNode.isNull()
+                ? null
+                : new StorageKey(Base64.getDecoder().decode(storageKeyNode.asText()));
         if (rootNode.has("signalingKey")) {
             signalingKey = Utils.getNotNullNode(rootNode, "signalingKey").asText();
         }
@@ -398,6 +404,8 @@ public class SignalAccount implements Closeable {
                 .put("registrationLockPin", registrationLockPin)
                 .put("pinMasterKey",
                         pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
+                .put("storageKey",
+                        storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
                 .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
@@ -531,6 +539,17 @@ public class SignalAccount implements Closeable {
 
     public void setPinMasterKey(final MasterKey pinMasterKey) {
         this.pinMasterKey = pinMasterKey;
+    }
+
+    public StorageKey getStorageKey() {
+        if (pinMasterKey != null) {
+            return pinMasterKey.deriveStorageServiceKey();
+        }
+        return storageKey;
+    }
+
+    public void setStorageKey(final StorageKey storageKey) {
+        this.storageKey = storageKey;
     }
 
     public String getSignalingKey() {

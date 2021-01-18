@@ -114,6 +114,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
+import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
@@ -123,6 +124,7 @@ import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
+import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
@@ -1167,6 +1169,18 @@ public class Manager implements Closeable {
         }
     }
 
+    void requestSyncKeys() throws IOException {
+        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+                .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
+                .build();
+        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        try {
+            sendSyncMessage(message);
+        } catch (UntrustedIdentityException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     private byte[] getSenderCertificate() {
         // TODO support UUID capable sender certificates
         // byte[] certificate = accountManager.getSenderCertificateForPhoneNumberPrivacy();
@@ -2015,6 +2029,13 @@ public class Manager implements Closeable {
                             getRecipientProfile(getSelfAddress(), true);
                         case STORAGE_MANIFEST:
                             // TODO
+                    }
+                }
+                if (syncMessage.getKeys().isPresent()) {
+                    final KeysMessage keysMessage = syncMessage.getKeys().get();
+                    if (keysMessage.getStorageService().isPresent()) {
+                        final StorageKey storageKey = keysMessage.getStorageService().get();
+                        account.setStorageKey(storageKey);
                     }
                 }
                 if (syncMessage.getConfiguration().isPresent()) {
