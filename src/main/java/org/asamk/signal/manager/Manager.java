@@ -137,6 +137,7 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
+import org.whispersystems.signalservice.internal.util.Util;
 
 import java.io.Closeable;
 import java.io.File;
@@ -2304,8 +2305,20 @@ public class Manager implements Closeable {
         return account.getContactStore().getContacts();
     }
 
-    public ContactInfo getContact(String number) {
-        return account.getContactStore().getContact(Utils.getSignalServiceAddressFromIdentifier(number));
+    public String getContactOrProfileName(String number) {
+        final SignalServiceAddress address = Utils.getSignalServiceAddressFromIdentifier(number);
+
+        final ContactInfo contact = account.getContactStore().getContact(address);
+        if (contact != null && !Util.isEmpty(contact.name)) {
+            return contact.name;
+        }
+
+        final SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(address);
+        if (profileEntry != null && profileEntry.getProfile() != null) {
+            return profileEntry.getProfile().getName();
+        }
+
+        return null;
     }
 
     public GroupInfo getGroup(GroupId groupId) {

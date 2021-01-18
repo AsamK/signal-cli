@@ -3,7 +3,6 @@ package org.asamk.signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
-import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
@@ -53,9 +52,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             SignalServiceAddress source = envelope.getSourceAddress();
-            ContactInfo sourceContact = m.getContact(source.getLegacyIdentifier());
+            String name = m.getContactOrProfileName(source.getLegacyIdentifier());
             System.out.println(String.format("Envelope from: %s (device: %d)",
-                    (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + source.getLegacyIdentifier(),
+                    (name == null ? "" : "“" + name + "” ") + source.getLegacyIdentifier(),
                     envelope.getSourceDevice()));
             if (source.getRelay().isPresent()) {
                 System.out.println("Relayed by: " + source.getRelay().get());
@@ -98,10 +97,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (content == null) {
                 System.out.println("Failed to decrypt message.");
             } else {
-                ContactInfo sourceContact = m.getContact(content.getSender().getLegacyIdentifier());
+                String senderName = m.getContactOrProfileName(content.getSender().getLegacyIdentifier());
                 System.out.println(String.format("Sender: %s (device: %d)",
-                        (sourceContact == null ? "" : "“" + sourceContact.name + "” ") + content.getSender()
-                                .getLegacyIdentifier(),
+                        (senderName == null ? "" : "“" + senderName + "” ") + content.getSender().getLegacyIdentifier(),
                         content.getSenderDevice()));
                 if (content.getDataMessage().isPresent()) {
                     SignalServiceDataMessage message = content.getDataMessage().get();
@@ -127,10 +125,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (syncMessage.getRead().isPresent()) {
                         System.out.println("Received sync read messages list");
                         for (ReadMessage rm : syncMessage.getRead().get()) {
-                            ContactInfo fromContact = m.getContact(rm.getSender().getLegacyIdentifier());
+                            String name = m.getContactOrProfileName(rm.getSender().getLegacyIdentifier());
                             System.out.println("From: "
-                                    + (fromContact == null ? "" : "“" + fromContact.name + "” ")
-                                    + rm.getSender().getLegacyIdentifier()
+                                    + (name == null ? "" : "“" + name + "” ")
+                                    + rm.getSender()
+                                    .getLegacyIdentifier()
                                     + " Message timestamp: "
                                     + DateUtils.formatTimestamp(rm.getTimestamp()));
                         }
@@ -159,13 +158,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         String to;
                         if (sentTranscriptMessage.getDestination().isPresent()) {
                             String dest = sentTranscriptMessage.getDestination().get().getLegacyIdentifier();
-                            ContactInfo destContact = m.getContact(dest);
-                            to = (destContact == null ? "" : "“" + destContact.name + "” ") + dest;
+                            String name = m.getContactOrProfileName(dest);
+                            to = (name == null ? "" : "“" + name + "” ") + dest;
                         } else if (sentTranscriptMessage.getRecipients().size() > 0) {
                             StringBuilder toBuilder = new StringBuilder();
                             for (SignalServiceAddress dest : sentTranscriptMessage.getRecipients()) {
-                                ContactInfo destContact = m.getContact(dest.getLegacyIdentifier());
-                                toBuilder.append(destContact == null ? "" : "“" + destContact.name + "” ")
+                                String name = m.getContactOrProfileName(dest.getLegacyIdentifier());
+                                toBuilder.append(name == null ? "" : "“" + name + "” ")
                                         .append(dest.getLegacyIdentifier())
                                         .append(" ");
                             }
