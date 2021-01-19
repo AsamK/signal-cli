@@ -183,7 +183,7 @@ public class JsonGroupStore {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (JsonNode n : node) {
                 GroupInfo g;
-                if (n.has("masterKey")) {
+                if (n.hasNonNull("masterKey")) {
                     // a v2 group
                     GroupIdV2 groupId = GroupIdV2.fromBase64(n.get("groupId").asText());
                     try {

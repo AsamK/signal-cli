@@ -219,10 +219,11 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                         try {
                             IdentityKey id = new IdentityKey(Base64.getDecoder()
                                     .decode(trustedKey.get("identityKey").asText()), 0);
-                            TrustLevel trustLevel = trustedKey.has("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
-                                    "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
-                            Date added = trustedKey.has("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
-                                    .asLong()) : new Date();
+                            TrustLevel trustLevel = trustedKey.hasNonNull("trustLevel")
+                                    ? TrustLevel.fromInt(trustedKey.get("trustLevel").asInt())
+                                    : TrustLevel.TRUSTED_UNVERIFIED;
+                            Date added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get(
+                                    "addedTimestamp").asLong()) : new Date();
                             keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
                         } catch (InvalidKeyException e) {
                             logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());

@@ -84,7 +84,7 @@ public class Utils {
 
     public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
         JsonNode node = parent.get(name);
-        if (node == null) {
+        if (node == null || node.isNull()) {
             throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ",
                     name));
         }

@@ -244,50 +244,50 @@ public class SignalAccount implements Closeable {
             rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
         }
 
-        JsonNode uuidNode = rootNode.get("uuid");
-        if (uuidNode != null && !uuidNode.isNull()) {
+        if (rootNode.hasNonNull("uuid")) {
             try {
-                uuid = UUID.fromString(uuidNode.asText());
+                uuid = UUID.fromString(rootNode.get("uuid").asText());
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid uuid, needs to be a valid UUID", e);
             }
         }
-        JsonNode node = rootNode.get("deviceId");
-        if (node != null) {
-            deviceId = node.asInt();
+        if (rootNode.hasNonNull("deviceId")) {
+            deviceId = rootNode.get("deviceId").asInt();
         }
-        if (rootNode.has("isMultiDevice")) {
-            isMultiDevice = Utils.getNotNullNode(rootNode, "isMultiDevice").asBoolean();
+        if (rootNode.hasNonNull("isMultiDevice")) {
+            isMultiDevice = rootNode.get("isMultiDevice").asBoolean();
         }
         username = Utils.getNotNullNode(rootNode, "username").asText();
         password = Utils.getNotNullNode(rootNode, "password").asText();
-        JsonNode pinNode = rootNode.get("registrationLockPin");
-        registrationLockPin = pinNode == null || pinNode.isNull() ? null : pinNode.asText();
-        JsonNode pinMasterKeyNode = rootNode.get("pinMasterKey");
-        pinMasterKey = pinMasterKeyNode == null || pinMasterKeyNode.isNull()
-                ? null
-                : new MasterKey(Base64.getDecoder().decode(pinMasterKeyNode.asText()));
-        JsonNode storageKeyNode = rootNode.get("storageKey");
-        storageKey = storageKeyNode == null || storageKeyNode.isNull()
-                ? null
-                : new StorageKey(Base64.getDecoder().decode(storageKeyNode.asText()));
-        if (rootNode.has("signalingKey")) {
-            signalingKey = Utils.getNotNullNode(rootNode, "signalingKey").asText();
+        if (rootNode.hasNonNull("registrationLockPin")) {
+            registrationLockPin = rootNode.get("registrationLockPin").asText();
         }
-        if (rootNode.has("preKeyIdOffset")) {
-            preKeyIdOffset = Utils.getNotNullNode(rootNode, "preKeyIdOffset").asInt(0);
+        if (rootNode.hasNonNull("pinMasterKey")) {
+            pinMasterKey = new MasterKey(Base64.getDecoder().decode(rootNode.get("pinMasterKey").asText()));
+        }
+        if (rootNode.hasNonNull("storageKey")) {
+            storageKey = new StorageKey(Base64.getDecoder().decode(rootNode.get("storageKey").asText()));
+        }
+        if (rootNode.hasNonNull("signalingKey")) {
+            signalingKey = rootNode.get("signalingKey").asText();
+            if (signalingKey.equals("null")) {
+                // Workaround for load bug in older versions
+                signalingKey = null;
+            }
+        }
+        if (rootNode.hasNonNull("preKeyIdOffset")) {
+            preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(0);
         } else {
             preKeyIdOffset = 0;
         }
-        if (rootNode.has("nextSignedPreKeyId")) {
-            nextSignedPreKeyId = Utils.getNotNullNode(rootNode, "nextSignedPreKeyId").asInt();
+        if (rootNode.hasNonNull("nextSignedPreKeyId")) {
+            nextSignedPreKeyId = rootNode.get("nextSignedPreKeyId").asInt();
         } else {
             nextSignedPreKeyId = 0;
         }
-        if (rootNode.has("profileKey")) {
+        if (rootNode.hasNonNull("profileKey")) {
             try {
-                profileKey = new ProfileKey(Base64.getDecoder()
-                        .decode(Utils.getNotNullNode(rootNode, "profileKey").asText()));
+                profileKey = new ProfileKey(Base64.getDecoder().decode(rootNode.get("profileKey").asText()));
             } catch (InvalidInputException e) {
                 throw new IOException(
                         "Config file contains an invalid profileKey, needs to be base64 encoded array of 32 bytes",
