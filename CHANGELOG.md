@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.7.4] - 2021-01-19
+### Changed
+- Notify linked devices after profile has been updated
+
+### Fixes
+- After registering a new account, receiving messages didn't work
+  You may have to register and verify again to fix the issue.
+- Creating v1 groups works again
+
 ## [0.7.3] - 2021-01-17
 ### Added
 - `getUserStatus` command to check if a user is registered on Signal (Thanks @Atomic-Bean)
