@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'application'
     id 'eclipse'
-    id 'org.mikeneck.graalvm-native-image' version 'v1.0.0'
+    id 'org.mikeneck.graalvm-native-image' version '1.1.0'
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
