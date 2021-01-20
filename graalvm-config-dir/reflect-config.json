@@ -1213,6 +1213,66 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"blocked_", "allowUnsafeAccess":true}, 
+    {"name":"configuration_", "allowUnsafeAccess":true}, 
+    {"name":"contacts_", "allowUnsafeAccess":true}, 
+    {"name":"fetchLatest_", "allowUnsafeAccess":true}, 
+    {"name":"groups_", "allowUnsafeAccess":true}, 
+    {"name":"keys_", "allowUnsafeAccess":true}, 
+    {"name":"messageRequestResponse_", "allowUnsafeAccess":true}, 
+    {"name":"padding_", "allowUnsafeAccess":true}, 
+    {"name":"read_", "allowUnsafeAccess":true}, 
+    {"name":"request_", "allowUnsafeAccess":true}, 
+    {"name":"sent_", "allowUnsafeAccess":true}, 
+    {"name":"stickerPackOperation_", "allowUnsafeAccess":true}, 
+    {"name":"verified_", "allowUnsafeAccess":true}, 
+    {"name":"viewOnceOpen_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"senderE164_", "allowUnsafeAccess":true}, 
+    {"name":"senderUuid_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"destinationE164_", "allowUnsafeAccess":true}, 
+    {"name":"destinationUuid_", "allowUnsafeAccess":true}, 
+    {"name":"expirationStartTimestamp_", "allowUnsafeAccess":true}, 
+    {"name":"isRecipientUpdate_", "allowUnsafeAccess":true}, 
+    {"name":"message_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}, 
+    {"name":"unidentifiedStatus_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$UnidentifiedDeliveryStatus",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"destinationE164_", "allowUnsafeAccess":true}, 
+    {"name":"destinationUuid_", "allowUnsafeAccess":true}, 
+    {"name":"unidentified_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$StickerPackOperation",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"packId_", "allowUnsafeAccess":true}, 
+    {"name":"packKey_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.VerifyAccountResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
