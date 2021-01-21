@@ -23,7 +23,9 @@ You can find further instructions on the Wiki:
 
 ## Usage
 
-Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
+For a complete usage overview please read the [man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/AsamK/signal-cli/wiki).
+
+Important: The USERNAME is your phone number in international format and must include the country calling code. Hence it should start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
 
 * Register a number (with SMS verification)
 
@@ -47,7 +49,6 @@ Important: The USERNAME (your phone number) must include the country calling cod
 
         signal-cli -u USERNAME receive
 
-For more information read the [man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/AsamK/signal-cli/wiki).
 
 ## Storage
 
