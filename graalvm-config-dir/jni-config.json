@@ -1,0 +1,13 @@
+[
+{
+  "name":"java.lang.ClassLoader",
+  "methods":[{"name":"getPlatformClassLoader","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.NoSuchMethodError"
+},
+{
+  "name":"java.lang.UnsatisfiedLinkError",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+}
+]

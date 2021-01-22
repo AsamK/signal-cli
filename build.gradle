@@ -75,8 +75,8 @@ task checkLibVersions {
     }
 }
 
-task buildNativeBinary {
-    dependsOn("build")
+task assembleNativeImage {
+    dependsOn("assemble")
     doLast {
         def graalVMHome = System.getenv("GRAALVM_HOME")
         if (!graalVMHome) {
@@ -92,18 +92,16 @@ task buildNativeBinary {
             commandLine "$graalVMHome/bin/native-image",
                         "-H:Path=$nativeBinaryOutputPath",
                         "-H:Name=$nativeBinaryName",
-                        "-H:JNIConfigurationFiles=",
-                        "-H:DynamicProxyConfigurationFiles=",
-                        "-H:ReflectionConfigurationFiles=",
-                        "-H:ResourceConfigurationFiles=",
+                        "-H:JNIConfigurationFiles=graalvm-config-dir/jni-config.json",
+                        "-H:DynamicProxyConfigurationFiles=graalvm-config-dir/proxy-config.json",
+                        "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
+                        "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json",
                         "--no-fallback",
                         "--allow-incomplete-classpath",
                         "--report-unsupported-elements-at-runtime",
                         "--enable-url-protocols=http,https",
                         "--enable-https",
                         "--enable-all-security-services",
-                        "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
-                        "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json",
                         "-cp",
                         sourceSets.main.runtimeClasspath.asPath,
                         project.mainClassName
