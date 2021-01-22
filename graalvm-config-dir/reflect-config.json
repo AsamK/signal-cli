@@ -641,6 +641,24 @@
   ]
 },
 {
+  "name":"org.signal.libsignal.metadata.SignalProtos$UnidentifiedSenderMessage",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"encryptedMessage_", "allowUnsafeAccess":true}, 
+    {"name":"encryptedStatic_", "allowUnsafeAccess":true}, 
+    {"name":"ephemeralPublic_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.libsignal.metadata.SignalProtos$UnidentifiedSenderMessage$Message",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"content_", "allowUnsafeAccess":true}, 
+    {"name":"senderCertificate_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.signal.storageservice.protos.groups.AccessControl",
   "fields":[
     {"name":"addFromInviteLink_", "allowUnsafeAccess":true}, 
@@ -1204,12 +1222,36 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Envelope",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"content_", "allowUnsafeAccess":true}, 
+    {"name":"legacyMessage_", "allowUnsafeAccess":true}, 
+    {"name":"relay_", "allowUnsafeAccess":true}, 
+    {"name":"serverGuid_", "allowUnsafeAccess":true}, 
+    {"name":"serverTimestamp_", "allowUnsafeAccess":true}, 
+    {"name":"sourceDevice_", "allowUnsafeAccess":true}, 
+    {"name":"sourceE164_", "allowUnsafeAccess":true}, 
+    {"name":"sourceUuid_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContextV2",
   "fields":[
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
     {"name":"groupChange_", "allowUnsafeAccess":true}, 
     {"name":"masterKey_", "allowUnsafeAccess":true}, 
     {"name":"revision_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ReceiptMessage",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}
   ]
 },
 {
@@ -1273,10 +1315,50 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TypingMessage",
+  "fields":[
+    {"name":"action_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"groupId_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.VerifyAccountResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.serialize.protos.AddressProto",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"e164_", "allowUnsafeAccess":true}, 
+    {"name":"relay_", "allowUnsafeAccess":true}, 
+    {"name":"uuid_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.serialize.protos.MetadataProto",
+  "fields":[
+    {"name":"address_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"needsReceipt_", "allowUnsafeAccess":true}, 
+    {"name":"senderDevice_", "allowUnsafeAccess":true}, 
+    {"name":"serverDeliveredTimestamp_", "allowUnsafeAccess":true}, 
+    {"name":"serverReceivedTimestamp_", "allowUnsafeAccess":true}, 
+    {"name":"timestamp_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.serialize.protos.SignalServiceContentProto",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"dataCase_", "allowUnsafeAccess":true}, 
+    {"name":"data_", "allowUnsafeAccess":true}, 
+    {"name":"localAddress_", "allowUnsafeAccess":true}, 
+    {"name":"metadata_", "allowUnsafeAccess":true}
+  ]
 },
 {
   "name":"org.whispersystems.signalservice.internal.util.JsonUtil$IdentityKeySerializer",
