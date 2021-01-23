@@ -1,15 +1,17 @@
-apply plugin: 'java'
-apply plugin: 'application'
-apply plugin: 'eclipse'
+plugins {
+    id "java"
+    id "application"
+    id "eclipse"
+}
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
-mainClassName = 'org.asamk.signal.Main'
+mainClassName = "org.asamk.signal.Main"
 
-version = '0.7.4'
+version = "0.7.4"
 
-compileJava.options.encoding = 'UTF-8'
+compileJava.options.encoding = "UTF-8"
 
 repositories {
     mavenLocal()
@@ -17,20 +19,20 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.protobuf:protobuf-javalite:3.10.0'
-    implementation 'com.github.turasa:signal-service-java:2.15.3_unofficial_18'
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.68'
-    implementation 'net.sourceforge.argparse4j:argparse4j:0.8.1'
-    implementation 'com.github.hypfvieh:dbus-java:3.2.4'
-    implementation 'org.slf4j:slf4j-simple:1.7.30'
+    implementation("com.google.protobuf:protobuf-javalite:3.10.0")
+    implementation("com.github.turasa:signal-service-java:2.15.3_unofficial_18")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.68")
+    implementation("net.sourceforge.argparse4j:argparse4j:0.8.1")
+    implementation("com.github.hypfvieh:dbus-java:3.2.4")
+    implementation("org.slf4j:slf4j-simple:1.7.30")
 }
 
 jar {
     manifest {
         attributes(
-                'Implementation-Title': project.name,
-                'Implementation-Version': project.version,
-                'Main-Class': project.mainClassName,
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Main-Class": project.mainClassName,
         )
     }
 }
@@ -39,7 +41,7 @@ run {
     if (project.hasProperty("appArgs")) {
         // allow passing command-line arguments to the main application e.g.:
         // $ gradle run -PappArgs="['-u', '+...', 'daemon', '--json']"
-        args Eval.me(appArgs)
+        args(Eval.me(appArgs))
     }
 }
 
@@ -54,19 +56,19 @@ task checkLibVersions {
                     def version = dependency.version
                     if (!checked[dependency]) {
                         def group = dependency.group
-                        def path = group.replace('.', '/')
+                        def path = group.replace(".", "/")
                         def name = dependency.name
                         def url = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
                         try {
                             def metadata = new XmlSlurper().parseText(url.toURL().text)
                             def newest = metadata.versioning.latest;
                             if ("$version" != "$newest") {
-                                println "UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}"
+                                println("UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}")
                             }
                         } catch (FileNotFoundException e) {
-                            logger.debug "Unable to download $url: $e.message"
+                            logger.debug("Unable to download $url: $e.message")
                         } catch (org.xml.sax.SAXParseException e) {
-                            logger.debug "Unable to parse $url: $e.message"
+                            logger.debug("Unable to parse $url: $e.message")
                         }
                         checked[dependency] = true
                     }
@@ -81,31 +83,31 @@ task assembleNativeImage {
     doLast {
         def graalVMHome = System.getenv("GRAALVM_HOME")
         if (!graalVMHome) {
-            throw new GradleException('Required GRAALVM_HOME environment variable not set.')
+            throw new GradleException("Required GRAALVM_HOME environment variable not set.")
         }
         def nativeBinaryOutputPath = "$buildDir/native-image"
         def nativeBinaryName = "signal-cli"
 
-        mkdir nativeBinaryOutputPath
+        mkdir(nativeBinaryOutputPath)
 
         exec {
-            workingDir "."
-            commandLine "$graalVMHome/bin/native-image",
-                        "-H:Path=$nativeBinaryOutputPath",
-                        "-H:Name=$nativeBinaryName",
-                        "-H:JNIConfigurationFiles=graalvm-config-dir/jni-config.json",
-                        "-H:DynamicProxyConfigurationFiles=graalvm-config-dir/proxy-config.json",
-                        "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
-                        "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json",
-                        "--no-fallback",
-                        "--allow-incomplete-classpath",
-                        "--report-unsupported-elements-at-runtime",
-                        "--enable-url-protocols=http,https",
-                        "--enable-https",
-                        "--enable-all-security-services",
-                        "-cp",
-                        sourceSets.main.runtimeClasspath.asPath,
-                        project.mainClassName
+            workingDir = "."
+            commandLine("$graalVMHome/bin/native-image",
+                    "-H:Path=$nativeBinaryOutputPath",
+                    "-H:Name=$nativeBinaryName",
+                    "-H:JNIConfigurationFiles=graalvm-config-dir/jni-config.json",
+                    "-H:DynamicProxyConfigurationFiles=graalvm-config-dir/proxy-config.json",
+                    "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
+                    "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json",
+                    "--no-fallback",
+                    "--allow-incomplete-classpath",
+                    "--report-unsupported-elements-at-runtime",
+                    "--enable-url-protocols=http,https",
+                    "--enable-https",
+                    "--enable-all-security-services",
+                    "-cp",
+                    sourceSets.main.runtimeClasspath.asPath,
+                    project.mainClassName)
         }
     }
 }
