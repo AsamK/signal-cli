@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.util;
 
-import org.asamk.signal.util.RandomUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.IdentityKey;
@@ -14,11 +13,14 @@ import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
 public class KeyUtils {
+
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     private KeyUtils() {
     }
@@ -77,7 +79,7 @@ public class KeyUtils {
     }
 
     public static MasterKey createMasterKey() {
-        return MasterKey.createNew(RandomUtils.getSecureRandom());
+        return MasterKey.createNew(secureRandom);
     }
 
     private static String getSecret(int size) {
@@ -87,7 +89,7 @@ public class KeyUtils {
 
     public static byte[] getSecretBytes(int size) {
         byte[] secret = new byte[size];
-        RandomUtils.getSecureRandom().nextBytes(secret);
+        secureRandom.nextBytes(secret);
         return secret;
     }
 }

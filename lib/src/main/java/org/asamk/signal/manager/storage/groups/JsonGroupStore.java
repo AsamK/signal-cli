@@ -17,12 +17,12 @@ import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.util.IOUtils;
-import org.asamk.signal.util.Hex;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.util.Hex;
 
 import java.io.File;
 import java.io.FileInputStream;
