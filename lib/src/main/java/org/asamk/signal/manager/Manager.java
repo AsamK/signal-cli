@@ -16,6 +16,9 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
@@ -131,7 +134,6 @@ import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -169,17 +171,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import static org.asamk.signal.manager.ServiceConfig.CDS_MRENCLAVE;
-import static org.asamk.signal.manager.ServiceConfig.capabilities;
-import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
+import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
 
 public class Manager implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
-    private final CertificateValidator certificateValidator = new CertificateValidator(ServiceConfig.getUnidentifiedSenderTrustRoot());
+    private final CertificateValidator certificateValidator;
 
-    private final SignalServiceConfiguration serviceConfiguration;
+    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
 
     private SignalAccount account;
@@ -202,16 +202,17 @@ public class Manager implements Closeable {
     Manager(
             SignalAccount account,
             PathConfig pathConfig,
-            SignalServiceConfiguration serviceConfiguration,
+            ServiceEnvironmentConfig serviceEnvironmentConfig,
             String userAgent
     ) {
         this.account = account;
-        this.serviceConfiguration = serviceConfiguration;
+        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
+        this.certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
         this.userAgent = userAgent;
         this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
-                serviceConfiguration)) : null;
+                serviceEnvironmentConfig.getSignalServiceConfiguration())) : null;
         final SleepTimer timer = new UptimeSleepTimer();
-        this.accountManager = new SignalServiceAccountManager(serviceConfiguration,
+        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(account.getUuid(),
                         account.getUsername(),
                         account.getPassword(),
@@ -222,11 +223,18 @@ public class Manager implements Closeable {
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
         this.groupsV2Api = accountManager.getGroupsV2Api();
-        final KeyBackupService keyBackupService = ServiceConfig.createKeyBackupService(accountManager);
+        final KeyBackupService keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
+                10);
+
         this.pinHelper = new PinHelper(keyBackupService);
-        this.clientZkProfileOperations = capabilities.isGv2() ? ClientZkOperations.create(serviceConfiguration)
-                .getProfileOperations() : null;
-        this.messageReceiver = new SignalServiceMessageReceiver(serviceConfiguration,
+        this.clientZkProfileOperations = capabilities.isGv2()
+                ? ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration())
+                .getProfileOperations()
+                : null;
+        this.messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 account.getUuid(),
                 account.getUsername(),
                 account.getPassword(),
@@ -275,7 +283,7 @@ public class Manager implements Closeable {
     }
 
     public static Manager init(
-            String username, File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent
+            String username, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) throws IOException, NotRegisteredException {
         PathConfig pathConfig = PathConfig.createDefault(settingsPath);
 
@@ -289,7 +297,11 @@ public class Manager implements Closeable {
             throw new NotRegisteredException();
         }
 
-        return new Manager(account, pathConfig, serviceConfiguration, userAgent);
+        final ServiceEnvironmentConfig serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(
+                serviceEnvironment,
+                userAgent);
+
+        return new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
     }
 
     public static List<String> getAllLocalUsernames(File settingsPath) {
@@ -498,7 +510,7 @@ public class Manager implements Closeable {
 
     private SignalServiceMessageSender createMessageSender() {
         final ExecutorService executor = null;
-        return new SignalServiceMessageSender(serviceConfiguration,
+        return new SignalServiceMessageSender(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 account.getUuid(),
                 account.getUsername(),
                 account.getPassword(),
@@ -1262,7 +1274,9 @@ public class Manager implements Closeable {
 
     private Map<String, UUID> getRegisteredUsers(final Set<String> numbersMissingUuid) throws IOException {
         try {
-            return accountManager.getRegisteredUsers(getIasKeyStore(), numbersMissingUuid, CDS_MRENCLAVE);
+            return accountManager.getRegisteredUsers(ServiceConfig.getIasKeyStore(),
+                    numbersMissingUuid,
+                    serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }

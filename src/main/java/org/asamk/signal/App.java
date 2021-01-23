@@ -21,14 +21,14 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotRegisteredException;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
-import org.asamk.signal.manager.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,8 +114,7 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        final SignalServiceConfiguration serviceConfiguration = ServiceConfig.createDefaultServiceConfiguration(
-                BaseConfig.USER_AGENT);
+        final ServiceEnvironment serviceEnvironment = ServiceEnvironment.LIVE;
 
         if (!ServiceConfig.getCapabilities().isGv2()) {
             logger.warn("WARNING: Support for new group V2 is disabled,"
@@ -128,7 +127,7 @@ public class App {
                 return 1;
             }
 
-            return handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceConfiguration);
+            return handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment);
         }
 
         if (username == null) {
@@ -139,7 +138,7 @@ public class App {
             }
 
             if (command instanceof MultiLocalCommand) {
-                return handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceConfiguration, usernames);
+                return handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
             }
 
             if (usernames.size() > 1) {
@@ -154,7 +153,7 @@ public class App {
         }
 
         if (command instanceof RegistrationCommand) {
-            return handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceConfiguration);
+            return handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceEnvironment);
         }
 
         if (!(command instanceof LocalCommand)) {
@@ -162,15 +161,13 @@ public class App {
             return 1;
         }
 
-        return handleLocalCommand((LocalCommand) command, username, dataPath, serviceConfiguration);
+        return handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment);
     }
 
     private int handleProvisioningCommand(
-            final ProvisioningCommand command,
-            final File dataPath,
-            final SignalServiceConfiguration serviceConfiguration
+            final ProvisioningCommand command, final File dataPath, final ServiceEnvironment serviceEnvironment
     ) {
-        ProvisioningManager pm = new ProvisioningManager(dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+        ProvisioningManager pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         return command.handleCommand(ns, pm);
     }
 
@@ -178,11 +175,11 @@ public class App {
             final RegistrationCommand command,
             final String username,
             final File dataPath,
-            final SignalServiceConfiguration serviceConfiguration
+            final ServiceEnvironment serviceEnvironment
     ) {
         final RegistrationManager manager;
         try {
-            manager = RegistrationManager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+            manager = RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
             logger.error("Error loading or creating state file: {}", e.getMessage());
             return 2;
@@ -199,9 +196,9 @@ public class App {
             final LocalCommand command,
             final String username,
             final File dataPath,
-            final SignalServiceConfiguration serviceConfiguration
+            final ServiceEnvironment serviceEnvironment
     ) {
-        try (Manager m = loadManager(username, dataPath, serviceConfiguration)) {
+        try (Manager m = loadManager(username, dataPath, serviceEnvironment)) {
             if (m == null) {
                 return 2;
             }
@@ -216,11 +213,11 @@ public class App {
     private int handleMultiLocalCommand(
             final MultiLocalCommand command,
             final File dataPath,
-            final SignalServiceConfiguration serviceConfiguration,
+            final ServiceEnvironment serviceEnvironment,
             final List<String> usernames
     ) {
         final List<Manager> managers = usernames.stream()
-                .map(u -> loadManager(u, dataPath, serviceConfiguration))
+                .map(u -> loadManager(u, dataPath, serviceEnvironment))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -237,11 +234,11 @@ public class App {
     }
 
     private Manager loadManager(
-            final String username, final File dataPath, final SignalServiceConfiguration serviceConfiguration
+            final String username, final File dataPath, final ServiceEnvironment serviceEnvironment
     ) {
         Manager manager;
         try {
-            manager = Manager.init(username, dataPath, serviceConfiguration, BaseConfig.USER_AGENT);
+            manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (NotRegisteredException e) {
             logger.error("User " + username + " is not registered.");
             return null;

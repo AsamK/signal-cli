@@ -16,6 +16,9 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.zkgroup.InvalidInputException;
@@ -31,7 +34,6 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.File;
@@ -43,7 +45,7 @@ public class ProvisioningManager {
     private final static Logger logger = LoggerFactory.getLogger(ProvisioningManager.class);
 
     private final PathConfig pathConfig;
-    private final SignalServiceConfiguration serviceConfiguration;
+    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
 
     private final SignalServiceAccountManager accountManager;
@@ -51,9 +53,9 @@ public class ProvisioningManager {
     private final int registrationId;
     private final String password;
 
-    public ProvisioningManager(File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent) {
-        this.pathConfig = PathConfig.createDefault(settingsPath);
-        this.serviceConfiguration = serviceConfiguration;
+    ProvisioningManager(PathConfig pathConfig, ServiceEnvironmentConfig serviceEnvironmentConfig, String userAgent) {
+        this.pathConfig = pathConfig;
+        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
 
         identityKey = KeyUtils.generateIdentityKeyPair();
@@ -62,16 +64,28 @@ public class ProvisioningManager {
         final SleepTimer timer = new UptimeSleepTimer();
         GroupsV2Operations groupsV2Operations;
         try {
-            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceConfiguration));
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
         } catch (Throwable ignored) {
             groupsV2Operations = null;
         }
-        accountManager = new SignalServiceAccountManager(serviceConfiguration,
+        accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(null, null, password, null, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
+    }
+
+    public static ProvisioningManager init(
+            File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
+    ) {
+        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
+
+        final ServiceEnvironmentConfig serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(
+                serviceEnvironment,
+                userAgent);
+
+        return new ProvisioningManager(pathConfig, serviceConfiguration, userAgent);
     }
 
     public String getDeviceLinkUri() throws TimeoutException, IOException {
@@ -120,7 +134,7 @@ public class ProvisioningManager {
                 profileKey)) {
             account.save();
 
-            try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {
+            try (Manager m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
 
                 try {
                     m.refreshPreKeys();

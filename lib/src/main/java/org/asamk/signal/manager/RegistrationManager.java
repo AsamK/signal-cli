@@ -16,6 +16,9 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -28,11 +31,12 @@ import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
+import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
@@ -46,7 +50,7 @@ public class RegistrationManager implements Closeable {
 
     private SignalAccount account;
     private final PathConfig pathConfig;
-    private final SignalServiceConfiguration serviceConfiguration;
+    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
 
     private final SignalServiceAccountManager accountManager;
@@ -55,31 +59,49 @@ public class RegistrationManager implements Closeable {
     public RegistrationManager(
             SignalAccount account,
             PathConfig pathConfig,
-            SignalServiceConfiguration serviceConfiguration,
+            ServiceEnvironmentConfig serviceEnvironmentConfig,
             String userAgent
     ) {
         this.account = account;
         this.pathConfig = pathConfig;
-        this.serviceConfiguration = serviceConfiguration;
+        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
 
         final SleepTimer timer = new UptimeSleepTimer();
-        this.accountManager = new SignalServiceAccountManager(serviceConfiguration, new DynamicCredentialsProvider(
-                // Using empty UUID, because registering doesn't work otherwise
-                null,
-                account.getUsername(),
-                account.getPassword(),
-                account.getSignalingKey(),
-                SignalServiceAddress.DEFAULT_DEVICE_ID), userAgent, null, ServiceConfig.AUTOMATIC_NETWORK_RETRY, timer);
-        final KeyBackupService keyBackupService = ServiceConfig.createKeyBackupService(accountManager);
+        GroupsV2Operations groupsV2Operations;
+        try {
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
+        } catch (Throwable ignored) {
+            groupsV2Operations = null;
+        }
+        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                new DynamicCredentialsProvider(
+                        // Using empty UUID, because registering doesn't work otherwise
+                        null,
+                        account.getUsername(),
+                        account.getPassword(),
+                        account.getSignalingKey(),
+                        SignalServiceAddress.DEFAULT_DEVICE_ID),
+                userAgent,
+                groupsV2Operations,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
+                timer);
+        final KeyBackupService keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
+                serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
+                10);
         this.pinHelper = new PinHelper(keyBackupService);
     }
 
     public static RegistrationManager init(
-            String username, File settingsPath, SignalServiceConfiguration serviceConfiguration, String userAgent
+            String username, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) throws IOException {
         PathConfig pathConfig = PathConfig.createDefault(settingsPath);
 
+        final ServiceEnvironmentConfig serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(
+                serviceEnvironment,
+                userAgent);
         if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
             IdentityKeyPair identityKey = KeyUtils.generateIdentityKeyPair();
             int registrationId = KeyHelper.generateRegistrationId(false);
@@ -159,7 +181,7 @@ public class RegistrationManager implements Closeable {
                         account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(),
                         TrustLevel.TRUSTED_VERIFIED);
 
-        try (Manager m = new Manager(account, pathConfig, serviceConfiguration, userAgent)) {
+        try (Manager m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
 
             m.refreshPreKeys();
 

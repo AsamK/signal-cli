@@ -1,14 +1,14 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.config;
 
 import org.whispersystems.signalservice.api.push.TrustStore;
 
 import java.io.InputStream;
 
-class WhisperTrustStore implements TrustStore {
+class IasTrustStore implements TrustStore {
 
     @Override
     public InputStream getKeyStoreInputStream() {
-        return WhisperTrustStore.class.getResourceAsStream("whisper.store");
+        return IasTrustStore.class.getResourceAsStream("ias.store");
     }
 
     @Override
