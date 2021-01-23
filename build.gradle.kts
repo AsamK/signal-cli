@@ -2,6 +2,7 @@ plugins {
     java
     application
     eclipse
+    `check-lib-versions`
 }
 
 version = "0.7.4"
@@ -54,39 +55,6 @@ tasks.withType<JavaExec> {
         // allow passing command-line arguments to the main application e.g.:
         // $ gradle run -PappArgs="['-u', '+...', 'daemon', '--json']"
         args = groovy.util.Eval.me(appArgs) as MutableList<String>
-    }
-}
-
-// Find any 3rd party libraries which have released new versions
-// to the central Maven repo since we last upgraded.
-val checkLibVersions by tasks.registering {
-    doLast {
-        val checked = kotlin.collections.HashSet<Dependency>()
-        allprojects {
-            configurations.forEach { configuration ->
-                configuration.allDependencies.forEach { dependency ->
-                    val version = dependency.version
-                    if (!checked.contains(dependency)) {
-                        val group = dependency.group
-                        val path = group?.replace(".", "/") ?: ""
-                        val name = dependency.name
-                        val metaDataUrl = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
-                        try {
-                            val url = org.codehaus.groovy.runtime.ResourceGroovyMethods.toURL(metaDataUrl)
-                            val metaDataText = org.codehaus.groovy.runtime.ResourceGroovyMethods.getText(url)
-                            val metadata = groovy.util.XmlSlurper().parseText(metaDataText)
-                            val newest = (metadata.getProperty("versioning") as groovy.util.slurpersupport.GPathResult).getProperty("latest")
-                            if (version != newest.toString()) {
-                                println("UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}")
-                            }
-                        } catch (e: Throwable) {
-                            logger.debug("Unable to download or parse $metaDataUrl: $e.message")
-                        }
-                        checked.add(dependency)
-                    }
-                }
-            }
-        }
     }
 }
 

@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `check-lib-versions`
 }
 
 java {
