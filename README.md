@@ -83,6 +83,20 @@ dependencies. If you have a recent gradle version installed, you can replace `./
 
         ./gradlew distTar
 
+### Building a native binary with GraalVM
+
+It is possible to build a native binary with [GraalVM](https://www.graalvm.org).
+
+1. [Install GraalVM and setup the enviroment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
+2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
+2. Execute Gradle:
+
+        ./gradle nativeImage
+  
+   The binary is available at
+
+        build/native-image/signal-cli
+
 ## Troubleshooting
 If you use a version of the Oracle JRE and get an InvalidKeyException you need to enable unlimited strength crypto. See https://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters for instructions.
 

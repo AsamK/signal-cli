@@ -74,3 +74,39 @@ task checkLibVersions {
         }
     }
 }
+
+task buildNativeBinary {
+    dependsOn("build")
+    doLast {
+        def graalVMHome = System.getenv("GRAALVM_HOME")
+        if (!graalVMHome) {
+            throw new GradleException('Required GRAALVM_HOME environment variable not set.')
+        }
+        def nativeBinaryOutputPath = "$buildDir/native-image"
+        def nativeBinaryName = "signal-cli"
+
+        mkdir nativeBinaryOutputPath
+
+        exec {
+            workingDir "."
+            commandLine "$graalVMHome/bin/native-image",
+                        "-H:Path=$nativeBinaryOutputPath",
+                        "-H:Name=$nativeBinaryName",
+                        "-H:JNIConfigurationFiles=",
+                        "-H:DynamicProxyConfigurationFiles=",
+                        "-H:ReflectionConfigurationFiles=",
+                        "-H:ResourceConfigurationFiles=",
+                        "--no-fallback",
+                        "--allow-incomplete-classpath",
+                        "--report-unsupported-elements-at-runtime",
+                        "--enable-url-protocols=http,https",
+                        "--enable-https",
+                        "--enable-all-security-services",
+                        "-H:ResourceConfigurationFiles=graalvm-config-dir/resource-config.json",
+                        "-H:ReflectionConfigurationFiles=graalvm-config-dir/reflect-config.json",
+                        "-cp",
+                        sourceSets.main.runtimeClasspath.asPath,
+                        project.mainClassName
+        }
+    }
+}
