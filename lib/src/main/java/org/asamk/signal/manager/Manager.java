@@ -362,22 +362,33 @@ public class Manager implements Closeable {
     }
 
     /**
-     * @param avatar if avatar is null the image from the local avatar store is used (if present),
-     *               if it's Optional.absent(), the avatar will be removed
+     * @param name       if null, the previous name will be kept
+     * @param about      if null, the previous about text will be kept
+     * @param aboutEmoji if null, the previous about emoji will be kept
+     * @param avatar     if avatar is null the image from the local avatar store is used (if present),
+     *                   if it's Optional.absent(), the avatar will be removed
      */
-    public void setProfile(String name, Optional<File> avatar) throws IOException {
-        // TODO
-        String about = null;
-        String aboutEmoji = null;
+    public void setProfile(String name, String about, String aboutEmoji, Optional<File> avatar) throws IOException {
+        SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(getSelfAddress());
+        SignalProfile profile = profileEntry == null ? null : profileEntry.getProfile();
+        SignalProfile newProfile = new SignalProfile(profile == null ? null : profile.getIdentityKey(),
+                name != null ? name : profile == null || profile.getName() == null ? "" : profile.getName(),
+                about != null ? about : profile == null || profile.getAbout() == null ? "" : profile.getAbout(),
+                aboutEmoji != null
+                        ? aboutEmoji
+                        : profile == null || profile.getAboutEmoji() == null ? "" : profile.getAboutEmoji(),
+                profile == null ? null : profile.getUnidentifiedAccess(),
+                account.isUnrestrictedUnidentifiedAccess(),
+                profile == null ? null : profile.getCapabilities());
 
         try (final StreamDetails streamDetails = avatar == null
                 ? avatarStore.retrieveProfileAvatar(getSelfAddress())
                 : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
             accountManager.setVersionedProfile(account.getUuid(),
                     account.getProfileKey(),
-                    name,
-                    about,
-                    aboutEmoji,
+                    newProfile.getName(),
+                    newProfile.getAbout(),
+                    newProfile.getAboutEmoji(),
                     streamDetails);
         }
 
@@ -389,6 +400,12 @@ public class Manager implements Closeable {
                 avatarStore.deleteProfileAvatar(getSelfAddress());
             }
         }
+        account.getProfileStore()
+                .updateProfile(getSelfAddress(),
+                        account.getProfileKey(),
+                        System.currentTimeMillis(),
+                        newProfile,
+                        profileEntry == null ? null : profileEntry.getProfileKeyCredential());
 
         try {
             sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));

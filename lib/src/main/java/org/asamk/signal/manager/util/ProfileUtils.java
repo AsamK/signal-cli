@@ -15,14 +15,9 @@ public class ProfileUtils {
     ) {
         ProfileCipher profileCipher = new ProfileCipher(profileKey);
         try {
-            String name;
-            try {
-                name = encryptedProfile.getName() == null
-                        ? null
-                        : new String(profileCipher.decryptName(Base64.getDecoder().decode(encryptedProfile.getName())));
-            } catch (IllegalArgumentException e) {
-                name = null;
-            }
+            String name = decryptName(encryptedProfile.getName(), profileCipher);
+            String about = decryptName(encryptedProfile.getAbout(), profileCipher);
+            String aboutEmoji = decryptName(encryptedProfile.getAboutEmoji(), profileCipher);
             String unidentifiedAccess;
             try {
                 unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null
@@ -35,10 +30,24 @@ public class ProfileUtils {
             }
             return new SignalProfile(encryptedProfile.getIdentityKey(),
                     name,
+                    about,
+                    aboutEmoji,
                     unidentifiedAccess,
                     encryptedProfile.isUnrestrictedUnidentifiedAccess(),
                     encryptedProfile.getCapabilities());
         } catch (InvalidCiphertextException e) {
+            return null;
+        }
+    }
+
+    private static String decryptName(
+            final String encryptedName, final ProfileCipher profileCipher
+    ) throws InvalidCiphertextException {
+        try {
+            return encryptedName == null
+                    ? null
+                    : new String(profileCipher.decryptName(Base64.getDecoder().decode(encryptedName)));
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }

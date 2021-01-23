@@ -14,6 +14,12 @@ public class SignalProfile {
     private final String name;
 
     @JsonProperty
+    private final String about;
+
+    @JsonProperty
+    private final String aboutEmoji;
+
+    @JsonProperty
     private final String unidentifiedAccess;
 
     @JsonProperty
@@ -25,12 +31,16 @@ public class SignalProfile {
     public SignalProfile(
             final String identityKey,
             final String name,
+            final String about,
+            final String aboutEmoji,
             final String unidentifiedAccess,
             final boolean unrestrictedUnidentifiedAccess,
             final SignalServiceProfile.Capabilities capabilities
     ) {
         this.identityKey = identityKey;
         this.name = name;
+        this.about = about;
+        this.aboutEmoji = aboutEmoji;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
         this.capabilities = new Capabilities();
@@ -42,12 +52,16 @@ public class SignalProfile {
     public SignalProfile(
             @JsonProperty("identityKey") final String identityKey,
             @JsonProperty("name") final String name,
+            @JsonProperty("about") final String about,
+            @JsonProperty("aboutEmoji") final String aboutEmoji,
             @JsonProperty("unidentifiedAccess") final String unidentifiedAccess,
             @JsonProperty("unrestrictedUnidentifiedAccess") final boolean unrestrictedUnidentifiedAccess,
             @JsonProperty("capabilities") final Capabilities capabilities
     ) {
         this.identityKey = identityKey;
         this.name = name;
+        this.about = about;
+        this.aboutEmoji = aboutEmoji;
         this.unidentifiedAccess = unidentifiedAccess;
         this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
         this.capabilities = capabilities;
@@ -59,6 +73,14 @@ public class SignalProfile {
 
     public String getName() {
         return name;
+    }
+
+    public String getAbout() {
+        return about;
+    }
+
+    public String getAboutEmoji() {
+        return aboutEmoji;
     }
 
     public String getUnidentifiedAccess() {
@@ -82,7 +104,12 @@ public class SignalProfile {
                 + ", name='"
                 + name
                 + '\''
-                + ", avatarFile="
+                + ", about='"
+                + about
+                + '\''
+                + ", aboutEmoji='"
+                + aboutEmoji
+                + '\''
                 + ", unidentifiedAccess='"
                 + unidentifiedAccess
                 + '\''
