@@ -228,10 +228,6 @@
   "allPublicMethods":true
 },
 {
-  "name":"jnr.enxio.channels.Native$LibC$jnr$ffi$1",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
-},
-{
   "name":"jnr.ffi.Pointer",
   "allDeclaredMethods":true,
   "allPublicMethods":true
@@ -283,10 +279,6 @@
 {
   "name":"jnr.unixsocket.Native$LibC",
   "allPublicMethods":true
-},
-{
-  "name":"jnr.unixsocket.Native$LibC$jnr$ffi$0",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
 },
 {
   "name":"jnr.unixsocket.SockAddrUnix",
@@ -877,60 +869,6 @@
   "name":"org.objectweb.asm.util.TraceMethodVisitor"
 },
 {
-  "name":"org.signal.libsignal.metadata.SignalProtos$SenderCertificate",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"certificate_", "allowUnsafeAccess":true}, 
-    {"name":"signature_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.signal.libsignal.metadata.SignalProtos$SenderCertificate$Certificate",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"expires_", "allowUnsafeAccess":true}, 
-    {"name":"identityKey_", "allowUnsafeAccess":true}, 
-    {"name":"senderDevice_", "allowUnsafeAccess":true}, 
-    {"name":"senderE164_", "allowUnsafeAccess":true}, 
-    {"name":"senderUuid_", "allowUnsafeAccess":true}, 
-    {"name":"signer_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.signal.libsignal.metadata.SignalProtos$ServerCertificate",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"certificate_", "allowUnsafeAccess":true}, 
-    {"name":"signature_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.signal.libsignal.metadata.SignalProtos$ServerCertificate$Certificate",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"id_", "allowUnsafeAccess":true}, 
-    {"name":"key_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.signal.libsignal.metadata.SignalProtos$UnidentifiedSenderMessage",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"encryptedMessage_", "allowUnsafeAccess":true}, 
-    {"name":"encryptedStatic_", "allowUnsafeAccess":true}, 
-    {"name":"ephemeralPublic_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.signal.libsignal.metadata.SignalProtos$UnidentifiedSenderMessage$Message",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"content_", "allowUnsafeAccess":true}, 
-    {"name":"senderCertificate_", "allowUnsafeAccess":true}, 
-    {"name":"type_", "allowUnsafeAccess":true}
-  ]
-},
-{
   "name":"org.signal.storageservice.protos.groups.AccessControl",
   "fields":[
     {"name":"addFromInviteLink_", "allowUnsafeAccess":true}, 
@@ -1033,48 +971,6 @@
   "fields":[{"name":"duration_", "allowUnsafeAccess":true}]
 },
 {
-  "name":"org.whispersystems.curve25519.OpportunisticCurve25519Provider",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.whispersystems.libsignal.fingerprint.FingerprintProtos$CombinedFingerprints",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"localFingerprint_", "allowUnsafeAccess":true}, 
-    {"name":"remoteFingerprint_", "allowUnsafeAccess":true}, 
-    {"name":"version_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.fingerprint.FingerprintProtos$LogicalFingerprint",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"content_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.SignalProtos$PreKeySignalMessage",
-  "fields":[
-    {"name":"baseKey_", "allowUnsafeAccess":true}, 
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"identityKey_", "allowUnsafeAccess":true}, 
-    {"name":"message_", "allowUnsafeAccess":true}, 
-    {"name":"preKeyId_", "allowUnsafeAccess":true}, 
-    {"name":"registrationId_", "allowUnsafeAccess":true}, 
-    {"name":"signedPreKeyId_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.SignalProtos$SignalMessage",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"ciphertext_", "allowUnsafeAccess":true}, 
-    {"name":"counter_", "allowUnsafeAccess":true}, 
-    {"name":"previousCounter_", "allowUnsafeAccess":true}, 
-    {"name":"ratchetKey_", "allowUnsafeAccess":true}
-  ]
-},
-{
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore",
   "allDeclaredMethods":true
 },
@@ -1093,98 +989,6 @@
 {
   "name":"org.whispersystems.libsignal.state.SignedPreKeyStore",
   "allDeclaredMethods":true
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$IdentityKeyPairStructure",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"privateKey_", "allowUnsafeAccess":true}, 
-    {"name":"publicKey_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$PreKeyRecordStructure",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"id_", "allowUnsafeAccess":true}, 
-    {"name":"privateKey_", "allowUnsafeAccess":true}, 
-    {"name":"publicKey_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$RecordStructure",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"currentSession_", "allowUnsafeAccess":true}, 
-    {"name":"previousSessions_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SessionStructure",
-  "fields":[
-    {"name":"aliceBaseKey_", "allowUnsafeAccess":true}, 
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"localIdentityPublic_", "allowUnsafeAccess":true}, 
-    {"name":"localRegistrationId_", "allowUnsafeAccess":true}, 
-    {"name":"needsRefresh_", "allowUnsafeAccess":true}, 
-    {"name":"pendingKeyExchange_", "allowUnsafeAccess":true}, 
-    {"name":"pendingPreKey_", "allowUnsafeAccess":true}, 
-    {"name":"previousCounter_", "allowUnsafeAccess":true}, 
-    {"name":"receiverChains_", "allowUnsafeAccess":true}, 
-    {"name":"remoteIdentityPublic_", "allowUnsafeAccess":true}, 
-    {"name":"remoteRegistrationId_", "allowUnsafeAccess":true}, 
-    {"name":"rootKey_", "allowUnsafeAccess":true}, 
-    {"name":"senderChain_", "allowUnsafeAccess":true}, 
-    {"name":"sessionVersion_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SessionStructure$Chain",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"chainKey_", "allowUnsafeAccess":true}, 
-    {"name":"messageKeys_", "allowUnsafeAccess":true}, 
-    {"name":"senderRatchetKeyPrivate_", "allowUnsafeAccess":true}, 
-    {"name":"senderRatchetKey_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SessionStructure$Chain$ChainKey",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"index_", "allowUnsafeAccess":true}, 
-    {"name":"key_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SessionStructure$Chain$MessageKey",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"cipherKey_", "allowUnsafeAccess":true}, 
-    {"name":"index_", "allowUnsafeAccess":true}, 
-    {"name":"iv_", "allowUnsafeAccess":true}, 
-    {"name":"macKey_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SessionStructure$PendingPreKey",
-  "fields":[
-    {"name":"baseKey_", "allowUnsafeAccess":true}, 
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"preKeyId_", "allowUnsafeAccess":true}, 
-    {"name":"signedPreKeyId_", "allowUnsafeAccess":true}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.StorageProtos$SignedPreKeyRecordStructure",
-  "fields":[
-    {"name":"bitField0_", "allowUnsafeAccess":true}, 
-    {"name":"id_", "allowUnsafeAccess":true}, 
-    {"name":"privateKey_", "allowUnsafeAccess":true}, 
-    {"name":"publicKey_", "allowUnsafeAccess":true}, 
-    {"name":"signature_", "allowUnsafeAccess":true}, 
-    {"name":"timestamp_", "allowUnsafeAccess":true}
-  ]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.AccountAttributes",
@@ -1535,6 +1339,7 @@
     {"name":"delete_", "allowUnsafeAccess":true}, 
     {"name":"expireTimer_", "allowUnsafeAccess":true}, 
     {"name":"flags_", "allowUnsafeAccess":true}, 
+    {"name":"groupCallUpdate_", "allowUnsafeAccess":true}, 
     {"name":"groupV2_", "allowUnsafeAccess":true}, 
     {"name":"group_", "allowUnsafeAccess":true}, 
     {"name":"isViewOnce_", "allowUnsafeAccess":true}, 

@@ -9,5 +9,48 @@
 {
   "name":"java.lang.UnsatisfiedLinkError",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore",
+  "methods":[
+    {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"getIdentityKeyPair","parameterTypes":[] }, 
+    {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
+    {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
+    {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.IdentityKey",
+  "methods":[
+    {"name":"<init>","parameterTypes":["byte[]"] }, 
+    {"name":"serialize","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.IdentityKeyPair",
+  "methods":[{"name":"serialize","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.SignalProtocolAddress",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.state.IdentityKeyStore"
+},
+{
+  "name":"org.whispersystems.libsignal.state.IdentityKeyStore$Direction",
+  "fields":[{"name":"SENDING"}]
+},
+{
+  "name":"org.whispersystems.libsignal.state.SessionRecord",
+  "methods":[
+    {"name":"<init>","parameterTypes":["byte[]"] }, 
+    {"name":"nativeHandle","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.state.SessionStore"
 }
 ]
