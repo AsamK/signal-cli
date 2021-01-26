@@ -319,6 +319,12 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonError",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonMessageEnvelope",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
