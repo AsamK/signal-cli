@@ -37,6 +37,14 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
 },
 {
+  "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.protocol.SignalMessage",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore"
 },
 {

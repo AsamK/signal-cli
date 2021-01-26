@@ -1585,6 +1585,13 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$NullMessage",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"padding_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ReceiptMessage",
   "fields":[
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
