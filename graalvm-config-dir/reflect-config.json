@@ -899,6 +899,87 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.GroupChange",
+  "fields":[
+    {"name":"actions_", "allowUnsafeAccess":true}, 
+    {"name":"changeEpoch_", "allowUnsafeAccess":true}, 
+    {"name":"serverSignature_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions",
+  "fields":[
+    {"name":"addMembers_", "allowUnsafeAccess":true}, 
+    {"name":"addPendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"addRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"deleteMembers_", "allowUnsafeAccess":true}, 
+    {"name":"deletePendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"deleteRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"modifyAddFromInviteLinkAccess_", "allowUnsafeAccess":true}, 
+    {"name":"modifyAttributesAccess_", "allowUnsafeAccess":true}, 
+    {"name":"modifyAvatar_", "allowUnsafeAccess":true}, 
+    {"name":"modifyDisappearingMessagesTimer_", "allowUnsafeAccess":true}, 
+    {"name":"modifyInviteLinkPassword_", "allowUnsafeAccess":true}, 
+    {"name":"modifyMemberAccess_", "allowUnsafeAccess":true}, 
+    {"name":"modifyMemberProfileKeys_", "allowUnsafeAccess":true}, 
+    {"name":"modifyMemberRoles_", "allowUnsafeAccess":true}, 
+    {"name":"modifyTitle_", "allowUnsafeAccess":true}, 
+    {"name":"promotePendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"promoteRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"revision_", "allowUnsafeAccess":true}, 
+    {"name":"sourceUuid_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddMemberAction",
+  "fields":[
+    {"name":"added_", "allowUnsafeAccess":true}, 
+    {"name":"joinFromInviteLink_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddPendingMemberAction",
+  "fields":[{"name":"added_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddRequestingMemberAction",
+  "fields":[{"name":"added_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteMemberAction",
+  "fields":[{"name":"deletedUserId_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeletePendingMemberAction",
+  "fields":[{"name":"deletedUserId_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteRequestingMemberAction",
+  "fields":[{"name":"deletedUserId_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberProfileKeyAction",
+  "fields":[{"name":"presentation_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberRoleAction",
+  "fields":[
+    {"name":"role_", "allowUnsafeAccess":true}, 
+    {"name":"userId_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromotePendingMemberAction",
+  "fields":[{"name":"presentation_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromoteRequestingMemberAction",
+  "fields":[
+    {"name":"role_", "allowUnsafeAccess":true}, 
+    {"name":"userId_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.signal.storageservice.protos.groups.Member",
   "fields":[
     {"name":"joinedAtRevision_", "allowUnsafeAccess":true}, 
@@ -937,6 +1018,30 @@
     {"name":"requestingMembers_", "allowUnsafeAccess":true}, 
     {"name":"revision_", "allowUnsafeAccess":true}, 
     {"name":"title_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupChange",
+  "fields":[
+    {"name":"deleteMembers_", "allowUnsafeAccess":true}, 
+    {"name":"deletePendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"deleteRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"editor_", "allowUnsafeAccess":true}, 
+    {"name":"modifiedProfileKeys_", "allowUnsafeAccess":true}, 
+    {"name":"modifyMemberRoles_", "allowUnsafeAccess":true}, 
+    {"name":"newAttributeAccess_", "allowUnsafeAccess":true}, 
+    {"name":"newAvatar_", "allowUnsafeAccess":true}, 
+    {"name":"newInviteLinkAccess_", "allowUnsafeAccess":true}, 
+    {"name":"newInviteLinkPassword_", "allowUnsafeAccess":true}, 
+    {"name":"newMemberAccess_", "allowUnsafeAccess":true}, 
+    {"name":"newMembers_", "allowUnsafeAccess":true}, 
+    {"name":"newPendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"newRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"newTimer_", "allowUnsafeAccess":true}, 
+    {"name":"newTitle_", "allowUnsafeAccess":true}, 
+    {"name":"promotePendingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"promoteRequestingMembers_", "allowUnsafeAccess":true}, 
+    {"name":"revision_", "allowUnsafeAccess":true}
   ]
 },
 {
