@@ -1110,6 +1110,27 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.internal.keybackup.protos.BackupRequest",
+  "fields":[
+    {"name":"backupId_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"data_", "allowUnsafeAccess":true}, 
+    {"name":"pin_", "allowUnsafeAccess":true}, 
+    {"name":"serviceId_", "allowUnsafeAccess":true}, 
+    {"name":"token_", "allowUnsafeAccess":true}, 
+    {"name":"tries_", "allowUnsafeAccess":true}, 
+    {"name":"validFrom_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.keybackup.protos.BackupResponse",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"status_", "allowUnsafeAccess":true}, 
+    {"name":"token_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.keybackup.protos.DeleteRequest",
   "fields":[
     {"name":"backupId_", "allowUnsafeAccess":true}, 
@@ -1119,6 +1140,15 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.keybackup.protos.Request",
+  "fields":[
+    {"name":"backup_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"delete_", "allowUnsafeAccess":true}, 
+    {"name":"restore_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.keybackup.protos.Response",
   "fields":[
     {"name":"backup_", "allowUnsafeAccess":true}, 
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
@@ -1253,6 +1283,12 @@
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
     {"name":"uuid_", "allowUnsafeAccess":true}
   ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.PushServiceSocket$RegistrationLockV2",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SendMessageResponse",
