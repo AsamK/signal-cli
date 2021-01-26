@@ -41,7 +41,10 @@
 },
 {
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore$Direction",
-  "fields":[{"name":"SENDING"}]
+  "fields":[
+    {"name":"RECEIVING"}, 
+    {"name":"SENDING"}
+  ]
 },
 {
   "name":"org.whispersystems.libsignal.state.SessionRecord",
