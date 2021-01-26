@@ -4,6 +4,10 @@
   "methods":[{"name":"getPlatformClassLoader","parameterTypes":[] }]
 },
 {
+  "name":"java.lang.IllegalStateException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"java.lang.NoSuchMethodError"
 },
 {
@@ -15,8 +19,10 @@
   "methods":[
     {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
     {"name":"getIdentityKeyPair","parameterTypes":[] }, 
+    {"name":"getLocalRegistrationId","parameterTypes":[] }, 
     {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
     {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"loadSignedPreKey","parameterTypes":["int"] }, 
     {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
     {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
   ]
@@ -31,6 +37,10 @@
 {
   "name":"org.whispersystems.libsignal.IdentityKeyPair",
   "methods":[{"name":"serialize","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.InvalidMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.whispersystems.libsignal.SignalProtocolAddress",
@@ -55,6 +65,9 @@
   ]
 },
 {
+  "name":"org.whispersystems.libsignal.state.PreKeyStore"
+},
+{
   "name":"org.whispersystems.libsignal.state.SessionRecord",
   "methods":[
     {"name":"<init>","parameterTypes":["byte[]"] }, 
@@ -63,5 +76,12 @@
 },
 {
   "name":"org.whispersystems.libsignal.state.SessionStore"
+},
+{
+  "name":"org.whispersystems.libsignal.state.SignedPreKeyRecord",
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore"
 }
 ]
