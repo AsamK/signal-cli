@@ -1,11 +1,12 @@
 {
   "resources":{
   "includes":[
-    {"pattern":"com/google/i18n/phonenumbers/data/.*"}, 
-    {"pattern":"libzkgroup.so"},
-    {"pattern":"org/asamk/signal/manager/ias.store"}, 
-    {"pattern":"org/asamk/signal/manager/whisper.store"}, 
-    {"pattern":"org/slf4j/impl/StaticLoggerBinder.class"}
+    {"pattern":"com/google/i18n/phonenumbers/data/.*"},
+    {"pattern":"\\Qlibsignal_jni.so\\E"}, 
+    {"pattern":"\\Qlibzkgroup.so\\E"}, 
+    {"pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"}, 
+    {"pattern":"\\Qorg/asamk/signal/manager/config/whisper.store\\E"}, 
+    {"pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"}
   ]},
   "bundles":[{"name":"net.sourceforge.argparse4j.internal.ArgumentParserImpl"}]
 }
