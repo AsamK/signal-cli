@@ -191,7 +191,7 @@ public class Manager implements Closeable {
     private final SignalServiceMessageReceiver messageReceiver;
     private final ClientZkProfileOperations clientZkProfileOperations;
 
-    private final ExecutorService executor = new ThreadPoolExecutor(0, 10, 10, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>()); //Todo added by me
+    private final ExecutorService executor = new ThreadPoolExecutor(0, 10, 10, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 
     private SignalServiceMessagePipe messagePipe = null;
