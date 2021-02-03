@@ -167,8 +167,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -191,8 +190,7 @@ public class Manager implements Closeable {
     private final SignalServiceMessageReceiver messageReceiver;
     private final ClientZkProfileOperations clientZkProfileOperations;
 
-    private final ExecutorService executor = new ThreadPoolExecutor(0, 10, 10, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
