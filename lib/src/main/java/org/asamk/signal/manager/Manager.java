@@ -167,6 +167,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -188,6 +189,8 @@ public class Manager implements Closeable {
     private final GroupsV2Operations groupsV2Operations;
     private final SignalServiceMessageReceiver messageReceiver;
     private final ClientZkProfileOperations clientZkProfileOperations;
+
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     private SignalServiceMessagePipe messagePipe = null;
     private SignalServiceMessagePipe unidentifiedMessagePipe = null;
@@ -526,7 +529,6 @@ public class Manager implements Closeable {
     }
 
     private SignalServiceMessageSender createMessageSender() {
-        final ExecutorService executor = null;
         return new SignalServiceMessageSender(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 account.getUuid(),
                 account.getUsername(),
@@ -2533,6 +2535,8 @@ public class Manager implements Closeable {
     }
 
     void close(boolean closeAccount) throws IOException {
+        executor.shutdown();
+
         if (messagePipe != null) {
             messagePipe.shutdown();
             messagePipe = null;
