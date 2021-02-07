@@ -21,6 +21,7 @@ import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
 import org.whispersystems.signalservice.api.messages.calls.HangupMessage;
 import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
 import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
+import org.whispersystems.signalservice.api.messages.calls.OpaqueMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMessage;
@@ -282,6 +283,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 if (content.getCallMessage().isPresent()) {
                     System.out.println("Received a call message");
                     SignalServiceCallMessage callMessage = content.getCallMessage().get();
+                    if (callMessage.getDestinationDeviceId().isPresent()) {
+                        final Integer deviceId = callMessage.getDestinationDeviceId().get();
+                        System.out.println("Destination device id: " + deviceId);
+                    }
                     if (callMessage.getAnswerMessage().isPresent()) {
                         AnswerMessage answerMessage = callMessage.getAnswerMessage().get();
                         System.out.println("Answer message: " + answerMessage.getId() + ": " + answerMessage.getSdp());
@@ -306,6 +311,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     if (callMessage.getOfferMessage().isPresent()) {
                         OfferMessage offerMessage = callMessage.getOfferMessage().get();
                         System.out.println("Offer message: " + offerMessage.getId() + ": " + offerMessage.getSdp());
+                    }
+                    if (callMessage.getOpaqueMessage().isPresent()) {
+                        final OpaqueMessage opaqueMessage = callMessage.getOpaqueMessage().get();
+                        System.out.println("Opaque message: size " + opaqueMessage.getOpaque().length);
                     }
                 }
                 if (content.getReceiptMessage().isPresent()) {
