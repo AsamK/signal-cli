@@ -13,7 +13,7 @@ java {
 }
 
 application {
-    mainClass.set("org.asamk.signal.Main")
+    mainClassName = "org.asamk.signal.Main"
 }
 
 repositories {
@@ -44,7 +44,7 @@ tasks.withType<Jar> {
         attributes(
                 "Implementation-Title" to project.name,
                 "Implementation-Version" to project.version,
-                "Main-Class" to application.mainClass.get()
+                "Main-Class" to application.mainClassName
         )
     }
 }
@@ -90,7 +90,7 @@ val assembleNativeImage by tasks.registering {
                     "--enable-all-security-services",
                     "-cp",
                     sourceSets.main.get().runtimeClasspath.asPath,
-                    application.mainClass.get())
+                    application.mainClassName)
         }
     }
 }
