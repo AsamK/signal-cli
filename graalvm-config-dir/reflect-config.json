@@ -313,6 +313,12 @@
   "allPublicConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonAttachment",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
