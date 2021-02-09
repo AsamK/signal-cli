@@ -30,6 +30,10 @@
   ]
 },
 {
+  "name":"org.whispersystems.libsignal.DuplicateMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.whispersystems.libsignal.IdentityKey",
   "methods":[
     {"name":"<init>","parameterTypes":["byte[]"] }, 
