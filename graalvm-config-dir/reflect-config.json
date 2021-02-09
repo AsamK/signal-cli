@@ -343,6 +343,12 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonRemoteDelete",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonTypingMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
