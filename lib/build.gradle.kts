@@ -26,6 +26,19 @@ configurations {
     }
 }
 
+tasks.withType<Jar> {
+    manifest {
+        attributes(
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            // use a more meaningful name than 'lib'
+            "Automatic-Module-Name" to "signal-lib",
+            // Custom (non-standard) attribute
+            "Maven-Group" to project.group
+        )
+    }
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }

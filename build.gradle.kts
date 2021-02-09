@@ -6,6 +6,7 @@ plugins {
 }
 
 version = "0.7.4"
+group = "org.asamk.signal"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -44,7 +45,10 @@ tasks.withType<Jar> {
         attributes(
                 "Implementation-Title" to project.name,
                 "Implementation-Version" to project.version,
-                "Main-Class" to application.mainClass.get()
+                "Main-Class" to application.mainClass.get(),
+                "Automatic-Module-Name" to project.name,
+                // Custom (non-standard) attribute
+                "Maven-Group" to project.group
         )
     }
 }
