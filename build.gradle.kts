@@ -2,7 +2,9 @@ plugins {
     java
     application
     eclipse
+    `maven-publish`
     `check-lib-versions`
+    `java-library-distribution`
 }
 
 val projectVersion: String by project
@@ -39,6 +41,20 @@ configurations {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+}
+
+distributions {
+    main {
+        distributionBaseName.set("signal-cli")
+    }
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
@@ -53,6 +69,11 @@ tasks.withType<Jar> {
                 // Custom (non-standard) attribute
                 "Maven-Group" to project.group
         )
+    }
+    dependsOn("generatePomFileForMavenPublication")
+    into("META-INF/maven/${project.group}/${project.name}") {
+        from("$buildDir/publications/maven/pom-default.xml")
+        rename(".*", "pom.xml")
     }
 }
 

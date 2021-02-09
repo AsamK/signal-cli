@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     `check-lib-versions`
+    `maven-publish`
 }
 
 val projectVersion: String by project
@@ -32,6 +33,14 @@ configurations {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+}
+
 tasks.withType<Jar> {
     manifest {
         attributes(
@@ -42,6 +51,11 @@ tasks.withType<Jar> {
             // Custom (non-standard) attribute
             "Maven-Group" to project.group
         )
+    }
+    dependsOn("generatePomFileForMavenPublication")
+    into("META-INF/maven/${project.group}/${project.name}") {
+        from("$buildDir/publications/maven/pom-default.xml")
+        rename(".*", "pom.xml")
     }
 }
 
