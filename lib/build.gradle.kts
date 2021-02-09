@@ -38,7 +38,7 @@ tasks.withType<Jar> {
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
             // use a more meaningful name than 'lib'
-            "Automatic-Module-Name" to "signal-lib",
+            "Automatic-Module-Name" to "signal.lib",
             // Custom (non-standard) attribute
             "Maven-Group" to project.group
         )

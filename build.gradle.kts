@@ -49,7 +49,7 @@ tasks.withType<Jar> {
                 "Implementation-Title" to project.name,
                 "Implementation-Version" to project.version,
                 "Main-Class" to application.mainClass.get(),
-                "Automatic-Module-Name" to project.name,
+                "Automatic-Module-Name" to project.name.replace('-', '.'),
                 // Custom (non-standard) attribute
                 "Maven-Group" to project.group
         )
