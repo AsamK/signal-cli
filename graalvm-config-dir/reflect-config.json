@@ -1528,6 +1528,13 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Delete",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"targetSentTimestamp_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Preview",
   "fields":[
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
