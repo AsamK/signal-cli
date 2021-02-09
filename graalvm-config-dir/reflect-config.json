@@ -313,6 +313,12 @@
   "allPublicConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonAttachment",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -338,6 +344,18 @@
 },
 {
   "name":"org.asamk.signal.json.JsonReceiptMessage",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonRemoteDelete",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonSticker",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -1525,6 +1543,66 @@
     {"name":"name_", "allowUnsafeAccess":true}, 
     {"name":"number_", "allowUnsafeAccess":true}, 
     {"name":"organization_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Avatar",
+  "fields":[
+    {"name":"avatar_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"isProfile_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Email",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"label_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}, 
+    {"name":"value_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Name",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"displayName_", "allowUnsafeAccess":true}, 
+    {"name":"familyName_", "allowUnsafeAccess":true}, 
+    {"name":"givenName_", "allowUnsafeAccess":true}, 
+    {"name":"middleName_", "allowUnsafeAccess":true}, 
+    {"name":"prefix_", "allowUnsafeAccess":true}, 
+    {"name":"suffix_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Phone",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"label_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}, 
+    {"name":"value_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$PostalAddress",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"city_", "allowUnsafeAccess":true}, 
+    {"name":"country_", "allowUnsafeAccess":true}, 
+    {"name":"label_", "allowUnsafeAccess":true}, 
+    {"name":"neighborhood_", "allowUnsafeAccess":true}, 
+    {"name":"pobox_", "allowUnsafeAccess":true}, 
+    {"name":"postcode_", "allowUnsafeAccess":true}, 
+    {"name":"region_", "allowUnsafeAccess":true}, 
+    {"name":"street_", "allowUnsafeAccess":true}, 
+    {"name":"type_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Delete",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"targetSentTimestamp_", "allowUnsafeAccess":true}
   ]
 },
 {
