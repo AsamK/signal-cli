@@ -3,6 +3,12 @@ plugins {
     `check-lib-versions`
 }
 
+val projectVersion: String by project
+val mavenGroup: String by project
+
+version = projectVersion
+group = mavenGroup
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11

@@ -5,8 +5,11 @@ plugins {
     `check-lib-versions`
 }
 
-version = "0.7.4"
-group = "org.asamk.signal"
+val projectVersion: String by project
+val mavenGroup: String by project
+
+version = projectVersion
+group = mavenGroup
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
