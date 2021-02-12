@@ -11,13 +11,13 @@ import org.whispersystems.libsignal.InvalidKeyIdException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SessionRecord;
-import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.signalservice.api.SignalServiceProtocolStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.List;
 
-public class JsonSignalProtocolStore implements SignalProtocolStore {
+public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
 
     @JsonProperty("preKeys")
     @JsonDeserialize(using = JsonPreKeyStore.JsonPreKeyStoreDeserializer.class)
@@ -169,6 +169,15 @@ public class JsonSignalProtocolStore implements SignalProtocolStore {
 
     public void deleteAllSessions(SignalServiceAddress serviceAddress) {
         sessionStore.deleteAllSessions(serviceAddress);
+    }
+
+    @Override
+    public void archiveSession(final SignalProtocolAddress address) {
+        sessionStore.archiveSession(address);
+    }
+
+    public void archiveAllSessions() {
+        sessionStore.archiveAllSessions();
     }
 
     @Override

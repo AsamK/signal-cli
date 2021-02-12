@@ -76,7 +76,6 @@ import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.InvalidMessageException;
-import org.whispersystems.libsignal.InvalidVersionException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -219,7 +218,6 @@ public class Manager implements Closeable {
                 new DynamicCredentialsProvider(account.getUuid(),
                         account.getUsername(),
                         account.getPassword(),
-                        account.getSignalingKey(),
                         account.getDeviceId()),
                 userAgent,
                 groupsV2Operations,
@@ -242,7 +240,6 @@ public class Manager implements Closeable {
                 account.getUsername(),
                 account.getPassword(),
                 account.getDeviceId(),
-                account.getSignalingKey(),
                 userAgent,
                 null,
                 timer,
@@ -352,7 +349,7 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getSignalingKey(),
+        accountManager.setAccountAttributes(null,
                 account.getSignalProtocolStore().getLocalRegistrationId(),
                 true,
                 // set legacy pin only if no KBS master key is set
@@ -1746,9 +1743,6 @@ public class Manager implements Closeable {
                 }
             } catch (TimeoutException e) {
                 if (returnOnTimeout) return;
-                continue;
-            } catch (InvalidVersionException e) {
-                logger.warn("Error while receiving messages, ignoring: {}", e.getMessage());
                 continue;
             }
 

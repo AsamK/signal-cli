@@ -77,11 +77,7 @@ public class RegistrationManager implements Closeable {
         this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
-                        null,
-                        account.getUsername(),
-                        account.getPassword(),
-                        account.getSignalingKey(),
-                        SignalServiceAddress.DEFAULT_DEVICE_ID),
+                        null, account.getUsername(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
@@ -142,9 +138,6 @@ public class RegistrationManager implements Closeable {
             String verificationCode, String pin
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         verificationCode = verificationCode.replace("-", "");
-        if (account.getSignalingKey() == null) {
-            account.setSignalingKey(KeyUtils.createSignalingKey());
-        }
         VerifyAccountResponse response;
         try {
             response = verifyAccountWithCode(verificationCode, pin, null);
@@ -176,6 +169,7 @@ public class RegistrationManager implements Closeable {
         account.setRegistered(true);
         account.setUuid(UuidUtil.parseOrNull(response.getUuid()));
         account.setRegistrationLockPin(pin);
+        account.getSignalProtocolStore().archiveAllSessions();
         account.getSignalProtocolStore()
                 .saveIdentity(account.getSelfAddress(),
                         account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(),
@@ -195,7 +189,7 @@ public class RegistrationManager implements Closeable {
             final String verificationCode, final String legacyPin, final String registrationLock
     ) throws IOException {
         return accountManager.verifyAccountWithCode(verificationCode,
-                account.getSignalingKey(),
+                null,
                 account.getSignalProtocolStore().getLocalRegistrationId(),
                 true,
                 legacyPin,

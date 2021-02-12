@@ -69,7 +69,7 @@ public class ProvisioningManager {
             groupsV2Operations = null;
         }
         accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                new DynamicCredentialsProvider(null, null, password, null, SignalServiceAddress.DEFAULT_DEVICE_ID),
+                new DynamicCredentialsProvider(null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
@@ -95,10 +95,8 @@ public class ProvisioningManager {
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
-        String signalingKey = KeyUtils.createSignalingKey();
         SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(
                 identityKey,
-                signalingKey,
                 false,
                 true,
                 registrationId,
@@ -130,7 +128,6 @@ public class ProvisioningManager {
                 ret.getDeviceId(),
                 ret.getIdentity(),
                 registrationId,
-                signalingKey,
                 profileKey)) {
             account.save();
 

@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.SessionRecord;
-import org.whispersystems.libsignal.state.SessionStore;
+import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -24,7 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-class JsonSessionStore implements SessionStore {
+class JsonSessionStore implements SignalServiceSessionStore {
 
     private final static Logger logger = LoggerFactory.getLogger(JsonSessionStore.class);
 
@@ -125,6 +125,27 @@ class JsonSessionStore implements SessionStore {
 
     public synchronized void deleteAllSessions(SignalServiceAddress serviceAddress) {
         sessions.removeIf(info -> info.address.matches(serviceAddress));
+    }
+
+    @Override
+    public void archiveSession(final SignalProtocolAddress address) {
+        final SessionRecord sessionRecord = loadSession(address);
+        if (sessionRecord == null) {
+            return;
+        }
+        sessionRecord.archiveCurrentState();
+        storeSession(address, sessionRecord);
+    }
+
+    public void archiveAllSessions() {
+        for (SessionInfo info : sessions) {
+            try {
+                final SessionRecord sessionRecord = new SessionRecord(info.sessionRecord);
+                sessionRecord.archiveCurrentState();
+                info.sessionRecord = sessionRecord.serialize();
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     public static class JsonSessionStoreDeserializer extends JsonDeserializer<JsonSessionStore> {

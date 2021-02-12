@@ -73,7 +73,6 @@ public class SignalAccount implements Closeable {
     private String registrationLockPin;
     private MasterKey pinMasterKey;
     private StorageKey storageKey;
-    private String signalingKey;
     private ProfileKey profileKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
@@ -153,7 +152,6 @@ public class SignalAccount implements Closeable {
             int deviceId,
             IdentityKeyPair identityKey,
             int registrationId,
-            String signalingKey,
             ProfileKey profileKey
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
@@ -170,7 +168,6 @@ public class SignalAccount implements Closeable {
         account.password = password;
         account.profileKey = profileKey;
         account.deviceId = deviceId;
-        account.signalingKey = signalingKey;
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
@@ -267,13 +264,6 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("storageKey")) {
             storageKey = new StorageKey(Base64.getDecoder().decode(rootNode.get("storageKey").asText()));
-        }
-        if (rootNode.hasNonNull("signalingKey")) {
-            signalingKey = rootNode.get("signalingKey").asText();
-            if (signalingKey.equals("null")) {
-                // Workaround for load bug in older versions
-                signalingKey = null;
-            }
         }
         if (rootNode.hasNonNull("preKeyIdOffset")) {
             preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(0);
@@ -406,7 +396,6 @@ public class SignalAccount implements Closeable {
                         pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
                 .put("storageKey",
                         storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
-                .put("signalingKey", signalingKey)
                 .put("preKeyIdOffset", preKeyIdOffset)
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
                 .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
@@ -550,14 +539,6 @@ public class SignalAccount implements Closeable {
 
     public void setStorageKey(final StorageKey storageKey) {
         this.storageKey = storageKey;
-    }
-
-    public String getSignalingKey() {
-        return signalingKey;
-    }
-
-    public void setSignalingKey(final String signalingKey) {
-        this.signalingKey = signalingKey;
     }
 
     public ProfileKey getProfileKey() {
