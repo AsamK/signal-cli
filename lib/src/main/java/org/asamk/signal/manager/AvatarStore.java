@@ -64,7 +64,9 @@ public class AvatarStore {
     }
 
     private void deleteAvatar(final File avatarFile) throws IOException {
-        Files.delete(avatarFile.toPath());
+        if (avatarFile.exists()) {
+            Files.delete(avatarFile.toPath());
+        }
     }
 
     private File getGroupAvatarFile(GroupId groupId) {

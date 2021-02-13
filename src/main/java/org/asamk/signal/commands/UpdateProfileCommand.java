@@ -40,7 +40,7 @@ public class UpdateProfileCommand implements LocalCommand {
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
-            System.err.println("UpdateAccount error: " + e.getMessage());
+            System.err.println("Update profile error: " + e.getMessage());
             return 3;
         }
 
