@@ -22,13 +22,21 @@ public class RegisterCommand implements RegistrationCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final RegistrationManager m) {
+        final boolean voiceVerification = ns.getBoolean("voice");
+        final String captcha = ns.getString("captcha");
+
         try {
-            final boolean voiceVerification = ns.getBoolean("voice");
-            final String captcha = ns.getString("captcha");
             m.register(voiceVerification, captcha);
             return 0;
         } catch (CaptchaRequiredException e) {
-            System.err.println("Captcha invalid or required for verification (" + e.getMessage() + ")");
+            if (captcha == null) {
+                System.err.println("Captcha required for verification, use --captcha CAPTCHA");
+                System.err.println("To get the token, go to https://signalcaptchas.org/registration/generate.html");
+                System.err.println("Check the developer tools (F12) console for a failed redirect to signalcaptcha://");
+                System.err.println("Everything after signalcaptcha:// is the captcha token.");
+            } else {
+                System.err.println("Invalid captcha given.");
+            }
             return 1;
         } catch (IOException e) {
             System.err.println("Request verify error: " + e.getMessage());
