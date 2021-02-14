@@ -1,14 +1,23 @@
 # Changelog
 
 ## [Unreleased]
-**Attention**: For all functionality an additional native library is now required: [libsignal-client](https://github.com/signalapp/libsignal-client/).
+
+## [0.8.0] - 2021-02-14
+**Attention**: For all signal protocol functionality an additional native library is now required: [libsignal-client](https://github.com/signalapp/libsignal-client/).
 See https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal for more information.
+
+### Added
+- Experimental support for building a GraalVM native image
+- Support for setting profile about text and emoji
+
+### Fixed
+- Incorrect error message when removing a non-existent profile avatar
 
 ## [0.7.4] - 2021-01-19
 ### Changed
 - Notify linked devices after profile has been updated
 
-### Fixes
+### Fixed
 - After registering a new account, receiving messages didn't work
   You may have to register and verify again to fix the issue.
 - Creating v1 groups works again
