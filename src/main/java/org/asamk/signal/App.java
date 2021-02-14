@@ -121,6 +121,11 @@ public class App {
                     + " because the required native library dependency is missing: libzkgroup");
         }
 
+        if (!ServiceConfig.isSignalClientAvailable()) {
+            logger.error("Missing required native library dependency: libsignal-client");
+            return 1;
+        }
+
         if (command instanceof ProvisioningCommand) {
             if (username != null) {
                 System.err.println("You cannot specify a username (phone number) when linking");

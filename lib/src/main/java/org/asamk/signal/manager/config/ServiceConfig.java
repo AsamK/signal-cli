@@ -49,6 +49,15 @@ public class ServiceConfig {
         }
     }
 
+    public static boolean isSignalClientAvailable() {
+        try {
+            org.signal.client.internal.Native.DisplayableFingerprint_Format(new byte[30], new byte[30]);
+            return true;
+        } catch (UnsatisfiedLinkError ignored) {
+            return false;
+        }
+    }
+
     public static AccountAttributes.Capabilities getCapabilities() {
         return capabilities;
     }
