@@ -14,6 +14,7 @@ import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.asamk.signal.manager.storage.contacts.ContactInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -264,4 +265,27 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
 		}
 	}
+
+    @Override
+    public  List<String> listGroups() {
+        List<GroupInfo> groups = m.getGroups();
+        List<String> gr = new ArrayList<>(groups.size());
+        for (GroupInfo group : groups) {
+            String entry="group="+group.getTitle()+" active:"+group.isMember(m.getSelfAddress())+" blocked:"+group.isBlocked();
+            gr.add(entry);
+        }
+        return gr;
+    }
+
+    @Override
+    public  List<String> listContacts() {
+        List<ContactInfo> contacts = m.getContacts();
+        List<String> cc = new ArrayList<>(contacts.size());
+        for (ContactInfo c : contacts) {
+            String entry="number:"+c.number+" name:"+c.name+" blocked:"+c.blocked;
+            cc.add(entry);
+        }
+        return cc;
+    }
+
 }
