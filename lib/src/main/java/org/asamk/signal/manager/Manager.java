@@ -122,6 +122,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptM
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
+import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -1556,6 +1557,14 @@ public class Manager implements Closeable {
         if (message.getAttachments().isPresent() && !ignoreAttachments) {
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
                 downloadAttachment(attachment);
+            }
+        }
+        if (message.getSharedContacts().isPresent() && !ignoreAttachments) {
+            for (SharedContact contact : message.getSharedContacts().get()) {
+                if (contact.getAvatar().isPresent()) {
+                    // TODO probably should save to contacts instead
+                    downloadAttachment(contact.getAvatar().get().getAttachment());
+                }
             }
         }
         if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {

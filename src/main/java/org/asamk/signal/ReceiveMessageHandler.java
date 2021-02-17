@@ -429,8 +429,37 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final List<SharedContact> sharedContacts = message.getSharedContacts().get();
             System.out.println("Contacts:");
             for (SharedContact contact : sharedContacts) {
-                System.out.println(" - Name: " + contact.getName());
+                System.out.println(" - Name: " + contact.getName());    // This just displays " - Name: org.whispersystems.signalservice.api.messages.shared.SharedContact$Name@7bde1f3a"
+                System.out.println(" - Avatar: " + (contact.getAvatar().isPresent() ? contact.getAvatar() : "-"));
+                System.out.println(" - Phone details:");
+                if (contact.getPhone().isPresent()) {
+                    for (SharedContact.Phone phone : contact.getPhone().get()) {
+                        System.out.println("   " + phone);
+                    }
+                } else {
+                    System.out.println("   -");
+                }
+                System.out.println(" - Email details:");
+
+                if (contact.getEmail().isPresent()) {
+                    for (SharedContact.Email email : contact.getEmail().get()) {
+                        System.out.println("   " + email);
+                    }
+                } else {
+                    System.out.println("   -");
+                }
+                System.out.println(" - Address details:");
+                if (contact.getAddress().isPresent()) {
+                    for (SharedContact.PostalAddress address : contact.getAddress().get()) {
+                        System.out.println("   " + address);
+                    }
+                } else {
+                    System.out.println("   -");
+                }
+                System.out.println(" - Organisation: " +
+                        (contact.getOrganization().isPresent() ? contact.getOrganization().get() : "-"));
                 // TODO show or store rest of the contact info
+                    // TODO: TEST THIS
             }
         }
         if (message.getSticker().isPresent()) {
