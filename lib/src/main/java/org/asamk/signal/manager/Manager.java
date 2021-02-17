@@ -1554,16 +1554,17 @@ public class Manager implements Closeable {
                 }
             }
         }
-        if (message.getAttachments().isPresent() && !ignoreAttachments) {
-            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                downloadAttachment(attachment);
+        if (!ignoreAttachments) {
+            if (message.getAttachments().isPresent()) {
+                for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+                    downloadAttachment(attachment);
+                }
             }
-        }
-        if (message.getSharedContacts().isPresent() && !ignoreAttachments) {
-            for (SharedContact contact : message.getSharedContacts().get()) {
-                if (contact.getAvatar().isPresent()) {
-                    // TODO probably should save to contacts instead
-                    downloadAttachment(contact.getAvatar().get().getAttachment());
+            if (message.getSharedContacts().isPresent()) {
+                for (SharedContact contact : message.getSharedContacts().get()) {
+                    if (contact.getAvatar().isPresent()) {
+                        downloadAttachment(contact.getAvatar().get().getAttachment());
+                    }
                 }
             }
         }
