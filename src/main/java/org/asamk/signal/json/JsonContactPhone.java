@@ -15,9 +15,16 @@ public class JsonContactPhone {
     @JsonProperty
     private final String label;
 
+    private String getValueIfPresent(String string) {
+        if (string == null || string.isBlank()) {
+            return null;
+        }
+        return string;
+    }
+
     public JsonContactPhone(SharedContact.Phone phone) {
         value = phone.getValue();
         type = phone.getType();
-        label = phone.getLabel().orNull();
+        label = getValueIfPresent(phone.getLabel().orNull());
     }
 }

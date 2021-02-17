@@ -15,9 +15,16 @@ public class JsonContactEmail {
     @JsonProperty
     private final String label;
 
+    private String getValueIfPresent(String string) {
+        if (string == null || string.isBlank()) {
+            return null;
+        }
+        return string;
+    }
+
     public JsonContactEmail(SharedContact.Email email) {
         value = email.getValue();
         type = email.getType();
-        label = email.getLabel().orNull();
+        label = getValueIfPresent(email.getLabel().orNull());
     }
 }

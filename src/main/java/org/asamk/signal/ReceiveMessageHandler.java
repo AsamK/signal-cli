@@ -429,37 +429,111 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final List<SharedContact> sharedContacts = message.getSharedContacts().get();
             System.out.println("Contacts:");
             for (SharedContact contact : sharedContacts) {
-                System.out.println(" - Name: " + contact.getName());    // This just displays " - Name: org.whispersystems.signalservice.api.messages.shared.SharedContact$Name@7bde1f3a"
-                System.out.println(" - Avatar: " + (contact.getAvatar().isPresent() ? contact.getAvatar() : "-"));
-                System.out.println(" - Phone details:");
-                if (contact.getPhone().isPresent()) {
-                    for (SharedContact.Phone phone : contact.getPhone().get()) {
-                        System.out.println("   " + phone);
-                    }
-                } else {
-                    System.out.println("   -");
+                System.out.println(" - Name:");
+                SharedContact.Name name = contact.getName();
+                if (name.getDisplay().isPresent() && !name.getDisplay().get().isBlank()) {
+                    System.out.println("   - Display name: " + name.getDisplay().get());
                 }
-                System.out.println(" - Email details:");
+                if (name.getGiven().isPresent() && !name.getGiven().get().isBlank()) {
+                    System.out.println("   - First name: " + name.getGiven().get());
+                }
+                if (name.getMiddle().isPresent() && !name.getMiddle().get().isBlank()) {
+                    System.out.println("   - Middle name: " + name.getMiddle().get());
+                }
+                if (name.getFamily().isPresent() && !name.getFamily().get().isBlank()) {
+                    System.out.println("   - Family name: " + name.getFamily().get());
+                }
+                if (name.getPrefix().isPresent() && !name.getPrefix().get().isBlank()) {
+                    System.out.println("   - Prefix name: " + name.getPrefix().get());
+                }
+                if (name.getSuffix().isPresent() && !name.getSuffix().get().isBlank()) {
+                    System.out.println("   - Suffix name: " + name.getSuffix().get());
+                }
+
+                if (contact.getAvatar().isPresent()) {
+                    SharedContact.Avatar avatar = contact.getAvatar().get();
+                    System.out.println(" - Avatar:");
+                    printAttachment(avatar.getAttachment());
+                    if (avatar.isProfile()) {
+                        System.out.println("   - Is profile");
+                    } else {
+                        System.out.println("   - Is not a profile");
+                    }
+                }
+
+                if (contact.getPhone().isPresent()) {
+                    System.out.println(" - Phone details:");
+                    int i = 0;
+                    for (SharedContact.Phone phone : contact.getPhone().get()) {
+                        System.out.println("   - No. " + i + ":");
+                        if (phone.getValue() != null) {
+                            System.out.println("     - Number: " + phone.getValue());
+                        }
+                        if (phone.getType() != null) {
+                            System.out.println("     - Type: " + phone.getType());
+                        }
+                        if (phone.getLabel().isPresent() && !phone.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + phone.getLabel().get());
+                        }
+                        i++;
+                    }
+                }
 
                 if (contact.getEmail().isPresent()) {
+                    System.out.println(" - Email details:");
+                    int i = 0;
                     for (SharedContact.Email email : contact.getEmail().get()) {
-                        System.out.println("   " + email);
+                        System.out.println("   - No. " + i + ":");
+                        if (email.getValue() != null) {
+                            System.out.println("     - Value: " + email.getValue());
+                        }
+                        if (email.getType() != null) {
+                            System.out.println("     - Type: " + email.getType());
+                        }
+                        if (email.getLabel().isPresent() && !email.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + email.getLabel().get());
+                        }
                     }
-                } else {
-                    System.out.println("   -");
                 }
-                System.out.println(" - Address details:");
+
                 if (contact.getAddress().isPresent()) {
+                    System.out.println(" - Address details:");
+                    int i = 0;
                     for (SharedContact.PostalAddress address : contact.getAddress().get()) {
-                        System.out.println("   " + address);
+                        System.out.println("   - No. " + i + ":");
+                        if (address.getType() != null) {
+                            System.out.println("     - Type: " + address.getType());
+                        }
+                        if (address.getLabel().isPresent() && !address.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + address.getLabel().get());
+                        }
+                        if (address.getStreet().isPresent() && !address.getStreet().get().isBlank()) {
+                            System.out.println("     - Street: " + address.getStreet().get());
+                        }
+                        if (address.getPobox().isPresent() && !address.getPobox().get().isBlank()) {
+                            System.out.println("     - Pobox: " + address.getPobox().get());
+                        }
+                        if (address.getNeighborhood().isPresent() && !address.getNeighborhood().get().isBlank()) {
+                            System.out.println("     - Neighbourhood: " + address.getNeighborhood().get());
+                        }
+                        if (address.getCity().isPresent() && !address.getCity().get().isBlank()) {
+                            System.out.println("     - City: " + address.getCity().get());
+                        }
+                        if (address.getRegion().isPresent() && !address.getRegion().get().isBlank()) {
+                            System.out.println("     - Region: " + address.getRegion().get());
+                        }
+                        if (address.getPostcode().isPresent() && !address.getPostcode().get().isBlank()) {
+                            System.out.println("     - Postcode: " + address.getPostcode().get());
+                        }
+                        if (address.getCountry().isPresent() && !address.getCountry().get().isBlank()) {
+                            System.out.println("     - Country: " + address.getCountry().get());
+                        }
+                        i++;
                     }
-                } else {
-                    System.out.println("   -");
                 }
+
                 System.out.println(" - Organisation: " +
                         (contact.getOrganization().isPresent() ? contact.getOrganization().get() : "-"));
-                // TODO show or store rest of the contact info
-                    // TODO: TEST THIS
             }
         }
         if (message.getSticker().isPresent()) {

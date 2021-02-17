@@ -33,15 +33,27 @@ public class JsonContactAddress {
     @JsonProperty
     private final String country;
 
+    private String getValueIfActuallyPopulated(String string) {
+        if (string == null || string.isBlank()) {
+            return null;
+        }
+        return string;
+    }
+
     public JsonContactAddress(SharedContact.PostalAddress address) {
         type = address.getType();
-        label = address.getLabel().orNull();
-        street = address.getStreet().orNull();
-        pobox = address.getPobox().orNull();
-        neighborhood = address.getNeighborhood().orNull();
-        city = address.getCity().orNull();
-        region = address.getRegion().orNull();
-        postcode = address.getPostcode().orNull();
-        country = address.getCountry().orNull();
+        label = getValueIfActuallyPopulated(address.getLabel().orNull());
+        street = getValueIfActuallyPopulated(address.getStreet().orNull());
+        pobox = getValueIfActuallyPopulated(address.getPobox().orNull());
+        neighborhood = getValueIfActuallyPopulated(address.getNeighborhood().orNull());
+        city = getValueIfActuallyPopulated(address.getCity().orNull());
+        region = getValueIfActuallyPopulated(address.getRegion().orNull());
+        postcode = getValueIfActuallyPopulated(address.getPostcode().orNull());
+        country = getValueIfActuallyPopulated(address.getCountry().orNull());
+        if (country == null) {
+            System.out.println("Is null");
+        } else {
+            System.out.println("Present: " + country);
+        }
     }
 }
