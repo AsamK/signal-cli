@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class JsonSharedContact {
 
     @JsonProperty
-    final JsonName name;
+    final JsonContactName name;
 
     @JsonProperty
     final JsonContactAvatar avatar;
@@ -33,7 +33,7 @@ public class JsonSharedContact {
 
 
     public JsonSharedContact(SharedContact contact) {
-        name = new JsonName(contact.getName());
+        name = new JsonContactName(contact.getName());
         if (contact.getAvatar().isPresent()) {
             avatar = new JsonContactAvatar(contact.getAvatar().get());
         } else {

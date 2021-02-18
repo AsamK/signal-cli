@@ -2,10 +2,19 @@ package org.asamk.signal.util;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.whispersystems.libsignal.util.guava.Optional;
 
 public class Util {
 
     private Util() {
+    }
+
+    public static String getStringIfNotBlank(Optional<String> value) {
+        String string = value.orNull();
+        if (string == null || string.isBlank()) {
+            return null;
+        }
+        return string;
     }
 
     public static String formatSafetyNumber(String digits) {

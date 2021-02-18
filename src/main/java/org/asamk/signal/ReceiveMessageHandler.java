@@ -463,9 +463,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
                 if (contact.getPhone().isPresent()) {
                     System.out.println(" - Phone details:");
-                    int i = 0;
                     for (SharedContact.Phone phone : contact.getPhone().get()) {
-                        System.out.println("   - No. " + i + ":");
+                        System.out.println("   - Phone:");
                         if (phone.getValue() != null) {
                             System.out.println("     - Number: " + phone.getValue());
                         }
@@ -475,15 +474,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         if (phone.getLabel().isPresent() && !phone.getLabel().get().isBlank()) {
                             System.out.println("     - Label: " + phone.getLabel().get());
                         }
-                        i++;
                     }
                 }
 
                 if (contact.getEmail().isPresent()) {
                     System.out.println(" - Email details:");
-                    int i = 0;
                     for (SharedContact.Email email : contact.getEmail().get()) {
-                        System.out.println("   - No. " + i + ":");
+                        System.out.println("   - Email:");
                         if (email.getValue() != null) {
                             System.out.println("     - Value: " + email.getValue());
                         }
@@ -498,9 +495,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
                 if (contact.getAddress().isPresent()) {
                     System.out.println(" - Address details:");
-                    int i = 0;
                     for (SharedContact.PostalAddress address : contact.getAddress().get()) {
-                        System.out.println("   - No. " + i + ":");
+                        System.out.println("   - Address:");
                         if (address.getType() != null) {
                             System.out.println("     - Type: " + address.getType());
                         }
@@ -528,7 +524,6 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         if (address.getCountry().isPresent() && !address.getCountry().get().isBlank()) {
                             System.out.println("     - Country: " + address.getCountry().get());
                         }
-                        i++;
                     }
                 }
 

@@ -2,6 +2,7 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
 public class JsonContactAddress {
@@ -33,27 +34,15 @@ public class JsonContactAddress {
     @JsonProperty
     private final String country;
 
-    private String getValueIfActuallyPopulated(String string) {
-        if (string == null || string.isBlank()) {
-            return null;
-        }
-        return string;
-    }
-
     public JsonContactAddress(SharedContact.PostalAddress address) {
         type = address.getType();
-        label = getValueIfActuallyPopulated(address.getLabel().orNull());
-        street = getValueIfActuallyPopulated(address.getStreet().orNull());
-        pobox = getValueIfActuallyPopulated(address.getPobox().orNull());
-        neighborhood = getValueIfActuallyPopulated(address.getNeighborhood().orNull());
-        city = getValueIfActuallyPopulated(address.getCity().orNull());
-        region = getValueIfActuallyPopulated(address.getRegion().orNull());
-        postcode = getValueIfActuallyPopulated(address.getPostcode().orNull());
-        country = getValueIfActuallyPopulated(address.getCountry().orNull());
-        if (country == null) {
-            System.out.println("Is null");
-        } else {
-            System.out.println("Present: " + country);
-        }
+        label = Util.getStringIfNotBlank(address.getLabel());
+        street = Util.getStringIfNotBlank(address.getStreet());
+        pobox = Util.getStringIfNotBlank(address.getPobox());
+        neighborhood = Util.getStringIfNotBlank(address.getNeighborhood());
+        city = Util.getStringIfNotBlank(address.getCity());
+        region = Util.getStringIfNotBlank(address.getRegion());
+        postcode = Util.getStringIfNotBlank(address.getPostcode());
+        country = Util.getStringIfNotBlank(address.getCountry());
     }
 }
