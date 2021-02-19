@@ -10,11 +10,10 @@ import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.libsignal.util.guava.Optional;
-import org.asamk.signal.manager.storage.contacts.ContactInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -252,9 +251,15 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void updateProfile(final String name,final String about,final String aboutEmoji, String avatarPath, final boolean removeAvatar) {
+    public void updateProfile(
+            final String name,
+            final String about,
+            final String aboutEmoji,
+            String avatarPath,
+            final boolean removeAvatar
+    ) {
         try {
-                if (avatarPath.isEmpty()) {
+            if (avatarPath.isEmpty()) {
                 avatarPath = null;
             }
             Optional<File> avatarFile = removeAvatar
