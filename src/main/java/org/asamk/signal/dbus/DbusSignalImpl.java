@@ -250,42 +250,20 @@ public class DbusSignalImpl implements Signal {
     public boolean isRegistered() {
         return true;
     }
-	
-	@Override
-	public void updateProfile(final String name,final String about,final String aboutEmoji, String avatarPath, final boolean removeAvatar) {
+
+    @Override
+    public void updateProfile(final String name,final String about,final String aboutEmoji, String avatarPath, final boolean removeAvatar) {
         try {
-			if (avatarPath.isEmpty()) {
+                if (avatarPath.isEmpty()) {
                 avatarPath = null;
             }
             Optional<File> avatarFile = removeAvatar
                     ? Optional.absent()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, about, aboutEmoji, avatarFile);
-		} catch (IOException e) {
+        } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-		}
-	}
-
-    @Override
-    public  List<String> listGroups() {
-        List<GroupInfo> groups = m.getGroups();
-        List<String> gr = new ArrayList<>(groups.size());
-        for (GroupInfo group : groups) {
-            String entry="group="+group.getTitle()+" active:"+group.isMember(m.getSelfAddress())+" blocked:"+group.isBlocked();
-            gr.add(entry);
         }
-        return gr;
-    }
-
-    @Override
-    public  List<String> listContacts() {
-        List<ContactInfo> contacts = m.getContacts();
-        List<String> cc = new ArrayList<>(contacts.size());
-        for (ContactInfo c : contacts) {
-            String entry="number:"+c.number+" name:"+c.name+" blocked:"+c.blocked;
-            cc.add(entry);
-        }
-        return cc;
     }
 
 }

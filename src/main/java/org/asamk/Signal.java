@@ -41,10 +41,6 @@ public interface Signal extends DBusInterface {
 
     List<byte[]> getGroupIds();
 
-    List<String> listGroups(); 
-
-    List<String> listContacts();
-    
     String getGroupName(byte[] groupId);
 
     List<String> getGroupMembers(byte[] groupId);
@@ -55,7 +51,7 @@ public interface Signal extends DBusInterface {
 
     boolean isRegistered();
 
-	void updateProfile(String name,String about,String aboutEmoji,String avatarPath,boolean removeAvatar) throws Error.Failure;
+    void updateProfile(String name,String about,String aboutEmoji,String avatarPath,boolean removeAvatar) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 
