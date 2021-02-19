@@ -117,11 +117,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         } else {
                             System.out.println("Received sync contacts");
                         }
-                        printAttachment(contactsMessage.getContactsStream());
+                        printAttachment(contactsMessage.getContactsStream(), 0);
                     }
                     if (syncMessage.getGroups().isPresent()) {
                         System.out.println("Received sync groups");
-                        printAttachment(syncMessage.getGroups().get());
+                        printAttachment(syncMessage.getGroups().get(), 0);
                     }
                     if (syncMessage.getRead().isPresent()) {
                         System.out.println("Received sync read messages list");
@@ -393,7 +393,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
                 if (groupInfo.getAvatar().isPresent()) {
                     System.out.println("  Avatar:");
-                    printAttachment(groupInfo.getAvatar().get());
+                    printAttachment(groupInfo.getAvatar().get(), 2);
                 }
             } else if (groupContext.getGroupV2().isPresent()) {
                 final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
@@ -421,7 +421,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 System.out.println(" - Title: " + preview.getTitle());
                 System.out.println(" - Url: " + preview.getUrl());
                 if (preview.getImage().isPresent()) {
-                    printAttachment(preview.getImage().get());
+                    printAttachment(preview.getImage().get(), 1);
                 }
             }
         }
@@ -429,8 +429,106 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final List<SharedContact> sharedContacts = message.getSharedContacts().get();
             System.out.println("Contacts:");
             for (SharedContact contact : sharedContacts) {
-                System.out.println(" - Name: " + contact.getName());
-                // TODO show or store rest of the contact info
+                System.out.println(" - Name:");
+                SharedContact.Name name = contact.getName();
+                if (name.getDisplay().isPresent() && !name.getDisplay().get().isBlank()) {
+                    System.out.println("   - Display name: " + name.getDisplay().get());
+                }
+                if (name.getGiven().isPresent() && !name.getGiven().get().isBlank()) {
+                    System.out.println("   - First name: " + name.getGiven().get());
+                }
+                if (name.getMiddle().isPresent() && !name.getMiddle().get().isBlank()) {
+                    System.out.println("   - Middle name: " + name.getMiddle().get());
+                }
+                if (name.getFamily().isPresent() && !name.getFamily().get().isBlank()) {
+                    System.out.println("   - Family name: " + name.getFamily().get());
+                }
+                if (name.getPrefix().isPresent() && !name.getPrefix().get().isBlank()) {
+                    System.out.println("   - Prefix name: " + name.getPrefix().get());
+                }
+                if (name.getSuffix().isPresent() && !name.getSuffix().get().isBlank()) {
+                    System.out.println("   - Suffix name: " + name.getSuffix().get());
+                }
+
+                if (contact.getAvatar().isPresent()) {
+                    SharedContact.Avatar avatar = contact.getAvatar().get();
+                    System.out.println(" - Avatar:");
+                    printAttachment(avatar.getAttachment(), 3);
+                    if (avatar.isProfile()) {
+                        System.out.println("   - Is profile");
+                    } else {
+                        System.out.println("   - Is not a profile");
+                    }
+                }
+
+                if (contact.getPhone().isPresent()) {
+                    System.out.println(" - Phone details:");
+                    for (SharedContact.Phone phone : contact.getPhone().get()) {
+                        System.out.println("   - Phone:");
+                        if (phone.getValue() != null) {
+                            System.out.println("     - Number: " + phone.getValue());
+                        }
+                        if (phone.getType() != null) {
+                            System.out.println("     - Type: " + phone.getType());
+                        }
+                        if (phone.getLabel().isPresent() && !phone.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + phone.getLabel().get());
+                        }
+                    }
+                }
+
+                if (contact.getEmail().isPresent()) {
+                    System.out.println(" - Email details:");
+                    for (SharedContact.Email email : contact.getEmail().get()) {
+                        System.out.println("   - Email:");
+                        if (email.getValue() != null) {
+                            System.out.println("     - Value: " + email.getValue());
+                        }
+                        if (email.getType() != null) {
+                            System.out.println("     - Type: " + email.getType());
+                        }
+                        if (email.getLabel().isPresent() && !email.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + email.getLabel().get());
+                        }
+                    }
+                }
+
+                if (contact.getAddress().isPresent()) {
+                    System.out.println(" - Address details:");
+                    for (SharedContact.PostalAddress address : contact.getAddress().get()) {
+                        System.out.println("   - Address:");
+                        if (address.getType() != null) {
+                            System.out.println("     - Type: " + address.getType());
+                        }
+                        if (address.getLabel().isPresent() && !address.getLabel().get().isBlank()) {
+                            System.out.println("     - Label: " + address.getLabel().get());
+                        }
+                        if (address.getStreet().isPresent() && !address.getStreet().get().isBlank()) {
+                            System.out.println("     - Street: " + address.getStreet().get());
+                        }
+                        if (address.getPobox().isPresent() && !address.getPobox().get().isBlank()) {
+                            System.out.println("     - Pobox: " + address.getPobox().get());
+                        }
+                        if (address.getNeighborhood().isPresent() && !address.getNeighborhood().get().isBlank()) {
+                            System.out.println("     - Neighbourhood: " + address.getNeighborhood().get());
+                        }
+                        if (address.getCity().isPresent() && !address.getCity().get().isBlank()) {
+                            System.out.println("     - City: " + address.getCity().get());
+                        }
+                        if (address.getRegion().isPresent() && !address.getRegion().get().isBlank()) {
+                            System.out.println("     - Region: " + address.getRegion().get());
+                        }
+                        if (address.getPostcode().isPresent() && !address.getPostcode().get().isBlank()) {
+                            System.out.println("     - Postcode: " + address.getPostcode().get());
+                        }
+                        if (address.getCountry().isPresent() && !address.getCountry().get().isBlank()) {
+                            System.out.println("     - Country: " + address.getCountry().get());
+                        }
+                    }
+                }
+
+                System.out.println(" - Organisation: " +
+                        (contact.getOrganization().isPresent() ? contact.getOrganization().get() : "-"));
             }
         }
         if (message.getSticker().isPresent()) {
@@ -472,7 +570,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (quote.getMentions() != null && quote.getMentions().size() > 0) {
                 System.out.println(" Mentions: ");
                 for (SignalServiceDataMessage.Mention mention : quote.getMentions()) {
-                    printMention(mention, m);
+                    printMention(mention, m, 1);
                 }
             }
             if (quote.getAttachments().size() > 0) {
@@ -482,7 +580,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     System.out.println("   Type: " + attachment.getContentType());
                     System.out.println("   Thumbnail:");
                     if (attachment.getThumbnail() != null) {
-                        printAttachment(attachment.getThumbnail());
+                        printAttachment(attachment.getThumbnail(), 3);
                     }
                 }
             }
@@ -495,45 +593,60 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.getMentions().isPresent()) {
             System.out.println("Mentions: ");
             for (SignalServiceDataMessage.Mention mention : message.getMentions().get()) {
-                printMention(mention, m);
+                printMention(mention, m, 0);
             }
         }
 
         if (message.getAttachments().isPresent()) {
             System.out.println("Attachments: ");
             for (SignalServiceAttachment attachment : message.getAttachments().get()) {
-                printAttachment(attachment);
+                printAttachment(attachment, 0);
             }
         }
     }
 
-    private void printMention(SignalServiceDataMessage.Mention mention, Manager m) {
-        System.out.println("- " + m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null))
+    /**
+     * Prints the Signal mention information
+     *
+     * @param mention is the Signal mention to print
+     * @param m is the Manager. used to resolve UUIDs into phone numbers if possible
+     * @param leadingSpaces is the number of spaces you want the message to be indented by
+     */
+    private void printMention(SignalServiceDataMessage.Mention mention, Manager m, int leadingSpaces) {
+        String spaces = " ".repeat(leadingSpaces);
+        System.out.println(spaces + "- " + m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null))
                 .getLegacyIdentifier() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
     }
 
-    private void printAttachment(SignalServiceAttachment attachment) {
-        System.out.println("- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (
+    /**
+     * Prints the Signal attachment information
+     *
+     * @param attachment is the Signal attachment to print
+     * @param leadingSpaces is the number of spaces you want the message to be indented by
+     */
+    private void printAttachment(SignalServiceAttachment attachment, int leadingSpaces) {
+        String spaces = " ".repeat(leadingSpaces);
+        System.out.println(spaces + "- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (
                 attachment.isStream() ? "Stream" : ""
         ) + ")");
         if (attachment.isPointer()) {
             final SignalServiceAttachmentPointer pointer = attachment.asPointer();
-            System.out.println("  Id: " + pointer.getRemoteId() + " Key length: " + pointer.getKey().length);
-            System.out.println("  Filename: " + (
+            System.out.println(spaces + "  Id: " + pointer.getRemoteId() + " Key length: " + pointer.getKey().length);
+            System.out.println(spaces + "  Filename: " + (
                     pointer.getFileName().isPresent() ? pointer.getFileName().get() : "-"
             ));
-            System.out.println("  Size: " + (
+            System.out.println(spaces + "  Size: " + (
                     pointer.getSize().isPresent() ? pointer.getSize().get() + " bytes" : "<unavailable>"
             ) + (
                     pointer.getPreview().isPresent() ? " (Preview is available: "
                             + pointer.getPreview().get().length
                             + " bytes)" : ""
             ));
-            System.out.println("  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
-            System.out.println("  Dimensions: " + pointer.getWidth() + "x" + pointer.getHeight());
+            System.out.println(spaces + "  Voice note: " + (pointer.getVoiceNote() ? "yes" : "no"));
+            System.out.println(spaces + "  Dimensions: " + pointer.getWidth() + "x" + pointer.getHeight());
             File file = m.getAttachmentFile(pointer.getRemoteId());
             if (file.exists()) {
-                System.out.println("  Stored plaintext in: " + file);
+                System.out.println(spaces + "  Stored plaintext in: " + file);
             }
         }
     }

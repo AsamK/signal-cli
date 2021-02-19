@@ -54,6 +54,10 @@ class JsonDataMessage {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonSharedContact> contacts;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
@@ -100,6 +104,16 @@ class JsonDataMessage {
             this.attachments = List.of();
         }
         this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
+
+        if (dataMessage.getSharedContacts().isPresent()) {
+            this.contacts = dataMessage.getSharedContacts()
+                    .get()
+                    .stream()
+                    .map(JsonSharedContact::new)
+                    .collect(Collectors.toList());
+        } else {
+            this.contacts = List.of();
+        }
     }
 
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
@@ -109,10 +123,11 @@ class JsonDataMessage {
         expiresInSeconds = null;
         viewOnce = null;
         remoteDelete = null;
-        reaction = null;    // TODO Replace these 4 with the proper commands
+        reaction = null;    // TODO Replace these 5 with the proper commands
         quote = null;
         mentions = null;
         sticker = null;
+        contacts = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 
@@ -123,10 +138,11 @@ class JsonDataMessage {
         expiresInSeconds = null;
         viewOnce = null;
         remoteDelete = null;
-        reaction = null;    // TODO Replace these 4 with the proper commands
+        reaction = null;    // TODO Replace these 5 with the proper commands
         quote = null;
         mentions = null;
         sticker = null;
+        contacts = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 }
