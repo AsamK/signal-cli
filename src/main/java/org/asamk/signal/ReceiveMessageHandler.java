@@ -527,8 +527,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     }
                 }
 
-                System.out.println(" - Organisation: " +
-                        (contact.getOrganization().isPresent() ? contact.getOrganization().get() : "-"));
+                System.out.println(" - Organisation: " + (
+                        contact.getOrganization().isPresent() ? contact.getOrganization().get() : "-"
+                ));
             }
         }
         if (message.getSticker().isPresent()) {
@@ -608,25 +609,27 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     /**
      * Prints the Signal mention information
      *
-     * @param mention is the Signal mention to print
-     * @param m is the Manager. used to resolve UUIDs into phone numbers if possible
+     * @param mention       is the Signal mention to print
+     * @param m             is the Manager. used to resolve UUIDs into phone numbers if possible
      * @param leadingSpaces is the number of spaces you want the message to be indented by
      */
     private void printMention(SignalServiceDataMessage.Mention mention, Manager m, int leadingSpaces) {
         String spaces = " ".repeat(leadingSpaces);
-        System.out.println(spaces + "- " + m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null))
-                .getLegacyIdentifier() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
+        System.out.println(spaces + "- " + m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(),
+                null)).getLegacyIdentifier() + ": " + mention.getStart() + " (length: " + mention.getLength() + ")");
     }
 
     /**
      * Prints the Signal attachment information
      *
-     * @param attachment is the Signal attachment to print
+     * @param attachment    is the Signal attachment to print
      * @param leadingSpaces is the number of spaces you want the message to be indented by
      */
     private void printAttachment(SignalServiceAttachment attachment, int leadingSpaces) {
         String spaces = " ".repeat(leadingSpaces);
-        System.out.println(spaces + "- " + attachment.getContentType() + " (" + (attachment.isPointer() ? "Pointer" : "") + (
+        System.out.println(spaces + "- " + attachment.getContentType() + " (" + (
+                attachment.isPointer() ? "Pointer" : ""
+        ) + (
                 attachment.isStream() ? "Stream" : ""
         ) + ")");
         if (attachment.isPointer()) {

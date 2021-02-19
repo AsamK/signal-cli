@@ -31,7 +31,6 @@ public class JsonSharedContact {
     @JsonProperty
     final String organization;
 
-
     public JsonSharedContact(SharedContact contact) {
         name = new JsonContactName(contact.getName());
         if (contact.getAvatar().isPresent()) {
@@ -41,31 +40,19 @@ public class JsonSharedContact {
         }
 
         if (contact.getPhone().isPresent()) {
-            phone = contact.getPhone()
-                    .get()
-                    .stream()
-                    .map(JsonContactPhone::new)
-                    .collect(Collectors.toList());
+            phone = contact.getPhone().get().stream().map(JsonContactPhone::new).collect(Collectors.toList());
         } else {
             phone = null;
         }
 
         if (contact.getEmail().isPresent()) {
-            email = contact.getEmail()
-                    .get()
-                    .stream()
-                    .map(JsonContactEmail::new)
-                    .collect(Collectors.toList());
+            email = contact.getEmail().get().stream().map(JsonContactEmail::new).collect(Collectors.toList());
         } else {
             email = null;
         }
 
         if (contact.getAddress().isPresent()) {
-            address = contact.getAddress()
-                    .get()
-                    .stream()
-                    .map(JsonContactAddress::new)
-                    .collect(Collectors.toList());
+            address = contact.getAddress().get().stream().map(JsonContactAddress::new).collect(Collectors.toList());
         } else {
             address = null;
         }
