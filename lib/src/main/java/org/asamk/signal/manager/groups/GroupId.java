@@ -33,7 +33,7 @@ public abstract class GroupId {
         }
     }
 
-    public GroupId(final byte[] id) {
+    protected GroupId(final byte[] id) {
         this.id = id;
     }
 
