@@ -18,13 +18,13 @@ public class GroupUtils {
             final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo groupInfo
     ) {
         if (groupInfo instanceof GroupInfoV1) {
-            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
+            var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)
                     .withId(groupInfo.getGroupId().serialize())
                     .build();
             messageBuilder.asGroupMessage(group);
         } else {
-            final GroupInfoV2 groupInfoV2 = (GroupInfoV2) groupInfo;
-            SignalServiceGroupV2 group = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
+            final var groupInfoV2 = (GroupInfoV2) groupInfo;
+            var group = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
                     .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().getRevision())
                     .build();
             messageBuilder.asGroupMessage(group);
@@ -46,13 +46,12 @@ public class GroupUtils {
     }
 
     public static GroupIdV2 getGroupIdV2(GroupMasterKey groupMasterKey) {
-        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
         return getGroupIdV2(groupSecretParams);
     }
 
     public static GroupIdV2 getGroupIdV2(GroupIdV1 groupIdV1) {
-        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(deriveV2MigrationMasterKey(
-                groupIdV1));
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(deriveV2MigrationMasterKey(groupIdV1));
         return getGroupIdV2(groupSecretParams);
     }
 

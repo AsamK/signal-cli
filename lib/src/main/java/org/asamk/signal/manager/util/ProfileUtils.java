@@ -13,11 +13,11 @@ public class ProfileUtils {
     public static SignalProfile decryptProfile(
             final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
-        ProfileCipher profileCipher = new ProfileCipher(profileKey);
+        var profileCipher = new ProfileCipher(profileKey);
         try {
-            String name = decryptName(encryptedProfile.getName(), profileCipher);
-            String about = decryptName(encryptedProfile.getAbout(), profileCipher);
-            String aboutEmoji = decryptName(encryptedProfile.getAboutEmoji(), profileCipher);
+            var name = decryptName(encryptedProfile.getName(), profileCipher);
+            var about = decryptName(encryptedProfile.getAbout(), profileCipher);
+            var aboutEmoji = decryptName(encryptedProfile.getAboutEmoji(), profileCipher);
             String unidentifiedAccess;
             try {
                 unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null

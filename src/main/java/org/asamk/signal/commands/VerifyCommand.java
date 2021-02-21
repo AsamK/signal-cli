@@ -21,8 +21,8 @@ public class VerifyCommand implements RegistrationCommand {
     @Override
     public int handleCommand(final Namespace ns, final RegistrationManager m) {
         try {
-            String verificationCode = ns.getString("verificationCode");
-            String pin = ns.getString("pin");
+            var verificationCode = ns.getString("verificationCode");
+            var pin = ns.getString("pin");
             m.verifyAccount(verificationCode, pin);
             return 0;
         } catch (LockedException e) {

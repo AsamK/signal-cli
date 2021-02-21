@@ -21,7 +21,6 @@ import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
-import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
@@ -37,7 +36,6 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.profiles.SignalProfile;
-import org.asamk.signal.manager.storage.profiles.SignalProfileEntry;
 import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
@@ -60,11 +58,8 @@ import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
-import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
-import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
-import org.signal.zkgroup.auth.AuthCredentialResponse;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.profiles.ClientZkProfileOperations;
@@ -81,20 +76,17 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
-import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -106,7 +98,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
@@ -116,22 +107,18 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
-import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
-import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
-import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
-import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
@@ -160,7 +147,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +211,7 @@ public class Manager implements Closeable {
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
         this.groupsV2Api = accountManager.getGroupsV2Api();
-        final KeyBackupService keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
+        final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
@@ -286,29 +272,27 @@ public class Manager implements Closeable {
     public static Manager init(
             String username, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) throws IOException, NotRegisteredException {
-        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
+        var pathConfig = PathConfig.createDefault(settingsPath);
 
         if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
             throw new NotRegisteredException();
         }
 
-        SignalAccount account = SignalAccount.load(pathConfig.getDataPath(), username);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username);
 
         if (!account.isRegistered()) {
             throw new NotRegisteredException();
         }
 
-        final ServiceEnvironmentConfig serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(
-                serviceEnvironment,
-                userAgent);
+        final var serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
 
         return new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
     }
 
     public static List<String> getAllLocalUsernames(File settingsPath) {
-        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
-        final File dataPath = pathConfig.getDataPath();
-        final File[] files = dataPath.listFiles();
+        var pathConfig = PathConfig.createDefault(settingsPath);
+        final var dataPath = pathConfig.getDataPath();
+        final var files = dataPath.listFiles();
 
         if (files == null) {
             return List.of();
@@ -342,9 +326,9 @@ public class Manager implements Closeable {
      */
     public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
-        Map<String, UUID> contactDetails = getRegisteredUsers(numbers);
+        var contactDetails = getRegisteredUsers(numbers);
 
-        Set<String> registeredUsers = contactDetails.keySet();
+        var registeredUsers = contactDetails.keySet();
 
         return numbers.stream().collect(Collectors.toMap(x -> x, registeredUsers::contains));
     }
@@ -370,9 +354,9 @@ public class Manager implements Closeable {
      *                   if it's Optional.absent(), the avatar will be removed
      */
     public void setProfile(String name, String about, String aboutEmoji, Optional<File> avatar) throws IOException {
-        SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(getSelfAddress());
-        SignalProfile profile = profileEntry == null ? null : profileEntry.getProfile();
-        SignalProfile newProfile = new SignalProfile(profile == null ? null : profile.getIdentityKey(),
+        var profileEntry = account.getProfileStore().getProfileEntry(getSelfAddress());
+        var profile = profileEntry == null ? null : profileEntry.getProfile();
+        var newProfile = new SignalProfile(profile == null ? null : profile.getIdentityKey(),
                 name != null ? name : profile == null || profile.getName() == null ? "" : profile.getName(),
                 about != null ? about : profile == null || profile.getAbout() == null ? "" : profile.getAbout(),
                 aboutEmoji != null
@@ -382,7 +366,7 @@ public class Manager implements Closeable {
                 account.isUnrestrictedUnidentifiedAccess(),
                 profile == null ? null : profile.getCapabilities());
 
-        try (final StreamDetails streamDetails = avatar == null
+        try (final var streamDetails = avatar == null
                 ? avatarStore.retrieveProfileAvatar(getSelfAddress())
                 : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
             accountManager.setVersionedProfile(account.getUuid(),
@@ -426,7 +410,7 @@ public class Manager implements Closeable {
     }
 
     public List<DeviceInfo> getLinkedDevices() throws IOException {
-        List<DeviceInfo> devices = accountManager.getDevices();
+        var devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
         account.save();
         return devices;
@@ -434,20 +418,20 @@ public class Manager implements Closeable {
 
     public void removeLinkedDevices(int deviceId) throws IOException {
         accountManager.removeDevice(deviceId);
-        List<DeviceInfo> devices = accountManager.getDevices();
+        var devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
         account.save();
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
-        DeviceLinkInfo info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
+        var info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
 
         addDevice(info.deviceIdentifier, info.deviceKey);
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
-        IdentityKeyPair identityKeyPair = getIdentityKeyPair();
-        String verificationCode = accountManager.getNewDeviceVerificationCode();
+        var identityKeyPair = getIdentityKeyPair();
+        var verificationCode = accountManager.getNewDeviceVerificationCode();
 
         accountManager.addDevice(deviceIdentifier,
                 deviceKey,
@@ -463,7 +447,7 @@ public class Manager implements Closeable {
             throw new RuntimeException("Only master device can set a PIN");
         }
         if (pin.isPresent()) {
-            final MasterKey masterKey = account.getPinMasterKey() != null
+            final var masterKey = account.getPinMasterKey() != null
                     ? account.getPinMasterKey()
                     : KeyUtils.createMasterKey();
 
@@ -485,17 +469,17 @@ public class Manager implements Closeable {
     }
 
     void refreshPreKeys() throws IOException {
-        List<PreKeyRecord> oneTimePreKeys = generatePreKeys();
-        final IdentityKeyPair identityKeyPair = getIdentityKeyPair();
-        SignedPreKeyRecord signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
+        var oneTimePreKeys = generatePreKeys();
+        final var identityKeyPair = getIdentityKeyPair();
+        var signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
         accountManager.setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
     private List<PreKeyRecord> generatePreKeys() {
-        final int offset = account.getPreKeyIdOffset();
+        final var offset = account.getPreKeyIdOffset();
 
-        List<PreKeyRecord> records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
+        var records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
         account.addPreKeys(records);
         account.save();
 
@@ -503,9 +487,9 @@ public class Manager implements Closeable {
     }
 
     private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
-        final int signedPreKeyId = account.getNextSignedPreKeyId();
+        final var signedPreKeyId = account.getNextSignedPreKeyId();
 
-        SignedPreKeyRecord record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
+        var record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
         account.addSignedPreKey(record);
         account.save();
 
@@ -553,11 +537,11 @@ public class Manager implements Closeable {
     private SignalProfile getRecipientProfile(
             SignalServiceAddress address, boolean force
     ) {
-        SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(address);
+        var profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry == null) {
             return null;
         }
-        long now = new Date().getTime();
+        var now = new Date().getTime();
         // Profiles are cached for 24h before retrieving them again
         if (!profileEntry.isRequestPending() && (
                 force
@@ -576,8 +560,8 @@ public class Manager implements Closeable {
                 profileEntry.setRequestPending(false);
             }
 
-            final ProfileKey profileKey = profileEntry.getProfileKey();
-            final SignalProfile profile = decryptProfileAndDownloadAvatar(address, profileKey, encryptedProfile);
+            final var profileKey = profileEntry.getProfileKey();
+            final var profile = decryptProfileAndDownloadAvatar(address, profileKey, encryptedProfile);
             account.getProfileStore()
                     .updateProfile(address, profileKey, now, profile, profileEntry.getProfileKeyCredential());
             return profile;
@@ -586,7 +570,7 @@ public class Manager implements Closeable {
     }
 
     private ProfileKeyCredential getRecipientProfileKeyCredential(SignalServiceAddress address) {
-        SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(address);
+        var profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry == null) {
             return null;
         }
@@ -600,9 +584,9 @@ public class Manager implements Closeable {
                 return null;
             }
 
-            long now = new Date().getTime();
-            final ProfileKeyCredential profileKeyCredential = profileAndCredential.getProfileKeyCredential().orNull();
-            final SignalProfile profile = decryptProfileAndDownloadAvatar(address,
+            var now = new Date().getTime();
+            final var profileKeyCredential = profileAndCredential.getProfileKeyCredential().orNull();
+            final var profile = decryptProfileAndDownloadAvatar(address,
                     profileEntry.getProfileKey(),
                     profileAndCredential.getProfile());
             account.getProfileStore()
@@ -623,7 +607,7 @@ public class Manager implements Closeable {
     }
 
     private Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupId groupId) throws IOException {
-        final StreamDetails streamDetails = avatarStore.retrieveGroupAvatar(groupId);
+        final var streamDetails = avatarStore.retrieveGroupAvatar(groupId);
         if (streamDetails == null) {
             return Optional.absent();
         }
@@ -632,7 +616,7 @@ public class Manager implements Closeable {
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
-        final StreamDetails streamDetails = avatarStore.retrieveContactAvatar(address);
+        final var streamDetails = avatarStore.retrieveContactAvatar(address);
         if (streamDetails == null) {
             return Optional.absent();
         }
@@ -641,7 +625,7 @@ public class Manager implements Closeable {
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        GroupInfo g = getGroup(groupId);
+        var g = getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -652,7 +636,7 @@ public class Manager implements Closeable {
     }
 
     private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        GroupInfo g = getGroup(groupId);
+        var g = getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -669,8 +653,7 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
             String messageText, List<String> attachments, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withBody(messageText);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
         }
@@ -681,12 +664,11 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendGroupMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, GroupId groupId
     ) throws IOException, InvalidNumberException, NotAGroupMemberException, GroupNotFoundException {
-        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji,
+        var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
                 canonicalizeAndResolveSignalServiceAddress(targetAuthor),
                 targetSentTimestamp);
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withReaction(reaction);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
 
         return sendGroupMessage(messageBuilder, groupId);
     }
@@ -694,7 +676,7 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
             SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
     ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
-        final GroupInfo g = getGroupForSending(groupId);
+        final var g = getGroupForSending(groupId);
 
         GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTime());
@@ -705,18 +687,16 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
         SignalServiceDataMessage.Builder messageBuilder;
 
-        final GroupInfo g = getGroupForUpdating(groupId);
+        final var g = getGroupForUpdating(groupId);
         if (g instanceof GroupInfoV1) {
-            GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
-            SignalServiceGroup group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
-                    .withId(groupId.serialize())
-                    .build();
+            var groupInfoV1 = (GroupInfoV1) g;
+            var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT).withId(groupId.serialize()).build();
             messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
             groupInfoV1.removeMember(account.getSelfAddress());
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
-            final GroupInfoV2 groupInfoV2 = (GroupInfoV2) g;
-            final Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.leaveGroup(groupInfoV2);
+            final var groupInfoV2 = (GroupInfoV2) g;
+            final var groupGroupChangePair = groupHelper.leaveGroup(groupInfoV2);
             groupInfoV2.setGroup(groupGroupChangePair.first());
             messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
             account.getGroupStore().updateGroup(groupInfoV2);
@@ -741,11 +721,11 @@ public class Manager implements Closeable {
         SignalServiceDataMessage.Builder messageBuilder;
         if (groupId == null) {
             // Create new group
-            GroupInfoV2 gv2 = groupHelper.createGroupV2(name == null ? "" : name,
+            var gv2 = groupHelper.createGroupV2(name == null ? "" : name,
                     members == null ? List.of() : members,
                     avatarFile);
             if (gv2 == null) {
-                GroupInfoV1 gv1 = new GroupInfoV1(GroupIdV1.createRandom());
+                var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
                 gv1.addMembers(List.of(account.getSelfAddress()));
                 updateGroupV1(gv1, name, members, avatarFile);
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
@@ -759,36 +739,33 @@ public class Manager implements Closeable {
                 g = gv2;
             }
         } else {
-            GroupInfo group = getGroupForUpdating(groupId);
+            var group = getGroupForUpdating(groupId);
             if (group instanceof GroupInfoV2) {
-                final GroupInfoV2 groupInfoV2 = (GroupInfoV2) group;
+                final var groupInfoV2 = (GroupInfoV2) group;
 
                 Pair<Long, List<SendMessageResult>> result = null;
                 if (groupInfoV2.isPendingMember(getSelfAddress())) {
-                    Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.acceptInvite(groupInfoV2);
+                    var groupGroupChangePair = groupHelper.acceptInvite(groupInfoV2);
                     result = sendUpdateGroupMessage(groupInfoV2,
                             groupGroupChangePair.first(),
                             groupGroupChangePair.second());
                 }
 
                 if (members != null) {
-                    final Set<SignalServiceAddress> newMembers = new HashSet<>(members);
+                    final var newMembers = new HashSet<>(members);
                     newMembers.removeAll(group.getMembers()
                             .stream()
                             .map(this::resolveSignalServiceAddress)
                             .collect(Collectors.toSet()));
                     if (newMembers.size() > 0) {
-                        Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
-                                newMembers);
+                        var groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2, newMembers);
                         result = sendUpdateGroupMessage(groupInfoV2,
                                 groupGroupChangePair.first(),
                                 groupGroupChangePair.second());
                     }
                 }
                 if (result == null || name != null || avatarFile != null) {
-                    Pair<DecryptedGroup, GroupChange> groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2,
-                            name,
-                            avatarFile);
+                    var groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2, name, avatarFile);
                     if (avatarFile != null) {
                         avatarStore.storeGroupAvatar(groupInfoV2.getGroupId(),
                                 outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
@@ -800,7 +777,7 @@ public class Manager implements Closeable {
 
                 return new Pair<>(group.getGroupId(), result.second());
             } else {
-                GroupInfoV1 gv1 = (GroupInfoV1) group;
+                var gv1 = (GroupInfoV1) group;
                 updateGroupV1(gv1, name, members, avatarFile);
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
@@ -809,8 +786,7 @@ public class Manager implements Closeable {
 
         account.getGroupStore().updateGroup(g);
 
-        final Pair<Long, List<SendMessageResult>> result = sendMessage(messageBuilder,
-                g.getMembersIncludingPendingWithout(account.getSelfAddress()));
+        final var result = sendMessage(messageBuilder, g.getMembersIncludingPendingWithout(account.getSelfAddress()));
         return new Pair<>(g.getGroupId(), result.second());
     }
 
@@ -825,15 +801,15 @@ public class Manager implements Closeable {
         }
 
         if (members != null) {
-            final Set<String> newE164Members = new HashSet<>();
-            for (SignalServiceAddress member : members) {
+            final var newE164Members = new HashSet<String>();
+            for (var member : members) {
                 if (g.isMember(member) || !member.getNumber().isPresent()) {
                     continue;
                 }
                 newE164Members.add(member.getNumber().get());
             }
 
-            final Map<String, UUID> registeredUsers = getRegisteredUsers(newE164Members);
+            final var registeredUsers = getRegisteredUsers(newE164Members);
             if (registeredUsers.size() != newE164Members.size()) {
                 // Some of the new members are not registered on Signal
                 newE164Members.removeAll(registeredUsers.keySet());
@@ -860,12 +836,12 @@ public class Manager implements Closeable {
     private Pair<GroupId, List<SendMessageResult>> sendJoinGroupMessage(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, GroupLinkNotActiveException {
-        final DecryptedGroupJoinInfo groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
+        final var groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
                 inviteLinkUrl.getPassword());
-        final GroupChange groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
+        final var groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
                 inviteLinkUrl.getPassword(),
                 groupJoinInfo);
-        final GroupInfoV2 group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
+        final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
                 groupJoinInfo.getRevision() + 1,
                 groupChange.toByteArray());
 
@@ -874,7 +850,7 @@ public class Manager implements Closeable {
             return new Pair<>(group.getGroupId(), List.of());
         }
 
-        final Pair<Long, List<SendMessageResult>> result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
+        final var result = sendUpdateGroupMessage(group, group.getGroup(), groupChange);
 
         return new Pair<>(group.getGroupId(), result.second());
     }
@@ -886,11 +862,11 @@ public class Manager implements Closeable {
     private GroupsV2AuthorizationString getGroupAuthForToday(
             final GroupSecretParams groupSecretParams
     ) throws IOException {
-        final int today = currentTimeDays();
+        final var today = currentTimeDays();
         // Returns credentials for the next 7 days
-        final HashMap<Integer, AuthCredentialResponse> credentials = groupsV2Api.getCredentials(today);
+        final var credentials = groupsV2Api.getCredentials(today);
         // TODO cache credentials until they expire
-        AuthCredentialResponse authCredentialResponse = credentials.get(today);
+        var authCredentialResponse = credentials.get(today);
         try {
             return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
                     today,
@@ -905,8 +881,7 @@ public class Manager implements Closeable {
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
         group.setGroup(newDecryptedGroup);
-        final SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(group,
-                groupChange.toByteArray());
+        final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
         account.getGroupStore().updateGroup(group);
         return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
     }
@@ -915,7 +890,7 @@ public class Manager implements Closeable {
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
-        GroupInfo group = getGroupForSending(groupId);
+        var group = getGroupForSending(groupId);
         if (!(group instanceof GroupInfoV1)) {
             throw new RuntimeException("Received an invalid group request for a v2 group!");
         }
@@ -925,20 +900,20 @@ public class Manager implements Closeable {
             throw new NotAGroupMemberException(groupId, g.name);
         }
 
-        SignalServiceDataMessage.Builder messageBuilder = getGroupUpdateMessageBuilder(g);
+        var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
         return sendMessage(messageBuilder, List.of(recipient));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
-        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
+        var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.getGroupId().serialize())
                 .withName(g.name)
                 .withMembers(new ArrayList<>(g.getMembers()));
 
         try {
-            final Optional<SignalServiceAttachmentStream> attachment = createGroupAvatarAttachment(g.getGroupId());
+            final var attachment = createGroupAvatarAttachment(g.getGroupId());
             if (attachment.isPresent()) {
                 group.withAvatar(attachment.get());
             }
@@ -952,7 +927,7 @@ public class Manager implements Closeable {
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
-        SignalServiceGroupV2.Builder group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
+        var group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
                 .withRevision(g.getGroup().getRevision())
                 .withSignedGroupChange(signedGroupChange);
         return SignalServiceDataMessage.newBuilder()
@@ -963,11 +938,9 @@ public class Manager implements Closeable {
     Pair<Long, List<SendMessageResult>> sendGroupInfoRequest(
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException {
-        SignalServiceGroup.Builder group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO)
-                .withId(groupId.serialize());
+        var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO).withId(groupId.serialize());
 
-        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build());
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
         return sendMessage(messageBuilder, List.of(recipient));
@@ -976,7 +949,7 @@ public class Manager implements Closeable {
     void sendReceipt(
             SignalServiceAddress remoteAddress, long messageId
     ) throws IOException, UntrustedIdentityException {
-        SignalServiceReceiptMessage receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
+        var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
                 List.of(messageId),
                 System.currentTimeMillis());
 
@@ -988,15 +961,14 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendMessage(
             String messageText, List<String> attachments, List<String> recipients
     ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withBody(messageText);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            List<SignalServiceAttachment> attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
+            var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
 
             // Upload attachments here, so we only upload once even for multiple recipients
-            SignalServiceMessageSender messageSender = createMessageSender();
-            List<SignalServiceAttachment> attachmentPointers = new ArrayList<>(attachmentStreams.size());
-            for (SignalServiceAttachment attachment : attachmentStreams) {
+            var messageSender = createMessageSender();
+            var attachmentPointers = new ArrayList<SignalServiceAttachment>(attachmentStreams.size());
+            for (var attachment : attachmentStreams) {
                 if (attachment.isStream()) {
                     attachmentPointers.add(messageSender.uploadAttachment(attachment.asStream()));
                 } else if (attachment.isPointer()) {
@@ -1012,8 +984,7 @@ public class Manager implements Closeable {
     public Pair<Long, SendMessageResult> sendSelfMessage(
             String messageText, List<String> attachments
     ) throws IOException, AttachmentInvalidException {
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withBody(messageText);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
         }
@@ -1023,23 +994,22 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {
-        SignalServiceDataMessage.Reaction reaction = new SignalServiceDataMessage.Reaction(emoji,
+        var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
                 canonicalizeAndResolveSignalServiceAddress(targetAuthor),
                 targetSentTimestamp);
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .withReaction(reaction);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
         return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
     public Pair<Long, List<SendMessageResult>> sendEndSessionMessage(List<String> recipients) throws IOException, InvalidNumberException {
-        SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
 
-        final Collection<SignalServiceAddress> signalServiceAddresses = getSignalServiceAddresses(recipients);
+        final var signalServiceAddresses = getSignalServiceAddresses(recipients);
         try {
             return sendMessage(messageBuilder, signalServiceAddresses);
         } catch (Exception e) {
-            for (SignalServiceAddress address : signalServiceAddresses) {
+            for (var address : signalServiceAddresses) {
                 handleEndSession(address);
             }
             account.save();
@@ -1048,7 +1018,7 @@ public class Manager implements Closeable {
     }
 
     public String getContactName(String number) throws InvalidNumberException {
-        ContactInfo contact = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
+        var contact = account.getContactStore().getContact(canonicalizeAndResolveSignalServiceAddress(number));
         if (contact == null) {
             return "";
         } else {
@@ -1057,8 +1027,8 @@ public class Manager implements Closeable {
     }
 
     public void setContactName(String number, String name) throws InvalidNumberException {
-        final SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(number);
-        ContactInfo contact = account.getContactStore().getContact(address);
+        final var address = canonicalizeAndResolveSignalServiceAddress(number);
+        var contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
         }
@@ -1072,7 +1042,7 @@ public class Manager implements Closeable {
     }
 
     private void setContactBlocked(SignalServiceAddress address, boolean blocked) {
-        ContactInfo contact = account.getContactStore().getContact(address);
+        var contact = account.getContactStore().getContact(address);
         if (contact == null) {
             contact = new ContactInfo(address);
         }
@@ -1082,7 +1052,7 @@ public class Manager implements Closeable {
     }
 
     public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
-        GroupInfo group = getGroup(groupId);
+        var group = getGroup(groupId);
         if (group == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -1096,7 +1066,7 @@ public class Manager implements Closeable {
      * Change the expiration timer for a contact
      */
     public void setExpirationTimer(SignalServiceAddress address, int messageExpirationTimer) throws IOException {
-        ContactInfo contact = account.getContactStore().getContact(address);
+        var contact = account.getContactStore().getContact(address);
         contact.messageExpirationTime = messageExpirationTimer;
         account.getContactStore().updateContact(contact);
         sendExpirationTimerUpdate(address);
@@ -1104,8 +1074,7 @@ public class Manager implements Closeable {
     }
 
     private void sendExpirationTimerUpdate(SignalServiceAddress address) throws IOException {
-        final SignalServiceDataMessage.Builder messageBuilder = SignalServiceDataMessage.newBuilder()
-                .asExpirationUpdate();
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         sendMessage(messageBuilder, List.of(address));
     }
 
@@ -1115,7 +1084,7 @@ public class Manager implements Closeable {
     public void setExpirationTimer(
             String number, int messageExpirationTimer
     ) throws IOException, InvalidNumberException {
-        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(number);
+        var address = canonicalizeAndResolveSignalServiceAddress(number);
         setExpirationTimer(address, messageExpirationTimer);
     }
 
@@ -1123,9 +1092,9 @@ public class Manager implements Closeable {
      * Change the expiration timer for a group
      */
     public void setExpirationTimer(GroupId groupId, int messageExpirationTimer) {
-        GroupInfo g = getGroup(groupId);
+        var g = getGroup(groupId);
         if (g instanceof GroupInfoV1) {
-            GroupInfoV1 groupInfoV1 = (GroupInfoV1) g;
+            var groupInfoV1 = (GroupInfoV1) g;
             groupInfoV1.messageExpirationTime = messageExpirationTimer;
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
@@ -1140,14 +1109,14 @@ public class Manager implements Closeable {
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
     public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
-        SignalServiceStickerManifestUpload manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
+        var manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
-        SignalServiceMessageSender messageSender = createMessageSender();
+        var messageSender = createMessageSender();
 
-        byte[] packKey = KeyUtils.createStickerUploadKey();
-        String packId = messageSender.uploadStickerManifest(manifest, packKey);
+        var packKey = KeyUtils.createStickerUploadKey();
+        var packId = messageSender.uploadStickerManifest(manifest, packKey);
 
-        Sticker sticker = new Sticker(Hex.fromStringCondensed(packId), packKey);
+        var sticker = new Sticker(Hex.fromStringCondensed(packId), packKey);
         account.getStickerStore().updateSticker(sticker);
         account.save();
 
@@ -1164,10 +1133,10 @@ public class Manager implements Closeable {
     }
 
     void requestSyncGroups() throws IOException {
-        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
                 .build();
-        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -1176,10 +1145,10 @@ public class Manager implements Closeable {
     }
 
     void requestSyncContacts() throws IOException {
-        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
                 .build();
-        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -1188,10 +1157,10 @@ public class Manager implements Closeable {
     }
 
     void requestSyncBlocked() throws IOException {
-        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
                 .build();
-        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -1200,10 +1169,10 @@ public class Manager implements Closeable {
     }
 
     void requestSyncConfiguration() throws IOException {
-        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
                 .build();
-        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -1212,10 +1181,10 @@ public class Manager implements Closeable {
     }
 
     void requestSyncKeys() throws IOException {
-        SignalServiceProtos.SyncMessage.Request r = SignalServiceProtos.SyncMessage.Request.newBuilder()
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
                 .build();
-        SignalServiceSyncMessage message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
+        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         try {
             sendSyncMessage(message);
         } catch (UntrustedIdentityException e) {
@@ -1238,7 +1207,7 @@ public class Manager implements Closeable {
     }
 
     private void sendSyncMessage(SignalServiceSyncMessage message) throws IOException, UntrustedIdentityException {
-        SignalServiceMessageSender messageSender = createMessageSender();
+        var messageSender = createMessageSender();
         try {
             messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
         } catch (UntrustedIdentityException e) {
@@ -1251,11 +1220,11 @@ public class Manager implements Closeable {
     }
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
-        final Set<SignalServiceAddress> signalServiceAddresses = new HashSet<>(numbers.size());
-        final Set<SignalServiceAddress> addressesMissingUuid = new HashSet<>();
+        final var signalServiceAddresses = new HashSet<SignalServiceAddress>(numbers.size());
+        final var addressesMissingUuid = new HashSet<SignalServiceAddress>();
 
-        for (String number : numbers) {
-            final SignalServiceAddress resolvedAddress = canonicalizeAndResolveSignalServiceAddress(number);
+        for (var number : numbers) {
+            final var resolvedAddress = canonicalizeAndResolveSignalServiceAddress(number);
             if (resolvedAddress.getUuid().isPresent()) {
                 signalServiceAddresses.add(resolvedAddress);
             } else {
@@ -1263,7 +1232,7 @@ public class Manager implements Closeable {
             }
         }
 
-        final Set<String> numbersMissingUuid = addressesMissingUuid.stream()
+        final var numbersMissingUuid = addressesMissingUuid.stream()
                 .map(a -> a.getNumber().get())
                 .collect(Collectors.toSet());
         Map<String, UUID> registeredUsers;
@@ -1274,11 +1243,10 @@ public class Manager implements Closeable {
             registeredUsers = Map.of();
         }
 
-        for (SignalServiceAddress address : addressesMissingUuid) {
-            final String number = address.getNumber().get();
+        for (var address : addressesMissingUuid) {
+            final var number = address.getNumber().get();
             if (registeredUsers.containsKey(number)) {
-                final SignalServiceAddress newAddress = resolveSignalServiceAddress(new SignalServiceAddress(
-                        registeredUsers.get(number),
+                final var newAddress = resolveSignalServiceAddress(new SignalServiceAddress(registeredUsers.get(number),
                         number));
                 signalServiceAddresses.add(newAddress);
             } else {
@@ -1303,7 +1271,7 @@ public class Manager implements Closeable {
             SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients
     ) throws IOException {
         recipients = recipients.stream().map(this::resolveSignalServiceAddress).collect(Collectors.toSet());
-        final long timestamp = System.currentTimeMillis();
+        final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         getOrCreateMessagePipe();
         getOrCreateUnidentifiedMessagePipe();
@@ -1312,13 +1280,13 @@ public class Manager implements Closeable {
             message = messageBuilder.build();
             if (message.getGroupContext().isPresent()) {
                 try {
-                    SignalServiceMessageSender messageSender = createMessageSender();
-                    final boolean isRecipientUpdate = false;
-                    List<SendMessageResult> result = messageSender.sendMessage(new ArrayList<>(recipients),
+                    var messageSender = createMessageSender();
+                    final var isRecipientUpdate = false;
+                    var result = messageSender.sendMessage(new ArrayList<>(recipients),
                             unidentifiedAccessHelper.getAccessFor(recipients),
                             isRecipientUpdate,
                             message);
-                    for (SendMessageResult r : result) {
+                    for (var r : result) {
                         if (r.getIdentityFailure() != null) {
                             account.getSignalProtocolStore()
                                     .saveIdentity(r.getAddress(),
@@ -1337,10 +1305,10 @@ public class Manager implements Closeable {
             } else {
                 // Send to all individually, so sync messages are sent correctly
                 messageBuilder.withProfileKey(account.getProfileKey().serialize());
-                List<SendMessageResult> results = new ArrayList<>(recipients.size());
-                for (SignalServiceAddress address : recipients) {
-                    final ContactInfo contact = account.getContactStore().getContact(address);
-                    final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
+                var results = new ArrayList<SendMessageResult>(recipients.size());
+                for (var address : recipients) {
+                    final var contact = account.getContactStore().getContact(address);
+                    final var expirationTime = contact != null ? contact.messageExpirationTime : 0;
                     messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
                     results.add(sendMessage(address, message));
@@ -1349,7 +1317,7 @@ public class Manager implements Closeable {
             }
         } finally {
             if (message != null && message.isEndSession()) {
-                for (SignalServiceAddress recipient : recipients) {
+                for (var recipient : recipients) {
                     handleEndSession(recipient);
                 }
             }
@@ -1360,19 +1328,19 @@ public class Manager implements Closeable {
     private Pair<Long, SendMessageResult> sendSelfMessage(
             SignalServiceDataMessage.Builder messageBuilder
     ) throws IOException {
-        final long timestamp = System.currentTimeMillis();
+        final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         getOrCreateMessagePipe();
         getOrCreateUnidentifiedMessagePipe();
         try {
-            final SignalServiceAddress address = getSelfAddress();
+            final var address = getSelfAddress();
 
-            final ContactInfo contact = account.getContactStore().getContact(address);
-            final int expirationTime = contact != null ? contact.messageExpirationTime : 0;
+            final var contact = account.getContactStore().getContact(address);
+            final var expirationTime = contact != null ? contact.messageExpirationTime : 0;
             messageBuilder.withExpiration(expirationTime);
 
-            SignalServiceDataMessage message = messageBuilder.build();
-            final SendMessageResult result = sendSelfMessage(message);
+            var message = messageBuilder.build();
+            final var result = sendSelfMessage(message);
             return new Pair<>(timestamp, result);
         } finally {
             account.save();
@@ -1380,21 +1348,21 @@ public class Manager implements Closeable {
     }
 
     private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
-        SignalServiceMessageSender messageSender = createMessageSender();
+        var messageSender = createMessageSender();
 
-        SignalServiceAddress recipient = account.getSelfAddress();
+        var recipient = account.getSelfAddress();
 
-        final Optional<UnidentifiedAccessPair> unidentifiedAccess = unidentifiedAccessHelper.getAccessFor(recipient);
-        SentTranscriptMessage transcript = new SentTranscriptMessage(Optional.of(recipient),
+        final var unidentifiedAccess = unidentifiedAccessHelper.getAccessFor(recipient);
+        var transcript = new SentTranscriptMessage(Optional.of(recipient),
                 message.getTimestamp(),
                 message,
                 message.getExpiresInSeconds(),
                 Map.of(recipient, unidentifiedAccess.isPresent()),
                 false);
-        SignalServiceSyncMessage syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
+        var syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
         try {
-            long startTime = System.currentTimeMillis();
+            var startTime = System.currentTimeMillis();
             messageSender.sendMessage(syncMessage, unidentifiedAccess);
             return SendMessageResult.success(recipient,
                     unidentifiedAccess.isPresent(),
@@ -1412,7 +1380,7 @@ public class Manager implements Closeable {
     private SendMessageResult sendMessage(
             SignalServiceAddress address, SignalServiceDataMessage message
     ) throws IOException {
-        SignalServiceMessageSender messageSender = createMessageSender();
+        var messageSender = createMessageSender();
 
         try {
             return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(address), message);
@@ -1426,16 +1394,15 @@ public class Manager implements Closeable {
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, org.whispersystems.libsignal.UntrustedIdentityException {
-        SignalServiceCipher cipher = new SignalServiceCipher(account.getSelfAddress(),
+        var cipher = new SignalServiceCipher(account.getSelfAddress(),
                 account.getSignalProtocolStore(),
                 certificateValidator);
         try {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
             if (e.getCause() instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
-                org.whispersystems.libsignal.UntrustedIdentityException identityException = (org.whispersystems.libsignal.UntrustedIdentityException) e
-                        .getCause();
-                final IdentityKey untrustedIdentity = identityException.getUntrustedIdentity();
+                var identityException = (org.whispersystems.libsignal.UntrustedIdentityException) e.getCause();
+                final var untrustedIdentity = identityException.getUntrustedIdentity();
                 if (untrustedIdentity != null) {
                     account.getSignalProtocolStore()
                             .saveIdentity(resolveSignalServiceAddress(identityException.getName()),
@@ -1459,14 +1426,14 @@ public class Manager implements Closeable {
             SignalServiceAddress destination,
             boolean ignoreAttachments
     ) {
-        List<HandleAction> actions = new ArrayList<>();
+        var actions = new ArrayList<HandleAction>();
         if (message.getGroupContext().isPresent()) {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                GroupIdV1 groupId = GroupId.v1(groupInfo.getGroupId());
-                GroupInfo group = getGroup(groupId);
+                var groupInfo = message.getGroupContext().get().getGroupV1().get();
+                var groupId = GroupId.v1(groupInfo.getGroupId());
+                var group = getGroup(groupId);
                 if (group == null || group instanceof GroupInfoV1) {
-                    GroupInfoV1 groupV1 = (GroupInfoV1) group;
+                    var groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
                         case UPDATE: {
                             if (groupV1 == null) {
@@ -1474,7 +1441,7 @@ public class Manager implements Closeable {
                             }
 
                             if (groupInfo.getAvatar().isPresent()) {
-                                SignalServiceAttachment avatar = groupInfo.getAvatar().get();
+                                var avatar = groupInfo.getAvatar().get();
                                 downloadGroupAvatar(avatar, groupV1.getGroupId());
                             }
 
@@ -1516,8 +1483,8 @@ public class Manager implements Closeable {
                 }
             }
             if (message.getGroupContext().get().getGroupV2().isPresent()) {
-                final SignalServiceGroupV2 groupContext = message.getGroupContext().get().getGroupV2().get();
-                final GroupMasterKey groupMasterKey = groupContext.getMasterKey();
+                final var groupContext = message.getGroupContext().get().getGroupV2().get();
+                final var groupMasterKey = groupContext.getMasterKey();
 
                 getOrMigrateGroup(groupMasterKey,
                         groupContext.getRevision(),
@@ -1525,15 +1492,15 @@ public class Manager implements Closeable {
             }
         }
 
-        final SignalServiceAddress conversationPartnerAddress = isSync ? destination : source;
+        final var conversationPartnerAddress = isSync ? destination : source;
         if (conversationPartnerAddress != null && message.isEndSession()) {
             handleEndSession(conversationPartnerAddress);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                    SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    GroupInfoV1 group = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(groupInfo.getGroupId()));
+                    var groupInfo = message.getGroupContext().get().getGroupV1().get();
+                    var group = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(groupInfo.getGroupId()));
                     if (group != null) {
                         if (group.messageExpirationTime != message.getExpiresInSeconds()) {
                             group.messageExpirationTime = message.getExpiresInSeconds();
@@ -1544,7 +1511,7 @@ public class Manager implements Closeable {
                     // disappearing message timer already stored in the DecryptedGroup
                 }
             } else if (conversationPartnerAddress != null) {
-                ContactInfo contact = account.getContactStore().getContact(conversationPartnerAddress);
+                var contact = account.getContactStore().getContact(conversationPartnerAddress);
                 if (contact == null) {
                     contact = new ContactInfo(conversationPartnerAddress);
                 }
@@ -1556,12 +1523,12 @@ public class Manager implements Closeable {
         }
         if (!ignoreAttachments) {
             if (message.getAttachments().isPresent()) {
-                for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+                for (var attachment : message.getAttachments().get()) {
                     downloadAttachment(attachment);
                 }
             }
             if (message.getSharedContacts().isPresent()) {
-                for (SharedContact contact : message.getSharedContacts().get()) {
+                for (var contact : message.getSharedContacts().get()) {
                     if (contact.getAvatar().isPresent()) {
                         downloadAttachment(contact.getAvatar().get().getAttachment());
                     }
@@ -1581,26 +1548,26 @@ public class Manager implements Closeable {
             this.account.getProfileStore().storeProfileKey(source, profileKey);
         }
         if (message.getPreviews().isPresent()) {
-            final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
-            for (SignalServiceDataMessage.Preview preview : previews) {
+            final var previews = message.getPreviews().get();
+            for (var preview : previews) {
                 if (preview.getImage().isPresent()) {
                     downloadAttachment(preview.getImage().get());
                 }
             }
         }
         if (message.getQuote().isPresent()) {
-            final SignalServiceDataMessage.Quote quote = message.getQuote().get();
+            final var quote = message.getQuote().get();
 
-            for (SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment : quote.getAttachments()) {
-                final SignalServiceAttachment thumbnail = quotedAttachment.getThumbnail();
+            for (var quotedAttachment : quote.getAttachments()) {
+                final var thumbnail = quotedAttachment.getThumbnail();
                 if (thumbnail != null) {
                     downloadAttachment(thumbnail);
                 }
             }
         }
         if (message.getSticker().isPresent()) {
-            final SignalServiceDataMessage.Sticker messageSticker = message.getSticker().get();
-            Sticker sticker = account.getStickerStore().getSticker(messageSticker.getPackId());
+            final var messageSticker = message.getSticker().get();
+            var sticker = account.getStickerStore().getSticker(messageSticker.getPackId());
             if (sticker == null) {
                 sticker = new Sticker(messageSticker.getPackId(), messageSticker.getPackKey());
                 account.getStickerStore().updateSticker(sticker);
@@ -1612,10 +1579,10 @@ public class Manager implements Closeable {
     private GroupInfoV2 getOrMigrateGroup(
             final GroupMasterKey groupMasterKey, final int revision, final byte[] signedGroupChange
     ) {
-        final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
-        GroupIdV2 groupId = GroupUtils.getGroupIdV2(groupSecretParams);
-        GroupInfo groupInfo = getGroup(groupId);
+        var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
+        var groupInfo = getGroup(groupId);
         final GroupInfoV2 groupInfoV2;
         if (groupInfo instanceof GroupInfoV1) {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
@@ -1642,7 +1609,7 @@ public class Manager implements Closeable {
             }
             if (group != null) {
                 storeProfileKeysFromMembers(group);
-                final String avatar = group.getAvatar();
+                final var avatar = group.getAvatar();
                 if (avatar != null && !avatar.isEmpty()) {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
@@ -1655,9 +1622,9 @@ public class Manager implements Closeable {
     }
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
-        for (DecryptedMember member : group.getMembersList()) {
-            final SignalServiceAddress address = resolveSignalServiceAddress(new SignalServiceAddress(UuidUtil.parseOrThrow(
-                    member.getUuid().toByteArray()), null));
+        for (var member : group.getMembersList()) {
+            final var address = resolveSignalServiceAddress(new SignalServiceAddress(UuidUtil.parseOrThrow(member.getUuid()
+                    .toByteArray()), null));
             try {
                 account.getProfileStore()
                         .storeProfileKey(address, new ProfileKey(member.getProfileKey().toByteArray()));
@@ -1667,7 +1634,7 @@ public class Manager implements Closeable {
     }
 
     private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
-        for (CachedMessage cachedMessage : account.getMessageCache().getCachedMessages()) {
+        for (var cachedMessage : account.getMessageCache().getCachedMessages()) {
             retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
         }
     }
@@ -1675,7 +1642,7 @@ public class Manager implements Closeable {
     private void retryFailedReceivedMessage(
             final ReceiveMessageHandler handler, final boolean ignoreAttachments, final CachedMessage cachedMessage
     ) {
-        SignalServiceEnvelope envelope = cachedMessage.loadEnvelope();
+        var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {
             return;
         }
@@ -1690,8 +1657,8 @@ public class Manager implements Closeable {
                 cachedMessage.delete();
                 return;
             }
-            List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
-            for (HandleAction action : actions) {
+            var actions = handleMessage(envelope, content, ignoreAttachments);
+            for (var action : actions) {
                 try {
                     action.execute(this);
                 } catch (Throwable e) {
@@ -1715,9 +1682,9 @@ public class Manager implements Closeable {
 
         Set<HandleAction> queuedActions = null;
 
-        final SignalServiceMessagePipe messagePipe = getOrCreateMessagePipe();
+        final var messagePipe = getOrCreateMessagePipe();
 
-        boolean hasCaughtUpWithOldMessages = false;
+        var hasCaughtUpWithOldMessages = false;
 
         while (true) {
             SignalServiceEnvelope envelope;
@@ -1725,7 +1692,7 @@ public class Manager implements Closeable {
             Exception exception = null;
             final CachedMessage[] cachedMessage = {null};
             try {
-                Optional<SignalServiceEnvelope> result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
+                var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1);
                 });
@@ -1736,7 +1703,7 @@ public class Manager implements Closeable {
                     hasCaughtUpWithOldMessages = true;
 
                     if (queuedActions != null) {
-                        for (HandleAction action : queuedActions) {
+                        for (var action : queuedActions) {
                             try {
                                 action.execute(this);
                             } catch (Throwable e) {
@@ -1758,7 +1725,7 @@ public class Manager implements Closeable {
 
             if (envelope.hasSource()) {
                 // Store uuid if we don't have it already
-                SignalServiceAddress source = envelope.getSourceAddress();
+                var source = envelope.getSourceAddress();
                 resolveSignalServiceAddress(source);
             }
             if (!envelope.isReceipt()) {
@@ -1767,9 +1734,9 @@ public class Manager implements Closeable {
                 } catch (Exception e) {
                     exception = e;
                 }
-                List<HandleAction> actions = handleMessage(envelope, content, ignoreAttachments);
+                var actions = handleMessage(envelope, content, ignoreAttachments);
                 if (hasCaughtUpWithOldMessages) {
-                    for (HandleAction action : actions) {
+                    for (var action : actions) {
                         try {
                             action.execute(this);
                         } catch (Throwable e) {
@@ -1810,16 +1777,16 @@ public class Manager implements Closeable {
         } else {
             return false;
         }
-        ContactInfo sourceContact = account.getContactStore().getContact(source);
+        var sourceContact = account.getContactStore().getContact(source);
         if (sourceContact != null && sourceContact.blocked) {
             return true;
         }
 
         if (content != null && content.getDataMessage().isPresent()) {
-            SignalServiceDataMessage message = content.getDataMessage().get();
+            var message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
-                GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                GroupInfo group = getGroup(groupId);
+                var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+                var group = getGroup(groupId);
                 if (group != null && group.isBlocked()) {
                     return true;
                 }
@@ -1841,16 +1808,16 @@ public class Manager implements Closeable {
         }
 
         if (content != null && content.getDataMessage().isPresent()) {
-            SignalServiceDataMessage message = content.getDataMessage().get();
+            var message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
                 if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                    SignalServiceGroup groupInfo = message.getGroupContext().get().getGroupV1().get();
+                    var groupInfo = message.getGroupContext().get().getGroupV1().get();
                     if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
                         return false;
                     }
                 }
-                GroupId groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                GroupInfo group = getGroup(groupId);
+                var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+                var group = getGroup(groupId);
                 if (group != null && !group.isMember(source)) {
                     return true;
                 }
@@ -1862,7 +1829,7 @@ public class Manager implements Closeable {
     private List<HandleAction> handleMessage(
             SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments
     ) {
-        List<HandleAction> actions = new ArrayList<>();
+        var actions = new ArrayList<HandleAction>();
         if (content != null) {
             final SignalServiceAddress sender;
             if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
@@ -1874,7 +1841,7 @@ public class Manager implements Closeable {
             resolveSignalServiceAddress(sender);
 
             if (content.getDataMessage().isPresent()) {
-                SignalServiceDataMessage message = content.getDataMessage().get();
+                var message = content.getDataMessage().get();
 
                 if (content.isNeedsReceipt()) {
                     actions.add(new SendReceiptAction(sender, message.getTimestamp()));
@@ -1888,10 +1855,10 @@ public class Manager implements Closeable {
             }
             if (content.getSyncMessage().isPresent()) {
                 account.setMultiDevice(true);
-                SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
+                var syncMessage = content.getSyncMessage().get();
                 if (syncMessage.getSent().isPresent()) {
-                    SentTranscriptMessage message = syncMessage.getSent().get();
-                    final SignalServiceAddress destination = message.getDestination().orNull();
+                    var message = syncMessage.getSent().get();
+                    final var destination = message.getDestination().orNull();
                     actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
                             true,
                             sender,
@@ -1899,7 +1866,7 @@ public class Manager implements Closeable {
                             ignoreAttachments));
                 }
                 if (syncMessage.getRequest().isPresent()) {
-                    RequestMessage rm = syncMessage.getRequest().get();
+                    var rm = syncMessage.getRequest().get();
                     if (rm.isContactsRequest()) {
                         actions.add(SendSyncContactsAction.create());
                     }
@@ -1915,14 +1882,12 @@ public class Manager implements Closeable {
                     File tmpFile = null;
                     try {
                         tmpFile = IOUtils.createTempFile();
-                        final SignalServiceAttachment groupsMessage = syncMessage.getGroups().get();
-                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(),
-                                tmpFile)) {
-                            DeviceGroupsInputStream s = new DeviceGroupsInputStream(attachmentAsStream);
+                        final var groupsMessage = syncMessage.getGroups().get();
+                        try (var attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(), tmpFile)) {
+                            var s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
                             while ((g = s.read()) != null) {
-                                GroupInfoV1 syncGroup = account.getGroupStore()
-                                        .getOrCreateGroupV1(GroupId.v1(g.getId()));
+                                var syncGroup = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(g.getId()));
                                 if (syncGroup != null) {
                                     if (g.getName().isPresent()) {
                                         syncGroup.name = g.getName().get();
@@ -1968,11 +1933,11 @@ public class Manager implements Closeable {
                     }
                 }
                 if (syncMessage.getBlockedList().isPresent()) {
-                    final BlockedListMessage blockedListMessage = syncMessage.getBlockedList().get();
-                    for (SignalServiceAddress address : blockedListMessage.getAddresses()) {
+                    final var blockedListMessage = syncMessage.getBlockedList().get();
+                    for (var address : blockedListMessage.getAddresses()) {
                         setContactBlocked(resolveSignalServiceAddress(address), true);
                     }
-                    for (GroupId groupId : blockedListMessage.getGroupIds()
+                    for (var groupId : blockedListMessage.getGroupIds()
                             .stream()
                             .map(GroupId::unknownVersion)
                             .collect(Collectors.toSet())) {
@@ -1988,10 +1953,10 @@ public class Manager implements Closeable {
                     File tmpFile = null;
                     try {
                         tmpFile = IOUtils.createTempFile();
-                        final ContactsMessage contactsMessage = syncMessage.getContacts().get();
-                        try (InputStream attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream()
+                        final var contactsMessage = syncMessage.getContacts().get();
+                        try (var attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream()
                                 .asPointer(), tmpFile)) {
-                            DeviceContactsInputStream s = new DeviceContactsInputStream(attachmentAsStream);
+                            var s = new DeviceContactsInputStream(attachmentAsStream);
                             if (contactsMessage.isComplete()) {
                                 account.getContactStore().clear();
                             }
@@ -2000,8 +1965,8 @@ public class Manager implements Closeable {
                                 if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
                                     account.setProfileKey(c.getProfileKey().get());
                                 }
-                                final SignalServiceAddress address = resolveSignalServiceAddress(c.getAddress());
-                                ContactInfo contact = account.getContactStore().getContact(address);
+                                final var address = resolveSignalServiceAddress(c.getAddress());
+                                var contact = account.getContactStore().getContact(address);
                                 if (contact == null) {
                                     contact = new ContactInfo(address);
                                 }
@@ -2015,7 +1980,7 @@ public class Manager implements Closeable {
                                     account.getProfileStore().storeProfileKey(address, c.getProfileKey().get());
                                 }
                                 if (c.getVerified().isPresent()) {
-                                    final VerifiedMessage verifiedMessage = c.getVerified().get();
+                                    final var verifiedMessage = c.getVerified().get();
                                     account.getSignalProtocolStore()
                                             .setIdentityTrustLevel(verifiedMessage.getDestination(),
                                                     verifiedMessage.getIdentityKey(),
@@ -2051,20 +2016,19 @@ public class Manager implements Closeable {
                     }
                 }
                 if (syncMessage.getVerified().isPresent()) {
-                    final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
+                    final var verifiedMessage = syncMessage.getVerified().get();
                     account.getSignalProtocolStore()
                             .setIdentityTrustLevel(resolveSignalServiceAddress(verifiedMessage.getDestination()),
                                     verifiedMessage.getIdentityKey(),
                                     TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                 }
                 if (syncMessage.getStickerPackOperations().isPresent()) {
-                    final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations()
-                            .get();
-                    for (StickerPackOperationMessage m : stickerPackOperationMessages) {
+                    final var stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
+                    for (var m : stickerPackOperationMessages) {
                         if (!m.getPackId().isPresent()) {
                             continue;
                         }
-                        Sticker sticker = account.getStickerStore().getSticker(m.getPackId().get());
+                        var sticker = account.getStickerStore().getSticker(m.getPackId().get());
                         if (sticker == null) {
                             if (!m.getPackKey().isPresent()) {
                                 continue;
@@ -2085,9 +2049,9 @@ public class Manager implements Closeable {
                     }
                 }
                 if (syncMessage.getKeys().isPresent()) {
-                    final KeysMessage keysMessage = syncMessage.getKeys().get();
+                    final var keysMessage = syncMessage.getKeys().get();
                     if (keysMessage.getStorageService().isPresent()) {
-                        final StorageKey storageKey = keysMessage.getStorageService().get();
+                        final var storageKey = keysMessage.getStorageService().get();
                         account.setStorageKey(storageKey);
                     }
                 }
@@ -2144,9 +2108,9 @@ public class Manager implements Closeable {
             logger.warn("Invalid state, can't store an attachment stream.");
         }
 
-        SignalServiceAttachmentPointer pointer = attachment.asPointer();
+        var pointer = attachment.asPointer();
         if (pointer.getPreview().isPresent()) {
-            final byte[] preview = pointer.getPreview().get();
+            final var preview = pointer.getPreview().get();
             try {
                 attachmentStore.storeAttachmentPreview(pointer.getRemoteId(),
                         outputStream -> outputStream.write(preview, 0, preview.length));
@@ -2166,15 +2130,15 @@ public class Manager implements Closeable {
     private void retrieveGroupV2Avatar(
             GroupSecretParams groupSecretParams, String cdnKey, OutputStream outputStream
     ) throws IOException {
-        GroupsV2Operations.GroupOperations groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
-        File tmpFile = IOUtils.createTempFile();
+        var tmpFile = IOUtils.createTempFile();
         try (InputStream input = messageReceiver.retrieveGroupsV2ProfileAvatar(cdnKey,
                 tmpFile,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
-            byte[] encryptedData = IOUtils.readFully(input);
+            var encryptedData = IOUtils.readFully(input);
 
-            byte[] decryptedData = groupOperations.decryptAvatar(encryptedData);
+            var decryptedData = groupOperations.decryptAvatar(encryptedData);
             outputStream.write(decryptedData);
         } finally {
             try {
@@ -2190,8 +2154,8 @@ public class Manager implements Closeable {
     private void retrieveProfileAvatar(
             String avatarPath, ProfileKey profileKey, OutputStream outputStream
     ) throws IOException {
-        File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveProfileAvatar(avatarPath,
+        var tmpFile = IOUtils.createTempFile();
+        try (var input = messageReceiver.retrieveProfileAvatar(avatarPath,
                 tmpFile,
                 profileKey,
                 ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
@@ -2212,10 +2176,10 @@ public class Manager implements Closeable {
             final SignalServiceAttachment attachment, final OutputStream outputStream
     ) throws IOException {
         if (attachment.isPointer()) {
-            SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            var pointer = attachment.asPointer();
             retrieveAttachmentPointer(pointer, outputStream);
         } else {
-            SignalServiceAttachmentStream stream = attachment.asStream();
+            var stream = attachment.asStream();
             IOUtils.copyStream(stream.getInputStream(), outputStream);
         }
     }
@@ -2223,8 +2187,8 @@ public class Manager implements Closeable {
     private void retrieveAttachmentPointer(
             SignalServiceAttachmentPointer pointer, OutputStream outputStream
     ) throws IOException {
-        File tmpFile = IOUtils.createTempFile();
-        try (InputStream input = retrieveAttachmentAsStream(pointer, tmpFile)) {
+        var tmpFile = IOUtils.createTempFile();
+        try (var input = retrieveAttachmentAsStream(pointer, tmpFile)) {
             IOUtils.copyStream(input, outputStream);
         } catch (MissingConfigurationException | InvalidMessageException e) {
             throw new IOException(e);
@@ -2246,14 +2210,14 @@ public class Manager implements Closeable {
     }
 
     void sendGroups() throws IOException, UntrustedIdentityException {
-        File groupsFile = IOUtils.createTempFile();
+        var groupsFile = IOUtils.createTempFile();
 
         try {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
-                DeviceGroupsOutputStream out = new DeviceGroupsOutputStream(fos);
-                for (GroupInfo record : getGroups()) {
+                var out = new DeviceGroupsOutputStream(fos);
+                for (var record : getGroups()) {
                     if (record instanceof GroupInfoV1) {
-                        GroupInfoV1 groupInfo = (GroupInfoV1) record;
+                        var groupInfo = (GroupInfoV1) record;
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
                                 Optional.fromNullable(groupInfo.name),
                                 new ArrayList<>(groupInfo.getMembers()),
@@ -2269,8 +2233,8 @@ public class Manager implements Closeable {
             }
 
             if (groupsFile.exists() && groupsFile.length() > 0) {
-                try (FileInputStream groupsFileStream = new FileInputStream(groupsFile)) {
-                    SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                try (var groupsFileStream = new FileInputStream(groupsFile)) {
+                    var attachmentStream = SignalServiceAttachment.newStreamBuilder()
                             .withStream(groupsFileStream)
                             .withContentType("application/octet-stream")
                             .withLength(groupsFile.length())
@@ -2289,14 +2253,14 @@ public class Manager implements Closeable {
     }
 
     public void sendContacts() throws IOException, UntrustedIdentityException {
-        File contactsFile = IOUtils.createTempFile();
+        var contactsFile = IOUtils.createTempFile();
 
         try {
             try (OutputStream fos = new FileOutputStream(contactsFile)) {
-                DeviceContactsOutputStream out = new DeviceContactsOutputStream(fos);
-                for (ContactInfo record : account.getContactStore().getContacts()) {
+                var out = new DeviceContactsOutputStream(fos);
+                for (var record : account.getContactStore().getContacts()) {
                     VerifiedMessage verifiedMessage = null;
-                    IdentityInfo currentIdentity = account.getSignalProtocolStore().getIdentity(record.getAddress());
+                    var currentIdentity = account.getSignalProtocolStore().getIdentity(record.getAddress());
                     if (currentIdentity != null) {
                         verifiedMessage = new VerifiedMessage(record.getAddress(),
                                 currentIdentity.getIdentityKey(),
@@ -2304,7 +2268,7 @@ public class Manager implements Closeable {
                                 currentIdentity.getDateAdded().getTime());
                     }
 
-                    ProfileKey profileKey = account.getProfileStore().getProfileKey(record.getAddress());
+                    var profileKey = account.getProfileStore().getProfileKey(record.getAddress());
                     out.write(new DeviceContact(record.getAddress(),
                             Optional.fromNullable(record.name),
                             createContactAvatarAttachment(record.getAddress()),
@@ -2333,8 +2297,8 @@ public class Manager implements Closeable {
             }
 
             if (contactsFile.exists() && contactsFile.length() > 0) {
-                try (FileInputStream contactsFileStream = new FileInputStream(contactsFile)) {
-                    SignalServiceAttachmentStream attachmentStream = SignalServiceAttachment.newStreamBuilder()
+                try (var contactsFileStream = new FileInputStream(contactsFile)) {
+                    var attachmentStream = SignalServiceAttachment.newStreamBuilder()
                             .withStream(contactsFileStream)
                             .withContentType("application/octet-stream")
                             .withLength(contactsFile.length())
@@ -2353,14 +2317,14 @@ public class Manager implements Closeable {
     }
 
     void sendBlockedList() throws IOException, UntrustedIdentityException {
-        List<SignalServiceAddress> addresses = new ArrayList<>();
-        for (ContactInfo record : account.getContactStore().getContacts()) {
+        var addresses = new ArrayList<SignalServiceAddress>();
+        for (var record : account.getContactStore().getContacts()) {
             if (record.blocked) {
                 addresses.add(record.getAddress());
             }
         }
-        List<byte[]> groupIds = new ArrayList<>();
-        for (GroupInfo record : getGroups()) {
+        var groupIds = new ArrayList<byte[]>();
+        for (var record : getGroups()) {
             if (record.isBlocked()) {
                 groupIds.add(record.getGroupId().serialize());
             }
@@ -2371,7 +2335,7 @@ public class Manager implements Closeable {
     private void sendVerifiedMessage(
             SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel
     ) throws IOException, UntrustedIdentityException {
-        VerifiedMessage verifiedMessage = new VerifiedMessage(destination,
+        var verifiedMessage = new VerifiedMessage(destination,
                 identityKey,
                 trustLevel.toVerifiedState(),
                 System.currentTimeMillis());
@@ -2383,14 +2347,14 @@ public class Manager implements Closeable {
     }
 
     public String getContactOrProfileName(String number) {
-        final SignalServiceAddress address = Utils.getSignalServiceAddressFromIdentifier(number);
+        final var address = Utils.getSignalServiceAddressFromIdentifier(number);
 
-        final ContactInfo contact = account.getContactStore().getContact(address);
+        final var contact = account.getContactStore().getContact(address);
         if (contact != null && !Util.isEmpty(contact.name)) {
             return contact.name;
         }
 
-        final SignalProfileEntry profileEntry = account.getProfileStore().getProfileEntry(address);
+        final var profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry != null && profileEntry.getProfile() != null) {
             return profileEntry.getProfile().getName();
         }
@@ -2399,9 +2363,9 @@ public class Manager implements Closeable {
     }
 
     public GroupInfo getGroup(GroupId groupId) {
-        final GroupInfo group = account.getGroupStore().getGroup(groupId);
+        final var group = account.getGroupStore().getGroup(groupId);
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
-            final GroupSecretParams groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
+            final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
             ((GroupInfoV2) group).setGroup(groupHelper.getDecryptedGroup(groupSecretParams));
             account.getGroupStore().updateGroup(group);
         }
@@ -2423,12 +2387,12 @@ public class Manager implements Closeable {
      * @param fingerprint Fingerprint
      */
     public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
-        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
-        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
+        var address = canonicalizeAndResolveSignalServiceAddress(name);
+        var ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (IdentityInfo id : ids) {
+        for (var id : ids) {
             if (!Arrays.equals(id.getIdentityKey().serialize(), fingerprint)) {
                 continue;
             }
@@ -2453,12 +2417,12 @@ public class Manager implements Closeable {
      * @param safetyNumber Safety number
      */
     public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
-        SignalServiceAddress address = canonicalizeAndResolveSignalServiceAddress(name);
-        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
+        var address = canonicalizeAndResolveSignalServiceAddress(name);
+        var ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (IdentityInfo id : ids) {
+        for (var id : ids) {
             if (!safetyNumber.equals(computeSafetyNumber(address, id.getIdentityKey()))) {
                 continue;
             }
@@ -2482,12 +2446,12 @@ public class Manager implements Closeable {
      * @param name username of the identity
      */
     public boolean trustIdentityAllKeys(String name) {
-        SignalServiceAddress address = resolveSignalServiceAddress(name);
-        List<IdentityInfo> ids = account.getSignalProtocolStore().getIdentities(address);
+        var address = resolveSignalServiceAddress(name);
+        var ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
-        for (IdentityInfo id : ids) {
+        for (var id : ids) {
             if (id.getTrustLevel() == TrustLevel.UNTRUSTED) {
                 account.getSignalProtocolStore()
                         .setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
@@ -2513,14 +2477,14 @@ public class Manager implements Closeable {
     }
 
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
-        String canonicalizedNumber = UuidUtil.isUuid(identifier)
+        var canonicalizedNumber = UuidUtil.isUuid(identifier)
                 ? identifier
                 : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
         return resolveSignalServiceAddress(canonicalizedNumber);
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(String identifier) {
-        SignalServiceAddress address = Utils.getSignalServiceAddressFromIdentifier(identifier);
+        var address = Utils.getSignalServiceAddressFromIdentifier(identifier);
 
         return resolveSignalServiceAddress(address);
     }

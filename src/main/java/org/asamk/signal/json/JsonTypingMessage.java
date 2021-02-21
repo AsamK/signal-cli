@@ -22,7 +22,7 @@ class JsonTypingMessage {
     JsonTypingMessage(SignalServiceTypingMessage typingMessage) {
         this.action = typingMessage.getAction().name();
         this.timestamp = typingMessage.getTimestamp();
-        final Base64.Encoder encoder = Base64.getEncoder();
+        final var encoder = Base64.getEncoder();
         this.groupId = typingMessage.getGroupId().transform(encoder::encodeToString).orNull();
     }
 }

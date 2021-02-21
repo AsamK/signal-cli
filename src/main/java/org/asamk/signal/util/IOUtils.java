@@ -12,8 +12,8 @@ public class IOUtils {
     }
 
     public static String readAll(InputStream in, Charset charset) throws IOException {
-        StringWriter output = new StringWriter();
-        byte[] buffer = new byte[4096];
+        var output = new StringWriter();
+        var buffer = new byte[4096];
         int n;
         while (-1 != (n = in.read(buffer))) {
             output.write(new String(buffer, 0, n, charset));
@@ -22,7 +22,7 @@ public class IOUtils {
     }
 
     public static File getDataHomeDir() {
-        String dataHome = System.getenv("XDG_DATA_HOME");
+        var dataHome = System.getenv("XDG_DATA_HOME");
         if (dataHome != null) {
             return new File(dataHome);
         }

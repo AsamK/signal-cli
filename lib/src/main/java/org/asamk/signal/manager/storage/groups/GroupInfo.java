@@ -57,7 +57,7 @@ public abstract class GroupInfo {
 
     @JsonIgnore
     public boolean isMember(SignalServiceAddress address) {
-        for (SignalServiceAddress member : getMembers()) {
+        for (var member : getMembers()) {
             if (member.matches(address)) {
                 return true;
             }
@@ -67,7 +67,7 @@ public abstract class GroupInfo {
 
     @JsonIgnore
     public boolean isPendingMember(SignalServiceAddress address) {
-        for (SignalServiceAddress member : getPendingMembers()) {
+        for (var member : getPendingMembers()) {
             if (member.matches(address)) {
                 return true;
             }

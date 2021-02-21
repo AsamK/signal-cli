@@ -20,7 +20,7 @@ public final class PlainTextWriterImpl implements PlainTextWriter {
 
     @Override
     public void println(String format, Object... args) throws IOException {
-        final String message = MessageFormatter.arrayFormat(format, args).getMessage();
+        final var message = MessageFormatter.arrayFormat(format, args).getMessage();
 
         writer.write(message);
         writer.write(System.lineSeparator());

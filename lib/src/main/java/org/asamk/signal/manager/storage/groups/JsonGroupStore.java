@@ -30,7 +30,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,10 +58,10 @@ public class JsonGroupStore {
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() != null) {
             try {
                 IOUtils.createPrivateDirectories(groupCachePath);
-                try (FileOutputStream stream = new FileOutputStream(getGroupFile(group.getGroupId()))) {
+                try (var stream = new FileOutputStream(getGroupFile(group.getGroupId()))) {
                     ((GroupInfoV2) group).getGroup().writeTo(stream);
                 }
-                final File groupFileLegacy = getGroupFileLegacy(group.getGroupId());
+                final var groupFileLegacy = getGroupFileLegacy(group.getGroupId());
                 if (groupFileLegacy.exists()) {
                     groupFileLegacy.delete();
                 }
@@ -77,7 +76,7 @@ public class JsonGroupStore {
     }
 
     public GroupInfo getGroup(GroupId groupId) {
-        GroupInfo group = groups.get(groupId);
+        var group = groups.get(groupId);
         if (group == null) {
             if (groupId instanceof GroupIdV1) {
                 group = groups.get(GroupUtils.getGroupIdV2((GroupIdV1) groupId));
@@ -90,9 +89,9 @@ public class JsonGroupStore {
     }
 
     private GroupInfoV1 getGroupV1ByV2Id(GroupIdV2 groupIdV2) {
-        for (GroupInfo g : groups.values()) {
+        for (var g : groups.values()) {
             if (g instanceof GroupInfoV1) {
-                final GroupInfoV1 gv1 = (GroupInfoV1) g;
+                final var gv1 = (GroupInfoV1) g;
                 if (groupIdV2.equals(gv1.getExpectedV2Id())) {
                     return gv1;
                 }
@@ -103,14 +102,14 @@ public class JsonGroupStore {
 
     private void loadDecryptedGroup(final GroupInfo group) {
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
-            File groupFile = getGroupFile(group.getGroupId());
+            var groupFile = getGroupFile(group.getGroupId());
             if (!groupFile.exists()) {
                 groupFile = getGroupFileLegacy(group.getGroupId());
             }
             if (!groupFile.exists()) {
                 return;
             }
-            try (FileInputStream stream = new FileInputStream(groupFile)) {
+            try (var stream = new FileInputStream(groupFile)) {
                 ((GroupInfoV2) group).setGroup(DecryptedGroup.parseFrom(stream));
             } catch (IOException ignored) {
             }
@@ -126,7 +125,7 @@ public class JsonGroupStore {
     }
 
     public GroupInfoV1 getOrCreateGroupV1(GroupIdV1 groupId) {
-        GroupInfo group = getGroup(groupId);
+        var group = getGroup(groupId);
         if (group instanceof GroupInfoV1) {
             return (GroupInfoV1) group;
         }
@@ -139,8 +138,8 @@ public class JsonGroupStore {
     }
 
     public List<GroupInfo> getGroups() {
-        final Collection<GroupInfo> groups = this.groups.values();
-        for (GroupInfo group : groups) {
+        final var groups = this.groups.values();
+        for (var group : groups) {
             loadDecryptedGroup(group);
         }
         return new ArrayList<>(groups);
@@ -152,13 +151,13 @@ public class JsonGroupStore {
         public void serialize(
                 final Map<String, GroupInfo> value, final JsonGenerator jgen, final SerializerProvider provider
         ) throws IOException {
-            final Collection<GroupInfo> groups = value.values();
+            final var groups = value.values();
             jgen.writeStartArray(groups.size());
-            for (GroupInfo group : groups) {
+            for (var group : groups) {
                 if (group instanceof GroupInfoV1) {
                     jgen.writeObject(group);
                 } else if (group instanceof GroupInfoV2) {
-                    final GroupInfoV2 groupV2 = (GroupInfoV2) group;
+                    final var groupV2 = (GroupInfoV2) group;
                     jgen.writeStartObject();
                     jgen.writeStringField("groupId", groupV2.getGroupId().toBase64());
                     jgen.writeStringField("masterKey",
@@ -179,16 +178,15 @@ public class JsonGroupStore {
         public Map<GroupId, GroupInfo> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            Map<GroupId, GroupInfo> groups = new HashMap<>();
+            var groups = new HashMap<GroupId, GroupInfo>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-            for (JsonNode n : node) {
+            for (var n : node) {
                 GroupInfo g;
                 if (n.hasNonNull("masterKey")) {
                     // a v2 group
-                    GroupIdV2 groupId = GroupIdV2.fromBase64(n.get("groupId").asText());
+                    var groupId = GroupIdV2.fromBase64(n.get("groupId").asText());
                     try {
-                        GroupMasterKey masterKey = new GroupMasterKey(Base64.getDecoder()
-                                .decode(n.get("masterKey").asText()));
+                        var masterKey = new GroupMasterKey(Base64.getDecoder().decode(n.get("masterKey").asText()));
                         g = new GroupInfoV2(groupId, masterKey);
                     } catch (InvalidInputException | IllegalArgumentException e) {
                         throw new AssertionError("Invalid master key for group " + groupId.toBase64());

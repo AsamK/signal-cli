@@ -48,19 +48,19 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     }
 
     public int handleCommand(final Namespace ns, final Signal signal, DBusConnection dbusconnection) {
-        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
+        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        final JsonWriter jsonWriter = inJson ? new JsonWriter(System.out) : null;
+        final var jsonWriter = inJson ? new JsonWriter(System.out) : null;
         try {
             dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
                 if (jsonWriter != null) {
-                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(messageReceived);
-                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
+                    var envelope = new JsonMessageEnvelope(messageReceived);
+                    final var object = Map.of("envelope", envelope);
                     try {
                         jsonWriter.write(object);
                     } catch (IOException e) {
@@ -77,7 +77,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     }
                     if (messageReceived.getAttachments().size() > 0) {
                         System.out.println("Attachments: ");
-                        for (String attachment : messageReceived.getAttachments()) {
+                        for (var attachment : messageReceived.getAttachments()) {
                             System.out.println("-  Stored plaintext in: " + attachment);
                         }
                     }
@@ -87,8 +87,8 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
             dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
                 if (jsonWriter != null) {
-                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(receiptReceived);
-                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
+                    var envelope = new JsonMessageEnvelope(receiptReceived);
+                    final var object = Map.of("envelope", envelope);
                     try {
                         jsonWriter.write(object);
                     } catch (IOException e) {
@@ -103,8 +103,8 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
             dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
                 if (jsonWriter != null) {
-                    JsonMessageEnvelope envelope = new JsonMessageEnvelope(syncReceived);
-                    final Map<String, JsonMessageEnvelope> object = Map.of("envelope", envelope);
+                    var envelope = new JsonMessageEnvelope(syncReceived);
+                    final var object = Map.of("envelope", envelope);
                     try {
                         jsonWriter.write(object);
                     } catch (IOException e) {
@@ -122,7 +122,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     }
                     if (syncReceived.getAttachments().size() > 0) {
                         System.out.println("Attachments: ");
-                        for (String attachment : syncReceived.getAttachments()) {
+                        for (var attachment : syncReceived.getAttachments()) {
                             System.out.println("-  Stored plaintext in: " + attachment);
                         }
                     }
@@ -144,7 +144,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
+        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -155,16 +155,14 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         if (ns.getDouble("timeout") != null) {
             timeout = ns.getDouble("timeout");
         }
-        boolean returnOnTimeout = true;
+        var returnOnTimeout = true;
         if (timeout < 0) {
             returnOnTimeout = false;
             timeout = 3600;
         }
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         try {
-            final Manager.ReceiveMessageHandler handler = inJson
-                    ? new JsonReceiveMessageHandler(m)
-                    : new ReceiveMessageHandler(m);
+            final var handler = inJson ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m);
             m.receiveMessages((long) (timeout * 1000),
                     TimeUnit.MILLISECONDS,
                     returnOnTimeout,

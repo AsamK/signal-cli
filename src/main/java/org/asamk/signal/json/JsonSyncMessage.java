@@ -45,7 +45,7 @@ class JsonSyncMessage {
                 ? new JsonSyncDataMessage(syncMessage.getSent().get(), m)
                 : null;
         if (syncMessage.getBlockedList().isPresent()) {
-            final Base64.Encoder base64 = Base64.getEncoder();
+            final var base64 = Base64.getEncoder();
             this.blockedNumbers = syncMessage.getBlockedList()
                     .get()
                     .getAddresses()

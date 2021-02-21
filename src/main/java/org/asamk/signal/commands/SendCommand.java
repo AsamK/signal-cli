@@ -1,7 +1,6 @@
 package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -24,7 +23,7 @@ public class SendCommand implements DbusCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
-        final MutuallyExclusiveGroup mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
+        final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
         mutuallyExclusiveGroup.addArgument("-g", "--group").help("Specify the recipient group ID.");
         mutuallyExclusiveGroup.addArgument("--note-to-self")
                 .help("Send the message to self without notification.")
@@ -40,11 +39,11 @@ public class SendCommand implements DbusCommand {
     @Override
     public int handleCommand(final Namespace ns, final Signal signal) {
         final List<String> recipients = ns.getList("recipient");
-        final Boolean isEndSession = ns.getBoolean("endsession");
-        final String groupIdString = ns.getString("group");
-        final Boolean isNoteToSelf = ns.getBoolean("note_to_self");
+        final var isEndSession = ns.getBoolean("endsession");
+        final var groupIdString = ns.getString("group");
+        final var isNoteToSelf = ns.getBoolean("note_to_self");
 
-        final boolean noRecipients = recipients == null || recipients.isEmpty();
+        final var noRecipients = recipients == null || recipients.isEmpty();
         if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null && !isNoteToSelf)) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
@@ -75,7 +74,7 @@ public class SendCommand implements DbusCommand {
             }
         }
 
-        String messageText = ns.getString("message");
+        var messageText = ns.getString("message");
         if (messageText == null) {
             try {
                 messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
@@ -101,7 +100,7 @@ public class SendCommand implements DbusCommand {
                     return 1;
                 }
 
-                long timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
+                var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
                 System.out.println(timestamp);
                 return 0;
             } catch (AssertionError e) {
@@ -115,7 +114,7 @@ public class SendCommand implements DbusCommand {
 
         if (isNoteToSelf) {
             try {
-                long timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
+                var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
                 System.out.println(timestamp);
                 return 0;
             } catch (AssertionError e) {
@@ -131,7 +130,7 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
-            long timestamp = signal.sendMessage(messageText, attachments, recipients);
+            var timestamp = signal.sendMessage(messageText, attachments, recipients);
             System.out.println(timestamp);
             return 0;
         } catch (AssertionError e) {

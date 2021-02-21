@@ -26,14 +26,14 @@ public class ErrorUtils {
         if (timestamp != 0) {
             System.out.println(timestamp);
         }
-        List<String> errors = getErrorMessagesFromSendMessageResults(results);
+        var errors = getErrorMessagesFromSendMessageResults(results);
         return handleSendMessageResultErrors(errors);
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(List<SendMessageResult> results) {
-        List<String> errors = new ArrayList<>();
-        for (SendMessageResult result : results) {
-            String error = getErrorMessageFromSendMessageResult(result);
+        var errors = new ArrayList<String>();
+        for (var result : results) {
+            var error = getErrorMessageFromSendMessageResult(result);
             if (error != null) {
                 errors.add(error);
             }
@@ -58,7 +58,7 @@ public class ErrorUtils {
             return 0;
         }
         System.err.println("Failed to send (some) messages:");
-        for (String error : errors) {
+        for (var error : errors) {
             System.err.println(error);
         }
         return 3;

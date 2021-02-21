@@ -13,8 +13,8 @@ public class JsonContactsStore {
     private List<ContactInfo> contacts = new ArrayList<>();
 
     public void updateContact(ContactInfo contact) {
-        final SignalServiceAddress contactAddress = contact.getAddress();
-        for (int i = 0; i < contacts.size(); i++) {
+        final var contactAddress = contact.getAddress();
+        for (var i = 0; i < contacts.size(); i++) {
             if (contacts.get(i).getAddress().matches(contactAddress)) {
                 contacts.set(i, contact);
                 return;
@@ -25,7 +25,7 @@ public class JsonContactsStore {
     }
 
     public ContactInfo getContact(SignalServiceAddress address) {
-        for (ContactInfo contact : contacts) {
+        for (var contact : contacts) {
             if (contact.getAddress().matches(address)) {
                 if (contact.uuid == null) {
                     contact.uuid = address.getUuid().orNull();

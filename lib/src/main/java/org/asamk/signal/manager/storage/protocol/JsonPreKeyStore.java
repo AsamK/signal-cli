@@ -69,16 +69,16 @@ class JsonPreKeyStore implements PreKeyStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            Map<Integer, byte[]> preKeyMap = new HashMap<>();
+            var preKeyMap = new HashMap<Integer, byte[]>();
             if (node.isArray()) {
-                for (JsonNode preKey : node) {
-                    final int preKeyId = preKey.get("id").asInt();
-                    final byte[] preKeyRecord = Base64.getDecoder().decode(preKey.get("record").asText());
+                for (var preKey : node) {
+                    final var preKeyId = preKey.get("id").asInt();
+                    final var preKeyRecord = Base64.getDecoder().decode(preKey.get("record").asText());
                     preKeyMap.put(preKeyId, preKeyRecord);
                 }
             }
 
-            JsonPreKeyStore keyStore = new JsonPreKeyStore();
+            var keyStore = new JsonPreKeyStore();
             keyStore.addPreKeys(preKeyMap);
 
             return keyStore;
@@ -92,7 +92,7 @@ class JsonPreKeyStore implements PreKeyStore {
                 JsonPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider
         ) throws IOException {
             json.writeStartArray();
-            for (Map.Entry<Integer, byte[]> preKey : jsonPreKeyStore.store.entrySet()) {
+            for (var preKey : jsonPreKeyStore.store.entrySet()) {
                 json.writeStartObject();
                 json.writeNumberField("id", preKey.getKey());
                 json.writeStringField("record", Base64.getEncoder().encodeToString(preKey.getValue()));

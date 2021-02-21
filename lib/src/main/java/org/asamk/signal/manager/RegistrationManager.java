@@ -22,12 +22,8 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.signal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.KbsPinData;
-import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -82,7 +78,7 @@ public class RegistrationManager implements Closeable {
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 timer);
-        final KeyBackupService keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
+        final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
@@ -93,17 +89,15 @@ public class RegistrationManager implements Closeable {
     public static RegistrationManager init(
             String username, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) throws IOException {
-        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
+        var pathConfig = PathConfig.createDefault(settingsPath);
 
-        final ServiceEnvironmentConfig serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(
-                serviceEnvironment,
-                userAgent);
+        final var serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
         if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
-            IdentityKeyPair identityKey = KeyUtils.generateIdentityKeyPair();
-            int registrationId = KeyHelper.generateRegistrationId(false);
+            var identityKey = KeyUtils.generateIdentityKeyPair();
+            var registrationId = KeyHelper.generateRegistrationId(false);
 
-            ProfileKey profileKey = KeyUtils.createProfileKey();
-            SignalAccount account = SignalAccount.create(pathConfig.getDataPath(),
+            var profileKey = KeyUtils.createProfileKey();
+            var account = SignalAccount.create(pathConfig.getDataPath(),
                     username,
                     identityKey,
                     registrationId,
@@ -113,7 +107,7 @@ public class RegistrationManager implements Closeable {
             return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
         }
 
-        SignalAccount account = SignalAccount.load(pathConfig.getDataPath(), username);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username);
 
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }
@@ -147,12 +141,12 @@ public class RegistrationManager implements Closeable {
                 throw e;
             }
 
-            KbsPinData registrationLockData = pinHelper.getRegistrationLockData(pin, e);
+            var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
             if (registrationLockData == null) {
                 throw e;
             }
 
-            String registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
+            var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
             try {
                 response = verifyAccountWithCode(verificationCode, null, registrationLock);
             } catch (LockedException _e) {
@@ -175,7 +169,7 @@ public class RegistrationManager implements Closeable {
                         account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(),
                         TrustLevel.TRUSTED_VERIFIED);
 
-        try (Manager m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
+        try (var m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
 
             m.refreshPreKeys();
 

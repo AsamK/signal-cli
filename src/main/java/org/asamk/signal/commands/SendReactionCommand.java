@@ -5,7 +5,6 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -48,9 +47,9 @@ public class SendReactionCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         final List<String> recipients = ns.getList("recipient");
-        final String groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group");
 
-        final boolean noRecipients = recipients == null || recipients.isEmpty();
+        final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {
             System.err.println("No recipients given");
             System.err.println("Aborting sending.");
@@ -61,15 +60,15 @@ public class SendReactionCommand implements LocalCommand {
             return 1;
         }
 
-        final String emoji = ns.getString("emoji");
+        final var emoji = ns.getString("emoji");
         final boolean isRemove = ns.getBoolean("remove");
-        final String targetAuthor = ns.getString("target_author");
+        final var targetAuthor = ns.getString("target_author");
         final long targetTimestamp = ns.getLong("target_timestamp");
 
         try {
             final Pair<Long, List<SendMessageResult>> results;
             if (groupIdString != null) {
-                GroupId groupId = Util.decodeGroupId(groupIdString);
+                var groupId = Util.decodeGroupId(groupIdString);
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
                 results = m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);

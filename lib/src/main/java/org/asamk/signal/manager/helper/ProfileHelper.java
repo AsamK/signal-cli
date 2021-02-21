@@ -2,10 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
-import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -63,8 +60,8 @@ public final class ProfileHelper {
     public ListenableFuture<ProfileAndCredential> retrieveProfile(
             SignalServiceAddress address, SignalServiceProfile.RequestType requestType
     ) {
-        Optional<UnidentifiedAccess> unidentifiedAccess = getUnidentifiedAccess(address);
-        Optional<ProfileKey> profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(address));
+        var unidentifiedAccess = getUnidentifiedAccess(address);
+        var profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(address));
 
         if (unidentifiedAccess.isPresent()) {
             return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address,
@@ -90,8 +87,8 @@ public final class ProfileHelper {
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
     ) throws IOException {
-        SignalServiceMessagePipe unidentifiedPipe = messagePipeProvider.getMessagePipe(true);
-        SignalServiceMessagePipe pipe = unidentifiedPipe != null && unidentifiedAccess.isPresent()
+        var unidentifiedPipe = messagePipeProvider.getMessagePipe(true);
+        var pipe = unidentifiedPipe != null && unidentifiedAccess.isPresent()
                 ? unidentifiedPipe
                 : messagePipeProvider.getMessagePipe(false);
         if (pipe != null) {
@@ -102,8 +99,7 @@ public final class ProfileHelper {
                 if (!address.getNumber().isPresent()) {
                     throw new NotFoundException("Can't request profile without number");
                 }
-                SignalServiceAddress addressWithoutUuid = new SignalServiceAddress(Optional.absent(),
-                        address.getNumber());
+                var addressWithoutUuid = new SignalServiceAddress(Optional.absent(), address.getNumber());
                 return pipe.getProfile(addressWithoutUuid, profileKey, unidentifiedAccess, requestType);
             }
         }
@@ -117,7 +113,7 @@ public final class ProfileHelper {
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
     ) throws NotFoundException {
-        SignalServiceMessageReceiver receiver = messageReceiverProvider.getMessageReceiver();
+        var receiver = messageReceiverProvider.getMessageReceiver();
         try {
             return receiver.retrieveProfile(address, profileKey, unidentifiedAccess, requestType);
         } catch (NoClassDefFoundError e) {
@@ -125,13 +121,13 @@ public final class ProfileHelper {
             if (!address.getNumber().isPresent()) {
                 throw new NotFoundException("Can't request profile without number");
             }
-            SignalServiceAddress addressWithoutUuid = new SignalServiceAddress(Optional.absent(), address.getNumber());
+            var addressWithoutUuid = new SignalServiceAddress(Optional.absent(), address.getNumber());
             return receiver.retrieveProfile(addressWithoutUuid, profileKey, unidentifiedAccess, requestType);
         }
     }
 
     private Optional<UnidentifiedAccess> getUnidentifiedAccess(SignalServiceAddress recipient) {
-        Optional<UnidentifiedAccessPair> unidentifiedAccess = unidentifiedAccessProvider.getAccessFor(recipient);
+        var unidentifiedAccess = unidentifiedAccessProvider.getAccessFor(recipient);
 
         if (unidentifiedAccess.isPresent()) {
             return unidentifiedAccess.get().getTargetUnidentifiedAccess();

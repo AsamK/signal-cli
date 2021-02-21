@@ -3,10 +3,7 @@ package org.asamk.signal;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
-import net.sourceforge.argparse4j.inf.Subparser;
-import net.sourceforge.argparse4j.inf.Subparsers;
 
 import org.asamk.Signal;
 import org.asamk.signal.commands.Command;
@@ -33,7 +30,6 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -44,7 +40,7 @@ public class App {
     private final Namespace ns;
 
     static ArgumentParser buildArgumentParser() {
-        ArgumentParser parser = ArgumentParsers.newFor("signal-cli")
+        var parser = ArgumentParsers.newFor("signal-cli")
                 .build()
                 .defaultHelp(true)
                 .description("Commandline interface for Signal.")
@@ -59,7 +55,7 @@ public class App {
 
         parser.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
 
-        MutuallyExclusiveGroup mut = parser.addMutuallyExclusiveGroup();
+        var mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
         mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
 
@@ -68,11 +64,11 @@ public class App {
                 .type(Arguments.enumStringType(OutputType.class))
                 .setDefault(OutputType.PLAIN_TEXT);
 
-        Subparsers subparsers = parser.addSubparsers().title("subcommands").dest("command");
+        var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
-        final Map<String, Command> commands = Commands.getCommands();
-        for (Map.Entry<String, Command> entry : commands.entrySet()) {
-            Subparser subparser = subparsers.addParser(entry.getKey());
+        final var commands = Commands.getCommands();
+        for (var entry : commands.entrySet()) {
+            var subparser = subparsers.addParser(entry.getKey());
             entry.getValue().attachToSubparser(subparser);
         }
 
@@ -84,8 +80,8 @@ public class App {
     }
 
     public int init() {
-        String commandKey = ns.getString("command");
-        Command command = Commands.getCommand(commandKey);
+        var commandKey = ns.getString("command");
+        var command = Commands.getCommand(commandKey);
         if (command == null) {
             logger.error("Command not implemented!");
             return 1;
@@ -97,7 +93,7 @@ public class App {
             return 1;
         }
 
-        String username = ns.getString("username");
+        var username = ns.getString("username");
 
         final boolean useDbus = ns.getBoolean("dbus");
         final boolean useDbusSystem = ns.getBoolean("dbus_system");
@@ -107,14 +103,14 @@ public class App {
         }
 
         final File dataPath;
-        String config = ns.getString("config");
+        var config = ns.getString("config");
         if (config != null) {
             dataPath = new File(config);
         } else {
             dataPath = getDefaultDataPath();
         }
 
-        final ServiceEnvironment serviceEnvironment = ServiceEnvironment.LIVE;
+        final var serviceEnvironment = ServiceEnvironment.LIVE;
 
         if (!ServiceConfig.getCapabilities().isGv2()) {
             logger.warn("WARNING: Support for new group V2 is disabled,"
@@ -136,7 +132,7 @@ public class App {
         }
 
         if (username == null) {
-            List<String> usernames = Manager.getAllLocalUsernames(dataPath);
+            var usernames = Manager.getAllLocalUsernames(dataPath);
             if (usernames.size() == 0) {
                 System.err.println("No local users found, you first need to register or link an account");
                 return 1;
@@ -172,7 +168,7 @@ public class App {
     private int handleProvisioningCommand(
             final ProvisioningCommand command, final File dataPath, final ServiceEnvironment serviceEnvironment
     ) {
-        ProvisioningManager pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+        var pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         return command.handleCommand(ns, pm);
     }
 
@@ -189,7 +185,7 @@ public class App {
             logger.error("Error loading or creating state file: {}", e.getMessage());
             return 2;
         }
-        try (RegistrationManager m = manager) {
+        try (var m = manager) {
             return command.handleCommand(ns, m);
         } catch (IOException e) {
             logger.error("Cleanup failed", e);
@@ -203,7 +199,7 @@ public class App {
             final File dataPath,
             final ServiceEnvironment serviceEnvironment
     ) {
-        try (Manager m = loadManager(username, dataPath, serviceEnvironment)) {
+        try (var m = loadManager(username, dataPath, serviceEnvironment)) {
             if (m == null) {
                 return 2;
             }
@@ -221,14 +217,14 @@ public class App {
             final ServiceEnvironment serviceEnvironment,
             final List<String> usernames
     ) {
-        final List<Manager> managers = usernames.stream()
+        final var managers = usernames.stream()
                 .map(u -> loadManager(u, dataPath, serviceEnvironment))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        int result = command.handleCommand(ns, managers);
+        var result = command.handleCommand(ns, managers);
 
-        for (Manager m : managers) {
+        for (var m : managers) {
             try {
                 m.close();
             } catch (IOException e) {
@@ -270,8 +266,8 @@ public class App {
             } else {
                 busType = DBusConnection.DBusBusType.SESSION;
             }
-            try (DBusConnection dBusConn = DBusConnection.getConnection(busType)) {
-                Signal ts = dBusConn.getRemoteObject(DbusConfig.getBusname(),
+            try (var dBusConn = DBusConnection.getConnection(busType)) {
+                var ts = dBusConn.getRemoteObject(DbusConfig.getBusname(),
                         DbusConfig.getObjectPath(username),
                         Signal.class);
 
@@ -302,14 +298,14 @@ public class App {
      * @return the data directory to be used by signal-cli.
      */
     private static File getDefaultDataPath() {
-        File dataPath = new File(IOUtils.getDataHomeDir(), "signal-cli");
+        var dataPath = new File(IOUtils.getDataHomeDir(), "signal-cli");
         if (dataPath.exists()) {
             return dataPath;
         }
 
-        File configPath = new File(System.getProperty("user.home"), ".config");
+        var configPath = new File(System.getProperty("user.home"), ".config");
 
-        File legacySettingsPath = new File(configPath, "signal");
+        var legacySettingsPath = new File(configPath, "signal");
         if (legacySettingsPath.exists()) {
             return legacySettingsPath;
         }

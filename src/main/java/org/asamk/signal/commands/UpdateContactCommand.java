@@ -23,13 +23,13 @@ public class UpdateContactCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        String number = ns.getString("number");
-        String name = ns.getString("name");
+        var number = ns.getString("number");
+        var name = ns.getString("name");
 
         try {
             m.setContactName(number, name);
 
-            Integer expiration = ns.getInt("expiration");
+            var expiration = ns.getInt("expiration");
             if (expiration != null) {
                 m.setExpirationTimer(number, expiration);
             }

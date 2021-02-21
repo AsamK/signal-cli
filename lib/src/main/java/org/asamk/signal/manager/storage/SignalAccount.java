@@ -8,24 +8,18 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
-import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
-import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.RecipientStore;
-import org.asamk.signal.manager.storage.protocol.SessionInfo;
 import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
-import org.asamk.signal.manager.storage.threads.ThreadInfo;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.Utils;
@@ -99,10 +93,10 @@ public class SignalAccount implements Closeable {
     }
 
     public static SignalAccount load(File dataPath, String username) throws IOException {
-        final File fileName = getFileName(dataPath, username);
-        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
+        final var fileName = getFileName(dataPath, username);
+        final var pair = openFileChannel(fileName);
         try {
-            SignalAccount account = new SignalAccount(pair.first(), pair.second());
+            var account = new SignalAccount(pair.first(), pair.second());
             account.load(dataPath);
             account.migrateLegacyConfigs();
 
@@ -118,13 +112,13 @@ public class SignalAccount implements Closeable {
             File dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        File fileName = getFileName(dataPath, username);
+        var fileName = getFileName(dataPath, username);
         if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
-        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
-        SignalAccount account = new SignalAccount(pair.first(), pair.second());
+        final var pair = openFileChannel(fileName);
+        var account = new SignalAccount(pair.first(), pair.second());
 
         account.username = username;
         account.profileKey = profileKey;
@@ -155,13 +149,13 @@ public class SignalAccount implements Closeable {
             ProfileKey profileKey
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
-        File fileName = getFileName(dataPath, username);
+        var fileName = getFileName(dataPath, username);
         if (!fileName.exists()) {
             IOUtils.createPrivateFile(fileName);
         }
 
-        final Pair<FileChannel, FileLock> pair = openFileChannel(fileName);
-        SignalAccount account = new SignalAccount(pair.first(), pair.second());
+        final var pair = openFileChannel(fileName);
+        var account = new SignalAccount(pair.first(), pair.second());
 
         account.username = username;
         account.uuid = uuid;
@@ -192,8 +186,8 @@ public class SignalAccount implements Closeable {
             save();
         }
         // Store profile keys only in profile store
-        for (ContactInfo contact : getContactStore().getContacts()) {
-            String profileKeyString = contact.profileKey;
+        for (var contact : getContactStore().getContacts()) {
+            var profileKeyString = contact.profileKey;
             if (profileKeyString == null) {
                 continue;
             }
@@ -230,7 +224,7 @@ public class SignalAccount implements Closeable {
         if (username == null) {
             return false;
         }
-        File f = getFileName(dataPath, username);
+        var f = getFileName(dataPath, username);
         return !(!f.exists() || f.isDirectory());
     }
 
@@ -288,7 +282,7 @@ public class SignalAccount implements Closeable {
         signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 JsonSignalProtocolStore.class);
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
-        JsonNode groupStoreNode = rootNode.get("groupStore");
+        var groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
             groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
             groupStore.groupCachePath = getGroupCachePath(dataPath, username);
@@ -297,7 +291,7 @@ public class SignalAccount implements Closeable {
             groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
-        JsonNode contactStoreNode = rootNode.get("contactStore");
+        var contactStoreNode = rootNode.get("contactStore");
         if (contactStoreNode != null) {
             contactStore = jsonProcessor.convertValue(contactStoreNode, JsonContactsStore.class);
         }
@@ -305,7 +299,7 @@ public class SignalAccount implements Closeable {
             contactStore = new JsonContactsStore();
         }
 
-        JsonNode recipientStoreNode = rootNode.get("recipientStore");
+        var recipientStoreNode = rootNode.get("recipientStore");
         if (recipientStoreNode != null) {
             recipientStore = jsonProcessor.convertValue(recipientStoreNode, RecipientStore.class);
         }
@@ -314,29 +308,29 @@ public class SignalAccount implements Closeable {
 
             recipientStore.resolveServiceAddress(getSelfAddress());
 
-            for (ContactInfo contact : contactStore.getContacts()) {
+            for (var contact : contactStore.getContacts()) {
                 recipientStore.resolveServiceAddress(contact.getAddress());
             }
 
-            for (GroupInfo group : groupStore.getGroups()) {
+            for (var group : groupStore.getGroups()) {
                 if (group instanceof GroupInfoV1) {
-                    GroupInfoV1 groupInfoV1 = (GroupInfoV1) group;
+                    var groupInfoV1 = (GroupInfoV1) group;
                     groupInfoV1.members = groupInfoV1.members.stream()
                             .map(m -> recipientStore.resolveServiceAddress(m))
                             .collect(Collectors.toSet());
                 }
             }
 
-            for (SessionInfo session : signalProtocolStore.getSessions()) {
+            for (var session : signalProtocolStore.getSessions()) {
                 session.address = recipientStore.resolveServiceAddress(session.address);
             }
 
-            for (IdentityInfo identity : signalProtocolStore.getIdentities()) {
+            for (var identity : signalProtocolStore.getIdentities()) {
                 identity.setAddress(recipientStore.resolveServiceAddress(identity.getAddress()));
             }
         }
 
-        JsonNode profileStoreNode = rootNode.get("profileStore");
+        var profileStoreNode = rootNode.get("profileStore");
         if (profileStoreNode != null) {
             profileStore = jsonProcessor.convertValue(profileStoreNode, ProfileStore.class);
         }
@@ -344,7 +338,7 @@ public class SignalAccount implements Closeable {
             profileStore = new ProfileStore();
         }
 
-        JsonNode stickerStoreNode = rootNode.get("stickerStore");
+        var stickerStoreNode = rootNode.get("stickerStore");
         if (stickerStoreNode != null) {
             stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
         }
@@ -354,22 +348,21 @@ public class SignalAccount implements Closeable {
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
 
-        JsonNode threadStoreNode = rootNode.get("threadStore");
+        var threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null && !threadStoreNode.isNull()) {
-            LegacyJsonThreadStore threadStore = jsonProcessor.convertValue(threadStoreNode,
-                    LegacyJsonThreadStore.class);
+            var threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
             // Migrate thread info to group and contact store
-            for (ThreadInfo thread : threadStore.getThreads()) {
+            for (var thread : threadStore.getThreads()) {
                 if (thread.id == null || thread.id.isEmpty()) {
                     continue;
                 }
                 try {
-                    ContactInfo contactInfo = contactStore.getContact(new SignalServiceAddress(null, thread.id));
+                    var contactInfo = contactStore.getContact(new SignalServiceAddress(null, thread.id));
                     if (contactInfo != null) {
                         contactInfo.messageExpirationTime = thread.messageExpirationTime;
                         contactStore.updateContact(contactInfo);
                     } else {
-                        GroupInfo groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
+                        var groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
                         if (groupInfo instanceof GroupInfoV1) {
                             ((GroupInfoV1) groupInfo).messageExpirationTime = thread.messageExpirationTime;
                             groupStore.updateGroup(groupInfo);
@@ -385,7 +378,7 @@ public class SignalAccount implements Closeable {
         if (fileChannel == null) {
             return;
         }
-        ObjectNode rootNode = jsonProcessor.createObjectNode();
+        var rootNode = jsonProcessor.createObjectNode();
         rootNode.put("username", username)
                 .put("uuid", uuid == null ? null : uuid.toString())
                 .put("deviceId", deviceId)
@@ -407,10 +400,10 @@ public class SignalAccount implements Closeable {
                 .putPOJO("profileStore", profileStore)
                 .putPOJO("stickerStore", stickerStore);
         try {
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            try (var output = new ByteArrayOutputStream()) {
                 // Write to memory first to prevent corrupting the file in case of serialization errors
                 jsonProcessor.writeValue(output, rootNode);
-                ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+                var input = new ByteArrayInputStream(output.toByteArray());
                 synchronized (fileChannel) {
                     fileChannel.position(0);
                     input.transferTo(Channels.newOutputStream(fileChannel));
@@ -424,8 +417,8 @@ public class SignalAccount implements Closeable {
     }
 
     private static Pair<FileChannel, FileLock> openFileChannel(File fileName) throws IOException {
-        FileChannel fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
-        FileLock lock = fileChannel.tryLock();
+        var fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
+        var lock = fileChannel.tryLock();
         if (lock == null) {
             logger.info("Config file is in use by another instance, waiting…");
             lock = fileChannel.lock();
@@ -439,7 +432,7 @@ public class SignalAccount implements Closeable {
     }
 
     public void addPreKeys(Collection<PreKeyRecord> records) {
-        for (PreKeyRecord record : records) {
+        for (var record : records) {
             signalProtocolStore.storePreKey(record.getId(), record);
         }
         preKeyIdOffset = (preKeyIdOffset + records.size()) % Medium.MAX_VALUE;

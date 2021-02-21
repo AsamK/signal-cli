@@ -1,8 +1,6 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.storage.profiles.SignalProfile;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
-import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
@@ -41,12 +39,12 @@ public class UnidentifiedAccessHelper {
     }
 
     public byte[] getTargetUnidentifiedAccessKey(SignalServiceAddress recipient) {
-        ProfileKey theirProfileKey = profileKeyProvider.getProfileKey(recipient);
+        var theirProfileKey = profileKeyProvider.getProfileKey(recipient);
         if (theirProfileKey == null) {
             return null;
         }
 
-        SignalProfile targetProfile = profileProvider.getProfile(recipient);
+        var targetProfile = profileProvider.getProfile(recipient);
         if (targetProfile == null || targetProfile.getUnidentifiedAccess() == null) {
             return null;
         }
@@ -59,8 +57,8 @@ public class UnidentifiedAccessHelper {
     }
 
     public Optional<UnidentifiedAccessPair> getAccessForSync() {
-        byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
-        byte[] selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        var selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
 
         if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
             return Optional.absent();
@@ -80,9 +78,9 @@ public class UnidentifiedAccessHelper {
     }
 
     public Optional<UnidentifiedAccessPair> getAccessFor(SignalServiceAddress recipient) {
-        byte[] recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
-        byte[] selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
-        byte[] selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
+        var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        var selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
 
         if (recipientUnidentifiedAccessKey == null
                 || selfUnidentifiedAccessKey == null

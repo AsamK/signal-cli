@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 public class RandomUtils {
 
     private static final ThreadLocal<SecureRandom> LOCAL_RANDOM = ThreadLocal.withInitial(() -> {
-        SecureRandom rand = getSecureRandomUnseeded();
+        var rand = getSecureRandomUnseeded();
 
         // Let the SecureRandom seed it self initially
         rand.nextBoolean();

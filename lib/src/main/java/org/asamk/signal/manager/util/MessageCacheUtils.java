@@ -16,32 +16,32 @@ import java.util.UUID;
 public class MessageCacheUtils {
 
     public static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
-        try (FileInputStream f = new FileInputStream(file)) {
-            DataInputStream in = new DataInputStream(f);
-            int version = in.readInt();
+        try (var f = new FileInputStream(file)) {
+            var in = new DataInputStream(f);
+            var version = in.readInt();
             if (version > 4) {
                 return null;
             }
-            int type = in.readInt();
-            String source = in.readUTF();
+            var type = in.readInt();
+            var source = in.readUTF();
             UUID sourceUuid = null;
             if (version >= 3) {
                 sourceUuid = UuidUtil.parseOrNull(in.readUTF());
             }
-            int sourceDevice = in.readInt();
+            var sourceDevice = in.readInt();
             if (version == 1) {
                 // read legacy relay field
                 in.readUTF();
             }
-            long timestamp = in.readLong();
+            var timestamp = in.readLong();
             byte[] content = null;
-            int contentLen = in.readInt();
+            var contentLen = in.readInt();
             if (contentLen > 0) {
                 content = new byte[contentLen];
                 in.readFully(content);
             }
             byte[] legacyMessage = null;
-            int legacyMessageLen = in.readInt();
+            var legacyMessageLen = in.readInt();
             if (legacyMessageLen > 0) {
                 legacyMessage = new byte[legacyMessageLen];
                 in.readFully(legacyMessage);
@@ -75,8 +75,8 @@ public class MessageCacheUtils {
     }
 
     public static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
-        try (FileOutputStream f = new FileOutputStream(file)) {
-            try (DataOutputStream out = new DataOutputStream(f)) {
+        try (var f = new FileOutputStream(file)) {
+            try (var out = new DataOutputStream(f)) {
                 out.writeInt(4); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
@@ -96,7 +96,7 @@ public class MessageCacheUtils {
                     out.writeInt(0);
                 }
                 out.writeLong(envelope.getServerReceivedTimestamp());
-                String uuid = envelope.getUuid();
+                var uuid = envelope.getUuid();
                 out.writeUTF(uuid == null ? "" : uuid);
                 out.writeLong(envelope.getServerDeliveredTimestamp());
             }

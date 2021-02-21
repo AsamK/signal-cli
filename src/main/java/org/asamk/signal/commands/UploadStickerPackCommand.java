@@ -20,8 +20,8 @@ public class UploadStickerPackCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         try {
-            File path = new File(ns.getString("path"));
-            String url = m.uploadStickerPack(path);
+            var path = new File(ns.getString("path"));
+            var url = m.uploadStickerPack(path);
             System.out.println(url);
             return 0;
         } catch (IOException e) {

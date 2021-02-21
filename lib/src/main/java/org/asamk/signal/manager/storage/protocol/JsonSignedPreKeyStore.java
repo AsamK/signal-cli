@@ -51,9 +51,9 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
     @Override
     public List<SignedPreKeyRecord> loadSignedPreKeys() {
         try {
-            List<SignedPreKeyRecord> results = new LinkedList<>();
+            var results = new LinkedList<SignedPreKeyRecord>();
 
-            for (byte[] serialized : store.values()) {
+            for (var serialized : store.values()) {
                 results.add(new SignedPreKeyRecord(serialized));
             }
 
@@ -86,16 +86,16 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            Map<Integer, byte[]> preKeyMap = new HashMap<>();
+            var preKeyMap = new HashMap<Integer, byte[]>();
             if (node.isArray()) {
-                for (JsonNode preKey : node) {
-                    final int preKeyId = preKey.get("id").asInt();
-                    final byte[] preKeyRecord = Base64.getDecoder().decode(preKey.get("record").asText());
+                for (var preKey : node) {
+                    final var preKeyId = preKey.get("id").asInt();
+                    final var preKeyRecord = Base64.getDecoder().decode(preKey.get("record").asText());
                     preKeyMap.put(preKeyId, preKeyRecord);
                 }
             }
 
-            JsonSignedPreKeyStore keyStore = new JsonSignedPreKeyStore();
+            var keyStore = new JsonSignedPreKeyStore();
             keyStore.addSignedPreKeys(preKeyMap);
 
             return keyStore;
@@ -109,7 +109,7 @@ class JsonSignedPreKeyStore implements SignedPreKeyStore {
                 JsonSignedPreKeyStore jsonPreKeyStore, JsonGenerator json, SerializerProvider serializerProvider
         ) throws IOException {
             json.writeStartArray();
-            for (Map.Entry<Integer, byte[]> signedPreKey : jsonPreKeyStore.store.entrySet()) {
+            for (var signedPreKey : jsonPreKeyStore.store.entrySet()) {
                 json.writeStartObject();
                 json.writeNumberField("id", signedPreKey.getKey());
                 json.writeStringField("record", Base64.getEncoder().encodeToString(signedPreKey.getValue()));

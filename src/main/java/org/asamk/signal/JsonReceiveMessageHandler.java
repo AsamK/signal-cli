@@ -10,7 +10,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
@@ -26,7 +25,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
 
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-        final Map<String, Object> object = new HashMap<>();
+        final var object = new HashMap<String, Object>();
         if (exception != null) {
             object.put("error", new JsonError(exception));
         }

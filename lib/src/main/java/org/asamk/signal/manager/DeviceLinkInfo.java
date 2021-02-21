@@ -20,14 +20,14 @@ public class DeviceLinkInfo {
     final ECPublicKey deviceKey;
 
     public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidKeyException {
-        final String rawQuery = linkUri.getRawQuery();
+        final var rawQuery = linkUri.getRawQuery();
         if (isEmpty(rawQuery)) {
             throw new RuntimeException("Invalid device link uri");
         }
 
-        Map<String, String> query = getQueryMap(rawQuery);
-        String deviceIdentifier = query.get("uuid");
-        String publicKeyEncoded = query.get("pub_key");
+        var query = getQueryMap(rawQuery);
+        var deviceIdentifier = query.get("uuid");
+        var publicKeyEncoded = query.get("pub_key");
 
         if (isEmpty(deviceIdentifier) || isEmpty(publicKeyEncoded)) {
             throw new RuntimeException("Invalid device link uri");
@@ -39,18 +39,18 @@ public class DeviceLinkInfo {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid device link uri", e);
         }
-        ECPublicKey deviceKey = Curve.decodePoint(publicKeyBytes, 0);
+        var deviceKey = Curve.decodePoint(publicKeyBytes, 0);
 
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }
 
     private static Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<>();
-        for (String param : params) {
-            final String[] paramParts = param.split("=");
-            String name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
-            String value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
+        var params = query.split("&");
+        var map = new HashMap<String, String>();
+        for (var param : params) {
+            final var paramParts = param.split("=");
+            var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
+            var value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
             map.put(name, value);
         }
         return map;
@@ -62,7 +62,7 @@ public class DeviceLinkInfo {
     }
 
     public String createDeviceLinkUri() {
-        final String deviceKeyString = Base64.getEncoder().encodeToString(deviceKey.serialize()).replace("=", "");
+        final var deviceKeyString = Base64.getEncoder().encodeToString(deviceKey.serialize()).replace("=", "");
         return "tsdevice:/?uuid="
                 + URLEncoder.encode(deviceIdentifier, StandardCharsets.UTF_8)
                 + "&pub_key="

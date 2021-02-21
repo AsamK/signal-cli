@@ -18,7 +18,7 @@ public class AttachmentUtils {
         List<SignalServiceAttachment> signalServiceAttachments = null;
         if (attachments != null) {
             signalServiceAttachments = new ArrayList<>(attachments.size());
-            for (String attachment : attachments) {
+            for (var attachment : attachments) {
                 try {
                     signalServiceAttachments.add(createAttachment(new File(attachment)));
                 } catch (IOException e) {
@@ -30,7 +30,7 @@ public class AttachmentUtils {
     }
 
     public static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        final StreamDetails streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
+        final var streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
         return createAttachment(streamDetails, Optional.of(attachmentFile.getName()));
     }
 
@@ -38,7 +38,7 @@ public class AttachmentUtils {
             StreamDetails streamDetails, Optional<String> name
     ) {
         // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
-        final long uploadTimestamp = System.currentTimeMillis();
+        final var uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();

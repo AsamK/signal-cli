@@ -21,13 +21,13 @@ public class LinkCommand implements ProvisioningCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final ProvisioningManager m) {
-        String deviceName = ns.getString("name");
+        var deviceName = ns.getString("name");
         if (deviceName == null) {
             deviceName = "cli";
         }
         try {
             System.out.println(m.getDeviceLinkUri());
-            String username = m.finishDeviceLink(deviceName);
+            var username = m.finishDeviceLink(deviceName);
             System.out.println("Associated with: " + username);
         } catch (TimeoutException e) {
             System.err.println("Link request timed out, please try again.");

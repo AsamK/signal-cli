@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
@@ -20,13 +19,13 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 public class IOUtils {
 
     public static File createTempFile() throws IOException {
-        final File tempFile = File.createTempFile("signal-cli_tmp_", ".tmp");
+        final var tempFile = File.createTempFile("signal-cli_tmp_", ".tmp");
         tempFile.deleteOnExit();
         return tempFile;
     }
 
     public static byte[] readFully(InputStream in) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        var baos = new ByteArrayOutputStream();
         IOUtils.copyStream(in, baos);
         return baos.toByteArray();
     }
@@ -36,7 +35,7 @@ public class IOUtils {
             return;
         }
 
-        final Path path = file.toPath();
+        final var path = file.toPath();
         try {
             Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE);
             Files.createDirectories(path, PosixFilePermissions.asFileAttribute(perms));
@@ -46,7 +45,7 @@ public class IOUtils {
     }
 
     public static void createPrivateFile(File path) throws IOException {
-        final Path file = path.toPath();
+        final var file = path.toPath();
         try {
             Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE);
             Files.createFile(file, PosixFilePermissions.asFileAttribute(perms));
@@ -66,7 +65,7 @@ public class IOUtils {
     }
 
     public static void copyStream(InputStream input, OutputStream output, int bufferSize) throws IOException {
-        byte[] buffer = new byte[bufferSize];
+        var buffer = new byte[bufferSize];
         int read;
 
         while ((read = input.read(buffer)) != -1) {

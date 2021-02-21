@@ -135,7 +135,7 @@ public class GroupInfoV1 extends GroupInfo {
     }
 
     public void addMembers(Collection<SignalServiceAddress> addresses) {
-        for (SignalServiceAddress address : addresses) {
+        for (var address : addresses) {
             if (this.members.contains(address)) {
                 continue;
             }
@@ -178,7 +178,7 @@ public class GroupInfoV1 extends GroupInfo {
                 final Set<SignalServiceAddress> value, final JsonGenerator jgen, final SerializerProvider provider
         ) throws IOException {
             jgen.writeStartArray(value.size());
-            for (SignalServiceAddress address : value) {
+            for (var address : value) {
                 if (address.getUuid().isPresent()) {
                     jgen.writeObject(new JsonSignalServiceAddress(address));
                 } else {
@@ -195,13 +195,13 @@ public class GroupInfoV1 extends GroupInfo {
         public Set<SignalServiceAddress> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            Set<SignalServiceAddress> addresses = new HashSet<>();
+            var addresses = new HashSet<SignalServiceAddress>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-            for (JsonNode n : node) {
+            for (var n : node) {
                 if (n.isTextual()) {
                     addresses.add(new SignalServiceAddress(null, n.textValue()));
                 } else {
-                    JsonSignalServiceAddress address = jsonProcessor.treeToValue(n, JsonSignalServiceAddress.class);
+                    var address = jsonProcessor.treeToValue(n, JsonSignalServiceAddress.class);
                     addresses.add(address.toSignalServiceAddress());
                 }
             }

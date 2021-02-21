@@ -3,46 +3,24 @@ package org.asamk.signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
-import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
 import org.slf4j.helpers.MessageFormatter;
 import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
-import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
-import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
-import org.whispersystems.signalservice.api.messages.calls.HangupMessage;
-import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
-import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
-import org.whispersystems.signalservice.api.messages.calls.OpaqueMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.MessageRequestResponseMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMessage;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
@@ -68,7 +46,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         PlainTextWriter writer = new PlainTextWriterImpl(System.out);
 
         if (envelope.hasSource()) {
-            SignalServiceAddress source = envelope.getSourceAddress();
+            var source = envelope.getSourceAddress();
             writer.println("Envelope from: {} (device: {})", formatContact(source), envelope.getSourceDevice());
             if (source.getRelay().isPresent()) {
                 writer.println("Relayed by: {}", source.getRelay().get());
@@ -86,7 +64,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         } else if (envelope.isSignalMessage() || envelope.isPreKeySignalMessage() || envelope.isUnidentifiedSender()) {
             if (exception != null) {
                 if (exception instanceof UntrustedIdentityException) {
-                    UntrustedIdentityException e = (UntrustedIdentityException) exception;
+                    var e = (UntrustedIdentityException) exception;
                     writer.println(
                             "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
                     writer.println(
@@ -112,28 +90,28 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         DateUtils.formatTimestamp(content.getServerDeliveredTimestamp()));
 
                 if (content.getDataMessage().isPresent()) {
-                    SignalServiceDataMessage message = content.getDataMessage().get();
+                    var message = content.getDataMessage().get();
                     printDataMessage(writer, message);
                 }
                 if (content.getSyncMessage().isPresent()) {
                     writer.println("Received a sync message");
-                    SignalServiceSyncMessage syncMessage = content.getSyncMessage().get();
+                    var syncMessage = content.getSyncMessage().get();
                     printSyncMessage(writer, syncMessage);
                 }
 
                 if (content.getCallMessage().isPresent()) {
                     writer.println("Received a call message");
-                    SignalServiceCallMessage callMessage = content.getCallMessage().get();
+                    var callMessage = content.getCallMessage().get();
                     printCallMessage(writer.indentedWriter(), callMessage);
                 }
                 if (content.getReceiptMessage().isPresent()) {
                     writer.println("Received a receipt message");
-                    SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
+                    var receiptMessage = content.getReceiptMessage().get();
                     printReceiptMessage(writer.indentedWriter(), receiptMessage);
                 }
                 if (content.getTypingMessage().isPresent()) {
                     writer.println("Received a typing message");
-                    SignalServiceTypingMessage typingMessage = content.getTypingMessage().get();
+                    var typingMessage = content.getTypingMessage().get();
                     printTypingMessage(writer.indentedWriter(), typingMessage);
                 }
             }
@@ -156,32 +134,32 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (message.getGroupContext().isPresent()) {
             writer.println("Group info:");
-            final SignalServiceGroupContext groupContext = message.getGroupContext().get();
+            final var groupContext = message.getGroupContext().get();
             printGroupContext(writer.indentedWriter(), groupContext);
         }
         if (message.getGroupCallUpdate().isPresent()) {
             writer.println("Group call update:");
-            final SignalServiceDataMessage.GroupCallUpdate groupCallUpdate = message.getGroupCallUpdate().get();
+            final var groupCallUpdate = message.getGroupCallUpdate().get();
             writer.indentedWriter().println("Era id: {}", groupCallUpdate.getEraId());
         }
         if (message.getPreviews().isPresent()) {
             writer.println("Previews:");
-            final List<SignalServiceDataMessage.Preview> previews = message.getPreviews().get();
-            for (SignalServiceDataMessage.Preview preview : previews) {
+            final var previews = message.getPreviews().get();
+            for (var preview : previews) {
                 writer.println("- Preview");
                 printPreview(writer.indentedWriter(), preview);
             }
         }
         if (message.getSharedContacts().isPresent()) {
-            final List<SharedContact> sharedContacts = message.getSharedContacts().get();
+            final var sharedContacts = message.getSharedContacts().get();
             writer.println("Contacts:");
-            for (SharedContact contact : sharedContacts) {
+            for (var contact : sharedContacts) {
                 writer.println("- Contact:");
                 printSharedContact(writer.indentedWriter(), contact);
             }
         }
         if (message.getSticker().isPresent()) {
-            final SignalServiceDataMessage.Sticker sticker = message.getSticker().get();
+            final var sticker = message.getSticker().get();
             writer.println("Sticker:");
             printSticker(writer.indentedWriter(), sticker);
         }
@@ -199,27 +177,27 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (message.getReaction().isPresent()) {
             writer.println("Reaction:");
-            final SignalServiceDataMessage.Reaction reaction = message.getReaction().get();
+            final var reaction = message.getReaction().get();
             printReaction(writer.indentedWriter(), reaction);
         }
         if (message.getQuote().isPresent()) {
             writer.println("Quote:");
-            SignalServiceDataMessage.Quote quote = message.getQuote().get();
+            var quote = message.getQuote().get();
             printQuote(writer.indentedWriter(), quote);
         }
         if (message.getRemoteDelete().isPresent()) {
-            final SignalServiceDataMessage.RemoteDelete remoteDelete = message.getRemoteDelete().get();
+            final var remoteDelete = message.getRemoteDelete().get();
             writer.println("Remote delete message: timestamp = {}", remoteDelete.getTargetSentTimestamp());
         }
         if (message.getMentions().isPresent()) {
             writer.println("Mentions:");
-            for (SignalServiceDataMessage.Mention mention : message.getMentions().get()) {
+            for (var mention : message.getMentions().get()) {
                 printMention(writer, mention);
             }
         }
         if (message.getAttachments().isPresent()) {
             writer.println("Attachments:");
-            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+            for (var attachment : message.getAttachments().get()) {
                 writer.println("- Attachment:");
                 printAttachment(writer.indentedWriter(), attachment);
             }
@@ -233,7 +211,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("Timestamp: {}", DateUtils.formatTimestamp(typingMessage.getTimestamp()));
         if (typingMessage.getGroupId().isPresent()) {
             writer.println("Group Info:");
-            final GroupId groupId = GroupId.unknownVersion(typingMessage.getGroupId().get());
+            final var groupId = GroupId.unknownVersion(typingMessage.getGroupId().get());
             printGroupInfo(writer.indentedWriter(), groupId);
         }
     }
@@ -261,34 +239,34 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final PlainTextWriter writer, final SignalServiceCallMessage callMessage
     ) throws IOException {
         if (callMessage.getDestinationDeviceId().isPresent()) {
-            final Integer deviceId = callMessage.getDestinationDeviceId().get();
+            final var deviceId = callMessage.getDestinationDeviceId().get();
             writer.println("Destination device id: {}", deviceId);
         }
         if (callMessage.getAnswerMessage().isPresent()) {
-            AnswerMessage answerMessage = callMessage.getAnswerMessage().get();
+            var answerMessage = callMessage.getAnswerMessage().get();
             writer.println("Answer message: {}, sdp: {})", answerMessage.getId(), answerMessage.getSdp());
         }
         if (callMessage.getBusyMessage().isPresent()) {
-            BusyMessage busyMessage = callMessage.getBusyMessage().get();
+            var busyMessage = callMessage.getBusyMessage().get();
             writer.println("Busy message: {}", busyMessage.getId());
         }
         if (callMessage.getHangupMessage().isPresent()) {
-            HangupMessage hangupMessage = callMessage.getHangupMessage().get();
+            var hangupMessage = callMessage.getHangupMessage().get();
             writer.println("Hangup message: {}", hangupMessage.getId());
         }
         if (callMessage.getIceUpdateMessages().isPresent()) {
             writer.println("Ice update messages:");
-            List<IceUpdateMessage> iceUpdateMessages = callMessage.getIceUpdateMessages().get();
-            for (IceUpdateMessage iceUpdateMessage : iceUpdateMessages) {
+            var iceUpdateMessages = callMessage.getIceUpdateMessages().get();
+            for (var iceUpdateMessage : iceUpdateMessages) {
                 writer.println("- {}, sdp: {}", iceUpdateMessage.getId(), iceUpdateMessage.getSdp());
             }
         }
         if (callMessage.getOfferMessage().isPresent()) {
-            OfferMessage offerMessage = callMessage.getOfferMessage().get();
+            var offerMessage = callMessage.getOfferMessage().get();
             writer.println("Offer message: {}, sdp: {}", offerMessage.getId(), offerMessage.getSdp());
         }
         if (callMessage.getOpaqueMessage().isPresent()) {
-            final OpaqueMessage opaqueMessage = callMessage.getOpaqueMessage().get();
+            final var opaqueMessage = callMessage.getOpaqueMessage().get();
             writer.println("Opaque message: size {}", opaqueMessage.getOpaque().length);
         }
     }
@@ -297,8 +275,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final PlainTextWriter writer, final SignalServiceSyncMessage syncMessage
     ) throws IOException {
         if (syncMessage.getContacts().isPresent()) {
-            final ContactsMessage contactsMessage = syncMessage.getContacts().get();
-            String type = contactsMessage.isComplete() ? "complete" : "partial";
+            final var contactsMessage = syncMessage.getContacts().get();
+            var type = contactsMessage.isComplete() ? "complete" : "partial";
             writer.println("Received {} sync contacts:", type);
             printAttachment(writer.indentedWriter(), contactsMessage.getContactsStream());
         }
@@ -308,7 +286,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (syncMessage.getRead().isPresent()) {
             writer.println("Received sync read messages list");
-            for (ReadMessage rm : syncMessage.getRead().get()) {
+            for (var rm : syncMessage.getRead().get()) {
                 writer.println("- From: {} Message timestamp: {}",
                         formatContact(rm.getSender()),
                         DateUtils.formatTimestamp(rm.getTimestamp()));
@@ -333,7 +311,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (syncMessage.getSent().isPresent()) {
             writer.println("Received sync sent message");
-            final SentTranscriptMessage sentTranscriptMessage = syncMessage.getSent().get();
+            final var sentTranscriptMessage = syncMessage.getSent().get();
             String to;
             if (sentTranscriptMessage.getDestination().isPresent()) {
                 to = formatContact(sentTranscriptMessage.getDestination().get());
@@ -353,28 +331,28 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         .println("Expiration started at: {}",
                                 DateUtils.formatTimestamp(sentTranscriptMessage.getExpirationStartTimestamp()));
             }
-            SignalServiceDataMessage message = sentTranscriptMessage.getMessage();
+            var message = sentTranscriptMessage.getMessage();
             printDataMessage(writer.indentedWriter(), message);
         }
         if (syncMessage.getBlockedList().isPresent()) {
             writer.println("Received sync message with block list");
             writer.println("Blocked numbers:");
-            final BlockedListMessage blockedList = syncMessage.getBlockedList().get();
-            for (SignalServiceAddress address : blockedList.getAddresses()) {
+            final var blockedList = syncMessage.getBlockedList().get();
+            for (var address : blockedList.getAddresses()) {
                 writer.println("- {}", address.getLegacyIdentifier());
             }
         }
         if (syncMessage.getVerified().isPresent()) {
             writer.println("Received sync message with verified identities:");
-            final VerifiedMessage verifiedMessage = syncMessage.getVerified().get();
+            final var verifiedMessage = syncMessage.getVerified().get();
             writer.println("- {}: {}", formatContact(verifiedMessage.getDestination()), verifiedMessage.getVerified());
-            String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(),
+            var safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(verifiedMessage.getDestination(),
                     verifiedMessage.getIdentityKey()));
             writer.indentedWriter().println(safetyNumber);
         }
         if (syncMessage.getConfiguration().isPresent()) {
             writer.println("Received sync message with configuration:");
-            final ConfigurationMessage configurationMessage = syncMessage.getConfiguration().get();
+            final var configurationMessage = syncMessage.getConfiguration().get();
             if (configurationMessage.getReadReceipts().isPresent()) {
                 writer.println("- Read receipts: {}",
                         configurationMessage.getReadReceipts().get() ? "enabled" : "disabled");
@@ -393,21 +371,20 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
         }
         if (syncMessage.getFetchType().isPresent()) {
-            final SignalServiceSyncMessage.FetchType fetchType = syncMessage.getFetchType().get();
+            final var fetchType = syncMessage.getFetchType().get();
             writer.println("Received sync message with fetch type: {}", fetchType);
         }
         if (syncMessage.getViewOnceOpen().isPresent()) {
-            final ViewOnceOpenMessage viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
+            final var viewOnceOpenMessage = syncMessage.getViewOnceOpen().get();
             writer.println("Received sync message with view once open message:");
             writer.indentedWriter().println("Sender: {}", formatContact(viewOnceOpenMessage.getSender()));
             writer.indentedWriter()
                     .println("Timestamp: {}", DateUtils.formatTimestamp(viewOnceOpenMessage.getTimestamp()));
         }
         if (syncMessage.getStickerPackOperations().isPresent()) {
-            final List<StickerPackOperationMessage> stickerPackOperationMessages = syncMessage.getStickerPackOperations()
-                    .get();
+            final var stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
             writer.println("Received sync message with sticker pack operations:");
-            for (StickerPackOperationMessage m : stickerPackOperationMessages) {
+            for (var m : stickerPackOperationMessages) {
                 writer.println("- {}", m.getType().isPresent() ? m.getType().get() : "<unknown>");
                 if (m.getPackId().isPresent()) {
                     writer.indentedWriter()
@@ -420,7 +397,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
         }
         if (syncMessage.getMessageRequestResponse().isPresent()) {
-            final MessageRequestResponseMessage requestResponseMessage = syncMessage.getMessageRequestResponse().get();
+            final var requestResponseMessage = syncMessage.getMessageRequestResponse().get();
             writer.println("Received message request response:");
             writer.indentedWriter().println("Type: {}", requestResponseMessage.getType());
             if (requestResponseMessage.getGroupId().isPresent()) {
@@ -434,7 +411,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
         }
         if (syncMessage.getKeys().isPresent()) {
-            final KeysMessage keysMessage = syncMessage.getKeys().get();
+            final var keysMessage = syncMessage.getKeys().get();
             writer.println("Received sync message with keys:");
             if (keysMessage.getStorageService().isPresent()) {
                 writer.println("-  storage key: length: {}", keysMessage.getStorageService().get().serialize().length);
@@ -482,13 +459,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("Text: {}", quote.getText());
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {
             writer.println("Mentions:");
-            for (SignalServiceDataMessage.Mention mention : quote.getMentions()) {
+            for (var mention : quote.getMentions()) {
                 printMention(writer, mention);
             }
         }
         if (quote.getAttachments().size() > 0) {
             writer.println("Attachments:");
-            for (SignalServiceDataMessage.Quote.QuotedAttachment attachment : quote.getAttachments()) {
+            for (var attachment : quote.getAttachments()) {
                 writer.println("- Filename: {}", attachment.getFileName());
                 writer.indent(w -> {
                     w.println("Type: {}", attachment.getContentType());
@@ -503,7 +480,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printSharedContact(final PlainTextWriter writer, final SharedContact contact) throws IOException {
         writer.println("Name:");
-        SharedContact.Name name = contact.getName();
+        var name = contact.getName();
         writer.indent(w -> {
             if (name.getDisplay().isPresent() && !name.getDisplay().get().isBlank()) {
                 w.println("Display name: {}", name.getDisplay().get());
@@ -526,7 +503,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         });
 
         if (contact.getAvatar().isPresent()) {
-            SharedContact.Avatar avatar = contact.getAvatar().get();
+            var avatar = contact.getAvatar().get();
             writer.println("Avatar: (profile: {})", avatar.isProfile());
             printAttachment(writer.indentedWriter(), avatar.getAttachment());
         }
@@ -537,7 +514,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
         if (contact.getPhone().isPresent()) {
             writer.println("Phone details:");
-            for (SharedContact.Phone phone : contact.getPhone().get()) {
+            for (var phone : contact.getPhone().get()) {
                 writer.println("- Phone:");
                 writer.indent(w -> {
                     if (phone.getValue() != null) {
@@ -555,7 +532,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
         if (contact.getEmail().isPresent()) {
             writer.println("Email details:");
-            for (SharedContact.Email email : contact.getEmail().get()) {
+            for (var email : contact.getEmail().get()) {
                 writer.println("- Email:");
                 writer.indent(w -> {
                     if (email.getValue() != null) {
@@ -573,7 +550,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
         if (contact.getAddress().isPresent()) {
             writer.println("Address details:");
-            for (SharedContact.PostalAddress address : contact.getAddress().get()) {
+            for (var address : contact.getAddress().get()) {
                 writer.println("- Address:");
                 writer.indent(w -> {
                     if (address.getType() != null) {
@@ -611,14 +588,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private void printGroupContext(
             final PlainTextWriter writer, final SignalServiceGroupContext groupContext
     ) throws IOException {
-        final GroupId groupId = GroupUtils.getGroupId(groupContext);
+        final var groupId = GroupUtils.getGroupId(groupContext);
         if (groupContext.getGroupV1().isPresent()) {
-            SignalServiceGroup groupInfo = groupContext.getGroupV1().get();
+            var groupInfo = groupContext.getGroupV1().get();
             printGroupInfo(writer, groupId);
             writer.println("Type: {}", groupInfo.getType());
             if (groupInfo.getMembers().isPresent()) {
                 writer.println("Members:");
-                for (SignalServiceAddress member : groupInfo.getMembers().get()) {
+                for (var member : groupInfo.getMembers().get()) {
                     writer.println("- {}", formatContact(member));
                 }
             }
@@ -627,7 +604,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 printAttachment(writer.indentedWriter(), groupInfo.getAvatar().get());
             }
         } else if (groupContext.getGroupV2().isPresent()) {
-            final SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
+            final var groupInfo = groupContext.getGroupV2().get();
             printGroupInfo(writer, groupId);
             writer.println("Revision: {}", groupInfo.getRevision());
             writer.println("Master key length: {}", groupInfo.getMasterKey().serialize().length);
@@ -638,7 +615,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private void printGroupInfo(final PlainTextWriter writer, final GroupId groupId) throws IOException {
         writer.println("Id: {}", groupId.toBase64());
 
-        GroupInfo group = m.getGroup(groupId);
+        var group = m.getGroup(groupId);
         if (group != null) {
             writer.println("Name: {}", group.getTitle());
         } else {
@@ -649,8 +626,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private void printMention(
             PlainTextWriter writer, SignalServiceDataMessage.Mention mention
     ) throws IOException {
-        final SignalServiceAddress address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(),
-                null));
+        final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null));
         writer.println("- {}: {} (length: {})", formatContact(address), mention.getStart(), mention.getLength());
     }
 
@@ -658,7 +634,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("Content-Type: {}", attachment.getContentType());
         writer.println("Type: {}", attachment.isPointer() ? "Pointer" : attachment.isStream() ? "Stream" : "<unknown>");
         if (attachment.isPointer()) {
-            final SignalServiceAttachmentPointer pointer = attachment.asPointer();
+            final var pointer = attachment.asPointer();
             writer.println("Id: {} Key length: {}", pointer.getRemoteId(), pointer.getKey().length);
             if (pointer.getUploadTimestamp() > 0) {
                 writer.println("Upload timestamp: {}", DateUtils.formatTimestamp(pointer.getUploadTimestamp()));
@@ -679,7 +655,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (pointer.getWidth() > 0 || pointer.getHeight() > 0) {
                 writer.println("Dimensions: {}x{}", pointer.getWidth(), pointer.getHeight());
             }
-            File file = m.getAttachmentFile(pointer.getRemoteId());
+            var file = m.getAttachmentFile(pointer.getRemoteId());
             if (file.exists()) {
                 writer.println("Stored plaintext in: {}", file);
             }
@@ -687,8 +663,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private String formatContact(SignalServiceAddress address) {
-        final String number = address.getLegacyIdentifier();
-        String name = m.getContactOrProfileName(number);
+        final var number = address.getLegacyIdentifier();
+        var name = m.getContactOrProfileName(number);
         if (name == null) {
             return number;
         } else {

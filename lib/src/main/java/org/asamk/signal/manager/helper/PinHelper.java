@@ -6,7 +6,6 @@ import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
-import org.whispersystems.signalservice.api.kbs.HashedPin;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.contacts.entities.TokenResponse;
@@ -25,15 +24,15 @@ public class PinHelper {
     public void setRegistrationLockPin(
             String pin, MasterKey masterKey
     ) throws IOException, UnauthenticatedResponseException {
-        final KeyBackupService.PinChangeSession pinChangeSession = keyBackupService.newPinChangeSession();
-        final HashedPin hashedPin = PinHashing.hashPin(pin, pinChangeSession);
+        final var pinChangeSession = keyBackupService.newPinChangeSession();
+        final var hashedPin = PinHashing.hashPin(pin, pinChangeSession);
 
         pinChangeSession.setPin(hashedPin, masterKey);
         pinChangeSession.enableRegistrationLock(masterKey);
     }
 
     public void removeRegistrationLockPin() throws IOException, UnauthenticatedResponseException {
-        final KeyBackupService.PinChangeSession pinChangeSession = keyBackupService.newPinChangeSession();
+        final var pinChangeSession = keyBackupService.newPinChangeSession();
         pinChangeSession.disableRegistrationLock();
         pinChangeSession.removePin();
     }
@@ -41,7 +40,7 @@ public class PinHelper {
     public KbsPinData getRegistrationLockData(
             String pin, LockedException e
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
-        String basicStorageCredentials = e.getBasicStorageCredentials();
+        var basicStorageCredentials = e.getBasicStorageCredentials();
         if (basicStorageCredentials == null) {
             return null;
         }
@@ -52,12 +51,12 @@ public class PinHelper {
     private KbsPinData getRegistrationLockData(
             String pin, String basicStorageCredentials
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
-        TokenResponse tokenResponse = keyBackupService.getToken(basicStorageCredentials);
+        var tokenResponse = keyBackupService.getToken(basicStorageCredentials);
         if (tokenResponse == null || tokenResponse.getTries() == 0) {
             throw new IOException("KBS Account locked");
         }
 
-        KbsPinData registrationLockData = restoreMasterKey(pin, basicStorageCredentials, tokenResponse);
+        var registrationLockData = restoreMasterKey(pin, basicStorageCredentials, tokenResponse);
         if (registrationLockData == null) {
             throw new AssertionError("Failed to restore master key");
         }
@@ -73,12 +72,11 @@ public class PinHelper {
             throw new AssertionError("Cannot restore KBS key, no storage credentials supplied");
         }
 
-        KeyBackupService.RestoreSession session = keyBackupService.newRegistrationSession(basicStorageCredentials,
-                tokenResponse);
+        var session = keyBackupService.newRegistrationSession(basicStorageCredentials, tokenResponse);
 
         try {
-            HashedPin hashedPin = PinHashing.hashPin(pin, session);
-            KbsPinData kbsData = session.restorePin(hashedPin);
+            var hashedPin = PinHashing.hashPin(pin, session);
+            var kbsData = session.restorePin(hashedPin);
             if (kbsData == null) {
                 throw new AssertionError("Null not expected");
             }

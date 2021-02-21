@@ -8,8 +8,8 @@ public class Hex {
     }
 
     public static String toString(byte[] bytes) {
-        StringBuffer buf = new StringBuffer();
-        for (final byte aByte : bytes) {
+        var buf = new StringBuffer();
+        for (final var aByte : bytes) {
             appendHexChar(buf, aByte);
             buf.append(" ");
         }
@@ -17,8 +17,8 @@ public class Hex {
     }
 
     public static String toStringCondensed(byte[] bytes) {
-        StringBuffer buf = new StringBuffer();
-        for (final byte aByte : bytes) {
+        var buf = new StringBuffer();
+        for (final var aByte : bytes) {
             appendHexChar(buf, aByte);
         }
         return buf.toString();
@@ -30,9 +30,9 @@ public class Hex {
     }
 
     public static byte[] toByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
+        var len = s.length();
+        var data = new byte[len / 2];
+        for (var i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
         }
         return data;

@@ -1,7 +1,6 @@
 package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -17,7 +16,7 @@ public class TrustCommand implements LocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
-        MutuallyExclusiveGroup mutTrust = subparser.addMutuallyExclusiveGroup();
+        var mutTrust = subparser.addMutuallyExclusiveGroup();
         mutTrust.addArgument("-a", "--trust-all-known-keys")
                 .help("Trust all known keys of this user, only use this for testing.")
                 .action(Arguments.storeTrue());
@@ -27,15 +26,15 @@ public class TrustCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        String number = ns.getString("number");
+        var number = ns.getString("number");
         if (ns.getBoolean("trust_all_known_keys")) {
-            boolean res = m.trustIdentityAllKeys(number);
+            var res = m.trustIdentityAllKeys(number);
             if (!res) {
                 System.err.println("Failed to set the trust for this number, make sure the number is correct.");
                 return 1;
             }
         } else {
-            String safetyNumber = ns.getString("verified_safety_number");
+            var safetyNumber = ns.getString("verified_safety_number");
             if (safetyNumber != null) {
                 safetyNumber = safetyNumber.replaceAll(" ", "");
                 if (safetyNumber.length() == 66) {

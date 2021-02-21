@@ -50,7 +50,7 @@ public abstract class GroupId {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final GroupId groupId = (GroupId) o;
+        final var groupId = (GroupId) o;
 
         return Arrays.equals(id, groupId.id);
     }

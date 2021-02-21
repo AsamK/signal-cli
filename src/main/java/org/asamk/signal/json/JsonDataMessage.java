@@ -6,9 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,12 +60,12 @@ class JsonDataMessage {
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
         this.timestamp = dataMessage.getTimestamp();
         if (dataMessage.getGroupContext().isPresent()) {
-            final SignalServiceGroupContext groupContext = dataMessage.getGroupContext().get();
+            final var groupContext = dataMessage.getGroupContext().get();
             if (groupContext.getGroupV1().isPresent()) {
-                SignalServiceGroup groupInfo = groupContext.getGroupV1().get();
+                var groupInfo = groupContext.getGroupV1().get();
                 this.groupInfo = new JsonGroupInfo(groupInfo);
             } else if (groupContext.getGroupV2().isPresent()) {
-                SignalServiceGroupV2 groupInfo = groupContext.getGroupV2().get();
+                var groupInfo = groupContext.getGroupV2().get();
                 this.groupInfo = new JsonGroupInfo(groupInfo);
             } else {
                 this.groupInfo = null;

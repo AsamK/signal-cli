@@ -17,7 +17,6 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 public class RecipientStore {
 
@@ -33,7 +32,7 @@ public class RecipientStore {
             return serviceAddress;
         }
 
-        for (SignalServiceAddress address : addresses) {
+        for (var address : addresses) {
             if (address.matches(serviceAddress)) {
                 return address;
             }
@@ -54,13 +53,13 @@ public class RecipientStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            Set<SignalServiceAddress> addresses = new HashSet<>();
+            var addresses = new HashSet<SignalServiceAddress>();
 
             if (node.isArray()) {
-                for (JsonNode recipient : node) {
-                    String recipientName = recipient.get("name").asText();
-                    UUID uuid = UuidUtil.parseOrThrow(recipient.get("uuid").asText());
-                    final SignalServiceAddress serviceAddress = new SignalServiceAddress(uuid, recipientName);
+                for (var recipient : node) {
+                    var recipientName = recipient.get("name").asText();
+                    var uuid = UuidUtil.parseOrThrow(recipient.get("uuid").asText());
+                    final var serviceAddress = new SignalServiceAddress(uuid, recipientName);
                     addresses.add(serviceAddress);
                 }
             }
@@ -76,7 +75,7 @@ public class RecipientStore {
                 Set<SignalServiceAddress> addresses, JsonGenerator json, SerializerProvider serializerProvider
         ) throws IOException {
             json.writeStartArray();
-            for (SignalServiceAddress address : addresses) {
+            for (var address : addresses) {
                 json.writeStartObject();
                 json.writeStringField("name", address.getNumber().get());
                 json.writeStringField("uuid", address.getUuid().get().toString());

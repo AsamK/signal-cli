@@ -1,7 +1,6 @@
 package org.asamk.signal.commands;
 
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -19,7 +18,7 @@ public class UpdateProfileCommand implements LocalCommand {
         subparser.addArgument("--about").help("New profile about text");
         subparser.addArgument("--about-emoji").help("New profile about emoji");
 
-        final MutuallyExclusiveGroup avatarOptions = subparser.addMutuallyExclusiveGroup();
+        final var avatarOptions = subparser.addMutuallyExclusiveGroup();
         avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
         avatarOptions.addArgument("--remove-avatar").action(Arguments.storeTrue());
 
@@ -28,10 +27,10 @@ public class UpdateProfileCommand implements LocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        String name = ns.getString("name");
-        String about = ns.getString("about");
-        String aboutEmoji = ns.getString("about_emoji");
-        String avatarPath = ns.getString("avatar");
+        var name = ns.getString("name");
+        var about = ns.getString("about");
+        var aboutEmoji = ns.getString("about_emoji");
+        var avatarPath = ns.getString("avatar");
         boolean removeAvatar = ns.getBoolean("remove_avatar");
 
         try {

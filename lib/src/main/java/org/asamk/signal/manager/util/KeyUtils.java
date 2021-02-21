@@ -6,8 +6,6 @@ import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
-import org.whispersystems.libsignal.ecc.ECKeyPair;
-import org.whispersystems.libsignal.ecc.ECPrivateKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
@@ -26,19 +24,19 @@ public class KeyUtils {
     }
 
     public static IdentityKeyPair generateIdentityKeyPair() {
-        ECKeyPair djbKeyPair = Curve.generateKeyPair();
-        IdentityKey djbIdentityKey = new IdentityKey(djbKeyPair.getPublicKey());
-        ECPrivateKey djbPrivateKey = djbKeyPair.getPrivateKey();
+        var djbKeyPair = Curve.generateKeyPair();
+        var djbIdentityKey = new IdentityKey(djbKeyPair.getPublicKey());
+        var djbPrivateKey = djbKeyPair.getPrivateKey();
 
         return new IdentityKeyPair(djbIdentityKey, djbPrivateKey);
     }
 
     public static List<PreKeyRecord> generatePreKeyRecords(final int offset, final int batchSize) {
-        List<PreKeyRecord> records = new ArrayList<>(batchSize);
-        for (int i = 0; i < batchSize; i++) {
-            int preKeyId = (offset + i) % Medium.MAX_VALUE;
-            ECKeyPair keyPair = Curve.generateKeyPair();
-            PreKeyRecord record = new PreKeyRecord(preKeyId, keyPair);
+        var records = new ArrayList<PreKeyRecord>(batchSize);
+        for (var i = 0; i < batchSize; i++) {
+            var preKeyId = (offset + i) % Medium.MAX_VALUE;
+            var keyPair = Curve.generateKeyPair();
+            var record = new PreKeyRecord(preKeyId, keyPair);
 
             records.add(record);
         }
@@ -48,7 +46,7 @@ public class KeyUtils {
     public static SignedPreKeyRecord generateSignedPreKeyRecord(
             final IdentityKeyPair identityKeyPair, final int signedPreKeyId
     ) {
-        ECKeyPair keyPair = Curve.generateKeyPair();
+        var keyPair = Curve.generateKeyPair();
         byte[] signature;
         try {
             signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
@@ -83,12 +81,12 @@ public class KeyUtils {
     }
 
     private static String getSecret(int size) {
-        byte[] secret = getSecretBytes(size);
+        var secret = getSecretBytes(size);
         return Base64.getEncoder().encodeToString(secret);
     }
 
     public static byte[] getSecretBytes(int size) {
-        byte[] secret = new byte[size];
+        var secret = new byte[size];
         secureRandom.nextBytes(secret);
         return secret;
     }

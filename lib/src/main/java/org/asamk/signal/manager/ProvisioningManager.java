@@ -79,37 +79,30 @@ public class ProvisioningManager {
     public static ProvisioningManager init(
             File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) {
-        PathConfig pathConfig = PathConfig.createDefault(settingsPath);
+        var pathConfig = PathConfig.createDefault(settingsPath);
 
-        final ServiceEnvironmentConfig serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(
-                serviceEnvironment,
-                userAgent);
+        final var serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
 
         return new ProvisioningManager(pathConfig, serviceConfiguration, userAgent);
     }
 
     public String getDeviceLinkUri() throws TimeoutException, IOException {
-        String deviceUuid = accountManager.getNewDeviceUuid();
+        var deviceUuid = accountManager.getNewDeviceUuid();
 
         return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
-        SignalServiceAccountManager.NewDeviceRegistrationReturn ret = accountManager.finishNewDeviceRegistration(
-                identityKey,
-                false,
-                true,
-                registrationId,
-                deviceName);
+        var ret = accountManager.finishNewDeviceRegistration(identityKey, false, true, registrationId, deviceName);
 
-        String username = ret.getNumber();
+        var username = ret.getNumber();
         // TODO do this check before actually registering
         if (SignalAccount.userExists(pathConfig.getDataPath(), username)) {
             throw new UserAlreadyExists(username, SignalAccount.getFileName(pathConfig.getDataPath(), username));
         }
 
         // Create new account with the synced identity
-        byte[] profileKeyBytes = ret.getProfileKey();
+        var profileKeyBytes = ret.getProfileKey();
         ProfileKey profileKey;
         if (profileKeyBytes == null) {
             profileKey = KeyUtils.createProfileKey();
@@ -121,7 +114,7 @@ public class ProvisioningManager {
             }
         }
 
-        try (SignalAccount account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
+        try (var account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
                 username,
                 ret.getUuid(),
                 password,
@@ -131,7 +124,7 @@ public class ProvisioningManager {
                 profileKey)) {
             account.save();
 
-            try (Manager m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
+            try (var m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
 
                 try {
                     m.refreshPreKeys();

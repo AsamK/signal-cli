@@ -6,10 +6,8 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -41,19 +39,19 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendMessage(final String message, final List<String> attachments, final String recipient) {
-        List<String> recipients = new ArrayList<>(1);
+        var recipients = new ArrayList<String>(1);
         recipients.add(recipient);
         return sendMessage(message, attachments, recipients);
     }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
-        String error = ErrorUtils.getErrorMessageFromSendMessageResult(result);
+        var error = ErrorUtils.getErrorMessageFromSendMessageResult(result);
 
         if (error == null) {
             return;
         }
 
-        final String message = timestamp + "\nFailed to send message:\n" + error + '\n';
+        final var message = timestamp + "\nFailed to send message:\n" + error + '\n';
 
         if (result.getIdentityFailure() != null) {
             throw new Error.UntrustedIdentity(message);
@@ -70,15 +68,15 @@ public class DbusSignalImpl implements Signal {
             return;
         }
 
-        List<String> errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
+        var errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {
             return;
         }
 
-        StringBuilder message = new StringBuilder();
+        var message = new StringBuilder();
         message.append(timestamp).append('\n');
         message.append("Failed to send (some) messages:\n");
-        for (String error : errors) {
+        for (var error : errors) {
             message.append(error).append('\n');
         }
 
@@ -88,7 +86,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            final Pair<Long, List<SendMessageResult>> results = m.sendMessage(message, attachments, recipients);
+            final var results = m.sendMessage(message, attachments, recipients);
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (InvalidNumberException e) {
@@ -105,7 +103,7 @@ public class DbusSignalImpl implements Signal {
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final Pair<Long, SendMessageResult> results = m.sendSelfMessage(message, attachments);
+            final var results = m.sendSelfMessage(message, attachments);
             checkSendMessageResult(results.first(), results.second());
             return results.first();
         } catch (AttachmentInvalidException e) {
@@ -118,7 +116,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
-            final Pair<Long, List<SendMessageResult>> results = m.sendEndSessionMessage(recipients);
+            final var results = m.sendEndSessionMessage(recipients);
             checkSendMessageResults(results.first(), results.second());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -130,9 +128,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            Pair<Long, List<SendMessageResult>> results = m.sendGroupMessage(message,
-                    attachments,
-                    GroupId.unknownVersion(groupId));
+            var results = m.sendGroupMessage(message, attachments, GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
@@ -182,9 +178,9 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<byte[]> getGroupIds() {
-        List<GroupInfo> groups = m.getGroups();
-        List<byte[]> ids = new ArrayList<>(groups.size());
-        for (GroupInfo group : groups) {
+        var groups = m.getGroups();
+        var ids = new ArrayList<byte[]>(groups.size());
+        for (var group : groups) {
             ids.add(group.getGroupId().serialize());
         }
         return ids;
@@ -192,7 +188,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public String getGroupName(final byte[] groupId) {
-        GroupInfo group = m.getGroup(GroupId.unknownVersion(groupId));
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return "";
         } else {
@@ -202,7 +198,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getGroupMembers(final byte[] groupId) {
-        GroupInfo group = m.getGroup(GroupId.unknownVersion(groupId));
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return List.of();
         } else {
@@ -229,9 +225,10 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final Pair<GroupId, List<SendMessageResult>> results = m.updateGroup(groupId == null
-                    ? null
-                    : GroupId.unknownVersion(groupId), name, members, avatar == null ? null : new File(avatar));
+            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId),
+                    name,
+                    members,
+                    avatar == null ? null : new File(avatar));
             checkSendMessageResults(0, results.second());
             return results.first().serialize();
         } catch (IOException e) {

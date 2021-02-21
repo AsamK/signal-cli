@@ -23,7 +23,7 @@ public class RegisterCommand implements RegistrationCommand {
     @Override
     public int handleCommand(final Namespace ns, final RegistrationManager m) {
         final boolean voiceVerification = ns.getBoolean("voice");
-        final String captcha = ns.getString("captcha");
+        final var captcha = ns.getString("captcha");
 
         try {
             m.register(voiceVerification, captcha);

@@ -35,7 +35,7 @@ public final class GroupInviteLinkUrl {
      * @throws InvalidGroupLinkException If group url, but cannot be parsed.
      */
     public static GroupInviteLinkUrl fromUri(String urlString) throws InvalidGroupLinkException, UnknownGroupLinkVersionException {
-        URI uri = getGroupUrl(urlString);
+        var uri = getGroupUrl(urlString);
 
         if (uri == null) {
             return null;
@@ -46,21 +46,21 @@ public final class GroupInviteLinkUrl {
                 throw new InvalidGroupLinkException("No path was expected in uri");
             }
 
-            String encoding = uri.getFragment();
+            var encoding = uri.getFragment();
 
             if (encoding == null || encoding.length() == 0) {
                 throw new InvalidGroupLinkException("No reference was in the uri");
             }
 
-            byte[] bytes = Base64UrlSafe.decodePaddingAgnostic(encoding);
-            GroupInviteLink groupInviteLink = GroupInviteLink.parseFrom(bytes);
+            var bytes = Base64UrlSafe.decodePaddingAgnostic(encoding);
+            var groupInviteLink = GroupInviteLink.parseFrom(bytes);
 
             switch (groupInviteLink.getContentsCase()) {
                 case V1CONTENTS: {
-                    GroupInviteLink.GroupInviteLinkContentsV1 groupInviteLinkContentsV1 = groupInviteLink.getV1Contents();
-                    GroupMasterKey groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.getGroupMasterKey()
+                    var groupInviteLinkContentsV1 = groupInviteLink.getV1Contents();
+                    var groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.getGroupMasterKey()
                             .toByteArray());
-                    GroupLinkPassword password = GroupLinkPassword.fromBytes(groupInviteLinkContentsV1.getInviteLinkPassword()
+                    var password = GroupLinkPassword.fromBytes(groupInviteLinkContentsV1.getInviteLinkPassword()
                             .toByteArray());
 
                     return new GroupInviteLinkUrl(groupMasterKey, password);
@@ -78,7 +78,7 @@ public final class GroupInviteLinkUrl {
      */
     private static URI getGroupUrl(String urlString) {
         try {
-            URI url = new URI(urlString);
+            var url = new URI(urlString);
 
             if (!"https".equalsIgnoreCase(url.getScheme()) && !"sgnl".equalsIgnoreCase(url.getScheme())) {
                 return null;
@@ -97,13 +97,13 @@ public final class GroupInviteLinkUrl {
     }
 
     protected static String createUrl(GroupMasterKey groupMasterKey, GroupLinkPassword password) {
-        GroupInviteLink groupInviteLink = GroupInviteLink.newBuilder()
+        var groupInviteLink = GroupInviteLink.newBuilder()
                 .setV1Contents(GroupInviteLink.GroupInviteLinkContentsV1.newBuilder()
                         .setGroupMasterKey(ByteString.copyFrom(groupMasterKey.serialize()))
                         .setInviteLinkPassword(ByteString.copyFrom(password.serialize())))
                 .build();
 
-        String encoding = Base64UrlSafe.encodeBytesWithoutPadding(groupInviteLink.toByteArray());
+        var encoding = Base64UrlSafe.encodeBytesWithoutPadding(groupInviteLink.toByteArray());
 
         return GROUP_URL_PREFIX + encoding;
     }

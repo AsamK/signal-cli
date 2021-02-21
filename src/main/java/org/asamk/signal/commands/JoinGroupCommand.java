@@ -4,16 +4,12 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
 import java.io.IOException;
-import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.util.ErrorUtils.handleIOException;
@@ -29,7 +25,7 @@ public class JoinGroupCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         final GroupInviteLinkUrl linkUrl;
-        String uri = ns.getString("uri");
+        var uri = ns.getString("uri");
         try {
             linkUrl = GroupInviteLinkUrl.fromUri(uri);
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException e) {
@@ -46,8 +42,8 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
-            final Pair<GroupId, List<SendMessageResult>> results = m.joinGroup(linkUrl);
-            GroupId newGroupId = results.first();
+            final var results = m.joinGroup(linkUrl);
+            var newGroupId = results.first();
             if (!m.getGroup(newGroupId).isMember(m.getSelfAddress())) {
                 System.out.println("Requested to join group \"" + newGroupId.toBase64() + "\"");
             } else {

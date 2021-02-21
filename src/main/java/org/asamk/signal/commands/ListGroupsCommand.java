@@ -7,7 +7,6 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +30,7 @@ public class ListGroupsCommand implements LocalCommand {
 
     private static void printGroupPlainText(Manager m, GroupInfo group, boolean detailed) {
         if (detailed) {
-            final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
+            final var groupInviteLink = group.getGroupInviteLink();
 
             System.out.println(String.format(
                     "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
@@ -70,11 +68,11 @@ public class ListGroupsCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         if (ns.get("output") == OutputType.JSON) {
-            final JsonWriter jsonWriter = new JsonWriter(System.out);
+            final var jsonWriter = new JsonWriter(System.out);
 
-            List<JsonGroup> jsonGroups = new ArrayList<>();
-            for (GroupInfo group : m.getGroups()) {
-                final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
+            var jsonGroups = new ArrayList<JsonGroup>();
+            for (var group : m.getGroups()) {
+                final var groupInviteLink = group.getGroupInviteLink();
 
                 jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
@@ -96,7 +94,7 @@ public class ListGroupsCommand implements LocalCommand {
             return 0;
         } else {
             boolean detailed = ns.getBoolean("detailed");
-            for (GroupInfo group : m.getGroups()) {
+            for (var group : m.getGroups()) {
                 printGroupPlainText(m, group, detailed);
             }
         }

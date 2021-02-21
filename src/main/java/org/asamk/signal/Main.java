@@ -18,7 +18,6 @@ package org.asamk.signal;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
@@ -36,11 +35,11 @@ public class Main {
         // Configuring the logger needs to happen before any logger is initialized
         configureLogging(isVerbose(args));
 
-        ArgumentParser parser = App.buildArgumentParser();
+        var parser = App.buildArgumentParser();
 
-        Namespace ns = parser.parseArgsOrFail(args);
+        var ns = parser.parseArgsOrFail(args);
 
-        int res = new App(ns).init();
+        var res = new App(ns).init();
         System.exit(res);
     }
 
@@ -51,7 +50,7 @@ public class Main {
     }
 
     private static boolean isVerbose(String[] args) {
-        ArgumentParser parser = ArgumentParsers.newFor("signal-cli").build().defaultHelp(false);
+        var parser = ArgumentParsers.newFor("signal-cli").build().defaultHelp(false);
         parser.addArgument("--verbose").action(Arguments.storeTrue());
 
         Namespace ns;

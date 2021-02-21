@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 class JsonSessionStore implements SignalServiceSessionStore {
 
@@ -49,14 +48,14 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public synchronized SessionRecord loadSession(SignalProtocolAddress address) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        for (SessionInfo info : sessions) {
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
+        for (var info : sessions) {
             if (info.address.matches(serviceAddress) && info.deviceId == address.getDeviceId()) {
                 try {
                     return new SessionRecord(info.sessionRecord);
                 } catch (IOException e) {
                     logger.warn("Failed to load session, resetting session: {}", e.getMessage());
-                    final SessionRecord sessionRecord = new SessionRecord();
+                    final var sessionRecord = new SessionRecord();
                     info.sessionRecord = sessionRecord.serialize();
                     return sessionRecord;
                 }
@@ -72,10 +71,10 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public synchronized List<Integer> getSubDeviceSessions(String name) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(name);
+        var serviceAddress = resolveSignalServiceAddress(name);
 
-        List<Integer> deviceIds = new LinkedList<>();
-        for (SessionInfo info : sessions) {
+        var deviceIds = new LinkedList<Integer>();
+        for (var info : sessions) {
             if (info.address.matches(serviceAddress) && info.deviceId != 1) {
                 deviceIds.add(info.deviceId);
             }
@@ -86,8 +85,8 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public synchronized void storeSession(SignalProtocolAddress address, SessionRecord record) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        for (SessionInfo info : sessions) {
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
+        for (var info : sessions) {
             if (info.address.matches(serviceAddress) && info.deviceId == address.getDeviceId()) {
                 if (!info.address.getUuid().isPresent() || !info.address.getNumber().isPresent()) {
                     info.address = serviceAddress;
@@ -102,8 +101,8 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public synchronized boolean containsSession(SignalProtocolAddress address) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        for (SessionInfo info : sessions) {
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
+        for (var info : sessions) {
             if (info.address.matches(serviceAddress) && info.deviceId == address.getDeviceId()) {
                 return true;
             }
@@ -113,13 +112,13 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public synchronized void deleteSession(SignalProtocolAddress address) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
         sessions.removeIf(info -> info.address.matches(serviceAddress) && info.deviceId == address.getDeviceId());
     }
 
     @Override
     public synchronized void deleteAllSessions(String name) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(name);
+        var serviceAddress = resolveSignalServiceAddress(name);
         deleteAllSessions(serviceAddress);
     }
 
@@ -129,7 +128,7 @@ class JsonSessionStore implements SignalServiceSessionStore {
 
     @Override
     public void archiveSession(final SignalProtocolAddress address) {
-        final SessionRecord sessionRecord = loadSession(address);
+        final var sessionRecord = loadSession(address);
         if (sessionRecord == null) {
             return;
         }
@@ -138,9 +137,9 @@ class JsonSessionStore implements SignalServiceSessionStore {
     }
 
     public void archiveAllSessions() {
-        for (SessionInfo info : sessions) {
+        for (var info : sessions) {
             try {
-                final SessionRecord sessionRecord = new SessionRecord(info.sessionRecord);
+                final var sessionRecord = new SessionRecord(info.sessionRecord);
                 sessionRecord.archiveCurrentState();
                 info.sessionRecord = sessionRecord.serialize();
             } catch (IOException ignored) {
@@ -156,23 +155,23 @@ class JsonSessionStore implements SignalServiceSessionStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            JsonSessionStore sessionStore = new JsonSessionStore();
+            var sessionStore = new JsonSessionStore();
 
             if (node.isArray()) {
-                for (JsonNode session : node) {
-                    String sessionName = session.hasNonNull("name") ? session.get("name").asText() : null;
+                for (var session : node) {
+                    var sessionName = session.hasNonNull("name") ? session.get("name").asText() : null;
                     if (UuidUtil.isUuid(sessionName)) {
                         // Ignore sessions that were incorrectly created with UUIDs as name
                         continue;
                     }
 
-                    UUID uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
-                    final SignalServiceAddress serviceAddress = uuid == null
+                    var uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
+                    final var serviceAddress = uuid == null
                             ? Utils.getSignalServiceAddressFromIdentifier(sessionName)
                             : new SignalServiceAddress(uuid, sessionName);
-                    final int deviceId = session.get("deviceId").asInt();
-                    final byte[] record = Base64.getDecoder().decode(session.get("record").asText());
-                    SessionInfo sessionInfo = new SessionInfo(serviceAddress, deviceId, record);
+                    final var deviceId = session.get("deviceId").asInt();
+                    final var record = Base64.getDecoder().decode(session.get("record").asText());
+                    var sessionInfo = new SessionInfo(serviceAddress, deviceId, record);
                     sessionStore.sessions.add(sessionInfo);
                 }
             }
@@ -188,7 +187,7 @@ class JsonSessionStore implements SignalServiceSessionStore {
                 JsonSessionStore jsonSessionStore, JsonGenerator json, SerializerProvider serializerProvider
         ) throws IOException {
             json.writeStartArray();
-            for (SessionInfo sessionInfo : jsonSessionStore.sessions) {
+            for (var sessionInfo : jsonSessionStore.sessions) {
                 json.writeStartObject();
                 if (sessionInfo.address.getNumber().isPresent()) {
                     json.writeStringField("name", sessionInfo.address.getNumber().get());

@@ -5,10 +5,8 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 
 import java.io.IOException;
-import java.util.List;
 
 public class ListDevicesCommand implements LocalCommand {
 
@@ -19,8 +17,8 @@ public class ListDevicesCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         try {
-            List<DeviceInfo> devices = m.getLinkedDevices();
-            for (DeviceInfo d : devices) {
+            var devices = m.getLinkedDevices();
+            for (var d : devices) {
                 System.out.println("Device "
                         + d.getId()
                         + (d.getId() == m.getDeviceId() ? " (this device)" : "")

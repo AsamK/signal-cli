@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 public class ProfileStore {
 
@@ -34,7 +33,7 @@ public class ProfileStore {
     private final List<SignalProfileEntry> profiles = new ArrayList<>();
 
     public SignalProfileEntry getProfileEntry(SignalServiceAddress serviceAddress) {
-        for (SignalProfileEntry entry : profiles) {
+        for (var entry : profiles) {
             if (entry.getServiceAddress().matches(serviceAddress)) {
                 return entry;
             }
@@ -43,7 +42,7 @@ public class ProfileStore {
     }
 
     public ProfileKey getProfileKey(SignalServiceAddress serviceAddress) {
-        for (SignalProfileEntry entry : profiles) {
+        for (var entry : profiles) {
             if (entry.getServiceAddress().matches(serviceAddress)) {
                 return entry.getProfileKey();
             }
@@ -58,12 +57,8 @@ public class ProfileStore {
             SignalProfile profile,
             ProfileKeyCredential profileKeyCredential
     ) {
-        SignalProfileEntry newEntry = new SignalProfileEntry(serviceAddress,
-                profileKey,
-                now,
-                profile,
-                profileKeyCredential);
-        for (int i = 0; i < profiles.size(); i++) {
+        var newEntry = new SignalProfileEntry(serviceAddress, profileKey, now, profile, profileKeyCredential);
+        for (var i = 0; i < profiles.size(); i++) {
             if (profiles.get(i).getServiceAddress().matches(serviceAddress)) {
                 profiles.set(i, newEntry);
                 return;
@@ -74,8 +69,8 @@ public class ProfileStore {
     }
 
     public void storeProfileKey(SignalServiceAddress serviceAddress, ProfileKey profileKey) {
-        SignalProfileEntry newEntry = new SignalProfileEntry(serviceAddress, profileKey, 0, null, null);
-        for (int i = 0; i < profiles.size(); i++) {
+        var newEntry = new SignalProfileEntry(serviceAddress, profileKey, 0, null, null);
+        for (var i = 0; i < profiles.size(); i++) {
             if (profiles.get(i).getServiceAddress().matches(serviceAddress)) {
                 if (!profiles.get(i).getProfileKey().equals(profileKey)) {
                     profiles.set(i, newEntry);
@@ -95,13 +90,13 @@ public class ProfileStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            List<SignalProfileEntry> addresses = new ArrayList<>();
+            var addresses = new ArrayList<SignalProfileEntry>();
 
             if (node.isArray()) {
-                for (JsonNode entry : node) {
-                    String name = entry.hasNonNull("name") ? entry.get("name").asText() : null;
-                    UUID uuid = entry.hasNonNull("uuid") ? UuidUtil.parseOrNull(entry.get("uuid").asText()) : null;
-                    final SignalServiceAddress serviceAddress = new SignalServiceAddress(uuid, name);
+                for (var entry : node) {
+                    var name = entry.hasNonNull("name") ? entry.get("name").asText() : null;
+                    var uuid = entry.hasNonNull("uuid") ? UuidUtil.parseOrNull(entry.get("uuid").asText()) : null;
+                    final var serviceAddress = new SignalServiceAddress(uuid, name);
                     ProfileKey profileKey = null;
                     try {
                         profileKey = new ProfileKey(Base64.getDecoder().decode(entry.get("profileKey").asText()));
@@ -115,8 +110,8 @@ public class ProfileStore {
                         } catch (Throwable ignored) {
                         }
                     }
-                    long lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
-                    SignalProfile profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
+                    var lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
+                    var profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
                     addresses.add(new SignalProfileEntry(serviceAddress,
                             profileKey,
                             lastUpdateTimestamp,
@@ -136,8 +131,8 @@ public class ProfileStore {
                 List<SignalProfileEntry> profiles, JsonGenerator json, SerializerProvider serializerProvider
         ) throws IOException {
             json.writeStartArray();
-            for (SignalProfileEntry profileEntry : profiles) {
-                final SignalServiceAddress address = profileEntry.getServiceAddress();
+            for (var profileEntry : profiles) {
+                final var address = profileEntry.getServiceAddress();
                 json.writeStartObject();
                 if (address.getNumber().isPresent()) {
                     json.writeStringField("name", address.getNumber().get());

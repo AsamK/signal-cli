@@ -36,7 +36,7 @@ public class MessageCache {
                 return Stream.of(dir);
             }
 
-            final File[] files = Objects.requireNonNull(dir.listFiles());
+            final var files = Objects.requireNonNull(dir.listFiles());
             if (files.length == 0) {
                 try {
                     Files.delete(dir.toPath());
@@ -50,11 +50,11 @@ public class MessageCache {
     }
 
     public CachedMessage cacheMessage(SignalServiceEnvelope envelope) {
-        final long now = new Date().getTime();
-        final String source = envelope.hasSource() ? envelope.getSourceAddress().getLegacyIdentifier() : "";
+        final var now = new Date().getTime();
+        final var source = envelope.hasSource() ? envelope.getSourceAddress().getLegacyIdentifier() : "";
 
         try {
-            File cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
+            var cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
             MessageCacheUtils.storeEnvelope(envelope, cacheFile);
             return new CachedMessage(cacheFile);
         } catch (IOException e) {
@@ -72,7 +72,7 @@ public class MessageCache {
     }
 
     private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
-        File cachePath = getMessageCachePath(sender);
+        var cachePath = getMessageCachePath(sender);
         IOUtils.createPrivateDirectories(cachePath);
         return new File(cachePath, now + "_" + timestamp);
     }

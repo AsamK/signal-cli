@@ -47,10 +47,10 @@ public class LegacyJsonThreadStore {
         public Map<String, ThreadInfo> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            Map<String, ThreadInfo> threads = new HashMap<>();
+            var threads = new HashMap<String, ThreadInfo>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-            for (JsonNode n : node) {
-                ThreadInfo t = jsonProcessor.treeToValue(n, ThreadInfo.class);
+            for (var n : node) {
+                var t = jsonProcessor.treeToValue(n, ThreadInfo.class);
                 threads.put(t.id, t);
             }
 

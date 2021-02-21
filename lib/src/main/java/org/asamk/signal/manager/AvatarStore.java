@@ -29,7 +29,7 @@ public class AvatarStore {
     }
 
     public StreamDetails retrieveGroupAvatar(GroupId groupId) throws IOException {
-        final File groupAvatarFile = getGroupAvatarFile(groupId);
+        final var groupAvatarFile = getGroupAvatarFile(groupId);
         return retrieveAvatar(groupAvatarFile);
     }
 

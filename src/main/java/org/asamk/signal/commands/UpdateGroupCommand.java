@@ -40,7 +40,7 @@ public class UpdateGroupCommand implements DbusCommand {
             groupId = new byte[0];
         }
 
-        String groupName = ns.getString("name");
+        var groupName = ns.getString("name");
         if (groupName == null) {
             groupName = "";
         }
@@ -50,13 +50,13 @@ public class UpdateGroupCommand implements DbusCommand {
             groupMembers = new ArrayList<>();
         }
 
-        String groupAvatar = ns.getString("avatar");
+        var groupAvatar = ns.getString("avatar");
         if (groupAvatar == null) {
             groupAvatar = "";
         }
 
         try {
-            byte[] newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
+            var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
                 System.out.println("Creating new group \"" + Base64.getEncoder().encodeToString(newGroupId) + "\" …");
             }

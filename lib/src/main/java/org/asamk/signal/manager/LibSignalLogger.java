@@ -18,7 +18,7 @@ public class LibSignalLogger implements SignalProtocolLogger {
 
     @Override
     public void log(final int priority, final String tag, final String message) {
-        final String logMessage = String.format("[%s]: %s", tag, message);
+        final var logMessage = String.format("[%s]: %s", tag, message);
         switch (priority) {
             case SignalProtocolLogger.VERBOSE:
                 logger.trace(logMessage);

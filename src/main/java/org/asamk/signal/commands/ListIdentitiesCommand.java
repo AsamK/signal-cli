@@ -9,12 +9,10 @@ import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
-import java.util.List;
-
 public class ListIdentitiesCommand implements LocalCommand {
 
     private static void printIdentityFingerprint(Manager m, IdentityInfo theirId) {
-        String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
+        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
         System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s",
                 theirId.getAddress().getNumber().orNull(),
                 theirId.getTrustLevel(),
@@ -31,14 +29,14 @@ public class ListIdentitiesCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         if (ns.get("number") == null) {
-            for (IdentityInfo identity : m.getIdentities()) {
+            for (var identity : m.getIdentities()) {
                 printIdentityFingerprint(m, identity);
             }
         } else {
-            String number = ns.getString("number");
+            var number = ns.getString("number");
             try {
-                List<IdentityInfo> identities = m.getIdentities(number);
-                for (IdentityInfo id : identities) {
+                var identities = m.getIdentities(number);
+                for (var id : identities) {
                     printIdentityFingerprint(m, id);
                 }
             } catch (InvalidNumberException e) {

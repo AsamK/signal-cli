@@ -20,7 +20,7 @@ public class SetPinCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         try {
-            String registrationLockPin = ns.getString("registrationLockPin");
+            var registrationLockPin = ns.getString("registrationLockPin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
             return 0;
         } catch (UnauthenticatedResponseException e) {

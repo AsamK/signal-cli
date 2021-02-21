@@ -10,7 +10,7 @@ public class Util {
     }
 
     public static String getStringIfNotBlank(Optional<String> value) {
-        String string = value.orNull();
+        var string = value.orNull();
         if (string == null || string.isBlank()) {
             return null;
         }
@@ -18,10 +18,10 @@ public class Util {
     }
 
     public static String formatSafetyNumber(String digits) {
-        final int partCount = 12;
-        int partSize = digits.length() / partCount;
-        StringBuilder f = new StringBuilder(digits.length() + partCount);
-        for (int i = 0; i < partCount; i++) {
+        final var partCount = 12;
+        var partSize = digits.length() / partCount;
+        var f = new StringBuilder(digits.length() + partCount);
+        for (var i = 0; i < partCount; i++) {
             f.append(digits, i * partSize, (i * partSize) + partSize).append(" ");
         }
         return f.toString();

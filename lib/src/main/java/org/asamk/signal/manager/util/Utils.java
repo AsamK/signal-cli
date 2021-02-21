@@ -3,7 +3,6 @@ package org.asamk.signal.manager.util;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import org.whispersystems.libsignal.IdentityKey;
-import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
@@ -21,7 +20,7 @@ import java.nio.file.Files;
 public class Utils {
 
     public static String getFileMimeType(File file, String defaultMimeType) throws IOException {
-        String mime = Files.probeContentType(file.toPath());
+        var mime = Files.probeContentType(file.toPath());
         if (mime == null) {
             try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
                 mime = URLConnection.guessContentTypeFromStream(bufferedStream);
@@ -35,8 +34,8 @@ public class Utils {
 
     public static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
         InputStream stream = new FileInputStream(file);
-        final long size = file.length();
-        final String mime = getFileMimeType(file, "application/octet-stream");
+        final var size = file.length();
+        final var mime = getFileMimeType(file, "application/octet-stream");
         return new StreamDetails(stream, mime, size);
     }
 
@@ -66,7 +65,7 @@ public class Utils {
             theirId = theirAddress.getNumber().get().getBytes();
         }
 
-        Fingerprint fingerprint = new NumericFingerprintGenerator(5200).createFor(version,
+        var fingerprint = new NumericFingerprintGenerator(5200).createFor(version,
                 ownId,
                 ownIdentityKey,
                 theirId,
@@ -83,7 +82,7 @@ public class Utils {
     }
 
     public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
-        JsonNode node = parent.get(name);
+        var node = parent.get(name);
         if (node == null || node.isNull()) {
             throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ",
                     name));

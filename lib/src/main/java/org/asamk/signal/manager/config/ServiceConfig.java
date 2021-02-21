@@ -39,7 +39,7 @@ public class ServiceConfig {
         try {
             TrustStore contactTrustStore = new IasTrustStore();
 
-            KeyStore keyStore = KeyStore.getInstance("BKS");
+            var keyStore = KeyStore.getInstance("BKS");
             keyStore.load(contactTrustStore.getKeyStoreInputStream(),
                     contactTrustStore.getKeyStorePassword().toCharArray());
 
@@ -74,7 +74,7 @@ public class ServiceConfig {
                 .header("User-Agent", userAgent)
                 .build());
 
-        final List<Interceptor> interceptors = List.of(userAgentInterceptor);
+        final var interceptors = List.of(userAgentInterceptor);
 
         switch (serviceEnvironment) {
             case LIVE:

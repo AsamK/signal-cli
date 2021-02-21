@@ -7,7 +7,6 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.List;
 
@@ -48,7 +47,7 @@ public class JsonMessageEnvelope {
 
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
-            SignalServiceAddress source = envelope.getSourceAddress();
+            var source = envelope.getSourceAddress();
             this.source = source.getLegacyIdentifier();
             this.sourceDevice = envelope.getSourceDevice();
             this.relay = source.getRelay().orNull();

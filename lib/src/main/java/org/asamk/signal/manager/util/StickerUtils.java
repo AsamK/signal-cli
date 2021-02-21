@@ -13,8 +13,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class StickerUtils {
@@ -33,7 +31,7 @@ public class StickerUtils {
             throw new StickerPackInvalidException("Could not find manifest.json");
         }
 
-        JsonStickerPack pack = parseStickerPack(rootPath, zip);
+        var pack = parseStickerPack(rootPath, zip);
 
         if (pack.stickers == null) {
             throw new StickerPackInvalidException("Must set a 'stickers' field.");
@@ -43,8 +41,8 @@ public class StickerUtils {
             throw new StickerPackInvalidException("Must include stickers.");
         }
 
-        List<SignalServiceStickerManifestUpload.StickerInfo> stickers = new ArrayList<>(pack.stickers.size());
-        for (JsonStickerPack.JsonSticker sticker : pack.stickers) {
+        var stickers = new ArrayList<SignalServiceStickerManifestUpload.StickerInfo>(pack.stickers.size());
+        for (var sticker : pack.stickers) {
             if (sticker.file == null) {
                 throw new StickerPackInvalidException("Must set a 'file' field on each sticker.");
             }
@@ -56,9 +54,8 @@ public class StickerUtils {
                 throw new StickerPackInvalidException("Could not find find " + sticker.file);
             }
 
-            String contentType = Utils.getFileMimeType(new File(sticker.file), null);
-            SignalServiceStickerManifestUpload.StickerInfo stickerInfo = new SignalServiceStickerManifestUpload.StickerInfo(
-                    data.first(),
+            var contentType = Utils.getFileMimeType(new File(sticker.file), null);
+            var stickerInfo = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
                     Optional.fromNullable(sticker.emoji).or(""),
                     contentType);
@@ -78,7 +75,7 @@ public class StickerUtils {
                 throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
             }
 
-            String contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
+            var contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
             cover = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
                     Optional.fromNullable(pack.cover.emoji).or(""),
@@ -102,10 +99,10 @@ public class StickerUtils {
             final String rootPath, final ZipFile zip, final String subfile
     ) throws IOException {
         if (zip != null) {
-            final ZipEntry entry = zip.getEntry(subfile);
+            final var entry = zip.getEntry(subfile);
             return new Pair<>(zip.getInputStream(entry), entry.getSize());
         } else {
-            final File file = new File(rootPath, subfile);
+            final var file = new File(rootPath, subfile);
             return new Pair<>(new FileInputStream(file), file.length());
         }
     }

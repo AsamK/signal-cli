@@ -29,7 +29,7 @@ class SendReceiptAction implements HandleAction {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final SendReceiptAction that = (SendReceiptAction) o;
+        final var that = (SendReceiptAction) o;
         return timestamp == that.timestamp && address.equals(that.address);
     }
 
@@ -110,7 +110,7 @@ class SendGroupInfoRequestAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final SendGroupInfoRequestAction that = (SendGroupInfoRequestAction) o;
+        final var that = (SendGroupInfoRequestAction) o;
 
         if (!address.equals(that.address)) return false;
         return groupId.equals(that.groupId);
@@ -118,7 +118,7 @@ class SendGroupInfoRequestAction implements HandleAction {
 
     @Override
     public int hashCode() {
-        int result = address.hashCode();
+        var result = address.hashCode();
         result = 31 * result + groupId.hashCode();
         return result;
     }
@@ -144,7 +144,7 @@ class SendGroupInfoAction implements HandleAction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final SendGroupInfoAction that = (SendGroupInfoAction) o;
+        final var that = (SendGroupInfoAction) o;
 
         if (!address.equals(that.address)) return false;
         return groupId.equals(that.groupId);
@@ -152,7 +152,7 @@ class SendGroupInfoAction implements HandleAction {
 
     @Override
     public int hashCode() {
-        int result = address.hashCode();
+        var result = address.hashCode();
         result = 31 * result + groupId.hashCode();
         return result;
     }

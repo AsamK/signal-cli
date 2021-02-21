@@ -45,7 +45,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
-        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
+        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -61,9 +61,9 @@ public class DaemonCommand implements MultiLocalCommand {
             busType = DBusConnection.DBusBusType.SESSION;
         }
 
-        try (DBusConnection conn = DBusConnection.getConnection(busType)) {
-            String objectPath = DbusConfig.getObjectPath();
-            Thread t = run(conn, objectPath, m, ignoreAttachments, inJson);
+        try (var conn = DBusConnection.getConnection(busType)) {
+            var objectPath = DbusConfig.getObjectPath();
+            var t = run(conn, objectPath, m, ignoreAttachments, inJson);
 
             conn.requestBusName(DbusConfig.getBusname());
 
@@ -80,7 +80,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public int handleCommand(final Namespace ns, final List<Manager> managers) {
-        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
+        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -96,17 +96,17 @@ public class DaemonCommand implements MultiLocalCommand {
             busType = DBusConnection.DBusBusType.SESSION;
         }
 
-        try (DBusConnection conn = DBusConnection.getConnection(busType)) {
-            List<Thread> receiveThreads = new ArrayList<>();
-            for (Manager m : managers) {
-                String objectPath = DbusConfig.getObjectPath(m.getUsername());
-                Thread thread = run(conn, objectPath, m, ignoreAttachments, inJson);
+        try (var conn = DBusConnection.getConnection(busType)) {
+            var receiveThreads = new ArrayList<Thread>();
+            for (var m : managers) {
+                var objectPath = DbusConfig.getObjectPath(m.getUsername());
+                var thread = run(conn, objectPath, m, ignoreAttachments, inJson);
                 receiveThreads.add(thread);
             }
 
             conn.requestBusName(DbusConfig.getBusname());
 
-            for (Thread t : receiveThreads) {
+            for (var t : receiveThreads) {
                 try {
                     t.join();
                 } catch (InterruptedException ignored) {
@@ -124,7 +124,7 @@ public class DaemonCommand implements MultiLocalCommand {
     ) throws DBusException {
         conn.exportObject(objectPath, new DbusSignalImpl(m));
 
-        final Thread thread = new Thread(() -> {
+        final var thread = new Thread(() -> {
             while (true) {
                 try {
                     m.receiveMessages(1,

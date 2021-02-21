@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,7 +37,7 @@ public class GetUserStatusCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         // Setup the json object mapper
-        boolean inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
+        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
         if (ns.getBoolean("json")) {
@@ -56,9 +55,9 @@ public class GetUserStatusCommand implements LocalCommand {
 
         // Output
         if (inJson) {
-            final JsonWriter jsonWriter = new JsonWriter(System.out);
+            final var jsonWriter = new JsonWriter(System.out);
 
-            List<JsonUserStatus> jsonUserStatuses = registered.entrySet()
+            var jsonUserStatuses = registered.entrySet()
                     .stream()
                     .map(entry -> new JsonUserStatus(entry.getKey(), entry.getValue()))
                     .collect(Collectors.toList());
@@ -70,7 +69,7 @@ public class GetUserStatusCommand implements LocalCommand {
                 return 3;
             }
         } else {
-            for (Map.Entry<String, Boolean> entry : registered.entrySet()) {
+            for (var entry : registered.entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
         }

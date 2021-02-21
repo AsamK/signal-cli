@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 public class JsonIdentityKeyStore implements IdentityKeyStore {
 
@@ -85,7 +84,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public boolean saveIdentity(
             SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel, Date added
     ) {
-        for (IdentityInfo id : identities) {
+        for (var id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
             }
@@ -111,7 +110,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     public void setIdentityTrustLevel(
             SignalServiceAddress serviceAddress, IdentityKey identityKey, TrustLevel trustLevel
     ) {
-        for (IdentityInfo id : identities) {
+        for (var id : identities) {
             if (!id.address.matches(serviceAddress) || !id.identityKey.equals(identityKey)) {
                 continue;
             }
@@ -129,10 +128,10 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     @Override
     public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
         // TODO implement possibility for different handling of incoming/outgoing trust decisions
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        boolean trustOnFirstUse = true;
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
+        var trustOnFirstUse = true;
 
-        for (IdentityInfo id : identities) {
+        for (var id : identities) {
             if (!id.address.matches(serviceAddress)) {
                 continue;
             }
@@ -149,20 +148,20 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
 
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
-        SignalServiceAddress serviceAddress = resolveSignalServiceAddress(address.getName());
-        IdentityInfo identity = getIdentity(serviceAddress);
+        var serviceAddress = resolveSignalServiceAddress(address.getName());
+        var identity = getIdentity(serviceAddress);
         return identity == null ? null : identity.getIdentityKey();
     }
 
     public IdentityInfo getIdentity(SignalServiceAddress serviceAddress) {
         long maxDate = 0;
         IdentityInfo maxIdentity = null;
-        for (IdentityInfo id : this.identities) {
+        for (var id : this.identities) {
             if (!id.address.matches(serviceAddress)) {
                 continue;
             }
 
-            final long time = id.getDateAdded().getTime();
+            final var time = id.getDateAdded().getTime();
             if (maxIdentity == null || maxDate <= time) {
                 maxDate = time;
                 maxIdentity = id;
@@ -177,8 +176,8 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
     }
 
     public List<IdentityInfo> getIdentities(SignalServiceAddress serviceAddress) {
-        List<IdentityInfo> identities = new ArrayList<>();
-        for (IdentityInfo identity : this.identities) {
+        var identities = new ArrayList<IdentityInfo>();
+        for (var identity : this.identities) {
             if (identity.address.matches(serviceAddress)) {
                 identities.add(identity);
             }
@@ -194,34 +193,32 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            int localRegistrationId = node.get("registrationId").asInt();
-            IdentityKeyPair identityKeyPair = new IdentityKeyPair(Base64.getDecoder()
-                    .decode(node.get("identityKey").asText()));
+            var localRegistrationId = node.get("registrationId").asInt();
+            var identityKeyPair = new IdentityKeyPair(Base64.getDecoder().decode(node.get("identityKey").asText()));
 
-            JsonIdentityKeyStore keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
+            var keyStore = new JsonIdentityKeyStore(identityKeyPair, localRegistrationId);
 
-            JsonNode trustedKeysNode = node.get("trustedKeys");
+            var trustedKeysNode = node.get("trustedKeys");
             if (trustedKeysNode.isArray()) {
-                for (JsonNode trustedKey : trustedKeysNode) {
-                    String trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
+                for (var trustedKey : trustedKeysNode) {
+                    var trustedKeyName = trustedKey.hasNonNull("name") ? trustedKey.get("name").asText() : null;
 
                     if (UuidUtil.isUuid(trustedKeyName)) {
                         // Ignore identities that were incorrectly created with UUIDs as name
                         continue;
                     }
 
-                    UUID uuid = trustedKey.hasNonNull("uuid")
+                    var uuid = trustedKey.hasNonNull("uuid")
                             ? UuidUtil.parseOrNull(trustedKey.get("uuid").asText())
                             : null;
-                    final SignalServiceAddress serviceAddress = uuid == null
+                    final var serviceAddress = uuid == null
                             ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
                             : new SignalServiceAddress(uuid, trustedKeyName);
                     try {
-                        IdentityKey id = new IdentityKey(Base64.getDecoder()
-                                .decode(trustedKey.get("identityKey").asText()), 0);
-                        TrustLevel trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
+                        var id = new IdentityKey(Base64.getDecoder().decode(trustedKey.get("identityKey").asText()), 0);
+                        var trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
                                 "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
-                        Date added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
+                        var added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
                                 .asLong()) : new Date();
                         keyStore.saveIdentity(serviceAddress, id, trustLevel, added);
                     } catch (InvalidKeyException e) {
@@ -251,7 +248,7 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
                     Base64.getEncoder()
                             .encodeToString(jsonIdentityKeyStore.getIdentityKeyPair().getPublicKey().serialize()));
             json.writeArrayFieldStart("trustedKeys");
-            for (IdentityInfo trustedKey : jsonIdentityKeyStore.identities) {
+            for (var trustedKey : jsonIdentityKeyStore.identities) {
                 json.writeStartObject();
                 if (trustedKey.getAddress().getNumber().isPresent()) {
                     json.writeStringField("name", trustedKey.getAddress().getNumber().get());
