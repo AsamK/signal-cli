@@ -8,13 +8,13 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +32,7 @@ public class ListGroupsCommand implements LocalCommand {
 
     private static void printGroupPlainText(
             PlainTextWriter writer, Manager m, GroupInfo group, boolean detailed
-    ) throws IOException {
+    ) {
         if (detailed) {
             final var groupInviteLink = group.getGroupInviteLink();
 
@@ -70,7 +70,7 @@ public class ListGroupsCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         if (ns.get("output") == OutputType.JSON) {
             final var jsonWriter = new JsonWriter(System.out);
 
@@ -88,28 +88,14 @@ public class ListGroupsCommand implements LocalCommand {
                         groupInviteLink == null ? null : groupInviteLink.getUrl()));
             }
 
-            try {
-                jsonWriter.write(jsonGroups);
-            } catch (IOException e) {
-                logger.error("Failed to write json object: {}", e.getMessage());
-                return 3;
-            }
-
-            return 0;
+            jsonWriter.write(jsonGroups);
         } else {
             final var writer = new PlainTextWriterImpl(System.out);
             boolean detailed = ns.getBoolean("detailed");
-            try {
-                for (var group : m.getGroups()) {
-                    printGroupPlainText(writer, m, group, detailed);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 3;
+            for (var group : m.getGroups()) {
+                printGroupPlainText(writer, m, group, detailed);
             }
         }
-
-        return 0;
     }
 
     private static final class JsonGroup {

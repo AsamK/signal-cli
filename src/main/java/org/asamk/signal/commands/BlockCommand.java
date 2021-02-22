@@ -7,9 +7,13 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class BlockCommand implements LocalCommand {
+
+    private final static Logger logger = LoggerFactory.getLogger(BlockCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -19,12 +23,12 @@ public class BlockCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) {
         for (var contact_number : ns.<String>getList("contact")) {
             try {
                 m.setContactBlocked(contact_number, true);
             } catch (InvalidNumberException e) {
-                System.err.println(e.getMessage());
+                logger.warn("Invalid number {}: {}", contact_number, e.getMessage());
             }
         }
 
@@ -34,11 +38,9 @@ public class BlockCommand implements LocalCommand {
                     var groupId = Util.decodeGroupId(groupIdString);
                     m.setGroupBlocked(groupId, true);
                 } catch (GroupIdFormatException | GroupNotFoundException e) {
-                    System.err.println(e.getMessage());
+                    logger.warn("Invalid group id {}: {}", groupIdString, e.getMessage());
                 }
             }
         }
-
-        return 0;
     }
 }

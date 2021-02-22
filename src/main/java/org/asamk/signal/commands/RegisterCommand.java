@@ -4,6 +4,9 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
 
@@ -21,26 +24,25 @@ public class RegisterCommand implements RegistrationCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final RegistrationManager m) {
+    public void handleCommand(final Namespace ns, final RegistrationManager m) throws CommandException {
         final boolean voiceVerification = ns.getBoolean("voice");
         final var captcha = ns.getString("captcha");
 
         try {
             m.register(voiceVerification, captcha);
-            return 0;
         } catch (CaptchaRequiredException e) {
+            String message;
             if (captcha == null) {
-                System.err.println("Captcha required for verification, use --captcha CAPTCHA");
-                System.err.println("To get the token, go to https://signalcaptchas.org/registration/generate.html");
-                System.err.println("Check the developer tools (F12) console for a failed redirect to signalcaptcha://");
-                System.err.println("Everything after signalcaptcha:// is the captcha token.");
+                message = "Captcha required for verification, use --captcha CAPTCHA\n"
+                        + "To get the token, go to https://signalcaptchas.org/registration/generate.html\n"
+                        + "Check the developer tools (F12) console for a failed redirect to signalcaptcha://\n"
+                        + "Everything after signalcaptcha:// is the captcha token.";
             } else {
-                System.err.println("Invalid captcha given.");
+                message = "Invalid captcha given.";
             }
-            return 1;
+            throw new UserErrorException(message);
         } catch (IOException e) {
-            System.err.println("Request verify error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Request verify error: " + e.getMessage());
         }
     }
 }

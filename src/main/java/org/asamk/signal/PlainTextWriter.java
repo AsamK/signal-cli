@@ -1,23 +1,21 @@
 package org.asamk.signal;
 
-import java.io.IOException;
-
 public interface PlainTextWriter {
 
-    void println(String format, Object... args) throws IOException;
+    void println(String format, Object... args);
 
     PlainTextWriter indentedWriter();
 
-    default void println() throws IOException {
+    default void println() {
         println("");
     }
 
-    default void indent(final WriterConsumer subWriter) throws IOException {
+    default void indent(final WriterConsumer subWriter) {
         subWriter.consume(indentedWriter());
     }
 
     interface WriterConsumer {
 
-        void consume(PlainTextWriter writer) throws IOException;
+        void consume(PlainTextWriter writer);
     }
 }

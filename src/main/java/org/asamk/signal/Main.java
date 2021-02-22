@@ -21,6 +21,11 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.LibSignalLogger;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -39,8 +44,14 @@ public class Main {
 
         var ns = parser.parseArgsOrFail(args);
 
-        var res = new App(ns).init();
-        System.exit(res);
+        int status = 0;
+        try {
+            new App(ns).init();
+        } catch (CommandException e) {
+            System.err.println(e.getMessage());
+            status = getStatusForError(e);
+        }
+        System.exit(status);
     }
 
     private static void installSecurityProviderWorkaround() {
@@ -76,6 +87,20 @@ public class Main {
             System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "false");
+        }
+    }
+
+    private static int getStatusForError(final CommandException e) {
+        if (e instanceof UserErrorException) {
+            return 1;
+        } else if (e instanceof UnexpectedErrorException) {
+            return 2;
+        } else if (e instanceof IOErrorException) {
+            return 3;
+        } else if (e instanceof UntrustedKeyErrorException) {
+            return 4;
+        } else {
+            return 2;
         }
     }
 }

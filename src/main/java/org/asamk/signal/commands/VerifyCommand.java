@@ -3,6 +3,10 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
@@ -19,26 +23,23 @@ public class VerifyCommand implements RegistrationCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final RegistrationManager m) {
+    public void handleCommand(final Namespace ns, final RegistrationManager m) throws CommandException {
+        var verificationCode = ns.getString("verificationCode");
+        var pin = ns.getString("pin");
+
         try {
-            var verificationCode = ns.getString("verificationCode");
-            var pin = ns.getString("pin");
             m.verifyAccount(verificationCode, pin);
-            return 0;
         } catch (LockedException e) {
-            System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: "
-                    + (e.getTimeRemaining() / 1000 / 60 / 60));
-            System.err.println("Use '--pin PIN_CODE' to specify the registration lock PIN");
-            return 1;
+            throw new UserErrorException(
+                    "Verification failed! This number is locked with a pin. Hours remaining until reset: "
+                            + (e.getTimeRemaining() / 1000 / 60 / 60)
+                            + "\nUse '--pin PIN_CODE' to specify the registration lock PIN");
         } catch (KeyBackupServicePinException e) {
-            System.err.println("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
-            return 1;
+            throw new UserErrorException("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
         } catch (KeyBackupSystemNoDataException e) {
-            System.err.println("Verification failed! No KBS data.");
-            return 3;
+            throw new UnexpectedErrorException("Verification failed! No KBS data.");
         } catch (IOException e) {
-            System.err.println("Verify error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Verify error: " + e.getMessage());
         }
     }
 }

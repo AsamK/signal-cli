@@ -6,8 +6,6 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 
-import java.io.IOException;
-
 public class ListContactsCommand implements LocalCommand {
 
     @Override
@@ -15,18 +13,12 @@ public class ListContactsCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) {
         final var writer = new PlainTextWriterImpl(System.out);
 
         var contacts = m.getContacts();
-        try {
-            for (var c : contacts) {
-                writer.println("Number: {} Name: {} Blocked: {}", c.number, c.name, c.blocked);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 3;
+        for (var c : contacts) {
+            writer.println("Number: {} Name: {} Blocked: {}", c.number, c.name, c.blocked);
         }
-        return 0;
     }
 }

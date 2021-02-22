@@ -3,6 +3,9 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 
@@ -16,16 +19,13 @@ public class SendContactsCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
             m.sendContacts();
-            return 0;
         } catch (UntrustedIdentityException e) {
-            System.err.println("SendContacts error: " + e.getMessage());
-            return 2;
+            throw new UntrustedKeyErrorException("SendContacts error: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("SendContacts error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("SendContacts error: " + e.getMessage());
         }
     }
 }

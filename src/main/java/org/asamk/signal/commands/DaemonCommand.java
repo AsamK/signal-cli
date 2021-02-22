@@ -8,6 +8,8 @@ import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -44,7 +46,7 @@ public class DaemonCommand implements MultiLocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
@@ -71,15 +73,14 @@ public class DaemonCommand implements MultiLocalCommand {
                 t.join();
             } catch (InterruptedException ignored) {
             }
-            return 0;
         } catch (DBusException | IOException e) {
             logger.error("Dbus command failed", e);
-            return 2;
+            throw new UnexpectedErrorException("Dbus command failed");
         }
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final List<Manager> managers) {
+    public void handleCommand(final Namespace ns, final List<Manager> managers) throws CommandException {
         var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
         // TODO delete later when "json" variable is removed
@@ -112,10 +113,9 @@ public class DaemonCommand implements MultiLocalCommand {
                 } catch (InterruptedException ignored) {
                 }
             }
-            return 0;
         } catch (DBusException | IOException e) {
             logger.error("Dbus command failed", e);
-            return 2;
+            throw new UnexpectedErrorException("Dbus command failed");
         }
     }
 

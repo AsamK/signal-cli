@@ -3,6 +3,9 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -16,16 +19,13 @@ public class RemovePinCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
             m.setRegistrationLockPin(Optional.absent());
-            return 0;
         } catch (UnauthenticatedResponseException e) {
-            System.err.println("Remove pin error: " + e.getMessage());
-            return 2;
+            throw new UnexpectedErrorException("Remove pin failed with unauthenticated response: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("Remove pin error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Remove pin error: " + e.getMessage());
         }
     }
 }

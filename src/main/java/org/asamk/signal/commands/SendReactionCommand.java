@@ -5,7 +5,11 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -18,11 +22,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
-import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
-import static org.asamk.signal.util.ErrorUtils.handleInvalidNumberException;
-import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class SendReactionCommand implements LocalCommand {
@@ -46,19 +45,16 @@ public class SendReactionCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var groupIdString = ns.getString("group");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {
-            System.err.println("No recipients given");
-            System.err.println("Aborting sending.");
-            return 1;
+            throw new UserErrorException("No recipients given");
         }
         if (!noRecipients && groupIdString != null) {
-            System.err.println("You cannot specify recipients by phone number and groups at the same time");
-            return 1;
+            throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
         }
 
         final var emoji = ns.getString("emoji");
@@ -66,35 +62,37 @@ public class SendReactionCommand implements LocalCommand {
         final var targetAuthor = ns.getString("target_author");
         final long targetTimestamp = ns.getLong("target_timestamp");
 
-        try {
-            final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = new PlainTextWriterImpl(System.out);
 
-            final Pair<Long, List<SendMessageResult>> results;
-            if (groupIdString != null) {
-                var groupId = Util.decodeGroupId(groupIdString);
+        final Pair<Long, List<SendMessageResult>> results;
+
+        GroupId groupId = null;
+        if (groupId != null) {
+            try {
+                groupId = Util.decodeGroupId(groupIdString);
+            } catch (GroupIdFormatException e) {
+                throw new UserErrorException("Invalid group id:" + e.getMessage());
+            }
+        }
+
+        try {
+            if (groupId != null) {
                 results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
                 results = m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
-            return handleTimestampAndSendMessageResults(writer, results.first(), results.second());
+            handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
-            handleIOException(e);
-            return 3;
+            throw new IOErrorException("Failed to send message: " + e.getMessage());
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (GroupNotFoundException e) {
-            handleGroupNotFoundException(e);
-            return 1;
+            throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (NotAGroupMemberException e) {
-            handleNotAGroupMemberException(e);
-            return 1;
-        } catch (GroupIdFormatException e) {
-            handleGroupIdFormatException(e);
-            return 1;
+            throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (InvalidNumberException e) {
-            handleInvalidNumberException(e);
-            return 1;
+            throw new UserErrorException("Invalid number: " + e.getMessage());
         }
     }
 }

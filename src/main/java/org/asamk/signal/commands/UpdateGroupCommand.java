@@ -5,19 +5,20 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 
 public class UpdateGroupCommand implements DbusCommand {
 
@@ -32,15 +33,14 @@ public class UpdateGroupCommand implements DbusCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Signal signal) {
+    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
         byte[] groupId = null;
         if (ns.getString("group") != null) {
             try {
                 groupId = Util.decodeGroupId(ns.getString("group")).serialize();
             } catch (GroupIdFormatException e) {
-                handleGroupIdFormatException(e);
-                return 1;
+                throw new UserErrorException("Invalid group id:" + e.getMessage());
             }
         }
         if (groupId == null) {
@@ -65,23 +65,15 @@ public class UpdateGroupCommand implements DbusCommand {
         try {
             var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                try {
-                    writer.println("Creating new group \"{}\" …", Base64.getEncoder().encodeToString(newGroupId));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return 3;
-                }
+                writer.println("Created new group: \"{}\"", Base64.getEncoder().encodeToString(newGroupId));
             }
-            return 0;
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (Signal.Error.AttachmentInvalid e) {
-            System.err.println("Failed to add avatar attachment for group\": " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (DBusExecutionException e) {
-            System.err.println("Failed to send message: " + e.getMessage());
-            return 2;
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         }
     }
 }

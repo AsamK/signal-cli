@@ -4,23 +4,22 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
 import java.io.IOException;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class JoinGroupCommand implements LocalCommand {
-
-    private final static Logger logger = LoggerFactory.getLogger(JoinGroupCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -28,22 +27,19 @@ public class JoinGroupCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final GroupInviteLinkUrl linkUrl;
         var uri = ns.getString("uri");
         try {
             linkUrl = GroupInviteLinkUrl.fromUri(uri);
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException e) {
-            System.err.println("Group link is invalid: " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Group link is invalid: " + e.getMessage());
         } catch (GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
-            System.err.println("Group link was created with an incompatible version: " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Group link was created with an incompatible version: " + e.getMessage());
         }
 
         if (linkUrl == null) {
-            System.err.println("Link is not a signal group invitation link");
-            return 1;
+            throw new UserErrorException("Link is not a signal group invitation link");
         }
 
         try {
@@ -56,23 +52,18 @@ public class JoinGroupCommand implements LocalCommand {
             } else {
                 writer.println("Joined group \"{}\"", newGroupId.toBase64());
             }
-            return handleTimestampAndSendMessageResults(writer, 0, results.second());
+            handleTimestampAndSendMessageResults(writer, 0, results.second());
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (GroupPatchNotAcceptedException e) {
-            System.err.println("Failed to join group, maybe already a member");
-            return 1;
+            throw new UserErrorException("Failed to join group, maybe already a member");
         } catch (IOException e) {
-            e.printStackTrace();
-            handleIOException(e);
-            return 3;
+            throw new IOErrorException("Failed to send message: " + e.getMessage());
         } catch (DBusExecutionException e) {
-            System.err.println("Failed to send message: " + e.getMessage());
-            return 2;
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         } catch (GroupLinkNotActiveException e) {
-            System.err.println("Group link is not valid: " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Group link is not valid: " + e.getMessage());
         }
     }
 }

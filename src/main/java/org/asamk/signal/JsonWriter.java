@@ -26,14 +26,18 @@ public class JsonWriter {
         objectMapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
-    public void write(final Object object) throws IOException {
+    public void write(final Object object) {
         try {
-            objectMapper.writeValue(writer, object);
-        } catch (JsonProcessingException e) {
-            // Some issue with json serialization, probably caused by a bug
+            try {
+                objectMapper.writeValue(writer, object);
+            } catch (JsonProcessingException e) {
+                // Some issue with json serialization, probably caused by a bug
+                throw new AssertionError(e);
+            }
+            writer.write(System.lineSeparator());
+            writer.flush();
+        } catch (IOException e) {
             throw new AssertionError(e);
         }
-        writer.write(System.lineSeparator());
-        writer.flush();
     }
 }

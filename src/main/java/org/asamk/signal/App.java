@@ -14,6 +14,9 @@ import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.MultiLocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
 import org.asamk.signal.commands.RegistrationCommand;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotRegisteredException;
 import org.asamk.signal.manager.ProvisioningManager;
@@ -29,9 +32,8 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class App {
 
@@ -79,18 +81,16 @@ public class App {
         this.ns = ns;
     }
 
-    public int init() {
+    public void init() throws CommandException {
         var commandKey = ns.getString("command");
         var command = Commands.getCommand(commandKey);
         if (command == null) {
-            logger.error("Command not implemented!");
-            return 1;
+            throw new UserErrorException("Command not implemented!");
         }
 
         OutputType outputType = ns.get("output");
         if (!command.getSupportedOutputTypes().contains(outputType)) {
-            logger.error("Command doesn't support output type {}", outputType.toString());
-            return 1;
+            throw new UserErrorException("Command doesn't support output type " + outputType.toString());
         }
 
         var username = ns.getString("username");
@@ -99,7 +99,8 @@ public class App {
         final boolean useDbusSystem = ns.getBoolean("dbus_system");
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
-            return initDbusClient(command, username, useDbusSystem);
+            initDbusClient(command, username, useDbusSystem);
+            return;
         }
 
         final File dataPath;
@@ -118,111 +119,102 @@ public class App {
         }
 
         if (!ServiceConfig.isSignalClientAvailable()) {
-            logger.error("Missing required native library dependency: libsignal-client");
-            return 1;
+            throw new UserErrorException("Missing required native library dependency: libsignal-client");
         }
 
         if (command instanceof ProvisioningCommand) {
             if (username != null) {
-                System.err.println("You cannot specify a username (phone number) when linking");
-                return 1;
+                throw new UserErrorException("You cannot specify a username (phone number) when linking");
             }
 
-            return handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment);
+            handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment);
+            return;
         }
 
         if (username == null) {
             var usernames = Manager.getAllLocalUsernames(dataPath);
             if (usernames.size() == 0) {
-                System.err.println("No local users found, you first need to register or link an account");
-                return 1;
+                throw new UserErrorException("No local users found, you first need to register or link an account");
             }
 
             if (command instanceof MultiLocalCommand) {
-                return handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
+                handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
+                return;
             }
 
             if (usernames.size() > 1) {
-                System.err.println("Multiple users found, you need to specify a username (phone number) with -u");
-                return 1;
+                throw new UserErrorException(
+                        "Multiple users found, you need to specify a username (phone number) with -u");
             }
 
             username = usernames.get(0);
         } else if (!PhoneNumberFormatter.isValidNumber(username, null)) {
-            System.err.println("Invalid username (phone number), make sure you include the country code.");
-            return 1;
+            throw new UserErrorException("Invalid username (phone number), make sure you include the country code.");
         }
 
         if (command instanceof RegistrationCommand) {
-            return handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceEnvironment);
+            handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceEnvironment);
+            return;
         }
 
         if (!(command instanceof LocalCommand)) {
-            System.err.println("Command only works via dbus");
-            return 1;
+            throw new UserErrorException("Command only works via dbus");
         }
 
-        return handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment);
+        handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment);
     }
 
-    private int handleProvisioningCommand(
+    private void handleProvisioningCommand(
             final ProvisioningCommand command, final File dataPath, final ServiceEnvironment serviceEnvironment
-    ) {
+    ) throws CommandException {
         var pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
-        return command.handleCommand(ns, pm);
+        command.handleCommand(ns, pm);
     }
 
-    private int handleRegistrationCommand(
+    private void handleRegistrationCommand(
             final RegistrationCommand command,
             final String username,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment
-    ) {
+    ) throws CommandException {
         final RegistrationManager manager;
         try {
             manager = RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
-            logger.error("Error loading or creating state file: {}", e.getMessage());
-            return 2;
+            throw new UnexpectedErrorException("Error loading or creating state file: " + e.getMessage());
         }
         try (var m = manager) {
-            return command.handleCommand(ns, m);
+            command.handleCommand(ns, m);
         } catch (IOException e) {
-            logger.error("Cleanup failed", e);
-            return 2;
+            logger.warn("Cleanup failed", e);
         }
     }
 
-    private int handleLocalCommand(
+    private void handleLocalCommand(
             final LocalCommand command,
             final String username,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment
-    ) {
+    ) throws CommandException {
         try (var m = loadManager(username, dataPath, serviceEnvironment)) {
-            if (m == null) {
-                return 2;
-            }
-
-            return command.handleCommand(ns, m);
+            command.handleCommand(ns, m);
         } catch (IOException e) {
-            logger.error("Cleanup failed", e);
-            return 2;
+            logger.warn("Cleanup failed", e);
         }
     }
 
-    private int handleMultiLocalCommand(
+    private void handleMultiLocalCommand(
             final MultiLocalCommand command,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
             final List<String> usernames
-    ) {
-        final var managers = usernames.stream()
-                .map(u -> loadManager(u, dataPath, serviceEnvironment))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    ) throws CommandException {
+        final var managers = new ArrayList<Manager>();
+        for (String u : usernames) {
+            managers.add(loadManager(u, dataPath, serviceEnvironment));
+        }
 
-        var result = command.handleCommand(ns, managers);
+        command.handleCommand(ns, managers);
 
         for (var m : managers) {
             try {
@@ -231,34 +223,32 @@ public class App {
                 logger.warn("Cleanup failed", e);
             }
         }
-        return result;
     }
 
     private Manager loadManager(
             final String username, final File dataPath, final ServiceEnvironment serviceEnvironment
-    ) {
+    ) throws CommandException {
         Manager manager;
         try {
             manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (NotRegisteredException e) {
-            logger.error("User " + username + " is not registered.");
-            return null;
+            throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {
-            logger.error("Error loading state file for user " + username + ": {}", e.getMessage());
-            return null;
+            throw new UnexpectedErrorException("Error loading state file for user " + username + ": " + e.getMessage());
         }
 
         try {
             manager.checkAccountState();
         } catch (IOException e) {
-            logger.error("Error while checking account " + username + ": {}", e.getMessage());
-            return null;
+            throw new UnexpectedErrorException("Error while checking account " + username + ": " + e.getMessage());
         }
 
         return manager;
     }
 
-    private int initDbusClient(final Command command, final String username, final boolean systemBus) {
+    private void initDbusClient(
+            final Command command, final String username, final boolean systemBus
+    ) throws CommandException {
         try {
             DBusConnection.DBusBusType busType;
             if (systemBus) {
@@ -271,22 +261,21 @@ public class App {
                         DbusConfig.getObjectPath(username),
                         Signal.class);
 
-                return handleCommand(command, ts, dBusConn);
+                handleCommand(command, ts, dBusConn);
             }
         } catch (DBusException | IOException e) {
             logger.error("Dbus client failed", e);
-            return 2;
+            throw new UnexpectedErrorException("Dbus client failed");
         }
     }
 
-    private int handleCommand(Command command, Signal ts, DBusConnection dBusConn) {
+    private void handleCommand(Command command, Signal ts, DBusConnection dBusConn) throws CommandException {
         if (command instanceof ExtendedDbusCommand) {
-            return ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
+            ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
         } else if (command instanceof DbusCommand) {
-            return ((DbusCommand) command).handleCommand(ns, ts);
+            ((DbusCommand) command).handleCommand(ns, ts);
         } else {
-            System.err.println("Command is not yet implemented via dbus");
-            return 1;
+            throw new UserErrorException("Command is not yet implemented via dbus");
         }
     }
 

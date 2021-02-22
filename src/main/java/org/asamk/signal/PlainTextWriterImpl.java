@@ -19,12 +19,16 @@ public final class PlainTextWriterImpl implements PlainTextWriter {
     }
 
     @Override
-    public void println(String format, Object... args) throws IOException {
+    public void println(String format, Object... args) {
         final var message = MessageFormatter.arrayFormat(format, args).getMessage();
 
-        writer.write(message);
-        writer.write(System.lineSeparator());
-        writer.flush();
+        try {
+            writer.write(message);
+            writer.write(System.lineSeparator());
+            writer.flush();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     @Override
@@ -51,8 +55,12 @@ public final class PlainTextWriterImpl implements PlainTextWriter {
         }
 
         @Override
-        public void println(final String format, final Object... args) throws IOException {
-            writer.write(spaces);
+        public void println(final String format, final Object... args) {
+            try {
+                writer.write(spaces);
+            } catch (IOException e) {
+                throw new AssertionError(e);
+            }
             plainTextWriter.println(format, args);
         }
 

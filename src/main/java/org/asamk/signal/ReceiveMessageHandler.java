@@ -630,7 +630,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("- {}: {} (length: {})", formatContact(address), mention.getStart(), mention.getLength());
     }
 
-    private void printAttachment(PlainTextWriter writer, SignalServiceAttachment attachment) throws IOException {
+    private void printAttachment(PlainTextWriter writer, SignalServiceAttachment attachment) {
         writer.println("Content-Type: {}", attachment.getContentType());
         writer.println("Type: {}", attachment.isPointer() ? "Pointer" : attachment.isStream() ? "Stream" : "<unknown>");
         if (attachment.isPointer()) {

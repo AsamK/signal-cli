@@ -1,38 +1,34 @@
 package org.asamk.signal.util;
 
 import org.asamk.signal.PlainTextWriter;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
-import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ErrorUtils {
 
+    private final static Logger logger = LoggerFactory.getLogger(ErrorUtils.class);
+
     private ErrorUtils() {
     }
 
     public static void handleAssertionError(AssertionError e) {
-        System.err.println("Failed to send/receive message (Assertion): " + e.getMessage());
-        e.printStackTrace();
-        System.err.println(
-                "If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
+        logger.warn("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
     }
 
-    public static int handleTimestampAndSendMessageResults(
-            PlainTextWriter writer,
-            long timestamp,
-            List<SendMessageResult> results
-    ) throws IOException {
+    public static void handleTimestampAndSendMessageResults(
+            PlainTextWriter writer, long timestamp, List<SendMessageResult> results
+    ) throws CommandException {
         if (timestamp != 0) {
             writer.println("{}", timestamp);
         }
         var errors = getErrorMessagesFromSendMessageResults(results);
-        return handleSendMessageResultErrors(errors);
+        handleSendMessageResultErrors(errors);
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(List<SendMessageResult> results) {
@@ -58,39 +54,15 @@ public class ErrorUtils {
         return null;
     }
 
-    private static int handleSendMessageResultErrors(List<String> errors) {
+    private static void handleSendMessageResultErrors(List<String> errors) throws CommandException {
         if (errors.size() == 0) {
-            return 0;
+            return;
         }
-        System.err.println("Failed to send (some) messages:");
+        var message = new StringBuilder();
+        message.append("Failed to send (some) messages:\n");
         for (var error : errors) {
-            System.err.println(error);
+            message.append(error).append("\n");
         }
-        return 3;
-    }
-
-    public static void handleIOException(IOException e) {
-        System.err.println("Failed to send message: " + e.getMessage());
-    }
-
-    public static void handleGroupNotFoundException(GroupNotFoundException e) {
-        System.err.println("Failed to send to group: " + e.getMessage());
-        System.err.println("Aborting sending.");
-    }
-
-    public static void handleNotAGroupMemberException(NotAGroupMemberException e) {
-        System.err.println("Failed to send to group: " + e.getMessage());
-        System.err.println("Update the group on another device to readd the user to this group.");
-        System.err.println("Aborting sending.");
-    }
-
-    public static void handleGroupIdFormatException(GroupIdFormatException e) {
-        System.err.println(e.getMessage());
-        System.err.println("Aborting sending.");
-    }
-
-    public static void handleInvalidNumberException(InvalidNumberException e) {
-        System.err.println("Failed to parse recipient: " + e.getMessage());
-        System.err.println("Aborting sending.");
+        throw new IOErrorException(message.toString());
     }
 }

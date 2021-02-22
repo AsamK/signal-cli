@@ -4,6 +4,10 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.UserAlreadyExists;
 import org.slf4j.Logger;
@@ -25,7 +29,7 @@ public class LinkCommand implements ProvisioningCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final ProvisioningManager m) {
+    public void handleCommand(final Namespace ns, final ProvisioningManager m) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
 
         var deviceName = ns.getString("name");
@@ -37,25 +41,21 @@ public class LinkCommand implements ProvisioningCommand {
             var username = m.finishDeviceLink(deviceName);
             writer.println("Associated with: {}", username);
         } catch (TimeoutException e) {
-            System.err.println("Link request timed out, please try again.");
-            return 3;
+            throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
-            System.err.println("Link request error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Link request error: " + e.getMessage());
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            return 2;
+            logger.debug("Finish device link failed", e);
+            throw new UnexpectedErrorException("Invalid key: " + e.getMessage());
         } catch (UserAlreadyExists e) {
-            System.err.println("The user "
+            throw new UserErrorException("The user "
                     + e.getUsername()
                     + " already exists\nDelete \""
                     + e.getFileName()
                     + "\" before trying again.");
-            return 1;
         }
-        return 0;
     }
 }

@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
@@ -32,10 +31,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         if (envelope != null) {
             object.put("envelope", new JsonMessageEnvelope(envelope, content, m));
         }
-        try {
-            jsonWriter.write(object);
-        } catch (IOException e) {
-            logger.error("Failed to write json object: {}", e.getMessage());
-        }
+
+        jsonWriter.write(object);
     }
 }

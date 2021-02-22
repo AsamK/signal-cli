@@ -7,6 +7,8 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,7 @@ public class GetUserStatusCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         // Setup the json object mapper
         var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
 
@@ -50,8 +52,8 @@ public class GetUserStatusCommand implements LocalCommand {
         try {
             registered = m.areUsersRegistered(new HashSet<>(ns.getList("number")));
         } catch (IOException e) {
-            System.err.println("Unable to check if users are registered");
-            return 3;
+            logger.debug("Failed to check registered users", e);
+            throw new IOErrorException("Unable to check if users are registered");
         }
 
         // Output
@@ -63,26 +65,14 @@ public class GetUserStatusCommand implements LocalCommand {
                     .map(entry -> new JsonUserStatus(entry.getKey(), entry.getValue()))
                     .collect(Collectors.toList());
 
-            try {
-                jsonWriter.write(jsonUserStatuses);
-            } catch (IOException e) {
-                logger.error("Failed to write json object: {}", e.getMessage());
-                return 3;
-            }
+            jsonWriter.write(jsonUserStatuses);
         } else {
             final var writer = new PlainTextWriterImpl(System.out);
 
-            try {
-                for (var entry : registered.entrySet()) {
-                    writer.println("{}: {}", entry.getKey(), entry.getValue());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 3;
+            for (var entry : registered.entrySet()) {
+                writer.println("{}: {}", entry.getKey(), entry.getValue());
             }
         }
-
-        return 0;
     }
 
     private static final class JsonUserStatus {

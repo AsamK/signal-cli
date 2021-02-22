@@ -6,6 +6,10 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
@@ -19,7 +23,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 
 public class SendCommand implements DbusCommand {
 
@@ -42,7 +45,7 @@ public class SendCommand implements DbusCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Signal signal) {
+    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var isEndSession = ns.getBoolean("endsession");
         final var groupIdString = ns.getString("group");
@@ -50,32 +53,27 @@ public class SendCommand implements DbusCommand {
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null && !isNoteToSelf)) {
-            System.err.println("No recipients given");
-            System.err.println("Aborting sending.");
-            return 1;
+            throw new UserErrorException("No recipients given");
         }
         if (!noRecipients && groupIdString != null) {
-            System.err.println("You cannot specify recipients by phone number and groups at the same time");
-            return 1;
+            throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
         }
         if (!noRecipients && isNoteToSelf) {
-            System.err.println("You cannot specify recipients by phone number and not to self at the same time");
-            return 1;
+            throw new UserErrorException(
+                    "You cannot specify recipients by phone number and not to self at the same time");
         }
 
         if (isEndSession) {
             try {
                 signal.sendEndSessionMessage(recipients);
-                return 0;
+                return;
             } catch (AssertionError e) {
                 handleAssertionError(e);
-                return 1;
+                throw e;
             } catch (Signal.Error.UntrustedIdentity e) {
-                System.err.println("Failed to send message: " + e.getMessage());
-                return 4;
+                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
             } catch (DBusExecutionException e) {
-                System.err.println("Failed to send message: " + e.getMessage());
-                return 2;
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
             }
         }
 
@@ -84,9 +82,7 @@ public class SendCommand implements DbusCommand {
             try {
                 messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
             } catch (IOException e) {
-                System.err.println("Failed to read message from stdin: " + e.getMessage());
-                System.err.println("Aborting sending.");
-                return 1;
+                throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
             }
         }
 
@@ -102,23 +98,18 @@ public class SendCommand implements DbusCommand {
             try {
                 groupId = Util.decodeGroupId(groupIdString).serialize();
             } catch (GroupIdFormatException e) {
-                handleGroupIdFormatException(e);
-                return 1;
+                throw new UserErrorException("Invalid group id:" + e.getMessage());
             }
 
             try {
                 var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
                 writer.println("{}", timestamp);
-                return 0;
+                return;
             } catch (AssertionError e) {
                 handleAssertionError(e);
-                return 1;
+                throw e;
             } catch (DBusExecutionException e) {
-                System.err.println("Failed to send group message: " + e.getMessage());
-                return 2;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 3;
+                throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage());
             }
         }
 
@@ -126,41 +117,29 @@ public class SendCommand implements DbusCommand {
             try {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
                 writer.println("{}", timestamp);
-                return 0;
+                return;
             } catch (AssertionError e) {
                 handleAssertionError(e);
-                return 1;
+                throw e;
             } catch (Signal.Error.UntrustedIdentity e) {
-                System.err.println("Failed to send message: " + e.getMessage());
-                return 4;
+                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
             } catch (DBusExecutionException e) {
-                System.err.println("Failed to send note to self message: " + e.getMessage());
-                return 2;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 3;
+                throw new UnexpectedErrorException("Failed to send note to self message: " + e.getMessage());
             }
         }
 
         try {
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
             writer.println("{}", timestamp);
-            return 0;
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (UnknownObject e) {
-            System.err.println("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
-            System.err.println("Failed to send message: " + e.getMessage());
-            return 4;
+            throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
         } catch (DBusExecutionException e) {
-            System.err.println("Failed to send message: " + e.getMessage());
-            return 2;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 3;
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         }
     }
 }

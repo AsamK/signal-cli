@@ -4,6 +4,8 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.libsignal.util.guava.Optional;
 
@@ -26,23 +28,21 @@ public class UpdateProfileCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         var name = ns.getString("name");
         var about = ns.getString("about");
         var aboutEmoji = ns.getString("about_emoji");
         var avatarPath = ns.getString("avatar");
         boolean removeAvatar = ns.getBoolean("remove_avatar");
 
+        Optional<File> avatarFile = removeAvatar
+                ? Optional.absent()
+                : avatarPath == null ? null : Optional.of(new File(avatarPath));
+
         try {
-            Optional<File> avatarFile = removeAvatar
-                    ? Optional.absent()
-                    : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
-            System.err.println("Update profile error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Update profile error: " + e.getMessage());
         }
-
-        return 0;
     }
 }

@@ -3,6 +3,9 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -22,7 +25,7 @@ public class UpdateContactCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         var number = ns.getString("number");
         var name = ns.getString("name");
 
@@ -34,13 +37,9 @@ public class UpdateContactCommand implements LocalCommand {
                 m.setExpirationTimer(number, expiration);
             }
         } catch (InvalidNumberException e) {
-            System.err.println("Invalid contact number: " + e.getMessage());
-            return 1;
+            throw new UserErrorException("Invalid contact number: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("Update contact error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Update contact error: " + e.getMessage());
         }
-
-        return 0;
     }
 }
