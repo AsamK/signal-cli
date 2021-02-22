@@ -8,6 +8,7 @@ import org.asamk.Signal;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
@@ -55,10 +56,11 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        final var jsonWriter = inJson ? new JsonWriter(System.out) : null;
         try {
-            dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
-                if (jsonWriter != null) {
+            if (inJson) {
+                final var jsonWriter = new JsonWriter(System.out);
+
+                dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
                     var envelope = new JsonMessageEnvelope(messageReceived);
                     final var object = Map.of("envelope", envelope);
                     try {
@@ -66,27 +68,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     } catch (IOException e) {
                         logger.error("Failed to write json object: {}", e.getMessage());
                     }
-                } else {
-                    System.out.print(String.format("Envelope from: %s\nTimestamp: %s\nBody: %s\n",
-                            messageReceived.getSender(),
-                            DateUtils.formatTimestamp(messageReceived.getTimestamp()),
-                            messageReceived.getMessage()));
-                    if (messageReceived.getGroupId().length > 0) {
-                        System.out.println("Group info:");
-                        System.out.println("  Id: " + Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
-                    }
-                    if (messageReceived.getAttachments().size() > 0) {
-                        System.out.println("Attachments: ");
-                        for (var attachment : messageReceived.getAttachments()) {
-                            System.out.println("-  Stored plaintext in: " + attachment);
-                        }
-                    }
-                    System.out.println();
-                }
-            });
+                });
 
-            dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
-                if (jsonWriter != null) {
+                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
                     var envelope = new JsonMessageEnvelope(receiptReceived);
                     final var object = Map.of("envelope", envelope);
                     try {
@@ -94,15 +78,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     } catch (IOException e) {
                         logger.error("Failed to write json object: {}", e.getMessage());
                     }
-                } else {
-                    System.out.print(String.format("Receipt from: %s\nTimestamp: %s\n",
-                            receiptReceived.getSender(),
-                            DateUtils.formatTimestamp(receiptReceived.getTimestamp())));
-                }
-            });
+                });
 
-            dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
-                if (jsonWriter != null) {
+                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
                     var envelope = new JsonMessageEnvelope(syncReceived);
                     final var object = Map.of("envelope", envelope);
                     try {
@@ -110,25 +88,66 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     } catch (IOException e) {
                         logger.error("Failed to write json object: {}", e.getMessage());
                     }
-                } else {
-                    System.out.print(String.format("Sync Envelope from: %s to: %s\nTimestamp: %s\nBody: %s\n",
-                            syncReceived.getSource(),
-                            syncReceived.getDestination(),
-                            DateUtils.formatTimestamp(syncReceived.getTimestamp()),
-                            syncReceived.getMessage()));
-                    if (syncReceived.getGroupId().length > 0) {
-                        System.out.println("Group info:");
-                        System.out.println("  Id: " + Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
-                    }
-                    if (syncReceived.getAttachments().size() > 0) {
-                        System.out.println("Attachments: ");
-                        for (var attachment : syncReceived.getAttachments()) {
-                            System.out.println("-  Stored plaintext in: " + attachment);
+                });
+            } else {
+                final var writer = new PlainTextWriterImpl(System.out);
+
+                dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
+                    try {
+                        writer.println("Envelope from: {}", messageReceived.getSender());
+                        writer.println("Timestamp: {}", DateUtils.formatTimestamp(messageReceived.getTimestamp()));
+                        writer.println("Body: {}", messageReceived.getMessage());
+                        if (messageReceived.getGroupId().length > 0) {
+                            writer.println("Group info:");
+                            writer.indentedWriter()
+                                    .println("Id: {}",
+                                            Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
                         }
+                        if (messageReceived.getAttachments().size() > 0) {
+                            writer.println("Attachments:");
+                            for (var attachment : messageReceived.getAttachments()) {
+                                writer.println("- Stored plaintext in: {}", attachment);
+                            }
+                        }
+                        writer.println();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    System.out.println();
-                }
-            });
+                });
+
+                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
+                    try {
+                        writer.println("Receipt from: {}", receiptReceived.getSender());
+                        writer.println("Timestamp: {}", DateUtils.formatTimestamp(receiptReceived.getTimestamp()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
+                    try {
+                        writer.println("Sync Envelope from: {} to: {}",
+                                syncReceived.getSource(),
+                                syncReceived.getDestination());
+                        writer.println("Timestamp: {}", DateUtils.formatTimestamp(syncReceived.getTimestamp()));
+                        writer.println("Body: {}", syncReceived.getMessage());
+                        if (syncReceived.getGroupId().length > 0) {
+                            writer.println("Group info:");
+                            writer.indentedWriter()
+                                    .println("Id: {}", Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
+                        }
+                        if (syncReceived.getAttachments().size() > 0) {
+                            writer.println("Attachments:");
+                            for (var attachment : syncReceived.getAttachments()) {
+                                writer.println("- Stored plaintext in: {}", attachment);
+                            }
+                        }
+                        writer.println();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
         } catch (DBusException e) {
             e.printStackTrace();
             return 2;

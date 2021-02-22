@@ -1,5 +1,6 @@
 package org.asamk.signal.util;
 
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -22,9 +23,13 @@ public class ErrorUtils {
                 "If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
     }
 
-    public static int handleTimestampAndSendMessageResults(long timestamp, List<SendMessageResult> results) {
+    public static int handleTimestampAndSendMessageResults(
+            PlainTextWriter writer,
+            long timestamp,
+            List<SendMessageResult> results
+    ) throws IOException {
         if (timestamp != 0) {
-            System.out.println(timestamp);
+            writer.println("{}", timestamp);
         }
         var errors = getErrorMessagesFromSendMessageResults(results);
         return handleSendMessageResultErrors(errors);

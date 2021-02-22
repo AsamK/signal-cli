@@ -5,11 +5,14 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -19,6 +22,8 @@ import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
 
 public class SendCommand implements DbusCommand {
+
+    private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -90,18 +95,20 @@ public class SendCommand implements DbusCommand {
             attachments = List.of();
         }
 
-        if (groupIdString != null) {
-            try {
-                byte[] groupId;
-                try {
-                    groupId = Util.decodeGroupId(groupIdString).serialize();
-                } catch (GroupIdFormatException e) {
-                    handleGroupIdFormatException(e);
-                    return 1;
-                }
+        final var writer = new PlainTextWriterImpl(System.out);
 
+        if (groupIdString != null) {
+            byte[] groupId;
+            try {
+                groupId = Util.decodeGroupId(groupIdString).serialize();
+            } catch (GroupIdFormatException e) {
+                handleGroupIdFormatException(e);
+                return 1;
+            }
+
+            try {
                 var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
-                System.out.println(timestamp);
+                writer.println("{}", timestamp);
                 return 0;
             } catch (AssertionError e) {
                 handleAssertionError(e);
@@ -109,13 +116,16 @@ public class SendCommand implements DbusCommand {
             } catch (DBusExecutionException e) {
                 System.err.println("Failed to send group message: " + e.getMessage());
                 return 2;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 3;
             }
         }
 
         if (isNoteToSelf) {
             try {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
-                System.out.println(timestamp);
+                writer.println("{}", timestamp);
                 return 0;
             } catch (AssertionError e) {
                 handleAssertionError(e);
@@ -126,12 +136,15 @@ public class SendCommand implements DbusCommand {
             } catch (DBusExecutionException e) {
                 System.err.println("Failed to send note to self message: " + e.getMessage());
                 return 2;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 3;
             }
         }
 
         try {
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
-            System.out.println(timestamp);
+            writer.println("{}", timestamp);
             return 0;
         } catch (AssertionError e) {
             handleAssertionError(e);
@@ -145,6 +158,9 @@ public class SendCommand implements DbusCommand {
         } catch (DBusExecutionException e) {
             System.err.println("Failed to send message: " + e.getMessage());
             return 2;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 3;
         }
     }
 }

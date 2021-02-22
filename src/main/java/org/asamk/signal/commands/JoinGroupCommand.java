@@ -3,9 +3,12 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
@@ -16,6 +19,8 @@ import static org.asamk.signal.util.ErrorUtils.handleIOException;
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class JoinGroupCommand implements LocalCommand {
+
+    private final static Logger logger = LoggerFactory.getLogger(JoinGroupCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -42,14 +47,16 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
+            final var writer = new PlainTextWriterImpl(System.out);
+
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();
             if (!m.getGroup(newGroupId).isMember(m.getSelfAddress())) {
-                System.out.println("Requested to join group \"" + newGroupId.toBase64() + "\"");
+                writer.println("Requested to join group \"{}\"", newGroupId.toBase64());
             } else {
-                System.out.println("Joined group \"" + newGroupId.toBase64() + "\"");
+                writer.println("Joined group \"{}\"", newGroupId.toBase64());
             }
-            return handleTimestampAndSendMessageResults(0, results.second());
+            return handleTimestampAndSendMessageResults(writer, 0, results.second());
         } catch (AssertionError e) {
             handleAssertionError(e);
             return 1;

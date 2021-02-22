@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +70,15 @@ public class GetUserStatusCommand implements LocalCommand {
                 return 3;
             }
         } else {
-            for (var entry : registered.entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
+            final var writer = new PlainTextWriterImpl(System.out);
+
+            try {
+                for (var entry : registered.entrySet()) {
+                    writer.println("{}: {}", entry.getKey(), entry.getValue());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 3;
             }
         }
 

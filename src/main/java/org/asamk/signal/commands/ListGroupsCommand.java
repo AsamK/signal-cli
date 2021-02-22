@@ -6,6 +6,8 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.PlainTextWriter;
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.slf4j.Logger;
@@ -28,12 +30,14 @@ public class ListGroupsCommand implements LocalCommand {
                 .collect(Collectors.toSet());
     }
 
-    private static void printGroupPlainText(Manager m, GroupInfo group, boolean detailed) {
+    private static void printGroupPlainText(
+            PlainTextWriter writer, Manager m, GroupInfo group, boolean detailed
+    ) throws IOException {
         if (detailed) {
             final var groupInviteLink = group.getGroupInviteLink();
 
-            System.out.println(String.format(
-                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
+            writer.println(
+                    "Id: {} Name: {}  Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
@@ -41,13 +45,13 @@ public class ListGroupsCommand implements LocalCommand {
                     resolveMembers(m, group.getMembers()),
                     resolveMembers(m, group.getPendingMembers()),
                     resolveMembers(m, group.getRequestingMembers()),
-                    groupInviteLink == null ? '-' : groupInviteLink.getUrl()));
+                    groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
-            System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
+            writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
-                    group.isBlocked()));
+                    group.isBlocked());
         }
     }
 
@@ -93,9 +97,15 @@ public class ListGroupsCommand implements LocalCommand {
 
             return 0;
         } else {
+            final var writer = new PlainTextWriterImpl(System.out);
             boolean detailed = ns.getBoolean("detailed");
-            for (var group : m.getGroups()) {
-                printGroupPlainText(m, group, detailed);
+            try {
+                for (var group : m.getGroups()) {
+                    printGroupPlainText(writer, m, group, detailed);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 3;
             }
         }
 

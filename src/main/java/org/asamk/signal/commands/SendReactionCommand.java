@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -66,6 +67,8 @@ public class SendReactionCommand implements LocalCommand {
         final long targetTimestamp = ns.getLong("target_timestamp");
 
         try {
+            final var writer = new PlainTextWriterImpl(System.out);
+
             final Pair<Long, List<SendMessageResult>> results;
             if (groupIdString != null) {
                 var groupId = Util.decodeGroupId(groupIdString);
@@ -73,7 +76,7 @@ public class SendReactionCommand implements LocalCommand {
             } else {
                 results = m.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
-            return handleTimestampAndSendMessageResults(results.first(), results.second());
+            return handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);
             return 3;

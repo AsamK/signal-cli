@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -28,9 +29,11 @@ public class QuitGroupCommand implements LocalCommand {
     @Override
     public int handleCommand(final Namespace ns, final Manager m) {
         try {
+            final var writer = new PlainTextWriterImpl(System.out);
+
             final var groupId = Util.decodeGroupId(ns.getString("group"));
             final var results = m.sendQuitGroupMessage(groupId);
-            return handleTimestampAndSendMessageResults(results.first(), results.second());
+            return handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
             handleIOException(e);
             return 3;
