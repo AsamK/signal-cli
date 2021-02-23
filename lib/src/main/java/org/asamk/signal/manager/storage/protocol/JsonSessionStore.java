@@ -12,6 +12,7 @@ import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.SignalProtocolAddress;
+import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -55,9 +56,7 @@ class JsonSessionStore implements SignalServiceSessionStore {
                     return new SessionRecord(info.sessionRecord);
                 } catch (IOException e) {
                     logger.warn("Failed to load session, resetting session: {}", e.getMessage());
-                    final var sessionRecord = new SessionRecord();
-                    info.sessionRecord = sessionRecord.serialize();
-                    return sessionRecord;
+                    return new SessionRecord();
                 }
             }
         }
@@ -104,7 +103,16 @@ class JsonSessionStore implements SignalServiceSessionStore {
         var serviceAddress = resolveSignalServiceAddress(address.getName());
         for (var info : sessions) {
             if (info.address.matches(serviceAddress) && info.deviceId == address.getDeviceId()) {
-                return true;
+                final SessionRecord sessionRecord;
+                try {
+                    sessionRecord = new SessionRecord(info.sessionRecord);
+                } catch (IOException e) {
+                    logger.warn("Failed to check session: {}", e.getMessage());
+                    return false;
+                }
+
+                return sessionRecord.hasSenderChain()
+                        && sessionRecord.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
             }
         }
         return false;
