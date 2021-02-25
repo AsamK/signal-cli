@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
-    long sendMessage(
+    long sendMessageSingle(
             String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
@@ -54,6 +54,22 @@ public interface Signal extends DBusInterface {
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+	
+	public String version();
+	
+	public List<String> listNumbers();
+	
+	public String getContactNumber(final String name);
+	
+	public void quitGroup(final byte[] groupId);
+	
+	public boolean isContactBlocked(final String number);
+	
+	public boolean isGroupBlocked(final byte[] groupId);
+	
+	public boolean isMember(final byte[] groupId);
+	
+	public void joinGroup(final String groupLink);
 
     class MessageReceived extends DBusSignal {
 
