@@ -91,6 +91,10 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
         identityKeyStore.setIdentityTrustLevel(serviceAddress, identityKey, trustLevel);
     }
 
+    public void removeIdentity(SignalServiceAddress serviceAddress, IdentityKey identityKey) {
+        identityKeyStore.removeIdentity(serviceAddress, identityKey);
+    }
+
     public List<IdentityInfo> getIdentities() {
         return identityKeyStore.getIdentities();
     }

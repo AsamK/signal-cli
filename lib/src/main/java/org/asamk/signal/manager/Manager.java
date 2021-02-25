@@ -156,6 +156,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
@@ -1211,10 +1212,12 @@ public class Manager implements Closeable {
         try {
             messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
         } catch (UntrustedIdentityException e) {
-            account.getSignalProtocolStore()
-                    .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                            e.getIdentityKey(),
-                            TrustLevel.UNTRUSTED);
+            if (e.getIdentityKey() != null) {
+                account.getSignalProtocolStore()
+                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
+                                e.getIdentityKey(),
+                                TrustLevel.UNTRUSTED);
+            }
             throw e;
         }
     }
@@ -1296,10 +1299,12 @@ public class Manager implements Closeable {
                     }
                     return new Pair<>(timestamp, result);
                 } catch (UntrustedIdentityException e) {
-                    account.getSignalProtocolStore()
-                            .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                                    e.getIdentityKey(),
-                                    TrustLevel.UNTRUSTED);
+                    if (e.getIdentityKey() != null) {
+                        account.getSignalProtocolStore()
+                                .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
+                                        e.getIdentityKey(),
+                                        TrustLevel.UNTRUSTED);
+                    }
                     return new Pair<>(timestamp, List.of());
                 }
             } else {
@@ -1369,10 +1374,12 @@ public class Manager implements Closeable {
                     false,
                     System.currentTimeMillis() - startTime);
         } catch (UntrustedIdentityException e) {
-            account.getSignalProtocolStore()
-                    .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                            e.getIdentityKey(),
-                            TrustLevel.UNTRUSTED);
+            if (e.getIdentityKey() != null) {
+                account.getSignalProtocolStore()
+                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
+                                e.getIdentityKey(),
+                                TrustLevel.UNTRUSTED);
+            }
             return SendMessageResult.identityFailure(recipient, e.getIdentityKey());
         }
     }
@@ -1385,10 +1392,12 @@ public class Manager implements Closeable {
         try {
             return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(address), message);
         } catch (UntrustedIdentityException e) {
-            account.getSignalProtocolStore()
-                    .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                            e.getIdentityKey(),
-                            TrustLevel.UNTRUSTED);
+            if (e.getIdentityKey() != null) {
+                account.getSignalProtocolStore()
+                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
+                                e.getIdentityKey(),
+                                TrustLevel.UNTRUSTED);
+            }
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
     }
@@ -2388,26 +2397,7 @@ public class Manager implements Closeable {
      */
     public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
         var address = canonicalizeAndResolveSignalServiceAddress(name);
-        var ids = account.getSignalProtocolStore().getIdentities(address);
-        if (ids == null) {
-            return false;
-        }
-        for (var id : ids) {
-            if (!Arrays.equals(id.getIdentityKey().serialize(), fingerprint)) {
-                continue;
-            }
-
-            account.getSignalProtocolStore()
-                    .setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-            try {
-                sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-            } catch (IOException | UntrustedIdentityException e) {
-                logger.warn("Failed to send verification sync message: {}", e.getMessage());
-            }
-            account.save();
-            return true;
-        }
-        return false;
+        return trustIdentity(address, (identityKey) -> Arrays.equals(identityKey.serialize(), fingerprint));
     }
 
     /**
@@ -2418,26 +2408,46 @@ public class Manager implements Closeable {
      */
     public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
         var address = canonicalizeAndResolveSignalServiceAddress(name);
+        return trustIdentity(address, (identityKey) -> safetyNumber.equals(computeSafetyNumber(address, identityKey)));
+    }
+
+    private boolean trustIdentity(SignalServiceAddress address, Function<IdentityKey, Boolean> verifier) {
         var ids = account.getSignalProtocolStore().getIdentities(address);
         if (ids == null) {
             return false;
         }
+
+        IdentityInfo foundIdentity = null;
+
         for (var id : ids) {
-            if (!safetyNumber.equals(computeSafetyNumber(address, id.getIdentityKey()))) {
+            if (verifier.apply(id.getIdentityKey())) {
+                foundIdentity = id;
+                break;
+            }
+        }
+
+        if (foundIdentity == null) {
+            return false;
+        }
+
+        account.getSignalProtocolStore()
+                .setIdentityTrustLevel(address, foundIdentity.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+        try {
+            sendVerifiedMessage(address, foundIdentity.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
+        } catch (IOException | UntrustedIdentityException e) {
+            logger.warn("Failed to send verification sync message: {}", e.getMessage());
+        }
+
+        // Successfully trusted the new identity, now remove all other identities for that number
+        for (var id : ids) {
+            if (id == foundIdentity) {
                 continue;
             }
-
-            account.getSignalProtocolStore()
-                    .setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-            try {
-                sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-            } catch (IOException | UntrustedIdentityException e) {
-                logger.warn("Failed to send verification sync message: {}", e.getMessage());
-            }
-            account.save();
-            return true;
+            account.getSignalProtocolStore().removeIdentity(address, id.getIdentityKey());
         }
-        return false;
+
+        account.save();
+        return true;
     }
 
     /**
