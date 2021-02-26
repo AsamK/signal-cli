@@ -13,13 +13,6 @@ public class IdentityInfo {
     TrustLevel trustLevel;
     Date added;
 
-    public IdentityInfo(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel) {
-        this.address = address;
-        this.identityKey = identityKey;
-        this.trustLevel = trustLevel;
-        this.added = new Date();
-    }
-
     IdentityInfo(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
         this.address = address;
         this.identityKey = identityKey;

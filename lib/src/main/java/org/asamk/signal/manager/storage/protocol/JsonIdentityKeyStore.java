@@ -125,6 +125,10 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
         identities.add(new IdentityInfo(serviceAddress, identityKey, trustLevel, new Date()));
     }
 
+    public void removeIdentity(SignalServiceAddress serviceAddress, IdentityKey identityKey) {
+        identities.removeIf(id -> id.address.matches(serviceAddress) && id.identityKey.equals(identityKey));
+    }
+
     @Override
     public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
         // TODO implement possibility for different handling of incoming/outgoing trust decisions
@@ -141,6 +145,10 @@ public class JsonIdentityKeyStore implements IdentityKeyStore {
             } else {
                 trustOnFirstUse = false;
             }
+        }
+
+        if (!trustOnFirstUse) {
+            saveIdentity(resolveSignalServiceAddress(address.getName()), identityKey, TrustLevel.UNTRUSTED, null);
         }
 
         return trustOnFirstUse;
