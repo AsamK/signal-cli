@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
-    long sendMessageSingle(
+    long sendMessage(
             String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 

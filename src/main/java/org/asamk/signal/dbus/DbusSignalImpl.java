@@ -43,7 +43,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendMessageSingle(final String message, final List<String> attachments, final String recipient) {
+    public long sendMessage(final String message, final List<String> attachments, final String recipient) {
         var recipients = new ArrayList<String>(1);
         recipients.add(recipient);
         return sendMessage(message, attachments, recipients);
@@ -65,9 +65,8 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    private static void checkSendMessageResults(
-            long timestamp, List<SendMessageResult> results
-    ) throws DBusExecutionException {
+    private static void checkSendMessageResults(long timestamp, List<SendMessageResult> results)
+            throws DBusExecutionException {
         if (results.size() == 1) {
             checkSendMessageResult(timestamp, results.get(0));
             return;
@@ -90,14 +89,6 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
-		System.out.println("Sending messsage:"+message);
-		System.out.println("Sending rec:"+recipients);
-		for (String r : recipients) {
-			System.out.println("to:"+r);
-		}
-		for (String r : attachments) {
-			System.out.println("at:"+r);
-		}
         try {
             final var results = m.sendMessage(message, attachments, recipients);
             checkSendMessageResults(results.first(), results.second());
@@ -112,9 +103,8 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendNoteToSelfMessage(
-            final String message, final List<String> attachments
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
+    public long sendNoteToSelfMessage(final String message, final List<String> attachments)
+            throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
             final var results = m.sendSelfMessage(message, attachments);
             checkSendMessageResult(results.first(), results.second());
@@ -153,11 +143,13 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-	//Since contact names might be empty if not defined, also potentially return the profile name
-	//Profile names separate firstname/lastname by a \0 - replace by space otherwise the interface will hickup
+    // Since contact names might be empty if not defined, also potentially return
+    // the profile name
+    // Profile names separate firstname/lastname by a \0 - replace by space
+    // otherwise the interface will hickup
     @Override
     public String getContactName(final String number) {
-		String name=m.getContactOrProfileName(number).replace("\0", " ");
+        String name = m.getContactOrProfileName(number).replace("\0", " ");
         return name;
     }
 
@@ -214,11 +206,8 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return List.of();
         } else {
-            return group.getMembers()
-                    .stream()
-                    .map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier)
-                    .collect(Collectors.toList());
+            return group.getMembers().stream().map(m::resolveSignalServiceAddress)
+                    .map(SignalServiceAddress::getLegacyIdentifier).collect(Collectors.toList());
         }
     }
 
@@ -237,9 +226,7 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId),
-                    name,
-                    members,
+            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId), name, members,
                     avatar == null ? null : new File(avatar));
             checkSendMessageResults(0, results.second());
             return results.first().serialize();
@@ -260,133 +247,134 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void updateProfile(
-            final String name,
-            final String about,
-            final String aboutEmoji,
-            String avatarPath,
-            final boolean removeAvatar
-    ) {
+    public void updateProfile(final String name, final String about, final String aboutEmoji, String avatarPath,
+            final boolean removeAvatar) {
         try {
             if (avatarPath.isEmpty()) {
                 avatarPath = null;
             }
-            Optional<File> avatarFile = removeAvatar
-                    ? Optional.absent()
+            Optional<File> avatarFile = removeAvatar ? Optional.absent()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
     }
-	
-	//Provide option to query a version string in order to react on potential future interface changes
+
+    // Provide option to query a version string in order to react on potential
+    // future interface changes
     @Override
-	public String version() {
+    public String version() {
         return BaseConfig.PROJECT_VERSION;
     }
-	
-	//Create a unique list of Numbers from Identities and Contacts to really get all numbers the system knows
-    @Override
-	public List<String> listNumbers() {
-		List <String> numbers = new ArrayList<>();
-		
-		for (IdentityInfo identity : m.getIdentities()) {
-			String number=identity.getAddress().getNumber().orNull();
-			if (number!=null) {
-				if (numbers.indexOf(number)==-1) {
-					numbers.add(number);
-				}
-			}
-		}
 
-		var contacts = m.getContacts();
+    // Create a unique list of Numbers from Identities and Contacts to really get
+    // all numbers the system knows
+    @Override
+    public List<String> listNumbers() {
+        List<String> numbers = new ArrayList<>();
+
+        for (IdentityInfo identity : m.getIdentities()) {
+            String number = identity.getAddress().getNumber().orNull();
+            if (number != null) {
+                if (numbers.indexOf(number) == -1) {
+                    numbers.add(number);
+                }
+            }
+        }
+
+        var contacts = m.getContacts();
         for (var c : contacts) {
-			if (numbers.indexOf(c.number)==-1) {
-				numbers.add(c.number);
-			}
-		}
-		
-		return numbers;
-	}
+            if (numbers.indexOf(c.number) == -1) {
+                numbers.add(c.number);
+            }
+        }
+
+        return numbers;
+    }
 
     @Override
-	public String getContactNumber(final String name) {
-		//Contact names have precendence.
-		var contacts = m.getContacts();
+    public String getContactNumber(final String name) {
+        // Contact names have precendence.
+        var contacts = m.getContacts();
         for (var c : contacts) {
-			if (!c.name.isEmpty() && c.name.equals(name)) {
-				return c.number;
-			}
-		}
-		// Try profiles if no contact name was found
-		for (IdentityInfo identity : m.getIdentities()) {
-			String number=identity.getAddress().getNumber().orNull();
-			if (number!=null) {
-				var address = Utils.getSignalServiceAddressFromIdentifier(number);
-				var profile = m.getRecipientProfile(address);
-				String profileName=profile.getName().replace("\0", " ");
-				if (profileName.equals(name)) {
-					return number;
-				}
-			}
-		}
-		
-		return "";
-		
-	}
-	
-	@Override
-	public void quitGroup(final byte[] groupId) {
-		var group = GroupId.unknownVersion(groupId);
-		try {
-			m.sendQuitGroupMessage(group);
-		} catch (GroupNotFoundException | NotAGroupMemberException e) {
+            if (!c.name.isEmpty() && c.name.equals(name)) {
+                return c.number;
+            }
+        }
+        // Try profiles if no contact name was found
+        for (IdentityInfo identity : m.getIdentities()) {
+            String number = identity.getAddress().getNumber().orNull();
+            if (number != null) {
+                var address = Utils.getSignalServiceAddressFromIdentifier(number);
+                var profile = m.getRecipientProfile(address);
+                String profileName = profile.getName().replace("\0", " ");
+                if (profileName.equals(name)) {
+                    return number;
+                }
+            }
+        }
+
+        return "";
+
+    }
+
+    @Override
+    public void quitGroup(final byte[] groupId) {
+        var group = GroupId.unknownVersion(groupId);
+        try {
+            m.sendQuitGroupMessage(group);
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
-		} catch (IOException e) {
+        } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
-	}
-	
-	@Override
-	public void joinGroup(final String groupLink) {
-		final GroupInviteLinkUrl linkUrl;
-		try {
-			linkUrl = GroupInviteLinkUrl.fromUri(groupLink);
-			m.joinGroup(linkUrl);
-		} catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupLinkNotActiveException e) {
-			throw new Error.Failure("Group link is invalid: " + e.getMessage());	
-		} catch (GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
+    }
+
+    @Override
+    public void joinGroup(final String groupLink) {
+        final GroupInviteLinkUrl linkUrl;
+        try {
+            linkUrl = GroupInviteLinkUrl.fromUri(groupLink);
+            m.joinGroup(linkUrl);
+        } catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupLinkNotActiveException e) {
+            throw new Error.Failure("Group link is invalid: " + e.getMessage());
+        } catch (GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
             throw new Error.Failure("Group link was created with an incompatible version: " + e.getMessage());
-		} catch (IOException e) {
+        } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
-	}
-	
-	@Override
-	public boolean isContactBlocked(final String number) {
-		return false;
-	}
-	
-	@Override
-	public boolean isGroupBlocked(final byte[] groupId) {
-		var group = m.getGroup(GroupId.unknownVersion(groupId));
+    }
+
+    @Override
+    public boolean isContactBlocked(final String number) {
+        var contacts = m.getContacts();
+        for (var c : contacts) {
+            if (c.number.equals(number)) {
+                return c.blocked;
+            }
+        }
+        throw new Error.InvalidNumber("Contact not found");
+    }
+
+    @Override
+    public boolean isGroupBlocked(final byte[] groupId) {
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return false;
         } else {
             return group.isBlocked();
         }
-	}
-	
-	@Override
-	public boolean isMember(final byte[] groupId) {
-		var group = m.getGroup(GroupId.unknownVersion(groupId));
+    }
+
+    @Override
+    public boolean isMember(final byte[] groupId) {
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return false;
         } else {
             return group.isMember(m.getSelfAddress());
         }
-	}
-	
+    }
 
 }
