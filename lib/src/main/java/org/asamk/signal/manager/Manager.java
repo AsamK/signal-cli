@@ -2365,7 +2365,7 @@ public class Manager implements Closeable {
 
         final var profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry != null && profileEntry.getProfile() != null) {
-            return profileEntry.getProfile().getName();
+            return profileEntry.getProfile().getDisplayName();
         }
 
         return null;

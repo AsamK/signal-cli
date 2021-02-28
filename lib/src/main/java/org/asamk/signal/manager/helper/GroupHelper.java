@@ -183,7 +183,7 @@ public class GroupHelper {
                 .collect(Collectors.toSet());
         if (noGv2Capability.size() > 0) {
             logger.warn("Cannot create a V2 group as some members don't support Groups V2: {}",
-                    noGv2Capability.stream().map(SignalProfile::getName).collect(Collectors.joining(", ")));
+                    noGv2Capability.stream().map(SignalProfile::getDisplayName).collect(Collectors.joining(", ")));
             return false;
         }
 

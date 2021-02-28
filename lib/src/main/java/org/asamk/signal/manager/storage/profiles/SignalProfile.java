@@ -75,6 +75,11 @@ public class SignalProfile {
         return name;
     }
 
+    public String getDisplayName() {
+        // First name and last name (if set) are separated by a NULL char
+        return name == null ? null : name.replace("\0", " ");
+    }
+
     public String getAbout() {
         return about;
     }
