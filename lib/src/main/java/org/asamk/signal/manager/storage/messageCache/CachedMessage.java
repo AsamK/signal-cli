@@ -22,7 +22,7 @@ public final class CachedMessage {
     public SignalServiceEnvelope loadEnvelope() {
         try {
             return MessageCacheUtils.loadEnvelope(file);
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Failed to load cached message envelope “{}”: {}", file, e.getMessage());
             return null;
         }

@@ -181,7 +181,11 @@ public class App {
         try {
             manager = RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
-            throw new UnexpectedErrorException("Error loading or creating state file: " + e.getMessage());
+            throw new UnexpectedErrorException("Error loading or creating state file: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")");
         }
         try (var m = manager) {
             command.handleCommand(ns, m);
@@ -234,7 +238,13 @@ public class App {
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {
-            throw new UnexpectedErrorException("Error loading state file for user " + username + ": " + e.getMessage());
+            throw new UnexpectedErrorException("Error loading state file for user "
+                    + username
+                    + ": "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")");
         }
 
         try {
