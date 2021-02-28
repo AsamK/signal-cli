@@ -149,7 +149,12 @@ public class DbusSignalImpl implements Signal {
     // the profile name
     @Override
     public String getContactName(final String number) {
-        String name = m.getContactOrProfileName(number);
+        String name="";
+        try {
+            name = m.getContactOrProfileName(number);
+        } catch (Exception e) {
+            throw new Error.InvalidNumber(e.getMessage());
+        }
         return name;
     }
 
