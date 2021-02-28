@@ -59,9 +59,9 @@ public interface Signal extends DBusInterface {
 	
 	public List<String> listNumbers();
 	
-	public String getContactNumber(final String name);
+	public List<String> getContactNumber(final String name) throws Error.Failure;
 	
-	public void quitGroup(final byte[] groupId);
+	public void quitGroup(final byte[] groupId) throws Error.GroupNotFound,Error.Failure;
 	
 	public boolean isContactBlocked(final String number);
 	
@@ -69,7 +69,7 @@ public interface Signal extends DBusInterface {
 	
 	public boolean isMember(final byte[] groupId);
 	
-	public void joinGroup(final String groupLink);
+	public void joinGroup(final String groupLink) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 

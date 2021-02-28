@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 public class DbusSignalImpl implements Signal {
@@ -145,11 +147,9 @@ public class DbusSignalImpl implements Signal {
 
     // Since contact names might be empty if not defined, also potentially return
     // the profile name
-    // Profile names separate firstname/lastname by a \0 - replace by space
-    // otherwise the interface will hickup
     @Override
     public String getContactName(final String number) {
-        String name = m.getContactOrProfileName(number).replace("\0", " ");
+        String name = m.getContactOrProfileName(number);
         return name;
     }
 
@@ -272,34 +272,21 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        List<String> numbers = new ArrayList<>();
-
-        for (IdentityInfo identity : m.getIdentities()) {
-            String number = identity.getAddress().getNumber().orNull();
-            if (number != null) {
-                if (numbers.indexOf(number) == -1) {
-                    numbers.add(number);
-                }
-            }
-        }
-
-        var contacts = m.getContacts();
-        for (var c : contacts) {
-            if (numbers.indexOf(c.number) == -1) {
-                numbers.add(c.number);
-            }
-        }
-
-        return numbers;
+             return Stream.concat(m.getIdentities().stream().map(i -> i.getAddress().getNumber().orNull()),
+                m.getContacts().stream().map(c -> c.number))
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
-    public String getContactNumber(final String name) {
+    public List<String> getContactNumber(final String name) {
         // Contact names have precendence.
+        List<String> numbers=new ArrayList<>();
         var contacts = m.getContacts();
         for (var c : contacts) {
-            if (!c.name.isEmpty() && c.name.equals(name)) {
-                return c.number;
+            if (c.name!=null && c.name.equals(name)) {
+                numbers.add(c.number);
             }
         }
         // Try profiles if no contact name was found
@@ -308,15 +295,16 @@ public class DbusSignalImpl implements Signal {
             if (number != null) {
                 var address = Utils.getSignalServiceAddressFromIdentifier(number);
                 var profile = m.getRecipientProfile(address);
-                String profileName = profile.getName().replace("\0", " ");
+                String profileName = profile.getDisplayName();
                 if (profileName.equals(name)) {
-                    return number;
+                    numbers.add(number);
                 }
             }
         }
-
-        return "";
-
+        if (numbers.size()==0) {
+            throw new Error.Failure("Contact name not found");
+        }
+        return numbers;
     }
 
     @Override
@@ -354,7 +342,7 @@ public class DbusSignalImpl implements Signal {
                 return c.blocked;
             }
         }
-        throw new Error.InvalidNumber("Contact not found");
+        return false;
     }
 
     @Override
