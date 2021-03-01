@@ -8,8 +8,6 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.protocol.IdentityInfo;
-import org.asamk.signal.manager.util.Utils;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -151,13 +149,11 @@ public class DbusSignalImpl implements Signal {
     // the profile name
     @Override
     public String getContactName(final String number) {
-        String name = "";
         try {
-            name = m.getContactOrProfileName(number);
+            return m.getContactOrProfileName(number);
         } catch (Exception e) {
             throw new Error.InvalidNumber(e.getMessage());
         }
-        return name;
     }
 
     @Override
@@ -299,8 +295,8 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getContactNumber(final String name) {
-        // Contact names have precendence.
-        List<String> numbers = new ArrayList<>();
+        // Contact names have precedence.
+        var numbers = new ArrayList<String>();
         var contacts = m.getContacts();
         for (var c : contacts) {
             if (c.name != null && c.name.equals(name)) {
@@ -308,19 +304,15 @@ public class DbusSignalImpl implements Signal {
             }
         }
         // Try profiles if no contact name was found
-        for (IdentityInfo identity : m.getIdentities()) {
-            String number = identity.getAddress().getNumber().orNull();
+        for (var identity : m.getIdentities()) {
+            final var address = identity.getAddress();
+            var number = address.getNumber().orNull();
             if (number != null) {
-                var address = Utils.getSignalServiceAddressFromIdentifier(number);
                 var profile = m.getRecipientProfile(address);
-                String profileName = profile.getDisplayName();
-                if (profileName.equals(name)) {
+                if (profile != null && profile.getDisplayName().equals(name)) {
                     numbers.add(number);
                 }
             }
-        }
-        if (numbers.size() == 0) {
-            throw new Error.Failure("Contact name not found");
         }
         return numbers;
     }
@@ -339,9 +331,8 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void joinGroup(final String groupLink) {
-        final GroupInviteLinkUrl linkUrl;
         try {
-            linkUrl = GroupInviteLinkUrl.fromUri(groupLink);
+            final var linkUrl = GroupInviteLinkUrl.fromUri(groupLink);
             m.joinGroup(linkUrl);
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupLinkNotActiveException e) {
             throw new Error.Failure("Group link is invalid: " + e.getMessage());
@@ -382,5 +373,4 @@ public class DbusSignalImpl implements Signal {
             return group.isMember(m.getSelfAddress());
         }
     }
-
 }
