@@ -1,30 +1,30 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
+import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.protocol.IdentityInfo;
-import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.manager.util.Utils;
-import org.asamk.signal.BaseConfig;
+import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DbusSignalImpl implements Signal {
 
@@ -67,8 +67,9 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    private static void checkSendMessageResults(long timestamp, List<SendMessageResult> results)
-            throws DBusExecutionException {
+    private static void checkSendMessageResults(
+            long timestamp, List<SendMessageResult> results
+    ) throws DBusExecutionException {
         if (results.size() == 1) {
             checkSendMessageResult(timestamp, results.get(0));
             return;
@@ -105,8 +106,9 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendNoteToSelfMessage(final String message, final List<String> attachments)
-            throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
+    public long sendNoteToSelfMessage(
+            final String message, final List<String> attachments
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
             final var results = m.sendSelfMessage(message, attachments);
             checkSendMessageResult(results.first(), results.second());
@@ -149,7 +151,7 @@ public class DbusSignalImpl implements Signal {
     // the profile name
     @Override
     public String getContactName(final String number) {
-        String name="";
+        String name = "";
         try {
             name = m.getContactOrProfileName(number);
         } catch (Exception e) {
@@ -211,8 +213,11 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return List.of();
         } else {
-            return group.getMembers().stream().map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier).collect(Collectors.toList());
+            return group.getMembers()
+                    .stream()
+                    .map(m::resolveSignalServiceAddress)
+                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .collect(Collectors.toList());
         }
     }
 
@@ -231,7 +236,9 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId), name, members,
+            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId),
+                    name,
+                    members,
                     avatar == null ? null : new File(avatar));
             checkSendMessageResults(0, results.second());
             return results.first().serialize();
@@ -252,13 +259,19 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void updateProfile(final String name, final String about, final String aboutEmoji, String avatarPath,
-            final boolean removeAvatar) {
+    public void updateProfile(
+            final String name,
+            final String about,
+            final String aboutEmoji,
+            String avatarPath,
+            final boolean removeAvatar
+    ) {
         try {
             if (avatarPath.isEmpty()) {
                 avatarPath = null;
             }
-            Optional<File> avatarFile = removeAvatar ? Optional.absent()
+            Optional<File> avatarFile = removeAvatar
+                    ? Optional.absent()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(name, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
@@ -277,7 +290,7 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-             return Stream.concat(m.getIdentities().stream().map(i -> i.getAddress().getNumber().orNull()),
+        return Stream.concat(m.getIdentities().stream().map(i -> i.getAddress().getNumber().orNull()),
                 m.getContacts().stream().map(c -> c.number))
                 .filter(Objects::nonNull)
                 .distinct()
@@ -287,10 +300,10 @@ public class DbusSignalImpl implements Signal {
     @Override
     public List<String> getContactNumber(final String name) {
         // Contact names have precendence.
-        List<String> numbers=new ArrayList<>();
+        List<String> numbers = new ArrayList<>();
         var contacts = m.getContacts();
         for (var c : contacts) {
-            if (c.name!=null && c.name.equals(name)) {
+            if (c.name != null && c.name.equals(name)) {
                 numbers.add(c.number);
             }
         }
@@ -306,7 +319,7 @@ public class DbusSignalImpl implements Signal {
                 }
             }
         }
-        if (numbers.size()==0) {
+        if (numbers.size() == 0) {
             throw new Error.Failure("Contact name not found");
         }
         return numbers;
