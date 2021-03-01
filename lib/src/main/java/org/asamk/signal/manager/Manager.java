@@ -529,7 +529,7 @@ public class Manager implements Closeable {
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
 
-    private SignalProfile getRecipientProfile(
+    public SignalProfile getRecipientProfile(
             SignalServiceAddress address
     ) {
         return getRecipientProfile(address, false);

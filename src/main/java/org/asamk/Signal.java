@@ -54,6 +54,22 @@ public interface Signal extends DBusInterface {
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+	
+	public String version();
+	
+	public List<String> listNumbers();
+	
+	public List<String> getContactNumber(final String name) throws Error.Failure;
+	
+	public void quitGroup(final byte[] groupId) throws Error.GroupNotFound,Error.Failure;
+	
+	public boolean isContactBlocked(final String number);
+	
+	public boolean isGroupBlocked(final byte[] groupId);
+	
+	public boolean isMember(final byte[] groupId);
+	
+	public void joinGroup(final String groupLink) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 
