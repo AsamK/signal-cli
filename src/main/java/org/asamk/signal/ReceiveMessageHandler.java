@@ -665,7 +665,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private String formatContact(SignalServiceAddress address) {
         final var number = address.getLegacyIdentifier();
         var name = m.getContactOrProfileName(number);
-        if (name == null) {
+        if (name == null || name.isEmpty()) {
             return number;
         } else {
             return MessageFormatter.arrayFormat("“{}” {}", new Object[]{name, number}).getMessage();
