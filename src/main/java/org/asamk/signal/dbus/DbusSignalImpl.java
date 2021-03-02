@@ -333,6 +333,9 @@ public class DbusSignalImpl implements Signal {
     public void joinGroup(final String groupLink) {
         try {
             final var linkUrl = GroupInviteLinkUrl.fromUri(groupLink);
+            if (linkUrl == null) {
+                throw new Error.Failure("Group link is invalid:");
+            }
             m.joinGroup(linkUrl);
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupLinkNotActiveException e) {
             throw new Error.Failure("Group link is invalid: " + e.getMessage());
