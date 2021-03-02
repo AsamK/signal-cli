@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2021-03-02
+### Added
+- New dbus commands: updateProfile, listNumbers, getContactNumber, quitGroup, isContactBlocked, isGroupBlocked, isMember, joinGroup (Thanks @bublath)
+- Additional output for json format: shared contacts (Thanks @Atomic-Bean)
+- Improved plain text output to be more consistent and synced messages are now indented
+
+### Fixed
+- Issue with broken sessions with linked devices
+
+### Changed
+- Behavior of `trust` command improved, when trusting a new identity key all other known keys for
+  the same number are removed.
+
 ## [0.8.0] - 2021-02-14
 **Attention**: For all signal protocol functionality an additional native library is now required: [libsignal-client](https://github.com/signalapp/libsignal-client/).
 See https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal for more information.
