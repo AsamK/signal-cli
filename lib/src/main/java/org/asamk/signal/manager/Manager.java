@@ -2367,7 +2367,6 @@ public class Manager implements Closeable {
         if (profileEntry != null && profileEntry.getProfile() != null) {
             return profileEntry.getProfile().getDisplayName();
         }
-
         return null;
     }
 
