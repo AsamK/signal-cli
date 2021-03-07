@@ -12,6 +12,7 @@ You can [build signal-cli](#building) yourself, or use the [provided binary file
 System requirements:
 - at least Java Runtime Environment (JRE) 11
 - native libraries: libzkgroup, libsignal-client
+
   Those are bundled for x86_64 Linux, for other systems/architectures see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
 ### Install system-wide on Linux
