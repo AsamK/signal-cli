@@ -38,6 +38,7 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.TimeoutException;
 
 public class ProvisioningManager {
@@ -86,7 +87,7 @@ public class ProvisioningManager {
         return new ProvisioningManager(pathConfig, serviceConfiguration, userAgent);
     }
 
-    public String getDeviceLinkUri() throws TimeoutException, IOException {
+    public URI getDeviceLinkUri() throws TimeoutException, IOException {
         var deviceUuid = accountManager.getNewDeviceUuid();
 
         return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();

@@ -5,6 +5,7 @@ import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -61,11 +62,15 @@ public class DeviceLinkInfo {
         this.deviceKey = deviceKey;
     }
 
-    public String createDeviceLinkUri() {
+    public URI createDeviceLinkUri() {
         final var deviceKeyString = Base64.getEncoder().encodeToString(deviceKey.serialize()).replace("=", "");
-        return "tsdevice:/?uuid="
-                + URLEncoder.encode(deviceIdentifier, StandardCharsets.UTF_8)
-                + "&pub_key="
-                + URLEncoder.encode(deviceKeyString, StandardCharsets.UTF_8);
+        try {
+            return new URI("tsdevice:/?uuid="
+                    + URLEncoder.encode(deviceIdentifier, StandardCharsets.UTF_8)
+                    + "&pub_key="
+                    + URLEncoder.encode(deviceKeyString, StandardCharsets.UTF_8));
+        } catch (URISyntaxException e) {
+            throw new AssertionError(e);
+        }
     }
 }
