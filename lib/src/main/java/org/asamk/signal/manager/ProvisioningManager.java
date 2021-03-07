@@ -92,7 +92,7 @@ public class ProvisioningManager {
         return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
-    public String finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
+    public Manager finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
         var ret = accountManager.finishNewDeviceRegistration(identityKey, false, true, registrationId, deviceName);
 
         var username = ret.getNumber();
@@ -114,17 +114,21 @@ public class ProvisioningManager {
             }
         }
 
-        try (var account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
-                username,
-                ret.getUuid(),
-                password,
-                ret.getDeviceId(),
-                ret.getIdentity(),
-                registrationId,
-                profileKey)) {
+        SignalAccount account = null;
+        try {
+            account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
+                    username,
+                    ret.getUuid(),
+                    password,
+                    ret.getDeviceId(),
+                    ret.getIdentity(),
+                    registrationId,
+                    profileKey);
             account.save();
 
-            try (var m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
+            Manager m = null;
+            try {
+                m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
 
                 try {
                     m.refreshPreKeys();
@@ -144,12 +148,22 @@ public class ProvisioningManager {
                     throw e;
                 }
 
-                m.close(false);
+                account.save();
+
+                final var result = m;
+                account = null;
+                m = null;
+
+                return result;
+            } finally {
+                if (m != null) {
+                    m.close();
+                }
             }
-
-            account.save();
+        } finally {
+            if (account != null) {
+                account.close();
+            }
         }
-
-        return username;
     }
 }

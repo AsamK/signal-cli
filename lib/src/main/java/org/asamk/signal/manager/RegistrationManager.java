@@ -128,7 +128,7 @@ public class RegistrationManager implements Closeable {
         account.save();
     }
 
-    public void verifyAccount(
+    public Manager verifyAccount(
             String verificationCode, String pin
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         verificationCode = verificationCode.replace("-", "");
@@ -169,14 +169,24 @@ public class RegistrationManager implements Closeable {
                         account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(),
                         TrustLevel.TRUSTED_VERIFIED);
 
-        try (var m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent)) {
+        Manager m = null;
+        try {
+            m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
 
             m.refreshPreKeys();
 
-            m.close(false);
-        }
+            account.save();
 
-        account.save();
+            final var result = m;
+            account = null;
+            m = null;
+
+            return result;
+        } finally {
+            if (m != null) {
+                m.close();
+            }
+        }
     }
 
     private VerifyAccountResponse verifyAccountWithCode(

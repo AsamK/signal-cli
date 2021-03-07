@@ -38,8 +38,9 @@ public class LinkCommand implements ProvisioningCommand {
         }
         try {
             writer.println("{}", m.getDeviceLinkUri());
-            var username = m.finishDeviceLink(deviceName);
-            writer.println("Associated with: {}", username);
+            try (var manager = m.finishDeviceLink(deviceName)) {
+                writer.println("Associated with: {}", manager.getUsername());
+            }
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
