@@ -133,16 +133,15 @@ public class App {
 
         if (username == null) {
             var usernames = Manager.getAllLocalUsernames(dataPath);
-            if (usernames.size() == 0) {
-                throw new UserErrorException("No local users found, you first need to register or link an account");
-            }
 
             if (command instanceof MultiLocalCommand) {
                 handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
                 return;
             }
 
-            if (usernames.size() > 1) {
+            if (usernames.size() == 0) {
+                throw new UserErrorException("No local users found, you first need to register or link an account");
+            } else if (usernames.size() > 1) {
                 throw new UserErrorException(
                         "Multiple users found, you need to specify a username (phone number) with -u");
             }
