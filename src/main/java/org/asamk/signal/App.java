@@ -214,7 +214,11 @@ public class App {
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
         for (String u : usernames) {
-            managers.add(loadManager(u, dataPath, serviceEnvironment));
+            try {
+                managers.add(loadManager(u, dataPath, serviceEnvironment));
+            } catch (CommandException e) {
+                logger.warn("Ignoring {}: {}", u, e.getMessage());
+            }
         }
 
         command.handleCommand(ns, managers);
