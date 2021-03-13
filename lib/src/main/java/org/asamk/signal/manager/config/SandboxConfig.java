@@ -29,7 +29,7 @@ class SandboxConfig {
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "823a3b2c037ff0cbe305cc48928cfcc97c9ed4a8ca6d49af6f7d6981fb60a4e9";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
-            "038c40bbbacdc873caa81ac793bb75afde6dfe436a99ab1f15e3f0cbb7434ced");
+            "51a56084c0b21c6b8f62b1bc792ec9bedac4c7c3964bb08ddcab868158c09982");
     private final static String KEY_BACKUP_MRENCLAVE = "a3baab19ef6ce6f34ab9ebb25ba722725ae44a8872dc0ff08ad6d83a9489de87";
 
     private final static String URL = "https://textsecure-service-staging.whispersystems.org";
