@@ -331,6 +331,18 @@
   "allDeclaredConstructors":true
 },
 {
+  "name": "org.asamk.signal.json.JsonGroupInfo",
+  "allDeclaredFields": true,
+  "allDeclaredMethods": true,
+  "allDeclaredConstructors": true
+},
+{
+  "name": "org.asamk.signal.json.JsonSyncMessage",
+  "allDeclaredFields": true,
+  "allDeclaredMethods": true,
+  "allDeclaredConstructors": true
+},
+{
   "name":"org.asamk.signal.json.JsonMessageEnvelope",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
