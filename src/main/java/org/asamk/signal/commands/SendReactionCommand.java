@@ -67,7 +67,7 @@ public class SendReactionCommand implements LocalCommand {
         final Pair<Long, List<SendMessageResult>> results;
 
         GroupId groupId = null;
-        if (groupId != null) {
+        if (groupIdString != null) {
             try {
                 groupId = Util.decodeGroupId(groupIdString);
             } catch (GroupIdFormatException e) {
