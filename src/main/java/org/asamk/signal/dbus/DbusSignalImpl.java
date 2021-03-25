@@ -104,6 +104,30 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public long sendMessageReaction(
+            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final String recipient
+    ) {
+        var recipients = new ArrayList<String>(1);
+        recipients.add(recipient);
+        return sendMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, recipients);
+    }
+
+    @Override
+    public long sendMessageReaction(
+            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final List<String> recipients
+    ) {
+        try {
+            final var results = m.sendMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, recipients);
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
@@ -142,6 +166,23 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
+        }
+    }
+
+    @Override
+    public long sendGroupMessageReaction(
+            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final byte[] groupId
+    ) {
+        try {
+            final var results = m.sendGroupMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, GroupId.unknownVersion(groupId));
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new Error.GroupNotFound(e.getMessage());
         }
     }
 

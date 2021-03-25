@@ -21,6 +21,14 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
+    long sendMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
+    ) throws Error.InvalidNumber, Error.Failure;
+
+    long sendMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
+    ) throws Error.InvalidNumber, Error.Failure;
+
     long sendNoteToSelfMessage(
             String message, List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure;
@@ -30,6 +38,10 @@ public interface Signal extends DBusInterface {
     long sendGroupMessage(
             String message, List<String> attachments, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid;
+
+    long sendGroupMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber;
 
     String getContactName(String number) throws Error.InvalidNumber;
 

@@ -98,7 +98,7 @@ public class SendCommand implements DbusCommand {
             try {
                 groupId = Util.decodeGroupId(groupIdString).serialize();
             } catch (GroupIdFormatException e) {
-                throw new UserErrorException("Invalid group id:" + e.getMessage());
+                throw new UserErrorException("Invalid group id: " + e.getMessage());
             }
 
             try {
