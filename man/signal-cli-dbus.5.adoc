@@ -11,7 +11,7 @@ DBus API for signal-cli - A commandline and dbus interface for the Signal messen
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-u USERNAME] [-o {plain-text,json}] [--dbus-system] daemon
+*signal-cli* [--verbose] [--config CONFIG] [-u USERNAME] [-o {plain-text,json}] daemon [--system]
 
 *dbus-send* [--system | --session] [--print-reply] --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal[/_<phonenum>] org.asamk.Signal.<method> [string:<string argument>] [array:<type>:<array argument>]
 
@@ -127,7 +127,7 @@ Expections: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
 
 getContactName(number<s>) -> name<s>::
 * number  : Phone number
-* name    : Name set in contacts (setContacts) or if not set the profile name 
+* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
 
 setContactName(number<s>,name<>) -> <>::
 * number  : Phone number
@@ -202,9 +202,7 @@ This signal is received whenever we get a private message or a message is posted
 == Examples
 
 Send a text message (without attachment) to a contact::
-dbus-send --print-reply --type=method_call --dest="org.asamk.Signal"
-/org/asamk/Signal org.asamk.Signal.sendMessage string:"Message text goes
-here" array:string: string:+123456789
+dbus-send --print-reply --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal org.asamk.Signal.sendMessage string:"Message text goes here" array:string: string:+123456789
 
 Send a group message::
 dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachmnt1','/path/to/attachmnt2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
