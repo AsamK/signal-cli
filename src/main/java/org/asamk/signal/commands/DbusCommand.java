@@ -12,6 +12,6 @@ public interface DbusCommand extends LocalCommand {
     void handleCommand(Namespace ns, Signal signal) throws CommandException;
 
     default void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        handleCommand(ns, new DbusSignalImpl(m));
+        handleCommand(ns, new DbusSignalImpl(m, null));
     }
 }

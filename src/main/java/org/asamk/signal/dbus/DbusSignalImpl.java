@@ -34,9 +34,11 @@ import static org.asamk.signal.util.Util.getLegacyIdentifier;
 public class DbusSignalImpl implements Signal {
 
     private final Manager m;
+    private final String objectPath;
 
-    public DbusSignalImpl(final Manager m) {
+    public DbusSignalImpl(final Manager m, final String objectPath) {
         this.m = m;
+        this.objectPath = objectPath;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public String getObjectPath() {
-        return null;
+        return objectPath;
     }
 
     @Override

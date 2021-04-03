@@ -14,6 +14,7 @@ import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.MultiLocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
 import org.asamk.signal.commands.RegistrationCommand;
+import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -235,7 +236,17 @@ public class App {
             }
         }
 
-        command.handleCommand(ns, managers);
+        command.handleCommand(ns, managers, new SignalCreator() {
+            @Override
+            public ProvisioningManager getNewProvisioningManager() {
+                return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+
+            @Override
+            public RegistrationManager getNewRegistrationManager(String username) throws IOException {
+                return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+        });
 
         for (var m : managers) {
             try {
