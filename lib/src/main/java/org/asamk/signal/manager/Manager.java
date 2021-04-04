@@ -992,6 +992,22 @@ public class Manager implements Closeable {
         return sendSelfMessage(messageBuilder);
     }
 
+    public Pair<Long, List<SendMessageResult>> remoteDelete(
+            long targetSentTimestamp, List<String> recipients
+    ) throws IOException, InvalidNumberException {
+        var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
+        return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
+    }
+
+    public Pair<Long, List<SendMessageResult>> remoteGroupDelete(
+            long targetSentTimestamp, GroupId groupId
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+        var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
+        return sendGroupMessage(messageBuilder, groupId);
+    }
+
     public Pair<Long, List<SendMessageResult>> sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {

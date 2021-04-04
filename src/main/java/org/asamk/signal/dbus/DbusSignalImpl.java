@@ -104,6 +104,36 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public long remoteDelete(
+            final long targetSentTimestamp, final List<String> recipients
+    ) {
+        try {
+            final var results = m.remoteDelete(targetSentTimestamp, recipients);
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
+        }
+    }
+
+    @Override
+    public long remoteGroupDelete(
+            final long targetSentTimestamp, final byte[] groupId
+    ) {
+        try {
+            final var results = m.remoteGroupDelete(targetSentTimestamp, GroupId.unknownVersion(groupId));
+            checkSendMessageResults(results.first(), results.second());
+            return results.first();
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        }
+    }
+
+    @Override
     public long sendMessageReaction(
             final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final String recipient
     ) {
