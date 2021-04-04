@@ -26,7 +26,7 @@ public class RemoteDeleteCommand implements DbusCommand {
                 .required(true)
                 .type(long.class)
                 .help("Specify the timestamp of the message to delete.");
-        var mut = subparser.addMutuallyExclusiveGroup().required(true);
+        var mut = subparser.addMutuallyExclusiveGroup();
         mut.addArgument("-g", "--group").help("Specify the recipient group ID.");
         mut.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
     }
@@ -36,8 +36,6 @@ public class RemoteDeleteCommand implements DbusCommand {
         final List<String> recipients = ns.getList("recipient");
         final var groupIdString = ns.getString("group");
 
-        // Possibly unnecessary (see above — recipient(s) or group is required),
-        // but just for case...
         final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {
             throw new UserErrorException("No recipients given");
