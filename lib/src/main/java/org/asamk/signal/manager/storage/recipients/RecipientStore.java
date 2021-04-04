@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.storage.protocol;
+package org.asamk.signal.manager.storage.recipients;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
