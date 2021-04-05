@@ -22,6 +22,10 @@ public interface Signal extends DBusInterface {
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long remoteDelete(
+            long targetSentTimestamp, String recipient
+    ) throws Error.Failure, Error.InvalidNumber;
+
+    long remoteDelete(
             long targetSentTimestamp, List<String> recipients
     ) throws Error.Failure, Error.InvalidNumber;
 

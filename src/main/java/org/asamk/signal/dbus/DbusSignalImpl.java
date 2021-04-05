@@ -105,6 +105,15 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long remoteDelete(
+            final long targetSentTimestamp, final String recipient
+    ) {
+        var recipients = new ArrayList<String>(1);
+        recipients.add(recipient);
+        return remoteDelete(targetSentTimestamp, recipients);
+    }
+
+    @Override
+    public long remoteDelete(
             final long targetSentTimestamp, final List<String> recipients
     ) {
         try {
