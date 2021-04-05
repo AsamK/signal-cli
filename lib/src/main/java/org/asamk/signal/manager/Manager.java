@@ -992,7 +992,7 @@ public class Manager implements Closeable {
         return sendSelfMessage(messageBuilder);
     }
 
-    public Pair<Long, List<SendMessageResult>> remoteDelete(
+    public Pair<Long, List<SendMessageResult>> sendRemoteDeleteMessage(
             long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
@@ -1000,7 +1000,7 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
     }
 
-    public Pair<Long, List<SendMessageResult>> remoteGroupDelete(
+    public Pair<Long, List<SendMessageResult>> sendGroupRemoteDeleteMessage(
             long targetSentTimestamp, GroupId groupId
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);

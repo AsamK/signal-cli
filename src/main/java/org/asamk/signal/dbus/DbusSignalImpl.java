@@ -104,20 +104,20 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long remoteDelete(
+    public long sendRemoteDeleteMessage(
             final long targetSentTimestamp, final String recipient
     ) {
         var recipients = new ArrayList<String>(1);
         recipients.add(recipient);
-        return remoteDelete(targetSentTimestamp, recipients);
+        return sendRemoteDeleteMessage(targetSentTimestamp, recipients);
     }
 
     @Override
-    public long remoteDelete(
+    public long sendRemoteDeleteMessage(
             final long targetSentTimestamp, final List<String> recipients
     ) {
         try {
-            final var results = m.remoteDelete(targetSentTimestamp, recipients);
+            final var results = m.sendRemoteDeleteMessage(targetSentTimestamp, recipients);
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
@@ -128,11 +128,11 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long remoteGroupDelete(
+    public long sendGroupRemoteDeleteMessage(
             final long targetSentTimestamp, final byte[] groupId
     ) {
         try {
-            final var results = m.remoteGroupDelete(targetSentTimestamp, GroupId.unknownVersion(groupId));
+            final var results = m.sendGroupRemoteDeleteMessage(targetSentTimestamp, GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {

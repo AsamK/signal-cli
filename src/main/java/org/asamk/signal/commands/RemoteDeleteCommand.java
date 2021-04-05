@@ -61,9 +61,9 @@ public class RemoteDeleteCommand implements DbusCommand {
         try {
             long timestamp;
             if (groupId != null) {
-                timestamp = signal.remoteGroupDelete(targetTimestamp, groupId);
+                timestamp = signal.sendGroupRemoteDeleteMessage(targetTimestamp, groupId);
             } else {
-                timestamp = signal.remoteDelete(targetTimestamp, recipients);
+                timestamp = signal.sendRemoteDeleteMessage(targetTimestamp, recipients);
             }
             writer.println("{}", timestamp);
         } catch (AssertionError e) {

@@ -149,15 +149,15 @@ Depending on the type of the recipient(s) field this sends a reaction to one or 
 
 Exceptions: Failure, InvalidNumber
 
-remoteGroupDelete(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
 * targetSentTimestamp : Long representing timestamp of the message to delete
 * groupId             : Byte array with base64 encoded group identifier
 * timestamp           : Long, can be used to identify the corresponding signal reply
 
 Exceptions: Failure, GroupNotFound
 
-remoteDelete(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
-remoteDelete(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
+sendRemoteDeleteMessage(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
+sendRemoteDeleteMessage(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
 * targetSentTimestamp : Long representing timestamp of the message to delete
 * recipient           : String with the phone number of a single recipient
 * recipients          : Array of strings with phone numbers, should there be more recipients
