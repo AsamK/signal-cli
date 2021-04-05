@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
@@ -17,6 +18,8 @@ import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
+import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
@@ -125,7 +128,8 @@ public class SignalAccount implements Closeable {
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
-        account.recipientStore = new RecipientStore();
+        account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
+                account::mergeRecipients);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -165,7 +169,8 @@ public class SignalAccount implements Closeable {
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
-        account.recipientStore = new RecipientStore();
+        account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
+                account::mergeRecipients);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -204,6 +209,10 @@ public class SignalAccount implements Closeable {
         getProfileStore().storeProfileKey(getSelfAddress(), getProfileKey());
     }
 
+    private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
+        // TODO
+    }
+
     public static File getFileName(File dataPath, String username) {
         return new File(dataPath, username);
     }
@@ -218,6 +227,10 @@ public class SignalAccount implements Closeable {
 
     private static File getGroupCachePath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "group-cache");
+    }
+
+    private static File getRecipientsStoreFile(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "recipients-store");
     }
 
     public static boolean userExists(File dataPath, String username) {
@@ -279,6 +292,16 @@ public class SignalAccount implements Closeable {
             }
         }
 
+        recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
+        var legacyRecipientStoreNode = rootNode.get("recipientStore");
+        if (legacyRecipientStoreNode != null) {
+            logger.debug("Migrating legacy recipient store.");
+            var legacyRecipientStore = jsonProcessor.convertValue(legacyRecipientStoreNode, LegacyRecipientStore.class);
+            if (legacyRecipientStore != null) {
+                recipientStore.resolveRecipients(legacyRecipientStore.getAddresses());
+            }
+        }
+
         signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 JsonSignalProtocolStore.class);
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
@@ -299,18 +322,29 @@ public class SignalAccount implements Closeable {
             contactStore = new JsonContactsStore();
         }
 
-        var recipientStoreNode = rootNode.get("recipientStore");
-        if (recipientStoreNode != null) {
-            recipientStore = jsonProcessor.convertValue(recipientStoreNode, RecipientStore.class);
+        var profileStoreNode = rootNode.get("profileStore");
+        if (profileStoreNode != null) {
+            profileStore = jsonProcessor.convertValue(profileStoreNode, ProfileStore.class);
         }
-        if (recipientStore == null) {
-            recipientStore = new RecipientStore();
+        if (profileStore == null) {
+            profileStore = new ProfileStore();
+        }
 
-            recipientStore.resolveServiceAddress(getSelfAddress());
+        var stickerStoreNode = rootNode.get("stickerStore");
+        if (stickerStoreNode != null) {
+            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
+        }
+        if (stickerStore == null) {
+            stickerStore = new StickerStore();
+        }
 
-            for (var contact : contactStore.getContacts()) {
-                recipientStore.resolveServiceAddress(contact.getAddress());
-            }
+        if (recipientStore.isEmpty()) {
+            recipientStore.resolveRecipient(getSelfAddress());
+
+            recipientStore.resolveRecipients(contactStore.getContacts()
+                    .stream()
+                    .map(ContactInfo::getAddress)
+                    .collect(Collectors.toList()));
 
             for (var group : groupStore.getGroups()) {
                 if (group instanceof GroupInfoV1) {
@@ -328,22 +362,6 @@ public class SignalAccount implements Closeable {
             for (var identity : signalProtocolStore.getIdentities()) {
                 identity.setAddress(recipientStore.resolveServiceAddress(identity.getAddress()));
             }
-        }
-
-        var profileStoreNode = rootNode.get("profileStore");
-        if (profileStoreNode != null) {
-            profileStore = jsonProcessor.convertValue(profileStoreNode, ProfileStore.class);
-        }
-        if (profileStore == null) {
-            profileStore = new ProfileStore();
-        }
-
-        var stickerStoreNode = rootNode.get("stickerStore");
-        if (stickerStoreNode != null) {
-            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
-        }
-        if (stickerStore == null) {
-            stickerStore = new StickerStore();
         }
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -396,7 +414,6 @@ public class SignalAccount implements Closeable {
                 .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
-                .putPOJO("recipientStore", recipientStore)
                 .putPOJO("profileStore", profileStore)
                 .putPOJO("stickerStore", stickerStore);
         try {
