@@ -193,6 +193,19 @@ Specify the timestamp of the message to which to react.
 *-r*, *--remove*::
 Remove a reaction.
 
+=== remoteDelete
+
+Remotely delete a previously sent message.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to delete.
+
 === receive
 
 Query the server for new messages.
