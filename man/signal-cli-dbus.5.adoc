@@ -98,7 +98,7 @@ sendEndSessionMessage(recipients<as>) -> <>::
 
 Exceptions: Failure, InvalidNumber, UntrustedIdentity
 
-sendGroupMessage(message<s>, attachments<as>, groupId<a>) -> timestamp<x>::
+sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * groupId     : Byte array representing the internal group identifier
@@ -113,7 +113,7 @@ sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 
 Exceptions: Failure, AttachmentInvalid
 
-sendMessage(message<s>, attachments<as>, recipient<s) -> timestamp<x>::
+sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
 sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
@@ -123,7 +123,31 @@ sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 
 Depending on the type of the recipient field this sends a message to one or multiple recipients.
 
-Expections: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
+Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
+
+sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+* emoji               : Unicode grapheme cluster of the emoji
+* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
+* targetAuthor        : String with the phone number of the author of the message to which to react
+* targetSentTimestamp : Long representing timestamp of the message to which to react
+* groupId             : Byte array with base64 encoded group identifier
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Exceptions: Failure, InvalidNumber, GroupNotFound
+
+sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
+sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
+* emoji               : Unicode grapheme cluster of the emoji
+* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
+* targetAuthor        : String with the phone number of the author of the message to which to react
+* targetSentTimestamp : Long representing timestamp of the message to which to react
+* recipient           : String with the phone number of a single recipient
+* recipients          : Array of strings with phone numbers, should there be more recipients
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Depending on the type of the recipient(s) field this sends a reaction to one or multiple recipients.
+
+Exceptions: Failure, InvalidNumber
 
 getContactName(number<s>) -> name<s>::
 * number  : Phone number
