@@ -21,6 +21,18 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
+    long sendRemoteDeleteMessage(
+            long targetSentTimestamp, String recipient
+    ) throws Error.Failure, Error.InvalidNumber;
+
+    long sendRemoteDeleteMessage(
+            long targetSentTimestamp, List<String> recipients
+    ) throws Error.Failure, Error.InvalidNumber;
+
+    long sendGroupRemoteDeleteMessage(
+            long targetSentTimestamp, byte[] groupId
+    ) throws Error.Failure, Error.GroupNotFound;
+
     long sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
     ) throws Error.InvalidNumber, Error.Failure;

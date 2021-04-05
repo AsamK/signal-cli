@@ -22,20 +22,21 @@ public class Commands {
         addCommand("receive", new ReceiveCommand());
         addCommand("register", new RegisterCommand());
         addCommand("removeDevice", new RemoveDeviceCommand());
+        addCommand("remoteDelete", new RemoteDeleteCommand());
         addCommand("removePin", new RemovePinCommand());
         addCommand("send", new SendCommand());
-        addCommand("sendReaction", new SendReactionCommand());
         addCommand("sendContacts", new SendContactsCommand());
-        addCommand("updateContact", new UpdateContactCommand());
+        addCommand("sendReaction", new SendReactionCommand());
         addCommand("setPin", new SetPinCommand());
         addCommand("trust", new TrustCommand());
         addCommand("unblock", new UnblockCommand());
         addCommand("unregister", new UnregisterCommand());
         addCommand("updateAccount", new UpdateAccountCommand());
+        addCommand("updateContact", new UpdateContactCommand());
         addCommand("updateGroup", new UpdateGroupCommand());
         addCommand("updateProfile", new UpdateProfileCommand());
-        addCommand("verify", new VerifyCommand());
         addCommand("uploadStickerPack", new UploadStickerPackCommand());
+        addCommand("verify", new VerifyCommand());
     }
 
     public static Map<String, Command> getCommands() {
