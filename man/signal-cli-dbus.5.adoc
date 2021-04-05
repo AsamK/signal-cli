@@ -98,7 +98,7 @@ sendEndSessionMessage(recipients<as>) -> <>::
 
 Exceptions: Failure, InvalidNumber, UntrustedIdentity
 
-sendGroupMessage(message<s>, attachments<as>, groupId<a>) -> timestamp<x>::
+sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * groupId     : Byte array representing the internal group identifier
@@ -125,7 +125,7 @@ Depending on the type of the recipient field this sends a message to one or mult
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
 
-sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<a>) -> timestamp<x>::
+sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
 * emoji               : Unicode grapheme cluster of the emoji
 * remove              : Boolean, whether a previously sent reaction (emoji) should be removed
 * targetAuthor        : String with the phone number of the author of the message to which to react
