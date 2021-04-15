@@ -1,10 +1,12 @@
 package org.asamk.signal.manager.storage.protocol;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyIdException;
@@ -17,6 +19,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.List;
 
+@JsonIgnoreProperties(value = "sessionStore", allowSetters = true)
 public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
 
     @JsonProperty("preKeys")
@@ -25,9 +28,8 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
     private JsonPreKeyStore preKeyStore;
 
     @JsonProperty("sessionStore")
-    @JsonDeserialize(using = JsonSessionStore.JsonSessionStoreDeserializer.class)
-    @JsonSerialize(using = JsonSessionStore.JsonSessionStoreSerializer.class)
-    private JsonSessionStore sessionStore;
+    @JsonDeserialize(using = LegacyJsonSessionStore.JsonSessionStoreDeserializer.class)
+    private LegacyJsonSessionStore legacySessionStore;
 
     @JsonProperty("signedPreKeyStore")
     @JsonDeserialize(using = JsonSignedPreKeyStore.JsonSignedPreKeyStoreDeserializer.class)
@@ -39,31 +41,28 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
     @JsonSerialize(using = JsonIdentityKeyStore.JsonIdentityKeyStoreSerializer.class)
     private JsonIdentityKeyStore identityKeyStore;
 
+    private SessionStore sessionStore;
+
     public JsonSignalProtocolStore() {
     }
 
-    public JsonSignalProtocolStore(
-            JsonPreKeyStore preKeyStore,
-            JsonSessionStore sessionStore,
-            JsonSignedPreKeyStore signedPreKeyStore,
-            JsonIdentityKeyStore identityKeyStore
-    ) {
-        this.preKeyStore = preKeyStore;
-        this.sessionStore = sessionStore;
-        this.signedPreKeyStore = signedPreKeyStore;
-        this.identityKeyStore = identityKeyStore;
-    }
-
-    public JsonSignalProtocolStore(IdentityKeyPair identityKeyPair, int registrationId) {
+    public JsonSignalProtocolStore(IdentityKeyPair identityKeyPair, int registrationId, SessionStore sessionStore) {
         preKeyStore = new JsonPreKeyStore();
-        sessionStore = new JsonSessionStore();
+        this.sessionStore = sessionStore;
         signedPreKeyStore = new JsonSignedPreKeyStore();
         this.identityKeyStore = new JsonIdentityKeyStore(identityKeyPair, registrationId);
     }
 
     public void setResolver(final SignalServiceAddressResolver resolver) {
-        sessionStore.setResolver(resolver);
         identityKeyStore.setResolver(resolver);
+    }
+
+    public void setSessionStore(final SessionStore sessionStore) {
+        this.sessionStore = sessionStore;
+    }
+
+    public LegacyJsonSessionStore getLegacySessionStore() {
+        return legacySessionStore;
     }
 
     @Override
@@ -142,10 +141,6 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
         return sessionStore.loadSession(address);
     }
 
-    public List<SessionInfo> getSessions() {
-        return sessionStore.getSessions();
-    }
-
     @Override
     public List<Integer> getSubDeviceSessions(String name) {
         return sessionStore.getSubDeviceSessions(name);
@@ -171,17 +166,9 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
         sessionStore.deleteAllSessions(name);
     }
 
-    public void deleteAllSessions(SignalServiceAddress serviceAddress) {
-        sessionStore.deleteAllSessions(serviceAddress);
-    }
-
     @Override
     public void archiveSession(final SignalProtocolAddress address) {
         sessionStore.archiveSession(address);
-    }
-
-    public void archiveAllSessions() {
-        sessionStore.archiveAllSessions();
     }
 
     @Override

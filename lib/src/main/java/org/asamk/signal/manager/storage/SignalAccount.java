@@ -21,6 +21,7 @@ import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
+import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.util.IOUtils;
@@ -31,7 +32,9 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.Pair;
@@ -77,6 +80,7 @@ public class SignalAccount implements Closeable {
     private boolean registered = false;
 
     private JsonSignalProtocolStore signalProtocolStore;
+    private SessionStore sessionStore;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
@@ -125,11 +129,13 @@ public class SignalAccount implements Closeable {
 
         account.username = username;
         account.profileKey = profileKey;
-        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
+        account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
+                account.recipientStore::resolveRecipient);
+        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId, account.sessionStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -166,11 +172,13 @@ public class SignalAccount implements Closeable {
         account.password = password;
         account.profileKey = profileKey;
         account.deviceId = deviceId;
-        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId);
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         account.contactStore = new JsonContactsStore();
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
+        account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
+                account.recipientStore::resolveRecipient);
+        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey, registrationId, account.sessionStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -210,7 +218,7 @@ public class SignalAccount implements Closeable {
     }
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
-        // TODO
+        sessionStore.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public static File getFileName(File dataPath, String username) {
@@ -227,6 +235,10 @@ public class SignalAccount implements Closeable {
 
     private static File getGroupCachePath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "group-cache");
+    }
+
+    private static File getSessionsPath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "sessions");
     }
 
     private static File getRecipientsStoreFile(File dataPath, String username) {
@@ -304,6 +316,19 @@ public class SignalAccount implements Closeable {
 
         signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 JsonSignalProtocolStore.class);
+        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
+        if (signalProtocolStore.getLegacySessionStore() != null) {
+            logger.debug("Migrating legacy session store.");
+            for (var session : signalProtocolStore.getLegacySessionStore().getSessions()) {
+                try {
+                    sessionStore.storeSession(new SignalProtocolAddress(session.address.getIdentifier(),
+                            session.deviceId), new SessionRecord(session.sessionRecord));
+                } catch (IOException e) {
+                    logger.warn("Failed to migrate session, ignoring", e);
+                }
+            }
+        }
+        signalProtocolStore.setSessionStore(sessionStore);
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         var groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
@@ -353,10 +378,6 @@ public class SignalAccount implements Closeable {
                             .map(m -> recipientStore.resolveServiceAddress(m))
                             .collect(Collectors.toSet());
                 }
-            }
-
-            for (var session : signalProtocolStore.getSessions()) {
-                session.address = recipientStore.resolveServiceAddress(session.address);
             }
 
             for (var identity : signalProtocolStore.getIdentities()) {
@@ -464,6 +485,10 @@ public class SignalAccount implements Closeable {
         return signalProtocolStore;
     }
 
+    public SessionStore getSessionStore() {
+        return sessionStore;
+    }
+
     public JsonGroupStore getGroupStore() {
         return groupStore;
     }
@@ -514,6 +539,14 @@ public class SignalAccount implements Closeable {
 
     public boolean isMasterDevice() {
         return deviceId == SignalServiceAddress.DEFAULT_DEVICE_ID;
+    }
+
+    public IdentityKeyPair getIdentityKeyPair() {
+        return signalProtocolStore.getIdentityKeyPair();
+    }
+
+    public int getLocalRegistrationId() {
+        return signalProtocolStore.getLocalRegistrationId();
     }
 
     public String getPassword() {

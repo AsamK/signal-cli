@@ -8,7 +8,11 @@ public class RecipientId {
         this.id = id;
     }
 
-    long getId() {
+    public static RecipientId of(long id) {
+        return new RecipientId(id);
+    }
+
+    public long getId() {
         return id;
     }
 

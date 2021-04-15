@@ -163,10 +163,10 @@ public class RegistrationManager implements Closeable {
         account.setRegistered(true);
         account.setUuid(UuidUtil.parseOrNull(response.getUuid()));
         account.setRegistrationLockPin(pin);
-        account.getSignalProtocolStore().archiveAllSessions();
+        account.getSessionStore().archiveAllSessions();
         account.getSignalProtocolStore()
                 .saveIdentity(account.getSelfAddress(),
-                        account.getSignalProtocolStore().getIdentityKeyPair().getPublicKey(),
+                        account.getIdentityKeyPair().getPublicKey(),
                         TrustLevel.TRUSTED_VERIFIED);
 
         Manager m = null;
@@ -194,7 +194,7 @@ public class RegistrationManager implements Closeable {
     ) throws IOException {
         return accountManager.verifyAccountWithCode(verificationCode,
                 null,
-                account.getSignalProtocolStore().getLocalRegistrationId(),
+                account.getLocalRegistrationId(),
                 true,
                 legacyPin,
                 registrationLock,

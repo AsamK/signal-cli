@@ -263,7 +263,7 @@ public class Manager implements Closeable {
     }
 
     private IdentityKeyPair getIdentityKeyPair() {
-        return account.getSignalProtocolStore().getIdentityKeyPair();
+        return account.getIdentityKeyPair();
     }
 
     public int getDeviceId() {
@@ -336,7 +336,7 @@ public class Manager implements Closeable {
 
     public void updateAccountAttributes() throws IOException {
         accountManager.setAccountAttributes(null,
-                account.getSignalProtocolStore().getLocalRegistrationId(),
+                account.getLocalRegistrationId(),
                 true,
                 // set legacy pin only if no KBS master key is set
                 account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
@@ -1441,7 +1441,7 @@ public class Manager implements Closeable {
     }
 
     private void handleEndSession(SignalServiceAddress source) {
-        account.getSignalProtocolStore().deleteAllSessions(source);
+        account.getSessionStore().deleteAllSessions(source.getIdentifier());
     }
 
     private List<HandleAction> handleSignalServiceDataMessage(
