@@ -16,9 +16,10 @@ import java.util.List;
 
 public class LegacyJsonSessionStore {
 
-    private final List<SessionInfo> sessions = new ArrayList<>();
+    private final List<SessionInfo> sessions;
 
-    public LegacyJsonSessionStore() {
+    private LegacyJsonSessionStore(final List<SessionInfo> sessions) {
+        this.sessions = sessions;
     }
 
     public List<SessionInfo> getSessions() {
@@ -33,7 +34,7 @@ public class LegacyJsonSessionStore {
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            var sessionStore = new LegacyJsonSessionStore();
+            var sessions = new ArrayList<SessionInfo>();
 
             if (node.isArray()) {
                 for (var session : node) {
@@ -50,11 +51,11 @@ public class LegacyJsonSessionStore {
                     final var deviceId = session.get("deviceId").asInt();
                     final var record = Base64.getDecoder().decode(session.get("record").asText());
                     var sessionInfo = new SessionInfo(serviceAddress, deviceId, record);
-                    sessionStore.sessions.add(sessionInfo);
+                    sessions.add(sessionInfo);
                 }
             }
 
-            return sessionStore;
+            return new LegacyJsonSessionStore(sessions);
         }
     }
 }

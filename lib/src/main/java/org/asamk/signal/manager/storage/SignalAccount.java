@@ -16,6 +16,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
+import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
@@ -82,6 +83,7 @@ public class SignalAccount implements Closeable {
 
     private JsonSignalProtocolStore signalProtocolStore;
     private PreKeyStore preKeyStore;
+    private SignedPreKeyStore signedPreKeyStore;
     private SessionStore sessionStore;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
@@ -136,11 +138,13 @@ public class SignalAccount implements Closeable {
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
         account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
+        account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
                 account.recipientStore::resolveRecipient);
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey,
                 registrationId,
                 account.preKeyStore,
+                account.signedPreKeyStore,
                 account.sessionStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
@@ -183,11 +187,13 @@ public class SignalAccount implements Closeable {
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
         account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
+        account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
                 account.recipientStore::resolveRecipient);
         account.signalProtocolStore = new JsonSignalProtocolStore(identityKey,
                 registrationId,
                 account.preKeyStore,
+                account.signedPreKeyStore,
                 account.sessionStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
@@ -249,6 +255,10 @@ public class SignalAccount implements Closeable {
 
     private static File getPreKeysPath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "pre-keys");
+    }
+
+    private static File getSignedPreKeysPath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "signed-pre-keys");
     }
 
     private static File getSessionsPath(File dataPath, String username) {
@@ -330,6 +340,7 @@ public class SignalAccount implements Closeable {
 
         signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 JsonSignalProtocolStore.class);
+
         preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
         if (signalProtocolStore.getLegacyPreKeyStore() != null) {
             logger.debug("Migrating legacy pre key store.");
@@ -342,6 +353,20 @@ public class SignalAccount implements Closeable {
             }
         }
         signalProtocolStore.setPreKeyStore(preKeyStore);
+
+        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
+        if (signalProtocolStore.getLegacySignedPreKeyStore() != null) {
+            logger.debug("Migrating legacy signed pre key store.");
+            for (var entry : signalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
+                try {
+                    signedPreKeyStore.storeSignedPreKey(entry.getKey(), new SignedPreKeyRecord(entry.getValue()));
+                } catch (IOException e) {
+                    logger.warn("Failed to migrate signed pre key, ignoring", e);
+                }
+            }
+        }
+        signalProtocolStore.setSignedPreKeyStore(signedPreKeyStore);
+
         sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
         if (signalProtocolStore.getLegacySessionStore() != null) {
             logger.debug("Migrating legacy session store.");
@@ -355,6 +380,7 @@ public class SignalAccount implements Closeable {
             }
         }
         signalProtocolStore.setSessionStore(sessionStore);
+
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         var groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {

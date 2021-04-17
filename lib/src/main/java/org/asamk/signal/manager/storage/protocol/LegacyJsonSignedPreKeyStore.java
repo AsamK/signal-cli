@@ -10,22 +10,22 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LegacyJsonPreKeyStore {
+public class LegacyJsonSignedPreKeyStore {
 
-    private final Map<Integer, byte[]> preKeys;
+    private final Map<Integer, byte[]> signedPreKeys;
 
-    private LegacyJsonPreKeyStore(final Map<Integer, byte[]> preKeys) {
-        this.preKeys = preKeys;
+    private LegacyJsonSignedPreKeyStore(final Map<Integer, byte[]> signedPreKeys) {
+        this.signedPreKeys = signedPreKeys;
     }
 
-    public Map<Integer, byte[]> getPreKeys() {
-        return preKeys;
+    public Map<Integer, byte[]> getSignedPreKeys() {
+        return signedPreKeys;
     }
 
-    public static class JsonPreKeyStoreDeserializer extends JsonDeserializer<LegacyJsonPreKeyStore> {
+    public static class JsonSignedPreKeyStoreDeserializer extends JsonDeserializer<LegacyJsonSignedPreKeyStore> {
 
         @Override
-        public LegacyJsonPreKeyStore deserialize(
+        public LegacyJsonSignedPreKeyStore deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
@@ -39,7 +39,7 @@ public class LegacyJsonPreKeyStore {
                 }
             }
 
-            return new LegacyJsonPreKeyStore(preKeyMap);
+            return new LegacyJsonSignedPreKeyStore(preKeyMap);
         }
     }
 }

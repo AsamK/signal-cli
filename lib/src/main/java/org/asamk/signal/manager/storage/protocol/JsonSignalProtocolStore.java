@@ -14,13 +14,14 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.PreKeyStore;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.state.SignedPreKeyStore;
 import org.whispersystems.signalservice.api.SignalServiceProtocolStore;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.List;
 
-@JsonIgnoreProperties(value = {"sessionStore", "preKeys"}, allowSetters = true)
+@JsonIgnoreProperties(value = {"sessionStore", "preKeys", "signedPreKeyStore"}, allowSetters = true)
 public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
 
     @JsonProperty("preKeys")
@@ -32,9 +33,8 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
     private LegacyJsonSessionStore legacySessionStore;
 
     @JsonProperty("signedPreKeyStore")
-    @JsonDeserialize(using = JsonSignedPreKeyStore.JsonSignedPreKeyStoreDeserializer.class)
-    @JsonSerialize(using = JsonSignedPreKeyStore.JsonSignedPreKeyStoreSerializer.class)
-    private JsonSignedPreKeyStore signedPreKeyStore;
+    @JsonDeserialize(using = LegacyJsonSignedPreKeyStore.JsonSignedPreKeyStoreDeserializer.class)
+    private LegacyJsonSignedPreKeyStore legacySignedPreKeyStore;
 
     @JsonProperty("identityKeyStore")
     @JsonDeserialize(using = JsonIdentityKeyStore.JsonIdentityKeyStoreDeserializer.class)
@@ -42,6 +42,7 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
     private JsonIdentityKeyStore identityKeyStore;
 
     private PreKeyStore preKeyStore;
+    private SignedPreKeyStore signedPreKeyStore;
     private SignalServiceSessionStore sessionStore;
 
     public JsonSignalProtocolStore() {
@@ -51,11 +52,12 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
             IdentityKeyPair identityKeyPair,
             int registrationId,
             PreKeyStore preKeyStore,
+            SignedPreKeyStore signedPreKeyStore,
             SignalServiceSessionStore sessionStore
     ) {
         this.preKeyStore = preKeyStore;
+        this.signedPreKeyStore = signedPreKeyStore;
         this.sessionStore = sessionStore;
-        signedPreKeyStore = new JsonSignedPreKeyStore();
         this.identityKeyStore = new JsonIdentityKeyStore(identityKeyPair, registrationId);
     }
 
@@ -67,12 +69,20 @@ public class JsonSignalProtocolStore implements SignalServiceProtocolStore {
         this.preKeyStore = preKeyStore;
     }
 
+    public void setSignedPreKeyStore(final SignedPreKeyStore signedPreKeyStore) {
+        this.signedPreKeyStore = signedPreKeyStore;
+    }
+
     public void setSessionStore(final SignalServiceSessionStore sessionStore) {
         this.sessionStore = sessionStore;
     }
 
     public LegacyJsonPreKeyStore getLegacyPreKeyStore() {
         return legacyPreKeyStore;
+    }
+
+    public LegacyJsonSignedPreKeyStore getLegacySignedPreKeyStore() {
+        return legacySignedPreKeyStore;
     }
 
     public LegacyJsonSessionStore getLegacySessionStore() {
