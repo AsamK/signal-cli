@@ -482,7 +482,6 @@ public class Manager implements Closeable {
 
         var records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
         account.addPreKeys(records);
-        account.save();
 
         return records;
     }
@@ -492,7 +491,6 @@ public class Manager implements Closeable {
 
         var record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
         account.addSignedPreKey(record);
-        account.save();
 
         return record;
     }
