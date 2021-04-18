@@ -29,7 +29,12 @@ public class TrustCommand implements LocalCommand {
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         var number = ns.getString("number");
         if (ns.getBoolean("trust_all_known_keys")) {
-            var res = m.trustIdentityAllKeys(number);
+            boolean res;
+            try {
+                res = m.trustIdentityAllKeys(number);
+            } catch (InvalidNumberException e) {
+                throw new UserErrorException("Failed to parse recipient: " + e.getMessage());
+            }
             if (!res) {
                 throw new UserErrorException("Failed to set the trust for this number, make sure the number is correct.");
             }

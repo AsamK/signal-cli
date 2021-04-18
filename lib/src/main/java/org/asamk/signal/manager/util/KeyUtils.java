@@ -6,6 +6,7 @@ import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECPrivateKey;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
@@ -21,6 +22,17 @@ public class KeyUtils {
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private KeyUtils() {
+    }
+
+    public static IdentityKeyPair getIdentityKeyPair(byte[] publicKeyBytes, byte[] privateKeyBytes) {
+        try {
+            IdentityKey publicKey = new IdentityKey(publicKeyBytes);
+            ECPrivateKey privateKey = Curve.decodePrivatePoint(privateKeyBytes);
+
+            return new IdentityKeyPair(publicKey, privateKey);
+        } catch (InvalidKeyException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static IdentityKeyPair generateIdentityKeyPair() {

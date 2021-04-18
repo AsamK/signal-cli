@@ -8,6 +8,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -144,7 +145,11 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendMessageReaction(
-            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final String recipient
+            final String emoji,
+            final boolean remove,
+            final String targetAuthor,
+            final long targetSentTimestamp,
+            final String recipient
     ) {
         var recipients = new ArrayList<String>(1);
         recipients.add(recipient);
@@ -153,7 +158,11 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendMessageReaction(
-            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final List<String> recipients
+            final String emoji,
+            final boolean remove,
+            final String targetAuthor,
+            final long targetSentTimestamp,
+            final List<String> recipients
     ) {
         try {
             final var results = m.sendMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, recipients);
@@ -210,10 +219,18 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendGroupMessageReaction(
-            final String emoji, final boolean remove, final String targetAuthor, final long targetSentTimestamp, final byte[] groupId
+            final String emoji,
+            final boolean remove,
+            final String targetAuthor,
+            final long targetSentTimestamp,
+            final byte[] groupId
     ) {
         try {
-            final var results = m.sendGroupMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, GroupId.unknownVersion(groupId));
+            final var results = m.sendGroupMessageReaction(emoji,
+                    remove,
+                    targetAuthor,
+                    targetSentTimestamp,
+                    GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
@@ -366,8 +383,11 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        return Stream.concat(m.getIdentities().stream().map(i -> i.getAddress().getNumber().orNull()),
-                m.getContacts().stream().map(c -> c.number))
+        return Stream.concat(m.getIdentities()
+                .stream()
+                .map(IdentityInfo::getRecipientId)
+                .map(m::resolveSignalServiceAddress)
+                .map(a -> a.getNumber().orNull()), m.getContacts().stream().map(c -> c.number))
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -385,7 +405,8 @@ public class DbusSignalImpl implements Signal {
         }
         // Try profiles if no contact name was found
         for (var identity : m.getIdentities()) {
-            final var address = identity.getAddress();
+            final var recipientId = identity.getRecipientId();
+            final var address = m.resolveSignalServiceAddress(recipientId);
             var number = address.getNumber().orNull();
             if (number != null) {
                 var profile = m.getRecipientProfile(address);

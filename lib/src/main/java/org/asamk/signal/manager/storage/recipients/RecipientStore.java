@@ -229,14 +229,15 @@ public class RecipientStore {
     }
 
     private void save() {
+        var storage = new Storage(recipients.entrySet()
+                .stream()
+                .map(pair -> new Storage.Recipient(pair.getKey().getId(),
+                        pair.getValue().getNumber().orNull(),
+                        pair.getValue().getUuid().transform(UUID::toString).orNull()))
+                .collect(Collectors.toList()), lastId);
+
         // Write to memory first to prevent corrupting the file in case of serialization errors
         try (var inMemoryOutput = new ByteArrayOutputStream()) {
-            var storage = new Storage(recipients.entrySet()
-                    .stream()
-                    .map(pair -> new Storage.Recipient(pair.getKey().getId(),
-                            pair.getValue().getNumber().orNull(),
-                            pair.getValue().getUuid().transform(UUID::toString).orNull()))
-                    .collect(Collectors.toList()), lastId);
             objectMapper.writeValue(inMemoryOutput, storage);
 
             var input = new ByteArrayInputStream(inMemoryOutput.toByteArray());

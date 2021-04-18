@@ -40,6 +40,7 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Locale;
 
 public class RegistrationManager implements Closeable {
@@ -164,10 +165,10 @@ public class RegistrationManager implements Closeable {
         account.setUuid(UuidUtil.parseOrNull(response.getUuid()));
         account.setRegistrationLockPin(pin);
         account.getSessionStore().archiveAllSessions();
-        account.getSignalProtocolStore()
-                .saveIdentity(account.getSelfAddress(),
-                        account.getIdentityKeyPair().getPublicKey(),
-                        TrustLevel.TRUSTED_VERIFIED);
+        final var recipientId = account.getRecipientStore().resolveRecipient(account.getSelfAddress());
+        final var publicKey = account.getIdentityKeyPair().getPublicKey();
+        account.getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
+        account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);
 
         Manager m = null;
         try {

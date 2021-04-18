@@ -199,7 +199,7 @@ public class SessionStore implements SignalServiceSessionStore {
                 .collect(Collectors.toList());
     }
 
-    private File getSessionPath(Key key) {
+    private File getSessionFile(Key key) {
         try {
             IOUtils.createPrivateDirectories(sessionsPath);
         } catch (IOException e) {
@@ -216,7 +216,7 @@ public class SessionStore implements SignalServiceSessionStore {
             }
         }
 
-        final var file = getSessionPath(key);
+        final var file = getSessionFile(key);
         if (!file.exists()) {
             return null;
         }
@@ -233,7 +233,7 @@ public class SessionStore implements SignalServiceSessionStore {
     private void storeSessionLocked(final Key key, final SessionRecord session) {
         cachedSessions.put(key, session);
 
-        final var file = getSessionPath(key);
+        final var file = getSessionFile(key);
         try {
             try (var outputStream = new FileOutputStream(file)) {
                 outputStream.write(session.serialize());
@@ -263,7 +263,7 @@ public class SessionStore implements SignalServiceSessionStore {
     private void deleteSessionLocked(final Key key) {
         cachedSessions.remove(key);
 
-        final var file = getSessionPath(key);
+        final var file = getSessionFile(key);
         if (!file.exists()) {
             return;
         }

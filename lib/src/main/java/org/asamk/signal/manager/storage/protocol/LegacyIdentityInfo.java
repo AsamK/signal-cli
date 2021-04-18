@@ -6,14 +6,14 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Date;
 
-public class IdentityInfo {
+public class LegacyIdentityInfo {
 
     SignalServiceAddress address;
     IdentityKey identityKey;
     TrustLevel trustLevel;
     Date added;
 
-    IdentityInfo(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
+    LegacyIdentityInfo(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
         this.address = address;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;

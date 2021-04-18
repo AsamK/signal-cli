@@ -34,9 +34,10 @@ import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
+import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.profiles.SignalProfile;
-import org.asamk.signal.manager.storage.protocol.IdentityInfo;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
@@ -233,8 +234,6 @@ public class Manager implements Closeable {
                 timer,
                 clientZkProfileOperations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-
-        this.account.setResolver(this::resolveSignalServiceAddress);
 
         this.unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
                 account.getProfileStore()::getProfileKey,
@@ -1223,17 +1222,7 @@ public class Manager implements Closeable {
 
     private void sendSyncMessage(SignalServiceSyncMessage message) throws IOException, UntrustedIdentityException {
         var messageSender = createMessageSender();
-        try {
-            messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
-        } catch (UntrustedIdentityException e) {
-            if (e.getIdentityKey() != null) {
-                account.getSignalProtocolStore()
-                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                                e.getIdentityKey(),
-                                TrustLevel.UNTRUSTED);
-            }
-            throw e;
-        }
+        messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
     }
 
     private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
@@ -1303,22 +1292,8 @@ public class Manager implements Closeable {
                             unidentifiedAccessHelper.getAccessFor(recipients),
                             isRecipientUpdate,
                             message);
-                    for (var r : result) {
-                        if (r.getIdentityFailure() != null) {
-                            account.getSignalProtocolStore()
-                                    .saveIdentity(r.getAddress(),
-                                            r.getIdentityFailure().getIdentityKey(),
-                                            TrustLevel.UNTRUSTED);
-                        }
-                    }
                     return new Pair<>(timestamp, result);
                 } catch (UntrustedIdentityException e) {
-                    if (e.getIdentityKey() != null) {
-                        account.getSignalProtocolStore()
-                                .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                                        e.getIdentityKey(),
-                                        TrustLevel.UNTRUSTED);
-                    }
                     return new Pair<>(timestamp, List.of());
                 }
             } else {
@@ -1388,12 +1363,6 @@ public class Manager implements Closeable {
                     false,
                     System.currentTimeMillis() - startTime);
         } catch (UntrustedIdentityException e) {
-            if (e.getIdentityKey() != null) {
-                account.getSignalProtocolStore()
-                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                                e.getIdentityKey(),
-                                TrustLevel.UNTRUSTED);
-            }
             return SendMessageResult.identityFailure(recipient, e.getIdentityKey());
         }
     }
@@ -1406,12 +1375,6 @@ public class Manager implements Closeable {
         try {
             return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(address), message);
         } catch (UntrustedIdentityException e) {
-            if (e.getIdentityKey() != null) {
-                account.getSignalProtocolStore()
-                        .saveIdentity(resolveSignalServiceAddress(e.getIdentifier()),
-                                e.getIdentityKey(),
-                                TrustLevel.UNTRUSTED);
-            }
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
     }
@@ -1424,15 +1387,7 @@ public class Manager implements Closeable {
             return cipher.decrypt(envelope);
         } catch (ProtocolUntrustedIdentityException e) {
             if (e.getCause() instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
-                var identityException = (org.whispersystems.libsignal.UntrustedIdentityException) e.getCause();
-                final var untrustedIdentity = identityException.getUntrustedIdentity();
-                if (untrustedIdentity != null) {
-                    account.getSignalProtocolStore()
-                            .saveIdentity(resolveSignalServiceAddress(identityException.getName()),
-                                    untrustedIdentity,
-                                    TrustLevel.UNTRUSTED);
-                }
-                throw identityException;
+                throw (org.whispersystems.libsignal.UntrustedIdentityException) e.getCause();
             }
             throw new AssertionError(e);
         }
@@ -2004,8 +1959,8 @@ public class Manager implements Closeable {
                                 }
                                 if (c.getVerified().isPresent()) {
                                     final var verifiedMessage = c.getVerified().get();
-                                    account.getSignalProtocolStore()
-                                            .setIdentityTrustLevel(verifiedMessage.getDestination(),
+                                    account.getIdentityKeyStore()
+                                            .setIdentityTrustLevel(resolveRecipientTrusted(verifiedMessage.getDestination()),
                                                     verifiedMessage.getIdentityKey(),
                                                     TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                                 }
@@ -2040,8 +1995,8 @@ public class Manager implements Closeable {
                 }
                 if (syncMessage.getVerified().isPresent()) {
                     final var verifiedMessage = syncMessage.getVerified().get();
-                    account.getSignalProtocolStore()
-                            .setIdentityTrustLevel(resolveSignalServiceAddress(verifiedMessage.getDestination()),
+                    account.getIdentityKeyStore()
+                            .setIdentityTrustLevel(resolveRecipientTrusted(verifiedMessage.getDestination()),
                                     verifiedMessage.getIdentityKey(),
                                     TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
                 }
@@ -2283,7 +2238,8 @@ public class Manager implements Closeable {
                 var out = new DeviceContactsOutputStream(fos);
                 for (var record : account.getContactStore().getContacts()) {
                     VerifiedMessage verifiedMessage = null;
-                    var currentIdentity = account.getSignalProtocolStore().getIdentity(record.getAddress());
+                    var currentIdentity = account.getIdentityKeyStore()
+                            .getIdentity(resolveRecipientTrusted(record.getAddress()));
                     if (currentIdentity != null) {
                         verifiedMessage = new VerifiedMessage(record.getAddress(),
                                 currentIdentity.getIdentityKey(),
@@ -2395,11 +2351,12 @@ public class Manager implements Closeable {
     }
 
     public List<IdentityInfo> getIdentities() {
-        return account.getSignalProtocolStore().getIdentities();
+        return account.getIdentityKeyStore().getIdentities();
     }
 
     public List<IdentityInfo> getIdentities(String number) throws InvalidNumberException {
-        return account.getSignalProtocolStore().getIdentities(canonicalizeAndResolveSignalServiceAddress(number));
+        final var identity = account.getIdentityKeyStore().getIdentity(canonicalizeAndResolveRecipient(number));
+        return identity == null ? List.of() : List.of(identity);
     }
 
     /**
@@ -2409,8 +2366,10 @@ public class Manager implements Closeable {
      * @param fingerprint Fingerprint
      */
     public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
-        var address = canonicalizeAndResolveSignalServiceAddress(name);
-        return trustIdentity(address, (identityKey) -> Arrays.equals(identityKey.serialize(), fingerprint));
+        var recipientId = canonicalizeAndResolveRecipient(name);
+        return trustIdentity(recipientId,
+                identityKey -> Arrays.equals(identityKey.serialize(), fingerprint),
+                TrustLevel.TRUSTED_VERIFIED);
     }
 
     /**
@@ -2420,47 +2379,11 @@ public class Manager implements Closeable {
      * @param safetyNumber Safety number
      */
     public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
-        var address = canonicalizeAndResolveSignalServiceAddress(name);
-        return trustIdentity(address, (identityKey) -> safetyNumber.equals(computeSafetyNumber(address, identityKey)));
-    }
-
-    private boolean trustIdentity(SignalServiceAddress address, Function<IdentityKey, Boolean> verifier) {
-        var ids = account.getSignalProtocolStore().getIdentities(address);
-        if (ids == null) {
-            return false;
-        }
-
-        IdentityInfo foundIdentity = null;
-
-        for (var id : ids) {
-            if (verifier.apply(id.getIdentityKey())) {
-                foundIdentity = id;
-                break;
-            }
-        }
-
-        if (foundIdentity == null) {
-            return false;
-        }
-
-        account.getSignalProtocolStore()
-                .setIdentityTrustLevel(address, foundIdentity.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-        try {
-            sendVerifiedMessage(address, foundIdentity.getIdentityKey(), TrustLevel.TRUSTED_VERIFIED);
-        } catch (IOException | UntrustedIdentityException e) {
-            logger.warn("Failed to send verification sync message: {}", e.getMessage());
-        }
-
-        // Successfully trusted the new identity, now remove all other identities for that number
-        for (var id : ids) {
-            if (id == foundIdentity) {
-                continue;
-            }
-            account.getSignalProtocolStore().removeIdentity(address, id.getIdentityKey());
-        }
-
-        account.save();
-        return true;
+        var recipientId = canonicalizeAndResolveRecipient(name);
+        var address = account.getRecipientStore().resolveServiceAddress(recipientId);
+        return trustIdentity(recipientId,
+                identityKey -> safetyNumber.equals(computeSafetyNumber(address, identityKey)),
+                TrustLevel.TRUSTED_VERIFIED);
     }
 
     /**
@@ -2468,24 +2391,31 @@ public class Manager implements Closeable {
      *
      * @param name username of the identity
      */
-    public boolean trustIdentityAllKeys(String name) {
-        var address = resolveSignalServiceAddress(name);
-        var ids = account.getSignalProtocolStore().getIdentities(address);
-        if (ids == null) {
+    public boolean trustIdentityAllKeys(String name) throws InvalidNumberException {
+        var recipientId = canonicalizeAndResolveRecipient(name);
+        return trustIdentity(recipientId, identityKey -> true, TrustLevel.TRUSTED_UNVERIFIED);
+    }
+
+    private boolean trustIdentity(
+            RecipientId recipientId, Function<IdentityKey, Boolean> verifier, TrustLevel trustLevel
+    ) {
+        var identity = account.getIdentityKeyStore().getIdentity(recipientId);
+        if (identity == null) {
             return false;
         }
-        for (var id : ids) {
-            if (id.getTrustLevel() == TrustLevel.UNTRUSTED) {
-                account.getSignalProtocolStore()
-                        .setIdentityTrustLevel(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
-                try {
-                    sendVerifiedMessage(address, id.getIdentityKey(), TrustLevel.TRUSTED_UNVERIFIED);
-                } catch (IOException | UntrustedIdentityException e) {
-                    logger.warn("Failed to send verification sync message: {}", e.getMessage());
-                }
-            }
+
+        if (!verifier.apply(identity.getIdentityKey())) {
+            return false;
         }
-        account.save();
+
+        account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identity.getIdentityKey(), trustLevel);
+        try {
+            var address = account.getRecipientStore().resolveServiceAddress(recipientId);
+            sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
+        } catch (IOException | UntrustedIdentityException e) {
+            logger.warn("Failed to send verification sync message: {}", e.getMessage());
+        }
+
         return true;
     }
 
@@ -2499,6 +2429,7 @@ public class Manager implements Closeable {
                 theirIdentityKey);
     }
 
+    @Deprecated
     public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
         var canonicalizedNumber = UuidUtil.isUuid(identifier)
                 ? identifier
@@ -2506,18 +2437,41 @@ public class Manager implements Closeable {
         return resolveSignalServiceAddress(canonicalizedNumber);
     }
 
+    @Deprecated
     public SignalServiceAddress resolveSignalServiceAddress(String identifier) {
         var address = Utils.getSignalServiceAddressFromIdentifier(identifier);
 
         return resolveSignalServiceAddress(address);
     }
 
+    @Deprecated
     public SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address) {
         if (address.matches(account.getSelfAddress())) {
             return account.getSelfAddress();
         }
 
         return account.getRecipientStore().resolveServiceAddress(address);
+    }
+
+    public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
+        return account.getRecipientStore().resolveServiceAddress(recipientId);
+    }
+
+    public RecipientId canonicalizeAndResolveRecipient(String identifier) throws InvalidNumberException {
+        var canonicalizedNumber = UuidUtil.isUuid(identifier)
+                ? identifier
+                : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
+        var address = Utils.getSignalServiceAddressFromIdentifier(canonicalizedNumber);
+
+        return resolveRecipient(address);
+    }
+
+    public RecipientId resolveRecipient(SignalServiceAddress address) {
+        return account.getRecipientStore().resolveRecipientUntrusted(address);
+    }
+
+    private RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
+        return account.getRecipientStore().resolveRecipient(address);
     }
 
     @Override

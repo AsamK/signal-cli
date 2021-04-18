@@ -8,11 +8,12 @@ import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.storage.protocol.IdentityInfo;
+import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
@@ -22,9 +23,10 @@ public class ListIdentitiesCommand implements LocalCommand {
     private final static Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, IdentityInfo theirId) {
-        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
+        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
+        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
-                theirId.getAddress().getNumber().orNull(),
+                address.getNumber().orNull(),
                 theirId.getTrustLevel(),
                 theirId.getDateAdded(),
                 Hex.toString(theirId.getFingerprint()),

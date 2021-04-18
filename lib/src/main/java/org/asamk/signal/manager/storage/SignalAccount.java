@@ -14,12 +14,13 @@ import org.asamk.signal.manager.storage.contacts.ContactInfo;
 import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
+import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
-import org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore;
-import org.asamk.signal.manager.storage.protocol.SignalServiceAddressResolver;
+import org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore;
+import org.asamk.signal.manager.storage.protocol.SignalProtocolStore;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
@@ -81,10 +82,11 @@ public class SignalAccount implements Closeable {
 
     private boolean registered = false;
 
-    private JsonSignalProtocolStore signalProtocolStore;
+    private SignalProtocolStore signalProtocolStore;
     private PreKeyStore preKeyStore;
     private SignedPreKeyStore signedPreKeyStore;
     private SessionStore sessionStore;
+    private IdentityKeyStore identityKeyStore;
     private JsonGroupStore groupStore;
     private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
@@ -141,11 +143,14 @@ public class SignalAccount implements Closeable {
         account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
                 account.recipientStore::resolveRecipient);
-        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey,
-                registrationId,
-                account.preKeyStore,
+        account.identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
+                account.recipientStore::resolveRecipient,
+                identityKey,
+                registrationId);
+        account.signalProtocolStore = new SignalProtocolStore(account.preKeyStore,
                 account.signedPreKeyStore,
-                account.sessionStore);
+                account.sessionStore,
+                account.identityKeyStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -190,11 +195,14 @@ public class SignalAccount implements Closeable {
         account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
                 account.recipientStore::resolveRecipient);
-        account.signalProtocolStore = new JsonSignalProtocolStore(identityKey,
-                registrationId,
-                account.preKeyStore,
+        account.identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
+                account.recipientStore::resolveRecipient,
+                identityKey,
+                registrationId);
+        account.signalProtocolStore = new SignalProtocolStore(account.preKeyStore,
                 account.signedPreKeyStore,
-                account.sessionStore);
+                account.sessionStore,
+                account.identityKeyStore);
         account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
@@ -235,6 +243,7 @@ public class SignalAccount implements Closeable {
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         sessionStore.mergeRecipients(recipientId, toBeMergedRecipientId);
+        identityKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public static File getFileName(File dataPath, String username) {
@@ -259,6 +268,10 @@ public class SignalAccount implements Closeable {
 
     private static File getSignedPreKeysPath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "signed-pre-keys");
+    }
+
+    private static File getIdentitiesPath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "identities");
     }
 
     private static File getSessionsPath(File dataPath, String username) {
@@ -299,6 +312,17 @@ public class SignalAccount implements Closeable {
         }
         username = Utils.getNotNullNode(rootNode, "username").asText();
         password = Utils.getNotNullNode(rootNode, "password").asText();
+        int registrationId = 0;
+        if (rootNode.hasNonNull("registrationId")) {
+            registrationId = rootNode.get("registrationId").asInt();
+        }
+        IdentityKeyPair identityKeyPair = null;
+        if (rootNode.hasNonNull("identityPrivateKey") && rootNode.hasNonNull("identityKey")) {
+            final var publicKeyBytes = Base64.getDecoder().decode(rootNode.get("identityKey").asText());
+            final var privateKeyBytes = Base64.getDecoder().decode(rootNode.get("identityPrivateKey").asText());
+            identityKeyPair = KeyUtils.getIdentityKeyPair(publicKeyBytes, privateKeyBytes);
+        }
+
         if (rootNode.hasNonNull("registrationLockPin")) {
             registrationLockPin = rootNode.get("registrationLockPin").asText();
         }
@@ -338,13 +362,15 @@ public class SignalAccount implements Closeable {
             }
         }
 
-        signalProtocolStore = jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
-                JsonSignalProtocolStore.class);
+        var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
+                ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
+                LegacyJsonSignalProtocolStore.class)
+                : null;
 
         preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
-        if (signalProtocolStore.getLegacyPreKeyStore() != null) {
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyPreKeyStore() != null) {
             logger.debug("Migrating legacy pre key store.");
-            for (var entry : signalProtocolStore.getLegacyPreKeyStore().getPreKeys().entrySet()) {
+            for (var entry : legacySignalProtocolStore.getLegacyPreKeyStore().getPreKeys().entrySet()) {
                 try {
                     preKeyStore.storePreKey(entry.getKey(), new PreKeyRecord(entry.getValue()));
                 } catch (IOException e) {
@@ -352,12 +378,11 @@ public class SignalAccount implements Closeable {
                 }
             }
         }
-        signalProtocolStore.setPreKeyStore(preKeyStore);
 
         signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
-        if (signalProtocolStore.getLegacySignedPreKeyStore() != null) {
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySignedPreKeyStore() != null) {
             logger.debug("Migrating legacy signed pre key store.");
-            for (var entry : signalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
+            for (var entry : legacySignalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
                 try {
                     signedPreKeyStore.storeSignedPreKey(entry.getKey(), new SignedPreKeyRecord(entry.getValue()));
                 } catch (IOException e) {
@@ -365,12 +390,11 @@ public class SignalAccount implements Closeable {
                 }
             }
         }
-        signalProtocolStore.setSignedPreKeyStore(signedPreKeyStore);
 
         sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
-        if (signalProtocolStore.getLegacySessionStore() != null) {
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySessionStore() != null) {
             logger.debug("Migrating legacy session store.");
-            for (var session : signalProtocolStore.getLegacySessionStore().getSessions()) {
+            for (var session : legacySignalProtocolStore.getLegacySessionStore().getSessions()) {
                 try {
                     sessionStore.storeSession(new SignalProtocolAddress(session.address.getIdentifier(),
                             session.deviceId), new SessionRecord(session.sessionRecord));
@@ -379,7 +403,27 @@ public class SignalAccount implements Closeable {
                 }
             }
         }
-        signalProtocolStore.setSessionStore(sessionStore);
+
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
+            identityKeyPair = legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentityKeyPair();
+            registrationId = legacySignalProtocolStore.getLegacyIdentityKeyStore().getLocalRegistrationId();
+        }
+        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
+                recipientStore::resolveRecipient,
+                identityKeyPair,
+                registrationId);
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
+            logger.debug("Migrating identity session store.");
+            for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
+                RecipientId recipientId = recipientStore.resolveRecipient(identity.getAddress());
+                identityKeyStore.saveIdentity(recipientId, identity.getIdentityKey(), identity.getDateAdded());
+                identityKeyStore.setIdentityTrustLevel(recipientId,
+                        identity.getIdentityKey(),
+                        identity.getTrustLevel());
+            }
+        }
+
+        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
 
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         var groupStoreNode = rootNode.get("groupStore");
@@ -431,10 +475,6 @@ public class SignalAccount implements Closeable {
                             .collect(Collectors.toSet());
                 }
             }
-
-            for (var identity : signalProtocolStore.getIdentities()) {
-                identity.setAddress(recipientStore.resolveServiceAddress(identity.getAddress()));
-            }
         }
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -475,6 +515,13 @@ public class SignalAccount implements Closeable {
                 .put("deviceId", deviceId)
                 .put("isMultiDevice", isMultiDevice)
                 .put("password", password)
+                .put("registrationId", identityKeyStore.getLocalRegistrationId())
+                .put("identityPrivateKey",
+                        Base64.getEncoder()
+                                .encodeToString(identityKeyStore.getIdentityKeyPair().getPrivateKey().serialize()))
+                .put("identityKey",
+                        Base64.getEncoder()
+                                .encodeToString(identityKeyStore.getIdentityKeyPair().getPublicKey().serialize()))
                 .put("registrationLockPin", registrationLockPin)
                 .put("pinMasterKey",
                         pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
@@ -484,7 +531,6 @@ public class SignalAccount implements Closeable {
                 .put("nextSignedPreKeyId", nextSignedPreKeyId)
                 .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
                 .put("registered", registered)
-                .putPOJO("axolotlStore", signalProtocolStore)
                 .putPOJO("groupStore", groupStore)
                 .putPOJO("contactStore", contactStore)
                 .putPOJO("profileStore", profileStore)
@@ -517,10 +563,6 @@ public class SignalAccount implements Closeable {
         return new Pair<>(fileChannel, lock);
     }
 
-    public void setResolver(final SignalServiceAddressResolver resolver) {
-        signalProtocolStore.setResolver(resolver);
-    }
-
     public void addPreKeys(List<PreKeyRecord> records) {
         for (var record : records) {
             if (preKeyIdOffset != record.getId()) {
@@ -543,12 +585,16 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public JsonSignalProtocolStore getSignalProtocolStore() {
+    public SignalProtocolStore getSignalProtocolStore() {
         return signalProtocolStore;
     }
 
     public SessionStore getSessionStore() {
         return sessionStore;
+    }
+
+    public IdentityKeyStore getIdentityKeyStore() {
+        return identityKeyStore;
     }
 
     public JsonGroupStore getGroupStore() {
