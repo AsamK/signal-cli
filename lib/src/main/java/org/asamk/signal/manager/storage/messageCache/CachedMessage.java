@@ -19,6 +19,10 @@ public final class CachedMessage {
         this.file = file;
     }
 
+    File getFile() {
+        return file;
+    }
+
     public SignalServiceEnvelope loadEnvelope() {
         try {
             return MessageCacheUtils.loadEnvelope(file);
@@ -33,6 +37,11 @@ public final class CachedMessage {
             Files.delete(file.toPath());
         } catch (IOException e) {
             logger.warn("Failed to delete cached message file “{}”, ignoring: {}", file, e.getMessage());
+        }
+        // Delete parent directory, if empty
+        try {
+            Files.delete(file.toPath().getParent());
+        } catch (IOException ignored) {
         }
     }
 }

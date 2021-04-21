@@ -244,6 +244,7 @@ public class SignalAccount implements Closeable {
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         sessionStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         identityKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
+        messageCache.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public static File getFileName(File dataPath, String username) {

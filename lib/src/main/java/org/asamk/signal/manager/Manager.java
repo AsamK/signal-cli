@@ -1629,6 +1629,15 @@ public class Manager implements Closeable {
             try {
                 content = decryptMessage(envelope);
             } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+                if (!envelope.hasSource()) {
+                    final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) e)
+                            .getName());
+                    try {
+                        account.getMessageCache().replaceSender(cachedMessage, recipientId);
+                    } catch (IOException ioException) {
+                        logger.warn("Failed to move cached message to recipient folder: {}", ioException.getMessage());
+                    }
+                }
                 return;
             } catch (Exception er) {
                 // All other errors are not recoverable, so delete the cached message
@@ -1671,8 +1680,11 @@ public class Manager implements Closeable {
             final CachedMessage[] cachedMessage = {null};
             try {
                 var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
+                    final var recipientId = envelope1.hasSource()
+                            ? resolveRecipient(envelope1.getSourceIdentifier())
+                            : null;
                     // store message on disk, before acknowledging receipt to the server
-                    cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1);
+                    cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
                 if (result.isPresent()) {
                     envelope = result.get();
@@ -1703,8 +1715,7 @@ public class Manager implements Closeable {
 
             if (envelope.hasSource()) {
                 // Store uuid if we don't have it already
-                var source = envelope.getSourceAddress();
-                resolveSignalServiceAddress(source);
+                resolveRecipientTrusted(envelope.getSourceAddress());
             }
             if (!envelope.isReceipt()) {
                 try {
@@ -1736,8 +1747,19 @@ public class Manager implements Closeable {
             } else {
                 handler.handleMessage(envelope, content, exception);
             }
-            if (!(exception instanceof org.whispersystems.libsignal.UntrustedIdentityException)) {
-                if (cachedMessage[0] != null) {
+            if (cachedMessage[0] != null) {
+                if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
+                    if (!envelope.hasSource()) {
+                        final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) exception)
+                                .getName());
+                        try {
+                            cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
+                        } catch (IOException ioException) {
+                            logger.warn("Failed to move cached message to recipient folder: {}",
+                                    ioException.getMessage());
+                        }
+                    }
+                } else {
                     cachedMessage[0].delete();
                 }
             }
@@ -2461,7 +2483,12 @@ public class Manager implements Closeable {
         var canonicalizedNumber = UuidUtil.isUuid(identifier)
                 ? identifier
                 : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
-        var address = Utils.getSignalServiceAddressFromIdentifier(canonicalizedNumber);
+
+        return resolveRecipient(canonicalizedNumber);
+    }
+
+    private RecipientId resolveRecipient(final String identifier) {
+        var address = Utils.getSignalServiceAddressFromIdentifier(identifier);
 
         return resolveRecipient(address);
     }

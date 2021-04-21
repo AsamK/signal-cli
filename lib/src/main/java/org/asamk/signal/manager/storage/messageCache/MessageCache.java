@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.storage.messageCache;
 
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.MessageCacheUtils;
 import org.slf4j.Logger;
@@ -49,12 +50,11 @@ public class MessageCache {
         }).map(CachedMessage::new).collect(Collectors.toList());
     }
 
-    public CachedMessage cacheMessage(SignalServiceEnvelope envelope) {
+    public CachedMessage cacheMessage(SignalServiceEnvelope envelope, RecipientId recipientId) {
         final var now = new Date().getTime();
-        final var source = envelope.hasSource() ? envelope.getSourceAddress().getLegacyIdentifier() : "";
 
         try {
-            var cacheFile = getMessageCacheFile(source, now, envelope.getTimestamp());
+            var cacheFile = getMessageCacheFile(recipientId, now, envelope.getTimestamp());
             MessageCacheUtils.storeEnvelope(envelope, cacheFile);
             return new CachedMessage(cacheFile);
         } catch (IOException e) {
@@ -63,17 +63,53 @@ public class MessageCache {
         }
     }
 
-    private File getMessageCachePath(String sender) {
-        if (sender == null || sender.isEmpty()) {
+    public CachedMessage replaceSender(CachedMessage cachedMessage, RecipientId sender) throws IOException {
+        final var cacheFile = getMessageCacheFile(sender, cachedMessage.getFile().getName());
+        if (cacheFile.equals(cachedMessage.getFile())) {
+            return cachedMessage;
+        }
+        Files.move(cachedMessage.getFile().toPath(), cacheFile.toPath());
+        return new CachedMessage(cacheFile);
+    }
+
+    private File getMessageCachePath(RecipientId recipientId) {
+        if (recipientId == null) {
             return messageCachePath;
         }
 
+        var sender = String.valueOf(recipientId.getId());
         return new File(messageCachePath, sender.replace("/", "_"));
     }
 
-    private File getMessageCacheFile(String sender, long now, long timestamp) throws IOException {
-        var cachePath = getMessageCachePath(sender);
+    private File getMessageCacheFile(RecipientId recipientId, String filename) throws IOException {
+        var cachePath = getMessageCachePath(recipientId);
+        IOUtils.createPrivateDirectories(cachePath);
+        return new File(cachePath, filename);
+    }
+
+    private File getMessageCacheFile(RecipientId recipientId, long now, long timestamp) throws IOException {
+        var cachePath = getMessageCachePath(recipientId);
         IOUtils.createPrivateDirectories(cachePath);
         return new File(cachePath, now + "_" + timestamp);
+    }
+
+    public void mergeRecipients(final RecipientId recipientId, final RecipientId toBeMergedRecipientId) {
+        final var toBeMergedMessageCachePath = getMessageCachePath(toBeMergedRecipientId);
+        if (!toBeMergedMessageCachePath.exists()) {
+            return;
+        }
+
+        for (var file : Objects.requireNonNull(toBeMergedMessageCachePath.listFiles())) {
+            if (!file.isFile()) {
+                continue;
+            }
+
+            try {
+                final var cacheFile = getMessageCacheFile(recipientId, file.getName());
+                Files.move(file.toPath(), cacheFile.toPath());
+            } catch (IOException e) {
+                logger.warn("Failed to move cache file “{}”, ignoring: {}", file, e.getMessage());
+            }
+        }
     }
 }
