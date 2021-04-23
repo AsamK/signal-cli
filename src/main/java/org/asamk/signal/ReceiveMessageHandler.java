@@ -67,14 +67,17 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     var e = (UntrustedIdentityException) exception;
                     writer.println(
                             "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
+                    final var recipientName = m.resolveSignalServiceAddress(e.getName()).getLegacyIdentifier();
                     writer.println(
-                            "Use 'signal-cli -u {0} listIdentities -n {1}', verify the key and run 'signal-cli -u {0} trust -v \"FINGER_PRINT\" {1}' to mark it as trusted",
+                            "Use 'signal-cli -u {} listIdentities -n {}', verify the key and run 'signal-cli -u {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
                             m.getUsername(),
-                            e.getName());
+                            recipientName,
+                            m.getUsername(),
+                            recipientName);
                     writer.println(
                             "If you don't care about security, use 'signal-cli -u {} trust -a {}' to trust it without verification",
                             m.getUsername(),
-                            e.getName());
+                            recipientName);
                 } else {
                     writer.println("Exception: {} ({})", exception.getMessage(), exception.getClass().getSimpleName());
                 }
