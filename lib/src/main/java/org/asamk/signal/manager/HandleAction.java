@@ -157,3 +157,32 @@ class SendGroupInfoAction implements HandleAction {
         return result;
     }
 }
+
+class RetrieveProfileAction implements HandleAction {
+
+    private final SignalServiceAddress address;
+
+    public RetrieveProfileAction(final SignalServiceAddress address) {
+        this.address = address;
+    }
+
+    @Override
+    public void execute(Manager m) throws Throwable {
+        m.getRecipientProfile(address, true);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final RetrieveProfileAction that = (RetrieveProfileAction) o;
+
+        return address.equals(that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return address.hashCode();
+    }
+}

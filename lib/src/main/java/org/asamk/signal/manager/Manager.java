@@ -146,6 +146,7 @@ import java.nio.file.Files;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -532,11 +533,13 @@ public class Manager implements Closeable {
         return getRecipientProfile(address, false);
     }
 
-    private SignalProfile getRecipientProfile(
+    SignalProfile getRecipientProfile(
             SignalServiceAddress address, boolean force
     ) {
         var profileEntry = account.getProfileStore().getProfileEntry(address);
         if (profileEntry == null) {
+            // retrieve profile to get identity key
+            retrieveEncryptedProfile(address);
             return null;
         }
         var now = new Date().getTime();
@@ -549,13 +552,12 @@ public class Manager implements Closeable {
             profileEntry.setRequestPending(true);
             final SignalServiceProfile encryptedProfile;
             try {
-                encryptedProfile = profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE)
-                        .getProfile();
-            } catch (IOException e) {
-                logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
-                return null;
+                encryptedProfile = retrieveEncryptedProfile(address);
             } finally {
                 profileEntry.setRequestPending(false);
+            }
+            if (encryptedProfile == null) {
+                return null;
             }
 
             final var profileKey = profileEntry.getProfileKey();
@@ -565,6 +567,25 @@ public class Manager implements Closeable {
             return profile;
         }
         return profileEntry.getProfile();
+    }
+
+    private SignalServiceProfile retrieveEncryptedProfile(SignalServiceAddress address) {
+        try {
+            final var profile = profileHelper.retrieveProfileSync(address, SignalServiceProfile.RequestType.PROFILE)
+                    .getProfile();
+            try {
+                account.getIdentityKeyStore()
+                        .saveIdentity(resolveRecipient(address),
+                                new IdentityKey(Base64.getDecoder().decode(profile.getIdentityKey())),
+                                new Date());
+            } catch (InvalidKeyException ignored) {
+                logger.warn("Got invalid identity key in profile for {}", address.getLegacyIdentifier());
+            }
+            return profile;
+        } catch (IOException e) {
+            logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
+            return null;
+        }
     }
 
     private ProfileKeyCredential getRecipientProfileKeyCredential(SignalServiceAddress address) {
@@ -1292,6 +1313,16 @@ public class Manager implements Closeable {
                             unidentifiedAccessHelper.getAccessFor(recipients),
                             isRecipientUpdate,
                             message);
+
+                    for (var r : result) {
+                        if (r.getIdentityFailure() != null) {
+                            account.getIdentityKeyStore().
+                                    saveIdentity(resolveRecipient(r.getAddress()),
+                                            r.getIdentityFailure().getIdentityKey(),
+                                            new Date());
+                        }
+                    }
+
                     return new Pair<>(timestamp, result);
                 } catch (UntrustedIdentityException e) {
                     return new Pair<>(timestamp, List.of());
@@ -1612,19 +1643,31 @@ public class Manager implements Closeable {
     }
 
     private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
+        Set<HandleAction> queuedActions = new HashSet<>();
         for (var cachedMessage : account.getMessageCache().getCachedMessages()) {
-            retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
+            var actions = retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
+            if (actions != null) {
+                queuedActions.addAll(actions);
+            }
+        }
+        for (var action : queuedActions) {
+            try {
+                action.execute(this);
+            } catch (Throwable e) {
+                logger.warn("Message action failed.", e);
+            }
         }
     }
 
-    private void retryFailedReceivedMessage(
+    private List<HandleAction> retryFailedReceivedMessage(
             final ReceiveMessageHandler handler, final boolean ignoreAttachments, final CachedMessage cachedMessage
     ) {
         var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {
-            return;
+            return null;
         }
         SignalServiceContent content = null;
+        List<HandleAction> actions = null;
         if (!envelope.isReceipt()) {
             try {
                 content = decryptMessage(envelope);
@@ -1638,24 +1681,18 @@ public class Manager implements Closeable {
                         logger.warn("Failed to move cached message to recipient folder: {}", ioException.getMessage());
                     }
                 }
-                return;
+                return null;
             } catch (Exception er) {
                 // All other errors are not recoverable, so delete the cached message
                 cachedMessage.delete();
-                return;
+                return null;
             }
-            var actions = handleMessage(envelope, content, ignoreAttachments);
-            for (var action : actions) {
-                try {
-                    action.execute(this);
-                } catch (Throwable e) {
-                    logger.warn("Message action failed.", e);
-                }
-            }
+            actions = handleMessage(envelope, content, ignoreAttachments);
         }
         account.save();
         handler.handleMessage(envelope, content, null);
         cachedMessage.delete();
+        return actions;
     }
 
     public void receiveMessages(
@@ -1749,9 +1786,10 @@ public class Manager implements Closeable {
             }
             if (cachedMessage[0] != null) {
                 if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
+                    final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) exception)
+                            .getName());
+                    queuedActions.add(new RetrieveProfileAction(resolveSignalServiceAddress(recipientId)));
                     if (!envelope.hasSource()) {
-                        final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) exception)
-                                .getName());
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
                         } catch (IOException ioException) {
