@@ -14,19 +14,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-class JsonReaction {
-    String emoji; // unicode?
-    String targetAuthor;
-    long targetTimestamp;
-    boolean isRemove;
-	JsonReaction (SignalServiceDataMessage.Reaction reaction) {
-        this.emoji = reaction.getEmoji();
-        // comment on this line from ReceiveMessageHandler: todo resolve
-        this.targetAuthor = reaction.getTargetAuthor().getLegacyIdentifier();
-    	this.targetTimestamp = reaction.getTargetSentTimestamp();
-    	this.isRemove = reaction.isRemove();
-    }
-}
+//class JsonReaction {
+//    String emoji; // unicode?
+//    String targetAuthor;
+//    long targetTimestamp;
+//    boolean isRemove;
+//	JsonReaction (SignalServiceDataMessage.Reaction reaction) {
+//        this.emoji = reaction.getEmoji();
+//        // comment on this line from ReceiveMessageHandler: todo resolve
+//        this.targetAuthor = reaction.getTargetAuthor().getLegacyIdentifier();
+//    	this.targetTimestamp = reaction.getTargetSentTimestamp();
+//    	this.isRemove = reaction.isRemove();
+//    }
+//}
 
 
 class JsonDataMessage {
@@ -55,30 +55,6 @@ class JsonDataMessage {
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final List<JsonMention> mentions;
-    @JsonProperty
-    final long timestamp;
-
-    @JsonProperty
-    final String message;
-
-    @JsonProperty
-    final Integer expiresInSeconds;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final Boolean viewOnce;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonReaction reaction;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonQuote quote;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonMention> mentions;
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -96,35 +72,6 @@ class JsonDataMessage {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final List<JsonSharedContact> contacts;
 
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonAttachment> attachments;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonSticker sticker;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonRemoteDelete remoteDelete;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonSharedContact> contacts;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonGroupInfo groupInfo;
-    JsonReaction reaction;
-    JsonQuote quote;
-    List<JsonMention> mentions;
-    List<JsonAttachment> attachments;
-    JsonGroupInfo groupInfo;
-    JsonReaction reaction;
-	SignalServiceDataMessage.Quote quote;
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
         this.timestamp = dataMessage.getTimestamp();
@@ -180,19 +127,8 @@ class JsonDataMessage {
             this.emoji = "";
             this.targetAuthor = "";
             this.targetTimestamp = 0;
-            }*/
-        this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
-
-        if (dataMessage.getSharedContacts().isPresent()) {
-            this.contacts = dataMessage.getSharedContacts()
-                    .get()
-                    .stream()
-                    .map(JsonSharedContact::new)
-                    .collect(Collectors.toList());
-        } else {
-            this.contacts = List.of();
-        }
-    /*	if (message.getQuote().isPresent()) {
+            }
+        if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
             // there doesn't seem to be any way to find a message's id?
