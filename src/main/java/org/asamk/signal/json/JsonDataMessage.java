@@ -125,19 +125,18 @@ class JsonDataMessage {
         } else {
             this.attachments = List.of();
         }
-<<<<<<< HEAD
-        if (dataMessage.getReaction().isPresent()) {
+	/*if (dataMessage.getReaction().isPresent()) { // not sure if json reactions have been implemented elsewhere
             final SignalServiceDataMessage.Reaction reaction = dataMessage.getReaction().get();
             this.reaction = new JsonReaction(reaction);
-/*          this.emoji = reaction.getEmoji();
+            this.emoji = reaction.getEmoji();
             this.targetAuthor = reaction.getTargetAuthor().getLegacyIdentifier();
-			this.targetTimestamp = reaction.getTargetSentTimestamp();
-*/        } /*else {
-			this.reaction = null;
+            this.targetTimestamp = reaction.getTargetSentTimestamp();
+        } else {
+            this.reaction = null;
             this.emoji = "";
             this.targetAuthor = "";
             this.targetTimestamp = 0;
-=======
+            }*/
         this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
 
         if (dataMessage.getSharedContacts().isPresent()) {
@@ -150,7 +149,6 @@ class JsonDataMessage {
             this.contacts = List.of();
         }
     }
->>>>>>> upstream/master
 
 	}
 

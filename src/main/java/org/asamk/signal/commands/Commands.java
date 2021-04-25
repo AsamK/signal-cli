@@ -11,11 +11,8 @@ public class Commands {
         addCommand("addDevice", new AddDeviceCommand());
         addCommand("block", new BlockCommand());
         addCommand("daemon", new DaemonCommand());
-<<<<<<< HEAD
         addCommand("stdio", new StdioCommand());
-=======
         addCommand("getUserStatus", new GetUserStatusCommand());
->>>>>>> upstream/master
         addCommand("link", new LinkCommand());
         addCommand("listContacts", new ListContactsCommand());
         addCommand("listDevices", new ListDevicesCommand());

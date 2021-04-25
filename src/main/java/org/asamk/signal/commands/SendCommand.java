@@ -129,15 +129,9 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
-<<<<<<< HEAD
             System.out.println(Arrays.toString(ns.getList("recipient").toArray()));
-            long timestamp = signal.sendMessage(messageText, attachments, ns.getList("recipient"));
-            System.out.println(timestamp);
-            return 0;
-=======
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
             writer.println("{}", timestamp);
->>>>>>> upstream/master
         } catch (AssertionError e) {
             handleAssertionError(e);
             throw e;

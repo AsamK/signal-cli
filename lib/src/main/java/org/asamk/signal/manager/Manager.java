@@ -161,14 +161,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-<<<<<<< HEAD:src/main/java/org/asamk/signal/manager/Manager.java
 import static org.asamk.signal.manager.ServiceConfig.CDS_MRENCLAVE;
 import static org.asamk.signal.manager.ServiceConfig.capabilities;
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.manager.ServiceConfig.getIasKeyStore;
-=======
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
->>>>>>> upstream/master:lib/src/main/java/org/asamk/signal/manager/Manager.java
 
 public class Manager implements Closeable {
 

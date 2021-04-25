@@ -12,17 +12,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import java.util.List;
 
 public class JsonMessageEnvelope {
-<<<<<<< HEAD
-    String source;
-    int sourceDevice;
-    String relay;
-    long timestamp;
-    JsonDataMessage dataMessage;
-    JsonSyncMessage syncMessage;
-    JsonCallMessage callMessage;
-    JsonReceiptMessage receiptMessage;
-    // String typingAction;
-=======
 
     @JsonProperty
     final String source;
@@ -56,7 +45,6 @@ public class JsonMessageEnvelope {
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonTypingMessage typingMessage;
->>>>>>> upstream/master
 
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
@@ -81,30 +69,6 @@ public class JsonMessageEnvelope {
         } else {
             this.receiptMessage = null;
         }
-<<<<<<< HEAD
-        if (content != null) {
-            if (envelope.isUnidentifiedSender()) {
-                this.source = content.getSender().getLegacyIdentifier();
-                this.sourceDevice = content.getSenderDevice();
-            }
-            if (content.getDataMessage().isPresent()) {
-                this.dataMessage = new JsonDataMessage(content.getDataMessage().get(), m);
-            }
-            if (content.getSyncMessage().isPresent()) {
-                this.syncMessage = new JsonSyncMessage(content.getSyncMessage().get(), m);
-            }
-            if (content.getCallMessage().isPresent()) {
-                this.callMessage = new JsonCallMessage(content.getCallMessage().get());
-            }
-            if (content.getReceiptMessage().isPresent()) {
-                this.receiptMessage = new JsonReceiptMessage(content.getReceiptMessage().get());
-            }
-/*            if (content.getTypingMessage().isPresent()) {
-                SignalServiceTypingMessage typingMessage = content.getTypingMessage().get();
-                this.typingAction = content.getTypingMessage().get();
-           }
-*/        }
-=======
         this.typingMessage = content != null && content.getTypingMessage().isPresent()
                 ? new JsonTypingMessage(content.getTypingMessage().get())
                 : null;
@@ -118,7 +82,6 @@ public class JsonMessageEnvelope {
         this.callMessage = content != null && content.getCallMessage().isPresent()
                 ? new JsonCallMessage(content.getCallMessage().get())
                 : null;
->>>>>>> upstream/master
     }
 
     public JsonMessageEnvelope(Signal.MessageReceived messageReceived) {
