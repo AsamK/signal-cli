@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Arrays;
+
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
 public class SendCommand implements DbusCommand {

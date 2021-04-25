@@ -1698,7 +1698,13 @@ public class Manager implements Closeable {
         cachedMessage.delete();
     }
 
-    public void receiveMessagesAndReadStdin(long timeout, TimeUnit unit, boolean returnOnTimeout, boolean ignoreAttachments, ReceiveMessageHandler handler) throws IOException {
+    public void receiveMessagesAndReadStdin(
+            long timeout,
+            TimeUnit unit,
+            boolean returnOnTimeout,
+            boolean ignoreAttachments,
+            ReceiveMessageHandler handler
+    ) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
         final SignalServiceMessageReceiver messageReceiver = getMessageReceiver();
 

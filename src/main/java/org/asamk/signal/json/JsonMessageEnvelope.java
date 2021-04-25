@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
-//import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
