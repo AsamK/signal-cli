@@ -1,25 +1,29 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 
 import java.util.List;
 
 class JsonReceiptMessage {
 
-    long when;
-    boolean isDelivery;
-    boolean isRead;
-    List<Long> timestamps;
+    @JsonProperty
+    final long when;
+
+    @JsonProperty
+    final boolean isDelivery;
+
+    @JsonProperty
+    final boolean isRead;
+
+    @JsonProperty
+    final List<Long> timestamps;
 
     JsonReceiptMessage(SignalServiceReceiptMessage receiptMessage) {
-
         this.when = receiptMessage.getWhen();
-        if (receiptMessage.isDeliveryReceipt()) {
-            this.isDelivery = true;
-        }
-        if (receiptMessage.isReadReceipt()) {
-            this.isRead = true;
-        }
+        this.isDelivery = receiptMessage.isDeliveryReceipt();
+        this.isRead = receiptMessage.isReadReceipt();
         this.timestamps = receiptMessage.getTimestamps();
     }
 

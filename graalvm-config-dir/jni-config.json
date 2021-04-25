@@ -1,0 +1,97 @@
+[
+{
+  "name":"java.lang.ClassLoader",
+  "methods":[{"name":"getPlatformClassLoader","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.IllegalStateException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.NoSuchMethodError"
+},
+{
+  "name":"java.lang.UnsatisfiedLinkError",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore",
+  "methods":[
+    {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"getIdentityKeyPair","parameterTypes":[] }, 
+    {"name":"getLocalRegistrationId","parameterTypes":[] }, 
+    {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
+    {"name":"loadPreKey","parameterTypes":["int"] }, 
+    {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"loadSignedPreKey","parameterTypes":["int"] }, 
+    {"name":"removePreKey","parameterTypes":["int"] }, 
+    {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
+    {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.DuplicateMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.IdentityKey",
+  "methods":[
+    {"name":"<init>","parameterTypes":["byte[]"] }, 
+    {"name":"serialize","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.IdentityKeyPair",
+  "methods":[{"name":"serialize","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.InvalidMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.SignalProtocolAddress",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.protocol.SignalMessage",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.state.IdentityKeyStore"
+},
+{
+  "name":"org.whispersystems.libsignal.state.IdentityKeyStore$Direction",
+  "fields":[
+    {"name":"RECEIVING"}, 
+    {"name":"SENDING"}
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.state.PreKeyRecord",
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.state.PreKeyStore"
+},
+{
+  "name":"org.whispersystems.libsignal.state.SessionRecord",
+  "methods":[
+    {"name":"<init>","parameterTypes":["byte[]"] }, 
+    {"name":"nativeHandle","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.state.SessionStore"
+},
+{
+  "name":"org.whispersystems.libsignal.state.SignedPreKeyRecord",
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore"
+}
+]

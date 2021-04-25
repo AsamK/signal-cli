@@ -3,24 +3,32 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.PlainTextWriter;
+import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.storage.protocol.JsonIdentityKeyStore;
+import org.asamk.signal.manager.storage.protocol.IdentityInfo;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
 
 public class ListIdentitiesCommand implements LocalCommand {
 
-    private static void printIdentityFingerprint(Manager m, JsonIdentityKeyStore.Identity theirId) {
-        String digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
-        System.out.println(String.format("%s: %s Added: %s Fingerprint: %s Safety Number: %s",
+    private final static Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
+
+    private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, IdentityInfo theirId) {
+        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(theirId.getAddress(), theirId.getIdentityKey()));
+        writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
                 theirId.getAddress().getNumber().orNull(),
                 theirId.getTrustLevel(),
                 theirId.getDateAdded(),
                 Hex.toString(theirId.getFingerprint()),
-                digits));
+                digits);
     }
 
     @Override
@@ -29,26 +37,27 @@ public class ListIdentitiesCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-        if (ns.get("number") == null) {
-            for (JsonIdentityKeyStore.Identity identity : m.getIdentities()) {
-                printIdentityFingerprint(m, identity);
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        final var writer = new PlainTextWriterImpl(System.out);
+
+        var number = ns.getString("number");
+
+        if (number == null) {
+            for (var identity : m.getIdentities()) {
+                printIdentityFingerprint(writer, m, identity);
             }
-        } else {
-            String number = ns.getString("number");
-            try {
-                List<JsonIdentityKeyStore.Identity> identities = m.getIdentities(number);
-                for (JsonIdentityKeyStore.Identity id : identities) {
-                    printIdentityFingerprint(m, id);
-                }
-            } catch (InvalidNumberException e) {
-                System.err.println("Invalid number: " + e.getMessage());
-            }
+            return;
         }
-        return 0;
+
+        List<IdentityInfo> identities;
+        try {
+            identities = m.getIdentities(number);
+        } catch (InvalidNumberException e) {
+            throw new UserErrorException("Invalid number: " + e.getMessage());
+        }
+
+        for (var id : identities) {
+            printIdentityFingerprint(writer, m, id);
+        }
     }
 }

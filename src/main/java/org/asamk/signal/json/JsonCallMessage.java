@@ -1,5 +1,8 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
 import org.whispersystems.signalservice.api.messages.calls.HangupMessage;
@@ -11,27 +14,31 @@ import java.util.List;
 
 class JsonCallMessage {
 
-    OfferMessage offerMessage;
-    AnswerMessage answerMessage;
-    BusyMessage busyMessage;
-    HangupMessage hangupMessage;
-    List<IceUpdateMessage> iceUpdateMessages;
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final OfferMessage offerMessage;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final AnswerMessage answerMessage;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final BusyMessage busyMessage;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final HangupMessage hangupMessage;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<IceUpdateMessage> iceUpdateMessages;
 
     JsonCallMessage(SignalServiceCallMessage callMessage) {
-        if (callMessage.getOfferMessage().isPresent()) {
-            this.offerMessage = callMessage.getOfferMessage().get();
-        }
-        if (callMessage.getAnswerMessage().isPresent()) {
-            this.answerMessage = callMessage.getAnswerMessage().get();
-        }
-        if (callMessage.getBusyMessage().isPresent()) {
-            this.busyMessage = callMessage.getBusyMessage().get();
-        }
-        if (callMessage.getHangupMessage().isPresent()) {
-            this.hangupMessage = callMessage.getHangupMessage().get();
-        }
-        if (callMessage.getIceUpdateMessages().isPresent()) {
-            this.iceUpdateMessages = callMessage.getIceUpdateMessages().get();
-        }
+        this.offerMessage = callMessage.getOfferMessage().orNull();
+        this.answerMessage = callMessage.getAnswerMessage().orNull();
+        this.busyMessage = callMessage.getBusyMessage().orNull();
+        this.hangupMessage = callMessage.getHangupMessage().orNull();
+        this.iceUpdateMessages = callMessage.getIceUpdateMessages().orNull();
     }
 }

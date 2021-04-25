@@ -21,6 +21,9 @@ For registering you need a phone number where you can receive SMS or incoming ca
 signal-cli was primarily developed to be used on servers to notify admins of important events.
 For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
+For some functionality the Signal protocol requires that all messages have been received from the server.
+The `receive` command should be regularly executed. In daemon mode messages are continuously received.
+
 == Options
 
 *-h*, *--help*::
@@ -28,6 +31,9 @@ Show help message and quit.
 
 *-v*, *--version*::
 Print the version and quit.
+
+*--verbose*::
+Raise log level and include lib signal logs.
 
 *--config* CONFIG::
 Set the path, where to store the config.
@@ -38,11 +44,19 @@ Make sure you have full read/write access to the given directory.
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
 
+This flag must not be given for the `link` command.
+It is optional for the `daemon` command.
+For all other commands it is only optional if there is exactly one local user in the
+config directory.
+
 *--dbus*::
 Make request via user dbus.
 
 *--dbus-system*::
 Make request via system dbus.
+
+*-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
+Specify if you want commands to output in either "plain-text" mode or in "json". Defaults to "plain-text"
 
 == Commands
 
@@ -97,7 +111,8 @@ Remove the registration lock pin.
 === link
 
 Link to an existing device, instead of registering a new number.
-This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI. If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
+This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI.
+If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
 
 *-n* NAME, *--name* NAME::
 Optionally specify a name to describe this new device.
@@ -109,7 +124,8 @@ Link another device to this device.
 Only works, if this is the master device.
 
 *--uri* URI::
-Specify the uri contained in the QR code shown by the new device. You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
+Specify the uri contained in the QR code shown by the new device.
+You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
 
 === listDevices
 
@@ -123,6 +139,15 @@ Only works, if this is the master device.
 *-d* DEVICEID, *--deviceId* DEVICEID::
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
+
+=== getUserStatus
+
+Uses a list of phone numbers to determine the statuses of those users.
+Shows if they are registered on the Signal Servers or not.
+In json mode this is outputted as a list of objects.
+
+[NUMBER [NUMBER ...]]::
+One or more numbers to check.
 
 === send
 
@@ -139,6 +164,9 @@ Specify the message, if missing, standard input is used.
 
 *-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
 Add one or more files as attachment.
+
+*--note-to-self*::
+Send the message to self without notification.
 
 *-e*, *--endsession*::
 Clear session state and send end session message.
@@ -165,22 +193,36 @@ Specify the timestamp of the message to which to react.
 *-r*, *--remove*::
 Remove a reaction.
 
+=== remoteDelete
+
+Remotely delete a previously sent message.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to delete.
+
 === receive
 
 Query the server for new messages.
-New messages are printed on standardoutput and attachments are downloaded to the config directory.
+New messages are printed on standard output and attachments are downloaded to the config directory.
+In json mode this is outputted as one json object per line.
 
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
-*--json*::
-Output received messages in json format, one object per line.
 
 === joinGroup
 
 Join a group via an invitation link.
+To be able to join a v2 group the account needs to have a profile (can be created
+with the `updateProfile` command)
 
 *--uri*::
 The invitation link URI (starts with `https://signal.group/#`)
@@ -189,6 +231,8 @@ The invitation link URI (starts with `https://signal.group/#`)
 
 Create or update a group.
 If the user is a pending member, this command will accept the group invitation.
+To be able to join or create a v2 group the account needs to have a profile (can
+be created with the `updateProfile` command)
 
 *-g* GROUP, *--group* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -213,10 +257,11 @@ Specify the recipient group ID in base64 encoding.
 
 === listGroups
 
-Show a list of known groups.
+Show a list of known groups and related information.
+In json mode this is outputted as an list of objects and is always in detailed mode.
 
 *-d*, *--detailed*::
-Include the list of members of each group.
+Include the list of members of each group and the group invite link.
 
 === listIdentities
 
@@ -328,6 +373,8 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus interface.
+If no `-u` username is given, all local users will be exported as separate dbus
+objects under the same bus name.
 
 *--system*::
 Use DBus system bus instead of user bus.
@@ -365,6 +412,12 @@ signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
 
 Trust new key, without having verified it. Only use this if you don't care about security::
 signal-cli -u USERNAME trust -a NUMBER
+
+== Exit codes
+* *1*: Error is probably caused and fixable by the user
+* *2*: Some unexpected error
+* *3*: Server or IO error
+* *4*: Sending failed due to untrusted key
 
 == Files
 

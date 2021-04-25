@@ -1,19 +1,14 @@
 package org.asamk.signal;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.GroupUtils;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +41,11 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 e.printStackTrace();
             }
         } else if (content != null) {
-            final SignalServiceAddress sender = !envelope.isUnidentifiedSender() && envelope.hasSource()
+            final var sender = !envelope.isUnidentifiedSender() && envelope.hasSource()
                     ? envelope.getSourceAddress()
                     : content.getSender();
             if (content.getReceiptMessage().isPresent()) {
-                final SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
+                final var receiptMessage = content.getReceiptMessage().get();
                 if (receiptMessage.isDeliveryReceipt()) {
                     for (long timestamp : receiptMessage.getTimestamps()) {
                         try {
@@ -63,9 +58,9 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     }
                 }
             } else if (content.getDataMessage().isPresent()) {
-                SignalServiceDataMessage message = content.getDataMessage().get();
+                var message = content.getDataMessage().get();
 
-                byte[] groupId = getGroupId(message);
+                var groupId = getGroupId(message);
                 if (!message.isEndSession() && (
                         groupId == null
                                 || message.getGroupContext().get().getGroupV1Type() == null
@@ -83,15 +78,15 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     }
                 }
             } else if (content.getSyncMessage().isPresent()) {
-                SignalServiceSyncMessage sync_message = content.getSyncMessage().get();
+                var sync_message = content.getSyncMessage().get();
                 if (sync_message.getSent().isPresent()) {
-                    SentTranscriptMessage transcript = sync_message.getSent().get();
+                    var transcript = sync_message.getSent().get();
 
                     if (transcript.getDestination().isPresent() || transcript.getMessage()
                             .getGroupContext()
                             .isPresent()) {
-                        SignalServiceDataMessage message = transcript.getMessage();
-                        byte[] groupId = getGroupId(message);
+                        var message = transcript.getMessage();
+                        var groupId = getGroupId(message);
 
                         try {
                             conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
@@ -118,9 +113,9 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
     }
 
     static private List<String> getAttachments(SignalServiceDataMessage message, Manager m) {
-        List<String> attachments = new ArrayList<>();
+        var attachments = new ArrayList<String>();
         if (message.getAttachments().isPresent()) {
-            for (SignalServiceAttachment attachment : message.getAttachments().get()) {
+            for (var attachment : message.getAttachments().get()) {
                 if (attachment.isPointer()) {
                     attachments.add(m.getAttachmentFile(attachment.asPointer().getRemoteId()).getAbsolutePath());
                 }

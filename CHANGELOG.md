@@ -2,6 +2,73 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2021-03-02
+### Added
+- New dbus commands: updateProfile, listNumbers, getContactNumber, quitGroup, isContactBlocked, isGroupBlocked, isMember, joinGroup (Thanks @bublath)
+- Additional output for json format: shared contacts (Thanks @Atomic-Bean)
+- Improved plain text output to be more consistent and synced messages are now indented
+
+### Fixed
+- Issue with broken sessions with linked devices
+
+### Changed
+- Behavior of `trust` command improved, when trusting a new identity key all other known keys for
+  the same number are removed.
+
+## [0.8.0] - 2021-02-14
+**Attention**: For all signal protocol functionality an additional native library is now required: [libsignal-client](https://github.com/signalapp/libsignal-client/).
+See https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal for more information.
+
+### Added
+- Experimental support for building a GraalVM native image
+- Support for setting profile about text and emoji
+
+### Fixed
+- Incorrect error message when removing a non-existent profile avatar
+
+## [0.7.4] - 2021-01-19
+### Changed
+- Notify linked devices after profile has been updated
+
+### Fixed
+- After registering a new account, receiving messages didn't work
+  You may have to register and verify again to fix the issue.
+- Creating v1 groups works again
+
+## [0.7.3] - 2021-01-17
+### Added
+- `getUserStatus` command to check if a user is registered on Signal (Thanks @Atomic-Bean)
+- Global `--verbose` flag to increase log level
+- Global `--output=json` flag, currently supported by `receive`, `daemon`, `getUserStatus`, `listGroups`
+- `--note-to-self` flag for `send` command to send a note to linked devices
+- More info for received messages in json output: stickers, viewOnce, typing, remoteDelete
+
+### Changed
+- signal-cli can now be used without the username `-u` flag
+  For daemon command all local users will be exposed as dbus objects.
+  If only one local user exists, all other commands will use that user,
+  otherwise a user has to be specified.
+- Messages sent to self number will be sent as normal Signal messages again, to
+  send a sync message, use the new `--note-to-self` flag
+- Ignore messages with group context sent by non group member
+- Profile key is sent along with all direct messages
+- In json output unnecessary fields that are null are now omitted
+
+### Fixed
+- Disable registration lock before removing the PIN
+- Fix PIN hash version to match the official clients.
+  If you had previously set a PIN you need to set it again to be able to unlock the registration lock later.
+- Issue with saving account file after linking
+
+## [0.7.2] - 2020-12-31
+### Added
+- Implement new registration lock PIN with `setPin` and `removePin` (with KBS)
+- Include quotes, mentions and reactions in json output (Thanks @Atomic-Bean)
+
+### Fixed
+- Retrieve avatars for v2 groups
+- Download attachment thumbnail for quoted attachments
+
 ## [0.7.1] - 2020-12-21
 ### Added
 - Accept group invitation with `updateGroup -g GROUP_ID`

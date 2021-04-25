@@ -19,11 +19,21 @@ expect the wiki and builds to be broken for now.
 signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages.
 To be able to link to an existing Signal-Android/signal-cli instance, signal-cli uses a [patched libsignal-service-java](https://github.com/technillogue/libsignal-service-java), because libsignal-service-java does not yet support [provisioning as a slave device](https://github.com/WhisperSystems/libsignal-service-java/pull/21).
 For registering you need a phone number where you can receive SMS or incoming calls.
-signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
+signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)), that can be used to send messages from any programming language that has dbus bindings.
 
 ## Installation
 
+<<<<<<< HEAD
 You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/technillogue/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well. You need to have at least JRE 11 installed, to run signal-cli.
+=======
+You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well.
+
+System requirements:
+- at least Java Runtime Environment (JRE) 11
+- native libraries: libzkgroup, libsignal-client
+
+  Those are bundled for x86_64 Linux, for other systems/architectures see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
+>>>>>>> upstream/master
 
 ### Install system-wide on Linux
 See [latest version](https://github.com/technillogue/signal-cli/releases).
@@ -39,7 +49,9 @@ You can find further instructions on the Wiki:
 
 ## Usage
 
-Important: The USERNAME (your phone number) must include the country calling code, i.e. the number must start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
+For a complete usage overview please read the [man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/AsamK/signal-cli/wiki).
+
+Important: The USERNAME is your phone number in international format and must include the country calling code. Hence it should start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list of all country codes.)
 
 * Register a number (with SMS verification)
 
@@ -63,7 +75,10 @@ Important: The USERNAME (your phone number) must include the country calling cod
 
         signal-cli -u USERNAME receive
 
+<<<<<<< HEAD
 For more information read the [man page](https://github.com/technillogue/signal-cli/blob/master/man/signal-cli.1.adoc) and the [wiki](https://github.com/technillogue/signal-cli/wiki).
+=======
+>>>>>>> upstream/master
 
 ## Storage
 
@@ -97,6 +112,19 @@ dependencies. If you have a recent gradle version installed, you can replace `./
 4. Create tar file in *build/distributions*:
 
         ./gradlew distTar
+
+### Building a native binary with GraalVM (EXPERIMENTAL)
+
+It is possible to build a native binary with [GraalVM](https://www.graalvm.org).
+This is still experimental and will not work in all situations.
+
+1. [Install GraalVM and setup the enviroment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
+2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
+3. Execute Gradle:
+
+        ./gradlew assembleNativeImage
+  
+   The binary is available at *build/native-image/signal-cli*
 
 ## Troubleshooting
 If you use a version of the Oracle JRE and get an InvalidKeyException you need to enable unlimited strength crypto. See https://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters for instructions.

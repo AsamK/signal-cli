@@ -3,14 +3,18 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdFormatException;
-import org.asamk.signal.manager.GroupNotFoundException;
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class UnblockCommand implements LocalCommand {
+
+    private final static Logger logger = LoggerFactory.getLogger(UnblockCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -20,31 +24,26 @@ public class UnblockCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
-
-        for (String contact_number : ns.<String>getList("contact")) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        for (var contactNumber : ns.<String>getList("contact")) {
             try {
-                m.setContactBlocked(contact_number, false);
+                m.setContactBlocked(contactNumber, false);
             } catch (InvalidNumberException e) {
-                System.err.println(e.getMessage());
+                logger.warn("Invalid number: {}", contactNumber);
             }
         }
 
         if (ns.<String>getList("group") != null) {
-            for (String groupIdString : ns.<String>getList("group")) {
+            for (var groupIdString : ns.<String>getList("group")) {
                 try {
-                    GroupId groupId = Util.decodeGroupId(groupIdString);
+                    var groupId = Util.decodeGroupId(groupIdString);
                     m.setGroupBlocked(groupId, false);
-                } catch (GroupIdFormatException | GroupNotFoundException e) {
-                    System.err.println(e.getMessage());
+                } catch (GroupIdFormatException e) {
+                    logger.warn("Invalid group id: {}", groupIdString);
+                } catch (GroupNotFoundException e) {
+                    logger.warn("Unknown group id: {}", groupIdString);
                 }
             }
         }
-
-        return 0;
     }
 }

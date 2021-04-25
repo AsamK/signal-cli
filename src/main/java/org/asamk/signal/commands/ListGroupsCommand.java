@@ -4,77 +4,131 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupInviteLinkUrl;
+import org.asamk.signal.JsonWriter;
+import org.asamk.signal.OutputType;
+import org.asamk.signal.PlainTextWriter;
+import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements LocalCommand {
 
-    private static void printGroup(Manager m, GroupInfo group, boolean detailed) {
+    private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
+
+    private static Set<String> resolveMembers(Manager m, Set<SignalServiceAddress> addresses) {
+        return addresses.stream()
+                .map(m::resolveSignalServiceAddress)
+                .map(SignalServiceAddress::getLegacyIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    private static void printGroupPlainText(
+            PlainTextWriter writer, Manager m, GroupInfo group, boolean detailed
+    ) {
         if (detailed) {
-            Set<String> members = group.getMembers()
-                    .stream()
-                    .map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier)
-                    .collect(Collectors.toSet());
+            final var groupInviteLink = group.getGroupInviteLink();
 
-            Set<String> pendingMembers = group.getPendingMembers()
-                    .stream()
-                    .map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier)
-                    .collect(Collectors.toSet());
-
-            Set<String> requestingMembers = group.getRequestingMembers()
-                    .stream()
-                    .map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier)
-                    .collect(Collectors.toSet());
-
-            final GroupInviteLinkUrl groupInviteLink = group.getGroupInviteLink();
-
-            System.out.println(String.format(
-                    "Id: %s Name: %s  Active: %s Blocked: %b Members: %s Pending members: %s Requesting members: %s Link: %s",
+            writer.println(
+                    "Id: {} Name: {}  Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
                     group.isBlocked(),
-                    members,
-                    pendingMembers,
-                    requestingMembers,
-                    groupInviteLink == null ? '-' : groupInviteLink.getUrl()));
+                    resolveMembers(m, group.getMembers()),
+                    resolveMembers(m, group.getPendingMembers()),
+                    resolveMembers(m, group.getRequestingMembers()),
+                    groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
-            System.out.println(String.format("Id: %s Name: %s  Active: %s Blocked: %b",
+            writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.isMember(m.getSelfAddress()),
-                    group.isBlocked()));
+                    group.isBlocked());
         }
     }
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--detailed").action(Arguments.storeTrue()).help("List members of each group");
-        subparser.help("List group name and ids");
+        subparser.addArgument("-d", "--detailed")
+                .action(Arguments.storeTrue())
+                .help("List the members and group invite links of each group. If output=json, then this is always set");
+
+        subparser.help("List group information including names, ids, active status, blocked status and members");
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    }
 
-        List<GroupInfo> groups = m.getGroups();
-        boolean detailed = ns.getBoolean("detailed");
+    @Override
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        if (ns.get("output") == OutputType.JSON) {
+            final var jsonWriter = new JsonWriter(System.out);
 
-        for (GroupInfo group : groups) {
-            printGroup(m, group, detailed);
+            var jsonGroups = new ArrayList<JsonGroup>();
+            for (var group : m.getGroups()) {
+                final var groupInviteLink = group.getGroupInviteLink();
+
+                jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
+                        group.getTitle(),
+                        group.isMember(m.getSelfAddress()),
+                        group.isBlocked(),
+                        resolveMembers(m, group.getMembers()),
+                        resolveMembers(m, group.getPendingMembers()),
+                        resolveMembers(m, group.getRequestingMembers()),
+                        groupInviteLink == null ? null : groupInviteLink.getUrl()));
+            }
+
+            jsonWriter.write(jsonGroups);
+        } else {
+            final var writer = new PlainTextWriterImpl(System.out);
+            boolean detailed = ns.getBoolean("detailed");
+            for (var group : m.getGroups()) {
+                printGroupPlainText(writer, m, group, detailed);
+            }
         }
-        return 0;
+    }
+
+    private static final class JsonGroup {
+
+        public String id;
+        public String name;
+        public boolean isMember;
+        public boolean isBlocked;
+
+        public Set<String> members;
+        public Set<String> pendingMembers;
+        public Set<String> requestingMembers;
+        public String groupInviteLink;
+
+        public JsonGroup(
+                String id,
+                String name,
+                boolean isMember,
+                boolean isBlocked,
+                Set<String> members,
+                Set<String> pendingMembers,
+                Set<String> requestingMembers,
+                String groupInviteLink
+        ) {
+            this.id = id;
+            this.name = name;
+            this.isMember = isMember;
+            this.isBlocked = isBlocked;
+
+            this.members = members;
+            this.pendingMembers = pendingMembers;
+            this.requestingMembers = requestingMembers;
+            this.groupInviteLink = groupInviteLink;
+        }
     }
 }

@@ -3,6 +3,8 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
@@ -18,18 +20,12 @@ public class RemoveDeviceCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
-        }
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
             int deviceId = ns.getInt("deviceId");
             m.removeLinkedDevices(deviceId);
-            return 0;
         } catch (IOException e) {
-            e.printStackTrace();
-            return 3;
+            throw new IOErrorException("Error while removing device: " + e.getMessage());
         }
     }
 }

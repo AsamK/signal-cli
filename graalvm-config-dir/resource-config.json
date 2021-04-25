@@ -1,0 +1,13 @@
+{
+  "resources":{
+  "includes":[
+    {"pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DE\\E"}, 
+    {"pattern":"\\Qlibsignal_jni.so\\E"}, 
+    {"pattern":"\\Qlibzkgroup.so\\E"}, 
+    {"pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"}, 
+    {"pattern":"\\Qorg/asamk/signal/manager/config/whisper.store\\E"}, 
+    {"pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"}, 
+    {"pattern":"com/google/i18n/phonenumbers/data/.*"}
+  ]},
+  "bundles":[{"name":"net.sourceforge.argparse4j.internal.ArgumentParserImpl"}]
+}

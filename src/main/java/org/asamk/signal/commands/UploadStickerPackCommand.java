@@ -3,13 +3,21 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.StickerPackInvalidException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 
 public class UploadStickerPackCommand implements LocalCommand {
+
+    private final static Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -18,18 +26,17 @@ public class UploadStickerPackCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        final var writer = new PlainTextWriterImpl(System.out);
+        var path = new File(ns.getString("path"));
+
         try {
-            File path = new File(ns.getString("path"));
-            String url = m.uploadStickerPack(path);
-            System.out.println(url);
-            return 0;
+            var url = m.uploadStickerPack(path);
+            writer.println("{}", url);
         } catch (IOException e) {
-            System.err.println("Upload error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Upload error: " + e.getMessage());
         } catch (StickerPackInvalidException e) {
-            System.err.println("Invalid sticker pack: " + e.getMessage());
-            return 3;
+            throw new UserErrorException("Invalid sticker pack: " + e.getMessage());
         }
     }
 }

@@ -3,23 +3,20 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdFormatException;
-import org.asamk.signal.manager.GroupNotFoundException;
+import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.Util;
-import org.whispersystems.libsignal.util.Pair;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
 
 import java.io.IOException;
-import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
-import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
-import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class QuitGroupCommand implements LocalCommand {
@@ -30,31 +27,28 @@ public class QuitGroupCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        final var writer = new PlainTextWriterImpl(System.out);
+
+        final GroupId groupId;
+        try {
+            groupId = Util.decodeGroupId(ns.getString("group"));
+        } catch (GroupIdFormatException e) {
+            throw new UserErrorException("Invalid group id:" + e.getMessage());
         }
 
         try {
-            final GroupId groupId = Util.decodeGroupId(ns.getString("group"));
-            final Pair<Long, List<SendMessageResult>> results = m.sendQuitGroupMessage(groupId);
-            return handleTimestampAndSendMessageResults(results.first(), results.second());
+            final var results = m.sendQuitGroupMessage(groupId);
+            handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
-            handleIOException(e);
-            return 3;
+            throw new IOErrorException("Failed to send message: " + e.getMessage());
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
+            throw e;
         } catch (GroupNotFoundException e) {
-            handleGroupNotFoundException(e);
-            return 1;
+            throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (NotAGroupMemberException e) {
-            handleNotAGroupMemberException(e);
-            return 1;
-        } catch (GroupIdFormatException e) {
-            handleGroupIdFormatException(e);
-            return 1;
+            throw new UserErrorException("Failed to send to group: " + e.getMessage());
         }
     }
 }

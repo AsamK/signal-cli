@@ -4,28 +4,21 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.GroupId;
-import org.asamk.signal.manager.GroupIdFormatException;
-import org.asamk.signal.manager.GroupNotFoundException;
-import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotAGroupMemberException;
+import org.asamk.Signal;
+import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
-import org.whispersystems.libsignal.util.Pair;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.freedesktop.dbus.errors.UnknownObject;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-import static org.asamk.signal.util.ErrorUtils.handleGroupIdFormatException;
-import static org.asamk.signal.util.ErrorUtils.handleGroupNotFoundException;
-import static org.asamk.signal.util.ErrorUtils.handleIOException;
-import static org.asamk.signal.util.ErrorUtils.handleInvalidNumberException;
-import static org.asamk.signal.util.ErrorUtils.handleNotAGroupMemberException;
-import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
-public class SendReactionCommand implements LocalCommand {
+public class SendReactionCommand implements DbusCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -46,54 +39,53 @@ public class SendReactionCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (!m.isRegistered()) {
-            System.err.println("User is not registered.");
-            return 1;
+    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
+        final List<String> recipients = ns.getList("recipient");
+        final var groupIdString = ns.getString("group");
+
+        final var noRecipients = recipients == null || recipients.isEmpty();
+        if (noRecipients && groupIdString == null) {
+            throw new UserErrorException("No recipients given");
+        }
+        if (!noRecipients && groupIdString != null) {
+            throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
         }
 
-        if ((ns.getList("recipient") == null || ns.getList("recipient").size() == 0) && ns.getString("group") == null) {
-            System.err.println("No recipients given");
-            System.err.println("Aborting sending.");
-            return 1;
-        }
+        final var emoji = ns.getString("emoji");
+        final boolean isRemove = ns.getBoolean("remove");
+        final var targetAuthor = ns.getString("target_author");
+        final long targetTimestamp = ns.getLong("target_timestamp");
 
-        String emoji = ns.getString("emoji");
-        boolean isRemove = ns.getBoolean("remove");
-        String targetAuthor = ns.getString("target_author");
-        long targetTimestamp = ns.getLong("target_timestamp");
+        final var writer = new PlainTextWriterImpl(System.out);
+
+        byte[] groupId = null;
+        if (groupIdString != null) {
+            try {
+                groupId = Util.decodeGroupId(groupIdString).serialize();
+            } catch (GroupIdFormatException e) {
+                throw new UserErrorException("Invalid group id: " + e.getMessage());
+            }
+        }
 
         try {
-            final Pair<Long, List<SendMessageResult>> results;
-            if (ns.getString("group") != null) {
-                GroupId groupId = Util.decodeGroupId(ns.getString("group"));
-                results = m.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
+            long timestamp;
+            if (groupId != null) {
+                timestamp = signal.sendGroupMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, groupId);
             } else {
-                results = m.sendMessageReaction(emoji,
-                        isRemove,
-                        targetAuthor,
-                        targetTimestamp,
-                        ns.getList("recipient"));
+                timestamp = signal.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
-            return handleTimestampAndSendMessageResults(results.first(), results.second());
-        } catch (IOException e) {
-            handleIOException(e);
-            return 3;
+            writer.println("{}", timestamp);
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
-        } catch (GroupNotFoundException e) {
-            handleGroupNotFoundException(e);
-            return 1;
-        } catch (NotAGroupMemberException e) {
-            handleNotAGroupMemberException(e);
-            return 1;
-        } catch (GroupIdFormatException e) {
-            handleGroupIdFormatException(e);
-            return 1;
-        } catch (InvalidNumberException e) {
-            handleInvalidNumberException(e);
-            return 1;
+            throw e;
+        } catch (UnknownObject e) {
+            throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
+        } catch (Signal.Error.InvalidNumber e) {
+            throw new UserErrorException("Invalid number: " + e.getMessage());
+        } catch (Signal.Error.GroupNotFound e) {
+            throw new UserErrorException("Failed to send to group: " + e.getMessage());
+        } catch (DBusExecutionException e) {
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         }
     }
 }

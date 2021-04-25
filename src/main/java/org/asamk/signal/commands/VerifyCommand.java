@@ -3,12 +3,18 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.manager.Manager;
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.manager.RegistrationManager;
+import org.whispersystems.signalservice.api.KeyBackupServicePinException;
+import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
 
-public class VerifyCommand implements LocalCommand {
+public class VerifyCommand implements RegistrationCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
@@ -17,24 +23,24 @@ public class VerifyCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
-        if (m.isRegistered()) {
-            System.err.println("User registration is already verified");
-            return 1;
-        }
+    public void handleCommand(final Namespace ns, final RegistrationManager m) throws CommandException {
+        var verificationCode = ns.getString("verificationCode");
+        var pin = ns.getString("pin");
+
         try {
-            String verificationCode = ns.getString("verificationCode");
-            String pin = ns.getString("pin");
-            m.verifyAccount(verificationCode, pin);
-            return 0;
+            final var manager = m.verifyAccount(verificationCode, pin);
+            manager.close();
         } catch (LockedException e) {
-            System.err.println("Verification failed! This number is locked with a pin. Hours remaining until reset: "
-                    + (e.getTimeRemaining() / 1000 / 60 / 60));
-            System.err.println("Use '--pin PIN_CODE' to specify the registration lock PIN");
-            return 3;
+            throw new UserErrorException(
+                    "Verification failed! This number is locked with a pin. Hours remaining until reset: "
+                            + (e.getTimeRemaining() / 1000 / 60 / 60)
+                            + "\nUse '--pin PIN_CODE' to specify the registration lock PIN");
+        } catch (KeyBackupServicePinException e) {
+            throw new UserErrorException("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+        } catch (KeyBackupSystemNoDataException e) {
+            throw new UnexpectedErrorException("Verification failed! No KBS data.");
         } catch (IOException e) {
-            System.err.println("Verify error: " + e.getMessage());
-            return 3;
+            throw new IOErrorException("Verify error: " + e.getMessage());
         }
     }
 }

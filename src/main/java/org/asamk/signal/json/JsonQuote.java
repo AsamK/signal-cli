@@ -1,5 +1,8 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
@@ -9,12 +12,21 @@ import java.util.stream.Collectors;
 
 public class JsonQuote {
 
-    long id;
-    String author;
-    String text;
+    @JsonProperty
+    final long id;
 
-    List<JsonMention> mentions;
-    List<JsonQuotedAttachment> attachments;
+    @JsonProperty
+    final String author;
+
+    @JsonProperty
+    final String text;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonMention> mentions;
+
+    @JsonProperty
+    final List<JsonQuotedAttachment> attachments;
 
     JsonQuote(SignalServiceDataMessage.Quote quote, Manager m) {
         this.id = quote.getId();
@@ -26,6 +38,8 @@ public class JsonQuote {
                     .stream()
                     .map(quotedMention -> new JsonMention(quotedMention, m))
                     .collect(Collectors.toList());
+        } else {
+            this.mentions = null;
         }
 
         if (quote.getAttachments().size() > 0) {
