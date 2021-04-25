@@ -13,6 +13,7 @@ public class Commands {
         addCommand("daemon", new DaemonCommand());
         addCommand("stdio", new StdioCommand());
         addCommand("getUserStatus", new GetUserStatusCommand());
+        addCommand("getUserStatus", new GetUserStatusCommand());
         addCommand("link", new LinkCommand());
         addCommand("listContacts", new ListContactsCommand());
         addCommand("listDevices", new ListDevicesCommand());

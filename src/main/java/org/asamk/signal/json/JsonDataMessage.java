@@ -9,6 +9,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,30 @@ class JsonDataMessage {
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final List<JsonMention> mentions;
+    @JsonProperty
+    final long timestamp;
+
+    @JsonProperty
+    final String message;
+
+    @JsonProperty
+    final Integer expiresInSeconds;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final Boolean viewOnce;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonReaction reaction;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonQuote quote;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonMention> mentions;
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -71,6 +96,25 @@ class JsonDataMessage {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final List<JsonSharedContact> contacts;
 
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonAttachment> attachments;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonSticker sticker;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonRemoteDelete remoteDelete;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final List<JsonSharedContact> contacts;
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonGroupInfo groupInfo;
     JsonReaction reaction;
     JsonQuote quote;
     List<JsonMention> mentions;
@@ -157,8 +201,19 @@ class JsonDataMessage {
         }
         if (message.isExpirationUpdate()) {
             System.out.println("Is Expiration update: " + message.isExpirationUpdate());
-        } 
+        }
     }*/
+        this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
+
+        if (dataMessage.getSharedContacts().isPresent()) {
+            this.contacts = dataMessage.getSharedContacts()
+                    .get()
+                    .stream()
+                    .map(JsonSharedContact::new)
+                    .collect(Collectors.toList());
+        } else {
+            this.contacts = List.of();
+        }
     }
 
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
