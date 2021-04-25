@@ -148,11 +148,7 @@ class JsonDataMessage {
         } else {
             this.contacts = List.of();
         }
-    }
-
-	}
-
-        if (message.getQuote().isPresent()) {
+    /*	if (message.getQuote().isPresent()) {
             SignalServiceDataMessage.Quote quote = message.getQuote().get();
             System.out.println("Quote: (" + quote.getId() + ")");
             // there doesn't seem to be any way to find a message's id?
@@ -161,9 +157,10 @@ class JsonDataMessage {
         }
         if (message.isExpirationUpdate()) {
             System.out.println("Is Expiration update: " + message.isExpirationUpdate());
-        }
-*/
+        } 
+    }*/
     }
+
     public JsonDataMessage(Signal.MessageReceived messageReceived) {
         timestamp = messageReceived.getTimestamp();
         message = messageReceived.getMessage();
