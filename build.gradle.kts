@@ -35,6 +35,12 @@ configurations {
     }
 }
 
+
+tasks.withType<AbstractArchiveTask>().configureEach {
+  isPreserveFileTimestamps = false
+  isReproducibleFileOrder = true
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
