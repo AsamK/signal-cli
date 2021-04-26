@@ -68,7 +68,7 @@ class InputReader implements Runnable {
                             // verbosity flag? better yet, json acknowledgement with timestamp or message id?
                             System.out.println("sentMessage '" + command.content + "' to " + command.recipient);
                             this.m.sendMessage(command.content, attachments, recipients);
-                        } catch (AssertionError | EncapsulatedExceptions | AttachmentInvalidException | InvalidNumberException e) {
+                        } catch (AssertionError | AttachmentInvalidException | InvalidNumberException e) {
                             System.err.println("error in sending message");
                             e.printStackTrace(System.out);
                         }
@@ -99,7 +99,7 @@ public class StdioCommand implements LocalCommand {
     }
 
     @Override
-    public int handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m) {
         boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
         InputReader reader = new InputReader(m);
         Thread readerThread = new Thread(reader);
@@ -111,16 +111,12 @@ public class StdioCommand implements LocalCommand {
                     ignoreAttachments,
                     ns.getBoolean("json") ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m)
                     /*true*/);
-            return 0;
         } catch (IOException e) {
             System.err.println("Error while receiving messages: " + e.getMessage());
-            return 3;
         } catch (AssertionError e) {
             handleAssertionError(e);
-            return 1;
         } finally {
             reader.terminate();
         }
-
     }
 }

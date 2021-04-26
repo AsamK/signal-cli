@@ -72,6 +72,9 @@ class JsonDataMessage {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final List<JsonSharedContact> contacts;
 
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    final JsonGroupInfo groupInfo;
 
     JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
         this.timestamp = dataMessage.getTimestamp();
@@ -116,7 +119,7 @@ class JsonDataMessage {
         } else {
             this.attachments = List.of();
         }
-	/*if (dataMessage.getReaction().isPresent()) { // not sure if json reactions have been implemented elsewhere
+	/*if (dataMessage.getReaction().isPresent()) { // not sure if json reactions have been properly implemented elsewhere
             final SignalServiceDataMessage.Reaction reaction = dataMessage.getReaction().get();
             this.reaction = new JsonReaction(reaction);
             this.emoji = reaction.getEmoji();
