@@ -319,6 +319,42 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonCallMessage",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonContactAddress",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonContactAvatar",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonContactEmail",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonContactName",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonContactPhone",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -331,7 +367,31 @@
   "allDeclaredConstructors":true
 },
 {
+  "name": "org.asamk.signal.json.JsonGroupInfo",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonMention",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.json.JsonMessageEnvelope",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonQuote",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonQuotedAttachment",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -349,13 +409,37 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.json.JsonRemoteDelete",
+  "name": "org.asamk.signal.json.JsonRemoteDelete",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.json.JsonSticker",
+  "name": "org.asamk.signal.json.JsonSharedContact",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonSticker",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonSyncDataMessage",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonSyncMessage",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name": "org.asamk.signal.json.JsonSyncReadMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
