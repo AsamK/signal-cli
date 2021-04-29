@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Arrays;
 
 import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 
@@ -130,7 +129,6 @@ public class SendCommand implements DbusCommand {
         }
 
         try {
-            System.out.println(Arrays.toString(ns.getList("recipient").toArray()));
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
             writer.println("{}", timestamp);
         } catch (AssertionError e) {
