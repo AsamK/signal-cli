@@ -1,16 +1,19 @@
 package org.asamk.signal.manager.util;
 
-import org.asamk.signal.manager.storage.profiles.SignalProfile;
+import org.asamk.signal.manager.storage.recipients.Profile;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 
 import java.util.Base64;
+import java.util.Date;
+import java.util.HashSet;
 
 public class ProfileUtils {
 
-    public static SignalProfile decryptProfile(
+    public static Profile decryptProfile(
             final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
         var profileCipher = new ProfileCipher(profileKey);
@@ -28,13 +31,28 @@ public class ProfileUtils {
             } catch (IllegalArgumentException e) {
                 unidentifiedAccess = null;
             }
-            return new SignalProfile(encryptedProfile.getIdentityKey(),
-                    name,
+            final var nameParts = splitName(name);
+            final var capabilities = new HashSet<Profile.Capability>();
+            if (encryptedProfile.getCapabilities().isGv1Migration()) {
+                capabilities.add(Profile.Capability.gv1Migration);
+            }
+            if (encryptedProfile.getCapabilities().isGv2()) {
+                capabilities.add(Profile.Capability.gv2);
+            }
+            if (encryptedProfile.getCapabilities().isStorage()) {
+                capabilities.add(Profile.Capability.storage);
+            }
+            return new Profile(new Date().getTime(),
+                    nameParts.first(),
+                    nameParts.second(),
                     about,
                     aboutEmoji,
-                    unidentifiedAccess,
-                    encryptedProfile.isUnrestrictedUnidentifiedAccess(),
-                    encryptedProfile.getCapabilities());
+                    encryptedProfile.isUnrestrictedUnidentifiedAccess()
+                            ? Profile.UnidentifiedAccessMode.UNRESTRICTED
+                            : unidentifiedAccess != null
+                                    ? Profile.UnidentifiedAccessMode.ENABLED
+                                    : Profile.UnidentifiedAccessMode.DISABLED,
+                    capabilities);
         } catch (InvalidCiphertextException e) {
             return null;
         }
@@ -49,6 +67,19 @@ public class ProfileUtils {
                     : new String(profileCipher.decryptName(Base64.getDecoder().decode(encryptedName)));
         } catch (IllegalArgumentException e) {
             return null;
+        }
+    }
+
+    private static Pair<String, String> splitName(String name) {
+        String[] parts = name.split("\0");
+
+        switch (parts.length) {
+            case 0:
+                return new Pair<>(null, null);
+            case 1:
+                return new Pair<>(parts[0], null);
+            default:
+                return new Pair<>(parts[0], parts[1]);
         }
     }
 }

@@ -10,18 +10,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.storage.contacts.ContactInfo;
-import org.asamk.signal.manager.storage.contacts.JsonContactsStore;
+import org.asamk.signal.manager.storage.contacts.ContactsStore;
+import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.JsonGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
+import org.asamk.signal.manager.storage.profiles.LegacyProfileStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.SignalProtocolStore;
+import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
+import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
@@ -45,6 +48,7 @@ import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageKey;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,9 +61,9 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class SignalAccount implements Closeable {
 
@@ -88,9 +92,7 @@ public class SignalAccount implements Closeable {
     private SessionStore sessionStore;
     private IdentityKeyStore identityKeyStore;
     private JsonGroupStore groupStore;
-    private JsonContactsStore contactStore;
     private RecipientStore recipientStore;
-    private ProfileStore profileStore;
     private StickerStore stickerStore;
 
     private MessageCache messageCache;
@@ -136,7 +138,6 @@ public class SignalAccount implements Closeable {
         account.username = username;
         account.profileKey = profileKey;
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
-        account.contactStore = new JsonContactsStore();
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
         account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
@@ -151,7 +152,6 @@ public class SignalAccount implements Closeable {
                 account.signedPreKeyStore,
                 account.sessionStore,
                 account.identityKeyStore);
-        account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
         account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -188,9 +188,9 @@ public class SignalAccount implements Closeable {
         account.profileKey = profileKey;
         account.deviceId = deviceId;
         account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
-        account.contactStore = new JsonContactsStore();
         account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
                 account::mergeRecipients);
+        account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
         account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
@@ -203,7 +203,6 @@ public class SignalAccount implements Closeable {
                 account.signedPreKeyStore,
                 account.sessionStore,
                 account.identityKeyStore);
-        account.profileStore = new ProfileStore();
         account.stickerStore = new StickerStore();
 
         account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -222,23 +221,8 @@ public class SignalAccount implements Closeable {
             setProfileKey(KeyUtils.createProfileKey());
             save();
         }
-        // Store profile keys only in profile store
-        for (var contact : getContactStore().getContacts()) {
-            var profileKeyString = contact.profileKey;
-            if (profileKeyString == null) {
-                continue;
-            }
-            final ProfileKey profileKey;
-            try {
-                profileKey = new ProfileKey(Base64.getDecoder().decode(profileKeyString));
-            } catch (InvalidInputException ignored) {
-                continue;
-            }
-            contact.profileKey = null;
-            getProfileStore().storeProfileKey(contact.getAddress(), profileKey);
-        }
         // Ensure our profile key is stored in profile store
-        getProfileStore().storeProfileKey(getSelfAddress(), getProfileKey());
+        getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
     }
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
@@ -354,13 +338,15 @@ public class SignalAccount implements Closeable {
         }
 
         recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
+
         var legacyRecipientStoreNode = rootNode.get("recipientStore");
         if (legacyRecipientStoreNode != null) {
             logger.debug("Migrating legacy recipient store.");
             var legacyRecipientStore = jsonProcessor.convertValue(legacyRecipientStoreNode, LegacyRecipientStore.class);
             if (legacyRecipientStore != null) {
-                recipientStore.resolveRecipients(legacyRecipientStore.getAddresses());
+                recipientStore.resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
+            recipientStore.resolveRecipientTrusted(getSelfAddress());
         }
 
         var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
@@ -414,9 +400,9 @@ public class SignalAccount implements Closeable {
                 identityKeyPair,
                 registrationId);
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
-            logger.debug("Migrating identity session store.");
+            logger.debug("Migrating legacy identity session store.");
             for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
-                RecipientId recipientId = recipientStore.resolveRecipient(identity.getAddress());
+                RecipientId recipientId = recipientStore.resolveRecipientTrusted(identity.getAddress());
                 identityKeyStore.saveIdentity(recipientId, identity.getIdentityKey(), identity.getDateAdded());
                 identityKeyStore.setIdentityTrustLevel(recipientId,
                         identity.getIdentityKey(),
@@ -436,20 +422,67 @@ public class SignalAccount implements Closeable {
             groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
-        var contactStoreNode = rootNode.get("contactStore");
-        if (contactStoreNode != null) {
-            contactStore = jsonProcessor.convertValue(contactStoreNode, JsonContactsStore.class);
-        }
-        if (contactStore == null) {
-            contactStore = new JsonContactsStore();
+        if (rootNode.hasNonNull("contactStore")) {
+            logger.debug("Migrating legacy contact store.");
+            final var contactStoreNode = rootNode.get("contactStore");
+            final var contactStore = jsonProcessor.convertValue(contactStoreNode, LegacyJsonContactsStore.class);
+            for (var contact : contactStore.getContacts()) {
+                final var recipientId = recipientStore.resolveRecipientTrusted(contact.getAddress());
+                recipientStore.storeContact(recipientId,
+                        new Contact(contact.name,
+                                contact.color,
+                                contact.messageExpirationTime,
+                                contact.blocked,
+                                contact.archived));
+
+                // Store profile keys only in profile store
+                var profileKeyString = contact.profileKey;
+                if (profileKeyString != null) {
+                    final ProfileKey profileKey;
+                    try {
+                        profileKey = new ProfileKey(Base64.getDecoder().decode(profileKeyString));
+                        getProfileStore().storeProfileKey(recipientId, profileKey);
+                    } catch (InvalidInputException e) {
+                        logger.warn("Failed to parse legacy contact profile key: {}", e.getMessage());
+                    }
+                }
+            }
         }
 
-        var profileStoreNode = rootNode.get("profileStore");
-        if (profileStoreNode != null) {
-            profileStore = jsonProcessor.convertValue(profileStoreNode, ProfileStore.class);
-        }
-        if (profileStore == null) {
-            profileStore = new ProfileStore();
+        if (rootNode.hasNonNull("profileStore")) {
+            logger.debug("Migrating legacy profile store.");
+            var profileStoreNode = rootNode.get("profileStore");
+            final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
+            for (var profileEntry : legacyProfileStore.getProfileEntries()) {
+                var recipientId = recipientStore.resolveRecipient(profileEntry.getServiceAddress());
+                recipientStore.storeProfileKey(recipientId, profileEntry.getProfileKey());
+                recipientStore.storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
+                final var profile = profileEntry.getProfile();
+                if (profile != null) {
+                    final var capabilities = new HashSet<Profile.Capability>();
+                    if (profile.getCapabilities().gv1Migration) {
+                        capabilities.add(Profile.Capability.gv1Migration);
+                    }
+                    if (profile.getCapabilities().gv2) {
+                        capabilities.add(Profile.Capability.gv2);
+                    }
+                    if (profile.getCapabilities().storage) {
+                        capabilities.add(Profile.Capability.storage);
+                    }
+                    final var newProfile = new Profile(profileEntry.getLastUpdateTimestamp(),
+                            profile.getGivenName(),
+                            profile.getFamilyName(),
+                            profile.getAbout(),
+                            profile.getAboutEmoji(),
+                            profile.isUnrestrictedUnidentifiedAccess()
+                                    ? Profile.UnidentifiedAccessMode.UNRESTRICTED
+                                    : profile.getUnidentifiedAccess() != null
+                                            ? Profile.UnidentifiedAccessMode.ENABLED
+                                            : Profile.UnidentifiedAccessMode.DISABLED,
+                            capabilities);
+                    recipientStore.storeProfile(recipientId, newProfile);
+                }
+            }
         }
 
         var stickerStoreNode = rootNode.get("stickerStore");
@@ -458,24 +491,6 @@ public class SignalAccount implements Closeable {
         }
         if (stickerStore == null) {
             stickerStore = new StickerStore();
-        }
-
-        if (recipientStore.isEmpty()) {
-            recipientStore.resolveRecipient(getSelfAddress());
-
-            recipientStore.resolveRecipients(contactStore.getContacts()
-                    .stream()
-                    .map(ContactInfo::getAddress)
-                    .collect(Collectors.toList()));
-
-            for (var group : groupStore.getGroups()) {
-                if (group instanceof GroupInfoV1) {
-                    var groupInfoV1 = (GroupInfoV1) group;
-                    groupInfoV1.members = groupInfoV1.members.stream()
-                            .map(m -> recipientStore.resolveServiceAddress(m))
-                            .collect(Collectors.toSet());
-                }
-            }
         }
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -489,10 +504,15 @@ public class SignalAccount implements Closeable {
                     continue;
                 }
                 try {
-                    var contactInfo = contactStore.getContact(new SignalServiceAddress(null, thread.id));
-                    if (contactInfo != null) {
-                        contactInfo.messageExpirationTime = thread.messageExpirationTime;
-                        contactStore.updateContact(contactInfo);
+                    if (UuidUtil.isUuid(thread.id) || thread.id.startsWith("+")) {
+                        final var recipientId = recipientStore.resolveRecipient(thread.id);
+                        var contact = recipientStore.getContact(recipientId);
+                        if (contact != null) {
+                            recipientStore.storeContact(recipientId,
+                                    Contact.newBuilder(contact)
+                                            .withMessageExpirationTime(thread.messageExpirationTime)
+                                            .build());
+                        }
                     } else {
                         var groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
                         if (groupInfo instanceof GroupInfoV1) {
@@ -500,7 +520,8 @@ public class SignalAccount implements Closeable {
                             groupStore.updateGroup(groupInfo);
                         }
                     }
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    logger.warn("Failed to read legacy thread info: {}", e.getMessage());
                 }
             }
         }
@@ -533,8 +554,6 @@ public class SignalAccount implements Closeable {
                 .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
                 .put("registered", registered)
                 .putPOJO("groupStore", groupStore)
-                .putPOJO("contactStore", contactStore)
-                .putPOJO("profileStore", profileStore)
                 .putPOJO("stickerStore", stickerStore);
         try {
             try (var output = new ByteArrayOutputStream()) {
@@ -602,8 +621,8 @@ public class SignalAccount implements Closeable {
         return groupStore;
     }
 
-    public JsonContactsStore getContactStore() {
-        return contactStore;
+    public ContactsStore getContactStore() {
+        return recipientStore;
     }
 
     public RecipientStore getRecipientStore() {
@@ -611,7 +630,7 @@ public class SignalAccount implements Closeable {
     }
 
     public ProfileStore getProfileStore() {
-        return profileStore;
+        return recipientStore;
     }
 
     public StickerStore getStickerStore() {
@@ -636,6 +655,10 @@ public class SignalAccount implements Closeable {
 
     public SignalServiceAddress getSelfAddress() {
         return new SignalServiceAddress(uuid, username);
+    }
+
+    public RecipientId getSelfRecipientId() {
+        return recipientStore.resolveRecipientTrusted(getSelfAddress());
     }
 
     public int getDeviceId() {

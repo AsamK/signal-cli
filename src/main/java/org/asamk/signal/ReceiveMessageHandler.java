@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMess
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -667,7 +668,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private String formatContact(SignalServiceAddress address) {
         final var number = address.getLegacyIdentifier();
-        var name = m.getContactOrProfileName(number);
+        String name = null;
+        try {
+            name = m.getContactOrProfileName(number);
+        } catch (InvalidNumberException ignored) {
+        }
         if (name == null || name.isEmpty()) {
             return number;
         } else {

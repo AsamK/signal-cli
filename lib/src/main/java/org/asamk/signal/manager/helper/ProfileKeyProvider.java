@@ -1,9 +1,9 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public interface ProfileKeyProvider {
 
-    ProfileKey getProfileKey(SignalServiceAddress address);
+    ProfileKey getProfileKey(RecipientId address);
 }

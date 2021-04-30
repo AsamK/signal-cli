@@ -18,7 +18,10 @@ public class ListContactsCommand implements LocalCommand {
 
         var contacts = m.getContacts();
         for (var c : contacts) {
-            writer.println("Number: {} Name: {} Blocked: {}", c.number, c.name, c.blocked);
+            writer.println("Number: {} Name: {} Blocked: {}",
+                    m.resolveSignalServiceAddress(c.first()).getLegacyIdentifier(),
+                    c.second().getName(),
+                    c.second().isBlocked());
         }
     }
 }

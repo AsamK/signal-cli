@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 
-public class ContactInfo {
+public class LegacyContactInfo {
 
     @JsonProperty
     public String name;
@@ -38,12 +38,7 @@ public class ContactInfo {
     @JsonProperty(defaultValue = "false")
     public boolean archived;
 
-    public ContactInfo() {
-    }
-
-    public ContactInfo(SignalServiceAddress address) {
-        this.number = address.getNumber().orNull();
-        this.uuid = address.getUuid().orNull();
+    public LegacyContactInfo() {
     }
 
     @JsonIgnore

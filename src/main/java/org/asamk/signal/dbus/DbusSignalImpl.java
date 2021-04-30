@@ -11,6 +11,7 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
@@ -248,7 +249,7 @@ public class DbusSignalImpl implements Signal {
     public String getContactName(final String number) {
         try {
             return m.getContactOrProfileName(number);
-        } catch (Exception e) {
+        } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
         }
     }
@@ -383,11 +384,10 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        return Stream.concat(m.getIdentities()
-                .stream()
-                .map(IdentityInfo::getRecipientId)
+        return Stream.concat(m.getIdentities().stream().map(IdentityInfo::getRecipientId),
+                m.getContacts().stream().map(Pair::first))
                 .map(m::resolveSignalServiceAddress)
-                .map(a -> a.getNumber().orNull()), m.getContacts().stream().map(c -> c.number))
+                .map(a -> a.getNumber().orNull())
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -399,8 +399,8 @@ public class DbusSignalImpl implements Signal {
         var numbers = new ArrayList<String>();
         var contacts = m.getContacts();
         for (var c : contacts) {
-            if (c.name != null && c.name.equals(name)) {
-                numbers.add(c.number);
+            if (name.equals(c.second().getName())) {
+                numbers.add(m.resolveSignalServiceAddress(c.first()).getLegacyIdentifier());
             }
         }
         // Try profiles if no contact name was found
@@ -449,13 +449,11 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isContactBlocked(final String number) {
-        var contacts = m.getContacts();
-        for (var c : contacts) {
-            if (c.number.equals(number)) {
-                return c.blocked;
-            }
+        try {
+            return m.isContactBlocked(number);
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
         }
-        return false;
     }
 
     @Override

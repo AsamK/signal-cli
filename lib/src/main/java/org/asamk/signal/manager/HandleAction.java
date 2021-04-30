@@ -1,6 +1,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.groups.GroupIdV1;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Objects;
@@ -160,15 +161,15 @@ class SendGroupInfoAction implements HandleAction {
 
 class RetrieveProfileAction implements HandleAction {
 
-    private final SignalServiceAddress address;
+    private final RecipientId recipientId;
 
-    public RetrieveProfileAction(final SignalServiceAddress address) {
-        this.address = address;
+    public RetrieveProfileAction(final RecipientId recipientId) {
+        this.recipientId = recipientId;
     }
 
     @Override
     public void execute(Manager m) throws Throwable {
-        m.getRecipientProfile(address, true);
+        m.getRecipientProfile(recipientId, true);
     }
 
     @Override
@@ -178,11 +179,11 @@ class RetrieveProfileAction implements HandleAction {
 
         final RetrieveProfileAction that = (RetrieveProfileAction) o;
 
-        return address.equals(that.address);
+        return recipientId.equals(that.recipientId);
     }
 
     @Override
     public int hashCode() {
-        return address.hashCode();
+        return recipientId.hashCode();
     }
 }

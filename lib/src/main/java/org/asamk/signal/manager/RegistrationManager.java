@@ -165,7 +165,7 @@ public class RegistrationManager implements Closeable {
         account.setUuid(UuidUtil.parseOrNull(response.getUuid()));
         account.setRegistrationLockPin(pin);
         account.getSessionStore().archiveAllSessions();
-        final var recipientId = account.getRecipientStore().resolveRecipient(account.getSelfAddress());
+        final var recipientId = account.getRecipientStore().resolveRecipientTrusted(account.getSelfAddress());
         final var publicKey = account.getIdentityKeyPair().getPublicKey();
         account.getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
         account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);

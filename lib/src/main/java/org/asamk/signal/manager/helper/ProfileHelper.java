@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
@@ -27,23 +28,27 @@ public final class ProfileHelper {
 
     private final MessageReceiverProvider messageReceiverProvider;
 
+    private final SignalServiceAddressResolver addressResolver;
+
     public ProfileHelper(
             final ProfileKeyProvider profileKeyProvider,
             final UnidentifiedAccessProvider unidentifiedAccessProvider,
             final MessagePipeProvider messagePipeProvider,
-            final MessageReceiverProvider messageReceiverProvider
+            final MessageReceiverProvider messageReceiverProvider,
+            final SignalServiceAddressResolver addressResolver
     ) {
         this.profileKeyProvider = profileKeyProvider;
         this.unidentifiedAccessProvider = unidentifiedAccessProvider;
         this.messagePipeProvider = messagePipeProvider;
         this.messageReceiverProvider = messageReceiverProvider;
+        this.addressResolver = addressResolver;
     }
 
     public ProfileAndCredential retrieveProfileSync(
-            SignalServiceAddress recipient, SignalServiceProfile.RequestType requestType
+            RecipientId recipientId, SignalServiceProfile.RequestType requestType
     ) throws IOException {
         try {
-            return retrieveProfile(recipient, requestType).get(10, TimeUnit.SECONDS);
+            return retrieveProfile(recipientId, requestType).get(10, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof PushNetworkException) {
                 throw (PushNetworkException) e.getCause();
@@ -58,11 +63,12 @@ public final class ProfileHelper {
     }
 
     public ListenableFuture<ProfileAndCredential> retrieveProfile(
-            SignalServiceAddress address, SignalServiceProfile.RequestType requestType
+            RecipientId recipientId, SignalServiceProfile.RequestType requestType
     ) {
-        var unidentifiedAccess = getUnidentifiedAccess(address);
-        var profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(address));
+        var unidentifiedAccess = getUnidentifiedAccess(recipientId);
+        var profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(recipientId));
 
+        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
         if (unidentifiedAccess.isPresent()) {
             return new CascadingFuture<>(Arrays.asList(() -> getPipeRetrievalFuture(address,
                     profileKey,
@@ -126,8 +132,8 @@ public final class ProfileHelper {
         }
     }
 
-    private Optional<UnidentifiedAccess> getUnidentifiedAccess(SignalServiceAddress recipient) {
-        var unidentifiedAccess = unidentifiedAccessProvider.getAccessFor(recipient);
+    private Optional<UnidentifiedAccess> getUnidentifiedAccess(RecipientId recipientId) {
+        var unidentifiedAccess = unidentifiedAccessProvider.getAccessFor(recipientId);
 
         if (unidentifiedAccess.isPresent()) {
             return unidentifiedAccess.get().getTargetUnidentifiedAccess();

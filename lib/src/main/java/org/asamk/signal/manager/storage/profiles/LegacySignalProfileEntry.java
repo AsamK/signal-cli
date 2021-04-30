@@ -4,7 +4,7 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
-public class SignalProfileEntry {
+public class LegacySignalProfileEntry {
 
     private final SignalServiceAddress serviceAddress;
 
@@ -16,9 +16,7 @@ public class SignalProfileEntry {
 
     private final ProfileKeyCredential profileKeyCredential;
 
-    private boolean requestPending;
-
-    public SignalProfileEntry(
+    public LegacySignalProfileEntry(
             final SignalServiceAddress serviceAddress,
             final ProfileKey profileKey,
             final long lastUpdateTimestamp,
@@ -50,13 +48,5 @@ public class SignalProfileEntry {
 
     public ProfileKeyCredential getProfileKeyCredential() {
         return profileKeyCredential;
-    }
-
-    public boolean isRequestPending() {
-        return requestPending;
-    }
-
-    public void setRequestPending(final boolean requestPending) {
-        this.requestPending = requestPending;
     }
 }

@@ -87,7 +87,7 @@ public interface Signal extends DBusInterface {
 
     void quitGroup(final byte[] groupId) throws Error.GroupNotFound, Error.Failure;
 
-    boolean isContactBlocked(final String number);
+    boolean isContactBlocked(final String number) throws Error.InvalidNumber;
 
     boolean isGroupBlocked(final byte[] groupId);
 
