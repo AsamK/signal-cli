@@ -1995,9 +1995,6 @@ public class Manager implements Closeable {
                         try (var attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream()
                                 .asPointer(), tmpFile)) {
                             var s = new DeviceContactsInputStream(attachmentAsStream);
-                            if (contactsMessage.isComplete()) {
-                                account.getContactStore().clear();
-                            }
                             DeviceContact c;
                             while ((c = s.read()) != null) {
                                 if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
