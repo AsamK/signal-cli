@@ -282,6 +282,9 @@ public class SignalAccount implements Closeable {
             rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
         }
 
+        username = Utils.getNotNullNode(rootNode, "username").asText();
+        password = Utils.getNotNullNode(rootNode, "password").asText();
+        registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("uuid")) {
             try {
                 uuid = UUID.fromString(rootNode.get("uuid").asText());
@@ -295,8 +298,6 @@ public class SignalAccount implements Closeable {
         if (rootNode.hasNonNull("isMultiDevice")) {
             isMultiDevice = rootNode.get("isMultiDevice").asBoolean();
         }
-        username = Utils.getNotNullNode(rootNode, "username").asText();
-        password = Utils.getNotNullNode(rootNode, "password").asText();
         int registrationId = 0;
         if (rootNode.hasNonNull("registrationId")) {
             registrationId = rootNode.get("registrationId").asInt();
@@ -337,8 +338,54 @@ public class SignalAccount implements Closeable {
             }
         }
 
+        final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
+                ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
+                LegacyJsonSignalProtocolStore.class)
+                : null;
+        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
+            identityKeyPair = legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentityKeyPair();
+            registrationId = legacySignalProtocolStore.getLegacyIdentityKeyStore().getLocalRegistrationId();
+        }
+
         recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
 
+        preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
+        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
+        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
+        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
+                recipientStore::resolveRecipient,
+                identityKeyPair,
+                registrationId);
+
+        loadLegacyStores(rootNode, legacySignalProtocolStore);
+
+        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
+
+        var groupStoreNode = rootNode.get("groupStore");
+        if (groupStoreNode != null) {
+            groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
+            groupStore.groupCachePath = getGroupCachePath(dataPath, username);
+        }
+        if (groupStore == null) {
+            groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        }
+
+        var stickerStoreNode = rootNode.get("stickerStore");
+        if (stickerStoreNode != null) {
+            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
+        }
+        if (stickerStore == null) {
+            stickerStore = new StickerStore();
+        }
+
+        messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+
+        loadLegacyThreadStore(rootNode);
+    }
+
+    private void loadLegacyStores(
+            final JsonNode rootNode, final LegacyJsonSignalProtocolStore legacySignalProtocolStore
+    ) {
         var legacyRecipientStoreNode = rootNode.get("recipientStore");
         if (legacyRecipientStoreNode != null) {
             logger.debug("Migrating legacy recipient store.");
@@ -349,12 +396,6 @@ public class SignalAccount implements Closeable {
             recipientStore.resolveRecipientTrusted(getSelfAddress());
         }
 
-        var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
-                ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
-                LegacyJsonSignalProtocolStore.class)
-                : null;
-
-        preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyPreKeyStore() != null) {
             logger.debug("Migrating legacy pre key store.");
             for (var entry : legacySignalProtocolStore.getLegacyPreKeyStore().getPreKeys().entrySet()) {
@@ -366,7 +407,6 @@ public class SignalAccount implements Closeable {
             }
         }
 
-        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySignedPreKeyStore() != null) {
             logger.debug("Migrating legacy signed pre key store.");
             for (var entry : legacySignalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
@@ -378,7 +418,6 @@ public class SignalAccount implements Closeable {
             }
         }
 
-        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySessionStore() != null) {
             logger.debug("Migrating legacy session store.");
             for (var session : legacySignalProtocolStore.getLegacySessionStore().getSessions()) {
@@ -392,14 +431,6 @@ public class SignalAccount implements Closeable {
         }
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
-            identityKeyPair = legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentityKeyPair();
-            registrationId = legacySignalProtocolStore.getLegacyIdentityKeyStore().getLocalRegistrationId();
-        }
-        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
-                recipientStore::resolveRecipient,
-                identityKeyPair,
-                registrationId);
-        if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
             logger.debug("Migrating legacy identity session store.");
             for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
                 RecipientId recipientId = recipientStore.resolveRecipientTrusted(identity.getAddress());
@@ -408,18 +439,6 @@ public class SignalAccount implements Closeable {
                         identity.getIdentityKey(),
                         identity.getTrustLevel());
             }
-        }
-
-        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
-
-        registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
-        var groupStoreNode = rootNode.get("groupStore");
-        if (groupStoreNode != null) {
-            groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
-            groupStore.groupCachePath = getGroupCachePath(dataPath, username);
-        }
-        if (groupStore == null) {
-            groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
         if (rootNode.hasNonNull("contactStore")) {
@@ -484,17 +503,9 @@ public class SignalAccount implements Closeable {
                 }
             }
         }
+    }
 
-        var stickerStoreNode = rootNode.get("stickerStore");
-        if (stickerStoreNode != null) {
-            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
-        }
-        if (stickerStore == null) {
-            stickerStore = new StickerStore();
-        }
-
-        messageCache = new MessageCache(getMessageCachePath(dataPath, username));
-
+    private void loadLegacyThreadStore(final JsonNode rootNode) {
         var threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null && !threadStoreNode.isNull()) {
             var threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
