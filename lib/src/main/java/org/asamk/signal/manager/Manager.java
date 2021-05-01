@@ -1754,6 +1754,7 @@ public class Manager implements Closeable {
                 // Store uuid if we don't have it already
                 resolveRecipientTrusted(envelope.getSourceAddress());
             }
+            final var notAGroupMember = isNotAGroupMember(envelope, content);
             if (!envelope.isReceipt()) {
                 try {
                     content = decryptMessage(envelope);
@@ -1779,7 +1780,7 @@ public class Manager implements Closeable {
             account.save();
             if (isMessageBlocked(envelope, content)) {
                 logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
-            } else if (isNotAGroupMember(envelope, content)) {
+            } else if (notAGroupMember) {
                 logger.info("Ignoring a message from a non group member: {}", envelope.getTimestamp());
             } else {
                 handler.handleMessage(envelope, content, exception);
