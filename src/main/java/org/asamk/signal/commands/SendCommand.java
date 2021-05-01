@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class SendCommand implements DbusCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
@@ -67,9 +65,6 @@ public class SendCommand implements DbusCommand {
             try {
                 signal.sendEndSessionMessage(recipients);
                 return;
-            } catch (AssertionError e) {
-                handleAssertionError(e);
-                throw e;
             } catch (Signal.Error.UntrustedIdentity e) {
                 throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
             } catch (DBusExecutionException e) {
@@ -105,9 +100,6 @@ public class SendCommand implements DbusCommand {
                 var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
                 writer.println("{}", timestamp);
                 return;
-            } catch (AssertionError e) {
-                handleAssertionError(e);
-                throw e;
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage());
             }
@@ -118,9 +110,6 @@ public class SendCommand implements DbusCommand {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
                 writer.println("{}", timestamp);
                 return;
-            } catch (AssertionError e) {
-                handleAssertionError(e);
-                throw e;
             } catch (Signal.Error.UntrustedIdentity e) {
                 throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
             } catch (DBusExecutionException e) {
@@ -131,9 +120,6 @@ public class SendCommand implements DbusCommand {
         try {
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
             writer.println("{}", timestamp);
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {

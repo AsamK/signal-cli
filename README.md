@@ -102,8 +102,8 @@ This is still experimental and will not work in all situations.
   
    The binary is available at *build/native-image/signal-cli*
 
-## Troubleshooting
-If you use a version of the Oracle JRE and get an InvalidKeyException you need to enable unlimited strength crypto. See https://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters for instructions.
+## FAQ and Troubleshooting
+For frequently asked questions and issues have a look at the [wiki](https://github.com/AsamK/signal-cli/wiki/FAQ)
 
 ## License
 

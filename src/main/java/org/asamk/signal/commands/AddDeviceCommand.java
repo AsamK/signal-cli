@@ -16,8 +16,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class AddDeviceCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
@@ -41,9 +39,6 @@ public class AddDeviceCommand implements LocalCommand {
         } catch (InvalidKeyException e) {
             logger.error("Add device link failed", e);
             throw new UnexpectedErrorException("Add device link failed.");
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         }
     }
 }

@@ -16,7 +16,6 @@ import org.asamk.signal.util.Util;
 
 import java.io.IOException;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
 public class QuitGroupCommand implements LocalCommand {
@@ -42,12 +41,7 @@ public class QuitGroupCommand implements LocalCommand {
             handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
             throw new IOErrorException("Failed to send message: " + e.getMessage());
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
-        } catch (GroupNotFoundException e) {
-            throw new UserErrorException("Failed to send to group: " + e.getMessage());
-        } catch (NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         }
     }

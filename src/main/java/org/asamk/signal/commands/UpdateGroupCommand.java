@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class UpdateGroupCommand implements DbusCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
@@ -67,9 +65,6 @@ public class UpdateGroupCommand implements DbusCommand {
             if (groupId.length != newGroupId.length) {
                 writer.println("Created new group: \"{}\"", Base64.getEncoder().encodeToString(newGroupId));
             }
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         } catch (Signal.Error.AttachmentInvalid e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (DBusExecutionException e) {

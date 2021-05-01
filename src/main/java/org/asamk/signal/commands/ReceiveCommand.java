@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
@@ -169,9 +167,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     handler);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage());
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         }
     }
 }

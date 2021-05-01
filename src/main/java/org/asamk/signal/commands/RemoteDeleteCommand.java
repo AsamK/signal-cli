@@ -15,8 +15,6 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class RemoteDeleteCommand implements DbusCommand {
 
     @Override
@@ -26,10 +24,8 @@ public class RemoteDeleteCommand implements DbusCommand {
                 .required(true)
                 .type(long.class)
                 .help("Specify the timestamp of the message to delete.");
-        subparser.addArgument("-g", "--group")
-                .help("Specify the recipient group ID.");
-        subparser.addArgument("recipient")
-                .help("Specify the recipients' phone number.").nargs("*");
+        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
     }
 
     @Override
@@ -66,9 +62,6 @@ public class RemoteDeleteCommand implements DbusCommand {
                 timestamp = signal.sendRemoteDeleteMessage(targetTimestamp, recipients);
             }
             writer.println("{}", timestamp);
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {

@@ -17,10 +17,6 @@ public class ErrorUtils {
     private ErrorUtils() {
     }
 
-    public static void handleAssertionError(AssertionError e) {
-        logger.warn("If you use an Oracle JRE please check if you have unlimited strength crypto enabled, see README");
-    }
-
     public static void handleTimestampAndSendMessageResults(
             PlainTextWriter writer, long timestamp, List<SendMessageResult> results
     ) throws CommandException {

@@ -16,8 +16,6 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.util.List;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class SendReactionCommand implements DbusCommand {
 
     @Override
@@ -75,9 +73,6 @@ public class SendReactionCommand implements DbusCommand {
                 timestamp = signal.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
             writer.println("{}", timestamp);
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {

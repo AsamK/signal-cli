@@ -17,8 +17,6 @@ import org.whispersystems.libsignal.InvalidKeyException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import static org.asamk.signal.util.ErrorUtils.handleAssertionError;
-
 public class LinkCommand implements ProvisioningCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(LinkCommand.class);
@@ -45,9 +43,6 @@ public class LinkCommand implements ProvisioningCommand {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
             throw new IOErrorException("Link request error: " + e.getMessage());
-        } catch (AssertionError e) {
-            handleAssertionError(e);
-            throw e;
         } catch (InvalidKeyException e) {
             logger.debug("Finish device link failed", e);
             throw new UnexpectedErrorException("Invalid key: " + e.getMessage());
