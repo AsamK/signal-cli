@@ -1903,7 +1903,7 @@ public class Manager implements Closeable {
                             destination,
                             ignoreAttachments));
                 }
-                if (syncMessage.getRequest().isPresent()) {
+                if (syncMessage.getRequest().isPresent() && account.isMasterDevice()) {
                     var rm = syncMessage.getRequest().get();
                     if (rm.isContactsRequest()) {
                         actions.add(SendSyncContactsAction.create());
