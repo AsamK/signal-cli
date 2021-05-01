@@ -35,6 +35,8 @@ import java.security.Security;
 public class Main {
 
     public static void main(String[] args) {
+        // enable unlimited strength crypto via Policy, supported on relevant JREs
+        Security.setProperty("crypto.policy", "unlimited");
         installSecurityProviderWorkaround();
 
         // Configuring the logger needs to happen before any logger is initialized
