@@ -7,7 +7,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
-import org.asamk.signal.manager.storage.groups.JsonGroupStore;
+import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
@@ -86,7 +86,8 @@ public class SignalAccount implements Closeable {
     private SignedPreKeyStore signedPreKeyStore;
     private SessionStore sessionStore;
     private IdentityKeyStore identityKeyStore;
-    private JsonGroupStore groupStore;
+    private GroupStore groupStore;
+    private GroupStore.Storage groupStoreStorage;
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
     private StickerStore.Storage stickerStoreStorage;
@@ -130,7 +131,9 @@ public class SignalAccount implements Closeable {
         account.profileKey = profileKey;
 
         account.initStores(dataPath, identityKey, registrationId);
-        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
+                account.recipientStore::resolveRecipient,
+                account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
 
         account.registered = false;
@@ -183,7 +186,9 @@ public class SignalAccount implements Closeable {
         account.deviceId = deviceId;
 
         account.initStores(dataPath, identityKey, registrationId);
-        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
+                account.recipientStore::resolveRecipient,
+                account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
 
         account.registered = true;
@@ -209,6 +214,7 @@ public class SignalAccount implements Closeable {
         sessionStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         identityKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         messageCache.mergeRecipients(recipientId, toBeMergedRecipientId);
+        groupStore.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public static File getFileName(File dataPath, String username) {
@@ -331,13 +337,16 @@ public class SignalAccount implements Closeable {
 
         loadLegacyStores(rootNode, legacySignalProtocolStore);
 
-        var groupStoreNode = rootNode.get("groupStore");
-        if (groupStoreNode != null) {
-            groupStore = jsonProcessor.convertValue(groupStoreNode, JsonGroupStore.class);
-            groupStore.groupCachePath = getGroupCachePath(dataPath, username);
-        }
-        if (groupStore == null) {
-            groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        if (rootNode.hasNonNull("groupStore")) {
+            groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
+            groupStore = GroupStore.fromStorage(groupStoreStorage,
+                    getGroupCachePath(dataPath, username),
+                    recipientStore::resolveRecipient,
+                    this::saveGroupStore);
+        } else {
+            groupStore = new GroupStore(getGroupCachePath(dataPath, username),
+                    recipientStore::resolveRecipient,
+                    this::saveGroupStore);
         }
 
         if (rootNode.hasNonNull("stickerStore")) {
@@ -510,6 +519,11 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    private void saveGroupStore(GroupStore.Storage storage) {
+        this.groupStoreStorage = storage;
+        save();
+    }
+
     public void save() {
         synchronized (fileChannel) {
             var rootNode = jsonProcessor.createObjectNode();
@@ -534,7 +548,7 @@ public class SignalAccount implements Closeable {
                     .put("nextSignedPreKeyId", nextSignedPreKeyId)
                     .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
-                    .putPOJO("groupStore", groupStore)
+                    .putPOJO("groupStore", groupStoreStorage)
                     .putPOJO("stickerStore", stickerStoreStorage);
             try {
                 try (var output = new ByteArrayOutputStream()) {
@@ -597,7 +611,7 @@ public class SignalAccount implements Closeable {
         return identityKeyStore;
     }
 
-    public JsonGroupStore getGroupStore() {
+    public GroupStore getGroupStore() {
         return groupStore;
     }
 

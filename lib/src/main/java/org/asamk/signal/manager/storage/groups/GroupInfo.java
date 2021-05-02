@@ -1,10 +1,8 @@
 package org.asamk.signal.manager.storage.groups;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,66 +10,43 @@ import java.util.stream.Stream;
 
 public abstract class GroupInfo {
 
-    @JsonIgnore
     public abstract GroupId getGroupId();
 
-    @JsonIgnore
     public abstract String getTitle();
 
-    @JsonIgnore
     public abstract GroupInviteLinkUrl getGroupInviteLink();
 
-    @JsonIgnore
-    public abstract Set<SignalServiceAddress> getMembers();
+    public abstract Set<RecipientId> getMembers();
 
-    @JsonIgnore
-    public Set<SignalServiceAddress> getPendingMembers() {
+    public Set<RecipientId> getPendingMembers() {
         return Set.of();
     }
 
-    @JsonIgnore
-    public Set<SignalServiceAddress> getRequestingMembers() {
+    public Set<RecipientId> getRequestingMembers() {
         return Set.of();
     }
 
-    @JsonIgnore
     public abstract boolean isBlocked();
 
-    @JsonIgnore
     public abstract void setBlocked(boolean blocked);
 
-    @JsonIgnore
     public abstract int getMessageExpirationTime();
 
-    @JsonIgnore
-    public Set<SignalServiceAddress> getMembersWithout(SignalServiceAddress address) {
-        return getMembers().stream().filter(member -> !member.matches(address)).collect(Collectors.toSet());
+    public Set<RecipientId> getMembersWithout(RecipientId recipientId) {
+        return getMembers().stream().filter(member -> !member.equals(recipientId)).collect(Collectors.toSet());
     }
 
-    @JsonIgnore
-    public Set<SignalServiceAddress> getMembersIncludingPendingWithout(SignalServiceAddress address) {
+    public Set<RecipientId> getMembersIncludingPendingWithout(RecipientId recipientId) {
         return Stream.concat(getMembers().stream(), getPendingMembers().stream())
-                .filter(member -> !member.matches(address))
+                .filter(member -> !member.equals(recipientId))
                 .collect(Collectors.toSet());
     }
 
-    @JsonIgnore
-    public boolean isMember(SignalServiceAddress address) {
-        for (var member : getMembers()) {
-            if (member.matches(address)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isMember(RecipientId recipientId) {
+        return getMembers().contains(recipientId);
     }
 
-    @JsonIgnore
-    public boolean isPendingMember(SignalServiceAddress address) {
-        for (var member : getPendingMembers()) {
-            if (member.matches(address)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isPendingMember(RecipientId recipientId) {
+        return getPendingMembers().contains(recipientId);
     }
 }

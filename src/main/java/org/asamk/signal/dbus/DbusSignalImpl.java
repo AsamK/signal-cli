@@ -472,7 +472,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return false;
         } else {
-            return group.isMember(m.getSelfAddress());
+            return group.isMember(m.getSelfRecipientId());
         }
     }
 }

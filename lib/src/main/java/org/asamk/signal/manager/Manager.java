@@ -265,6 +265,10 @@ public class Manager implements Closeable {
         return account.getSelfAddress();
     }
 
+    public RecipientId getSelfRecipientId() {
+        return account.getSelfRecipientId();
+    }
+
     private IdentityKeyPair getIdentityKeyPair() {
         return account.getIdentityKeyPair();
     }
@@ -673,7 +677,7 @@ public class Manager implements Closeable {
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
-        if (!g.isMember(account.getSelfAddress())) {
+        if (!g.isMember(account.getSelfRecipientId())) {
             throw new NotAGroupMemberException(groupId, g.getTitle());
         }
         return g;
@@ -684,7 +688,7 @@ public class Manager implements Closeable {
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
-        if (!g.isMember(account.getSelfAddress()) && !g.isPendingMember(account.getSelfAddress())) {
+        if (!g.isMember(account.getSelfRecipientId()) && !g.isPendingMember(account.getSelfRecipientId())) {
             throw new NotAGroupMemberException(groupId, g.getTitle());
         }
         return g;
@@ -725,7 +729,7 @@ public class Manager implements Closeable {
         GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTime());
 
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfRecipientId()));
     }
 
     public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
@@ -736,17 +740,17 @@ public class Manager implements Closeable {
             var groupInfoV1 = (GroupInfoV1) g;
             var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT).withId(groupId.serialize()).build();
             messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
-            groupInfoV1.removeMember(account.getSelfAddress());
+            groupInfoV1.removeMember(account.getSelfRecipientId());
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
             final var groupInfoV2 = (GroupInfoV2) g;
             final var groupGroupChangePair = groupHelper.leaveGroup(groupInfoV2);
-            groupInfoV2.setGroup(groupGroupChangePair.first());
+            groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
             messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
             account.getGroupStore().updateGroup(groupInfoV2);
         }
 
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfAddress()));
+        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfRecipientId()));
     }
 
     public Pair<GroupId, List<SendMessageResult>> updateGroup(
@@ -754,11 +758,7 @@ public class Manager implements Closeable {
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return sendUpdateGroupMessage(groupId,
                 name,
-                members == null
-                        ? null
-                        : getSignalServiceAddresses(members).stream()
-                                .map(this::resolveRecipient)
-                                .collect(Collectors.toSet()),
+                members == null ? null : getSignalServiceAddresses(members),
                 avatarFile);
     }
 
@@ -769,16 +769,20 @@ public class Manager implements Closeable {
         SignalServiceDataMessage.Builder messageBuilder;
         if (groupId == null) {
             // Create new group
-            var gv2 = groupHelper.createGroupV2(name == null ? "" : name,
+            var gv2Pair = groupHelper.createGroupV2(name == null ? "" : name,
                     members == null ? Set.of() : members,
                     avatarFile);
-            if (gv2 == null) {
+            if (gv2Pair == null) {
                 var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
-                gv1.addMembers(List.of(account.getSelfAddress()));
+                gv1.addMembers(List.of(account.getSelfRecipientId()));
                 updateGroupV1(gv1, name, members, avatarFile);
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
             } else {
+                final var gv2 = gv2Pair.first();
+                final var decryptedGroup = gv2Pair.second();
+
+                gv2.setGroup(decryptedGroup, this::resolveRecipient);
                 if (avatarFile != null) {
                     avatarStore.storeGroupAvatar(gv2.getGroupId(),
                             outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
@@ -792,7 +796,7 @@ public class Manager implements Closeable {
                 final var groupInfoV2 = (GroupInfoV2) group;
 
                 Pair<Long, List<SendMessageResult>> result = null;
-                if (groupInfoV2.isPendingMember(getSelfAddress())) {
+                if (groupInfoV2.isPendingMember(account.getSelfRecipientId())) {
                     var groupGroupChangePair = groupHelper.acceptInvite(groupInfoV2);
                     result = sendUpdateGroupMessage(groupInfoV2,
                             groupGroupChangePair.first(),
@@ -801,10 +805,7 @@ public class Manager implements Closeable {
 
                 if (members != null) {
                     final var newMembers = new HashSet<>(members);
-                    newMembers.removeAll(group.getMembers()
-                            .stream()
-                            .map(this::resolveRecipient)
-                            .collect(Collectors.toSet()));
+                    newMembers.removeAll(group.getMembers());
                     if (newMembers.size() > 0) {
                         var groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2, newMembers);
                         result = sendUpdateGroupMessage(groupInfoV2,
@@ -834,7 +835,8 @@ public class Manager implements Closeable {
 
         account.getGroupStore().updateGroup(g);
 
-        final var result = sendMessage(messageBuilder, g.getMembersIncludingPendingWithout(account.getSelfAddress()));
+        final var result = sendMessage(messageBuilder,
+                g.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
         return new Pair<>(g.getGroupId(), result.second());
     }
 
@@ -846,12 +848,13 @@ public class Manager implements Closeable {
         }
 
         if (members != null) {
-            final var memberAddresses = members.stream()
+            final var newMemberAddresses = members.stream()
+                    .filter(member -> !g.isMember(member))
                     .map(this::resolveSignalServiceAddress)
                     .collect(Collectors.toList());
             final var newE164Members = new HashSet<String>();
-            for (var member : memberAddresses) {
-                if (g.isMember(member) || !member.getNumber().isPresent()) {
+            for (var member : newMemberAddresses) {
+                if (!member.getNumber().isPresent()) {
                     continue;
                 }
                 newE164Members.add(member.getNumber().get());
@@ -866,7 +869,7 @@ public class Manager implements Closeable {
                         + " to group: Not registered on Signal");
             }
 
-            g.addMembers(memberAddresses);
+            g.addMembers(members);
         }
 
         if (avatarFile != null) {
@@ -928,10 +931,10 @@ public class Manager implements Closeable {
     private Pair<Long, List<SendMessageResult>> sendUpdateGroupMessage(
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
-        group.setGroup(newDecryptedGroup);
+        group.setGroup(newDecryptedGroup, this::resolveRecipient);
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
         account.getGroupStore().updateGroup(group);
-        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfAddress()));
+        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
     Pair<Long, List<SendMessageResult>> sendGroupInfoMessage(
@@ -944,21 +947,24 @@ public class Manager implements Closeable {
         }
         g = (GroupInfoV1) group;
 
-        if (!g.isMember(recipient)) {
+        if (!g.isMember(resolveRecipient(recipient))) {
             throw new NotAGroupMemberException(groupId, g.name);
         }
 
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendMessage(messageBuilder, List.of(recipient));
+        return sendMessage(messageBuilder, Set.of(resolveRecipient(recipient)));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.getGroupId().serialize())
                 .withName(g.name)
-                .withMembers(new ArrayList<>(g.getMembers()));
+                .withMembers(g.getMembers()
+                        .stream()
+                        .map(this::resolveSignalServiceAddress)
+                        .collect(Collectors.toList()));
 
         try {
             final var attachment = createGroupAvatarAttachment(g.getGroupId());
@@ -991,7 +997,7 @@ public class Manager implements Closeable {
         var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendMessage(messageBuilder, List.of(recipient));
+        return sendMessage(messageBuilder, Set.of(resolveRecipient(recipient)));
     }
 
     void sendReceipt(
@@ -1126,9 +1132,9 @@ public class Manager implements Closeable {
                 .storeContact(recipientId, builder.withMessageExpirationTime(messageExpirationTimer).build());
     }
 
-    private void sendExpirationTimerUpdate(SignalServiceAddress address) throws IOException {
+    private void sendExpirationTimerUpdate(RecipientId recipientId) throws IOException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
-        sendMessage(messageBuilder, List.of(address));
+        sendMessage(messageBuilder, Set.of(recipientId));
     }
 
     /**
@@ -1139,7 +1145,7 @@ public class Manager implements Closeable {
     ) throws IOException, InvalidNumberException {
         var recipientId = canonicalizeAndResolveRecipient(number);
         setExpirationTimer(recipientId, messageExpirationTimer);
-        sendExpirationTimerUpdate(resolveSignalServiceAddress(recipientId));
+        sendExpirationTimerUpdate(recipientId);
         account.save();
     }
 
@@ -1266,7 +1272,7 @@ public class Manager implements Closeable {
         messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
     }
 
-    private Collection<SignalServiceAddress> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
+    private Set<RecipientId> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
         final var signalServiceAddresses = new HashSet<SignalServiceAddress>(numbers.size());
         final var addressesMissingUuid = new HashSet<SignalServiceAddress>();
 
@@ -1302,7 +1308,7 @@ public class Manager implements Closeable {
             }
         }
 
-        return signalServiceAddresses;
+        return signalServiceAddresses.stream().map(this::resolveRecipient).collect(Collectors.toSet());
     }
 
     private Map<String, UUID> getRegisteredUsers(final Set<String> numbersMissingUuid) throws IOException {
@@ -1316,10 +1322,8 @@ public class Manager implements Closeable {
     }
 
     private Pair<Long, List<SendMessageResult>> sendMessage(
-            SignalServiceDataMessage.Builder messageBuilder, Collection<SignalServiceAddress> recipients
+            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientId> recipientIds
     ) throws IOException {
-        recipients = recipients.stream().map(this::resolveSignalServiceAddress).collect(Collectors.toSet());
-        final var recipientIds = recipients.stream().map(this::resolveRecipient).collect(Collectors.toSet());
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         getOrCreateMessagePipe();
@@ -1331,8 +1335,12 @@ public class Manager implements Closeable {
                 try {
                     var messageSender = createMessageSender();
                     final var isRecipientUpdate = false;
-                    var result = messageSender.sendMessage(new ArrayList<>(recipients),
-                            unidentifiedAccessHelper.getAccessFor(recipientIds),
+                    final var recipientIdList = new ArrayList<>(recipientIds);
+                    final var addresses = recipientIdList.stream()
+                            .map(this::resolveSignalServiceAddress)
+                            .collect(Collectors.toList());
+                    var result = messageSender.sendMessage(addresses,
+                            unidentifiedAccessHelper.getAccessFor(recipientIdList),
                             isRecipientUpdate,
                             message);
 
@@ -1352,19 +1360,19 @@ public class Manager implements Closeable {
             } else {
                 // Send to all individually, so sync messages are sent correctly
                 messageBuilder.withProfileKey(account.getProfileKey().serialize());
-                var results = new ArrayList<SendMessageResult>(recipients.size());
-                for (var address : recipients) {
-                    final var contact = account.getContactStore().getContact(resolveRecipient(address));
+                var results = new ArrayList<SendMessageResult>(recipientIds.size());
+                for (var recipientId : recipientIds) {
+                    final var contact = account.getContactStore().getContact(recipientId);
                     final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
                     messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
-                    results.add(sendMessage(address, message));
+                    results.add(sendMessage(resolveSignalServiceAddress(recipientId), message));
                 }
                 return new Pair<>(timestamp, results);
             }
         } finally {
             if (message != null && message.isEndSession()) {
-                for (var recipient : recipients) {
+                for (var recipient : recipientIds) {
                     handleEndSession(recipient);
                 }
             }
@@ -1448,8 +1456,8 @@ public class Manager implements Closeable {
         }
     }
 
-    private void handleEndSession(SignalServiceAddress source) {
-        account.getSessionStore().deleteAllSessions(source.getIdentifier());
+    private void handleEndSession(RecipientId recipientId) {
+        account.getSessionStore().deleteAllSessions(recipientId);
     }
 
     private List<HandleAction> handleSignalServiceDataMessage(
@@ -1486,7 +1494,7 @@ public class Manager implements Closeable {
                                 groupV1.addMembers(groupInfo.getMembers()
                                         .get()
                                         .stream()
-                                        .map(this::resolveSignalServiceAddress)
+                                        .map(this::resolveRecipient)
                                         .collect(Collectors.toSet()));
                             }
 
@@ -1500,7 +1508,7 @@ public class Manager implements Closeable {
                             break;
                         case QUIT: {
                             if (groupV1 != null) {
-                                groupV1.removeMember(source);
+                                groupV1.removeMember(resolveRecipient(source));
                                 account.getGroupStore().updateGroup(groupV1);
                             }
                             break;
@@ -1527,7 +1535,7 @@ public class Manager implements Closeable {
 
         final var conversationPartnerAddress = isSync ? destination : source;
         if (conversationPartnerAddress != null && message.isEndSession()) {
-            handleEndSession(conversationPartnerAddress);
+            handleEndSession(resolveRecipient(conversationPartnerAddress));
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
@@ -1613,7 +1621,7 @@ public class Manager implements Closeable {
         final GroupInfoV2 groupInfoV2;
         if (groupInfo instanceof GroupInfoV1) {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
-            account.getGroupStore().deleteGroup(groupInfo.getGroupId());
+            account.getGroupStore().deleteGroupV1(((GroupInfoV1) groupInfo).getGroupId());
             groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
             logger.info("Locally migrated group {} to group v2, id: {}",
                     groupInfo.getGroupId().toBase64(),
@@ -1641,7 +1649,7 @@ public class Manager implements Closeable {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
-            groupInfoV2.setGroup(group);
+            groupInfoV2.setGroup(group, this::resolveRecipient);
             account.getGroupStore().updateGroup(groupInfoV2);
         }
 
@@ -1885,7 +1893,7 @@ public class Manager implements Closeable {
                 }
                 var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
                 var group = getGroup(groupId);
-                if (group != null && !group.isMember(source)) {
+                if (group != null && !group.isMember(resolveRecipient(source))) {
                     return true;
                 }
             }
@@ -1959,13 +1967,13 @@ public class Manager implements Closeable {
                                     }
                                     syncGroup.addMembers(g.getMembers()
                                             .stream()
-                                            .map(this::resolveSignalServiceAddress)
+                                            .map(this::resolveRecipient)
                                             .collect(Collectors.toSet()));
                                     if (!g.isActive()) {
-                                        syncGroup.removeMember(account.getSelfAddress());
+                                        syncGroup.removeMember(account.getSelfRecipientId());
                                     } else {
                                         // Add ourself to the member set as it's marked as active
-                                        syncGroup.addMembers(List.of(account.getSelfAddress()));
+                                        syncGroup.addMembers(List.of(account.getSelfRecipientId()));
                                     }
                                     syncGroup.blocked = g.isBlocked();
                                     if (g.getColor().isPresent()) {
@@ -1975,7 +1983,6 @@ public class Manager implements Closeable {
                                     if (g.getAvatar().isPresent()) {
                                         downloadGroupAvatar(g.getAvatar().get(), syncGroup.getGroupId());
                                     }
-                                    syncGroup.inboxPosition = g.getInboxPosition().orNull();
                                     syncGroup.archived = g.isArchived();
                                     account.getGroupStore().updateGroup(syncGroup);
                                 }
@@ -2282,13 +2289,16 @@ public class Manager implements Closeable {
                         var groupInfo = (GroupInfoV1) record;
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
                                 Optional.fromNullable(groupInfo.name),
-                                new ArrayList<>(groupInfo.getMembers()),
+                                groupInfo.getMembers()
+                                        .stream()
+                                        .map(this::resolveSignalServiceAddress)
+                                        .collect(Collectors.toList()),
                                 createGroupAvatarAttachment(groupInfo.getGroupId()),
-                                groupInfo.isMember(account.getSelfAddress()),
+                                groupInfo.isMember(account.getSelfRecipientId()),
                                 Optional.of(groupInfo.messageExpirationTime),
                                 Optional.fromNullable(groupInfo.color),
                                 groupInfo.blocked,
-                                Optional.fromNullable(groupInfo.inboxPosition),
+                                Optional.absent(),
                                 groupInfo.archived));
                     }
                 }
@@ -2434,7 +2444,7 @@ public class Manager implements Closeable {
         final var group = account.getGroupStore().getGroup(groupId);
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
             final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
-            ((GroupInfoV2) group).setGroup(groupHelper.getDecryptedGroup(groupSecretParams));
+            ((GroupInfoV2) group).setGroup(groupHelper.getDecryptedGroup(groupSecretParams), this::resolveRecipient);
             account.getGroupStore().updateGroup(group);
         }
         return group;

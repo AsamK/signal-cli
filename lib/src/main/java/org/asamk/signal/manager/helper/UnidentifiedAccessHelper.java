@@ -6,7 +6,6 @@ import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -76,7 +75,7 @@ public class UnidentifiedAccessHelper {
         }
     }
 
-    public List<Optional<UnidentifiedAccessPair>> getAccessFor(Collection<RecipientId> recipients) {
+    public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
         return recipients.stream().map(this::getAccessFor).collect(Collectors.toList());
     }
 

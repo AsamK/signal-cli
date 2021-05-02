@@ -17,15 +17,15 @@ public class Utils {
     }
 
     public static ObjectMapper createStorageObjectMapper() {
-        final ObjectMapper jsonProcessor = new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper();
 
-        jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
-        jsonProcessor.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print
-        jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        jsonProcessor.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
-        jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+        objectMapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
-        return jsonProcessor;
+        return objectMapper;
     }
 
     public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {

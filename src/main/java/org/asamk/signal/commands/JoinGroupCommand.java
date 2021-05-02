@@ -46,7 +46,7 @@ public class JoinGroupCommand implements LocalCommand {
 
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();
-            if (!m.getGroup(newGroupId).isMember(m.getSelfAddress())) {
+            if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
                 writer.println("Requested to join group \"{}\"", newGroupId.toBase64());
             } else {
                 writer.println("Joined group \"{}\"", newGroupId.toBase64());

@@ -2,6 +2,8 @@ package org.asamk.signal.manager.storage.groups;
 
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.groups.GroupMasterKey;
@@ -18,10 +20,17 @@ public class GroupInfoV2 extends GroupInfo {
 
     private boolean blocked;
     private DecryptedGroup group; // stored as a file with hexadecimal groupId as name
+    private RecipientResolver recipientResolver;
 
     public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey) {
         this.groupId = groupId;
         this.masterKey = masterKey;
+    }
+
+    public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey, final boolean blocked) {
+        this.groupId = groupId;
+        this.masterKey = masterKey;
+        this.blocked = blocked;
     }
 
     @Override
@@ -33,8 +42,9 @@ public class GroupInfoV2 extends GroupInfo {
         return masterKey;
     }
 
-    public void setGroup(final DecryptedGroup group) {
+    public void setGroup(final DecryptedGroup group, final RecipientResolver recipientResolver) {
         this.group = group;
+        this.recipientResolver = recipientResolver;
     }
 
     public DecryptedGroup getGroup() {
@@ -63,35 +73,38 @@ public class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
-    public Set<SignalServiceAddress> getMembers() {
+    public Set<RecipientId> getMembers() {
         if (this.group == null) {
             return Set.of();
         }
         return group.getMembersList()
                 .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
 
     @Override
-    public Set<SignalServiceAddress> getPendingMembers() {
+    public Set<RecipientId> getPendingMembers() {
         if (this.group == null) {
             return Set.of();
         }
         return group.getPendingMembersList()
                 .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
 
     @Override
-    public Set<SignalServiceAddress> getRequestingMembers() {
+    public Set<RecipientId> getRequestingMembers() {
         if (this.group == null) {
             return Set.of();
         }
         return group.getRequestingMembersList()
                 .stream()
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
 

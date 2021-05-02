@@ -100,7 +100,7 @@ public class GroupHelper {
                 groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams));
     }
 
-    public GroupInfoV2 createGroupV2(
+    public Pair<GroupInfoV2, DecryptedGroup> createGroupV2(
             String name, Set<RecipientId> members, File avatarFile
     ) throws IOException {
         final var avatarBytes = readAvatarBytes(avatarFile);
@@ -129,9 +129,8 @@ public class GroupHelper {
         final var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
         final var masterKey = groupSecretParams.getMasterKey();
         var g = new GroupInfoV2(groupId, masterKey);
-        g.setGroup(decryptedGroup);
 
-        return g;
+        return new Pair<>(g, decryptedGroup);
     }
 
     private byte[] readAvatarBytes(final File avatarFile) throws IOException {

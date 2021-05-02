@@ -11,6 +11,7 @@ import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -23,7 +24,7 @@ public class ListGroupsCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
 
-    private static Set<String> resolveMembers(Manager m, Set<SignalServiceAddress> addresses) {
+    private static Set<String> resolveMembers(Manager m, Set<RecipientId> addresses) {
         return addresses.stream()
                 .map(m::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getLegacyIdentifier)
@@ -40,7 +41,7 @@ public class ListGroupsCommand implements LocalCommand {
                     "Id: {} Name: {}  Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
-                    group.isMember(m.getSelfAddress()),
+                    group.isMember(m.getSelfRecipientId()),
                     group.isBlocked(),
                     resolveMembers(m, group.getMembers()),
                     resolveMembers(m, group.getPendingMembers()),
@@ -50,7 +51,7 @@ public class ListGroupsCommand implements LocalCommand {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
-                    group.isMember(m.getSelfAddress()),
+                    group.isMember(m.getSelfRecipientId()),
                     group.isBlocked());
         }
     }
@@ -80,7 +81,7 @@ public class ListGroupsCommand implements LocalCommand {
 
                 jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
-                        group.isMember(m.getSelfAddress()),
+                        group.isMember(m.getSelfRecipientId()),
                         group.isBlocked(),
                         resolveMembers(m, group.getMembers()),
                         resolveMembers(m, group.getPendingMembers()),
