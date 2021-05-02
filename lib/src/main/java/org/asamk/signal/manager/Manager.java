@@ -39,6 +39,7 @@ import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.Sticker;
+import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -1170,7 +1171,7 @@ public class Manager implements Closeable {
         var packKey = KeyUtils.createStickerUploadKey();
         var packId = messageSender.uploadStickerManifest(manifest, packKey);
 
-        var sticker = new Sticker(Hex.fromStringCondensed(packId), packKey);
+        var sticker = new Sticker(StickerPackId.deserialize(Hex.fromStringCondensed(packId)), packKey);
         account.getStickerStore().updateSticker(sticker);
         account.save();
 
@@ -1591,9 +1592,10 @@ public class Manager implements Closeable {
         }
         if (message.getSticker().isPresent()) {
             final var messageSticker = message.getSticker().get();
-            var sticker = account.getStickerStore().getSticker(messageSticker.getPackId());
+            final var stickerPackId = StickerPackId.deserialize(messageSticker.getPackId());
+            var sticker = account.getStickerStore().getSticker(stickerPackId);
             if (sticker == null) {
-                sticker = new Sticker(messageSticker.getPackId(), messageSticker.getPackKey());
+                sticker = new Sticker(stickerPackId, messageSticker.getPackKey());
                 account.getStickerStore().updateSticker(sticker);
             }
         }
@@ -2086,12 +2088,13 @@ public class Manager implements Closeable {
                         if (!m.getPackId().isPresent()) {
                             continue;
                         }
-                        var sticker = account.getStickerStore().getSticker(m.getPackId().get());
+                        final var stickerPackId = StickerPackId.deserialize(m.getPackId().get());
+                        var sticker = account.getStickerStore().getSticker(stickerPackId);
                         if (sticker == null) {
                             if (!m.getPackKey().isPresent()) {
                                 continue;
                             }
-                            sticker = new Sticker(m.getPackId().get(), m.getPackKey().get());
+                            sticker = new Sticker(stickerPackId, m.getPackKey().get());
                         }
                         sticker.setInstalled(!m.getType().isPresent()
                                 || m.getType().get() == StickerPackOperationMessage.Type.INSTALL);

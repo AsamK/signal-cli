@@ -1,69 +1,102 @@
 package org.asamk.signal.manager.storage.stickers;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class StickerStore {
 
-    @JsonSerialize(using = StickersSerializer.class)
-    @JsonDeserialize(using = StickersDeserializer.class)
-    private final Map<byte[], Sticker> stickers = new HashMap<>();
+    private final Map<StickerPackId, Sticker> stickers;
 
-    public Sticker getSticker(byte[] packId) {
-        return stickers.get(packId);
+    private final Saver saver;
+
+    public StickerStore(final Saver saver) {
+        this.saver = saver;
+        stickers = new HashMap<>();
+    }
+
+    public StickerStore(final Map<StickerPackId, Sticker> stickers, final Saver saver) {
+        this.stickers = stickers;
+        this.saver = saver;
+    }
+
+    public static StickerStore fromStorage(Storage storage, Saver saver) {
+        final var packIds = new HashSet<StickerPackId>();
+        final var stickers = storage.stickers.stream().map(s -> {
+            var packId = StickerPackId.deserialize(Base64.getDecoder().decode(s.packId));
+            if (packIds.contains(packId)) {
+                // Remove legacy duplicate packIds ...
+                return null;
+            }
+            packIds.add(packId);
+            var packKey = Base64.getDecoder().decode(s.packKey);
+            var installed = s.installed;
+            return new Sticker(packId, packKey, installed);
+        }).filter(Objects::nonNull).collect(Collectors.toMap(Sticker::getPackId, s -> s));
+
+        return new StickerStore(stickers, saver);
+    }
+
+    public Sticker getSticker(StickerPackId packId) {
+        synchronized (stickers) {
+            return stickers.get(packId);
+        }
     }
 
     public void updateSticker(Sticker sticker) {
-        stickers.put(sticker.getPackId(), sticker);
+        Storage storage;
+        synchronized (stickers) {
+            stickers.put(sticker.getPackId(), sticker);
+            storage = toStorageLocked();
+        }
+        saver.save(storage);
     }
 
-    private static class StickersSerializer extends JsonSerializer<Map<byte[], Sticker>> {
+    private Storage toStorageLocked() {
+        return new Storage(stickers.values()
+                .stream()
+                .map(s -> new Storage.Sticker(Base64.getEncoder().encodeToString(s.getPackId().serialize()),
+                        Base64.getEncoder().encodeToString(s.getPackKey()),
+                        s.isInstalled()))
+                .collect(Collectors.toList()));
+    }
 
-        @Override
-        public void serialize(
-                final Map<byte[], Sticker> value, final JsonGenerator jgen, final SerializerProvider provider
-        ) throws IOException {
-            final var stickers = value.values();
-            jgen.writeStartArray(stickers.size());
-            for (var sticker : stickers) {
-                jgen.writeStartObject();
-                jgen.writeStringField("packId", Base64.getEncoder().encodeToString(sticker.getPackId()));
-                jgen.writeStringField("packKey", Base64.getEncoder().encodeToString(sticker.getPackKey()));
-                jgen.writeBooleanField("installed", sticker.isInstalled());
-                jgen.writeEndObject();
+    public static class Storage {
+
+        public List<Storage.Sticker> stickers;
+
+        // For deserialization
+        private Storage() {
+        }
+
+        public Storage(final List<Sticker> stickers) {
+            this.stickers = stickers;
+        }
+
+        private static class Sticker {
+
+            public String packId;
+            public String packKey;
+            public boolean installed;
+
+            // For deserialization
+            private Sticker() {
             }
-            jgen.writeEndArray();
+
+            public Sticker(final String packId, final String packKey, final boolean installed) {
+                this.packId = packId;
+                this.packKey = packKey;
+                this.installed = installed;
+            }
         }
     }
 
-    private static class StickersDeserializer extends JsonDeserializer<Map<byte[], Sticker>> {
+    public interface Saver {
 
-        @Override
-        public Map<byte[], Sticker> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
-        ) throws IOException {
-            var stickers = new HashMap<byte[], Sticker>();
-            JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-            for (var n : node) {
-                var packId = Base64.getDecoder().decode(n.get("packId").asText());
-                var packKey = Base64.getDecoder().decode(n.get("packKey").asText());
-                var installed = n.get("installed").asBoolean(false);
-                stickers.put(packId, new Sticker(packId, packKey, installed));
-            }
-
-            return stickers;
-        }
+        void save(Storage storage);
     }
 }

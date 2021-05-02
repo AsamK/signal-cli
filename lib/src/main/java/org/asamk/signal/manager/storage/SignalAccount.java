@@ -1,13 +1,7 @@
 package org.asamk.signal.manager.storage;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
@@ -32,7 +26,6 @@ import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.asamk.signal.manager.util.Utils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -69,9 +62,11 @@ public class SignalAccount implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
-    private final ObjectMapper jsonProcessor = new ObjectMapper();
+    private final ObjectMapper jsonProcessor = Utils.createStorageObjectMapper();
+
     private final FileChannel fileChannel;
     private final FileLock lock;
+
     private String username;
     private UUID uuid;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
@@ -94,17 +89,13 @@ public class SignalAccount implements Closeable {
     private JsonGroupStore groupStore;
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
+    private StickerStore.Storage stickerStoreStorage;
 
     private MessageCache messageCache;
 
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
         this.lock = lock;
-        jsonProcessor.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE); // disable autodetect
-        jsonProcessor.enable(SerializationFeature.INDENT_OUTPUT); // for pretty print
-        jsonProcessor.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        jsonProcessor.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
-        jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     }
 
     public static SignalAccount load(File dataPath, String username) throws IOException {
@@ -137,30 +128,33 @@ public class SignalAccount implements Closeable {
 
         account.username = username;
         account.profileKey = profileKey;
-        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
-        account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
-                account::mergeRecipients);
-        account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
-        account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
-        account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
-                account.recipientStore::resolveRecipient);
-        account.identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
-                account.recipientStore::resolveRecipient,
-                identityKey,
-                registrationId);
-        account.signalProtocolStore = new SignalProtocolStore(account.preKeyStore,
-                account.signedPreKeyStore,
-                account.sessionStore,
-                account.identityKeyStore);
-        account.stickerStore = new StickerStore();
 
-        account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+        account.initStores(dataPath, identityKey, registrationId);
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        account.stickerStore = new StickerStore(account::saveStickerStore);
 
         account.registered = false;
 
         account.migrateLegacyConfigs();
 
         return account;
+    }
+
+    private void initStores(
+            final File dataPath, final IdentityKeyPair identityKey, final int registrationId
+    ) throws IOException {
+        recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
+
+        preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
+        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
+        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
+        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
+                recipientStore::resolveRecipient,
+                identityKey,
+                registrationId);
+        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
+
+        messageCache = new MessageCache(getMessageCachePath(dataPath, username));
     }
 
     public static SignalAccount createLinkedAccount(
@@ -187,29 +181,15 @@ public class SignalAccount implements Closeable {
         account.password = password;
         account.profileKey = profileKey;
         account.deviceId = deviceId;
-        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
-        account.recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username),
-                account::mergeRecipients);
-        account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
-        account.preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
-        account.signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
-        account.sessionStore = new SessionStore(getSessionsPath(dataPath, username),
-                account.recipientStore::resolveRecipient);
-        account.identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
-                account.recipientStore::resolveRecipient,
-                identityKey,
-                registrationId);
-        account.signalProtocolStore = new SignalProtocolStore(account.preKeyStore,
-                account.signedPreKeyStore,
-                account.sessionStore,
-                account.identityKeyStore);
-        account.stickerStore = new StickerStore();
 
-        account.messageCache = new MessageCache(getMessageCachePath(dataPath, username));
+        account.initStores(dataPath, identityKey, registrationId);
+        account.groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
+        account.stickerStore = new StickerStore(account::saveStickerStore);
 
         account.registered = true;
         account.isMultiDevice = true;
 
+        account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.migrateLegacyConfigs();
 
         return account;
@@ -347,19 +327,9 @@ public class SignalAccount implements Closeable {
             registrationId = legacySignalProtocolStore.getLegacyIdentityKeyStore().getLocalRegistrationId();
         }
 
-        recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
-
-        preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
-        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
-        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
-        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
-                recipientStore::resolveRecipient,
-                identityKeyPair,
-                registrationId);
+        initStores(dataPath, identityKeyPair, registrationId);
 
         loadLegacyStores(rootNode, legacySignalProtocolStore);
-
-        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
 
         var groupStoreNode = rootNode.get("groupStore");
         if (groupStoreNode != null) {
@@ -370,15 +340,12 @@ public class SignalAccount implements Closeable {
             groupStore = new JsonGroupStore(getGroupCachePath(dataPath, username));
         }
 
-        var stickerStoreNode = rootNode.get("stickerStore");
-        if (stickerStoreNode != null) {
-            stickerStore = jsonProcessor.convertValue(stickerStoreNode, StickerStore.class);
+        if (rootNode.hasNonNull("stickerStore")) {
+            stickerStoreStorage = jsonProcessor.convertValue(rootNode.get("stickerStore"), StickerStore.Storage.class);
+            stickerStore = StickerStore.fromStorage(stickerStoreStorage, this::saveStickerStore);
+        } else {
+            stickerStore = new StickerStore(this::saveStickerStore);
         }
-        if (stickerStore == null) {
-            stickerStore = new StickerStore();
-        }
-
-        messageCache = new MessageCache(getMessageCachePath(dataPath, username));
 
         loadLegacyThreadStore(rootNode);
     }
@@ -538,48 +505,50 @@ public class SignalAccount implements Closeable {
         }
     }
 
+    private void saveStickerStore(StickerStore.Storage storage) {
+        this.stickerStoreStorage = storage;
+        save();
+    }
+
     public void save() {
-        if (fileChannel == null) {
-            return;
-        }
-        var rootNode = jsonProcessor.createObjectNode();
-        rootNode.put("username", username)
-                .put("uuid", uuid == null ? null : uuid.toString())
-                .put("deviceId", deviceId)
-                .put("isMultiDevice", isMultiDevice)
-                .put("password", password)
-                .put("registrationId", identityKeyStore.getLocalRegistrationId())
-                .put("identityPrivateKey",
-                        Base64.getEncoder()
-                                .encodeToString(identityKeyStore.getIdentityKeyPair().getPrivateKey().serialize()))
-                .put("identityKey",
-                        Base64.getEncoder()
-                                .encodeToString(identityKeyStore.getIdentityKeyPair().getPublicKey().serialize()))
-                .put("registrationLockPin", registrationLockPin)
-                .put("pinMasterKey",
-                        pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
-                .put("storageKey",
-                        storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
-                .put("preKeyIdOffset", preKeyIdOffset)
-                .put("nextSignedPreKeyId", nextSignedPreKeyId)
-                .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
-                .put("registered", registered)
-                .putPOJO("groupStore", groupStore)
-                .putPOJO("stickerStore", stickerStore);
-        try {
-            try (var output = new ByteArrayOutputStream()) {
-                // Write to memory first to prevent corrupting the file in case of serialization errors
-                jsonProcessor.writeValue(output, rootNode);
-                var input = new ByteArrayInputStream(output.toByteArray());
-                synchronized (fileChannel) {
+        synchronized (fileChannel) {
+            var rootNode = jsonProcessor.createObjectNode();
+            rootNode.put("username", username)
+                    .put("uuid", uuid == null ? null : uuid.toString())
+                    .put("deviceId", deviceId)
+                    .put("isMultiDevice", isMultiDevice)
+                    .put("password", password)
+                    .put("registrationId", identityKeyStore.getLocalRegistrationId())
+                    .put("identityPrivateKey",
+                            Base64.getEncoder()
+                                    .encodeToString(identityKeyStore.getIdentityKeyPair().getPrivateKey().serialize()))
+                    .put("identityKey",
+                            Base64.getEncoder()
+                                    .encodeToString(identityKeyStore.getIdentityKeyPair().getPublicKey().serialize()))
+                    .put("registrationLockPin", registrationLockPin)
+                    .put("pinMasterKey",
+                            pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
+                    .put("storageKey",
+                            storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
+                    .put("preKeyIdOffset", preKeyIdOffset)
+                    .put("nextSignedPreKeyId", nextSignedPreKeyId)
+                    .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
+                    .put("registered", registered)
+                    .putPOJO("groupStore", groupStore)
+                    .putPOJO("stickerStore", stickerStoreStorage);
+            try {
+                try (var output = new ByteArrayOutputStream()) {
+                    // Write to memory first to prevent corrupting the file in case of serialization errors
+                    jsonProcessor.writeValue(output, rootNode);
+                    var input = new ByteArrayInputStream(output.toByteArray());
                     fileChannel.position(0);
                     input.transferTo(Channels.newOutputStream(fileChannel));
                     fileChannel.truncate(fileChannel.position());
                     fileChannel.force(false);
                 }
+            } catch (Exception e) {
+                logger.error("Error saving file: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            logger.error("Error saving file: {}", e.getMessage());
         }
     }
 

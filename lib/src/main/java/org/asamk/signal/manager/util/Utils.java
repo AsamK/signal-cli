@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -13,7 +11,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InvalidObjectException;
 import java.net.URLConnection;
 import java.nio.file.Files;
 
@@ -79,15 +76,5 @@ public class Utils {
         } else {
             return new SignalServiceAddress(null, identifier);
         }
-    }
-
-    public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
-        var node = parent.get(name);
-        if (node == null || node.isNull()) {
-            throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ",
-                    name));
-        }
-
-        return node;
     }
 }

@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.storage.groups;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -39,6 +40,7 @@ public class JsonGroupStore {
     private final static Logger logger = LoggerFactory.getLogger(JsonGroupStore.class);
 
     private static final ObjectMapper jsonProcessor = new ObjectMapper();
+    @JsonIgnore
     public File groupCachePath;
 
     @JsonProperty("groups")
@@ -137,6 +139,7 @@ public class JsonGroupStore {
         return null;
     }
 
+    @JsonIgnore
     public List<GroupInfo> getGroups() {
         final var groups = this.groups.values();
         for (var group : groups) {

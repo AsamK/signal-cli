@@ -5,8 +5,11 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.io.InvalidObjectException;
 
 public class Utils {
 
@@ -23,5 +26,15 @@ public class Utils {
         jsonProcessor.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
         return jsonProcessor;
+    }
+
+    public static JsonNode getNotNullNode(JsonNode parent, String name) throws InvalidObjectException {
+        var node = parent.get(name);
+        if (node == null || node.isNull()) {
+            throw new InvalidObjectException(String.format("Incorrect file format: expected parameter %s not found ",
+                    name));
+        }
+
+        return node;
     }
 }
