@@ -125,7 +125,6 @@ public class ProvisioningManager {
                     ret.getIdentity(),
                     registrationId,
                     profileKey);
-            account.save();
 
             Manager m = null;
             try {
@@ -148,8 +147,6 @@ public class ProvisioningManager {
                     logger.error("Failed to request sync messages from linked device.");
                     throw e;
                 }
-
-                account.save();
 
                 final var result = m;
                 account = null;

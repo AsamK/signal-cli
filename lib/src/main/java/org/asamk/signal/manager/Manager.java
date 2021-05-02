@@ -316,11 +316,9 @@ public class Manager implements Closeable {
     public void checkAccountState() throws IOException {
         if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             refreshPreKeys();
-            account.save();
         }
         if (account.getUuid() == null) {
             account.setUuid(accountManager.getOwnUuid());
-            account.save();
         }
         updateAccountAttributes();
     }
@@ -411,13 +409,11 @@ public class Manager implements Closeable {
         accountManager.deleteAccount();
 
         account.setRegistered(false);
-        account.save();
     }
 
     public List<DeviceInfo> getLinkedDevices() throws IOException {
         var devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
-        account.save();
         return devices;
     }
 
@@ -425,7 +421,6 @@ public class Manager implements Closeable {
         accountManager.removeDevice(deviceId);
         var devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
-        account.save();
     }
 
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
@@ -444,7 +439,6 @@ public class Manager implements Closeable {
                 Optional.of(account.getProfileKey().serialize()),
                 verificationCode);
         account.setMultiDevice(true);
-        account.save();
     }
 
     public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
@@ -458,8 +452,7 @@ public class Manager implements Closeable {
 
             pinHelper.setRegistrationLockPin(pin.get(), masterKey);
 
-            account.setRegistrationLockPin(pin.get());
-            account.setPinMasterKey(masterKey);
+            account.setRegistrationLockPin(pin.get(), masterKey);
         } else {
             // Remove legacy registration lock
             accountManager.removeRegistrationLockV1();
@@ -467,10 +460,8 @@ public class Manager implements Closeable {
             // Remove KBS Pin
             pinHelper.removeRegistrationLockPin();
 
-            account.setRegistrationLockPin(null);
-            account.setPinMasterKey(null);
+            account.setRegistrationLockPin(null, null);
         }
-        account.save();
     }
 
     void refreshPreKeys() throws IOException {
@@ -1082,7 +1073,6 @@ public class Manager implements Closeable {
             for (var address : signalServiceAddresses) {
                 handleEndSession(address);
             }
-            account.save();
             throw e;
         }
     }
@@ -1097,7 +1087,6 @@ public class Manager implements Closeable {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         account.getContactStore().storeContact(recipientId, builder.withName(name).build());
-        account.save();
     }
 
     public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
@@ -1108,7 +1097,6 @@ public class Manager implements Closeable {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         account.getContactStore().storeContact(recipientId, builder.withBlocked(blocked).build());
-        account.save();
     }
 
     public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
@@ -1119,7 +1107,6 @@ public class Manager implements Closeable {
 
         group.setBlocked(blocked);
         account.getGroupStore().updateGroup(group);
-        account.save();
     }
 
     private void setExpirationTimer(RecipientId recipientId, int messageExpirationTimer) {
@@ -1146,7 +1133,6 @@ public class Manager implements Closeable {
         var recipientId = canonicalizeAndResolveRecipient(number);
         setExpirationTimer(recipientId, messageExpirationTimer);
         sendExpirationTimerUpdate(recipientId);
-        account.save();
     }
 
     /**
@@ -1179,7 +1165,6 @@ public class Manager implements Closeable {
 
         var sticker = new Sticker(StickerPackId.deserialize(Hex.fromStringCondensed(packId)), packKey);
         account.getStickerStore().updateSticker(sticker);
-        account.save();
 
         try {
             return new URI("https",
@@ -1376,7 +1361,6 @@ public class Manager implements Closeable {
                     handleEndSession(recipient);
                 }
             }
-            account.save();
         }
     }
 
@@ -1387,19 +1371,15 @@ public class Manager implements Closeable {
         messageBuilder.withTimestamp(timestamp);
         getOrCreateMessagePipe();
         getOrCreateUnidentifiedMessagePipe();
-        try {
-            final var recipientId = account.getSelfRecipientId();
+        final var recipientId = account.getSelfRecipientId();
 
-            final var contact = account.getContactStore().getContact(recipientId);
-            final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
-            messageBuilder.withExpiration(expirationTime);
+        final var contact = account.getContactStore().getContact(recipientId);
+        final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
+        messageBuilder.withExpiration(expirationTime);
 
-            var message = messageBuilder.build();
-            final var result = sendSelfMessage(message);
-            return new Pair<>(timestamp, result);
-        } finally {
-            account.save();
-        }
+        var message = messageBuilder.build();
+        final var result = sendSelfMessage(message);
+        return new Pair<>(timestamp, result);
     }
 
     private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
@@ -1715,7 +1695,6 @@ public class Manager implements Closeable {
             }
             actions = handleMessage(envelope, content, ignoreAttachments);
         }
-        account.save();
         handler.handleMessage(envelope, content, null);
         cachedMessage.delete();
         return actions;
@@ -1763,7 +1742,6 @@ public class Manager implements Closeable {
                                 logger.warn("Message action failed.", e);
                             }
                         }
-                        account.save();
                         queuedActions.clear();
                         queuedActions = null;
                     }
@@ -1803,7 +1781,6 @@ public class Manager implements Closeable {
                     queuedActions.addAll(actions);
                 }
             }
-            account.save();
             if (isMessageBlocked(envelope, content)) {
                 logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             } else if (notAGroupMember) {

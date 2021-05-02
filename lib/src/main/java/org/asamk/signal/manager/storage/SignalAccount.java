@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
@@ -54,6 +55,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -139,6 +141,7 @@ public class SignalAccount implements Closeable {
         account.registered = false;
 
         account.migrateLegacyConfigs();
+        account.save();
 
         return account;
     }
@@ -196,15 +199,19 @@ public class SignalAccount implements Closeable {
 
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.migrateLegacyConfigs();
+        account.save();
 
         return account;
     }
 
-    public void migrateLegacyConfigs() {
+    private void migrateLegacyConfigs() {
+        if (getPassword() == null) {
+            setPassword(KeyUtils.createPassword());
+        }
+
         if (getProfileKey() == null && isRegistered()) {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
-            save();
         }
         // Ensure our profile key is stored in profile store
         getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
@@ -225,7 +232,7 @@ public class SignalAccount implements Closeable {
         return new File(dataPath, username + ".d");
     }
 
-    public static File getMessageCachePath(File dataPath, String username) {
+    private static File getMessageCachePath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "msg-cache");
     }
 
@@ -324,6 +331,7 @@ public class SignalAccount implements Closeable {
             }
         }
 
+        var migratedLegacyConfig = false;
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
@@ -331,11 +339,12 @@ public class SignalAccount implements Closeable {
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
             identityKeyPair = legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentityKeyPair();
             registrationId = legacySignalProtocolStore.getLegacyIdentityKeyStore().getLocalRegistrationId();
+            migratedLegacyConfig = true;
         }
 
         initStores(dataPath, identityKeyPair, registrationId);
 
-        loadLegacyStores(rootNode, legacySignalProtocolStore);
+        migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 
         if (rootNode.hasNonNull("groupStore")) {
             groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
@@ -356,12 +365,17 @@ public class SignalAccount implements Closeable {
             stickerStore = new StickerStore(this::saveStickerStore);
         }
 
-        loadLegacyThreadStore(rootNode);
+        migratedLegacyConfig = loadLegacyThreadStore(rootNode) || migratedLegacyConfig;
+
+        if (migratedLegacyConfig) {
+            save();
+        }
     }
 
-    private void loadLegacyStores(
+    private boolean loadLegacyStores(
             final JsonNode rootNode, final LegacyJsonSignalProtocolStore legacySignalProtocolStore
     ) {
+        var migrated = false;
         var legacyRecipientStoreNode = rootNode.get("recipientStore");
         if (legacyRecipientStoreNode != null) {
             logger.debug("Migrating legacy recipient store.");
@@ -370,6 +384,7 @@ public class SignalAccount implements Closeable {
                 recipientStore.resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
             recipientStore.resolveRecipientTrusted(getSelfAddress());
+            migrated = true;
         }
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyPreKeyStore() != null) {
@@ -381,6 +396,7 @@ public class SignalAccount implements Closeable {
                     logger.warn("Failed to migrate pre key, ignoring", e);
                 }
             }
+            migrated = true;
         }
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySignedPreKeyStore() != null) {
@@ -392,6 +408,7 @@ public class SignalAccount implements Closeable {
                     logger.warn("Failed to migrate signed pre key, ignoring", e);
                 }
             }
+            migrated = true;
         }
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySessionStore() != null) {
@@ -404,6 +421,7 @@ public class SignalAccount implements Closeable {
                     logger.warn("Failed to migrate session, ignoring", e);
                 }
             }
+            migrated = true;
         }
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
@@ -415,6 +433,7 @@ public class SignalAccount implements Closeable {
                         identity.getIdentityKey(),
                         identity.getTrustLevel());
             }
+            migrated = true;
         }
 
         if (rootNode.hasNonNull("contactStore")) {
@@ -442,6 +461,7 @@ public class SignalAccount implements Closeable {
                     }
                 }
             }
+            migrated = true;
         }
 
         if (rootNode.hasNonNull("profileStore")) {
@@ -479,9 +499,11 @@ public class SignalAccount implements Closeable {
                 }
             }
         }
+
+        return migrated;
     }
 
-    private void loadLegacyThreadStore(final JsonNode rootNode) {
+    private boolean loadLegacyThreadStore(final JsonNode rootNode) {
         var threadStoreNode = rootNode.get("threadStore");
         if (threadStoreNode != null && !threadStoreNode.isNull()) {
             var threadStore = jsonProcessor.convertValue(threadStoreNode, LegacyJsonThreadStore.class);
@@ -511,7 +533,10 @@ public class SignalAccount implements Closeable {
                     logger.warn("Failed to read legacy thread info: {}", e.getMessage());
                 }
             }
+            return true;
         }
+
+        return false;
     }
 
     private void saveStickerStore(StickerStore.Storage storage) {
@@ -524,7 +549,7 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public void save() {
+    private void save() {
         synchronized (fileChannel) {
             var rootNode = jsonProcessor.createObjectNode();
             rootNode.put("username", username)
@@ -645,6 +670,7 @@ public class SignalAccount implements Closeable {
 
     public void setUuid(final UUID uuid) {
         this.uuid = uuid;
+        save();
     }
 
     public SignalServiceAddress getSelfAddress() {
@@ -657,10 +683,6 @@ public class SignalAccount implements Closeable {
 
     public int getDeviceId() {
         return deviceId;
-    }
-
-    public void setDeviceId(final int deviceId) {
-        this.deviceId = deviceId;
     }
 
     public boolean isMasterDevice() {
@@ -679,24 +701,23 @@ public class SignalAccount implements Closeable {
         return password;
     }
 
-    public void setPassword(final String password) {
+    private void setPassword(final String password) {
         this.password = password;
+        save();
     }
 
     public String getRegistrationLockPin() {
         return registrationLockPin;
     }
 
-    public void setRegistrationLockPin(final String registrationLockPin) {
+    public void setRegistrationLockPin(final String registrationLockPin, final MasterKey pinMasterKey) {
         this.registrationLockPin = registrationLockPin;
+        this.pinMasterKey = pinMasterKey;
+        save();
     }
 
     public MasterKey getPinMasterKey() {
         return pinMasterKey;
-    }
-
-    public void setPinMasterKey(final MasterKey pinMasterKey) {
-        this.pinMasterKey = pinMasterKey;
     }
 
     public StorageKey getStorageKey() {
@@ -707,7 +728,11 @@ public class SignalAccount implements Closeable {
     }
 
     public void setStorageKey(final StorageKey storageKey) {
+        if (storageKey.equals(this.storageKey)) {
+            return;
+        }
         this.storageKey = storageKey;
+        save();
     }
 
     public ProfileKey getProfileKey() {
@@ -715,7 +740,11 @@ public class SignalAccount implements Closeable {
     }
 
     public void setProfileKey(final ProfileKey profileKey) {
+        if (profileKey.equals(this.profileKey)) {
+            return;
+        }
         this.profileKey = profileKey;
+        save();
     }
 
     public byte[] getSelfUnidentifiedAccessKey() {
@@ -736,6 +765,7 @@ public class SignalAccount implements Closeable {
 
     public void setRegistered(final boolean registered) {
         this.registered = registered;
+        save();
     }
 
     public boolean isMultiDevice() {
@@ -743,7 +773,11 @@ public class SignalAccount implements Closeable {
     }
 
     public void setMultiDevice(final boolean multiDevice) {
+        if (isMultiDevice == multiDevice) {
+            return;
+        }
         isMultiDevice = multiDevice;
+        save();
     }
 
     public boolean isUnrestrictedUnidentifiedAccess() {
@@ -756,11 +790,24 @@ public class SignalAccount implements Closeable {
         return true;
     }
 
+    public void finishRegistration(final UUID uuid, final MasterKey masterKey, final String pin) {
+        this.pinMasterKey = masterKey;
+        this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
+        this.isMultiDevice = false;
+        this.registered = true;
+        this.uuid = uuid;
+        this.registrationLockPin = pin;
+        save();
+
+        getSessionStore().archiveAllSessions();
+        final var recipientId = getRecipientStore().resolveRecipientTrusted(getSelfAddress());
+        final var publicKey = getIdentityKeyPair().getPublicKey();
+        getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
+        getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);
+    }
+
     @Override
     public void close() throws IOException {
-        if (fileChannel.isOpen()) {
-            save();
-        }
         synchronized (fileChannel) {
             try {
                 lock.close();
