@@ -53,7 +53,7 @@ public class PinHelper {
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         var tokenResponse = keyBackupService.getToken(basicStorageCredentials);
         if (tokenResponse == null || tokenResponse.getTries() == 0) {
-            throw new IOException("KBS Account locked");
+            throw new IOException("KBS Account locked, maximum pin attempts reached.");
         }
 
         var registrationLockData = restoreMasterKey(pin, basicStorageCredentials, tokenResponse);

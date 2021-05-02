@@ -136,7 +136,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
 
     @Deprecated
     public SignalServiceAddress resolveServiceAddress(SignalServiceAddress address) {
-        return resolveServiceAddress(resolveRecipient(address, true));
+        return resolveServiceAddress(resolveRecipient(address, false));
     }
 
     public RecipientId resolveRecipient(UUID uuid) {
@@ -331,9 +331,8 @@ public class RecipientStore implements ContactsStore, ProfileStore {
     private void updateRecipientAddressLocked(
             final RecipientId recipientId, final SignalServiceAddress address
     ) {
-        final var nextRecipientId = nextIdLocked();
         final var recipient = recipients.get(recipientId);
-        storeRecipientLocked(nextRecipientId, Recipient.newBuilder(recipient).withAddress(address).build());
+        storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withAddress(address).build());
     }
 
     private void storeRecipientLocked(

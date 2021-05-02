@@ -124,7 +124,7 @@ public class RegistrationManager implements Closeable {
 
     public Manager verifyAccount(
             String verificationCode, String pin
-    ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
+    ) throws IOException, LockedException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         verificationCode = verificationCode.replace("-", "");
         VerifyAccountResponse response;
         MasterKey masterKey;

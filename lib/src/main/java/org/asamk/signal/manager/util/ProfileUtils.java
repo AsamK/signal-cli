@@ -71,6 +71,9 @@ public class ProfileUtils {
     }
 
     private static Pair<String, String> splitName(String name) {
+        if (name == null) {
+            return new Pair<>(null, null);
+        }
         String[] parts = name.split("\0");
 
         switch (parts.length) {

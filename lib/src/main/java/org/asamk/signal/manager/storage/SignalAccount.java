@@ -229,7 +229,13 @@ public class SignalAccount implements Closeable {
     }
 
     private static File getUserPath(final File dataPath, final String username) {
-        return new File(dataPath, username + ".d");
+        final var path = new File(dataPath, username + ".d");
+        try {
+            IOUtils.createPrivateDirectories(path);
+        } catch (IOException e) {
+            throw new AssertionError("Failed to create user path", e);
+        }
+        return path;
     }
 
     private static File getMessageCachePath(File dataPath, String username) {
