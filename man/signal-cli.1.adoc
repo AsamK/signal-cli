@@ -92,6 +92,12 @@ If this is the master device, other users can't send messages to this number any
 Use "updateAccount" to undo this.
 To remove a linked device, use "removeDevice" from the master device.
 
+*--delete-account*::
+Delete account completely from server. Cannot be undone without loss. You will
+have to be readded to each group.
+
+CAUTION: Only delete your account if you won't use this number again!
+
 === updateAccount
 
 Update the account attributes on the signal server.

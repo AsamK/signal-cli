@@ -406,6 +406,11 @@ public class Manager implements Closeable {
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
         accountManager.setGcmId(Optional.absent());
+
+        account.setRegistered(false);
+    }
+
+    public void deleteAccount() throws IOException {
         accountManager.deleteAccount();
 
         account.setRegistered(false);
