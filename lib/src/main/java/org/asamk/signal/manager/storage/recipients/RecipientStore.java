@@ -301,7 +301,16 @@ public class RecipientStore implements ContactsStore, ProfileStore {
         }
 
         if (byUuid.isEmpty()) {
-            logger.debug("Got recipient existing with number, updating with high trust uuid");
+            if (byNumber.get().getAddress().getUuid().isPresent()) {
+                logger.debug(
+                        "Got recipient existing with number, but different uuid, so stripping its number and adding new recipient");
+
+                updateRecipientAddressLocked(byNumber.get().getRecipientId(),
+                        new SignalServiceAddress(byNumber.get().getAddress().getUuid().get(), null));
+                return new Pair<>(addNewRecipientLocked(address), Optional.empty());
+            }
+
+            logger.debug("Got recipient existing with number and no uuid, updating with high trust uuid");
             updateRecipientAddressLocked(byNumber.get().getRecipientId(), address);
             return new Pair<>(byNumber.get().getRecipientId(), Optional.empty());
         }

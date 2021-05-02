@@ -118,6 +118,7 @@ import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
+import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
@@ -1301,10 +1302,20 @@ public class Manager implements Closeable {
         return signalServiceAddresses.stream().map(this::resolveRecipient).collect(Collectors.toSet());
     }
 
-    private Map<String, UUID> getRegisteredUsers(final Set<String> numbersMissingUuid) throws IOException {
+    private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
+        final var address = resolveSignalServiceAddress(recipientId);
+        if (!address.getNumber().isPresent()) {
+            return recipientId;
+        }
+        final var number = address.getNumber().get();
+        final var uuidMap = getRegisteredUsers(Set.of(number));
+        return resolveRecipientTrusted(new SignalServiceAddress(uuidMap.getOrDefault(number, null), number));
+    }
+
+    private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException {
         try {
             return accountManager.getRegisteredUsers(ServiceConfig.getIasKeyStore(),
-                    numbersMissingUuid,
+                    numbers,
                     serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
@@ -1418,10 +1429,16 @@ public class Manager implements Closeable {
     ) throws IOException {
         var messageSender = createMessageSender();
 
+        final var recipientId = resolveRecipient(address);
         try {
-            return messageSender.sendMessage(address,
-                    unidentifiedAccessHelper.getAccessFor(resolveRecipient(address)),
-                    message);
+            try {
+                return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
+            } catch (UnregisteredUserException e) {
+                final var newRecipientId = refreshRegisteredUser(recipientId);
+                return messageSender.sendMessage(resolveSignalServiceAddress(newRecipientId),
+                        unidentifiedAccessHelper.getAccessFor(newRecipientId),
+                        message);
+            }
         } catch (UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
