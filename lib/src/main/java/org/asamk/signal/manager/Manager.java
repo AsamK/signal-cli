@@ -1293,8 +1293,9 @@ public class Manager implements Closeable {
         for (var address : addressesMissingUuid) {
             final var number = address.getNumber().get();
             if (registeredUsers.containsKey(number)) {
-                final var newAddress = resolveSignalServiceAddress(new SignalServiceAddress(registeredUsers.get(number),
-                        number));
+                final var newAddress = resolveSignalServiceAddress(resolveRecipientTrusted(new SignalServiceAddress(
+                        registeredUsers.get(number),
+                        number)));
                 signalServiceAddresses.add(newAddress);
             } else {
                 signalServiceAddresses.add(address);
