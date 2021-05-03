@@ -4,6 +4,7 @@ import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -260,6 +261,8 @@ public class DbusSignalImpl implements Signal {
             m.setContactName(number, name);
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
 
@@ -269,6 +272,8 @@ public class DbusSignalImpl implements Signal {
             m.setContactBlocked(number, blocked);
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
 

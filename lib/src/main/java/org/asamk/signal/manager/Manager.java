@@ -1088,14 +1088,22 @@ public class Manager implements Closeable {
         return contact == null || contact.getName() == null ? "" : contact.getName();
     }
 
-    public void setContactName(String number, String name) throws InvalidNumberException {
+    public void setContactName(String number, String name) throws InvalidNumberException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
         final var recipientId = canonicalizeAndResolveRecipient(number);
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         account.getContactStore().storeContact(recipientId, builder.withName(name).build());
     }
 
-    public void setContactBlocked(String number, boolean blocked) throws InvalidNumberException {
+    public void setContactBlocked(
+            String number, boolean blocked
+    ) throws InvalidNumberException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
         setContactBlocked(canonicalizeAndResolveRecipient(number), blocked);
     }
 

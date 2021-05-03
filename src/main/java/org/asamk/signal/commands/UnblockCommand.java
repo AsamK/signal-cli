@@ -4,7 +4,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.util.Util;
@@ -30,6 +32,8 @@ public class UnblockCommand implements LocalCommand {
                 m.setContactBlocked(contactNumber, false);
             } catch (InvalidNumberException e) {
                 logger.warn("Invalid number: {}", contactNumber);
+            } catch (NotMasterDeviceException e) {
+                throw new UserErrorException("This command doesn't work on linked devices.");
             }
         }
 
