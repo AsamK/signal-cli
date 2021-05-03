@@ -577,7 +577,8 @@ public class SignalAccount implements Closeable {
                             storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
                     .put("preKeyIdOffset", preKeyIdOffset)
                     .put("nextSignedPreKeyId", nextSignedPreKeyId)
-                    .put("profileKey", Base64.getEncoder().encodeToString(profileKey.serialize()))
+                    .put("profileKey",
+                            profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
                     .putPOJO("groupStore", groupStoreStorage)
                     .putPOJO("stickerStore", stickerStoreStorage);
