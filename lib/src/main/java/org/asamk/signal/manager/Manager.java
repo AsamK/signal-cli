@@ -381,8 +381,8 @@ public class Manager implements Closeable {
             accountManager.setVersionedProfile(account.getUuid(),
                     account.getProfileKey(),
                     newProfile.getInternalServiceName(),
-                    newProfile.getAbout(),
-                    newProfile.getAboutEmoji(),
+                    newProfile.getAbout() == null ? "" : newProfile.getAbout(),
+                    newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
                     streamDetails);
         }
 

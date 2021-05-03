@@ -161,6 +161,8 @@ public class RegistrationManager implements Closeable {
             account = null;
 
             m.refreshPreKeys();
+            // Set an initial empty profile so user can be added to groups
+            m.setProfile(null, null, null, null);
 
             final var result = m;
             m = null;
