@@ -1192,7 +1192,15 @@ public class Manager implements Closeable {
         }
     }
 
-    void requestSyncGroups() throws IOException {
+    public void requestAllSyncData() throws IOException {
+        requestSyncGroups();
+        requestSyncContacts();
+        requestSyncBlocked();
+        requestSyncConfiguration();
+        requestSyncKeys();
+    }
+
+    private void requestSyncGroups() throws IOException {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
                 .build();
@@ -1204,7 +1212,7 @@ public class Manager implements Closeable {
         }
     }
 
-    void requestSyncContacts() throws IOException {
+    private void requestSyncContacts() throws IOException {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
                 .build();
@@ -1216,7 +1224,7 @@ public class Manager implements Closeable {
         }
     }
 
-    void requestSyncBlocked() throws IOException {
+    private void requestSyncBlocked() throws IOException {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
                 .build();
@@ -1228,7 +1236,7 @@ public class Manager implements Closeable {
         }
     }
 
-    void requestSyncConfiguration() throws IOException {
+    private void requestSyncConfiguration() throws IOException {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
                 .build();
@@ -1240,7 +1248,7 @@ public class Manager implements Closeable {
         }
     }
 
-    void requestSyncKeys() throws IOException {
+    private void requestSyncKeys() throws IOException {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
                 .build();

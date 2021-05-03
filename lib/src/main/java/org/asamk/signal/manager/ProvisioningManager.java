@@ -138,11 +138,7 @@ public class ProvisioningManager {
                 }
 
                 try {
-                    m.requestSyncGroups();
-                    m.requestSyncContacts();
-                    m.requestSyncBlocked();
-                    m.requestSyncConfiguration();
-                    m.requestSyncKeys();
+                    m.requestAllSyncData();
                 } catch (Exception e) {
                     logger.error("Failed to request sync messages from linked device.");
                     throw e;
