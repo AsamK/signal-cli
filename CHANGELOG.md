@@ -1,6 +1,24 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- A manual page for the DBus interface (Thanks @bublath, @exquo)
+- Remote message delete command (Thanks @exquo)
+- sendSyncRequest command to request complete contact/group list from master device
+- New `--delete-account` argument for unregister (Dangerous)
+
+### Fixed
+- Sending reaction to group (Thanks @adaptivegarage)
+- Displaying of address for messages from untrusted identities
+- Handling of recipient number or uuid changes (e.g. after account deletions)
+- Only respond to sync requests from master device
+- Display of quit group messages
+
+### Changed
+- Unlimited strength crypto is now enabled automatically for JREs that require it (Thanks @i-infra)
+- Only one identity key is stored per recipient and updated from profile (to match app behavior)
+- updateContact, block and unblock are now disabled for linked devices
+- After registering an empty profile is created so new groups can be joined immediately
 
 ## [0.8.1] - 2021-03-02
 ### Added
