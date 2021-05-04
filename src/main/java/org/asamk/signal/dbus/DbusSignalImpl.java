@@ -414,7 +414,7 @@ public class DbusSignalImpl implements Signal {
             final var address = m.resolveSignalServiceAddress(recipientId);
             var number = address.getNumber().orNull();
             if (number != null) {
-                var profile = m.getRecipientProfile(address);
+                var profile = m.getRecipientProfile(recipientId);
                 if (profile != null && profile.getDisplayName().equals(name)) {
                     numbers.add(number);
                 }

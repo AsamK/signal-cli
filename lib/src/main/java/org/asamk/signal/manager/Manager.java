@@ -529,12 +529,6 @@ public class Manager implements Closeable {
     }
 
     public Profile getRecipientProfile(
-            SignalServiceAddress address
-    ) {
-        return getRecipientProfile(resolveRecipient(address), false);
-    }
-
-    public Profile getRecipientProfile(
             RecipientId recipientId
     ) {
         return getRecipientProfile(recipientId, false);
@@ -713,9 +707,10 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendGroupMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, GroupId groupId
     ) throws IOException, InvalidNumberException, NotAGroupMemberException, GroupNotFoundException {
+        var targetAuthorRecipientId = canonicalizeAndResolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
-                canonicalizeAndResolveSignalServiceAddress(targetAuthor),
+                resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
 
@@ -948,14 +943,15 @@ public class Manager implements Closeable {
         }
         g = (GroupInfoV1) group;
 
-        if (!g.isMember(resolveRecipient(recipient))) {
+        final var recipientId = resolveRecipient(recipient);
+        if (!g.isMember(recipientId)) {
             throw new NotAGroupMemberException(groupId, g.name);
         }
 
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendMessage(messageBuilder, Set.of(resolveRecipient(recipient)));
+        return sendMessage(messageBuilder, Set.of(recipientId));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -1065,9 +1061,10 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {
+        var targetAuthorRecipientId = canonicalizeAndResolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
-                canonicalizeAndResolveSignalServiceAddress(targetAuthor),
+                resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
         return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
@@ -1288,7 +1285,7 @@ public class Manager implements Closeable {
         final var addressesMissingUuid = new HashSet<SignalServiceAddress>();
 
         for (var number : numbers) {
-            final var resolvedAddress = canonicalizeAndResolveSignalServiceAddress(number);
+            final var resolvedAddress = resolveSignalServiceAddress(canonicalizeAndResolveRecipient(number));
             if (resolvedAddress.getUuid().isPresent()) {
                 signalServiceAddresses.add(resolvedAddress);
             } else {
@@ -1389,7 +1386,7 @@ public class Manager implements Closeable {
                     final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
                     messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
-                    results.add(sendMessage(resolveSignalServiceAddress(recipientId), message));
+                    results.add(sendMessage(recipientId, message));
                 }
                 return new Pair<>(timestamp, results);
             }
@@ -1423,9 +1420,10 @@ public class Manager implements Closeable {
     private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
         var messageSender = createMessageSender();
 
-        var recipient = account.getSelfAddress();
+        var recipientId = account.getSelfRecipientId();
 
-        final var unidentifiedAccess = unidentifiedAccessHelper.getAccessFor(resolveRecipient(recipient));
+        final var unidentifiedAccess = unidentifiedAccessHelper.getAccessFor(recipientId);
+        var recipient = resolveSignalServiceAddress(recipientId);
         var transcript = new SentTranscriptMessage(Optional.of(recipient),
                 message.getTimestamp(),
                 message,
@@ -1447,11 +1445,11 @@ public class Manager implements Closeable {
     }
 
     private SendMessageResult sendMessage(
-            SignalServiceAddress address, SignalServiceDataMessage message
+            RecipientId recipientId, SignalServiceDataMessage message
     ) throws IOException {
         var messageSender = createMessageSender();
 
-        final var recipientId = resolveRecipient(address);
+        final var address = resolveSignalServiceAddress(recipientId);
         try {
             try {
                 return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
@@ -1682,11 +1680,11 @@ public class Manager implements Closeable {
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.getMembersList()) {
-            final var address = resolveRecipient(new SignalServiceAddress(UuidUtil.parseOrThrow(member.getUuid()
-                    .toByteArray()), null));
+            final var uuid = UuidUtil.parseOrThrow(member.getUuid().toByteArray());
+            final var recipientId = account.getRecipientStore().resolveRecipient(uuid);
             try {
                 account.getProfileStore()
-                        .storeProfileKey(address, new ProfileKey(member.getProfileKey().toByteArray()));
+                        .storeProfileKey(recipientId, new ProfileKey(member.getProfileKey().toByteArray()));
             } catch (InvalidInputException ignored) {
             }
         }
@@ -1723,8 +1721,8 @@ public class Manager implements Closeable {
                 content = decryptMessage(envelope);
             } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
                 if (!envelope.hasSource()) {
-                    final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) e)
-                            .getName());
+                    final var identifier = ((org.whispersystems.libsignal.UntrustedIdentityException) e).getName();
+                    final var recipientId = resolveRecipient(identifier);
                     try {
                         account.getMessageCache().replaceSender(cachedMessage, recipientId);
                     } catch (IOException ioException) {
@@ -1834,8 +1832,8 @@ public class Manager implements Closeable {
             }
             if (cachedMessage[0] != null) {
                 if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
-                    final var recipientId = resolveRecipient(((org.whispersystems.libsignal.UntrustedIdentityException) exception)
-                            .getName());
+                    final var identifier = ((org.whispersystems.libsignal.UntrustedIdentityException) exception).getName();
+                    final var recipientId = resolveRecipient(identifier);
                     queuedActions.add(new RetrieveProfileAction(recipientId));
                     if (!envelope.hasSource()) {
                         try {
@@ -2548,14 +2546,6 @@ public class Manager implements Closeable {
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
-    }
-
-    @Deprecated
-    public SignalServiceAddress canonicalizeAndResolveSignalServiceAddress(String identifier) throws InvalidNumberException {
-        var canonicalizedNumber = UuidUtil.isUuid(identifier)
-                ? identifier
-                : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
-        return resolveSignalServiceAddress(canonicalizedNumber);
     }
 
     @Deprecated
