@@ -133,6 +133,14 @@ public class SessionStore implements SignalServiceSessionStore {
         }
     }
 
+    public void archiveSessions(final RecipientId recipientId) {
+        synchronized (cachedSessions) {
+            getKeysLocked().stream()
+                    .filter(key -> key.recipientId.equals(recipientId))
+                    .forEach(this::archiveSessionLocked);
+        }
+    }
+
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         synchronized (cachedSessions) {
             final var otherHasSession = getKeysLocked(toBeMergedRecipientId).size() > 0;

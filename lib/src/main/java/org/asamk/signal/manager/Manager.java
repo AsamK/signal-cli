@@ -601,10 +601,14 @@ public class Manager implements Closeable {
         final var profile = profileAndCredential.getProfile();
 
         try {
-            account.getIdentityKeyStore()
+            var newIdentity = account.getIdentityKeyStore()
                     .saveIdentity(recipientId,
                             new IdentityKey(Base64.getDecoder().decode(profile.getIdentityKey())),
                             new Date());
+
+            if (newIdentity) {
+                account.getSessionStore().archiveSessions(recipientId);
+            }
         } catch (InvalidKeyException ignored) {
             logger.warn("Got invalid identity key in profile for {}",
                     resolveSignalServiceAddress(recipientId).getLegacyIdentifier());
@@ -1363,10 +1367,12 @@ public class Manager implements Closeable {
 
                     for (var r : result) {
                         if (r.getIdentityFailure() != null) {
-                            account.getIdentityKeyStore().
-                                    saveIdentity(resolveRecipient(r.getAddress()),
-                                            r.getIdentityFailure().getIdentityKey(),
-                                            new Date());
+                            final var recipientId = resolveRecipient(r.getAddress());
+                            final var newIdentity = account.getIdentityKeyStore()
+                                    .saveIdentity(recipientId, r.getIdentityFailure().getIdentityKey(), new Date());
+                            if (newIdentity) {
+                                account.getSessionStore().archiveSessions(recipientId);
+                            }
                         }
                     }
 
