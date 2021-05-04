@@ -3,7 +3,7 @@
 ## [Unreleased]
 ### Added
 - A manual page for the DBus interface (Thanks @bublath, @exquo)
-- Remote message delete command (Thanks @exquo)
+- Remote message delete command (Thanks @adaptivegarage)
 - sendSyncRequest command to request complete contact/group list from master device
 - New `--delete-account` argument for unregister (Dangerous)
 
