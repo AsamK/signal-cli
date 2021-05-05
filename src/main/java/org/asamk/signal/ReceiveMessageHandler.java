@@ -84,7 +84,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 }
             }
             if (content == null) {
-                writer.println("Failed to decrypt message.");
+                writer.println("No message content");
             } else {
                 writer.println("Sender: {} (device: {})",
                         formatContact(content.getSender()),

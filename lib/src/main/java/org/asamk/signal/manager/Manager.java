@@ -1088,6 +1088,11 @@ public class Manager implements Closeable {
         }
     }
 
+    SendMessageResult renewSession(RecipientId recipientId) throws IOException {
+        account.getSessionStore().archiveSessions(recipientId);
+        return sendNullMessage(recipientId);
+    }
+
     public String getContactName(String number) throws InvalidNumberException {
         var contact = account.getContactStore().getContact(canonicalizeAndResolveRecipient(number));
         return contact == null || contact.getName() == null ? "" : contact.getName();
@@ -1468,6 +1473,23 @@ public class Manager implements Closeable {
         }
     }
 
+    private SendMessageResult sendNullMessage(RecipientId recipientId) throws IOException {
+        var messageSender = createMessageSender();
+
+        final var address = resolveSignalServiceAddress(recipientId);
+        try {
+            try {
+                return messageSender.sendNullMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId));
+            } catch (UnregisteredUserException e) {
+                final var newRecipientId = refreshRegisteredUser(recipientId);
+                final var newAddress = resolveSignalServiceAddress(newRecipientId);
+                return messageSender.sendNullMessage(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId));
+            }
+        } catch (UntrustedIdentityException e) {
+            return SendMessageResult.identityFailure(address, e.getIdentityKey());
+        }
+    }
+
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, org.whispersystems.libsignal.UntrustedIdentityException {
         var cipher = new SignalServiceCipher(account.getSelfAddress(),
                 account.getSignalProtocolStore(),
@@ -1812,6 +1834,11 @@ public class Manager implements Closeable {
                     exception = e;
                 }
                 var actions = handleMessage(envelope, content, ignoreAttachments);
+                if (exception instanceof ProtocolInvalidMessageException) {
+                    final var sender = resolveRecipient(((ProtocolInvalidMessageException) exception).getSender());
+                    logger.debug("Received invalid message, queuing renew session action.");
+                    actions.add(new RenewSessionAction(sender));
+                }
                 if (hasCaughtUpWithOldMessages) {
                     for (var action : actions) {
                         try {
