@@ -6,6 +6,7 @@
 - Remote message delete command (Thanks @adaptivegarage)
 - sendSyncRequest command to request complete contact/group list from master device
 - New `--delete-account` argument for unregister (Dangerous)
+- New `--family-name` argument for updateProfile
 
 ### Fixed
 - Sending reaction to group (Thanks @adaptivegarage)
@@ -19,6 +20,7 @@
 - Only one identity key is stored per recipient and updated from profile (to match app behavior)
 - updateContact, block and unblock are now disabled for linked devices
 - After registering an empty profile is created so new groups can be joined immediately
+- If message decryption fails due to a broken session, the session is automatically renewed
 
 ## [0.8.1] - 2021-03-02
 ### Added
