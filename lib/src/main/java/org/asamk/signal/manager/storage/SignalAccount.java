@@ -64,6 +64,9 @@ public class SignalAccount implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
+    private static final int MINIMUM_STORAGE_VERSION = 1;
+    private static final int CURRENT_STORAGE_VERSION = 2;
+
     private final ObjectMapper jsonProcessor = Utils.createStorageObjectMapper();
 
     private final FileChannel fileChannel;
@@ -279,6 +282,15 @@ public class SignalAccount implements Closeable {
         synchronized (fileChannel) {
             fileChannel.position(0);
             rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
+        }
+
+        if (rootNode.hasNonNull("version")) {
+            var accountVersion = rootNode.get("version").asInt(1);
+            if (accountVersion > CURRENT_STORAGE_VERSION) {
+                throw new IOException("Config file was created by a more recent version!");
+            } else if (accountVersion < MINIMUM_STORAGE_VERSION) {
+                throw new IOException("Config file was created by a no longer supported older version!");
+            }
         }
 
         username = Utils.getNotNullNode(rootNode, "username").asText();
@@ -558,7 +570,8 @@ public class SignalAccount implements Closeable {
     private void save() {
         synchronized (fileChannel) {
             var rootNode = jsonProcessor.createObjectNode();
-            rootNode.put("username", username)
+            rootNode.put("version", CURRENT_STORAGE_VERSION)
+                    .put("username", username)
                     .put("uuid", uuid == null ? null : uuid.toString())
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
