@@ -372,7 +372,7 @@ public class DbusSignalImpl implements Signal {
             Optional<File> avatarFile = removeAvatar
                     ? Optional.absent()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
-            m.setProfile(name, about, aboutEmoji, avatarFile);
+            m.setProfile(name, null, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }

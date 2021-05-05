@@ -354,18 +354,22 @@ public class Manager implements Closeable {
     }
 
     /**
-     * @param name       if null, the previous name will be kept
+     * @param givenName  if null, the previous givenName will be kept
+     * @param familyName if null, the previous familyName will be kept
      * @param about      if null, the previous about text will be kept
      * @param aboutEmoji if null, the previous about emoji will be kept
      * @param avatar     if avatar is null the image from the local avatar store is used (if present),
-     *                   if it's Optional.absent(), the avatar will be removed
      */
-    public void setProfile(String name, String about, String aboutEmoji, Optional<File> avatar) throws IOException {
+    public void setProfile(
+            String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
+    ) throws IOException {
         var profile = getRecipientProfile(account.getSelfRecipientId());
         var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
-        if (name != null) {
-            builder.withGivenName(name);
-            builder.withFamilyName(null);
+        if (givenName != null) {
+            builder.withGivenName(givenName);
+        }
+        if (familyName != null) {
+            builder.withFamilyName(familyName);
         }
         if (about != null) {
             builder.withAbout(about);
