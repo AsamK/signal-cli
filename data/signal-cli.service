@@ -11,6 +11,8 @@ Environment="SIGNAL_CLI_OPTS=-Xms2m"
 ExecStart=%dir%/bin/signal-cli --config /var/lib/signal-cli daemon --system
 User=signal-cli
 BusName=org.asamk.Signal
+# JVM always exits with 143 in reaction to SIGTERM signal
+SuccessExitStatus=143
 
 [Install]
 Alias=dbus-org.asamk.Signal.service
