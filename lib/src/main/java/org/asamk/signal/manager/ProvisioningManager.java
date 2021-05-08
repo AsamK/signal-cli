@@ -21,12 +21,9 @@ import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.signal.zkgroup.InvalidInputException;
-import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
-import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
@@ -93,35 +90,30 @@ public class ProvisioningManager {
         return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
-    public Manager finishDeviceLink(String deviceName) throws IOException, InvalidKeyException, TimeoutException, UserAlreadyExists {
-        var ret = accountManager.finishNewDeviceRegistration(identityKey, false, true, registrationId, deviceName);
+    public Manager finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
+        var ret = accountManager.getNewDeviceRegistration(identityKey);
+        var number = ret.getNumber();
 
-        var username = ret.getNumber();
-        // TODO do this check before actually registering
-        if (SignalAccount.userExists(pathConfig.getDataPath(), username)) {
-            throw new UserAlreadyExists(username, SignalAccount.getFileName(pathConfig.getDataPath(), username));
+        if (SignalAccount.userExists(pathConfig.getDataPath(), number)) {
+            throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
         }
+
+        var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
+                false,
+                true,
+                registrationId,
+                deviceName);
 
         // Create new account with the synced identity
-        var profileKeyBytes = ret.getProfileKey();
-        ProfileKey profileKey;
-        if (profileKeyBytes == null) {
-            profileKey = KeyUtils.createProfileKey();
-        } else {
-            try {
-                profileKey = new ProfileKey(profileKeyBytes);
-            } catch (InvalidInputException e) {
-                throw new IOException("Received invalid profileKey", e);
-            }
-        }
+        var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();
 
         SignalAccount account = null;
         try {
             account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
-                    username,
+                    number,
                     ret.getUuid(),
                     password,
-                    ret.getDeviceId(),
+                    deviceId,
                     ret.getIdentity(),
                     registrationId,
                     profileKey);

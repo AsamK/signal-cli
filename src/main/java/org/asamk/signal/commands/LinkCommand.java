@@ -6,13 +6,11 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
-import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.UserAlreadyExists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.InvalidKeyException;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -43,9 +41,6 @@ public class LinkCommand implements ProvisioningCommand {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
             throw new IOErrorException("Link request error: " + e.getMessage());
-        } catch (InvalidKeyException e) {
-            logger.debug("Finish device link failed", e);
-            throw new UnexpectedErrorException("Invalid key: " + e.getMessage());
         } catch (UserAlreadyExists e) {
             throw new UserErrorException("The user "
                     + e.getUsername()
