@@ -35,6 +35,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("-t", "--timeout")
                 .type(double.class)
+                .setDefault(1.0)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
@@ -148,10 +149,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        double timeout = 5;
-        if (ns.getDouble("timeout") != null) {
-            timeout = ns.getDouble("timeout");
-        }
+        double timeout = ns.getDouble("timeout");
         var returnOnTimeout = true;
         if (timeout < 0) {
             returnOnTimeout = false;
