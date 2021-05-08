@@ -95,6 +95,8 @@ public class ProvisioningManager {
         var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
 
+        logger.info("Received link information from {}, linking in progress ...", number);
+
         if (SignalAccount.userExists(pathConfig.getDataPath(), number)) {
             throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
         }
