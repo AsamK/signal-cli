@@ -341,7 +341,8 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(null,
+        accountManager.setAccountAttributes(account.getDeviceName(),
+                null,
                 account.getLocalRegistrationId(),
                 true,
                 // set legacy pin only if no KBS master key is set

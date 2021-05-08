@@ -113,6 +113,7 @@ public class ProvisioningManager {
                     number,
                     ret.getUuid(),
                     password,
+                    deviceName,
                     deviceId,
                     ret.getIdentity(),
                     registrationId,
