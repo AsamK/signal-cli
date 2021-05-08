@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.Signal;
+import org.asamk.signal.json.JsonMention;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -72,7 +73,8 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                                 sender.getLegacyIdentifier(),
                                 groupId != null ? groupId : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
-                                JsonDbusReceiveMessageHandler.getAttachments(message, m)));
+                                JsonDbusReceiveMessageHandler.getAttachments(message, m),
+                                JsonDbusReceiveMessageHandler.getMentions(message, m)));
                     } catch (DBusException e) {
                         e.printStackTrace();
                     }
@@ -97,7 +99,8 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                                             .getLegacyIdentifier() : "",
                                     groupId != null ? groupId : new byte[0],
                                     message.getBody().isPresent() ? message.getBody().get() : "",
-                                    JsonDbusReceiveMessageHandler.getAttachments(message, m)));
+                                    JsonDbusReceiveMessageHandler.getAttachments(message, m)
+                                    JsonDbusReceiveMessageHandler.getMentions(message, m)));
                         } catch (DBusException e) {
                             e.printStackTrace();
                         }
@@ -122,6 +125,18 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
             }
         }
         return attachments;
+    }
+
+    static private List<String> getMentions(SignalServiceDataMessage message, Manager m) {
+        var mentions = new ArrayList<String>();
+        if (message.getMentions().isPresent()) {
+            for (var mention : message.getMentions().get()) {
+                if (mention.isPointer()) {
+                    mentions.add(new JsonMention(mention, m));
+                }
+            }
+        }
+        return mentions;
     }
 
     @Override
