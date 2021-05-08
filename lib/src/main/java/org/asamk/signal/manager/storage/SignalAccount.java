@@ -74,7 +74,7 @@ public class SignalAccount implements Closeable {
 
     private String username;
     private UUID uuid;
-    private String deviceName;
+    private String encryptedDeviceName;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private boolean isMultiDevice = false;
     private String password;
@@ -172,7 +172,7 @@ public class SignalAccount implements Closeable {
             String username,
             UUID uuid,
             String password,
-            String deviceName,
+            String encryptedDeviceName,
             int deviceId,
             IdentityKeyPair identityKey,
             int registrationId,
@@ -191,7 +191,7 @@ public class SignalAccount implements Closeable {
         account.uuid = uuid;
         account.password = password;
         account.profileKey = profileKey;
-        account.deviceName = deviceName;
+        account.encryptedDeviceName = encryptedDeviceName;
         account.deviceId = deviceId;
 
         account.initStores(dataPath, identityKey, registrationId);
@@ -307,7 +307,7 @@ public class SignalAccount implements Closeable {
             }
         }
         if (rootNode.hasNonNull("deviceName")) {
-            deviceName = rootNode.get("deviceName").asText();
+            encryptedDeviceName = rootNode.get("deviceName").asText();
         }
         if (rootNode.hasNonNull("deviceId")) {
             deviceId = rootNode.get("deviceId").asInt();
@@ -579,7 +579,7 @@ public class SignalAccount implements Closeable {
             rootNode.put("version", CURRENT_STORAGE_VERSION)
                     .put("username", username)
                     .put("uuid", uuid == null ? null : uuid.toString())
-                    .put("deviceName", deviceName)
+                    .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
                     .put("password", password)
@@ -708,8 +708,8 @@ public class SignalAccount implements Closeable {
         return recipientStore.resolveRecipientTrusted(getSelfAddress());
     }
 
-    public String getDeviceName() {
-        return deviceName;
+    public String getEncryptedDeviceName() {
+        return encryptedDeviceName;
     }
 
     public int getDeviceId() {
@@ -823,7 +823,7 @@ public class SignalAccount implements Closeable {
 
     public void finishRegistration(final UUID uuid, final MasterKey masterKey, final String pin) {
         this.pinMasterKey = masterKey;
-        this.deviceName = null;
+        this.encryptedDeviceName = null;
         this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
         this.isMultiDevice = false;
         this.registered = true;

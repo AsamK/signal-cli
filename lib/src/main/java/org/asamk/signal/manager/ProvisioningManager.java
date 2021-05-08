@@ -29,6 +29,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
@@ -47,7 +48,7 @@ public class ProvisioningManager {
     private final String userAgent;
 
     private final SignalServiceAccountManager accountManager;
-    private final IdentityKeyPair identityKey;
+    private final IdentityKeyPair tempIdentityKey;
     private final int registrationId;
     private final String password;
 
@@ -56,7 +57,7 @@ public class ProvisioningManager {
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
 
-        identityKey = KeyUtils.generateIdentityKeyPair();
+        tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         final SleepTimer timer = new UptimeSleepTimer();
@@ -87,22 +88,26 @@ public class ProvisioningManager {
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         var deviceUuid = accountManager.getNewDeviceUuid();
 
-        return new DeviceLinkInfo(deviceUuid, identityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
+        return new DeviceLinkInfo(deviceUuid, tempIdentityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     public Manager finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
-        var ret = accountManager.getNewDeviceRegistration(identityKey);
+        var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
 
         if (SignalAccount.userExists(pathConfig.getDataPath(), number)) {
             throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
         }
 
+        var encryptedDeviceName = deviceName == null
+                ? null
+                : DeviceNameUtil.encryptDeviceName(deviceName, ret.getIdentity().getPrivateKey());
+
         var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
                 false,
                 true,
                 registrationId,
-                deviceName);
+                encryptedDeviceName);
 
         // Create new account with the synced identity
         var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();
@@ -113,7 +118,7 @@ public class ProvisioningManager {
                     number,
                     ret.getUuid(),
                     password,
-                    deviceName,
+                    encryptedDeviceName,
                     deviceId,
                     ret.getIdentity(),
                     registrationId,

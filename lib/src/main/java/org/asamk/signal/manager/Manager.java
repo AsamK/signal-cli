@@ -16,6 +16,7 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -108,7 +109,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsO
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
@@ -119,6 +119,7 @@ import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
+import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.SleepTimer;
@@ -341,7 +342,7 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getDeviceName(),
+        accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
                 null,
                 account.getLocalRegistrationId(),
                 true,
@@ -422,10 +423,21 @@ public class Manager implements Closeable {
         account.setRegistered(false);
     }
 
-    public List<DeviceInfo> getLinkedDevices() throws IOException {
+    public List<Device> getLinkedDevices() throws IOException {
         var devices = accountManager.getDevices();
         account.setMultiDevice(devices.size() > 1);
-        return devices;
+        var identityKey = account.getIdentityKeyPair().getPrivateKey();
+        return devices.stream().map(d -> {
+            String deviceName = d.getName();
+            if (deviceName != null) {
+                try {
+                    deviceName = DeviceNameUtil.decryptDeviceName(deviceName, identityKey);
+                } catch (IOException e) {
+                    logger.debug("Failed to decrypt device name, maybe plain text?", e);
+                }
+            }
+            return new Device(d.getId(), deviceName, d.getCreated(), d.getLastSeen());
+        }).collect(Collectors.toList());
     }
 
     public void removeLinkedDevices(int deviceId) throws IOException {

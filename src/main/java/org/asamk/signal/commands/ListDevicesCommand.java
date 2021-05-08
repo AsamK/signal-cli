@@ -7,10 +7,10 @@ import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.util.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,7 +27,7 @@ public class ListDevicesCommand implements LocalCommand {
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
 
-        List<DeviceInfo> devices;
+        List<Device> devices;
         try {
             devices = m.getLinkedDevices();
         } catch (IOException e) {
