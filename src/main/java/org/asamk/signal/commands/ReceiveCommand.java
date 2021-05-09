@@ -35,7 +35,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("-t", "--timeout")
                 .type(double.class)
-                .setDefault(1.0)
+                .setDefault(3.0)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")

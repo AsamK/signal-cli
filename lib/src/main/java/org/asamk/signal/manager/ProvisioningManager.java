@@ -29,6 +29,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
@@ -97,7 +98,7 @@ public class ProvisioningManager {
 
         logger.info("Received link information from {}, linking in progress ...", number);
 
-        if (SignalAccount.userExists(pathConfig.getDataPath(), number)) {
+        if (SignalAccount.userExists(pathConfig.getDataPath(), number) && !canRelinkExistingAccount(number)) {
             throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
         }
 
@@ -116,7 +117,7 @@ public class ProvisioningManager {
 
         SignalAccount account = null;
         try {
-            account = SignalAccount.createLinkedAccount(pathConfig.getDataPath(),
+            account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.getDataPath(),
                     number,
                     ret.getUuid(),
                     password,
@@ -133,7 +134,7 @@ public class ProvisioningManager {
                 try {
                     m.refreshPreKeys();
                 } catch (Exception e) {
-                    logger.error("Failed to refresh prekeys.");
+                    logger.error("Failed to check new account state.");
                     throw e;
                 }
 
@@ -158,6 +159,33 @@ public class ProvisioningManager {
             if (account != null) {
                 account.close();
             }
+        }
+    }
+
+    private boolean canRelinkExistingAccount(final String number) throws UserAlreadyExists, IOException {
+        final SignalAccount signalAccount;
+        try {
+            signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false);
+        } catch (IOException e) {
+            logger.debug("Account in use or failed to load.", e);
+            return false;
+        }
+
+        try (signalAccount) {
+            if (signalAccount.isMasterDevice()) {
+                logger.debug("Account is a master device.");
+                return false;
+            }
+
+            final var m = new Manager(signalAccount, pathConfig, serviceEnvironmentConfig, userAgent);
+            try (m) {
+                m.checkAccountState();
+            } catch (AuthorizationFailedException ignored) {
+                return true;
+            }
+
+            logger.debug("Account is still successfully linked.");
+            return false;
         }
     }
 }

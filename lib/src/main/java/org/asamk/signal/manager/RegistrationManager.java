@@ -107,7 +107,7 @@ public class RegistrationManager implements Closeable {
             return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), username);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username, true);
 
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }

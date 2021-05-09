@@ -78,6 +78,21 @@ public class PreKeyStore implements org.whispersystems.libsignal.state.PreKeySto
         }
     }
 
+    public void removeAllPreKeys() {
+        final var files = preKeysPath.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (var file : files) {
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                logger.error("Failed to delete pre key file {}: {}", file, e.getMessage());
+            }
+        }
+    }
+
     private File getPreKeyFile(int preKeyId) {
         try {
             IOUtils.createPrivateDirectories(preKeysPath);

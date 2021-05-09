@@ -288,7 +288,7 @@ public class Manager implements Closeable {
             throw new NotRegisteredException();
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), username);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username, true);
 
         if (!account.isRegistered()) {
             throw new NotRegisteredException();

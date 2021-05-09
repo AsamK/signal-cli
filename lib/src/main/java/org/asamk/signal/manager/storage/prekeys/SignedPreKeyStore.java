@@ -91,6 +91,21 @@ public class SignedPreKeyStore implements org.whispersystems.libsignal.state.Sig
         }
     }
 
+    public void removeAllSignedPreKeys() {
+        final var files = signedPreKeysPath.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (var file : files) {
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                logger.error("Failed to delete signed pre key file {}: {}", file, e.getMessage());
+            }
+        }
+    }
+
     private File getSignedPreKeyFile(int signedPreKeyId) {
         try {
             IOUtils.createPrivateDirectories(signedPreKeysPath);

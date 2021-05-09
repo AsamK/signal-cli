@@ -105,13 +105,18 @@ public class SignalAccount implements Closeable {
         this.lock = lock;
     }
 
-    public static SignalAccount load(File dataPath, String username) throws IOException {
+    public static SignalAccount load(File dataPath, String username, boolean waitForLock) throws IOException {
         final var fileName = getFileName(dataPath, username);
-        final var pair = openFileChannel(fileName);
+        final var pair = openFileChannel(fileName, waitForLock);
         try {
             var account = new SignalAccount(pair.first(), pair.second());
             account.load(dataPath);
             account.migrateLegacyConfigs();
+
+            if (!username.equals(account.getUsername())) {
+                throw new IOException("Username in account file doesn't match expected number: "
+                        + account.getUsername());
+            }
 
             return account;
         } catch (Throwable e) {
@@ -130,7 +135,7 @@ public class SignalAccount implements Closeable {
             IOUtils.createPrivateFile(fileName);
         }
 
-        final var pair = openFileChannel(fileName);
+        final var pair = openFileChannel(fileName, true);
         var account = new SignalAccount(pair.first(), pair.second());
 
         account.username = username;
@@ -167,7 +172,7 @@ public class SignalAccount implements Closeable {
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
     }
 
-    public static SignalAccount createLinkedAccount(
+    public static SignalAccount createOrUpdateLinkedAccount(
             File dataPath,
             String username,
             UUID uuid,
@@ -181,18 +186,51 @@ public class SignalAccount implements Closeable {
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getFileName(dataPath, username);
         if (!fileName.exists()) {
-            IOUtils.createPrivateFile(fileName);
+            return createLinkedAccount(dataPath,
+                    username,
+                    uuid,
+                    password,
+                    encryptedDeviceName,
+                    deviceId,
+                    identityKey,
+                    registrationId,
+                    profileKey);
         }
 
-        final var pair = openFileChannel(fileName);
+        final var account = load(dataPath, username, true);
+        account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
+        account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
+        account.sessionStore.archiveAllSessions();
+        account.clearAllPreKeys();
+        return account;
+    }
+
+    private void clearAllPreKeys() {
+        this.preKeyIdOffset = 0;
+        this.nextSignedPreKeyId = 0;
+        this.preKeyStore.removeAllPreKeys();
+        this.signedPreKeyStore.removeAllSignedPreKeys();
+        save();
+    }
+
+    private static SignalAccount createLinkedAccount(
+            File dataPath,
+            String username,
+            UUID uuid,
+            String password,
+            String encryptedDeviceName,
+            int deviceId,
+            IdentityKeyPair identityKey,
+            int registrationId,
+            ProfileKey profileKey
+    ) throws IOException {
+        var fileName = getFileName(dataPath, username);
+        IOUtils.createPrivateFile(fileName);
+
+        final var pair = openFileChannel(fileName, true);
         var account = new SignalAccount(pair.first(), pair.second());
 
-        account.username = username;
-        account.uuid = uuid;
-        account.password = password;
-        account.profileKey = profileKey;
-        account.encryptedDeviceName = encryptedDeviceName;
-        account.deviceId = deviceId;
+        account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
 
         account.initStores(dataPath, identityKey, registrationId);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
@@ -200,14 +238,29 @@ public class SignalAccount implements Closeable {
                 account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
 
-        account.registered = true;
-        account.isMultiDevice = true;
-
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.migrateLegacyConfigs();
         account.save();
 
         return account;
+    }
+
+    private void setProvisioningData(
+            final String username,
+            final UUID uuid,
+            final String password,
+            final String encryptedDeviceName,
+            final int deviceId,
+            final ProfileKey profileKey
+    ) {
+        this.username = username;
+        this.uuid = uuid;
+        this.password = password;
+        this.profileKey = profileKey;
+        this.encryptedDeviceName = encryptedDeviceName;
+        this.deviceId = deviceId;
+        this.registered = true;
+        this.isMultiDevice = true;
     }
 
     private void migrateLegacyConfigs() {
@@ -618,10 +671,14 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    private static Pair<FileChannel, FileLock> openFileChannel(File fileName) throws IOException {
+    private static Pair<FileChannel, FileLock> openFileChannel(File fileName, boolean waitForLock) throws IOException {
         var fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
         var lock = fileChannel.tryLock();
         if (lock == null) {
+            if (!waitForLock) {
+                logger.debug("Config file is in use by another instance.");
+                throw new IOException("Config file is in use by another instance.");
+            }
             logger.info("Config file is in use by another instance, waiting…");
             lock = fileChannel.lock();
             logger.info("Config file lock acquired.");
