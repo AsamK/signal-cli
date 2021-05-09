@@ -1839,6 +1839,7 @@ public class Manager implements Closeable {
 
             if (envelope.hasSource()) {
                 // Store uuid if we don't have it already
+                // address/uuid in envelope is sent by server
                 resolveRecipientTrusted(envelope.getSourceAddress());
             }
             final var notAGroupMember = isNotAGroupMember(envelope, content);
@@ -1847,6 +1848,11 @@ public class Manager implements Closeable {
                     content = decryptMessage(envelope);
                 } catch (Exception e) {
                     exception = e;
+                }
+                if (!envelope.hasSource() && content != null) {
+                    // Store uuid if we don't have it already
+                    // address/uuid is validated by unidentified sender certificate
+                    resolveRecipientTrusted(content.getSender());
                 }
                 var actions = handleMessage(envelope, content, ignoreAttachments);
                 if (exception instanceof ProtocolInvalidMessageException) {
