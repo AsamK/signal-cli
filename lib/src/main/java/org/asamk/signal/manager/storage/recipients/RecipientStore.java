@@ -226,7 +226,15 @@ public class RecipientStore implements ContactsStore, ProfileStore {
     public void storeProfileKey(final RecipientId recipientId, final ProfileKey profileKey) {
         synchronized (recipients) {
             final var recipient = recipients.get(recipientId);
-            storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withProfileKey(profileKey).build());
+            if (profileKey.equals(recipient.getProfileKey())) {
+                return;
+            }
+
+            final var newRecipient = Recipient.newBuilder(recipient)
+                    .withProfileKey(profileKey)
+                    .withProfileKeyCredential(null)
+                    .build();
+            storeRecipientLocked(recipientId, newRecipient);
         }
     }
 
