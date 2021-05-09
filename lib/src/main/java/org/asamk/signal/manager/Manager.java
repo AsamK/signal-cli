@@ -1284,11 +1284,13 @@ public class Manager implements Closeable {
     }
 
     private byte[] getSenderCertificate() {
-        // TODO support UUID capable sender certificates
-        // byte[] certificate = accountManager.getSenderCertificateForPhoneNumberPrivacy();
         byte[] certificate;
         try {
-            certificate = accountManager.getSenderCertificate();
+            if (account.isPhoneNumberShared()) {
+                certificate = accountManager.getSenderCertificate();
+            } else {
+                certificate = accountManager.getSenderCertificateForPhoneNumberPrivacy();
+            }
         } catch (IOException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;

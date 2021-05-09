@@ -878,6 +878,11 @@ public class SignalAccount implements Closeable {
         return true;
     }
 
+    public boolean isPhoneNumberShared() {
+        // TODO make configurable
+        return true;
+    }
+
     public void finishRegistration(final UUID uuid, final MasterKey masterKey, final String pin) {
         this.pinMasterKey = masterKey;
         this.encryptedDeviceName = null;
