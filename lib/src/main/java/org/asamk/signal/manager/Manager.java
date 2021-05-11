@@ -1104,9 +1104,11 @@ public class Manager implements Closeable {
         }
     }
 
-    SendMessageResult renewSession(RecipientId recipientId) throws IOException {
+    void renewSession(RecipientId recipientId) throws IOException {
         account.getSessionStore().archiveSessions(recipientId);
-        return sendNullMessage(recipientId);
+        if (!recipientId.equals(getSelfRecipientId())) {
+            sendNullMessage(recipientId);
+        }
     }
 
     public String getContactName(String number) throws InvalidNumberException {
