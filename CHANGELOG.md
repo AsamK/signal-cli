@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.8.2] - 2021-05-11
 ### Added
 - A manual page for the DBus interface (Thanks @bublath, @exquo)
 - Remote message delete command (Thanks @adaptivegarage)
