@@ -355,6 +355,12 @@ Specify the group IDs that should be unblocked in base64 encoding.
 Send a synchronization message with the local contacts list to all linked devices.
 This command should only be used if this is the master device.
 
+=== sendSyncRequest
+
+Send a synchronization request message to the master device (for group, contacts, ...).
+The master device will respond with synchronization messages with full contact and
+group lists.
+
 === uploadStickerPack
 
 Upload a new sticker pack, consisting of a manifest file and the stickers in WebP format (maximum size for a sticker file is 100KiB).
