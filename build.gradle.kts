@@ -24,7 +24,7 @@ repositories {
 dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on:1.68")
     implementation("net.sourceforge.argparse4j:argparse4j:0.8.1")
-    implementation("com.github.hypfvieh:dbus-java:3.2.4")
+    implementation("com.github.hypfvieh:dbus-java:3.3.0")
     implementation("org.slf4j:slf4j-simple:1.7.30")
     implementation(project(":lib"))
 }
@@ -37,8 +37,8 @@ configurations {
 
 
 tasks.withType<AbstractArchiveTask>().configureEach {
-  isPreserveFileTimestamps = false
-  isReproducibleFileOrder = true
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 tasks.withType<JavaCompile> {
