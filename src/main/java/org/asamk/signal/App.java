@@ -309,11 +309,13 @@ public class App {
 
         var legacySettingsPath = new File(configPath, "signal");
         if (legacySettingsPath.exists()) {
+            logger.warn("Using legacy data path \"{}\", please move it to \"{}\".", legacySettingsPath, dataPath);
             return legacySettingsPath;
         }
 
         legacySettingsPath = new File(configPath, "textsecure");
         if (legacySettingsPath.exists()) {
+            logger.warn("Using legacy data path \"{}\", please move it to \"{}\".", legacySettingsPath, dataPath);
             return legacySettingsPath;
         }
 
