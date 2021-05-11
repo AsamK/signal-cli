@@ -30,6 +30,17 @@
   ]
 },
 {
+  "name":"org.asamk.signal.manager.storage.protocol.SignalProtocolStore",
+  "methods":[
+    {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"getIdentityKeyPair","parameterTypes":[] }, 
+    {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
+    {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
+    {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
+  ]
+},
+{
   "name":"org.whispersystems.libsignal.DuplicateMessageException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -51,6 +62,10 @@
 {
   "name":"org.whispersystems.libsignal.SignalProtocolAddress",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.UntrustedIdentityException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
