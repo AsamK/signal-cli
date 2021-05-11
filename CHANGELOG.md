@@ -21,6 +21,10 @@
 - updateContact, block and unblock are now disabled for linked devices
 - After registering an empty profile is created so new groups can be joined immediately
 - If message decryption fails due to a broken session, the session is automatically renewed
+- Rework account storage for better reliability
+- Improved device linking flow
+  - Allow relinking existing account
+  - Encrypt/Decrypt device names
 
 ## [0.8.1] - 2021-03-02
 ### Added
