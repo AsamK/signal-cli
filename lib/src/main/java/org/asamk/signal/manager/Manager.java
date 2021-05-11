@@ -556,14 +556,6 @@ public class Manager implements Closeable {
     Profile getRecipientProfile(
             RecipientId recipientId, boolean force
     ) {
-        var profileKey = account.getProfileStore().getProfileKey(recipientId);
-        if (profileKey == null) {
-            if (force) {
-                // retrieve profile to get identity key
-                retrieveEncryptedProfile(recipientId);
-            }
-            return null;
-        }
         var profile = account.getProfileStore().getProfile(recipientId);
 
         var now = new Date().getTime();
@@ -590,7 +582,18 @@ public class Manager implements Closeable {
             return null;
         }
 
-        profile = decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
+        var profileKey = account.getProfileStore().getProfileKey(recipientId);
+        if (profileKey == null) {
+            profile = new Profile(new Date().getTime(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null),
+                    ProfileUtils.getCapabilities(encryptedProfile));
+        } else {
+            profile = decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
+        }
         account.getProfileStore().storeProfile(recipientId, profile);
 
         return profile;

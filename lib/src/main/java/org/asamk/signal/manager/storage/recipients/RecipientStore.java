@@ -233,6 +233,9 @@ public class RecipientStore implements ContactsStore, ProfileStore {
             final var newRecipient = Recipient.newBuilder(recipient)
                     .withProfileKey(profileKey)
                     .withProfileKeyCredential(null)
+                    .withProfile(recipient.getProfile() == null
+                            ? null
+                            : Profile.newBuilder(recipient.getProfile()).withLastUpdateTimestamp(0).build())
                     .build();
             storeRecipientLocked(recipientId, newRecipient);
         }

@@ -21,41 +21,49 @@ public class ProfileUtils {
             var name = decryptName(encryptedProfile.getName(), profileCipher);
             var about = decryptName(encryptedProfile.getAbout(), profileCipher);
             var aboutEmoji = decryptName(encryptedProfile.getAboutEmoji(), profileCipher);
-            String unidentifiedAccess;
-            try {
-                unidentifiedAccess = encryptedProfile.getUnidentifiedAccess() == null
-                        || !profileCipher.verifyUnidentifiedAccess(Base64.getDecoder()
-                        .decode(encryptedProfile.getUnidentifiedAccess()))
-                        ? null
-                        : encryptedProfile.getUnidentifiedAccess();
-            } catch (IllegalArgumentException e) {
-                unidentifiedAccess = null;
-            }
+
             final var nameParts = splitName(name);
-            final var capabilities = new HashSet<Profile.Capability>();
-            if (encryptedProfile.getCapabilities().isGv1Migration()) {
-                capabilities.add(Profile.Capability.gv1Migration);
-            }
-            if (encryptedProfile.getCapabilities().isGv2()) {
-                capabilities.add(Profile.Capability.gv2);
-            }
-            if (encryptedProfile.getCapabilities().isStorage()) {
-                capabilities.add(Profile.Capability.storage);
-            }
             return new Profile(new Date().getTime(),
                     nameParts.first(),
                     nameParts.second(),
                     about,
                     aboutEmoji,
-                    encryptedProfile.isUnrestrictedUnidentifiedAccess()
-                            ? Profile.UnidentifiedAccessMode.UNRESTRICTED
-                            : unidentifiedAccess != null
-                                    ? Profile.UnidentifiedAccessMode.ENABLED
-                                    : Profile.UnidentifiedAccessMode.DISABLED,
-                    capabilities);
+                    getUnidentifiedAccessMode(encryptedProfile, profileCipher),
+                    getCapabilities(encryptedProfile));
         } catch (InvalidCiphertextException e) {
             return null;
         }
+    }
+
+    public static Profile.UnidentifiedAccessMode getUnidentifiedAccessMode(
+            final SignalServiceProfile encryptedProfile, final ProfileCipher profileCipher
+    ) {
+        if (encryptedProfile.isUnrestrictedUnidentifiedAccess()) {
+            return Profile.UnidentifiedAccessMode.UNRESTRICTED;
+        }
+
+        if (encryptedProfile.getUnidentifiedAccess() != null && profileCipher != null) {
+            final var unidentifiedAccessVerifier = Base64.getDecoder().decode(encryptedProfile.getUnidentifiedAccess());
+            if (profileCipher.verifyUnidentifiedAccess(unidentifiedAccessVerifier)) {
+                return Profile.UnidentifiedAccessMode.ENABLED;
+            }
+        }
+
+        return Profile.UnidentifiedAccessMode.DISABLED;
+    }
+
+    public static HashSet<Profile.Capability> getCapabilities(final SignalServiceProfile encryptedProfile) {
+        final var capabilities = new HashSet<Profile.Capability>();
+        if (encryptedProfile.getCapabilities().isGv1Migration()) {
+            capabilities.add(Profile.Capability.gv1Migration);
+        }
+        if (encryptedProfile.getCapabilities().isGv2()) {
+            capabilities.add(Profile.Capability.gv2);
+        }
+        if (encryptedProfile.getCapabilities().isStorage()) {
+            capabilities.add(Profile.Capability.storage);
+        }
+        return capabilities;
     }
 
     private static String decryptName(
