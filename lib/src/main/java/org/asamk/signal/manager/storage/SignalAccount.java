@@ -552,14 +552,16 @@ public class SignalAccount implements Closeable {
                 final var profile = profileEntry.getProfile();
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
-                    if (profile.getCapabilities().gv1Migration) {
-                        capabilities.add(Profile.Capability.gv1Migration);
-                    }
-                    if (profile.getCapabilities().gv2) {
-                        capabilities.add(Profile.Capability.gv2);
-                    }
-                    if (profile.getCapabilities().storage) {
-                        capabilities.add(Profile.Capability.storage);
+                    if (profile.getCapabilities() != null) {
+                        if (profile.getCapabilities().gv1Migration) {
+                            capabilities.add(Profile.Capability.gv1Migration);
+                        }
+                        if (profile.getCapabilities().gv2) {
+                            capabilities.add(Profile.Capability.gv2);
+                        }
+                        if (profile.getCapabilities().storage) {
+                            capabilities.add(Profile.Capability.storage);
+                        }
                     }
                     final var newProfile = new Profile(profileEntry.getLastUpdateTimestamp(),
                             profile.getGivenName(),
