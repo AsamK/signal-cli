@@ -237,10 +237,6 @@
   "allPublicMethods":true
 },
 {
-  "name":"jnr.enxio.channels.Native$LibC$jnr$ffi$1",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
-},
-{
   "name":"jnr.ffi.Pointer",
   "allDeclaredMethods":true,
   "allPublicMethods":true
@@ -292,10 +288,6 @@
 {
   "name":"jnr.unixsocket.Native$LibC",
   "allPublicMethods":true
-},
-{
-  "name":"jnr.unixsocket.Native$LibC$jnr$ffi$0",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
 },
 {
   "name":"jnr.unixsocket.SockAddrUnix",
@@ -473,18 +465,6 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.manager.storage.contacts.ContactInfo",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.contacts.JsonContactsStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
   "name":"org.asamk.signal.manager.storage.groups.GroupInfo",
   "allDeclaredFields":true,
   "allDeclaredMethods":true
@@ -494,20 +474,6 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupInfoV1$JsonSignalServiceAddress",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupInfoV1$MembersDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupInfoV1$MembersSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.groups.GroupStore$GroupsDeserializer",
@@ -545,21 +511,6 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.manager.storage.groups.JsonGroupStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true,
-  "fields":[{"name":"groups", "allowWrite":true}]
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.JsonGroupStore$GroupsDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.JsonGroupStore$GroupsSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
   "name":"org.asamk.signal.manager.storage.identities.IdentityKeyStore$IdentityStorage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -569,16 +520,7 @@
   "name":"org.asamk.signal.manager.storage.profiles.ProfileStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true,
-  "fields":[{"name":"profiles", "allowWrite":true}]
-},
-{
-  "name":"org.asamk.signal.manager.storage.profiles.ProfileStore$ProfileStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.profiles.ProfileStore$ProfileStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.manager.storage.profiles.SignalProfile",
@@ -591,59 +533,6 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonIdentityKeyStore$JsonIdentityKeyStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonIdentityKeyStore$JsonIdentityKeyStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonPreKeyStore$JsonPreKeyStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonPreKeyStore$JsonPreKeyStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonSessionStore$JsonSessionStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonSessionStore$JsonSessionStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonSignalProtocolStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonSignedPreKeyStore$JsonSignedPreKeyStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.JsonSignedPreKeyStore$JsonSignedPreKeyStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.RecipientStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true,
-  "fields":[{"name":"addresses", "allowWrite":true}]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.RecipientStore$RecipientStoreDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.protocol.RecipientStore$RecipientStoreSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage",
@@ -675,14 +564,6 @@
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
   "fields":[{"name":"stickers", "allowWrite":true}]
-},
-{
-  "name":"org.asamk.signal.manager.storage.stickers.StickerStore$StickersDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.stickers.StickerStore$StickersSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.stickers.StickerStore$Storage",
@@ -1063,10 +944,6 @@
 {
   "name":"org.bouncycastle.jcajce.provider.symmetric.Zuc$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.freedesktop.DBus$NameAcquired",
-  "allDeclaredConstructors":true
 },
 {
   "name":"org.freedesktop.dbus.interfaces.Introspectable",
