@@ -58,7 +58,7 @@ public class SendCommand implements DbusCommand {
         }
         if (!noRecipients && isNoteToSelf) {
             throw new UserErrorException(
-                    "You cannot specify recipients by phone number and not to self at the same time");
+                    "You cannot specify recipients by phone number and note to self at the same time");
         }
 
         if (isEndSession) {
