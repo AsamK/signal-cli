@@ -241,6 +241,7 @@ public class App {
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {
+            logger.debug("Loading state file failed", e);
             throw new UnexpectedErrorException("Error loading state file for user "
                     + username
                     + ": "

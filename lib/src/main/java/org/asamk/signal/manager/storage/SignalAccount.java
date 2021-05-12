@@ -547,8 +547,8 @@ public class SignalAccount implements Closeable {
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
                 var recipientId = recipientStore.resolveRecipient(profileEntry.getServiceAddress());
-                recipientStore.storeProfileKey(recipientId, profileEntry.getProfileKey());
                 recipientStore.storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
+                recipientStore.storeProfileKey(recipientId, profileEntry.getProfileKey());
                 final var profile = profileEntry.getProfile();
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
