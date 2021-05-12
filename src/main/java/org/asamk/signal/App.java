@@ -55,7 +55,7 @@ public class App {
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 
-        parser.addArgument("-u", "--username").help("Specify your phone number, that will be used for verification.");
+        parser.addArgument("-u", "--username").help("Specify your phone number, that will be your identifier.");
 
         var mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
@@ -65,6 +65,11 @@ public class App {
                 .help("Choose to output in plain text or JSON")
                 .type(Arguments.enumStringType(OutputType.class))
                 .setDefault(OutputType.PLAIN_TEXT);
+
+        parser.addArgument("--service-environment")
+                .help("Choose the server environment to use, SANDBOX or LIVE.")
+                .type(Arguments.enumStringType(ServiceEnvironmentCli.class))
+                .setDefault(ServiceEnvironmentCli.LIVE);
 
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
@@ -88,15 +93,15 @@ public class App {
             throw new UserErrorException("Command not implemented!");
         }
 
-        OutputType outputType = ns.get("output");
+        var outputType = ns.<OutputType>get("output");
         if (!command.getSupportedOutputTypes().contains(outputType)) {
             throw new UserErrorException("Command doesn't support output type " + outputType.toString());
         }
 
         var username = ns.getString("username");
 
-        final boolean useDbus = ns.getBoolean("dbus");
-        final boolean useDbusSystem = ns.getBoolean("dbus_system");
+        final var useDbus = ns.getBoolean("dbus");
+        final var useDbusSystem = ns.getBoolean("dbus_system");
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
             initDbusClient(command, username, useDbusSystem);
@@ -111,7 +116,10 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        final var serviceEnvironment = ServiceEnvironment.LIVE;
+        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service_environment");
+        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
+                ? ServiceEnvironment.LIVE
+                : ServiceEnvironment.SANDBOX;
 
         if (!ServiceConfig.getCapabilities().isGv2()) {
             logger.warn("WARNING: Support for new group V2 is disabled,"
