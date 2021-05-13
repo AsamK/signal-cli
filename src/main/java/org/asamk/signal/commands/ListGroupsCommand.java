@@ -38,9 +38,10 @@ public class ListGroupsCommand implements LocalCommand {
             final var groupInviteLink = group.getGroupInviteLink();
 
             writer.println(
-                    "Id: {} Name: {}  Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
+                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
+                    group.getDescription(),
                     group.isMember(m.getSelfRecipientId()),
                     group.isBlocked(),
                     resolveMembers(m, group.getMembers()),
@@ -81,6 +82,7 @@ public class ListGroupsCommand implements LocalCommand {
 
                 jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
+                        group.getDescription(),
                         group.isMember(m.getSelfRecipientId()),
                         group.isBlocked(),
                         resolveMembers(m, group.getMembers()),
@@ -103,6 +105,7 @@ public class ListGroupsCommand implements LocalCommand {
 
         public String id;
         public String name;
+        public String description;
         public boolean isMember;
         public boolean isBlocked;
 
@@ -114,6 +117,7 @@ public class ListGroupsCommand implements LocalCommand {
         public JsonGroup(
                 String id,
                 String name,
+                String description,
                 boolean isMember,
                 boolean isBlocked,
                 Set<String> members,
@@ -123,6 +127,7 @@ public class ListGroupsCommand implements LocalCommand {
         ) {
             this.id = id;
             this.name = name;
+            this.description = description;
             this.isMember = isMember;
             this.isBlocked = isBlocked;
 

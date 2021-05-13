@@ -196,12 +196,16 @@ public class GroupHelper {
     }
 
     public Pair<DecryptedGroup, GroupChange> updateGroupV2(
-            GroupInfoV2 groupInfoV2, String name, File avatarFile
+            GroupInfoV2 groupInfoV2, String name, String description, File avatarFile
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
         var change = name != null ? groupOperations.createModifyGroupTitle(name) : GroupChange.Actions.newBuilder();
+
+        if (description != null) {
+            change.setModifyDescription(groupOperations.createModifyGroupDescription(description));
+        }
 
         if (avatarFile != null) {
             final var avatarBytes = readAvatarBytes(avatarFile);

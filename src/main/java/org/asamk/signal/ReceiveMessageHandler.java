@@ -20,6 +20,7 @@ import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
@@ -283,6 +284,14 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 writer.println("- From: {} Message timestamp: {}",
                         formatContact(rm.getSender()),
                         DateUtils.formatTimestamp(rm.getTimestamp()));
+            }
+        }
+        if (syncMessage.getViewed().isPresent()) {
+            writer.println("Received sync viewed messages list");
+            for (var vm : syncMessage.getViewed().get()) {
+                writer.println("- From: {} Message timestamp: {}",
+                        formatContact(vm.getSender()),
+                        DateUtils.formatTimestamp(vm.getTimestamp()));
             }
         }
         if (syncMessage.getRequest().isPresent()) {
@@ -643,8 +652,19 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     pointer.getPreview().isPresent() ? " (Preview is available: "
                             + pointer.getPreview().get().length
                             + " bytes)" : "");
-            writer.println("Voice note: {}", pointer.getVoiceNote() ? "yes" : "no");
-            writer.println("Borderless: {}", pointer.isBorderless() ? "yes" : "no");
+            final var flags = new ArrayList<String>();
+            if (pointer.getVoiceNote()) {
+                flags.add("voice note");
+            }
+            if (pointer.isBorderless()) {
+                flags.add("borderless");
+            }
+            if (pointer.isGif()) {
+                flags.add("video gif");
+            }
+            if (flags.size() > 0) {
+                writer.println("Flags: {}", String.join(", ", flags));
+            }
             if (pointer.getWidth() > 0 || pointer.getHeight() > 0) {
                 writer.println("Dimensions: {}x{}", pointer.getWidth(), pointer.getHeight());
             }

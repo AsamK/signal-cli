@@ -337,6 +337,7 @@ public class DbusSignalImpl implements Signal {
             }
             final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId),
                     name,
+                    null,
                     members,
                     avatar == null ? null : new File(avatar));
             checkSendMessageResults(0, results.second());

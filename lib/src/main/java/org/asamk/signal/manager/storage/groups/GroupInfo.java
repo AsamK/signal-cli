@@ -14,6 +14,10 @@ public abstract class GroupInfo {
 
     public abstract String getTitle();
 
+    public String getDescription() {
+        return null;
+    }
+
     public abstract GroupInviteLinkUrl getGroupInviteLink();
 
     public abstract Set<RecipientId> getMembers();

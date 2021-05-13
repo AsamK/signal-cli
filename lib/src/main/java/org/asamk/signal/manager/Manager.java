@@ -783,17 +783,17 @@ public class Manager implements Closeable {
     }
 
     public Pair<GroupId, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, List<String> members, File avatarFile
+            GroupId groupId, String name, String description, List<String> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         final var membersRecipientIds = members == null ? null : getSignalServiceAddresses(members);
         if (membersRecipientIds != null) {
             membersRecipientIds.remove(account.getSelfRecipientId());
         }
-        return sendUpdateGroupMessage(groupId, name, membersRecipientIds, avatarFile);
+        return sendUpdateGroupMessage(groupId, name, description, membersRecipientIds, avatarFile);
     }
 
     private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
-            GroupId groupId, String name, Set<RecipientId> members, File avatarFile
+            GroupId groupId, String name, String description, Set<RecipientId> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         GroupInfo g;
         SignalServiceDataMessage.Builder messageBuilder;
@@ -809,6 +809,7 @@ public class Manager implements Closeable {
                 messageBuilder = getGroupUpdateMessageBuilder(gv1);
                 g = gv1;
             } else {
+                // TODO set description as well
                 final var gv2 = gv2Pair.first();
                 final var decryptedGroup = gv2Pair.second();
 
@@ -843,8 +844,8 @@ public class Manager implements Closeable {
                                 groupGroupChangePair.second());
                     }
                 }
-                if (result == null || name != null || avatarFile != null) {
-                    var groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2, name, avatarFile);
+                if (result == null || name != null || description != null || avatarFile != null) {
+                    var groupGroupChangePair = groupHelper.updateGroupV2(groupInfoV2, name, description, avatarFile);
                     if (avatarFile != null) {
                         avatarStore.storeGroupAvatar(groupInfoV2.getGroupId(),
                                 outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
