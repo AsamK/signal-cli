@@ -772,10 +772,11 @@ public class Manager implements Closeable {
     public Pair<GroupId, List<SendMessageResult>> updateGroup(
             GroupId groupId, String name, List<String> members, File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
-        return sendUpdateGroupMessage(groupId,
-                name,
-                members == null ? null : getSignalServiceAddresses(members),
-                avatarFile);
+        final var membersRecipientIds = members == null ? null : getSignalServiceAddresses(members);
+        if (membersRecipientIds != null) {
+            membersRecipientIds.remove(account.getSelfRecipientId());
+        }
+        return sendUpdateGroupMessage(groupId, name, membersRecipientIds, avatarFile);
     }
 
     private Pair<GroupId, List<SendMessageResult>> sendUpdateGroupMessage(
