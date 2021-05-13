@@ -23,7 +23,7 @@ public class UnregisterCommand implements LocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
-            if (ns.getBoolean("delete_account")) {
+            if (ns.getBoolean("delete-account")) {
                 m.deleteAccount();
             } else {
                 m.unregister();

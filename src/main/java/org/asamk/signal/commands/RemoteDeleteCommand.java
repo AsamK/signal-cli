@@ -41,7 +41,7 @@ public class RemoteDeleteCommand implements DbusCommand {
             throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
         }
 
-        final long targetTimestamp = ns.getLong("target_timestamp");
+        final long targetTimestamp = ns.getLong("target-timestamp");
 
         final var writer = new PlainTextWriterImpl(System.out);
 

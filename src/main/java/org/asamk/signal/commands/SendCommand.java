@@ -47,7 +47,7 @@ public class SendCommand implements DbusCommand {
         final List<String> recipients = ns.getList("recipient");
         final var isEndSession = ns.getBoolean("endsession");
         final var groupIdString = ns.getString("group");
-        final var isNoteToSelf = ns.getBoolean("note_to_self");
+        final var isNoteToSelf = ns.getBoolean("note-to-self");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if ((noRecipients && isEndSession) || (noRecipients && groupIdString == null && !isNoteToSelf)) {

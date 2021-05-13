@@ -51,8 +51,8 @@ public class SendReactionCommand implements DbusCommand {
 
         final var emoji = ns.getString("emoji");
         final boolean isRemove = ns.getBoolean("remove");
-        final var targetAuthor = ns.getString("target_author");
-        final long targetTimestamp = ns.getLong("target_timestamp");
+        final var targetAuthor = ns.getString("target-author");
+        final long targetTimestamp = ns.getLong("target-timestamp");
 
         final var writer = new PlainTextWriterImpl(System.out);
 

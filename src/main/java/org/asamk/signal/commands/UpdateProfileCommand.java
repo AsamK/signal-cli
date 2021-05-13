@@ -30,12 +30,12 @@ public class UpdateProfileCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        var givenName = ns.getString("given_name");
-        var familyName = ns.getString("family_name");
+        var givenName = ns.getString("given-name");
+        var familyName = ns.getString("family-name");
         var about = ns.getString("about");
-        var aboutEmoji = ns.getString("about_emoji");
+        var aboutEmoji = ns.getString("about-emoji");
         var avatarPath = ns.getString("avatar");
-        boolean removeAvatar = ns.getBoolean("remove_avatar");
+        boolean removeAvatar = ns.getBoolean("remove-avatar");
 
         Optional<File> avatarFile = removeAvatar
                 ? Optional.absent()

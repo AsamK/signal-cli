@@ -155,7 +155,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             returnOnTimeout = false;
             timeout = 3600;
         }
-        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
         try {
             final var handler = inJson ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m);
             m.receiveMessages((long) (timeout * 1000),

@@ -54,7 +54,7 @@ public class DaemonCommand implements MultiLocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
         if (ns.getBoolean("system")) {
@@ -88,7 +88,7 @@ public class DaemonCommand implements MultiLocalCommand {
             logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
         }
 
-        boolean ignoreAttachments = ns.getBoolean("ignore_attachments");
+        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
         if (ns.getBoolean("system")) {

@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
+
 public class App {
 
     private final static Logger logger = LoggerFactory.getLogger(App.class);
@@ -42,7 +44,8 @@ public class App {
     private final Namespace ns;
 
     static ArgumentParser buildArgumentParser() {
-        var parser = ArgumentParsers.newFor("signal-cli")
+        var parser = ArgumentParsers.newFor("signal-cli", VERSION_0_9_0_DEFAULT_SETTINGS)
+                .includeArgumentNamesAsKeysInResult(true)
                 .build()
                 .defaultHelp(true)
                 .description("Commandline interface for Signal.")
@@ -101,7 +104,7 @@ public class App {
         var username = ns.getString("username");
 
         final var useDbus = ns.getBoolean("dbus");
-        final var useDbusSystem = ns.getBoolean("dbus_system");
+        final var useDbusSystem = ns.getBoolean("dbus-system");
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
             initDbusClient(command, username, useDbusSystem);
@@ -116,7 +119,7 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service_environment");
+        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
         final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
                 ? ServiceEnvironment.LIVE
                 : ServiceEnvironment.SANDBOX;
