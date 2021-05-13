@@ -57,12 +57,22 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.whispersystems.libsignal.logging.Log",
+  "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]
+},
+{
   "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
+    {"name":"nativeHandle","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.whispersystems.libsignal.protocol.SignalMessage",
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
+    {"name":"nativeHandle","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore"

@@ -51,7 +51,7 @@ public class ServiceConfig {
 
     public static boolean isSignalClientAvailable() {
         try {
-            org.signal.client.internal.Native.DisplayableFingerprint_Format(new byte[30], new byte[30]);
+            org.signal.client.internal.Native.DeviceTransfer_GeneratePrivateKey();
             return true;
         } catch (UnsatisfiedLinkError ignored) {
             return false;

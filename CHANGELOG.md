@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ## [0.8.3] - 2021-05-13
+**Attention**: Now requires native libsignal-client version 0.5.1
+
 ### Fixed
 - Upgrading from account files with older profiles
 - Building native image with graalvm

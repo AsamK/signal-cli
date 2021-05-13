@@ -18,9 +18,9 @@ public class ProfileUtils {
     ) {
         var profileCipher = new ProfileCipher(profileKey);
         try {
-            var name = decryptName(encryptedProfile.getName(), profileCipher);
-            var about = decryptName(encryptedProfile.getAbout(), profileCipher);
-            var aboutEmoji = decryptName(encryptedProfile.getAboutEmoji(), profileCipher);
+            var name = decrypt(encryptedProfile.getName(), profileCipher);
+            var about = decrypt(encryptedProfile.getAbout(), profileCipher);
+            var aboutEmoji = decrypt(encryptedProfile.getAboutEmoji(), profileCipher);
 
             final var nameParts = splitName(name);
             return new Profile(new Date().getTime(),
@@ -66,13 +66,13 @@ public class ProfileUtils {
         return capabilities;
     }
 
-    private static String decryptName(
+    private static String decrypt(
             final String encryptedName, final ProfileCipher profileCipher
     ) throws InvalidCiphertextException {
         try {
             return encryptedName == null
                     ? null
-                    : new String(profileCipher.decryptName(Base64.getDecoder().decode(encryptedName)));
+                    : new String(profileCipher.decrypt(Base64.getDecoder().decode(encryptedName)));
         } catch (IllegalArgumentException e) {
             return null;
         }

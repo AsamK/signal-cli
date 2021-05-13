@@ -5,8 +5,8 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
+import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.slf4j.helpers.MessageFormatter;
-import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -20,7 +20,6 @@ import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
-import java.io.IOException;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
@@ -34,16 +33,6 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-        try {
-            printMessage(envelope, content, exception);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void printMessage(
-            SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception
-    ) throws IOException {
         PlainTextWriter writer = new PlainTextWriterImpl(System.out);
 
         if (envelope.hasSource()) {
@@ -64,11 +53,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Got receipt.");
         } else if (envelope.isSignalMessage() || envelope.isPreKeySignalMessage() || envelope.isUnidentifiedSender()) {
             if (exception != null) {
-                if (exception instanceof UntrustedIdentityException) {
-                    var e = (UntrustedIdentityException) exception;
+                if (exception instanceof ProtocolUntrustedIdentityException) {
+                    var e = (ProtocolUntrustedIdentityException) exception;
                     writer.println(
                             "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
-                    final var recipientName = m.resolveSignalServiceAddress(e.getName()).getLegacyIdentifier();
+                    final var recipientName = m.resolveSignalServiceAddress(e.getSender()).getLegacyIdentifier();
                     writer.println(
                             "Use 'signal-cli -u {} listIdentities -n {}', verify the key and run 'signal-cli -u {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
                             m.getUsername(),
@@ -127,7 +116,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printDataMessage(
             PlainTextWriter writer, SignalServiceDataMessage message
-    ) throws IOException {
+    ) {
         writer.println("Message timestamp: {}", DateUtils.formatTimestamp(message.getTimestamp()));
         if (message.isViewOnce()) {
             writer.println("=VIEW ONCE=");
@@ -210,7 +199,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printTypingMessage(
             final PlainTextWriter writer, final SignalServiceTypingMessage typingMessage
-    ) throws IOException {
+    ) {
         writer.println("Action: {}", typingMessage.getAction());
         writer.println("Timestamp: {}", DateUtils.formatTimestamp(typingMessage.getTimestamp()));
         if (typingMessage.getGroupId().isPresent()) {
@@ -222,7 +211,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printReceiptMessage(
             final PlainTextWriter writer, final SignalServiceReceiptMessage receiptMessage
-    ) throws IOException {
+    ) {
         writer.println("When: {}", DateUtils.formatTimestamp(receiptMessage.getWhen()));
         if (receiptMessage.isDeliveryReceipt()) {
             writer.println("Is delivery receipt");
@@ -241,7 +230,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printCallMessage(
             final PlainTextWriter writer, final SignalServiceCallMessage callMessage
-    ) throws IOException {
+    ) {
         if (callMessage.getDestinationDeviceId().isPresent()) {
             final var deviceId = callMessage.getDestinationDeviceId().get();
             writer.println("Destination device id: {}", deviceId);
@@ -277,7 +266,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printSyncMessage(
             final PlainTextWriter writer, final SignalServiceSyncMessage syncMessage
-    ) throws IOException {
+    ) {
         if (syncMessage.getContacts().isPresent()) {
             final var contactsMessage = syncMessage.getContacts().get();
             var type = contactsMessage.isComplete() ? "complete" : "partial";
@@ -425,7 +414,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printPreview(
             final PlainTextWriter writer, final SignalServiceDataMessage.Preview preview
-    ) throws IOException {
+    ) {
         writer.println("Title: {}", preview.getTitle());
         writer.println("Description: {}", preview.getDescription());
         writer.println("Date: {}", DateUtils.formatTimestamp(preview.getDate()));
@@ -438,7 +427,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printSticker(
             final PlainTextWriter writer, final SignalServiceDataMessage.Sticker sticker
-    ) throws IOException {
+    ) {
         writer.println("Pack id: {}", Base64.getEncoder().encodeToString(sticker.getPackId()));
         writer.println("Pack key: {}", Base64.getEncoder().encodeToString(sticker.getPackKey()));
         writer.println("Sticker id: {}", sticker.getStickerId());
@@ -448,7 +437,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printReaction(
             final PlainTextWriter writer, final SignalServiceDataMessage.Reaction reaction
-    ) throws IOException {
+    ) {
         writer.println("Emoji: {}", reaction.getEmoji());
         writer.println("Target author: {}", formatContact(m.resolveSignalServiceAddress(reaction.getTargetAuthor())));
         writer.println("Target timestamp: {}", DateUtils.formatTimestamp(reaction.getTargetSentTimestamp()));
@@ -457,7 +446,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printQuote(
             final PlainTextWriter writer, final SignalServiceDataMessage.Quote quote
-    ) throws IOException {
+    ) {
         writer.println("Id: {}", quote.getId());
         writer.println("Author: {}", m.resolveSignalServiceAddress(quote.getAuthor()).getLegacyIdentifier());
         writer.println("Text: {}", quote.getText());
@@ -482,7 +471,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printSharedContact(final PlainTextWriter writer, final SharedContact contact) throws IOException {
+    private void printSharedContact(final PlainTextWriter writer, final SharedContact contact) {
         writer.println("Name:");
         var name = contact.getName();
         writer.indent(w -> {
@@ -591,7 +580,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printGroupContext(
             final PlainTextWriter writer, final SignalServiceGroupContext groupContext
-    ) throws IOException {
+    ) {
         final var groupId = GroupUtils.getGroupId(groupContext);
         if (groupContext.getGroupV1().isPresent()) {
             var groupInfo = groupContext.getGroupV1().get();
@@ -616,7 +605,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printGroupInfo(final PlainTextWriter writer, final GroupId groupId) throws IOException {
+    private void printGroupInfo(final PlainTextWriter writer, final GroupId groupId) {
         writer.println("Id: {}", groupId.toBase64());
 
         var group = m.getGroup(groupId);
@@ -629,7 +618,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     private void printMention(
             PlainTextWriter writer, SignalServiceDataMessage.Mention mention
-    ) throws IOException {
+    ) {
         final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null));
         writer.println("- {}: {} (length: {})", formatContact(address), mention.getStart(), mention.getLength());
     }

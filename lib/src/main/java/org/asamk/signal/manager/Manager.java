@@ -83,6 +83,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
+import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
@@ -161,6 +162,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -193,6 +195,15 @@ public class Manager implements Closeable {
     private final PinHelper pinHelper;
     private final AvatarStore avatarStore;
     private final AttachmentStore attachmentStore;
+    private final SignalSessionLock sessionLock = new SignalSessionLock() {
+        private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
+
+        @Override
+        public Lock acquire() {
+            LEGACY_LOCK.lock();
+            return LEGACY_LOCK::unlock;
+        }
+    };
 
     Manager(
             SignalAccount account,
@@ -389,6 +400,7 @@ public class Manager implements Closeable {
                     newProfile.getInternalServiceName(),
                     newProfile.getAbout() == null ? "" : newProfile.getAbout(),
                     newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
+                    Optional.absent(),
                     streamDetails);
         }
 
@@ -534,6 +546,7 @@ public class Manager implements Closeable {
                 account.getPassword(),
                 account.getDeviceId(),
                 account.getSignalProtocolStore(),
+                sessionLock,
                 userAgent,
                 account.isMultiDevice(),
                 Optional.fromNullable(messagePipe),
@@ -1511,18 +1524,12 @@ public class Manager implements Closeable {
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, org.whispersystems.libsignal.UntrustedIdentityException {
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, ProtocolUntrustedIdentityException {
         var cipher = new SignalServiceCipher(account.getSelfAddress(),
                 account.getSignalProtocolStore(),
+                sessionLock,
                 certificateValidator);
-        try {
-            return cipher.decrypt(envelope);
-        } catch (ProtocolUntrustedIdentityException e) {
-            if (e.getCause() instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
-                throw (org.whispersystems.libsignal.UntrustedIdentityException) e.getCause();
-            }
-            throw new AssertionError(e);
-        }
+        return cipher.decrypt(envelope);
     }
 
     private void handleEndSession(RecipientId recipientId) {
@@ -1766,9 +1773,9 @@ public class Manager implements Closeable {
         if (!envelope.isReceipt()) {
             try {
                 content = decryptMessage(envelope);
-            } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+            } catch (ProtocolUntrustedIdentityException e) {
                 if (!envelope.hasSource()) {
-                    final var identifier = ((org.whispersystems.libsignal.UntrustedIdentityException) e).getName();
+                    final var identifier = e.getSender();
                     final var recipientId = resolveRecipient(identifier);
                     try {
                         account.getMessageCache().replaceSender(cachedMessage, recipientId);
@@ -1889,8 +1896,8 @@ public class Manager implements Closeable {
                 handler.handleMessage(envelope, content, exception);
             }
             if (cachedMessage[0] != null) {
-                if (exception instanceof org.whispersystems.libsignal.UntrustedIdentityException) {
-                    final var identifier = ((org.whispersystems.libsignal.UntrustedIdentityException) exception).getName();
+                if (exception instanceof ProtocolUntrustedIdentityException) {
+                    final var identifier = ((ProtocolUntrustedIdentityException) exception).getSender();
                     final var recipientId = resolveRecipient(identifier);
                     queuedActions.add(new RetrieveProfileAction(recipientId));
                     if (!envelope.hasSource()) {
