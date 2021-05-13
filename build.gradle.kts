@@ -5,7 +5,7 @@ plugins {
     `check-lib-versions`
 }
 
-version = "0.8.2"
+version = "0.8.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11

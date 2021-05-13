@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.8.3] - 2021-05-13
+### Fixed
+- Upgrading from account files with older profiles
+- Building native image with graalvm
+
 ## [0.8.2] - 2021-05-11
 ### Added
 - A manual page for the DBus interface (Thanks @bublath, @exquo)
