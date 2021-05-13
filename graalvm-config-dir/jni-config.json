@@ -19,8 +19,12 @@
   "methods":[
     {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
     {"name":"getIdentityKeyPair","parameterTypes":[] }, 
+    {"name":"getLocalRegistrationId","parameterTypes":[] }, 
     {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
+    {"name":"loadPreKey","parameterTypes":["int"] }, 
     {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"loadSignedPreKey","parameterTypes":["int"] }, 
+    {"name":"removePreKey","parameterTypes":["int"] }, 
     {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
     {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
   ]

@@ -114,7 +114,8 @@
   "name":"java.lang.Integer",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.Iterable",
@@ -124,7 +125,8 @@
   "name":"java.lang.Long",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.Number",
@@ -237,6 +239,10 @@
   "allPublicMethods":true
 },
 {
+  "name":"jnr.enxio.channels.Native$LibC$jnr$ffi$1",
+  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
+},
+{
   "name":"jnr.ffi.Pointer",
   "allDeclaredMethods":true,
   "allPublicMethods":true
@@ -290,6 +296,10 @@
   "allPublicMethods":true
 },
 {
+  "name":"jnr.unixsocket.Native$LibC$jnr$ffi$0",
+  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]
+},
+{
   "name":"jnr.unixsocket.SockAddrUnix",
   "allPublicMethods":true
 },
@@ -320,6 +330,18 @@
   "name":"org.asamk.Signal$SyncMessageReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true
+},
+{
+  "name":"org.asamk.signal.commands.GetUserStatusCommand$JsonUserStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.commands.ListGroupsCommand$JsonGroup",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.json.JsonAttachment",
@@ -946,6 +968,14 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.freedesktop.dbus.errors.ServiceUnknown",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.freedesktop.dbus.interfaces.DBus$NameAcquired",
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.freedesktop.dbus.interfaces.Introspectable",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true
@@ -964,6 +994,18 @@
     {"name":"addFromInviteLink_", "allowUnsafeAccess":true}, 
     {"name":"attributes_", "allowUnsafeAccess":true}, 
     {"name":"members_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.AvatarUploadAttributes",
+  "fields":[
+    {"name":"acl_", "allowUnsafeAccess":true}, 
+    {"name":"algorithm_", "allowUnsafeAccess":true}, 
+    {"name":"credential_", "allowUnsafeAccess":true}, 
+    {"name":"date_", "allowUnsafeAccess":true}, 
+    {"name":"key_", "allowUnsafeAccess":true}, 
+    {"name":"policy_", "allowUnsafeAccess":true}, 
+    {"name":"signature_", "allowUnsafeAccess":true}
   ]
 },
 {
@@ -1158,6 +1200,13 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval",
+  "fields":[
+    {"name":"uuidCipherText_", "allowUnsafeAccess":true}, 
+    {"name":"uuid_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.signal.storageservice.protos.groups.local.DecryptedRequestingMember",
   "fields":[
     {"name":"profileKey_", "allowUnsafeAccess":true}, 
@@ -1347,6 +1396,15 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.internal.devices.DeviceNameProtos$DeviceName",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"ciphertext_", "allowUnsafeAccess":true}, 
+    {"name":"ephemeralPublic_", "allowUnsafeAccess":true}, 
+    {"name":"syntheticIv_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.keybackup.protos.BackupRequest",
   "fields":[
     {"name":"backupId_", "allowUnsafeAccess":true}, 
@@ -1391,6 +1449,27 @@
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
     {"name":"delete_", "allowUnsafeAccess":true}, 
     {"name":"restore_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.keybackup.protos.RestoreRequest",
+  "fields":[
+    {"name":"backupId_", "allowUnsafeAccess":true}, 
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"pin_", "allowUnsafeAccess":true}, 
+    {"name":"serviceId_", "allowUnsafeAccess":true}, 
+    {"name":"token_", "allowUnsafeAccess":true}, 
+    {"name":"validFrom_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.keybackup.protos.RestoreResponse",
+  "fields":[
+    {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"data_", "allowUnsafeAccess":true}, 
+    {"name":"status_", "allowUnsafeAccess":true}, 
+    {"name":"token_", "allowUnsafeAccess":true}, 
+    {"name":"tries_", "allowUnsafeAccess":true}
   ]
 },
 {
@@ -1526,6 +1605,12 @@
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
     {"name":"uuid_", "allowUnsafeAccess":true}
   ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.PushServiceSocket$RegistrationLockFailure",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PushServiceSocket$RegistrationLockV2",
@@ -1874,6 +1959,14 @@
     {"name":"stickerPackOperation_", "allowUnsafeAccess":true}, 
     {"name":"verified_", "allowUnsafeAccess":true}, 
     {"name":"viewOnceOpen_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Blocked",
+  "fields":[
+    {"name":"groupIds_", "allowUnsafeAccess":true}, 
+    {"name":"numbers_", "allowUnsafeAccess":true}, 
+    {"name":"uuids_", "allowUnsafeAccess":true}
   ]
 },
 {
