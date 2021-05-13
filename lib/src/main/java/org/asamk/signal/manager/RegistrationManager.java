@@ -129,9 +129,10 @@ public class RegistrationManager implements Closeable {
         VerifyAccountResponse response;
         MasterKey masterKey;
         try {
-            response = verifyAccountWithCode(verificationCode, pin, null);
+            response = verifyAccountWithCode(verificationCode, null, null);
 
             masterKey = null;
+            pin = null;
         } catch (LockedException e) {
             if (pin == null) {
                 throw e;
@@ -139,16 +140,17 @@ public class RegistrationManager implements Closeable {
 
             var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
             if (registrationLockData == null) {
-                throw e;
+                response = verifyAccountWithCode(verificationCode, pin, null);
+                masterKey = null;
+            } else {
+                var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
+                try {
+                    response = verifyAccountWithCode(verificationCode, null, registrationLock);
+                } catch (LockedException _e) {
+                    throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
+                }
+                masterKey = registrationLockData.getMasterKey();
             }
-
-            var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
-            try {
-                response = verifyAccountWithCode(verificationCode, null, registrationLock);
-            } catch (LockedException _e) {
-                throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
-            }
-            masterKey = registrationLockData.getMasterKey();
         }
 
         // TODO response.isStorageCapable()
