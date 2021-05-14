@@ -335,13 +335,19 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final var results = m.updateGroup(groupId == null ? null : GroupId.unknownVersion(groupId),
-                    name,
-                    null,
-                    members,
-                    avatar == null ? null : new File(avatar));
-            checkSendMessageResults(0, results.second());
-            return results.first().serialize();
+            if (groupId == null) {
+                final var results = m.createGroup(name, members, avatar == null ? null : new File(avatar));
+                checkSendMessageResults(0, results.second());
+                return results.first().serialize();
+            } else {
+                final var results = m.updateGroup(GroupId.unknownVersion(groupId),
+                        name,
+                        null,
+                        members,
+                        avatar == null ? null : new File(avatar));
+                checkSendMessageResults(results.first(), results.second());
+                return groupId;
+            }
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {

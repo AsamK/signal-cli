@@ -62,15 +62,20 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         var groupAvatar = ns.getString("avatar");
 
         try {
-            var results = m.updateGroup(groupId,
-                    groupName,
-                    groupDescription,
-                    groupMembers,
-                    groupAvatar == null ? null : new File(groupAvatar));
-            ErrorUtils.handleTimestampAndSendMessageResults(writer, 0, results.second());
-            final var newGroupId = results.first();
             if (groupId == null) {
+                var results = m.createGroup(groupName,
+                        groupMembers,
+                        groupAvatar == null ? null : new File(groupAvatar));
+                ErrorUtils.handleTimestampAndSendMessageResults(writer, 0, results.second());
+                final var newGroupId = results.first();
                 writer.println("Created new group: \"{}\"", newGroupId.toBase64());
+            } else {
+                var results = m.updateGroup(groupId,
+                        groupName,
+                        groupDescription,
+                        groupMembers,
+                        groupAvatar == null ? null : new File(groupAvatar));
+                ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }
         } catch (AttachmentInvalidException e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
