@@ -826,22 +826,33 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, String description, List<String> members, File avatarFile
+            GroupId groupId,
+            String name,
+            String description,
+            List<String> members,
+            List<String> removeMembers,
+            File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return updateGroup(groupId,
                 name,
                 description,
                 members == null ? null : getSignalServiceAddresses(members),
+                removeMembers == null ? null : getSignalServiceAddresses(removeMembers),
                 avatarFile);
     }
 
     private Pair<Long, List<SendMessageResult>> updateGroup(
-            GroupId groupId, String name, String description, Set<RecipientId> members, File avatarFile
+            GroupId groupId,
+            String name,
+            String description,
+            Set<RecipientId> members,
+            final Set<RecipientId> removeMembers,
+            File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         var group = getGroupForUpdating(groupId);
 
         if (group instanceof GroupInfoV2) {
-            return updateGroupV2((GroupInfoV2) group, name, description, members, avatarFile);
+            return updateGroupV2((GroupInfoV2) group, name, description, members, removeMembers, avatarFile);
         }
 
         return updateGroupV1((GroupInfoV1) group, name, members, avatarFile);
@@ -901,6 +912,7 @@ public class Manager implements Closeable {
             final String name,
             final String description,
             final Set<RecipientId> members,
+            final Set<RecipientId> removeMembers,
             final File avatarFile
     ) throws IOException {
         Pair<Long, List<SendMessageResult>> result = null;
@@ -917,6 +929,24 @@ public class Manager implements Closeable {
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
         }
+
+        if (removeMembers != null) {
+            var existingRemoveMembers = new HashSet<>(removeMembers);
+            existingRemoveMembers.retainAll(group.getMembers());
+            existingRemoveMembers.remove(getSelfRecipientId());// self can be removed with sendQuitGroupMessage
+            if (existingRemoveMembers.size() > 0) {
+                var groupGroupChangePair = groupHelper.removeMembers(group, existingRemoveMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
+
+            var pendingRemoveMembers = new HashSet<>(removeMembers);
+            pendingRemoveMembers.retainAll(group.getPendingMembers());
+            if (pendingRemoveMembers.size() > 0) {
+                var groupGroupChangePair = groupHelper.revokeInvitedMembers(group, pendingRemoveMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
+        }
+
         if (result == null || name != null || description != null || avatarFile != null) {
             var groupGroupChangePair = groupHelper.updateGroupV2(group, name, description, avatarFile);
             if (avatarFile != null) {
@@ -954,10 +984,14 @@ public class Manager implements Closeable {
     private Pair<Long, List<SendMessageResult>> sendUpdateGroupV2Message(
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
+        final var selfRecipientId = account.getSelfRecipientId();
+        final var members = group.getMembersIncludingPendingWithout(selfRecipientId);
         group.setGroup(newDecryptedGroup, this::resolveRecipient);
+        members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
+
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
         account.getGroupStore().updateGroup(group);
-        return sendMessage(messageBuilder, group.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+        return sendMessage(messageBuilder, members);
     }
 
     private static int currentTimeDays() {

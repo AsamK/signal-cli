@@ -38,6 +38,9 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         subparser.addArgument("-d", "--description").help("Specify the new group description.");
         subparser.addArgument("-a", "--avatar").help("Specify a new group avatar image file");
         subparser.addArgument("-m", "--member").nargs("*").help("Specify one or more members to add to the group");
+        subparser.addArgument("-r", "--remove-member")
+                .nargs("*")
+                .help("Specify one or more members to remove from the group");
     }
 
     @Override
@@ -59,6 +62,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
         List<String> groupMembers = ns.getList("member");
 
+        List<String> groupRemoveMembers = ns.getList("remove-member");
+
         var groupAvatar = ns.getString("avatar");
 
         try {
@@ -74,6 +79,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupName,
                         groupDescription,
                         groupMembers,
+                        groupRemoveMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }

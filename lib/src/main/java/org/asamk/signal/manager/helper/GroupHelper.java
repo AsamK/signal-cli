@@ -263,6 +263,34 @@ public class GroupHelper {
         }
     }
 
+    public Pair<DecryptedGroup, GroupChange> removeMembers(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> members
+    ) throws IOException {
+        final var memberUuids = members.stream()
+                .map(addressResolver::resolveSignalServiceAddress)
+                .map(SignalServiceAddress::getUuid)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+        return ejectMembers(groupInfoV2, memberUuids);
+    }
+
+    public Pair<DecryptedGroup, GroupChange> revokeInvitedMembers(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> members
+    ) throws IOException {
+        var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
+        final var memberUuids = members.stream()
+                .map(addressResolver::resolveSignalServiceAddress)
+                .map(SignalServiceAddress::getUuid)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(uuid -> DecryptedGroupUtil.findPendingByUuid(pendingMembersList, uuid))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+        return revokeInvites(groupInfoV2, memberUuids);
+    }
+
     public GroupChange joinGroup(
             GroupMasterKey groupMasterKey,
             GroupLinkPassword groupLinkPassword,
@@ -309,7 +337,7 @@ public class GroupHelper {
         return commitChange(groupInfoV2, change);
     }
 
-    public Pair<DecryptedGroup, GroupChange> revokeInvites(
+    private Pair<DecryptedGroup, GroupChange> revokeInvites(
             GroupInfoV2 groupInfoV2, Set<DecryptedPendingMember> pendingMembers
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
@@ -324,7 +352,9 @@ public class GroupHelper {
         return commitChange(groupInfoV2, groupOperations.createRemoveInvitationChange(uuidCipherTexts));
     }
 
-    public Pair<DecryptedGroup, GroupChange> ejectMembers(GroupInfoV2 groupInfoV2, Set<UUID> uuids) throws IOException {
+    private Pair<DecryptedGroup, GroupChange> ejectMembers(
+            GroupInfoV2 groupInfoV2, Set<UUID> uuids
+    ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
         final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
         return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(uuids));
