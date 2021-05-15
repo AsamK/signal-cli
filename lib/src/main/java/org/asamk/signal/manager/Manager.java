@@ -26,7 +26,7 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.helper.GroupHelper;
+import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
@@ -191,7 +191,7 @@ public class Manager implements Closeable {
 
     private final UnidentifiedAccessHelper unidentifiedAccessHelper;
     private final ProfileHelper profileHelper;
-    private final GroupHelper groupHelper;
+    private final GroupV2Helper groupV2Helper;
     private final PinHelper pinHelper;
     private final AvatarStore avatarStore;
     private final AttachmentStore attachmentStore;
@@ -259,7 +259,7 @@ public class Manager implements Closeable {
                 unidentified -> unidentified ? getOrCreateUnidentifiedMessagePipe() : getOrCreateMessagePipe(),
                 () -> messageReceiver,
                 this::resolveSignalServiceAddress);
-        this.groupHelper = new GroupHelper(this::getRecipientProfileKeyCredential,
+        this.groupV2Helper = new GroupV2Helper(this::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
                 account::getSelfRecipientId,
                 groupsV2Operations,
@@ -773,7 +773,7 @@ public class Manager implements Closeable {
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
             final var groupInfoV2 = (GroupInfoV2) g;
-            final var groupGroupChangePair = groupHelper.leaveGroup(groupInfoV2);
+            final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2);
             groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
             messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
             account.getGroupStore().updateGroup(groupInfoV2);
@@ -797,7 +797,7 @@ public class Manager implements Closeable {
             members.remove(selfRecipientId);
         }
 
-        var gv2Pair = groupHelper.createGroupV2(name == null ? "" : name,
+        var gv2Pair = groupV2Helper.createGroup(name == null ? "" : name,
                 members == null ? Set.of() : members,
                 avatarFile);
 
@@ -917,7 +917,7 @@ public class Manager implements Closeable {
     ) throws IOException {
         Pair<Long, List<SendMessageResult>> result = null;
         if (group.isPendingMember(account.getSelfRecipientId())) {
-            var groupGroupChangePair = groupHelper.acceptInvite(group);
+            var groupGroupChangePair = groupV2Helper.acceptInvite(group);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 
@@ -925,7 +925,7 @@ public class Manager implements Closeable {
             final var newMembers = new HashSet<>(members);
             newMembers.removeAll(group.getMembers());
             if (newMembers.size() > 0) {
-                var groupGroupChangePair = groupHelper.updateGroupV2(group, newMembers);
+                var groupGroupChangePair = groupV2Helper.addMembers(group, newMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
         }
@@ -935,20 +935,20 @@ public class Manager implements Closeable {
             existingRemoveMembers.retainAll(group.getMembers());
             existingRemoveMembers.remove(getSelfRecipientId());// self can be removed with sendQuitGroupMessage
             if (existingRemoveMembers.size() > 0) {
-                var groupGroupChangePair = groupHelper.removeMembers(group, existingRemoveMembers);
+                var groupGroupChangePair = groupV2Helper.removeMembers(group, existingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
 
             var pendingRemoveMembers = new HashSet<>(removeMembers);
             pendingRemoveMembers.retainAll(group.getPendingMembers());
             if (pendingRemoveMembers.size() > 0) {
-                var groupGroupChangePair = groupHelper.revokeInvitedMembers(group, pendingRemoveMembers);
+                var groupGroupChangePair = groupV2Helper.revokeInvitedMembers(group, pendingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
         }
 
         if (result == null || name != null || description != null || avatarFile != null) {
-            var groupGroupChangePair = groupHelper.updateGroupV2(group, name, description, avatarFile);
+            var groupGroupChangePair = groupV2Helper.updateGroup(group, name, description, avatarFile);
             if (avatarFile != null) {
                 avatarStore.storeGroupAvatar(group.getGroupId(),
                         outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
@@ -962,9 +962,9 @@ public class Manager implements Closeable {
     public Pair<GroupId, List<SendMessageResult>> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, GroupLinkNotActiveException {
-        final var groupJoinInfo = groupHelper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
+        final var groupJoinInfo = groupV2Helper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
                 inviteLinkUrl.getPassword());
-        final var groupChange = groupHelper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
+        final var groupChange = groupV2Helper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
                 inviteLinkUrl.getPassword(),
                 groupJoinInfo);
         final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
@@ -1762,10 +1762,12 @@ public class Manager implements Closeable {
             if (signedGroupChange != null
                     && groupInfoV2.getGroup() != null
                     && groupInfoV2.getGroup().getRevision() + 1 == revision) {
-                group = groupHelper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(), signedGroupChange, groupMasterKey);
+                group = groupV2Helper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(),
+                        signedGroupChange,
+                        groupMasterKey);
             }
             if (group == null) {
-                group = groupHelper.getDecryptedGroup(groupSecretParams);
+                group = groupV2Helper.getDecryptedGroup(groupSecretParams);
             }
             if (group != null) {
                 storeProfileKeysFromMembers(group);
@@ -2577,7 +2579,7 @@ public class Manager implements Closeable {
         final var group = account.getGroupStore().getGroup(groupId);
         if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
             final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
-            ((GroupInfoV2) group).setGroup(groupHelper.getDecryptedGroup(groupSecretParams), this::resolveRecipient);
+            ((GroupInfoV2) group).setGroup(groupV2Helper.getDecryptedGroup(groupSecretParams), this::resolveRecipient);
             account.getGroupStore().updateGroup(group);
         }
         return group;

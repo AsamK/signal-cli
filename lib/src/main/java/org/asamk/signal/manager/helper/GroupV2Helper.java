@@ -43,9 +43,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class GroupHelper {
+public class GroupV2Helper {
 
-    private final static Logger logger = LoggerFactory.getLogger(GroupHelper.class);
+    private final static Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
 
     private final ProfileKeyCredentialProvider profileKeyCredentialProvider;
 
@@ -61,7 +61,7 @@ public class GroupHelper {
 
     private final SignalServiceAddressResolver addressResolver;
 
-    public GroupHelper(
+    public GroupV2Helper(
             final ProfileKeyCredentialProvider profileKeyCredentialProvider,
             final ProfileProvider profileProvider,
             final SelfRecipientIdProvider selfRecipientIdProvider,
@@ -100,11 +100,11 @@ public class GroupHelper {
                 groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams));
     }
 
-    public Pair<GroupInfoV2, DecryptedGroup> createGroupV2(
+    public Pair<GroupInfoV2, DecryptedGroup> createGroup(
             String name, Set<RecipientId> members, File avatarFile
     ) throws IOException {
         final var avatarBytes = readAvatarBytes(avatarFile);
-        final var newGroup = buildNewGroupV2(name, members, avatarBytes);
+        final var newGroup = buildNewGroup(name, members, avatarBytes);
         if (newGroup == null) {
             return null;
         }
@@ -141,7 +141,7 @@ public class GroupHelper {
         return avatarBytes;
     }
 
-    private GroupsV2Operations.NewGroup buildNewGroupV2(
+    private GroupsV2Operations.NewGroup buildNewGroup(
             String name, Set<RecipientId> members, byte[] avatar
     ) {
         final var profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(selfRecipientIdProvider.getSelfRecipientId());
@@ -195,7 +195,7 @@ public class GroupHelper {
         return true;
     }
 
-    public Pair<DecryptedGroup, GroupChange> updateGroupV2(
+    public Pair<DecryptedGroup, GroupChange> updateGroup(
             GroupInfoV2 groupInfoV2, String name, String description, File avatarFile
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
@@ -224,7 +224,7 @@ public class GroupHelper {
         return commitChange(groupInfoV2, change);
     }
 
-    public Pair<DecryptedGroup, GroupChange> updateGroupV2(
+    public Pair<DecryptedGroup, GroupChange> addMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> newMembers
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
