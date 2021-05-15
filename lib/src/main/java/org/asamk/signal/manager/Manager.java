@@ -836,7 +836,8 @@ public class Manager implements Closeable {
             List<String> removeAdmins,
             boolean resetGroupLink,
             GroupLinkState groupLinkState,
-            File avatarFile
+            File avatarFile,
+            Integer expirationTimer
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return updateGroup(groupId,
                 name,
@@ -847,7 +848,8 @@ public class Manager implements Closeable {
                 removeAdmins == null ? null : getSignalServiceAddresses(removeAdmins),
                 resetGroupLink,
                 groupLinkState,
-                avatarFile);
+                avatarFile,
+                expirationTimer);
     }
 
     private Pair<Long, List<SendMessageResult>> updateGroup(
@@ -860,7 +862,8 @@ public class Manager implements Closeable {
             final Set<RecipientId> removeAdmins,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
-            final File avatarFile
+            final File avatarFile,
+            Integer expirationTimer
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         var group = getGroupForUpdating(groupId);
 
@@ -874,10 +877,16 @@ public class Manager implements Closeable {
                     removeAdmins,
                     resetGroupLink,
                     groupLinkState,
-                    avatarFile);
+                    avatarFile,
+                    expirationTimer);
         }
 
-        return updateGroupV1((GroupInfoV1) group, name, members, avatarFile);
+        final var gv1 = (GroupInfoV1) group;
+        final var result = updateGroupV1(gv1, name, members, avatarFile);
+        if (expirationTimer != null) {
+            setExpirationTimer(gv1, expirationTimer);
+        }
+        return result;
     }
 
     private Pair<Long, List<SendMessageResult>> updateGroupV1(
@@ -939,7 +948,8 @@ public class Manager implements Closeable {
             final Set<RecipientId> removeAdmins,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
-            final File avatarFile
+            final File avatarFile,
+            Integer expirationTimer
     ) throws IOException {
         Pair<Long, List<SendMessageResult>> result = null;
         if (group.isPendingMember(account.getSelfRecipientId())) {
@@ -1007,6 +1017,11 @@ public class Manager implements Closeable {
 
         if (groupLinkState != null) {
             var groupGroupChangePair = groupV2Helper.setGroupLinkState(group, groupLinkState);
+            result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+        }
+
+        if (expirationTimer != null) {
+            var groupGroupChangePair = groupV2Helper.setMessageExpirationTimer(group, expirationTimer);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 
@@ -1306,15 +1321,17 @@ public class Manager implements Closeable {
     /**
      * Change the expiration timer for a group
      */
-    public void setExpirationTimer(GroupId groupId, int messageExpirationTimer) {
-        var g = getGroup(groupId);
-        if (g instanceof GroupInfoV1) {
-            var groupInfoV1 = (GroupInfoV1) g;
-            groupInfoV1.messageExpirationTime = messageExpirationTimer;
-            account.getGroupStore().updateGroup(groupInfoV1);
-        } else {
-            throw new RuntimeException("TODO Not implemented!");
-        }
+    private void setExpirationTimer(
+            GroupInfoV1 groupInfoV1, int messageExpirationTimer
+    ) throws NotAGroupMemberException, GroupNotFoundException, IOException {
+        groupInfoV1.messageExpirationTime = messageExpirationTimer;
+        account.getGroupStore().updateGroup(groupInfoV1);
+        sendExpirationTimerUpdate(groupInfoV1.getGroupId());
+    }
+
+    private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
+        sendGroupMessage(messageBuilder, groupId);
     }
 
     /**

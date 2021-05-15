@@ -54,6 +54,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         subparser.addArgument("--link")
                 .help("Set group link state, with or without admin approval")
                 .type(Arguments.enumStringType(GroupLinkState.class));
+
+        subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
     @Override
@@ -87,6 +89,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
         var groupLinkState = ns.<GroupLinkState>get("link");
 
+        var groupExpiration = ns.getInt("expiration");
+
         try {
             if (groupId == null) {
                 var results = m.createGroup(groupName,
@@ -105,7 +109,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupRemoveAdmins,
                         groupResetLink,
                         groupLinkState != null ? groupLinkState.toLinkState() : null,
-                        groupAvatar == null ? null : new File(groupAvatar));
+                        groupAvatar == null ? null : new File(groupAvatar),
+                        groupExpiration);
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }
         } catch (AttachmentInvalidException e) {
