@@ -27,6 +27,7 @@ import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
+import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.PinHelper;
@@ -763,7 +764,9 @@ public class Manager implements Closeable {
         return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfRecipientId()));
     }
 
-    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(GroupId groupId) throws GroupNotFoundException, IOException, NotAGroupMemberException {
+    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(
+            GroupId groupId, Set<String> groupAdmins
+    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, InvalidNumberException, LastGroupAdminException {
         SignalServiceDataMessage.Builder messageBuilder;
 
         final var g = getGroupForUpdating(groupId);
@@ -775,7 +778,18 @@ public class Manager implements Closeable {
             account.getGroupStore().updateGroup(groupInfoV1);
         } else {
             final var groupInfoV2 = (GroupInfoV2) g;
-            final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2);
+            final var currentAdmins = g.getAdminMembers();
+            final var newAdmins = getSignalServiceAddresses(groupAdmins);
+            newAdmins.removeAll(currentAdmins);
+            newAdmins.retainAll(g.getMembers());
+            if (currentAdmins.contains(getSelfRecipientId())
+                    && currentAdmins.size() == 1
+                    && g.getMembers().size() > 1
+                    && newAdmins.size() == 0) {
+                // Last admin can't leave the group, unless she's also the last member
+                throw new LastGroupAdminException(g.getGroupId(), g.getTitle());
+            }
+            final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2, newAdmins);
             groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
             messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
             account.getGroupStore().updateGroup(groupInfoV2);

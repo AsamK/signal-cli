@@ -250,7 +250,9 @@ public class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    public Pair<DecryptedGroup, GroupChange> leaveGroup(GroupInfoV2 groupInfoV2) throws IOException {
+    public Pair<DecryptedGroup, GroupChange> leaveGroup(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> membersToMakeAdmin
+    ) throws IOException {
         var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
         final var selfUuid = addressResolver.resolveSignalServiceAddress(selfRecipientIdProvider.getSelfRecipientId())
                 .getUuid()
@@ -259,9 +261,15 @@ public class GroupV2Helper {
 
         if (selfPendingMember.isPresent()) {
             return revokeInvites(groupInfoV2, Set.of(selfPendingMember.get()));
-        } else {
-            return ejectMembers(groupInfoV2, Set.of(selfUuid));
         }
+
+        final var adminUuids = membersToMakeAdmin.stream()
+                .map(addressResolver::resolveSignalServiceAddress)
+                .map(SignalServiceAddress::getUuid)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        return commitChange(groupInfoV2, groupOperations.createLeaveAndPromoteMembersToAdmin(selfUuid, adminUuids));
     }
 
     public Pair<DecryptedGroup, GroupChange> removeMembers(

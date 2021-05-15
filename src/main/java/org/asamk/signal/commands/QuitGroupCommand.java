@@ -11,10 +11,14 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.Util;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
 
@@ -23,6 +27,9 @@ public class QuitGroupCommand implements LocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.addArgument("-g", "--group").required(true).help("Specify the recipient group ID.");
+        subparser.addArgument("--admin")
+                .nargs("*")
+                .help("Specify one or more members to make a group admin, required if you're currently the only admin.");
     }
 
     @Override
@@ -36,13 +43,20 @@ public class QuitGroupCommand implements LocalCommand {
             throw new UserErrorException("Invalid group id: " + e.getMessage());
         }
 
+        var groupAdmins = ns.<String>getList("admin");
+
         try {
-            final var results = m.sendQuitGroupMessage(groupId);
+            final var results = m.sendQuitGroupMessage(groupId,
+                    groupAdmins == null ? Set.of() : new HashSet<>(groupAdmins));
             handleTimestampAndSendMessageResults(writer, results.first(), results.second());
         } catch (IOException e) {
             throw new IOErrorException("Failed to send message: " + e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new UserErrorException("Failed to parse admin number: " + e.getMessage());
+        } catch (LastGroupAdminException e) {
+            throw new UserErrorException("You need to specify a new admin with --admin: " + e.getMessage());
         }
     }
 }

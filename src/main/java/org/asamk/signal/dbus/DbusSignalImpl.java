@@ -8,6 +8,7 @@ import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -442,11 +444,13 @@ public class DbusSignalImpl implements Signal {
     public void quitGroup(final byte[] groupId) {
         var group = GroupId.unknownVersion(groupId);
         try {
-            m.sendQuitGroupMessage(group);
+            m.sendQuitGroupMessage(group, Set.of());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | LastGroupAdminException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
         }
     }
 
