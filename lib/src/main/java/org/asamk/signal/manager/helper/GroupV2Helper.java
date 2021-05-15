@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.groups.GroupLinkPassword;
+import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.Profile;
@@ -290,6 +291,29 @@ public class GroupV2Helper {
         return revokeInvites(groupInfoV2, memberUuids);
     }
 
+    public Pair<DecryptedGroup, GroupChange> resetGroupLinkPassword(GroupInfoV2 groupInfoV2) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var newGroupLinkPassword = GroupLinkPassword.createNew().serialize();
+        final var change = groupOperations.createModifyGroupLinkPasswordChange(newGroupLinkPassword);
+        return commitChange(groupInfoV2, change);
+    }
+
+    public Pair<DecryptedGroup, GroupChange> setGroupLinkState(
+            GroupInfoV2 groupInfoV2, GroupLinkState state
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+
+        final var accessRequired = toAccessControl(state);
+        final var requiresNewPassword = state != GroupLinkState.DISABLED && groupInfoV2.getGroup()
+                .getInviteLinkPassword()
+                .isEmpty();
+
+        final var change = requiresNewPassword ? groupOperations.createModifyGroupLinkPasswordAndRightsChange(
+                GroupLinkPassword.createNew().serialize(),
+                accessRequired) : groupOperations.createChangeJoinByLinkRights(accessRequired);
+        return commitChange(groupInfoV2, change);
+    }
+
     public GroupChange joinGroup(
             GroupMasterKey groupMasterKey,
             GroupLinkPassword groupLinkPassword,
@@ -343,6 +367,19 @@ public class GroupV2Helper {
         final var newRole = admin ? Member.Role.ADMINISTRATOR : Member.Role.DEFAULT;
         final var change = groupOperations.createChangeMemberRole(address.getUuid().get(), newRole);
         return commitChange(groupInfoV2, change);
+    }
+
+    private AccessControl.AccessRequired toAccessControl(final GroupLinkState state) {
+        switch (state) {
+            case DISABLED:
+                return AccessControl.AccessRequired.UNSATISFIABLE;
+            case ENABLED:
+                return AccessControl.AccessRequired.ANY;
+            case ENABLED_WITH_APPROVAL:
+                return AccessControl.AccessRequired.ADMINISTRATOR;
+            default:
+                throw new AssertionError();
+        }
     }
 
     private GroupsV2Operations.GroupOperations getGroupOperations(final GroupInfoV2 groupInfoV2) {

@@ -1,9 +1,11 @@
 package org.asamk.signal.commands;
 
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.GroupLinkState;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -46,6 +48,12 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                 .nargs("*")
                 .help("Specify one or more members to remove group admin privileges");
 
+        subparser.addArgument("--reset-link")
+                .action(Arguments.storeTrue())
+                .help("Reset group link and create new link password");
+        subparser.addArgument("--link")
+                .help("Set group link state, with or without admin approval")
+                .type(Arguments.enumStringType(GroupLinkState.class));
     }
 
     @Override
@@ -65,15 +73,19 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
         var groupDescription = ns.getString("description");
 
-        List<String> groupMembers = ns.getList("member");
+        var groupMembers = ns.<String>getList("member");
 
-        List<String> groupRemoveMembers = ns.getList("remove-member");
+        var groupRemoveMembers = ns.<String>getList("remove-member");
 
-        List<String> groupAdmins = ns.getList("admin");
+        var groupAdmins = ns.<String>getList("admin");
 
-        List<String> groupRemoveAdmins = ns.getList("remove-admin");
+        var groupRemoveAdmins = ns.<String>getList("remove-admin");
 
         var groupAvatar = ns.getString("avatar");
+
+        var groupResetLink = ns.getBoolean("reset-link");
+
+        var groupLinkState = ns.<GroupLinkState>get("link");
 
         try {
             if (groupId == null) {
@@ -91,6 +103,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupRemoveMembers,
                         groupAdmins,
                         groupRemoveAdmins,
+                        groupResetLink,
+                        groupLinkState != null ? groupLinkState.toLinkState() : null,
                         groupAvatar == null ? null : new File(groupAvatar));
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }

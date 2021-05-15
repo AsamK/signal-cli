@@ -70,7 +70,7 @@ public class GroupInfoV2 extends GroupInfo {
 
     @Override
     public GroupInviteLinkUrl getGroupInviteLink() {
-        if (this.group == null || this.group.getInviteLinkPassword() == null || (
+        if (this.group == null || this.group.getInviteLinkPassword().isEmpty() || (
                 this.group.getAccessControl().getAddFromInviteLink() != AccessControl.AccessRequired.ANY
                         && this.group.getAccessControl().getAddFromInviteLink()
                         != AccessControl.AccessRequired.ADMINISTRATOR
