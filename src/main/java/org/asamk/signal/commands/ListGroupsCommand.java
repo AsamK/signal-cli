@@ -38,7 +38,7 @@ public class ListGroupsCommand implements LocalCommand {
             final var groupInviteLink = group.getGroupInviteLink();
 
             writer.println(
-                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Link: {}",
+                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.getDescription(),
@@ -47,6 +47,7 @@ public class ListGroupsCommand implements LocalCommand {
                     resolveMembers(m, group.getMembers()),
                     resolveMembers(m, group.getPendingMembers()),
                     resolveMembers(m, group.getRequestingMembers()),
+                    resolveMembers(m, group.getAdminMembers()),
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
@@ -88,6 +89,7 @@ public class ListGroupsCommand implements LocalCommand {
                         resolveMembers(m, group.getMembers()),
                         resolveMembers(m, group.getPendingMembers()),
                         resolveMembers(m, group.getRequestingMembers()),
+                        resolveMembers(m, group.getAdminMembers()),
                         groupInviteLink == null ? null : groupInviteLink.getUrl()));
             }
 
@@ -112,6 +114,7 @@ public class ListGroupsCommand implements LocalCommand {
         public Set<String> members;
         public Set<String> pendingMembers;
         public Set<String> requestingMembers;
+        public Set<String> admins;
         public String groupInviteLink;
 
         public JsonGroup(
@@ -123,6 +126,7 @@ public class ListGroupsCommand implements LocalCommand {
                 Set<String> members,
                 Set<String> pendingMembers,
                 Set<String> requestingMembers,
+                Set<String> admins,
                 String groupInviteLink
         ) {
             this.id = id;
@@ -134,6 +138,7 @@ public class ListGroupsCommand implements LocalCommand {
             this.members = members;
             this.pendingMembers = pendingMembers;
             this.requestingMembers = requestingMembers;
+            this.admins = admins;
             this.groupInviteLink = groupInviteLink;
         }
     }

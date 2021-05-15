@@ -227,8 +227,7 @@ public class GroupV2Helper {
     public Pair<DecryptedGroup, GroupChange> addMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> newMembers
     ) throws IOException {
-        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         if (!areMembersValid(newMembers)) {
             throw new IOException("Failed to update group");
@@ -318,8 +317,7 @@ public class GroupV2Helper {
     }
 
     public Pair<DecryptedGroup, GroupChange> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
-        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         final var selfRecipientId = this.selfRecipientIdProvider.getSelfRecipientId();
         final var profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(selfRecipientId);
@@ -337,11 +335,25 @@ public class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
+    public Pair<DecryptedGroup, GroupChange> setMemberAdmin(
+            GroupInfoV2 groupInfoV2, RecipientId recipientId, boolean admin
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        final var newRole = admin ? Member.Role.ADMINISTRATOR : Member.Role.DEFAULT;
+        final var change = groupOperations.createChangeMemberRole(address.getUuid().get(), newRole);
+        return commitChange(groupInfoV2, change);
+    }
+
+    private GroupsV2Operations.GroupOperations getGroupOperations(final GroupInfoV2 groupInfoV2) {
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
+        return groupsV2Operations.forGroup(groupSecretParams);
+    }
+
     private Pair<DecryptedGroup, GroupChange> revokeInvites(
             GroupInfoV2 groupInfoV2, Set<DecryptedPendingMember> pendingMembers
     ) throws IOException {
-        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var uuidCipherTexts = pendingMembers.stream().map(member -> {
             try {
                 return new UuidCiphertext(member.getUuidCipherText().toByteArray());
@@ -355,8 +367,7 @@ public class GroupV2Helper {
     private Pair<DecryptedGroup, GroupChange> ejectMembers(
             GroupInfoV2 groupInfoV2, Set<UUID> uuids
     ) throws IOException {
-        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(uuids));
     }
 

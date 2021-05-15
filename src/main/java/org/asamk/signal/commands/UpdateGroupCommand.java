@@ -41,6 +41,11 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         subparser.addArgument("-r", "--remove-member")
                 .nargs("*")
                 .help("Specify one or more members to remove from the group");
+        subparser.addArgument("--admin").nargs("*").help("Specify one or more members to make a group admin");
+        subparser.addArgument("--remove-admin")
+                .nargs("*")
+                .help("Specify one or more members to remove group admin privileges");
+
     }
 
     @Override
@@ -64,6 +69,10 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
         List<String> groupRemoveMembers = ns.getList("remove-member");
 
+        List<String> groupAdmins = ns.getList("admin");
+
+        List<String> groupRemoveAdmins = ns.getList("remove-admin");
+
         var groupAvatar = ns.getString("avatar");
 
         try {
@@ -80,6 +89,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupDescription,
                         groupMembers,
                         groupRemoveMembers,
+                        groupAdmins,
+                        groupRemoveAdmins,
                         groupAvatar == null ? null : new File(groupAvatar));
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }

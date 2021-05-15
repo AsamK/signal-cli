@@ -831,6 +831,8 @@ public class Manager implements Closeable {
             String description,
             List<String> members,
             List<String> removeMembers,
+            List<String> admins,
+            List<String> removeAdmins,
             File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return updateGroup(groupId,
@@ -838,21 +840,32 @@ public class Manager implements Closeable {
                 description,
                 members == null ? null : getSignalServiceAddresses(members),
                 removeMembers == null ? null : getSignalServiceAddresses(removeMembers),
+                admins == null ? null : getSignalServiceAddresses(admins),
+                removeAdmins == null ? null : getSignalServiceAddresses(removeAdmins),
                 avatarFile);
     }
 
     private Pair<Long, List<SendMessageResult>> updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientId> members,
+            final GroupId groupId,
+            final String name,
+            final String description,
+            final Set<RecipientId> members,
             final Set<RecipientId> removeMembers,
-            File avatarFile
+            final Set<RecipientId> admins,
+            final Set<RecipientId> removeAdmins,
+            final File avatarFile
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         var group = getGroupForUpdating(groupId);
 
         if (group instanceof GroupInfoV2) {
-            return updateGroupV2((GroupInfoV2) group, name, description, members, removeMembers, avatarFile);
+            return updateGroupV2((GroupInfoV2) group,
+                    name,
+                    description,
+                    members,
+                    removeMembers,
+                    admins,
+                    removeAdmins,
+                    avatarFile);
         }
 
         return updateGroupV1((GroupInfoV1) group, name, members, avatarFile);
@@ -913,6 +926,8 @@ public class Manager implements Closeable {
             final String description,
             final Set<RecipientId> members,
             final Set<RecipientId> removeMembers,
+            final Set<RecipientId> admins,
+            final Set<RecipientId> removeAdmins,
             final File avatarFile
     ) throws IOException {
         Pair<Long, List<SendMessageResult>> result = null;
@@ -944,6 +959,33 @@ public class Manager implements Closeable {
             if (pendingRemoveMembers.size() > 0) {
                 var groupGroupChangePair = groupV2Helper.revokeInvitedMembers(group, pendingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
+        }
+
+        if (admins != null) {
+            final var newAdmins = new HashSet<>(admins);
+            newAdmins.retainAll(group.getMembers());
+            newAdmins.removeAll(group.getAdminMembers());
+            if (newAdmins.size() > 0) {
+                for (var admin : newAdmins) {
+                    var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, true);
+                    result = sendUpdateGroupV2Message(group,
+                            groupGroupChangePair.first(),
+                            groupGroupChangePair.second());
+                }
+            }
+        }
+
+        if (removeAdmins != null) {
+            final var existingRemoveAdmins = new HashSet<>(removeAdmins);
+            existingRemoveAdmins.retainAll(group.getAdminMembers());
+            if (existingRemoveAdmins.size() > 0) {
+                for (var admin : existingRemoveAdmins) {
+                    var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, false);
+                    result = sendUpdateGroupV2Message(group,
+                            groupGroupChangePair.first(),
+                            groupGroupChangePair.second());
+                }
             }
         }
 

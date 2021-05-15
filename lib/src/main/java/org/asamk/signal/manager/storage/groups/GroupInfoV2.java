@@ -5,6 +5,7 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.storageservice.protos.groups.AccessControl;
+import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -111,6 +112,19 @@ public class GroupInfoV2 extends GroupInfo {
         }
         return group.getRequestingMembersList()
                 .stream()
+                .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(recipientResolver::resolveRecipient)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<RecipientId> getAdminMembers() {
+        if (this.group == null) {
+            return Set.of();
+        }
+        return group.getMembersList()
+                .stream()
+                .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
                 .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());

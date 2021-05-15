@@ -30,6 +30,10 @@ public abstract class GroupInfo {
         return Set.of();
     }
 
+    public Set<RecipientId> getAdminMembers() {
+        return Set.of();
+    }
+
     public abstract boolean isBlocked();
 
     public abstract void setBlocked(boolean blocked);
