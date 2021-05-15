@@ -1060,7 +1060,7 @@ public class Manager implements Closeable {
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 
-        if (result == null || name != null || description != null || avatarFile != null) {
+        if (name != null || description != null || avatarFile != null) {
             var groupGroupChangePair = groupV2Helper.updateGroup(group, name, description, avatarFile);
             if (avatarFile != null) {
                 avatarStore.storeGroupAvatar(group.getGroupId(),

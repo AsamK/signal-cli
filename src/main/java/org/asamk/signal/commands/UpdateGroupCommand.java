@@ -98,22 +98,27 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, 0, results.second());
-                final var newGroupId = results.first();
-                writer.println("Created new group: \"{}\"", newGroupId.toBase64());
-            } else {
-                var results = m.updateGroup(groupId,
-                        groupName,
-                        groupDescription,
-                        groupMembers,
-                        groupRemoveMembers,
-                        groupAdmins,
-                        groupRemoveAdmins,
-                        groupResetLink,
-                        groupLinkState != null ? groupLinkState.toLinkState() : null,
-                        groupAddMemberPermission != null ? groupAddMemberPermission.toManager() : null,
-                        groupEditDetailsPermission != null ? groupEditDetailsPermission.toManager() : null,
-                        groupAvatar == null ? null : new File(groupAvatar),
-                        groupExpiration);
+                groupId = results.first();
+                writer.println("Created new group: \"{}\"", groupId.toBase64());
+                groupName = null;
+                groupMembers = null;
+                groupAvatar = null;
+            }
+
+            var results = m.updateGroup(groupId,
+                    groupName,
+                    groupDescription,
+                    groupMembers,
+                    groupRemoveMembers,
+                    groupAdmins,
+                    groupRemoveAdmins,
+                    groupResetLink,
+                    groupLinkState != null ? groupLinkState.toLinkState() : null,
+                    groupAddMemberPermission != null ? groupAddMemberPermission.toManager() : null,
+                    groupEditDetailsPermission != null ? groupEditDetailsPermission.toManager() : null,
+                    groupAvatar == null ? null : new File(groupAvatar),
+                    groupExpiration);
+            if (results != null) {
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
             }
         } catch (AttachmentInvalidException e) {
