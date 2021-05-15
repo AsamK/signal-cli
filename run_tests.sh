@@ -79,20 +79,21 @@ sleep 5
 run_main -u "$NUMBER_1" setPin "$TEST_PIN_1"
 run_main -u "$NUMBER_2" removePin
 
-## Identities
-run_main -u "$NUMBER_1" listIdentities
-run_main -u "$NUMBER_2" trust "$NUMBER_1" -a
-
 ## Contacts
 run_main -u "$NUMBER_2" updateContact "$NUMBER_1" -n NUMBER_1 -e 10
 run_main -u "$NUMBER_2" block "$NUMBER_1"
 run_main -u "$NUMBER_2" unblock "$NUMBER_1"
 run_main -u "$NUMBER_2" listContacts
 
+run_main -u "$NUMBER_1" send "$NUMBER_2" -m hi
+run_main -u "$NUMBER_2" receive
+run_main -u "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -u "$NUMBER_1" receive
+run_main -u "$NUMBER_2" receive
 ## Groups
 GROUP_ID=$(run_main -u "$NUMBER_1" updateGroup -n GRUPPE -a LICENSE -m "$NUMBER_1" | grep -oP '(?<=").+(?=")')
 run_main -u "$NUMBER_1" send "$NUMBER_2" -m first
-run_main -u "$NUMBER_1" updateGroup -g "$GROUP_ID" -n GRUPPE_UMB -m "$NUMBER_2"
+run_main -u "$NUMBER_1" updateGroup -g "$GROUP_ID" -n GRUPPE_UMB -m "$NUMBER_2" --admin "$NUMBER_2" --remove-admin "$NUMBER_2" --description DESCRIPTION --link=enabled-with-approval --set-permission-add-member=only-admins --set-permission-edit-details=only-admins -e 42
 run_main -u "$NUMBER_1" listGroups -d
 run_main -u "$NUMBER_1" --output=json listGroups -d
 run_main -u "$NUMBER_2" --verbose receive
@@ -103,6 +104,11 @@ run_main -u "$NUMBER_1" receive
 run_main -u "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -u "$NUMBER_1" block "$GROUP_ID"
 run_main -u "$NUMBER_1" unblock "$GROUP_ID"
+
+## Identities
+run_main -u "$NUMBER_1" listIdentities
+run_main -u "$NUMBER_2" listIdentities
+run_main -u "$NUMBER_2" trust "$NUMBER_1" -a
 
 ## Basic send/receive
 for OUTPUT in "plain-text" "json"; do

@@ -1092,6 +1092,26 @@
   "fields":[{"name":"deletedUserId_", "allowUnsafeAccess":true}]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAddFromInviteLinkAccessControlAction",
+  "fields":[{"name":"addFromInviteLinkAccess_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAttributesAccessControlAction",
+  "fields":[{"name":"attributesAccess_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDescriptionAction",
+  "fields":[{"name":"description_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDisappearingMessagesTimerAction",
+  "fields":[{"name":"timer_", "allowUnsafeAccess":true}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyInviteLinkPasswordAction",
+  "fields":[{"name":"inviteLinkPassword_", "allowUnsafeAccess":true}]
+},
+{
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberProfileKeyAction",
   "fields":[{"name":"presentation_", "allowUnsafeAccess":true}]
 },
@@ -1101,6 +1121,10 @@
     {"name":"role_", "allowUnsafeAccess":true}, 
     {"name":"userId_", "allowUnsafeAccess":true}
   ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMembersAccessControlAction",
+  "fields":[{"name":"membersAccess_", "allowUnsafeAccess":true}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyTitleAction",
@@ -1115,6 +1139,20 @@
   "fields":[
     {"name":"role_", "allowUnsafeAccess":true}, 
     {"name":"userId_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupInviteLink",
+  "fields":[
+    {"name":"contentsCase_", "allowUnsafeAccess":true}, 
+    {"name":"contents_", "allowUnsafeAccess":true}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupInviteLink$GroupInviteLinkContentsV1",
+  "fields":[
+    {"name":"groupMasterKey_", "allowUnsafeAccess":true}, 
+    {"name":"inviteLinkPassword_", "allowUnsafeAccess":true}
   ]
 },
 {
