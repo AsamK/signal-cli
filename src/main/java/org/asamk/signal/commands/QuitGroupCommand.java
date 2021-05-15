@@ -33,7 +33,7 @@ public class QuitGroupCommand implements LocalCommand {
         try {
             groupId = Util.decodeGroupId(ns.getString("group"));
         } catch (GroupIdFormatException e) {
-            throw new UserErrorException("Invalid group id:" + e.getMessage());
+            throw new UserErrorException("Invalid group id: " + e.getMessage());
         }
 
         try {

@@ -25,6 +25,7 @@ import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.helper.GroupV2Helper;
@@ -836,6 +837,8 @@ public class Manager implements Closeable {
             List<String> removeAdmins,
             boolean resetGroupLink,
             GroupLinkState groupLinkState,
+            GroupPermission addMemberPermission,
+            GroupPermission editDetailsPermission,
             File avatarFile,
             Integer expirationTimer
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
@@ -848,6 +851,8 @@ public class Manager implements Closeable {
                 removeAdmins == null ? null : getSignalServiceAddresses(removeAdmins),
                 resetGroupLink,
                 groupLinkState,
+                addMemberPermission,
+                editDetailsPermission,
                 avatarFile,
                 expirationTimer);
     }
@@ -862,8 +867,10 @@ public class Manager implements Closeable {
             final Set<RecipientId> removeAdmins,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
+            final GroupPermission addMemberPermission,
+            final GroupPermission editDetailsPermission,
             final File avatarFile,
-            Integer expirationTimer
+            final Integer expirationTimer
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         var group = getGroupForUpdating(groupId);
 
@@ -877,6 +884,8 @@ public class Manager implements Closeable {
                     removeAdmins,
                     resetGroupLink,
                     groupLinkState,
+                    addMemberPermission,
+                    editDetailsPermission,
                     avatarFile,
                     expirationTimer);
         }
@@ -948,6 +957,8 @@ public class Manager implements Closeable {
             final Set<RecipientId> removeAdmins,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
+            final GroupPermission addMemberPermission,
+            final GroupPermission editDetailsPermission,
             final File avatarFile,
             Integer expirationTimer
     ) throws IOException {
@@ -1017,6 +1028,16 @@ public class Manager implements Closeable {
 
         if (groupLinkState != null) {
             var groupGroupChangePair = groupV2Helper.setGroupLinkState(group, groupLinkState);
+            result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+        }
+
+        if (addMemberPermission != null) {
+            var groupGroupChangePair = groupV2Helper.setAddMemberPermission(group, addMemberPermission);
+            result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+        }
+
+        if (editDetailsPermission != null) {
+            var groupGroupChangePair = groupV2Helper.setEditDetailsPermission(group, editDetailsPermission);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 

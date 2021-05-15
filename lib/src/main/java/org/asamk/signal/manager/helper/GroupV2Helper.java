@@ -4,6 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.asamk.signal.manager.groups.GroupLinkState;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.Profile;
@@ -314,6 +315,26 @@ public class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
+    public Pair<DecryptedGroup, GroupChange> setEditDetailsPermission(
+            GroupInfoV2 groupInfoV2, GroupPermission permission
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+
+        final var accessRequired = toAccessControl(permission);
+        final var change = groupOperations.createChangeAttributesRights(accessRequired);
+        return commitChange(groupInfoV2, change);
+    }
+
+    public Pair<DecryptedGroup, GroupChange> setAddMemberPermission(
+            GroupInfoV2 groupInfoV2, GroupPermission permission
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+
+        final var accessRequired = toAccessControl(permission);
+        final var change = groupOperations.createChangeMembershipRights(accessRequired);
+        return commitChange(groupInfoV2, change);
+    }
+
     public GroupChange joinGroup(
             GroupMasterKey groupMasterKey,
             GroupLinkPassword groupLinkPassword,
@@ -384,6 +405,17 @@ public class GroupV2Helper {
             case ENABLED:
                 return AccessControl.AccessRequired.ANY;
             case ENABLED_WITH_APPROVAL:
+                return AccessControl.AccessRequired.ADMINISTRATOR;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    private AccessControl.AccessRequired toAccessControl(final GroupPermission permission) {
+        switch (permission) {
+            case EVERY_MEMBER:
+                return AccessControl.AccessRequired.MEMBER;
+            case ONLY_ADMINS:
                 return AccessControl.AccessRequired.ADMINISTRATOR;
             default:
                 throw new AssertionError();

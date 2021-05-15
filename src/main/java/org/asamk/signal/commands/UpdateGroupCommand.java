@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.GroupLinkState;
+import org.asamk.signal.GroupPermission;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -55,6 +56,13 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                 .help("Set group link state, with or without admin approval")
                 .type(Arguments.enumStringType(GroupLinkState.class));
 
+        subparser.addArgument("--set-permission-add-member")
+                .help("Set permission to add new group members")
+                .type(Arguments.enumStringType(GroupPermission.class));
+        subparser.addArgument("--set-permission-edit-details")
+                .help("Set permission to edit group details")
+                .type(Arguments.enumStringType(GroupPermission.class));
+
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
@@ -67,29 +75,22 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
             try {
                 groupId = Util.decodeGroupId(groupIdString);
             } catch (GroupIdFormatException e) {
-                throw new UserErrorException("Invalid group id:" + e.getMessage());
+                throw new UserErrorException("Invalid group id: " + e.getMessage());
             }
         }
 
         var groupName = ns.getString("name");
-
         var groupDescription = ns.getString("description");
-
         var groupMembers = ns.<String>getList("member");
-
         var groupRemoveMembers = ns.<String>getList("remove-member");
-
         var groupAdmins = ns.<String>getList("admin");
-
         var groupRemoveAdmins = ns.<String>getList("remove-admin");
-
         var groupAvatar = ns.getString("avatar");
-
         var groupResetLink = ns.getBoolean("reset-link");
-
         var groupLinkState = ns.<GroupLinkState>get("link");
-
         var groupExpiration = ns.getInt("expiration");
+        var groupAddMemberPermission = ns.<GroupPermission>get("set-permission-add-member");
+        var groupEditDetailsPermission = ns.<GroupPermission>get("set-permission-edit-details");
 
         try {
             if (groupId == null) {
@@ -109,6 +110,8 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupRemoveAdmins,
                         groupResetLink,
                         groupLinkState != null ? groupLinkState.toLinkState() : null,
+                        groupAddMemberPermission != null ? groupAddMemberPermission.toManager() : null,
+                        groupEditDetailsPermission != null ? groupEditDetailsPermission.toManager() : null,
                         groupAvatar == null ? null : new File(groupAvatar),
                         groupExpiration);
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
@@ -134,7 +137,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
             try {
                 groupId = Util.decodeGroupId(ns.getString("group")).serialize();
             } catch (GroupIdFormatException e) {
-                throw new UserErrorException("Invalid group id:" + e.getMessage());
+                throw new UserErrorException("Invalid group id: " + e.getMessage());
             }
         }
         if (groupId == null) {
