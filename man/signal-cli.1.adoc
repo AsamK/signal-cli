@@ -243,11 +243,39 @@ If not specified, a new group with a new random ID is generated.
 *-n* NAME, *--name* NAME::
 Specify the new group name.
 
+*-d* DESCRIPTION, *--description* DESCRIPTION::
+Specify the new group description.
+
 *-a* AVATAR, *--avatar* AVATAR::
 Specify a new group avatar image file.
 
 *-m* [MEMBER [MEMBER ...]], *--member* [MEMBER [MEMBER ...]]::
 Specify one or more members to add to the group.
+
+*-r* [MEMBER [MEMBER ...]], *--remove-member* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove from the group
+
+*--admin* [MEMBER [MEMBER ...]]::
+Specify one or more members to make a group admin
+
+*--remove-admin* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove group admin privileges
+
+*--reset-link*::
+Reset group link and create new link password
+
+*--link* LINK_STATE::
+Set group link state: `enabled`, `enabled-with-approval`, `disabled`
+
+*--set-permission-add-member* PERMISSION::
+Set permission to add new group members: `every-member`, `only-admins`
+
+*--set-permission-edit-details* PERMISSION::
+Set permission to edit group details: `every-member`, `only-admins`
+
+*-e* EXPIRATION_SECONDS, *--expiration* EXPIRATION_SECONDS::
+Set expiration time of messages (seconds).
+To disable expiration set expiration time to 0.
 
 === quitGroup
 
@@ -324,7 +352,7 @@ Specify the contact phone number.
 *-n*, *--name*::
 Specify the new name for this contact.
 
-*-e*, *--expiration*::
+*-e*, *--expiration* EXPIRATION_SECONDS::
 Set expiration time of messages (seconds).
 To disable expiration set expiration time to 0.
 

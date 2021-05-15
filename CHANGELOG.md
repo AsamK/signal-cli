@@ -1,9 +1,16 @@
 # Changelog
 
 ## [Unreleased]
+**Attention**: Now requires native libsignal-client version 0.5.1
+
+### Added
+- Added new parameters to `updateGroup` for group v2 features:
+  `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
+
+### Fixed
+- Prevent last admin of a group from leaving the group
 
 ## [0.8.3] - 2021-05-13
-**Attention**: Now requires native libsignal-client version 0.5.1
 
 ### Fixed
 - Upgrading from account files with older profiles
