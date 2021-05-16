@@ -1232,6 +1232,13 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedModifyMemberRole",
+  "fields":[
+    {"name":"role_", "allowUnsafeAccess":true}, 
+    {"name":"uuid_", "allowUnsafeAccess":true}
+  ]
+},
+{
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMember",
   "fields":[
     {"name":"addedByUuid_", "allowUnsafeAccess":true}, 

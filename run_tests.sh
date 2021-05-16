@@ -136,6 +136,8 @@ run_main -u "$NUMBER_1" listDevices
 run_linked -u "$NUMBER_1" sendSyncRequest
 run_main -u "$NUMBER_1" sendContacts
 
+run_main -u "$NUMBER_1" removeDevice -d 2
+
 ## DBus
 #run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running
 #run_main daemon &
