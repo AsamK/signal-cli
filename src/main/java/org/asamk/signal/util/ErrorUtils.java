@@ -6,9 +6,11 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ErrorUtils {
 
@@ -46,6 +48,17 @@ public class ErrorUtils {
             return String.format("Unregistered user \"%s\"", result.getAddress().getLegacyIdentifier());
         } else if (result.getIdentityFailure() != null) {
             return String.format("Untrusted Identity for \"%s\"", result.getAddress().getLegacyIdentifier());
+        } else if (result.getProofRequiredFailure() != null) {
+            final var failure = result.getProofRequiredFailure();
+            return String.format(
+                    "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with token \"%s\", or wait \"%d\" seconds",
+                    result.getAddress().getLegacyIdentifier(),
+                    failure.getOptions()
+                            .stream()
+                            .map(ProofRequiredException.Option::toString)
+                            .collect(Collectors.joining(", ")),
+                    failure.getToken(),
+                    failure.getRetryAfterSeconds());
         }
         return null;
     }
