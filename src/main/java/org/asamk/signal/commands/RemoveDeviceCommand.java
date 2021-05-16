@@ -13,7 +13,7 @@ public class RemoveDeviceCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("-d", "--deviceId")
+        subparser.addArgument("-d", "--device-id", "--deviceId")
                 .type(int.class)
                 .required(true)
                 .help("Specify the device you want to remove. Use listDevices to see the deviceIds.");
@@ -22,7 +22,7 @@ public class RemoveDeviceCommand implements LocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
-            int deviceId = ns.getInt("deviceId");
+            int deviceId = ns.getInt("device-id");
             m.removeLinkedDevices(deviceId);
         } catch (IOException e) {
             throw new IOErrorException("Error while removing device: " + e.getMessage());

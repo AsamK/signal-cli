@@ -142,7 +142,7 @@ Show a list of connected devices.
 Remove a connected device.
 Only works, if this is the master device.
 
-*-d* DEVICEID, *--deviceId* DEVICEID::
+*-d* DEVICEID, *--device-id* DEVICEID::
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
 
