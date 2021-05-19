@@ -10,6 +10,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 
 import java.util.List;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class JsonMessageEnvelope {
 
     @JsonProperty
@@ -48,11 +50,11 @@ public class JsonMessageEnvelope {
     public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             var source = envelope.getSourceAddress();
-            this.source = source.getLegacyIdentifier();
+            this.source = getLegacyIdentifier(source);
             this.sourceDevice = envelope.getSourceDevice();
             this.relay = source.getRelay().orNull();
         } else if (envelope.isUnidentifiedSender() && content != null) {
-            this.source = content.getSender().getLegacyIdentifier();
+            this.source = getLegacyIdentifier(content.getSender());
             this.sourceDevice = content.getSenderDevice();
             this.relay = null;
         } else {

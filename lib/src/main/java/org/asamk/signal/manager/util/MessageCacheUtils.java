@@ -96,7 +96,7 @@ public class MessageCacheUtils {
                     out.writeInt(0);
                 }
                 out.writeLong(envelope.getServerReceivedTimestamp());
-                var uuid = envelope.getUuid();
+                var uuid = envelope.getServerGuid();
                 out.writeUTF(uuid == null ? "" : uuid);
                 out.writeLong(envelope.getServerDeliveredTimestamp());
             }

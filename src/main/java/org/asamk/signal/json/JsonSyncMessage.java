@@ -5,12 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
@@ -50,7 +52,7 @@ class JsonSyncMessage {
                     .get()
                     .getAddresses()
                     .stream()
-                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .map(Util::getLegacyIdentifier)
                     .collect(Collectors.toList());
             this.blockedGroupIds = syncMessage.getBlockedList()
                     .get()
@@ -66,7 +68,7 @@ class JsonSyncMessage {
             this.readMessages = syncMessage.getRead()
                     .get()
                     .stream()
-                    .map(message -> new JsonSyncReadMessage(message.getSender().getLegacyIdentifier(),
+                    .map(message -> new JsonSyncReadMessage(getLegacyIdentifier(message.getSender()),
                             message.getTimestamp()))
                     .collect(Collectors.toList());
         } else {

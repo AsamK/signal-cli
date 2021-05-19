@@ -3,6 +3,7 @@ package org.asamk.signal.util;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class Util {
 
@@ -29,5 +30,9 @@ public class Util {
 
     public static GroupId decodeGroupId(String groupId) throws GroupIdFormatException {
         return GroupId.fromBase64(groupId);
+    }
+
+    public static String getLegacyIdentifier(final SignalServiceAddress address) {
+        return address.getNumber().or(() -> address.getUuid().get().toString());
     }
 }

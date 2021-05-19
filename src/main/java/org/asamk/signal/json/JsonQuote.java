@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class JsonQuote {
 
     @JsonProperty
@@ -30,7 +32,7 @@ public class JsonQuote {
 
     JsonQuote(SignalServiceDataMessage.Quote quote, Manager m) {
         this.id = quote.getId();
-        this.author = m.resolveSignalServiceAddress(quote.getAuthor()).getLegacyIdentifier();
+        this.author = getLegacyIdentifier(m.resolveSignalServiceAddress(quote.getAuthor()));
         this.text = quote.getText();
 
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {

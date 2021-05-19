@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.Reaction;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class JsonReaction {
 
     @JsonProperty
@@ -21,7 +23,7 @@ public class JsonReaction {
 
     JsonReaction(Reaction reaction, Manager m) {
         this.emoji = reaction.getEmoji();
-        this.targetAuthor = m.resolveSignalServiceAddress(reaction.getTargetAuthor()).getLegacyIdentifier();
+        this.targetAuthor = getLegacyIdentifier(m.resolveSignalServiceAddress(reaction.getTargetAuthor()));
         this.targetSentTimestamp = reaction.getTargetSentTimestamp();
         this.isRemove = reaction.isRemove();
     }

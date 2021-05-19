@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.signal.manager.groups.GroupUtils;
+import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Base64;
 import java.util.List;
@@ -36,7 +36,7 @@ class JsonGroupInfo {
             this.members = groupInfo.getMembers()
                     .get()
                     .stream()
-                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .map(Util::getLegacyIdentifier)
                     .collect(Collectors.toList());
         } else {
             this.members = null;

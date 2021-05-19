@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 class JsonSyncDataMessage extends JsonDataMessage {
 
@@ -15,9 +15,7 @@ class JsonSyncDataMessage extends JsonDataMessage {
     JsonSyncDataMessage(SentTranscriptMessage transcriptMessage, Manager m) {
         super(transcriptMessage.getMessage(), m);
 
-        this.destination = transcriptMessage.getDestination()
-                .transform(SignalServiceAddress::getLegacyIdentifier)
-                .orNull();
+        this.destination = transcriptMessage.getDestination().transform(Util::getLegacyIdentifier).orNull();
     }
 
     JsonSyncDataMessage(Signal.SyncMessageReceived messageReceived) {

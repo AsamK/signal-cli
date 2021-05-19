@@ -74,11 +74,15 @@ public class AvatarStore {
     }
 
     private File getContactAvatarFile(SignalServiceAddress address) {
-        return new File(avatarsPath, "contact-" + address.getLegacyIdentifier());
+        return new File(avatarsPath, "contact-" + getLegacyIdentifier(address));
+    }
+
+    private String getLegacyIdentifier(final SignalServiceAddress address) {
+        return address.getNumber().or(() -> address.getUuid().get().toString());
     }
 
     private File getProfileAvatarFile(SignalServiceAddress address) {
-        return new File(avatarsPath, "profile-" + address.getLegacyIdentifier());
+        return new File(avatarsPath, "profile-" + getLegacyIdentifier(address));
     }
 
     private void createAvatarsDir() throws IOException {

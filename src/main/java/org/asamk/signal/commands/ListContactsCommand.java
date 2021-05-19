@@ -6,6 +6,8 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.manager.Manager;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class ListContactsCommand implements LocalCommand {
 
     @Override
@@ -19,7 +21,7 @@ public class ListContactsCommand implements LocalCommand {
         var contacts = m.getContacts();
         for (var c : contacts) {
             writer.println("Number: {} Name: {} Blocked: {}",
-                    m.resolveSignalServiceAddress(c.first()).getLegacyIdentifier(),
+                    getLegacyIdentifier(m.resolveSignalServiceAddress(c.first())),
                     c.second().getName(),
                     c.second().isBlocked());
         }

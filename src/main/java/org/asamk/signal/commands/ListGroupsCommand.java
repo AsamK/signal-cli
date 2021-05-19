@@ -12,9 +12,9 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -27,7 +27,7 @@ public class ListGroupsCommand implements LocalCommand {
     private static Set<String> resolveMembers(Manager m, Set<RecipientId> addresses) {
         return addresses.stream()
                 .map(m::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getLegacyIdentifier)
+                .map(Util::getLegacyIdentifier)
                 .collect(Collectors.toSet());
     }
 

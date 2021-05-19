@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     final Manager m;
@@ -58,7 +60,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     var e = (ProtocolUntrustedIdentityException) exception;
                     writer.println(
                             "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
-                    final var recipientName = m.resolveSignalServiceAddress(e.getSender()).getLegacyIdentifier();
+                    final var recipientName = getLegacyIdentifier(m.resolveSignalServiceAddress(e.getSender()));
                     writer.println(
                             "Use 'signal-cli -u {} listIdentities -n {}', verify the key and run 'signal-cli -u {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
                             m.getUsername(),
@@ -341,7 +343,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Blocked numbers:");
             final var blockedList = syncMessage.getBlockedList().get();
             for (var address : blockedList.getAddresses()) {
-                writer.println("- {}", address.getLegacyIdentifier());
+                writer.println("- {}", getLegacyIdentifier(address));
             }
         }
         if (syncMessage.getVerified().isPresent()) {
@@ -457,7 +459,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final PlainTextWriter writer, final SignalServiceDataMessage.Quote quote
     ) {
         writer.println("Id: {}", quote.getId());
-        writer.println("Author: {}", m.resolveSignalServiceAddress(quote.getAuthor()).getLegacyIdentifier());
+        writer.println("Author: {}", getLegacyIdentifier(m.resolveSignalServiceAddress(quote.getAuthor())));
         writer.println("Text: {}", quote.getText());
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {
             writer.println("Mentions:");
@@ -676,7 +678,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private String formatContact(SignalServiceAddress address) {
-        final var number = address.getLegacyIdentifier();
+        final var number = getLegacyIdentifier(address);
         String name = null;
         try {
             name = m.getContactOrProfileName(number);

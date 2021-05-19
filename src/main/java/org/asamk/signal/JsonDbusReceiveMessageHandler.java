@@ -13,6 +13,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
+
 public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
 
     private final DBusConnection conn;
@@ -36,7 +38,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
             try {
                 conn.sendMessage(new Signal.ReceiptReceived(objectPath, envelope.getTimestamp(),
                         // A receipt envelope always has a source address
-                        envelope.getSourceAddress().getLegacyIdentifier()));
+                        getLegacyIdentifier(envelope.getSourceAddress())));
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -51,7 +53,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         try {
                             conn.sendMessage(new Signal.ReceiptReceived(objectPath,
                                     timestamp,
-                                    sender.getLegacyIdentifier()));
+                                    getLegacyIdentifier(sender)));
                         } catch (DBusException e) {
                             e.printStackTrace();
                         }
@@ -69,7 +71,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     try {
                         conn.sendMessage(new Signal.MessageReceived(objectPath,
                                 message.getTimestamp(),
-                                sender.getLegacyIdentifier(),
+                                getLegacyIdentifier(sender),
                                 groupId != null ? groupId : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
                                 JsonDbusReceiveMessageHandler.getAttachments(message, m)));
@@ -91,10 +93,10 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         try {
                             conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
                                     transcript.getTimestamp(),
-                                    sender.getLegacyIdentifier(),
-                                    transcript.getDestination().isPresent() ? transcript.getDestination()
-                                            .get()
-                                            .getLegacyIdentifier() : "",
+                                    getLegacyIdentifier(sender),
+                                    transcript.getDestination().isPresent()
+                                            ? getLegacyIdentifier(transcript.getDestination().get())
+                                            : "",
                                     groupId != null ? groupId : new byte[0],
                                     message.getBody().isPresent() ? message.getBody().get() : "",
                                     JsonDbusReceiveMessageHandler.getAttachments(message, m)));

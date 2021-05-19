@@ -12,12 +12,12 @@ import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
+import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
@@ -28,6 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class DbusSignalImpl implements Signal {
 
@@ -317,7 +319,7 @@ public class DbusSignalImpl implements Signal {
             return group.getMembers()
                     .stream()
                     .map(m::resolveSignalServiceAddress)
-                    .map(SignalServiceAddress::getLegacyIdentifier)
+                    .map(Util::getLegacyIdentifier)
                     .collect(Collectors.toList());
         }
     }
@@ -424,7 +426,7 @@ public class DbusSignalImpl implements Signal {
         var contacts = m.getContacts();
         for (var c : contacts) {
             if (name.equals(c.second().getName())) {
-                numbers.add(m.resolveSignalServiceAddress(c.first()).getLegacyIdentifier());
+                numbers.add(getLegacyIdentifier(m.resolveSignalServiceAddress(c.first())));
             }
         }
         // Try profiles if no contact name was found

@@ -176,7 +176,8 @@ public class GroupV2Helper {
         final var noUuidCapability = members.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
                 .filter(address -> !address.getUuid().isPresent())
-                .map(SignalServiceAddress::getLegacyIdentifier)
+                .map(SignalServiceAddress::getNumber)
+                .map(Optional::get)
                 .collect(Collectors.toSet());
         if (noUuidCapability.size() > 0) {
             logger.warn("Cannot create a V2 group as some members don't have a UUID: {}",

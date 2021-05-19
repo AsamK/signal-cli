@@ -641,7 +641,7 @@ public class Manager implements Closeable {
             }
         } catch (InvalidKeyException ignored) {
             logger.warn("Got invalid identity key in profile for {}",
-                    resolveSignalServiceAddress(recipientId).getLegacyIdentifier());
+                    resolveSignalServiceAddress(recipientId).getIdentifier());
         }
         return profileAndCredential;
     }
