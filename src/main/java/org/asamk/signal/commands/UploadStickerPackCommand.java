@@ -21,6 +21,7 @@ public class UploadStickerPackCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Upload a new sticker pack, consisting of a manifest file and the stickers images.");
         subparser.addArgument("path")
                 .help("The path of the manifest.json or a zip file containing the sticker pack you wish to upload.");
     }

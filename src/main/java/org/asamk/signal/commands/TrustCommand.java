@@ -16,6 +16,7 @@ public class TrustCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Set the trust level of a given number.");
         subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
         var mutTrust = subparser.addMutuallyExclusiveGroup();
         mutTrust.addArgument("-a", "--trust-all-known-keys")

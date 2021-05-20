@@ -26,6 +26,7 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Send a quit group message to all group members and remove self from member list.");
         subparser.addArgument("-g", "--group").required(true).help("Specify the recipient group ID.");
         subparser.addArgument("--admin")
                 .nargs("*")

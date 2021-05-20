@@ -28,6 +28,7 @@ public class SendCommand implements DbusCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
         mutuallyExclusiveGroup.addArgument("-g", "--group").help("Specify the recipient group ID.");

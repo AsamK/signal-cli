@@ -18,6 +18,7 @@ public class VerifyCommand implements RegistrationCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Verify the number using the code received via SMS or voice.");
         subparser.addArgument("verificationCode").help("The verification code you received via sms or voice call.");
         subparser.addArgument("-p", "--pin").help("The registration lock PIN, that was set by the user (Optional)");
     }

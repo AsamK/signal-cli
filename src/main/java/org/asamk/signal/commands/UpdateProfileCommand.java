@@ -16,6 +16,7 @@ public class UpdateProfileCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Set a name, about and avatar image for the user profile");
         subparser.addArgument("--given-name", "--name").help("New profile (given) name");
         subparser.addArgument("--family-name").help("New profile family name (optional)");
         subparser.addArgument("--about").help("New profile about text");
@@ -24,8 +25,6 @@ public class UpdateProfileCommand implements LocalCommand {
         final var avatarOptions = subparser.addMutuallyExclusiveGroup();
         avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
         avatarOptions.addArgument("--remove-avatar").action(Arguments.storeTrue());
-
-        subparser.help("Set a name, about and avatar image for the user profile");
     }
 
     @Override

@@ -16,6 +16,7 @@ public class RemovePinCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Remove the registration lock pin.");
     }
 
     @Override

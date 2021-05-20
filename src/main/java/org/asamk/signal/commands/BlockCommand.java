@@ -20,9 +20,9 @@ public class BlockCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Block the given contacts or groups (no messages will be received)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group").help("Group ID").nargs("*");
-        subparser.help("Block the given contacts or groups (no messages will be received)");
     }
 
     @Override

@@ -12,6 +12,7 @@ public class ListContactsCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Show a list of known contacts with names.");
     }
 
     @Override

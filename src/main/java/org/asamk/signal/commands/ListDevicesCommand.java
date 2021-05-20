@@ -21,6 +21,7 @@ public class ListDevicesCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Show a list of linked devices.");
     }
 
     @Override

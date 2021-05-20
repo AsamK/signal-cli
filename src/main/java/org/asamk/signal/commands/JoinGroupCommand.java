@@ -22,6 +22,7 @@ public class JoinGroupCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Join a group via an invitation link.");
         subparser.addArgument("--uri").required(true).help("Specify the uri with the group invitation link.");
     }
 

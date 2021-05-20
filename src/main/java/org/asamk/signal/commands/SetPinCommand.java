@@ -16,6 +16,7 @@ public class SetPinCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Set a registration lock pin, to prevent others from registering this number.");
         subparser.addArgument("registrationLockPin")
                 .help("The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)");
     }

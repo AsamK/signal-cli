@@ -33,6 +33,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Query the server for new messages.");
         subparser.addArgument("-t", "--timeout")
                 .type(double.class)
                 .setDefault(3.0)

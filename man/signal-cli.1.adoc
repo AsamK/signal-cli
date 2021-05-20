@@ -135,14 +135,14 @@ You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid
 
 === listDevices
 
-Show a list of connected devices.
+Show a list of linked devices.
 
 === removeDevice
 
-Remove a connected device.
+Remove a linked device.
 Only works, if this is the master device.
 
-*-d* DEVICEID, *--device-id* DEVICEID::
+*-d* DEVICE_ID, *--device-id* DEVICE_ID::
 Specify the device you want to remove.
 Use listDevices to see the deviceIds.
 
@@ -292,6 +292,10 @@ In json mode this is outputted as an list of objects and is always in detailed m
 
 *-d*, *--detailed*::
 Include the list of members of each group and the group invite link.
+
+=== listContacts
+
+Show a list of known contacts with names.
 
 === listIdentities
 
@@ -446,6 +450,9 @@ signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
 
 Add member to a group::
 signal-cli -u USERNAME updateGroup -g GROUP_ID -m "NEW_MEMBER"
+
+Accept a group invitation::
+signal-cli -u USERNAME updateGroup -g GROUP_ID
 
 Leave a group::
 signal-cli -u USERNAME quitGroup -g GROUP_ID

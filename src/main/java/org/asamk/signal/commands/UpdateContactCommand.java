@@ -16,13 +16,13 @@ public class UpdateContactCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Update the details of a given contact");
         subparser.addArgument("number").help("Contact number");
         subparser.addArgument("-n", "--name").required(true).help("New contact name");
         subparser.addArgument("-e", "--expiration")
                 .required(false)
                 .type(int.class)
                 .help("Set expiration time of messages (seconds)");
-        subparser.help("Update the details of a given contact");
     }
 
     @Override

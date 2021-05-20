@@ -25,8 +25,8 @@ public class GetUserStatusCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("number").help("Phone number").nargs("+");
         subparser.help("Check if the specified phone number/s have been registered");
+        subparser.addArgument("number").help("Phone number").nargs("+");
         subparser.addArgument("--json")
                 .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
                 .action(Arguments.storeTrue());

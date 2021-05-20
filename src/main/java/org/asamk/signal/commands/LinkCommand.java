@@ -21,6 +21,7 @@ public class LinkCommand implements ProvisioningCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Link to an existing device, instead of registering a new number.");
         subparser.addArgument("-n", "--name").help("Specify a name to describe this new device.");
     }
 

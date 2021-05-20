@@ -13,6 +13,7 @@ public class RemoveDeviceCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Remove a linked device.");
         subparser.addArgument("-d", "--device-id", "--deviceId")
                 .type(int.class)
                 .required(true)

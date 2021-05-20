@@ -35,6 +35,7 @@ public class ListIdentitiesCommand implements LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("List all known identity keys and their trust status, fingerprint and safety number.");
         subparser.addArgument("-n", "--number").help("Only show identity keys for the given phone number.");
     }
 

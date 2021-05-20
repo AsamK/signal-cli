@@ -36,6 +36,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Create or update a group.");
         subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("-n", "--name").help("Specify the new group name.");
         subparser.addArgument("-d", "--description").help("Specify the new group description.");

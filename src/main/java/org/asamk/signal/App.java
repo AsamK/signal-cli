@@ -70,7 +70,7 @@ public class App {
                 .setDefault(OutputType.PLAIN_TEXT);
 
         parser.addArgument("--service-environment")
-                .help("Choose the server environment to use, SANDBOX or LIVE.")
+                .help("Choose the server environment to use.")
                 .type(Arguments.enumStringType(ServiceEnvironmentCli.class))
                 .setDefault(ServiceEnvironmentCli.LIVE);
 

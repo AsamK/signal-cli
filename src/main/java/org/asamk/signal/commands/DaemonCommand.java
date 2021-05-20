@@ -29,6 +29,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
+        subparser.help("Run in daemon mode and provide an experimental dbus interface.");
         subparser.addArgument("--system")
                 .action(Arguments.storeTrue())
                 .help("Use DBus system bus instead of user bus.");
