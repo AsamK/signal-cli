@@ -2142,6 +2142,7 @@
     {"name":"needsReceipt_", "allowUnsafeAccess":true}, 
     {"name":"senderDevice_", "allowUnsafeAccess":true}, 
     {"name":"serverDeliveredTimestamp_", "allowUnsafeAccess":true}, 
+    {"name":"serverGuid_", "allowUnsafeAccess":true}, 
     {"name":"serverReceivedTimestamp_", "allowUnsafeAccess":true}, 
     {"name":"timestamp_", "allowUnsafeAccess":true}
   ]

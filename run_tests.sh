@@ -136,6 +136,14 @@ run_main -u "$NUMBER_1" listDevices
 run_linked -u "$NUMBER_1" sendSyncRequest
 run_main -u "$NUMBER_1" sendContacts
 
+for OUTPUT in "plain-text" "json"; do
+	run_main -u "$NUMBER_1" send "$NUMBER_2" -m hi
+	run_main -u "$NUMBER_2" send "$NUMBER_1" -m hi
+	run_main -u "$NUMBER_2" --output="$OUTPUT" receive
+	run_main -u "$NUMBER_1" --output="$OUTPUT" receive
+	run_linked -u "$NUMBER_1" --output="$OUTPUT" receive
+done
+
 run_main -u "$NUMBER_1" removeDevice -d 2
 
 ## DBus
