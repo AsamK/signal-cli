@@ -22,6 +22,8 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
@@ -44,6 +46,8 @@ import java.io.IOException;
 import java.util.Locale;
 
 public class RegistrationManager implements Closeable {
+
+    private final static Logger logger = LoggerFactory.getLogger(RegistrationManager.class);
 
     private SignalAccount account;
     private final PathConfig pathConfig;
@@ -114,12 +118,24 @@ public class RegistrationManager implements Closeable {
 
     public void register(boolean voiceVerification, String captcha) throws IOException {
         if (voiceVerification) {
-            accountManager.requestVoiceVerificationCode(Locale.getDefault(),
+            accountManager.requestVoiceVerificationCode(getDefaultLocale(),
                     Optional.fromNullable(captcha),
                     Optional.absent());
         } else {
             accountManager.requestSmsVerificationCode(false, Optional.fromNullable(captcha), Optional.absent());
         }
+    }
+
+    private Locale getDefaultLocale() {
+        final var locale = Locale.getDefault();
+        try {
+            Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
+        } catch (IllegalArgumentException e) {
+            logger.debug("Invalid locale, ignoring: {}", locale);
+            return null;
+        }
+
+        return locale;
     }
 
     public Manager verifyAccount(
