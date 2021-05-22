@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '11', '14' ]
+        java: [ '11', '16' ]
 
     steps:
     - uses: actions/checkout@v1
@@ -18,3 +18,10 @@ jobs:
         java-version: ${{ matrix.java }}
     - name: Build with Gradle
       run: ./gradlew build
+    - name: Compress archive
+      run: gzip -n -9 build/distributions/signal-cli-*.tar
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: signal-cli-archive
+        path: build/distributions/signal-cli-*.tar.gz
