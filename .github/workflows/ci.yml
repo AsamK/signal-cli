@@ -23,5 +23,5 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: signal-cli-archive
+        name: signal-cli-archive-${{ matrix.java }}
         path: build/distributions/signal-cli-*.tar.gz
