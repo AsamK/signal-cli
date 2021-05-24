@@ -8,12 +8,14 @@ import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
+import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendReceiptAction;
 import org.asamk.signal.manager.actions.SendSyncBlockedListAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
+import org.asamk.signal.manager.actions.SendSyncKeysAction;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
@@ -237,7 +239,10 @@ public final class IncomingMessageHandler {
             if (rm.isBlockedListRequest()) {
                 actions.add(SendSyncBlockedListAction.create());
             }
-            // TODO Handle rm.isConfigurationRequest(); rm.isKeysRequest();
+            if (rm.isKeysRequest()) {
+                actions.add(SendSyncKeysAction.create());
+            }
+            // TODO Handle rm.isConfigurationRequest();
         }
         if (syncMessage.getGroups().isPresent()) {
             logger.warn("Received a group v1 sync message, that can't be handled anymore, ignoring.");
@@ -307,7 +312,7 @@ public final class IncomingMessageHandler {
                 case LOCAL_PROFILE:
                     actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
                 case STORAGE_MANIFEST:
-                    // TODO
+                    actions.add(RetrieveStorageDataAction.create());
             }
         }
         if (syncMessage.getKeys().isPresent()) {
@@ -315,6 +320,7 @@ public final class IncomingMessageHandler {
             if (keysMessage.getStorageService().isPresent()) {
                 final var storageKey = keysMessage.getStorageService().get();
                 account.setStorageKey(storageKey);
+                actions.add(RetrieveStorageDataAction.create());
             }
         }
         if (syncMessage.getConfiguration().isPresent()) {

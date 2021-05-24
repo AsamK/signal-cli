@@ -174,7 +174,6 @@ public class RegistrationManager implements Closeable {
             masterKey = registrationLockData.getMasterKey();
         }
 
-        // TODO response.isStorageCapable()
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.finishRegistration(UuidUtil.parseOrNull(response.getUuid()), masterKey, pin);
 
@@ -186,6 +185,9 @@ public class RegistrationManager implements Closeable {
             m.refreshPreKeys();
             // Set an initial empty profile so user can be added to groups
             m.setProfile(null, null, null, null, null);
+            if (response.isStorageCapable()) {
+                m.retrieveRemoteStorage();
+            }
 
             final var result = m;
             m = null;

@@ -5,6 +5,7 @@ import org.asamk.signal.manager.StickerPackStore;
 import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
+import org.asamk.signal.manager.helper.StorageHelper;
 import org.asamk.signal.manager.helper.SyncHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 
@@ -17,6 +18,7 @@ public class Context {
     private final GroupHelper groupHelper;
     private final SyncHelper syncHelper;
     private final ProfileHelper profileHelper;
+    private final StorageHelper storageHelper;
 
     public Context(
             final SignalAccount account,
@@ -25,7 +27,8 @@ public class Context {
             final SendHelper sendHelper,
             final GroupHelper groupHelper,
             final SyncHelper syncHelper,
-            final ProfileHelper profileHelper
+            final ProfileHelper profileHelper,
+            final StorageHelper storageHelper
     ) {
         this.account = account;
         this.dependencies = dependencies;
@@ -34,6 +37,7 @@ public class Context {
         this.groupHelper = groupHelper;
         this.syncHelper = syncHelper;
         this.profileHelper = profileHelper;
+        this.storageHelper = storageHelper;
     }
 
     public SignalAccount getAccount() {
@@ -62,5 +66,9 @@ public class Context {
 
     public ProfileHelper getProfileHelper() {
         return profileHelper;
+    }
+
+    public StorageHelper getStorageHelper() {
+        return storageHelper;
     }
 }

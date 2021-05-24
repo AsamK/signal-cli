@@ -103,6 +103,7 @@ public class ProvisioningManager {
                 ? null
                 : DeviceNameUtil.encryptDeviceName(deviceName, ret.getIdentity().getPrivateKey());
 
+        logger.debug("Finishing new device registration");
         var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
                 false,
                 true,
@@ -129,6 +130,7 @@ public class ProvisioningManager {
             try {
                 m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
 
+                logger.debug("Refreshing pre keys");
                 try {
                     m.refreshPreKeys();
                 } catch (Exception e) {
@@ -136,6 +138,7 @@ public class ProvisioningManager {
                     throw e;
                 }
 
+                logger.debug("Requesting sync data");
                 try {
                     m.requestAllSyncData();
                 } catch (Exception e) {

@@ -42,6 +42,7 @@ import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
+import org.asamk.signal.manager.helper.StorageHelper;
 import org.asamk.signal.manager.helper.SyncHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
 import org.asamk.signal.manager.jobs.Context;
@@ -133,6 +134,7 @@ public class Manager implements Closeable {
 
     private final ProfileHelper profileHelper;
     private final PinHelper pinHelper;
+    private final StorageHelper storageHelper;
     private final SendHelper sendHelper;
     private final SyncHelper syncHelper;
     private final AttachmentHelper attachmentHelper;
@@ -209,6 +211,7 @@ public class Manager implements Closeable {
                 avatarStore,
                 this::resolveSignalServiceAddress,
                 account.getRecipientStore());
+        this.storageHelper = new StorageHelper(account, dependencies, groupHelper);
         this.contactHelper = new ContactHelper(account);
         this.syncHelper = new SyncHelper(account,
                 attachmentHelper,
@@ -223,7 +226,8 @@ public class Manager implements Closeable {
                 sendHelper,
                 groupHelper,
                 syncHelper,
-                profileHelper);
+                profileHelper,
+                storageHelper);
         var jobExecutor = new JobExecutor(context);
 
         this.incomingMessageHandler = new IncomingMessageHandler(account,
@@ -747,6 +751,13 @@ public class Manager implements Closeable {
 
     public void requestAllSyncData() throws IOException {
         syncHelper.requestAllSyncData();
+        retrieveRemoteStorage();
+    }
+
+    void retrieveRemoteStorage() throws IOException {
+        if (account.getStorageKey() != null) {
+            storageHelper.readDataFromStorage();
+        }
     }
 
     private byte[] getSenderCertificate() {

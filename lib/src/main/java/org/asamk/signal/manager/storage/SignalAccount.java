@@ -84,6 +84,7 @@ public class SignalAccount implements Closeable {
     private String registrationLockPin;
     private MasterKey pinMasterKey;
     private StorageKey storageKey;
+    private long storageManifestVersion = -1;
     private ProfileKey profileKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
@@ -291,6 +292,9 @@ public class SignalAccount implements Closeable {
         this.registered = true;
         this.isMultiDevice = true;
         this.lastReceiveTimestamp = 0;
+        this.pinMasterKey = null;
+        this.storageManifestVersion = -1;
+        this.storageKey = null;
     }
 
     private void migrateLegacyConfigs() {
@@ -431,6 +435,9 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("storageKey")) {
             storageKey = new StorageKey(Base64.getDecoder().decode(rootNode.get("storageKey").asText()));
+        }
+        if (rootNode.hasNonNull("storageManifestVersion")) {
+            storageManifestVersion = rootNode.get("storageManifestVersion").asLong();
         }
         if (rootNode.hasNonNull("preKeyIdOffset")) {
             preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(0);
@@ -693,6 +700,7 @@ public class SignalAccount implements Closeable {
                             pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
                     .put("storageKey",
                             storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
+                    .put("storageManifestVersion", storageManifestVersion == -1 ? null : storageManifestVersion)
                     .put("preKeyIdOffset", preKeyIdOffset)
                     .put("nextSignedPreKeyId", nextSignedPreKeyId)
                     .put("profileKey",
@@ -877,6 +885,18 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public long getStorageManifestVersion() {
+        return this.storageManifestVersion;
+    }
+
+    public void setStorageManifestVersion(final long storageManifestVersion) {
+        if (storageManifestVersion == this.storageManifestVersion) {
+            return;
+        }
+        this.storageManifestVersion = storageManifestVersion;
+        save();
+    }
+
     public ProfileKey getProfileKey() {
         return profileKey;
     }
@@ -948,6 +968,8 @@ public class SignalAccount implements Closeable {
 
     public void finishRegistration(final UUID uuid, final MasterKey masterKey, final String pin) {
         this.pinMasterKey = masterKey;
+        this.storageManifestVersion = -1;
+        this.storageKey = null;
         this.encryptedDeviceName = null;
         this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
         this.isMultiDevice = false;
