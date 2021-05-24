@@ -36,9 +36,9 @@ Important: The USERNAME is your phone number in international format and must in
 * Register a number (with SMS verification)
 
         signal-cli -u USERNAME register
-        
+
   You can register Signal using a land line number. In this case you can skip SMS verification process and jump directly to the voice call verification by adding the `--voice` switch at the end of above register command.
-  
+
   Registering may require solving a CAPTCHA challenge: [Registration with captcha](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha)
 
 * Verify the number using the code received via SMS or voice, optionally add `--pin PIN_CODE` if you've added a pin code to your account
@@ -52,7 +52,7 @@ Important: The USERNAME is your phone number in international format and must in
 * Pipe the message content from another process.
 
         uname -a | signal-cli -u USERNAME send RECIPIENT
-        
+
 * Receive messages
 
         signal-cli -u USERNAME receive
@@ -64,12 +64,12 @@ This is required for the encryption to work efficiently and for getting updates 
 
 The password and cryptographic keys are created when registering and stored in the current users home directory:
 
-`$XDG_DATA_HOME/signal-cli/data/` (`$HOME/.local/share/signal-cli/data/`)
+        $XDG_DATA_HOME/signal-cli/data/
+        $HOME/.local/share/signal-cli/data/
 
 For legacy users, the old config directories are used as a fallback:
 
         $HOME/.config/signal/data/
-
         $HOME/.config/textsecure/data/
 
 ## Building
@@ -103,7 +103,7 @@ This is still experimental and will not work in all situations.
 3. Execute Gradle:
 
         ./gradlew assembleNativeImage
-  
+
    The binary is available at *build/native-image/signal-cli*
 
 ## FAQ and Troubleshooting
