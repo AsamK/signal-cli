@@ -57,6 +57,8 @@ Important: The USERNAME is your phone number in international format and must in
 
         signal-cli -u USERNAME receive
 
+**Hint**: The Signal protocol expects that incoming messages are regularly received (using `daemon` or `receive` command).
+This is required for the encryption to work efficiently and for getting updates to groups, expiration timer and other features.
 
 ## Storage
 

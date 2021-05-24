@@ -14,7 +14,7 @@ public class DateUtils {
 
     public static String formatTimestamp(long timestamp) {
         var date = new Date(timestamp);
-        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX"); // Quoted "Z" to indicate UTC, no timezone offset
+        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
         df.setTimeZone(tzUTC);
         return timestamp + " (" + df.format(date) + ")";
     }

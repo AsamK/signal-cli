@@ -330,6 +330,17 @@ public class Manager implements Closeable {
     }
 
     public void checkAccountState() throws IOException {
+        if (account.getLastReceiveTimestamp() == 0) {
+            logger.warn("The Signal protocol expects that incoming messages are regularly received.");
+        } else {
+            var diffInMilliseconds = new Date().getTime() - account.getLastReceiveTimestamp();
+            long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
+            if (days > 7) {
+                logger.warn(
+                        "Messages have been last received {} days ago. The Signal protocol expects that incoming messages are regularly received.",
+                        days);
+            }
+        }
         if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             refreshPreKeys();
         }
@@ -1982,6 +1993,7 @@ public class Manager implements Closeable {
             SignalServiceContent content = null;
             Exception exception = null;
             final CachedMessage[] cachedMessage = {null};
+            account.setLastReceiveTimestamp(new Date().getTime());
             try {
                 var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     final var recipientId = envelope1.hasSource()

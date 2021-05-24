@@ -84,6 +84,7 @@ public class SignalAccount implements Closeable {
     private ProfileKey profileKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
+    private long lastReceiveTimestamp = 0;
 
     private boolean registered = false;
 
@@ -261,6 +262,7 @@ public class SignalAccount implements Closeable {
         this.deviceId = deviceId;
         this.registered = true;
         this.isMultiDevice = true;
+        this.lastReceiveTimestamp = 0;
     }
 
     private void migrateLegacyConfigs() {
@@ -367,6 +369,9 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("isMultiDevice")) {
             isMultiDevice = rootNode.get("isMultiDevice").asBoolean();
+        }
+        if (rootNode.hasNonNull("lastReceiveTimestamp")) {
+            lastReceiveTimestamp = rootNode.get("lastReceiveTimestamp").asLong();
         }
         int registrationId = 0;
         if (rootNode.hasNonNull("registrationId")) {
@@ -637,6 +642,7 @@ public class SignalAccount implements Closeable {
                     .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
+                    .put("lastReceiveTimestamp", lastReceiveTimestamp)
                     .put("password", password)
                     .put("registrationId", identityKeyStore.getLocalRegistrationId())
                     .put("identityPrivateKey",
@@ -870,6 +876,15 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public long getLastReceiveTimestamp() {
+        return lastReceiveTimestamp;
+    }
+
+    public void setLastReceiveTimestamp(final long lastReceiveTimestamp) {
+        this.lastReceiveTimestamp = lastReceiveTimestamp;
+        save();
+    }
+
     public boolean isUnrestrictedUnidentifiedAccess() {
         // TODO make configurable
         return false;
@@ -893,6 +908,7 @@ public class SignalAccount implements Closeable {
         this.registered = true;
         this.uuid = uuid;
         this.registrationLockPin = pin;
+        this.lastReceiveTimestamp = 0;
         save();
 
         getSessionStore().archiveAllSessions();
