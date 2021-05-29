@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,7 +50,7 @@ public class MessageCache {
     }
 
     public CachedMessage cacheMessage(SignalServiceEnvelope envelope, RecipientId recipientId) {
-        final var now = new Date().getTime();
+        final var now = System.currentTimeMillis();
 
         try {
             var cacheFile = getMessageCacheFile(recipientId, now, envelope.getTimestamp());

@@ -333,7 +333,7 @@ public class Manager implements Closeable {
         if (account.getLastReceiveTimestamp() == 0) {
             logger.warn("The Signal protocol expects that incoming messages are regularly received.");
         } else {
-            var diffInMilliseconds = new Date().getTime() - account.getLastReceiveTimestamp();
+            var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
             long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
             if (days > 7) {
                 logger.warn(
@@ -585,7 +585,7 @@ public class Manager implements Closeable {
     ) {
         var profile = account.getProfileStore().getProfile(recipientId);
 
-        var now = new Date().getTime();
+        var now = System.currentTimeMillis();
         // Profiles are cached for 24h before retrieving them again, unless forced
         if (!force && profile != null && now - profile.getLastUpdateTimestamp() < 24 * 60 * 60 * 1000) {
             return profile;
@@ -611,7 +611,7 @@ public class Manager implements Closeable {
 
         var profileKey = account.getProfileStore().getProfileKey(recipientId);
         if (profileKey == null) {
-            profile = new Profile(new Date().getTime(),
+            profile = new Profile(System.currentTimeMillis(),
                     null,
                     null,
                     null,
@@ -1993,7 +1993,7 @@ public class Manager implements Closeable {
             SignalServiceContent content = null;
             Exception exception = null;
             final CachedMessage[] cachedMessage = {null};
-            account.setLastReceiveTimestamp(new Date().getTime());
+            account.setLastReceiveTimestamp(System.currentTimeMillis());
             try {
                 var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     final var recipientId = envelope1.hasSource()

@@ -8,7 +8,6 @@ import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 
 import java.util.Base64;
-import java.util.Date;
 import java.util.HashSet;
 
 public class ProfileUtils {
@@ -23,7 +22,7 @@ public class ProfileUtils {
             var aboutEmoji = decrypt(encryptedProfile.getAboutEmoji(), profileCipher);
 
             final var nameParts = splitName(name);
-            return new Profile(new Date().getTime(),
+            return new Profile(System.currentTimeMillis(),
                     nameParts.first(),
                     nameParts.second(),
                     about,
