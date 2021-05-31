@@ -65,19 +65,19 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             if (inJson) {
                 final var jsonWriter = new JsonWriter(System.out);
 
-                dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
+                dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     var envelope = new JsonMessageEnvelope(messageReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
-                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
+                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, signal, receiptReceived -> {
                     var envelope = new JsonMessageEnvelope(receiptReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
-                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
+                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
                     var envelope = new JsonMessageEnvelope(syncReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
@@ -85,7 +85,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             } else {
                 final var writer = new PlainTextWriterImpl(System.out);
 
-                dbusconnection.addSigHandler(Signal.MessageReceived.class, messageReceived -> {
+                dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     writer.println("Envelope from: {}", messageReceived.getSender());
                     writer.println("Timestamp: {}", DateUtils.formatTimestamp(messageReceived.getTimestamp()));
                     writer.println("Body: {}", messageReceived.getMessage());
@@ -103,12 +103,12 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     writer.println();
                 });
 
-                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, receiptReceived -> {
+                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, signal, receiptReceived -> {
                     writer.println("Receipt from: {}", receiptReceived.getSender());
                     writer.println("Timestamp: {}", DateUtils.formatTimestamp(receiptReceived.getTimestamp()));
                 });
 
-                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, syncReceived -> {
+                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
                     writer.println("Sync Envelope from: {} to: {}",
                             syncReceived.getSource(),
                             syncReceived.getDestination());
