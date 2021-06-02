@@ -121,6 +121,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -900,19 +901,37 @@ public class Manager implements Closeable {
         var group = getGroupForUpdating(groupId);
 
         if (group instanceof GroupInfoV2) {
-            return updateGroupV2((GroupInfoV2) group,
-                    name,
-                    description,
-                    members,
-                    removeMembers,
-                    admins,
-                    removeAdmins,
-                    resetGroupLink,
-                    groupLinkState,
-                    addMemberPermission,
-                    editDetailsPermission,
-                    avatarFile,
-                    expirationTimer);
+            try {
+                return updateGroupV2((GroupInfoV2) group,
+                        name,
+                        description,
+                        members,
+                        removeMembers,
+                        admins,
+                        removeAdmins,
+                        resetGroupLink,
+                        groupLinkState,
+                        addMemberPermission,
+                        editDetailsPermission,
+                        avatarFile,
+                        expirationTimer);
+            } catch (ConflictException e) {
+                // Detected conflicting update, refreshing group and trying again
+                group = getGroup(groupId, true);
+                return updateGroupV2((GroupInfoV2) group,
+                        name,
+                        description,
+                        members,
+                        removeMembers,
+                        admins,
+                        removeAdmins,
+                        resetGroupLink,
+                        groupLinkState,
+                        addMemberPermission,
+                        editDetailsPermission,
+                        avatarFile,
+                        expirationTimer);
+            }
         }
 
         final var gv1 = (GroupInfoV1) group;
@@ -2703,8 +2722,12 @@ public class Manager implements Closeable {
     }
 
     public GroupInfo getGroup(GroupId groupId) {
+        return getGroup(groupId, false);
+    }
+
+    public GroupInfo getGroup(GroupId groupId, boolean forceUpdate) {
         final var group = account.getGroupStore().getGroup(groupId);
-        if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
+        if (group instanceof GroupInfoV2 && (forceUpdate || ((GroupInfoV2) group).getGroup() == null)) {
             final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(((GroupInfoV2) group).getMasterKey());
             ((GroupInfoV2) group).setGroup(groupV2Helper.getDecryptedGroup(groupSecretParams), this::resolveRecipient);
             account.getGroupStore().updateGroup(group);
