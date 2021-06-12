@@ -285,6 +285,9 @@ If the user is a pending member, this command will decline the group invitation.
 *-g* GROUP, *--group* GROUP::
 Specify the recipient group ID in base64 encoding.
 
+*--delete*::
+Delete local group data completely after quitting group.
+
 === listGroups
 
 Show a list of known groups and related information.

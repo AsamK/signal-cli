@@ -49,6 +49,10 @@ public class AvatarStore {
         deleteAvatar(getProfileAvatarFile(address));
     }
 
+    public void deleteGroupAvatar(GroupId groupId) throws IOException {
+        deleteAvatar(getGroupAvatarFile(groupId));
+    }
+
     private StreamDetails retrieveAvatar(final File avatarFile) throws IOException {
         if (!avatarFile.exists()) {
             return null;

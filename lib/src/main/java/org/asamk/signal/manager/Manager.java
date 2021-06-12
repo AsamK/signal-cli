@@ -779,35 +779,55 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(
             GroupId groupId, Set<String> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, InvalidNumberException, LastGroupAdminException {
-        SignalServiceDataMessage.Builder messageBuilder;
-
-        final var g = getGroupForUpdating(groupId);
-        if (g instanceof GroupInfoV1) {
-            var groupInfoV1 = (GroupInfoV1) g;
-            var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT).withId(groupId.serialize()).build();
-            messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
-            groupInfoV1.removeMember(account.getSelfRecipientId());
-            account.getGroupStore().updateGroup(groupInfoV1);
-        } else {
-            final var groupInfoV2 = (GroupInfoV2) g;
-            final var currentAdmins = g.getAdminMembers();
-            final var newAdmins = getSignalServiceAddresses(groupAdmins);
-            newAdmins.removeAll(currentAdmins);
-            newAdmins.retainAll(g.getMembers());
-            if (currentAdmins.contains(getSelfRecipientId())
-                    && currentAdmins.size() == 1
-                    && g.getMembers().size() > 1
-                    && newAdmins.size() == 0) {
-                // Last admin can't leave the group, unless she's also the last member
-                throw new LastGroupAdminException(g.getGroupId(), g.getTitle());
-            }
-            final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2, newAdmins);
-            groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
-            messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
-            account.getGroupStore().updateGroup(groupInfoV2);
+        var group = getGroupForUpdating(groupId);
+        if (group instanceof GroupInfoV1) {
+            return quitGroupV1((GroupInfoV1) group);
         }
 
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfRecipientId()));
+        final var newAdmins = getSignalServiceAddresses(groupAdmins);
+        try {
+            return quitGroupV2((GroupInfoV2) group, newAdmins);
+        } catch (ConflictException e) {
+            // Detected conflicting update, refreshing group and trying again
+            group = getGroup(groupId, true);
+            return quitGroupV2((GroupInfoV2) group, newAdmins);
+        }
+    }
+
+    private Pair<Long, List<SendMessageResult>> quitGroupV1(final GroupInfoV1 groupInfoV1) throws IOException {
+        var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
+                .withId(groupInfoV1.getGroupId().serialize())
+                .build();
+
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
+        groupInfoV1.removeMember(account.getSelfRecipientId());
+        account.getGroupStore().updateGroup(groupInfoV1);
+        return sendMessage(messageBuilder, groupInfoV1.getMembersWithout(account.getSelfRecipientId()));
+    }
+
+    private Pair<Long, List<SendMessageResult>> quitGroupV2(
+            final GroupInfoV2 groupInfoV2, final Set<RecipientId> newAdmins
+    ) throws LastGroupAdminException, IOException {
+        final var currentAdmins = groupInfoV2.getAdminMembers();
+        newAdmins.removeAll(currentAdmins);
+        newAdmins.retainAll(groupInfoV2.getMembers());
+        if (currentAdmins.contains(getSelfRecipientId())
+                && currentAdmins.size() == 1
+                && groupInfoV2.getMembers().size() > 1
+                && newAdmins.size() == 0) {
+            // Last admin can't leave the group, unless she's also the last member
+            throw new LastGroupAdminException(groupInfoV2.getGroupId(), groupInfoV2.getTitle());
+        }
+        final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2, newAdmins);
+        groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
+        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
+        account.getGroupStore().updateGroup(groupInfoV2);
+        return sendMessage(messageBuilder, groupInfoV2.getMembersWithout(account.getSelfRecipientId()));
+    }
+
+    public void deleteGroup(GroupId groupId) throws IOException {
+        account.getGroupStore().deleteGroup(groupId);
+        avatarStore.deleteGroupAvatar(groupId);
     }
 
     public Pair<GroupId, List<SendMessageResult>> createGroup(
@@ -2013,6 +2033,7 @@ public class Manager implements Closeable {
             Exception exception = null;
             final CachedMessage[] cachedMessage = {null};
             account.setLastReceiveTimestamp(System.currentTimeMillis());
+            logger.debug("Checking for new message from server");
             try {
                 var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
                     final var recipientId = envelope1.hasSource()
@@ -2021,6 +2042,7 @@ public class Manager implements Closeable {
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
+                logger.debug("New message received from server");
                 if (result.isPresent()) {
                     envelope = result.get();
                 } else {

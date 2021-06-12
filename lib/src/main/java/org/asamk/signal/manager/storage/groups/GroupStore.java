@@ -133,7 +133,11 @@ public class GroupStore {
         saver.save(storage);
     }
 
-    public void deleteGroupV1(GroupIdV1 groupId) {
+    public void deleteGroupV1(GroupIdV1 groupIdV1) {
+        deleteGroup(groupIdV1);
+    }
+
+    public void deleteGroup(GroupId groupId) {
         final Storage storage;
         synchronized (groups) {
             groups.remove(groupId);

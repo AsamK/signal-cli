@@ -6,6 +6,7 @@
 ### Added
 - Added new parameters to `updateGroup` for group v2 features:
   `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
+- Added new `--delete` parameter to `quitGroup`, to delete the local group data
 
 ### Fixed
 - Prevent last admin of a group from leaving the group
