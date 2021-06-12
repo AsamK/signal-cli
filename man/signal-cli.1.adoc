@@ -199,6 +199,20 @@ Specify the timestamp of the message to which to react.
 *-r*, *--remove*::
 Remove a reaction.
 
+=== sendTyping
+
+Send typing message to trigger a typing indicator for the recipient.
+Indicator will be shown for 15seconds unless a typing STOP message is sent first.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-s*, *--stop*::
+Send a typing STOP message.
+
 === remoteDelete
 
 Remotely delete a previously sent message.

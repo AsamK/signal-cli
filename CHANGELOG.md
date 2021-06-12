@@ -4,9 +4,10 @@
 **Attention**: Now requires native libsignal-client version 0.8.1
 
 ### Added
-- Added new parameters to `updateGroup` for group v2 features:
+- New parameters to `updateGroup` for group v2 features:
   `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
-- Added new `--delete` parameter to `quitGroup`, to delete the local group data
+- New `--delete` parameter for `quitGroup`, to delete the local group data
+- New 'sendTyping' command to send typing indicators
 
 ### Fixed
 - Prevent last admin of a group from leaving the group

@@ -17,6 +17,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -106,6 +107,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
@@ -1595,6 +1597,40 @@ public class Manager implements Closeable {
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }
+    }
+
+    public void sendTypingMessage(
+            TypingAction action, Set<String> recipients
+    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
+        sendTypingMessageInternal(action, getSignalServiceAddresses(recipients));
+    }
+
+    private void sendTypingMessageInternal(
+            TypingAction action, Set<RecipientId> recipientIds
+    ) throws IOException, UntrustedIdentityException {
+        final var timestamp = System.currentTimeMillis();
+        var message = new SignalServiceTypingMessage(action.toSignalService(), timestamp, Optional.absent());
+        var messageSender = createMessageSender();
+        for (var recipientId : recipientIds) {
+            final var address = resolveSignalServiceAddress(recipientId);
+            messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
+        }
+    }
+
+    public void sendGroupTypingMessage(
+            TypingAction action, GroupId groupId
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+        final var timestamp = System.currentTimeMillis();
+        final var g = getGroupForSending(groupId);
+        final var message = new SignalServiceTypingMessage(action.toSignalService(),
+                timestamp,
+                Optional.of(groupId.serialize()));
+        final var messageSender = createMessageSender();
+        final var recipientIdList = new ArrayList<>(g.getMembersWithout(account.getSelfRecipientId()));
+        final var addresses = recipientIdList.stream()
+                .map(this::resolveSignalServiceAddress)
+                .collect(Collectors.toList());
+        messageSender.sendTyping(addresses, unidentifiedAccessHelper.getAccessFor(recipientIdList), message, null);
     }
 
     private Pair<Long, List<SendMessageResult>> sendMessage(

@@ -28,6 +28,7 @@ public class Commands {
         addCommand("sendContacts", new SendContactsCommand());
         addCommand("sendReaction", new SendReactionCommand());
         addCommand("sendSyncRequest", new SendSyncRequestCommand());
+        addCommand("sendTyping", new SendTypingCommand());
         addCommand("setPin", new SetPinCommand());
         addCommand("trust", new TrustCommand());
         addCommand("unblock", new UnblockCommand());
