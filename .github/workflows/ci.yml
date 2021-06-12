@@ -1,6 +1,6 @@
 name: signal-cli CI
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -11,17 +11,17 @@ jobs:
         java: [ '11', '16' ]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up JDK
-      uses: actions/setup-java@v1
-      with:
-        java-version: ${{ matrix.java }}
-    - name: Build with Gradle
-      run: ./gradlew build
-    - name: Compress archive
-      run: gzip -n -9 build/distributions/signal-cli-*.tar
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: signal-cli-archive-${{ matrix.java }}
-        path: build/distributions/signal-cli-*.tar.gz
+      - uses: actions/checkout@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Build with Gradle
+        run: ./gradlew build
+      - name: Compress archive
+        run: gzip -n -9 build/distributions/signal-cli-*.tar
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: signal-cli-archive-${{ matrix.java }}
+          path: build/distributions/signal-cli-*.tar.gz

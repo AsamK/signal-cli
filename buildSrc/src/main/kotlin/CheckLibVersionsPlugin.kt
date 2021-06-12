@@ -9,11 +9,12 @@ import org.gradle.api.artifacts.Dependency
 class CheckLibVersionsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.task("checkLibVersions") {
-            description = "Find any 3rd party libraries which have released new versions to the central Maven repo since we last upgraded."
+            description =
+                "Find any 3rd party libraries which have released new versions to the central Maven repo since we last upgraded."
             doLast {
                 project.configurations.flatMap { it.allDependencies }
-                        .toSet()
-                        .forEach { checkDependency(it) }
+                    .toSet()
+                    .forEach { checkDependency(it) }
             }
         }
     }
