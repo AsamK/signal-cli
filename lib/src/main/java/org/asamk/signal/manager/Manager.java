@@ -2240,7 +2240,16 @@ public class Manager implements Closeable {
                         try (var attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(), tmpFile)) {
                             var s = new DeviceGroupsInputStream(attachmentAsStream);
                             DeviceGroup g;
-                            while ((g = s.read()) != null) {
+                            while (true) {
+                                try {
+                                    g = s.read();
+                                } catch (IOException e) {
+                                    logger.warn("Sync groups contained invalid group, ignoring: {}", e.getMessage());
+                                    continue;
+                                }
+                                if (g == null) {
+                                    break;
+                                }
                                 var syncGroup = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(g.getId()));
                                 if (syncGroup != null) {
                                     if (g.getName().isPresent()) {
