@@ -2320,7 +2320,17 @@ public class Manager implements Closeable {
                                 .asPointer(), tmpFile)) {
                             var s = new DeviceContactsInputStream(attachmentAsStream);
                             DeviceContact c;
-                            while ((c = s.read()) != null) {
+                            while (true) {
+                                try {
+                                    c = s.read();
+                                } catch (IOException e) {
+                                    logger.warn("Sync contacts contained invalid contact, ignoring: {}",
+                                            e.getMessage());
+                                    continue;
+                                }
+                                if (c == null) {
+                                    break;
+                                }
                                 if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
                                     account.setProfileKey(c.getProfileKey().get());
                                 }
