@@ -34,7 +34,7 @@ public class ServiceConfig {
         } catch (Throwable ignored) {
             zkGroupAvailable = false;
         }
-        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, zkGroupAvailable);
+        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, zkGroupAvailable, false);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();

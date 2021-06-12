@@ -87,6 +87,7 @@ import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
+import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
@@ -1534,7 +1535,7 @@ public class Manager implements Closeable {
 
     private void sendSyncMessage(SignalServiceSyncMessage message) throws IOException, UntrustedIdentityException {
         var messageSender = createMessageSender();
-        messageSender.sendMessage(message, unidentifiedAccessHelper.getAccessForSync());
+        messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
     }
 
     private Set<RecipientId> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
@@ -1614,9 +1615,10 @@ public class Manager implements Closeable {
                     final var addresses = recipientIdList.stream()
                             .map(this::resolveSignalServiceAddress)
                             .collect(Collectors.toList());
-                    var result = messageSender.sendMessage(addresses,
+                    var result = messageSender.sendDataMessage(addresses,
                             unidentifiedAccessHelper.getAccessFor(recipientIdList),
                             isRecipientUpdate,
+                            ContentHint.DEFAULT,
                             message);
 
                     for (var r : result) {
@@ -1691,7 +1693,7 @@ public class Manager implements Closeable {
 
         try {
             var startTime = System.currentTimeMillis();
-            messageSender.sendMessage(syncMessage, unidentifiedAccess);
+            messageSender.sendSyncMessage(syncMessage, unidentifiedAccess);
             return SendMessageResult.success(recipient,
                     unidentifiedAccess.isPresent(),
                     false,
@@ -1709,11 +1711,15 @@ public class Manager implements Closeable {
         final var address = resolveSignalServiceAddress(recipientId);
         try {
             try {
-                return messageSender.sendMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
+                return messageSender.sendDataMessage(address,
+                        unidentifiedAccessHelper.getAccessFor(recipientId),
+                        ContentHint.DEFAULT,
+                        message);
             } catch (UnregisteredUserException e) {
                 final var newRecipientId = refreshRegisteredUser(recipientId);
-                return messageSender.sendMessage(resolveSignalServiceAddress(newRecipientId),
+                return messageSender.sendDataMessage(resolveSignalServiceAddress(newRecipientId),
                         unidentifiedAccessHelper.getAccessFor(newRecipientId),
+                        ContentHint.DEFAULT,
                         message);
             }
         } catch (UntrustedIdentityException e) {

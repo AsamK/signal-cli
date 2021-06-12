@@ -6,6 +6,7 @@ import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.state.SessionRecord;
@@ -21,6 +22,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -52,6 +54,30 @@ public class SessionStore implements SignalServiceSessionStore {
                 return new SessionRecord();
             }
             return session;
+        }
+    }
+
+    @Override
+    public List<SessionRecord> loadExistingSessions(final List<SignalProtocolAddress> addresses) throws NoSessionException {
+        final var keys = addresses.stream().map(this::getKey).collect(Collectors.toList());
+
+        synchronized (cachedSessions) {
+            final var sessions = keys.stream()
+                    .map(this::loadSessionLocked)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (sessions.size() != addresses.size()) {
+                String message = "Mismatch! Asked for "
+                        + addresses.size()
+                        + " sessions, but only found "
+                        + sessions.size()
+                        + "!";
+                logger.warn(message);
+                throw new NoSessionException(message);
+            }
+
+            return sessions;
         }
     }
 

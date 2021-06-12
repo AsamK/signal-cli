@@ -133,7 +133,8 @@ public class Profile {
     public enum Capability {
         gv2,
         storage,
-        gv1Migration;
+        gv1Migration,
+        senderKey;
 
         static Capability valueOfOrNull(String value) {
             try {

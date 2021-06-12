@@ -1787,8 +1787,10 @@
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
     {"name":"callMessage_", "allowUnsafeAccess":true}, 
     {"name":"dataMessage_", "allowUnsafeAccess":true}, 
+    {"name":"decryptionErrorMessage_", "allowUnsafeAccess":true}, 
     {"name":"nullMessage_", "allowUnsafeAccess":true}, 
     {"name":"receiptMessage_", "allowUnsafeAccess":true}, 
+    {"name":"senderKeyDistributionMessage_", "allowUnsafeAccess":true}, 
     {"name":"syncMessage_", "allowUnsafeAccess":true}, 
     {"name":"typingMessage_", "allowUnsafeAccess":true}
   ]
@@ -2139,6 +2141,7 @@
   "fields":[
     {"name":"address_", "allowUnsafeAccess":true}, 
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
+    {"name":"groupId_", "allowUnsafeAccess":true}, 
     {"name":"needsReceipt_", "allowUnsafeAccess":true}, 
     {"name":"senderDevice_", "allowUnsafeAccess":true}, 
     {"name":"serverDeliveredTimestamp_", "allowUnsafeAccess":true}, 

@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.protocol;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyIdException;
+import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.groups.state.SenderKeyRecord;
 import org.whispersystems.libsignal.state.IdentityKeyStore;
@@ -13,8 +14,11 @@ import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyStore;
 import org.whispersystems.signalservice.api.SignalServiceProtocolStore;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
+import org.whispersystems.signalservice.api.push.DistributionId;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class SignalProtocolStore implements SignalServiceProtocolStore {
@@ -87,6 +91,11 @@ public class SignalProtocolStore implements SignalServiceProtocolStore {
     }
 
     @Override
+    public List<SessionRecord> loadExistingSessions(final List<SignalProtocolAddress> addresses) throws NoSessionException {
+        return sessionStore.loadExistingSessions(addresses);
+    }
+
+    @Override
     public List<Integer> getSubDeviceSessions(String name) {
         return sessionStore.getSubDeviceSessions(name);
     }
@@ -145,10 +154,32 @@ public class SignalProtocolStore implements SignalServiceProtocolStore {
     public void storeSenderKey(
             final SignalProtocolAddress sender, final UUID distributionId, final SenderKeyRecord record
     ) {
+        // TODO
     }
 
     @Override
     public SenderKeyRecord loadSenderKey(final SignalProtocolAddress sender, final UUID distributionId) {
+        // TODO
         return null;
+    }
+
+    @Override
+    public Set<SignalProtocolAddress> getSenderKeySharedWith(final DistributionId distributionId) {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public void markSenderKeySharedWith(
+            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+    ) {
+        // TODO
+    }
+
+    @Override
+    public void clearSenderKeySharedWith(
+            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+    ) {
+        // TODO
     }
 }

@@ -62,6 +62,9 @@ public class ProfileUtils {
         if (encryptedProfile.getCapabilities().isStorage()) {
             capabilities.add(Profile.Capability.storage);
         }
+        if (encryptedProfile.getCapabilities().isSenderKey()) {
+            capabilities.add(Profile.Capability.senderKey);
+        }
         return capabilities;
     }
 

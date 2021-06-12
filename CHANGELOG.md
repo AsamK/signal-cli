@@ -1,7 +1,7 @@
 # Changelog
 
 ## [Unreleased]
-**Attention**: Now requires native libsignal-client version 0.5.1
+**Attention**: Now requires native libsignal-client version 0.8.1
 
 ### Added
 - Added new parameters to `updateGroup` for group v2 features:
