@@ -1,16 +1,23 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.8.4] - 2021-06-13
 **Attention**: Now requires native libsignal-client version 0.8.1
 
 ### Added
-- New parameters to `updateGroup` for group v2 features:
-  `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
+- New parameters for `updateGroup` command for group v2 features:
+  `--description`, `--remove-member`, `--admin`, `--remove-admin`, `--reset-link`, `--link`, `--set-permission-add-member`, `--set-permission-edit-details`, `--expiration`
+- New `--admin` parameter for `quitGroup` to set an admin before leaving the group
 - New `--delete` parameter for `quitGroup`, to delete the local group data
 - New 'sendTyping' command to send typing indicators
 
 ### Fixed
+- Fixed issue that prevented registration with invalid locales
 - Prevent last admin of a group from leaving the group
+- All commands now show a short description with `--help`
+- Now a hint is shown if messages aren't received regularly
+- Group edit conflicts are now resolved automatically
 
 ## [0.8.3] - 2021-05-13
 
