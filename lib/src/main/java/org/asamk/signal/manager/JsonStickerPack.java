@@ -25,5 +25,8 @@ public class JsonStickerPack {
 
         @JsonProperty
         public String file;
+
+        @JsonProperty
+        public String contentType;
     }
 }

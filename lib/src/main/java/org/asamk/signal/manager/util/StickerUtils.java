@@ -8,10 +8,12 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.zip.ZipFile;
 
@@ -54,7 +56,9 @@ public class StickerUtils {
                 throw new StickerPackInvalidException("Could not find find " + sticker.file);
             }
 
-            var contentType = Utils.getFileMimeType(new File(sticker.file), null);
+            var contentType = sticker.contentType != null && !sticker.contentType.isEmpty()
+                    ? sticker.contentType
+                    : getContentType(rootPath, zip, sticker.file);
             var stickerInfo = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
                     Optional.fromNullable(sticker.emoji).or(""),
@@ -75,7 +79,9 @@ public class StickerUtils {
                 throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
             }
 
-            var contentType = Utils.getFileMimeType(new File(pack.cover.file), null);
+            var contentType = pack.cover.contentType != null && !pack.cover.contentType.isEmpty()
+                    ? pack.cover.contentType
+                    : getContentType(rootPath, zip, pack.cover.file);
             cover = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
                     Optional.fromNullable(pack.cover.emoji).or(""),
@@ -107,4 +113,17 @@ public class StickerUtils {
         }
     }
 
+    private static String getContentType(
+            final String rootPath, final ZipFile zip, final String subfile
+    ) throws IOException {
+        if (zip != null) {
+            final var entry = zip.getEntry(subfile);
+            try (InputStream bufferedStream = new BufferedInputStream(zip.getInputStream(entry))) {
+                return URLConnection.guessContentTypeFromStream(bufferedStream);
+            }
+        } else {
+            final var file = new File(rootPath, subfile);
+            return Utils.getFileMimeType(file, null);
+        }
+    }
 }

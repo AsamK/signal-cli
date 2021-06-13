@@ -412,7 +412,13 @@ group lists.
 
 === uploadStickerPack
 
-Upload a new sticker pack, consisting of a manifest file and the stickers in WebP format (maximum size for a sticker file is 100KiB).
+Upload a new sticker pack, consisting of a manifest file and the sticker images.
+Images must conform to the following specification: (see https://support.signal.org/hc/en-us/articles/360031836512-Stickers#sticker_reqs )
+- Static stickers in PNG or WebP format
+- Animated stickers in APNG format,
+- Maximum file size for a sticker file is 300KiB
+- Image resolution of 512 x 512 px
+
 The required manifest.json has the following format:
 
 [source,json]
@@ -421,12 +427,14 @@ The required manifest.json has the following format:
   "title": "<STICKER_PACK_TITLE>",
   "author": "<STICKER_PACK_AUTHOR>",
   "cover": { // Optional cover, by default the first sticker is used as cover
-    "file": "<name of webp file, mandatory>",
+    "file": "<name of image file, mandatory>",
+    "contentType": "<optional>",
     "emoji": "<optional>"
   },
   "stickers": [
     {
-      "file": "<name of webp file, mandatory>",
+      "file": "<name of image file, mandatory>",
+      "contentType": "<optional>",
       "emoji": "<optional>"
     }
     ...
