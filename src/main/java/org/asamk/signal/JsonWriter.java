@@ -18,8 +18,8 @@ public class JsonWriter {
     private final Writer writer;
     private final ObjectMapper objectMapper;
 
-    public JsonWriter(final OutputStream writer) {
-        this.writer = new BufferedWriter(new OutputStreamWriter(writer, StandardCharsets.UTF_8));
+    public JsonWriter(final OutputStream outputStream) {
+        this.writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
 
         objectMapper = new ObjectMapper();
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
