@@ -18,6 +18,19 @@ public class JsonStickerPack {
     @JsonProperty
     public List<JsonSticker> stickers;
 
+    // For deserialization
+    private JsonStickerPack() {
+    }
+
+    public JsonStickerPack(
+            final String title, final String author, final JsonSticker cover, final List<JsonSticker> stickers
+    ) {
+        this.title = title;
+        this.author = author;
+        this.cover = cover;
+        this.stickers = stickers;
+    }
+
     public static class JsonSticker {
 
         @JsonProperty
@@ -28,5 +41,15 @@ public class JsonStickerPack {
 
         @JsonProperty
         public String contentType;
+
+        // For deserialization
+        private JsonSticker() {
+        }
+
+        public JsonSticker(final String emoji, final String file, final String contentType) {
+            this.emoji = emoji;
+            this.file = file;
+            this.contentType = contentType;
+        }
     }
 }

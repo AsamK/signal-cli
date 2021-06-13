@@ -34,6 +34,9 @@ import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
+import org.asamk.signal.manager.jobs.Context;
+import org.asamk.signal.manager.jobs.Job;
+import org.asamk.signal.manager.jobs.RetrieveStickerPackJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -202,6 +205,7 @@ public class Manager implements Closeable {
     private final PinHelper pinHelper;
     private final AvatarStore avatarStore;
     private final AttachmentStore attachmentStore;
+    private final StickerPackStore stickerPackStore;
     private final SignalSessionLock sessionLock = new SignalSessionLock() {
         private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
 
@@ -275,6 +279,7 @@ public class Manager implements Closeable {
                 this::resolveSignalServiceAddress);
         this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
         this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
+        this.stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
     }
 
     public String getUsername() {
@@ -1434,18 +1439,20 @@ public class Manager implements Closeable {
         var messageSender = createMessageSender();
 
         var packKey = KeyUtils.createStickerUploadKey();
-        var packId = messageSender.uploadStickerManifest(manifest, packKey);
+        var packIdString = messageSender.uploadStickerManifest(manifest, packKey);
+        var packId = StickerPackId.deserialize(Hex.fromStringCondensed(packIdString));
 
-        var sticker = new Sticker(StickerPackId.deserialize(Hex.fromStringCondensed(packId)), packKey);
+        var sticker = new Sticker(packId, packKey);
         account.getStickerStore().updateSticker(sticker);
 
         try {
             return new URI("https",
                     "signal.art",
                     "/addstickers/",
-                    "pack_id=" + URLEncoder.encode(packId, StandardCharsets.UTF_8) + "&pack_key=" + URLEncoder.encode(
-                            Hex.toStringCondensed(packKey),
-                            StandardCharsets.UTF_8)).toString();
+                    "pack_id="
+                            + URLEncoder.encode(Hex.toStringCondensed(packId.serialize()), StandardCharsets.UTF_8)
+                            + "&pack_key="
+                            + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8)).toString();
         } catch (URISyntaxException e) {
             throw new AssertionError(e);
         }
@@ -1939,6 +1946,7 @@ public class Manager implements Closeable {
                 sticker = new Sticker(stickerPackId, messageSticker.getPackKey());
                 account.getStickerStore().updateSticker(sticker);
             }
+            enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }
         return actions;
     }
@@ -2461,16 +2469,23 @@ public class Manager implements Closeable {
                             continue;
                         }
                         final var stickerPackId = StickerPackId.deserialize(m.getPackId().get());
+                        final var installed = !m.getType().isPresent()
+                                || m.getType().get() == StickerPackOperationMessage.Type.INSTALL;
+
                         var sticker = account.getStickerStore().getSticker(stickerPackId);
-                        if (sticker == null) {
-                            if (!m.getPackKey().isPresent()) {
-                                continue;
+                        if (m.getPackKey().isPresent()) {
+                            if (sticker == null) {
+                                sticker = new Sticker(stickerPackId, m.getPackKey().get());
                             }
-                            sticker = new Sticker(stickerPackId, m.getPackKey().get());
+                            if (installed) {
+                                enqueueJob(new RetrieveStickerPackJob(stickerPackId, m.getPackKey().get()));
+                            }
                         }
-                        sticker.setInstalled(!m.getType().isPresent()
-                                || m.getType().get() == StickerPackOperationMessage.Type.INSTALL);
-                        account.getStickerStore().updateSticker(sticker);
+
+                        if (sticker != null) {
+                            sticker.setInstalled(installed);
+                            account.getStickerStore().updateSticker(sticker);
+                        }
                     }
                 }
                 if (syncMessage.getFetchType().isPresent()) {
@@ -2937,6 +2952,11 @@ public class Manager implements Closeable {
 
     private RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
         return account.getRecipientStore().resolveRecipientTrusted(address);
+    }
+
+    private void enqueueJob(Job job) {
+        var context = new Context(account, accountManager, messageReceiver, stickerPackStore);
+        job.run(context);
     }
 
     @Override
