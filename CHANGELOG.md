@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.8.4.1] - 2021-06-20
+### Fixed
+- Incorrect error handling in register command
+
 ## [0.8.4] - 2021-06-13
 **Attention**: Now requires native libsignal-client version 0.8.1
 
