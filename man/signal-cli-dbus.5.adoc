@@ -223,7 +223,7 @@ isRegistred -> result<b>::
 
 == Signals
 
-SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
+SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<as>)::
 The sync message is received when the user sends a message from a linked device.
 
 ReceiptReceived (timestamp<x>, sender<s>)::
@@ -232,11 +232,12 @@ ReceiptReceived (timestamp<x>, sender<s>)::
 
 This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
-MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as>)::
+MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<as>)::
 * timestamp   : Integer value that is used by the system to send a ReceiptReceived reply
 * sender      : Phone number of the sender
 * groupId     : Byte array representing the internal group identifier (empty when private message)
 * message     : Message text
+* mentions    : Struct array of mentions. A mention consists of a user name, its position in the message string and its length.
 * attachments : String array of filenames for the attachments. These files are located in the signal-cli storage and the current user needs to have read access there
 
 This signal is received whenever we get a private message or a message is posted in a group we are an active member
