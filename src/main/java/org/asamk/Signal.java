@@ -1,5 +1,6 @@
 package org.asamk;
 
+import org.asamk.signal.dbus.DbusMention;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -115,6 +116,7 @@ public interface Signal extends DBusInterface {
         private final String sender;
         private final byte[] groupId;
         private final String message;
+        private final List<DbusMention> mentions;
         private final List<String> attachments;
 
         public MessageReceived(
@@ -123,13 +125,15 @@ public interface Signal extends DBusInterface {
                 String sender,
                 byte[] groupId,
                 String message,
+                List<DbusMention> mentions,
                 List<String> attachments
         ) throws DBusException {
-            super(objectpath, timestamp, sender, groupId, message, attachments);
+            super(objectpath, timestamp, sender, groupId, message, mentions, attachments);
             this.timestamp = timestamp;
             this.sender = sender;
             this.groupId = groupId;
             this.message = message;
+            this.mentions = mentions;
             this.attachments = attachments;
         }
 
@@ -147,6 +151,10 @@ public interface Signal extends DBusInterface {
 
         public String getMessage() {
             return message;
+        }
+
+        public List<DbusMention> getMentions() {
+            return mentions;
         }
 
         public List<String> getAttachments() {
@@ -181,6 +189,7 @@ public interface Signal extends DBusInterface {
         private final String destination;
         private final byte[] groupId;
         private final String message;
+        private final List<DbusMention> mentions;
         private final List<String> attachments;
 
         public SyncMessageReceived(
@@ -190,14 +199,16 @@ public interface Signal extends DBusInterface {
                 String destination,
                 byte[] groupId,
                 String message,
+                List<DbusMention> mentions,
                 List<String> attachments
         ) throws DBusException {
-            super(objectpath, timestamp, source, destination, groupId, message, attachments);
+            super(objectpath, timestamp, source, destination, groupId, message, mentions, attachments);
             this.timestamp = timestamp;
             this.source = source;
             this.destination = destination;
             this.groupId = groupId;
             this.message = message;
+            this.mentions = mentions;
             this.attachments = attachments;
         }
 
@@ -219,6 +230,10 @@ public interface Signal extends DBusInterface {
 
         public String getMessage() {
             return message;
+        }
+
+        public List<DbusMention> getMentions() {
+            return mentions;
         }
 
         public List<String> getAttachments() {
