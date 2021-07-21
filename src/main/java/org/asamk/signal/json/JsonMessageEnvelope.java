@@ -68,9 +68,13 @@ public class JsonMessageEnvelope {
             this.relay = null;
         }
         if (this.source != null) {
+            String name;
             try {
-                this.sourceName =  m.getContactOrProfileName(this.source);
-            } catch (InvalidNumberException e) {}
+                name =  m.getContactOrProfileName(this.source);
+            } catch (InvalidNumberException e) {
+                name = null;
+            }
+            this.sourceName = name;
         } else {
             this.sourceName = null;
         }
