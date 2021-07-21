@@ -67,17 +67,13 @@ public class JsonMessageEnvelope {
             this.sourceDevice = null;
             this.relay = null;
         }
-        if (this.source != null) {
-            String name;
-            try {
-                name =  m.getContactOrProfileName(this.source);
-            } catch (InvalidNumberException e) {
-                name = null;
-            }
-            this.sourceName = name;
-        } else {
-            this.sourceName = null;
+        String name;
+        try {
+            name = m.getContactOrProfileName(this.source);
+        } catch (InvalidNumberException | NullPointerException e) {
+            name = null;
         }
+        this.sourceName = name;
         this.timestamp = envelope.getTimestamp();
         if (envelope.isReceipt()) {
             this.receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
