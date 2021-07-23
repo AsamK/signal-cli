@@ -31,7 +31,6 @@ public class JsonMessageEnvelope {
     @JsonProperty
     final long timestamp;
 
-
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonDataMessage dataMessage;
