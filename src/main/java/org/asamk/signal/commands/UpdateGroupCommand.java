@@ -5,6 +5,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.JsonWriter;
+import org.asamk.signal.OutputType;
 import org.asamk.signal.GroupLinkState;
 import org.asamk.signal.GroupPermission;
 import org.asamk.signal.PlainTextWriterImpl;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
@@ -136,6 +140,11 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
     }
 
     @Override
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    }
+
+    @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
         byte[] groupId = null;
@@ -168,7 +177,13 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         try {
             var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                writer.println("Created new group: \"{}\"", Base64.getEncoder().encodeToString(newGroupId));
+                String encodedGroup = Base64.getEncoder().encodeToString(newGroupId);
+                if (ns.get("output") == OutputType.JSON) {
+                    final var jsonWriter = new JsonWriter(System.out);
+                    jsonWriter.write(Map.of("group", encodedGroup, "members", groupMembers, "name", groupName));
+                } else {
+                    writer.println("Created new group: \"{}\"", encodedGroup);
+                }
             }
         } catch (Signal.Error.AttachmentInvalid e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
