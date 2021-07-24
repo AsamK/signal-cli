@@ -5,10 +5,10 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.JsonWriter;
-import org.asamk.signal.OutputType;
 import org.asamk.signal.GroupLinkState;
 import org.asamk.signal.GroupPermission;
+import org.asamk.signal.JsonWriter;
+import org.asamk.signal.OutputType;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -72,6 +72,11 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
     }
 
     @Override
+    public Set<OutputType> getSupportedOutputTypes() {
+        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    }
+
+    @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
         GroupId groupId = null;
@@ -104,7 +109,12 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                         groupAvatar == null ? null : new File(groupAvatar));
                 ErrorUtils.handleTimestampAndSendMessageResults(writer, 0, results.second());
                 groupId = results.first();
-                writer.println("Created new group: \"{}\"", groupId.toBase64());
+                if (ns.get("output") == OutputType.JSON) {
+                    final var jsonWriter = new JsonWriter(System.out);
+                    jsonWriter.write(Map.of("groupId", groupId.toBase64(), "members", groupMembers, "name", groupName));
+                } else {
+                    writer.println("Created new group: \"{}\"", groupId.toBase64());
+                }
                 groupName = null;
                 groupMembers = null;
                 groupAvatar = null;
@@ -140,11 +150,6 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
     }
 
     @Override
-    public Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
-    }
-
-    @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final var writer = new PlainTextWriterImpl(System.out);
         byte[] groupId = null;
@@ -177,12 +182,12 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         try {
             var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                String encodedGroup = Base64.getEncoder().encodeToString(newGroupId);
+                String encodedGroupId = Base64.getEncoder().encodeToString(newGroupId);
                 if (ns.get("output") == OutputType.JSON) {
                     final var jsonWriter = new JsonWriter(System.out);
-                    jsonWriter.write(Map.of("group", encodedGroup, "members", groupMembers, "name", groupName));
+                    jsonWriter.write(Map.of("groupId", encodedGroupId, "members", groupMembers, "name", groupName));
                 } else {
-                    writer.println("Created new group: \"{}\"", encodedGroup);
+                    writer.println("Created new group: \"{}\"", encodedGroupId);
                 }
             }
         } catch (Signal.Error.AttachmentInvalid e) {
