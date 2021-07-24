@@ -539,6 +539,30 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "fields":[{"name":"contacts", "allowWrite":true}]
+},
+{
+  "name":"org.asamk.signal.manager.storage.profiles.LegacyProfileStore",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "fields":[{"name":"profiles", "allowWrite":true}]
+},
+{
+  "name":"org.asamk.signal.manager.storage.profiles.LegacyProfileStore$ProfileStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.profiles.LegacySignalProfileEntry",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.manager.storage.profiles.ProfileStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -555,6 +579,39 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonIdentityKeyStore$JsonIdentityKeyStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonPreKeyStore$JsonPreKeyStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonSessionStore$JsonSessionStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonSignedPreKeyStore$JsonSignedPreKeyStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "fields":[{"name":"addresses", "allowWrite":true}]
+},
+{
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore$RecipientStoreDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage",
