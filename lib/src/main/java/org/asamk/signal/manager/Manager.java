@@ -618,21 +618,27 @@ public class Manager implements Closeable {
             return null;
         }
 
+        profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
+        account.getProfileStore().storeProfile(recipientId, profile);
+
+        return profile;
+    }
+
+    private Profile decryptProfileIfKeyKnown(
+            final RecipientId recipientId, final SignalServiceProfile encryptedProfile
+    ) {
         var profileKey = account.getProfileStore().getProfileKey(recipientId);
         if (profileKey == null) {
-            profile = new Profile(System.currentTimeMillis(),
+            return new Profile(System.currentTimeMillis(),
                     null,
                     null,
                     null,
                     null,
                     ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null),
                     ProfileUtils.getCapabilities(encryptedProfile));
-        } else {
-            profile = decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
         }
-        account.getProfileStore().storeProfile(recipientId, profile);
 
-        return profile;
+        return decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
     }
 
     private SignalServiceProfile retrieveEncryptedProfile(RecipientId recipientId) {
