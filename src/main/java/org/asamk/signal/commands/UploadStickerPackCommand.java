@@ -35,7 +35,7 @@ public class UploadStickerPackCommand implements LocalCommand {
             var url = m.uploadStickerPack(path);
             writer.println("{}", url);
         } catch (IOException e) {
-            throw new IOErrorException("Upload error: " + e.getMessage());
+            throw new IOErrorException("Upload error (maybe image size too large):" + e.getMessage());
         } catch (StickerPackInvalidException e) {
             throw new UserErrorException("Invalid sticker pack: " + e.getMessage());
         }
