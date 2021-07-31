@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.dbus.DbusAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 import java.util.List;
@@ -126,6 +127,7 @@ class JsonDataMessage {
         sticker = null;
         contacts = null;
         attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
+
     }
 
     public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {

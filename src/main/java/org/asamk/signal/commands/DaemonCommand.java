@@ -65,7 +65,12 @@ public class DaemonCommand implements MultiLocalCommand {
             var objectPath = DbusConfig.getObjectPath();
             var t = run(conn, objectPath, m, ignoreAttachments);
 
-            conn.requestBusName(DbusConfig.getBusname());
+            try {
+                conn.requestBusName(DbusConfig.getBusname());
+            } catch (DBusException e) {
+                logger.error("Dbus request command failed", e);
+                throw new UnexpectedErrorException("Dbus request command failed");
+            }
 
             try {
                 t.join();

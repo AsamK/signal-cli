@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.URL;
 
 public class AttachmentUtils {
 
@@ -21,8 +22,13 @@ public class AttachmentUtils {
             for (var attachment : attachments) {
                 try {
                     signalServiceAttachments.add(createAttachment(new File(attachment)));
-                } catch (IOException e) {
-                    throw new AttachmentInvalidException(attachment, e);
+                } catch (IOException f) {
+                    // no such file, send it as URL
+                    try {
+                        signalServiceAttachments.add(createAttachment(new URL(attachment)));
+                    } catch (IOException e) {
+                        throw new AttachmentInvalidException(attachment, e);
+                    }
                 }
             }
         }
@@ -34,25 +40,39 @@ public class AttachmentUtils {
         return createAttachment(streamDetails, Optional.of(attachmentFile.getName()));
     }
 
+    public static SignalServiceAttachmentStream createAttachment(URL aURL) throws IOException {
+        final var streamDetails = Utils.createStreamDetailsFromURL(aURL);
+        String path = aURL.getPath();
+        String name = path.substring(path.lastIndexOf('/') + 1);
+        return createAttachment(streamDetails, Optional.of(name));
+    }
+
     public static SignalServiceAttachmentStream createAttachment(
             StreamDetails streamDetails, Optional<String> name
     ) {
-        // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
+        // TODO maybe add a parameter to set the voiceNote, borderless, preview, width, height, caption, blurHash options
         final var uploadTimestamp = System.currentTimeMillis();
+        boolean voicenote = false;
+        boolean borderless = false;
         Optional<byte[]> preview = Optional.absent();
+        int width = 0;
+        int height = 0;
         Optional<String> caption = Optional.absent();
         Optional<String> blurHash = Optional.absent();
         final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
+        //ProgressListener listener = null; //Android OS
+        //CancellationSignal cancellationSignal = null; //Android OS; Signal developers misspelled class name
+
         return new SignalServiceAttachmentStream(streamDetails.getStream(),
                 streamDetails.getContentType(),
                 streamDetails.getLength(),
                 name,
-                false,
-                false,
+                voicenote,
+                borderless,
                 false,
                 preview,
-                0,
-                0,
+                width,
+                height,
                 uploadTimestamp,
                 caption,
                 blurHash,

@@ -1,8 +1,14 @@
 package org.asamk.signal.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class Util {
