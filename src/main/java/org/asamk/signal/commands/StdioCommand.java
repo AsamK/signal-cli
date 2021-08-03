@@ -14,8 +14,12 @@ import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -62,15 +66,28 @@ class InputReader implements Runnable {
         while (alive) {
             try {
                 String input = reader.readLine();
-                if (input != null) {
+                if (input != null && !input.trim().isEmpty()) {
+                    // parse namespace
                     Map<String, Object> commandMap = jsonProcessor.readValue(input, inputType);
                     HashMap<String, Object> mergedMap = new HashMap<>(ourNamespace);
                     mergedMap.putAll(commandMap);
                     Namespace commandNamespace = new NamespaceDefaultingToFalse(mergedMap);
+                    // find command
                     String commandKey = commandNamespace.getString("command");
                     LocalCommand commandObject = (LocalCommand) Commands.getCommand(commandKey);
                     assert commandObject != null;
+                    // capture output
+                    ByteArrayOutputStream commandOutput = new ByteArrayOutputStream();
+                    System.setOut(new PrintStream(commandOutput));
                     commandObject.handleCommand(commandNamespace, manager);
+                    System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
+                    Object output;
+                    try {
+                        output = jsonProcessor.readTree(commandOutput.toString());
+                    } catch (IOException e) {
+                        output = commandOutput.toString();
+                    }
+                    jsonWriter.write(Map.of("namespace", commandNamespace, "output", output));
                 }
             } catch (Exception e) {
                 if (this.inJson) {
