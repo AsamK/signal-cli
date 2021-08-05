@@ -18,17 +18,13 @@ public class UpdateContactCommand implements LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("number").help("Contact number");
-        subparser.addArgument("-n", "--name").required(true).help("New contact name");
-        subparser.addArgument("-e", "--expiration")
-                .required(false)
-                .type(int.class)
-                .help("Set expiration time of messages (seconds)");
+        subparser.addArgument("-n", "--name").help("New contact name");
+        subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         var number = ns.getString("number");
-        var name = ns.getString("name");
 
         try {
             var expiration = ns.getInt("expiration");
@@ -36,7 +32,10 @@ public class UpdateContactCommand implements LocalCommand {
                 m.setExpirationTimer(number, expiration);
             }
 
-            m.setContactName(number, name);
+            var name = ns.getString("name");
+            if (name != null) {
+                m.setContactName(number, name);
+            }
         } catch (InvalidNumberException e) {
             throw new UserErrorException("Invalid contact number: " + e.getMessage());
         } catch (IOException e) {
