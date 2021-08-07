@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.8.5] - 2021-08-07
+### Added
+- Source name is included in JSON receive output
+
+### Fixed
+- Allow updateContact command to only set expiration timer without requiring a name parameter
+
 ## [0.8.4.1] - 2021-06-20
 ### Fixed
 - Incorrect error handling in register command
