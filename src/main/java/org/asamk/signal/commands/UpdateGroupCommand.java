@@ -7,6 +7,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.Signal;
 import org.asamk.signal.GroupLinkState;
 import org.asamk.signal.GroupPermission;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -33,9 +34,13 @@ import java.util.List;
 public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UpdateGroupCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Create or update a group.");
         subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("-n", "--name").help("Specify the new group name.");
@@ -69,7 +74,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
         GroupId groupId = null;
         final var groupIdString = ns.getString("group");
         if (groupIdString != null) {
@@ -137,7 +142,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
         byte[] groupId = null;
         if (ns.getString("group") != null) {
             try {

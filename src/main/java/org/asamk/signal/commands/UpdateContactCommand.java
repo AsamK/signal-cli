@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -14,8 +15,10 @@ import java.io.IOException;
 
 public class UpdateContactCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UpdateContactCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("number").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");

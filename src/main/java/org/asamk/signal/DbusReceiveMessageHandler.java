@@ -10,8 +10,8 @@ public class DbusReceiveMessageHandler extends ReceiveMessageHandler {
     private final DBusConnection conn;
     private final String objectPath;
 
-    public DbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
-        super(m);
+    public DbusReceiveMessageHandler(Manager m, PlainTextWriter writer, DBusConnection conn, final String objectPath) {
+        super(m, writer);
         this.conn = conn;
         this.objectPath = objectPath;
     }

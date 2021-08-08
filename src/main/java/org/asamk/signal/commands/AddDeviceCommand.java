@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -20,12 +21,14 @@ public class AddDeviceCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Link another device to this device. Only works, if this is the master device.");
         subparser.addArgument("--uri")
                 .required(true)
                 .help("Specify the uri contained in the QR code shown by the new device.");
+    }
+
+    public AddDeviceCommand(final OutputWriter outputWriter) {
     }
 
     @Override

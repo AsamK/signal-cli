@@ -1,6 +1,8 @@
 package org.asamk.signal;
 
-public interface PlainTextWriter {
+import java.util.function.Consumer;
+
+public interface PlainTextWriter extends OutputWriter {
 
     void println(String format, Object... args);
 
@@ -10,12 +12,7 @@ public interface PlainTextWriter {
         println("");
     }
 
-    default void indent(final WriterConsumer subWriter) {
-        subWriter.consume(indentedWriter());
-    }
-
-    interface WriterConsumer {
-
-        void consume(PlainTextWriter writer);
+    default void indent(final Consumer<PlainTextWriter> subWriter) {
+        subWriter.accept(indentedWriter());
     }
 }

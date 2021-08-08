@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
@@ -11,8 +12,10 @@ import java.io.IOException;
 
 public class UpdateAccountCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UpdateAccountCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the account attributes on the signal server.");
     }
 

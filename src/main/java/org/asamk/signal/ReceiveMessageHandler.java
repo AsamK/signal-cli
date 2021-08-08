@@ -29,15 +29,15 @@ import static org.asamk.signal.util.Util.getLegacyIdentifier;
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     final Manager m;
+    final PlainTextWriter writer;
 
-    public ReceiveMessageHandler(Manager m) {
+    public ReceiveMessageHandler(Manager m, final PlainTextWriter writer) {
         this.m = m;
+        this.writer = writer;
     }
 
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
-        PlainTextWriter writer = new PlainTextWriterImpl(System.out);
-
         if (envelope.hasSource()) {
             var source = envelope.getSourceAddress();
             writer.println("Envelope from: {} (device: {})", formatContact(source), envelope.getSourceDevice());

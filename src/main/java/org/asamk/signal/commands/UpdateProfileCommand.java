@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
@@ -14,8 +15,10 @@ import java.io.IOException;
 
 public class UpdateProfileCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UpdateProfileCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Set a name, about and avatar image for the user profile");
         subparser.addArgument("--given-name", "--name").help("New profile (given) name");
         subparser.addArgument("--family-name").help("New profile family name (optional)");

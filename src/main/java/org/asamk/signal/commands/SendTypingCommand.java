@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -21,8 +22,10 @@ import java.util.HashSet;
 
 public class SendTypingCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public SendTypingCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help(
                 "Send typing message to trigger a typing indicator for the recipient. Indicator will be shown for 15seconds unless a typing STOP message is sent first.");
         subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");

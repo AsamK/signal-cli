@@ -7,7 +7,10 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.OutputWriter;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.dbus.DbusSignalImpl;
@@ -26,9 +29,9 @@ import java.util.concurrent.TimeUnit;
 public class DaemonCommand implements MultiLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Run in daemon mode and provide an experimental dbus interface.");
         subparser.addArgument("--system")
                 .action(Arguments.storeTrue())
@@ -38,6 +41,10 @@ public class DaemonCommand implements MultiLocalCommand {
                 .action(Arguments.storeTrue());
     }
 
+    public DaemonCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
     @Override
     public Set<OutputType> getSupportedOutputTypes() {
         return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
@@ -45,8 +52,6 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON;
-
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
@@ -58,7 +63,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
         try (var conn = DBusConnection.getConnection(busType)) {
             var objectPath = DbusConfig.getObjectPath();
-            var t = run(conn, objectPath, m, ignoreAttachments, inJson);
+            var t = run(conn, objectPath, m, ignoreAttachments);
 
             conn.requestBusName(DbusConfig.getBusname());
 
@@ -74,8 +79,6 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final List<Manager> managers) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON;
-
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
@@ -89,7 +92,7 @@ public class DaemonCommand implements MultiLocalCommand {
             var receiveThreads = new ArrayList<Thread>();
             for (var m : managers) {
                 var objectPath = DbusConfig.getObjectPath(m.getUsername());
-                var thread = run(conn, objectPath, m, ignoreAttachments, inJson);
+                var thread = run(conn, objectPath, m, ignoreAttachments);
                 receiveThreads.add(thread);
             }
 
@@ -108,20 +111,17 @@ public class DaemonCommand implements MultiLocalCommand {
     }
 
     private Thread run(
-            DBusConnection conn, String objectPath, Manager m, boolean ignoreAttachments, boolean inJson
+            DBusConnection conn, String objectPath, Manager m, boolean ignoreAttachments
     ) throws DBusException {
         conn.exportObject(objectPath, new DbusSignalImpl(m));
 
         final var thread = new Thread(() -> {
             while (true) {
                 try {
-                    m.receiveMessages(1,
-                            TimeUnit.HOURS,
-                            false,
-                            ignoreAttachments,
-                            inJson
-                                    ? new JsonDbusReceiveMessageHandler(m, conn, objectPath)
-                                    : new DbusReceiveMessageHandler(m, conn, objectPath));
+                    final var receiveMessageHandler = outputWriter instanceof JsonWriter
+                            ? new JsonDbusReceiveMessageHandler(m, (JsonWriter) outputWriter, conn, objectPath)
+                            : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
+                    m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, receiveMessageHandler);
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);
                 }

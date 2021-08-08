@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -28,9 +29,13 @@ import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResu
 public class QuitGroupCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(QuitGroupCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public QuitGroupCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a quit group message to all group members and remove self from member list.");
         subparser.addArgument("-g", "--group").required(true).help("Specify the recipient group ID.");
         subparser.addArgument("--delete")
@@ -43,7 +48,7 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         final GroupId groupId;
         try {

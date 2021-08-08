@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -21,6 +22,11 @@ import java.util.List;
 public class ListIdentitiesCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
+    private final OutputWriter outputWriter;
+
+    public ListIdentitiesCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, IdentityInfo theirId) {
         final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
@@ -33,15 +39,14 @@ public class ListIdentitiesCommand implements LocalCommand {
                 digits);
     }
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("List all known identity keys and their trust status, fingerprint and safety number.");
         subparser.addArgument("-n", "--number").help("Only show identity keys for the given phone number.");
     }
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         var number = ns.getString("number");
 

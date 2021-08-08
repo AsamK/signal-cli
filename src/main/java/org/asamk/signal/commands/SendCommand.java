@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -25,9 +26,13 @@ import java.util.List;
 public class SendCommand implements DbusCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public SendCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
@@ -87,7 +92,7 @@ public class SendCommand implements DbusCommand {
             attachments = List.of();
         }
 
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         if (groupIdString != null) {
             byte[] groupId;

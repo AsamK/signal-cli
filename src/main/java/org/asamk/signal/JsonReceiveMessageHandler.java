@@ -17,9 +17,9 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     protected final Manager m;
     private final JsonWriter jsonWriter;
 
-    public JsonReceiveMessageHandler(Manager m) {
+    public JsonReceiveMessageHandler(Manager m, JsonWriter jsonWriter) {
         this.m = m;
-        jsonWriter = new JsonWriter(System.out);
+        this.jsonWriter = jsonWriter;
     }
 
     @Override

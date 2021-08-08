@@ -76,11 +76,10 @@ public class App {
 
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
-        final var commands = Commands.getCommands();
-        for (var entry : commands.entrySet()) {
-            var subparser = subparsers.addParser(entry.getKey());
-            entry.getValue().attachToSubparser(subparser);
-        }
+        Commands.getCommandSubparserAttachers().forEach((key, value) -> {
+            var subparser = subparsers.addParser(key);
+            value.attachToSubparser(subparser);
+        });
 
         return parser;
     }
@@ -90,13 +89,17 @@ public class App {
     }
 
     public void init() throws CommandException {
+        var outputType = ns.<OutputType>get("output");
+        var outputWriter = outputType == OutputType.JSON
+                ? new JsonWriter(System.out)
+                : new PlainTextWriterImpl(System.out);
+
         var commandKey = ns.getString("command");
-        var command = Commands.getCommand(commandKey);
+        var command = Commands.getCommand(commandKey, outputWriter);
         if (command == null) {
             throw new UserErrorException("Command not implemented!");
         }
 
-        var outputType = ns.<OutputType>get("output");
         if (!command.getSupportedOutputTypes().contains(outputType)) {
             throw new UserErrorException("Command doesn't support output type " + outputType.toString());
         }

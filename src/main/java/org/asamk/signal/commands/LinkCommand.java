@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -18,16 +19,20 @@ import java.util.concurrent.TimeoutException;
 public class LinkCommand implements ProvisioningCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(LinkCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public LinkCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Link to an existing device, instead of registering a new number.");
         subparser.addArgument("-n", "--name").help("Specify a name to describe this new device.");
     }
 
     @Override
     public void handleCommand(final Namespace ns, final ProvisioningManager m) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         var deviceName = ns.getString("name");
         if (deviceName == null) {

@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -20,8 +21,13 @@ import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResu
 
 public class JoinGroupCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    private final OutputWriter outputWriter;
+
+    public JoinGroupCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Join a group via an invitation link.");
         subparser.addArgument("--uri").required(true).help("Specify the uri with the group invitation link.");
     }
@@ -43,7 +49,7 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
-            final var writer = new PlainTextWriterImpl(System.out);
+            final var writer = (PlainTextWriterImpl) outputWriter;
 
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();

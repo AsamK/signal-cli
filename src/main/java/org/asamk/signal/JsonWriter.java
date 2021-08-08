@@ -13,7 +13,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
-public class JsonWriter {
+public class JsonWriter implements OutputWriter {
 
     private final Writer writer;
     private final ObjectMapper objectMapper;

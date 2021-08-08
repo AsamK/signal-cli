@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -14,8 +15,10 @@ import java.util.Locale;
 
 public class TrustCommand implements LocalCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public TrustCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Set the trust level of a given number.");
         subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
         var mutTrust = subparser.addMutuallyExclusiveGroup();

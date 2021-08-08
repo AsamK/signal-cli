@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -18,9 +19,13 @@ import java.io.IOException;
 public class UploadStickerPackCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UploadStickerPackCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Upload a new sticker pack, consisting of a manifest file and the stickers images.");
         subparser.addArgument("path")
                 .help("The path of the manifest.json or a zip file containing the sticker pack you wish to upload.");
@@ -28,7 +33,7 @@ public class UploadStickerPackCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
         var path = new File(ns.getString("path"));
 
         try {

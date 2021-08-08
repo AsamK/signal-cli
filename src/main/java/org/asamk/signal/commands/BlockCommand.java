@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -18,20 +19,22 @@ public class BlockCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(BlockCommand.class);
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Block the given contacts or groups (no messages will be received)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group").help("Group ID").nargs("*");
     }
 
+    public BlockCommand(final OutputWriter outputWriter) {
+    }
+
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        for (var contact_number : ns.<String>getList("contact")) {
+        for (var contactNumber : ns.<String>getList("contact")) {
             try {
-                m.setContactBlocked(contact_number, true);
+                m.setContactBlocked(contactNumber, true);
             } catch (InvalidNumberException e) {
-                logger.warn("Invalid number {}: {}", contact_number, e.getMessage());
+                logger.warn("Invalid number {}: {}", contactNumber, e.getMessage());
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             }

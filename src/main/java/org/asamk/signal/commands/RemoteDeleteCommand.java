@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -17,8 +18,13 @@ import java.util.List;
 
 public class RemoteDeleteCommand implements DbusCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    private final OutputWriter outputWriter;
+
+    public RemoteDeleteCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Remotely delete a previously sent message.");
         subparser.addArgument("-t", "--target-timestamp")
                 .required(true)
@@ -43,7 +49,7 @@ public class RemoteDeleteCommand implements DbusCommand {
 
         final long targetTimestamp = ns.getLong("target-timestamp");
 
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         byte[] groupId = null;
         if (groupIdString != null) {

@@ -6,8 +6,8 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
-import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
@@ -16,13 +16,19 @@ import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
+
+    public static void attachToSubparser(final Subparser subparser) {
+        subparser.help("List group information including names, ids, active status, blocked status and members");
+        subparser.addArgument("-d", "--detailed")
+                .action(Arguments.storeTrue())
+                .help("List the members and group invite links of each group. If output=json, then this is always set");
+    }
 
     private static Set<String> resolveMembers(Manager m, Set<RecipientId> addresses) {
         return addresses.stream()
@@ -58,12 +64,10 @@ public class ListGroupsCommand implements LocalCommand {
         }
     }
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
-        subparser.help("List group information including names, ids, active status, blocked status and members");
-        subparser.addArgument("-d", "--detailed")
-                .action(Arguments.storeTrue())
-                .help("List the members and group invite links of each group. If output=json, then this is always set");
+    private final OutputWriter outputWriter;
+
+    public ListGroupsCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
     }
 
     @Override
@@ -73,14 +77,15 @@ public class ListGroupsCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        if (ns.get("output") == OutputType.JSON) {
-            final var jsonWriter = new JsonWriter(System.out);
+        final var groups = m.getGroups();
 
-            var jsonGroups = new ArrayList<JsonGroup>();
-            for (var group : m.getGroups()) {
+        if (outputWriter instanceof JsonWriter) {
+            final var jsonWriter = (JsonWriter) outputWriter;
+
+            var jsonGroups = groups.stream().map(group -> {
                 final var groupInviteLink = group.getGroupInviteLink();
 
-                jsonGroups.add(new JsonGroup(group.getGroupId().toBase64(),
+                return new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
                         group.getDescription(),
                         group.isMember(m.getSelfRecipientId()),
@@ -89,14 +94,14 @@ public class ListGroupsCommand implements LocalCommand {
                         resolveMembers(m, group.getPendingMembers()),
                         resolveMembers(m, group.getRequestingMembers()),
                         resolveMembers(m, group.getAdminMembers()),
-                        groupInviteLink == null ? null : groupInviteLink.getUrl()));
-            }
+                        groupInviteLink == null ? null : groupInviteLink.getUrl());
+            }).collect(Collectors.toList());
 
             jsonWriter.write(jsonGroups);
         } else {
-            final var writer = new PlainTextWriterImpl(System.out);
+            final var writer = (PlainTextWriter) outputWriter;
             boolean detailed = ns.getBoolean("detailed");
-            for (var group : m.getGroups()) {
+            for (var group : groups) {
                 printGroupPlainText(writer, m, group, detailed);
             }
         }

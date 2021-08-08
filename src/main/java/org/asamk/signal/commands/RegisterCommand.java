@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -14,8 +15,10 @@ import java.io.IOException;
 
 public class RegisterCommand implements RegistrationCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public RegisterCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Register a phone number with SMS or voice verification.");
         subparser.addArgument("-v", "--voice")
                 .help("The verification should be done over voice, not SMS.")

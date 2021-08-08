@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -18,8 +19,10 @@ public class UnblockCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UnblockCommand.class);
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public UnblockCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Unblock the given contacts or groups (messages will be received again)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group").help("Group ID").nargs("*");

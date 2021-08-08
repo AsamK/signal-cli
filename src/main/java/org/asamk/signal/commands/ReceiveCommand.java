@@ -8,6 +8,8 @@ import org.asamk.Signal;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.OutputWriter;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -30,9 +32,9 @@ import java.util.concurrent.TimeUnit;
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Query the server for new messages.");
         subparser.addArgument("-t", "--timeout")
                 .type(double.class)
@@ -43,6 +45,10 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 .action(Arguments.storeTrue());
     }
 
+    public ReceiveCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
     @Override
     public Set<OutputType> getSupportedOutputTypes() {
         return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
@@ -51,11 +57,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public void handleCommand(
             final Namespace ns, final Signal signal, DBusConnection dbusconnection
     ) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON;
-
         try {
-            if (inJson) {
-                final var jsonWriter = new JsonWriter(System.out);
+            if (outputWriter instanceof JsonWriter) {
+                final var jsonWriter = (JsonWriter) outputWriter;
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     var envelope = new JsonMessageEnvelope(messageReceived);
@@ -75,7 +79,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     jsonWriter.write(object);
                 });
             } else {
-                final var writer = new PlainTextWriterImpl(System.out);
+                final var writer = (PlainTextWriterImpl) outputWriter;
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     writer.println("Envelope from: {}", messageReceived.getSender());
@@ -135,8 +139,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON;
-
         double timeout = ns.getDouble("timeout");
         var returnOnTimeout = true;
         if (timeout < 0) {
@@ -145,7 +147,8 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         }
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
         try {
-            final var handler = inJson ? new JsonReceiveMessageHandler(m) : new ReceiveMessageHandler(m);
+            final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
+                    (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
             m.receiveMessages((long) (timeout * 1000),
                     TimeUnit.MILLISECONDS,
                     returnOnTimeout,

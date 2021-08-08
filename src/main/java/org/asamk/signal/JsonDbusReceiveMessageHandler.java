@@ -21,8 +21,10 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
 
     private final String objectPath;
 
-    public JsonDbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
-        super(m);
+    public JsonDbusReceiveMessageHandler(
+            Manager m, JsonWriter jsonWriter, DBusConnection conn, final String objectPath
+    ) {
+        super(m, jsonWriter);
         this.conn = conn;
         this.objectPath = objectPath;
     }

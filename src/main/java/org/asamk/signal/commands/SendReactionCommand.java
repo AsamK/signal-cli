@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -18,8 +19,13 @@ import java.util.List;
 
 public class SendReactionCommand implements DbusCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    private final OutputWriter outputWriter;
+
+    public SendReactionCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send reaction to a previously received or sent message.");
         subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
@@ -54,7 +60,7 @@ public class SendReactionCommand implements DbusCommand {
         final var targetAuthor = ns.getString("target-author");
         final long targetTimestamp = ns.getLong("target-timestamp");
 
-        final var writer = new PlainTextWriterImpl(System.out);
+        final var writer = (PlainTextWriterImpl) outputWriter;
 
         byte[] groupId = null;
         if (groupIdString != null) {

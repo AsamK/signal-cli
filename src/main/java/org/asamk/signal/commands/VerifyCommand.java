@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -16,8 +17,10 @@ import java.io.IOException;
 
 public class VerifyCommand implements RegistrationCommand {
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public VerifyCommand(final OutputWriter outputWriter) {
+    }
+
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Verify the number using the code received via SMS or voice.");
         subparser.addArgument("verificationCode").help("The verification code you received via sms or voice call.");
         subparser.addArgument("-p", "--pin").help("The registration lock PIN, that was set by the user (Optional)");

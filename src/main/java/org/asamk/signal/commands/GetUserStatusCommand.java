@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -21,11 +22,15 @@ import java.util.stream.Collectors;
 public class GetUserStatusCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
+    private final OutputWriter outputWriter;
 
-    @Override
-    public void attachToSubparser(final Subparser subparser) {
+    public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Check if the specified phone number/s have been registered");
         subparser.addArgument("number").help("Phone number").nargs("+");
+    }
+
+    public GetUserStatusCommand(final OutputWriter outputWriter) {
+        this.outputWriter = outputWriter;
     }
 
     @Override
@@ -35,9 +40,6 @@ public class GetUserStatusCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        // Setup the json object mapper
-        var inJson = ns.get("output") == OutputType.JSON;
-
         // Get a map of registration statuses
         Map<String, Boolean> registered;
         try {
@@ -48,8 +50,8 @@ public class GetUserStatusCommand implements LocalCommand {
         }
 
         // Output
-        if (inJson) {
-            final var jsonWriter = new JsonWriter(System.out);
+        if (outputWriter instanceof JsonWriter) {
+            final var jsonWriter = (JsonWriter) outputWriter;
 
             var jsonUserStatuses = registered.entrySet()
                     .stream()
@@ -58,7 +60,7 @@ public class GetUserStatusCommand implements LocalCommand {
 
             jsonWriter.write(jsonUserStatuses);
         } else {
-            final var writer = new PlainTextWriterImpl(System.out);
+            final var writer = (PlainTextWriterImpl) outputWriter;
 
             for (var entry : registered.entrySet()) {
                 writer.println("{}: {}", entry.getKey(), entry.getValue());
