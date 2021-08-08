@@ -41,9 +41,6 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
-        subparser.addArgument("--json")
-                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
-                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -54,12 +51,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     public void handleCommand(
             final Namespace ns, final Signal signal, DBusConnection dbusconnection
     ) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
-
-        // TODO delete later when "json" variable is removed
-        if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
-        }
+        var inJson = ns.get("output") == OutputType.JSON;
 
         try {
             if (inJson) {
@@ -143,12 +135,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
-
-        // TODO delete later when "json" variable is removed
-        if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
-        }
+        var inJson = ns.get("output") == OutputType.JSON;
 
         double timeout = ns.getDouble("timeout");
         var returnOnTimeout = true;

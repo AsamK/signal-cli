@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- Removed deprecated `--json` parameter, use `--output=json` instead
 
 ## [0.8.5] - 2021-08-07
 ### Added

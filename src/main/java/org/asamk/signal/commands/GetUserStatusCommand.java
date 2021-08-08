@@ -1,6 +1,5 @@
 package org.asamk.signal.commands;
 
-import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -27,9 +26,6 @@ public class GetUserStatusCommand implements LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Check if the specified phone number/s have been registered");
         subparser.addArgument("number").help("Phone number").nargs("+");
-        subparser.addArgument("--json")
-                .help("WARNING: This parameter is now deprecated! Please use the global \"--output=json\" option instead.\n\nOutput received messages in json format, one json object per line.")
-                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -40,12 +36,7 @@ public class GetUserStatusCommand implements LocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         // Setup the json object mapper
-        var inJson = ns.get("output") == OutputType.JSON || ns.getBoolean("json");
-
-        // TODO delete later when "json" variable is removed
-        if (ns.getBoolean("json")) {
-            logger.warn("\"--json\" option has been deprecated, please use the global \"--output=json\" instead.");
-        }
+        var inJson = ns.get("output") == OutputType.JSON;
 
         // Get a map of registration statuses
         Map<String, Boolean> registered;
