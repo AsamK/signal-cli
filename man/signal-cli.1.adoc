@@ -503,12 +503,6 @@ The password and cryptographic keys are created when registering and stored in t
 
 `$XDG_DATA_HOME/signal-cli/` (`$HOME/.local/share/signal-cli/`)
 
-For legacy users, the old config directories are used as a fallback:
-
-    $HOME/.config/signal/
-
-    $HOME/.config/textsecure/
-
 == Authors
 
 Maintained by AsamK <asamk@gmx.de>, who is assisted by other open source contributors.

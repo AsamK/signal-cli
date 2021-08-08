@@ -67,11 +67,6 @@ The password and cryptographic keys are created when registering and stored in t
         $XDG_DATA_HOME/signal-cli/data/
         $HOME/.local/share/signal-cli/data/
 
-For legacy users, the old config directories are used as a fallback:
-
-        $HOME/.config/signal/data/
-        $HOME/.config/textsecure/data/
-
 ## Building
 
 This project uses [Gradle](http://gradle.org) for building and maintaining

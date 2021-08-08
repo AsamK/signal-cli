@@ -1,8 +1,10 @@
 # Changelog
 
 ## [Unreleased]
-### Changed
+### Breaking changes
 - Removed deprecated `--json` parameter, use `--output=json` instead
+- Removed deprecated fallback data paths, only `$XDG_DATA_HOME/signal-cli` is used now
+  For those still using the old paths (`$HOME/.config/signal`, `$HOME/.config/textsecure`) you need to move those to the new location.
 
 ## [0.8.5] - 2021-08-07
 ### Added

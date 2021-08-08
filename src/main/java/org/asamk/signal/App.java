@@ -305,32 +305,9 @@ public class App {
     }
 
     /**
-     * Uses $XDG_DATA_HOME/signal-cli if it exists, or if none of the legacy directories exist:
-     * - $HOME/.config/signal
-     * - $HOME/.config/textsecure
-     *
-     * @return the data directory to be used by signal-cli.
+     * @return the default data directory to be used by signal-cli.
      */
     private static File getDefaultDataPath() {
-        var dataPath = new File(IOUtils.getDataHomeDir(), "signal-cli");
-        if (dataPath.exists()) {
-            return dataPath;
-        }
-
-        var configPath = new File(System.getProperty("user.home"), ".config");
-
-        var legacySettingsPath = new File(configPath, "signal");
-        if (legacySettingsPath.exists()) {
-            logger.warn("Using legacy data path \"{}\", please move it to \"{}\".", legacySettingsPath, dataPath);
-            return legacySettingsPath;
-        }
-
-        legacySettingsPath = new File(configPath, "textsecure");
-        if (legacySettingsPath.exists()) {
-            logger.warn("Using legacy data path \"{}\", please move it to \"{}\".", legacySettingsPath, dataPath);
-            return legacySettingsPath;
-        }
-
-        return dataPath;
+        return new File(IOUtils.getDataHomeDir(), "signal-cli");
     }
 }
