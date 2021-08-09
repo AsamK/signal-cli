@@ -8,7 +8,7 @@ import org.asamk.Signal;
 import org.asamk.signal.GroupLinkState;
 import org.asamk.signal.GroupPermission;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -74,7 +74,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = (PlainTextWriterImpl) outputWriter;
+        final var writer = (PlainTextWriter) outputWriter;
         GroupId groupId = null;
         final var groupIdString = ns.getString("group");
         if (groupIdString != null) {
@@ -142,7 +142,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
-        final var writer = (PlainTextWriterImpl) outputWriter;
+        final var writer = (PlainTextWriter) outputWriter;
         byte[] groupId = null;
         if (ns.getString("group") != null) {
             try {

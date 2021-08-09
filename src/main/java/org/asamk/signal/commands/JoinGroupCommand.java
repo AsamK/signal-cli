@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
@@ -49,7 +49,7 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
-            final var writer = (PlainTextWriterImpl) outputWriter;
+            final var writer = (PlainTextWriter) outputWriter;
 
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();

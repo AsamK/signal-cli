@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -60,7 +60,7 @@ public class SendReactionCommand implements DbusCommand {
         final var targetAuthor = ns.getString("target-author");
         final long targetTimestamp = ns.getLong("target-timestamp");
 
-        final var writer = (PlainTextWriterImpl) outputWriter;
+        final var writer = (PlainTextWriter) outputWriter;
 
         byte[] groupId = null;
         if (groupIdString != null) {

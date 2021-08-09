@@ -5,7 +5,6 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
-import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -46,7 +45,7 @@ public class ListIdentitiesCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = (PlainTextWriterImpl) outputWriter;
+        final var writer = (PlainTextWriter) outputWriter;
 
         var number = ns.getString("number");
 

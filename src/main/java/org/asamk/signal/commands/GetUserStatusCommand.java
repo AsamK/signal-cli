@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
@@ -60,7 +60,7 @@ public class GetUserStatusCommand implements LocalCommand {
 
             jsonWriter.write(jsonUserStatuses);
         } else {
-            final var writer = (PlainTextWriterImpl) outputWriter;
+            final var writer = (PlainTextWriter) outputWriter;
 
             for (var entry : registered.entrySet()) {
                 writer.println("{}: {}", entry.getKey(), entry.getValue());

@@ -10,7 +10,6 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
-import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -79,7 +78,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     jsonWriter.write(object);
                 });
             } else {
-                final var writer = (PlainTextWriterImpl) outputWriter;
+                final var writer = (PlainTextWriter) outputWriter;
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     writer.println("Envelope from: {}", messageReceived.getSender());
