@@ -174,7 +174,7 @@ Add one or more files as attachment.
 *--note-to-self*::
 Send the message to self without notification.
 
-*-e*, *--endsession*::
+*-e*, *--end-session*::
 Clear session state and send end session message.
 
 === sendReaction

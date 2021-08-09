@@ -43,7 +43,7 @@ public class SendCommand implements DbusCommand {
 
         subparser.addArgument("-m", "--message").help("Specify the message, if missing standard input is used.");
         subparser.addArgument("-a", "--attachment").nargs("*").help("Add file as attachment");
-        subparser.addArgument("-e", "--endsession")
+        subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
     }
@@ -51,7 +51,7 @@ public class SendCommand implements DbusCommand {
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
-        final var isEndSession = ns.getBoolean("endsession");
+        final var isEndSession = ns.getBoolean("end-session");
         final var groupIdString = ns.getString("group");
         final var isNoteToSelf = ns.getBoolean("note-to-self");
 
