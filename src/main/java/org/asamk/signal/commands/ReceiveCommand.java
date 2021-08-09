@@ -155,6 +155,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     handler);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage());
+        } catch (InterruptedException ignored) {
         }
     }
 }

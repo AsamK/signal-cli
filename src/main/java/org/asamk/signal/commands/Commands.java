@@ -16,6 +16,7 @@ public class Commands {
         addCommand("block", BlockCommand::new, BlockCommand::attachToSubparser);
         addCommand("daemon", DaemonCommand::new, DaemonCommand::attachToSubparser);
         addCommand("getUserStatus", GetUserStatusCommand::new, GetUserStatusCommand::attachToSubparser);
+        addCommand("jsonRpc", JsonRpcDispatcherCommand::new, JsonRpcDispatcherCommand::attachToSubparser);
         addCommand("link", LinkCommand::new, LinkCommand::attachToSubparser);
         addCommand("listContacts", ListContactsCommand::new, ListContactsCommand::attachToSubparser);
         addCommand("listDevices", ListDevicesCommand::new, ListDevicesCommand::attachToSubparser);
@@ -43,6 +44,7 @@ public class Commands {
         addCommand("updateProfile", UpdateProfileCommand::new, UpdateProfileCommand::attachToSubparser);
         addCommand("uploadStickerPack", UploadStickerPackCommand::new, UploadStickerPackCommand::attachToSubparser);
         addCommand("verify", VerifyCommand::new, VerifyCommand::attachToSubparser);
+        addCommand("version", VersionCommand::new, null);
     }
 
     public static Map<String, SubparserAttacher> getCommandSubparserAttachers() {
@@ -60,7 +62,9 @@ public class Commands {
             String name, CommandConstructor commandConstructor, SubparserAttacher subparserAttacher
     ) {
         commands.put(name, commandConstructor);
-        commandSubparserAttacher.put(name, subparserAttacher);
+        if (subparserAttacher != null) {
+            commandSubparserAttacher.put(name, subparserAttacher);
+        }
     }
 
     private interface CommandConstructor {

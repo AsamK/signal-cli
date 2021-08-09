@@ -2028,6 +2028,9 @@ public class Manager implements Closeable {
             try {
                 action.execute(this);
             } catch (Throwable e) {
+                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 logger.warn("Message action failed.", e);
             }
         }
@@ -2074,7 +2077,7 @@ public class Manager implements Closeable {
             boolean returnOnTimeout,
             boolean ignoreAttachments,
             ReceiveMessageHandler handler
-    ) throws IOException {
+    ) throws IOException, InterruptedException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
 
         Set<HandleAction> queuedActions = null;
@@ -2110,6 +2113,9 @@ public class Manager implements Closeable {
                             try {
                                 action.execute(this);
                             } catch (Throwable e) {
+                                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                                    Thread.currentThread().interrupt();
+                                }
                                 logger.warn("Message action failed.", e);
                             }
                         }
@@ -2119,6 +2125,12 @@ public class Manager implements Closeable {
 
                     // Continue to wait another timeout for new messages
                     continue;
+                }
+            } catch (AssertionError e) {
+                if (e.getCause() instanceof InterruptedException) {
+                    throw (InterruptedException) e.getCause();
+                } else {
+                    throw e;
                 }
             } catch (TimeoutException e) {
                 if (returnOnTimeout) return;
@@ -2153,6 +2165,9 @@ public class Manager implements Closeable {
                         try {
                             action.execute(this);
                         } catch (Throwable e) {
+                            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                                Thread.currentThread().interrupt();
+                            }
                             logger.warn("Message action failed.", e);
                         }
                     }
@@ -2549,6 +2564,9 @@ public class Manager implements Closeable {
             avatarStore.storeProfileAvatar(address,
                     outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
         } catch (Throwable e) {
+            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             logger.warn("Failed to download profile avatar, ignoring: {}", e.getMessage());
         }
     }

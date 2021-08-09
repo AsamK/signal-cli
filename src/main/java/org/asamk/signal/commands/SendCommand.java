@@ -5,12 +5,15 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.dbus.DbusSignalImpl;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
@@ -22,8 +25,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 
-public class SendCommand implements DbusCommand {
+public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
     private final OutputWriter outputWriter;
@@ -92,8 +96,6 @@ public class SendCommand implements DbusCommand {
             attachments = List.of();
         }
 
-        final var writer = (PlainTextWriterImpl) outputWriter;
-
         if (groupIdString != null) {
             byte[] groupId;
             try {
@@ -104,7 +106,7 @@ public class SendCommand implements DbusCommand {
 
             try {
                 var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
-                writer.println("{}", timestamp);
+                outputResult(timestamp);
                 return;
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage());
@@ -114,7 +116,7 @@ public class SendCommand implements DbusCommand {
         if (isNoteToSelf) {
             try {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
-                writer.println("{}", timestamp);
+                outputResult(timestamp);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
                 throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
@@ -125,7 +127,7 @@ public class SendCommand implements DbusCommand {
 
         try {
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
-            writer.println("{}", timestamp);
+            outputResult(timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
@@ -133,5 +135,20 @@ public class SendCommand implements DbusCommand {
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         }
+    }
+
+    private void outputResult(final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
+        }
+    }
+
+    @Override
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null));
     }
 }

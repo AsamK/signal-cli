@@ -1,10 +1,9 @@
 package org.asamk.signal;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.asamk.signal.util.Util;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -21,9 +20,7 @@ public class JsonWriterImpl implements JsonWriter {
     public JsonWriterImpl(final OutputStream outputStream) {
         this.writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
 
-        objectMapper = new ObjectMapper();
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
-        objectMapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        objectMapper = Util.createJsonObjectMapper();
     }
 
     public synchronized void write(final Object object) {
