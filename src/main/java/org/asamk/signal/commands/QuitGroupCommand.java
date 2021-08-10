@@ -63,7 +63,9 @@ public class QuitGroupCommand implements LocalCommand {
             try {
                 final var results = m.sendQuitGroupMessage(groupId,
                         groupAdmins == null ? Set.of() : new HashSet<>(groupAdmins));
-                handleTimestampAndSendMessageResults(writer, results.first(), results.second());
+                final var timestamp = results.first();
+                writer.println("{}", timestamp);
+                handleTimestampAndSendMessageResults(results.second());
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }

@@ -17,7 +17,7 @@ import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAc
 
 import java.io.IOException;
 
-import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
+import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
 public class JoinGroupCommand implements LocalCommand {
 
@@ -58,7 +58,7 @@ public class JoinGroupCommand implements LocalCommand {
             } else {
                 writer.println("Joined group \"{}\"", newGroupId.toBase64());
             }
-            handleTimestampAndSendMessageResults(writer, 0, results.second());
+            handleSendMessageResults(results.second());
         } catch (GroupPatchNotAcceptedException e) {
             throw new UserErrorException("Failed to join group, maybe already a member");
         } catch (IOException e) {
