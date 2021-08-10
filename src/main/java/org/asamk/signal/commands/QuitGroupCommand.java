@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -22,11 +23,12 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import static org.asamk.signal.util.ErrorUtils.handleTimestampAndSendMessageResults;
+import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
-public class QuitGroupCommand implements LocalCommand {
+public class QuitGroupCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(QuitGroupCommand.class);
     private final OutputWriter outputWriter;
@@ -48,8 +50,6 @@ public class QuitGroupCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = (PlainTextWriter) outputWriter;
-
         final GroupId groupId;
         try {
             groupId = Util.decodeGroupId(ns.getString("group-id"));
@@ -64,8 +64,8 @@ public class QuitGroupCommand implements LocalCommand {
                 final var results = m.sendQuitGroupMessage(groupId,
                         groupAdmins == null ? Set.of() : new HashSet<>(groupAdmins));
                 final var timestamp = results.first();
-                writer.println("{}", timestamp);
-                handleTimestampAndSendMessageResults(results.second());
+                outputResult(timestamp);
+                handleSendMessageResults(results.second());
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }
@@ -81,6 +81,16 @@ public class QuitGroupCommand implements LocalCommand {
             throw new UserErrorException("Failed to parse admin number: " + e.getMessage());
         } catch (LastGroupAdminException e) {
             throw new UserErrorException("You need to specify a new admin with --admin: " + e.getMessage());
+        }
+    }
+
+    private void outputResult(final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }
