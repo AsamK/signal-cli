@@ -6,7 +6,9 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
 import org.asamk.signal.dbus.DbusAttachment;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DBus interface for the org.asamk.Signal service.
@@ -93,7 +95,9 @@ public interface Signal extends DBusInterface {
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
 
-    boolean isRegistered();
+    boolean isRegistered(String number);
+
+    List<Boolean> isRegistered(List<String> numbers);
 
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
