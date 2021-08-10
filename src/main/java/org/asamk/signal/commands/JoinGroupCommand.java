@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -16,10 +17,11 @@ import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
-public class JoinGroupCommand implements LocalCommand {
+public class JoinGroupCommand implements JsonRpcLocalCommand {
 
     private final OutputWriter outputWriter;
 
@@ -49,14 +51,22 @@ public class JoinGroupCommand implements LocalCommand {
         }
 
         try {
-            final var writer = (PlainTextWriter) outputWriter;
-
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();
-            if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
-                writer.println("Requested to join group \"{}\"", newGroupId.toBase64());
+            if (outputWriter instanceof JsonWriter) {
+                final var writer = (JsonWriter) outputWriter;
+                if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
+                    writer.write(Map.of("groupId", newGroupId.toBase64(), "onlyRequested", true));
+                } else {
+                    writer.write(Map.of("groupId", newGroupId.toBase64()));
+                }
             } else {
-                writer.println("Joined group \"{}\"", newGroupId.toBase64());
+                final var writer = (PlainTextWriter) outputWriter;
+                if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
+                    writer.println("Requested to join group \"{}\"", newGroupId.toBase64());
+                } else {
+                    writer.println("Joined group \"{}\"", newGroupId.toBase64());
+                }
             }
             handleSendMessageResults(results.second());
         } catch (GroupPatchNotAcceptedException e) {
