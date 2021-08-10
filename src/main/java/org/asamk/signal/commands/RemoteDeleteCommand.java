@@ -4,19 +4,23 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.dbus.DbusSignalImpl;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.util.List;
+import java.util.Map;
 
-public class RemoteDeleteCommand implements DbusCommand {
+public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final OutputWriter outputWriter;
 
@@ -49,8 +53,6 @@ public class RemoteDeleteCommand implements DbusCommand {
 
         final long targetTimestamp = ns.getLong("target-timestamp");
 
-        final var writer = (PlainTextWriter) outputWriter;
-
         byte[] groupId = null;
         if (groupIdString != null) {
             try {
@@ -67,7 +69,7 @@ public class RemoteDeleteCommand implements DbusCommand {
             } else {
                 timestamp = signal.sendRemoteDeleteMessage(targetTimestamp, recipients);
             }
-            writer.println("{}", timestamp);
+            outputResult(timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {
@@ -76,6 +78,21 @@ public class RemoteDeleteCommand implements DbusCommand {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null));
+    }
+
+    private void outputResult(final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }
