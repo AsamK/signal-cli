@@ -22,7 +22,7 @@ public class BlockCommand implements LocalCommand {
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Block the given contacts or groups (no messages will be received)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
-        subparser.addArgument("-g", "--group").help("Group ID").nargs("*");
+        subparser.addArgument("-g", "--group-id", "--group").help("Group ID").nargs("*");
     }
 
     public BlockCommand(final OutputWriter outputWriter) {
@@ -40,8 +40,8 @@ public class BlockCommand implements LocalCommand {
             }
         }
 
-        if (ns.<String>getList("group") != null) {
-            for (var groupIdString : ns.<String>getList("group")) {
+        if (ns.<String>getList("group-id") != null) {
+            for (var groupIdString : ns.<String>getList("group-id")) {
                 try {
                     var groupId = Util.decodeGroupId(groupIdString);
                     m.setGroupBlocked(groupId, true);

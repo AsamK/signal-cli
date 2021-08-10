@@ -27,7 +27,7 @@ public class SendReactionCommand implements DbusCommand {
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send reaction to a previously received or sent message.");
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-e", "--emoji")
                 .required(true)
@@ -45,7 +45,7 @@ public class SendReactionCommand implements DbusCommand {
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {

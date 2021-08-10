@@ -28,7 +28,7 @@ public class SendTypingCommand implements LocalCommand {
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help(
                 "Send typing message to trigger a typing indicator for the recipient. Indicator will be shown for 15seconds unless a typing STOP message is sent first.");
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-s", "--stop").help("Send a typing STOP message.").action(Arguments.storeTrue());
     }
@@ -36,7 +36,7 @@ public class SendTypingCommand implements LocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final var recipients = ns.<String>getList("recipient");
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {

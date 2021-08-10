@@ -36,7 +36,7 @@ public class SendCommand implements DbusCommand {
         subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
-        mutuallyExclusiveGroup.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        mutuallyExclusiveGroup.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         mutuallyExclusiveGroup.addArgument("--note-to-self")
                 .help("Send the message to self without notification.")
                 .action(Arguments.storeTrue());
@@ -52,7 +52,7 @@ public class SendCommand implements DbusCommand {
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var isEndSession = ns.getBoolean("end-session");
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
         final var isNoteToSelf = ns.getBoolean("note-to-self");
 
         final var noRecipients = recipients == null || recipients.isEmpty();

@@ -162,7 +162,7 @@ Send a message to another user or group.
 RECIPIENT::
 Specify the recipients’ phone number.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
 *-m* MESSAGE, *--message* MESSAGE::
@@ -184,7 +184,7 @@ Send reaction to a previously received or sent message.
 RECIPIENT::
 Specify the recipients’ phone number.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
 *-e* EMOJI, *--emoji* EMOJI::
@@ -207,7 +207,7 @@ Indicator will be shown for 15seconds unless a typing STOP message is sent first
 RECIPIENT::
 Specify the recipients’ phone number.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
 *-s*, *--stop*::
@@ -220,7 +220,7 @@ Remotely delete a previously sent message.
 RECIPIENT::
 Specify the recipients’ phone number.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
 *-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
@@ -250,7 +250,7 @@ The invitation link URI (starts with `https://signal.group/#`)
 Create or update a group.
 If the user is a pending member, this command will accept the group invitation.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 If not specified, a new group with a new random ID is generated.
 
@@ -296,7 +296,7 @@ To disable expiration set expiration time to 0.
 Send a quit group message to all group members and remove self from member list.
 If the user is a pending member, this command will decline the group invitation.
 
-*-g* GROUP, *--group* GROUP::
+*-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
 *--delete*::
@@ -385,7 +385,7 @@ This change is only local but can be synchronized to other devices by using `sen
 [CONTACT [CONTACT ...]]::
 Specify the phone numbers of contacts that should be blocked.
 
-*-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
+*-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
 Specify the group IDs that should be blocked in base64 encoding.
 
 === unblock
@@ -396,7 +396,7 @@ This change is only local but can be synchronized to other devices by using `sen
 [CONTACT [CONTACT ...]]::
 Specify the phone numbers of contacts that should be unblocked.
 
-*-g* [GROUP [GROUP ...]], *--group* [GROUP [GROUP ...]]::
+*-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
 Specify the group IDs that should be unblocked in base64 encoding.
 
 === sendContacts

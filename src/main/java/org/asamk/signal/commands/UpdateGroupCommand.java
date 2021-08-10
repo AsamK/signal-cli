@@ -42,7 +42,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Create or update a group.");
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the group ID.");
         subparser.addArgument("-n", "--name").help("Specify the new group name.");
         subparser.addArgument("-d", "--description").help("Specify the new group description.");
         subparser.addArgument("-a", "--avatar").help("Specify a new group avatar image file");
@@ -76,7 +76,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
         GroupId groupId = null;
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
         if (groupIdString != null) {
             try {
                 groupId = Util.decodeGroupId(groupIdString);
@@ -144,9 +144,9 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
         byte[] groupId = null;
-        if (ns.getString("group") != null) {
+        if (ns.getString("group-id") != null) {
             try {
-                groupId = Util.decodeGroupId(ns.getString("group")).serialize();
+                groupId = Util.decodeGroupId(ns.getString("group-id")).serialize();
             } catch (GroupIdFormatException e) {
                 throw new UserErrorException("Invalid group id: " + e.getMessage());
             }

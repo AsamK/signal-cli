@@ -37,7 +37,7 @@ public class QuitGroupCommand implements LocalCommand {
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a quit group message to all group members and remove self from member list.");
-        subparser.addArgument("-g", "--group").required(true).help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").required(true).help("Specify the recipient group ID.");
         subparser.addArgument("--delete")
                 .action(Arguments.storeTrue())
                 .help("Delete local group data completely after quitting group.");
@@ -52,7 +52,7 @@ public class QuitGroupCommand implements LocalCommand {
 
         final GroupId groupId;
         try {
-            groupId = Util.decodeGroupId(ns.getString("group"));
+            groupId = Util.decodeGroupId(ns.getString("group-id"));
         } catch (GroupIdFormatException e) {
             throw new UserErrorException("Invalid group id: " + e.getMessage());
         }
