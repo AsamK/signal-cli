@@ -13,7 +13,7 @@ import org.whispersystems.signalservice.internal.contacts.crypto.Unauthenticated
 
 import java.io.IOException;
 
-public class RemovePinCommand implements LocalCommand {
+public class RemovePinCommand implements JsonRpcLocalCommand {
 
     public RemovePinCommand(final OutputWriter outputWriter) {
     }

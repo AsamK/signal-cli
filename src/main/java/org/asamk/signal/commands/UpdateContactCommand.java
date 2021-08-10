@@ -13,7 +13,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 
-public class UpdateContactCommand implements LocalCommand {
+public class UpdateContactCommand implements JsonRpcLocalCommand {
 
     public UpdateContactCommand(final OutputWriter outputWriter) {
     }

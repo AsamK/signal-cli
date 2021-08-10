@@ -12,7 +12,7 @@ import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 
 import java.io.IOException;
 
-public class SendContactsCommand implements LocalCommand {
+public class SendContactsCommand implements JsonRpcLocalCommand {
 
     public SendContactsCommand(final OutputWriter outputWriter) {
     }

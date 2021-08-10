@@ -13,7 +13,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.Locale;
 
-public class TrustCommand implements LocalCommand {
+public class TrustCommand implements JsonRpcLocalCommand {
 
     public TrustCommand(final OutputWriter outputWriter) {
     }

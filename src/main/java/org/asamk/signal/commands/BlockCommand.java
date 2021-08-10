@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
-public class BlockCommand implements LocalCommand {
+public class BlockCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(BlockCommand.class);
 

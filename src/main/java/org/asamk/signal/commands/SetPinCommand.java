@@ -13,21 +13,21 @@ import org.whispersystems.signalservice.internal.contacts.crypto.Unauthenticated
 
 import java.io.IOException;
 
-public class SetPinCommand implements LocalCommand {
+public class SetPinCommand implements JsonRpcLocalCommand {
 
     public SetPinCommand(final OutputWriter outputWriter) {
     }
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Set a registration lock pin, to prevent others from registering this number.");
-        subparser.addArgument("registrationLockPin")
+        subparser.addArgument("pin")
                 .help("The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)");
     }
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         try {
-            var registrationLockPin = ns.getString("registrationLockPin");
+            var registrationLockPin = ns.getString("pin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
         } catch (UnauthenticatedResponseException e) {
             throw new UnexpectedErrorException("Set pin error failed with unauthenticated response: " + e.getMessage());

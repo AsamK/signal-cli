@@ -10,7 +10,7 @@ import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
 
-public class RemoveDeviceCommand implements LocalCommand {
+public class RemoveDeviceCommand implements JsonRpcLocalCommand {
 
     public RemoveDeviceCommand(final OutputWriter outputWriter) {
     }

@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class AddDeviceCommand implements LocalCommand {
+public class AddDeviceCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
 

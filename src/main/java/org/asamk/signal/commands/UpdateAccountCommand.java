@@ -10,7 +10,7 @@ import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
 
-public class UpdateAccountCommand implements LocalCommand {
+public class UpdateAccountCommand implements JsonRpcLocalCommand {
 
     public UpdateAccountCommand(final OutputWriter outputWriter) {
     }

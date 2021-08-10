@@ -20,7 +20,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import java.io.IOException;
 import java.util.HashSet;
 
-public class SendTypingCommand implements LocalCommand {
+public class SendTypingCommand implements JsonRpcLocalCommand {
 
     public SendTypingCommand(final OutputWriter outputWriter) {
     }
