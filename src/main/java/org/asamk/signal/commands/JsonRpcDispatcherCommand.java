@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -129,7 +130,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
                     null));
         }
 
-        Object output = result[0] == null ? new Object() : result[0];
+        Object output = result[0] == null ? Map.of() : result[0];
         return objectMapper.valueToTree(output);
     }
 
