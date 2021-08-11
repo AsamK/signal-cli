@@ -10,7 +10,7 @@ import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
 
-public class SendSyncRequestCommand implements LocalCommand {
+public class SendSyncRequestCommand implements JsonRpcLocalCommand {
 
     public SendSyncRequestCommand(final OutputWriter outputWriter) {
     }

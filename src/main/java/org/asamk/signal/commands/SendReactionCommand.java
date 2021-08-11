@@ -5,19 +5,23 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.dbus.DbusSignalImpl;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.util.List;
+import java.util.Map;
 
-public class SendReactionCommand implements DbusCommand {
+public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final OutputWriter outputWriter;
 
@@ -27,7 +31,7 @@ public class SendReactionCommand implements DbusCommand {
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Send reaction to a previously received or sent message.");
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-e", "--emoji")
                 .required(true)
@@ -45,7 +49,7 @@ public class SendReactionCommand implements DbusCommand {
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
         if (noRecipients && groupIdString == null) {
@@ -59,8 +63,6 @@ public class SendReactionCommand implements DbusCommand {
         final boolean isRemove = ns.getBoolean("remove");
         final var targetAuthor = ns.getString("target-author");
         final long targetTimestamp = ns.getLong("target-timestamp");
-
-        final var writer = (PlainTextWriterImpl) outputWriter;
 
         byte[] groupId = null;
         if (groupIdString != null) {
@@ -78,7 +80,7 @@ public class SendReactionCommand implements DbusCommand {
             } else {
                 timestamp = signal.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
-            writer.println("{}", timestamp);
+            outputResult(timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {
@@ -87,6 +89,21 @@ public class SendReactionCommand implements DbusCommand {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null));
+    }
+
+    private void outputResult(final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }

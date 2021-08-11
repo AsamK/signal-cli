@@ -5,10 +5,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
-import org.asamk.signal.GroupLinkState;
-import org.asamk.signal.GroupPermission;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -16,7 +15,9 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
+import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
@@ -28,10 +29,10 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 
-public class UpdateGroupCommand implements DbusCommand, LocalCommand {
+public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
     private final OutputWriter outputWriter;
@@ -42,7 +43,7 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     public static void attachToSubparser(final Subparser subparser) {
         subparser.help("Create or update a group.");
-        subparser.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the group ID.");
         subparser.addArgument("-n", "--name").help("Specify the new group name.");
         subparser.addArgument("-d", "--description").help("Specify the new group description.");
         subparser.addArgument("-a", "--avatar").help("Specify a new group avatar image file");
@@ -60,23 +61,55 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                 .help("Reset group link and create new link password");
         subparser.addArgument("--link")
                 .help("Set group link state, with or without admin approval")
-                .type(Arguments.enumStringType(GroupLinkState.class));
+                .choices("enabled", "enabled-with-approval", "disabled");
 
         subparser.addArgument("--set-permission-add-member")
                 .help("Set permission to add new group members")
-                .type(Arguments.enumStringType(GroupPermission.class));
+                .choices("every-member", "only-admins");
         subparser.addArgument("--set-permission-edit-details")
                 .help("Set permission to edit group details")
-                .type(Arguments.enumStringType(GroupPermission.class));
+                .choices("every-member", "only-admins");
 
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
+    GroupLinkState getGroupLinkState(String value) throws UserErrorException {
+        if (value == null) {
+            return null;
+        }
+        switch (value) {
+            case "enabled":
+                return GroupLinkState.ENABLED;
+            case "enabled-with-approval":
+            case "enabledWithApproval":
+                return GroupLinkState.ENABLED_WITH_APPROVAL;
+            case "disabled":
+                return GroupLinkState.DISABLED;
+            default:
+                throw new UserErrorException("Invalid group link state: " + value);
+        }
+    }
+
+    GroupPermission getGroupPermission(String value) throws UserErrorException {
+        if (value == null) {
+            return null;
+        }
+        switch (value) {
+            case "every-member":
+            case "everyMember":
+                return GroupPermission.EVERY_MEMBER;
+            case "only-admins":
+            case "onlyAdmins":
+                return GroupPermission.ONLY_ADMINS;
+            default:
+                throw new UserErrorException("Invalid group permission: " + value);
+        }
+    }
+
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        final var writer = (PlainTextWriterImpl) outputWriter;
         GroupId groupId = null;
-        final var groupIdString = ns.getString("group");
+        final var groupIdString = ns.getString("group-id");
         if (groupIdString != null) {
             try {
                 groupId = Util.decodeGroupId(groupIdString);
@@ -93,19 +126,20 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         var groupRemoveAdmins = ns.<String>getList("remove-admin");
         var groupAvatar = ns.getString("avatar");
         var groupResetLink = ns.getBoolean("reset-link");
-        var groupLinkState = ns.<GroupLinkState>get("link");
+        var groupLinkState = getGroupLinkState(ns.getString("link"));
         var groupExpiration = ns.getInt("expiration");
-        var groupAddMemberPermission = ns.<GroupPermission>get("set-permission-add-member");
-        var groupEditDetailsPermission = ns.<GroupPermission>get("set-permission-edit-details");
+        var groupAddMemberPermission = getGroupPermission(ns.getString("set-permission-add-member"));
+        var groupEditDetailsPermission = getGroupPermission(ns.getString("set-permission-edit-details"));
 
         try {
+            boolean isNewGroup = false;
             if (groupId == null) {
+                isNewGroup = true;
                 var results = m.createGroup(groupName,
                         groupMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
-                ErrorUtils.handleTimestampAndSendMessageResults(writer, 0, results.second());
+                ErrorUtils.handleSendMessageResults(results.second());
                 groupId = results.first();
-                writer.println("Created new group: \"{}\"", groupId.toBase64());
                 groupName = null;
                 groupMembers = null;
                 groupAvatar = null;
@@ -119,14 +153,17 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
                     groupAdmins,
                     groupRemoveAdmins,
                     groupResetLink,
-                    groupLinkState != null ? groupLinkState.toLinkState() : null,
-                    groupAddMemberPermission != null ? groupAddMemberPermission.toManager() : null,
-                    groupEditDetailsPermission != null ? groupEditDetailsPermission.toManager() : null,
+                    groupLinkState,
+                    groupAddMemberPermission,
+                    groupEditDetailsPermission,
                     groupAvatar == null ? null : new File(groupAvatar),
                     groupExpiration);
+            Long timestamp = null;
             if (results != null) {
-                ErrorUtils.handleTimestampAndSendMessageResults(writer, results.first(), results.second());
+                timestamp = results.first();
+                ErrorUtils.handleSendMessageResults(results.second());
             }
+            outputResult(timestamp, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (GroupNotFoundException e) {
@@ -142,11 +179,10 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
-        final var writer = (PlainTextWriterImpl) outputWriter;
         byte[] groupId = null;
-        if (ns.getString("group") != null) {
+        if (ns.getString("group-id") != null) {
             try {
-                groupId = Util.decodeGroupId(ns.getString("group")).serialize();
+                groupId = Util.decodeGroupId(ns.getString("group-id")).serialize();
             } catch (GroupIdFormatException e) {
                 throw new UserErrorException("Invalid group id: " + e.getMessage());
             }
@@ -173,12 +209,34 @@ public class UpdateGroupCommand implements DbusCommand, LocalCommand {
         try {
             var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                writer.println("Created new group: \"{}\"", Base64.getEncoder().encodeToString(newGroupId));
+                outputResult(null, GroupId.unknownVersion(newGroupId));
             }
         } catch (Signal.Error.AttachmentInvalid e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+        }
+    }
+
+    private void outputResult(final Long timestamp, final GroupId groupId) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            if (groupId != null) {
+                writer.println("Created new group: \"{}\"", groupId.toBase64());
+            }
+            if (timestamp != null) {
+                writer.println("{}", timestamp);
+            }
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            final var result = new HashMap<>();
+            if (timestamp != null) {
+                result.put("timestamp", timestamp);
+            }
+            if (groupId != null) {
+                result.put("groupId", groupId.toBase64());
+            }
+            writer.write(result);
         }
     }
 }

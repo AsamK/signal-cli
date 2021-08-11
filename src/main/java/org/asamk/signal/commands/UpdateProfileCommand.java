@@ -13,7 +13,7 @@ import org.whispersystems.libsignal.util.guava.Optional;
 import java.io.File;
 import java.io.IOException;
 
-public class UpdateProfileCommand implements LocalCommand {
+public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
     public UpdateProfileCommand(final OutputWriter outputWriter) {
     }

@@ -92,7 +92,7 @@ public class App {
     public void init() throws CommandException {
         var outputType = ns.<OutputType>get("output");
         var outputWriter = outputType == OutputType.JSON
-                ? new JsonWriter(System.out)
+                ? new JsonWriterImpl(System.out)
                 : new PlainTextWriterImpl(System.out);
 
         var commandKey = ns.getString("command");

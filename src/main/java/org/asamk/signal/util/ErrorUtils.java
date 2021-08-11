@@ -1,6 +1,5 @@
 package org.asamk.signal.util;
 
-import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.slf4j.Logger;
@@ -21,12 +20,9 @@ public class ErrorUtils {
     private ErrorUtils() {
     }
 
-    public static void handleTimestampAndSendMessageResults(
-            PlainTextWriter writer, long timestamp, List<SendMessageResult> results
+    public static void handleSendMessageResults(
+            List<SendMessageResult> results
     ) throws CommandException {
-        if (timestamp != 0) {
-            writer.println("{}", timestamp);
-        }
         var errors = getErrorMessagesFromSendMessageResults(results);
         handleSendMessageResultErrors(errors);
     }

@@ -5,14 +5,16 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.Signal;
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusAttachment;
-
+import org.asamk.signal.dbus.DbusSignalImpl;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
@@ -26,8 +28,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class SendCommand implements DbusCommand {
+public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
     private final OutputWriter outputWriter;
@@ -40,14 +43,14 @@ public class SendCommand implements DbusCommand {
         subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
-        mutuallyExclusiveGroup.addArgument("-g", "--group").help("Specify the recipient group ID.");
+        mutuallyExclusiveGroup.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         mutuallyExclusiveGroup.addArgument("--note-to-self")
                 .help("Send the message to self without notification.")
                 .action(Arguments.storeTrue());
 
         subparser.addArgument("-m", "--message").help("Specify the message, if missing standard input is used.");
         subparser.addArgument("-a", "--attachment").nargs("*").help("Add file as attachment");
-        subparser.addArgument("-e", "--endsession")
+        subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
     }
@@ -55,8 +58,8 @@ public class SendCommand implements DbusCommand {
     @Override
     public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
-        final var isEndSession = ns.getBoolean("endsession");
-        final var groupIdString = ns.getString("group");
+        final var isEndSession = ns.getBoolean("end-session");
+        final var groupIdString = ns.getString("group-id");
         final var isNoteToSelf = ns.getBoolean("note-to-self");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
@@ -96,8 +99,6 @@ public class SendCommand implements DbusCommand {
             attachmentNames = List.of();
         }
 
-        final var writer = (PlainTextWriterImpl) outputWriter;
-
         ArrayList<DbusAttachment> dBusAttachments = new ArrayList<>();
         if (!attachmentNames.isEmpty()) {
             for (var attachmentName : attachmentNames) {
@@ -116,7 +117,7 @@ public class SendCommand implements DbusCommand {
 
             try {
                 var timestamp = signal.sendGroupMessage(messageText, attachmentNames, groupId);
-                writer.println("{}", timestamp);
+                outputResult(timestamp);
                 return;
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage());
@@ -126,7 +127,7 @@ public class SendCommand implements DbusCommand {
         if (isNoteToSelf) {
             try {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachmentNames);
-                writer.println("{}", timestamp);
+                outputResult(timestamp);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
                 throw new UntrustedKeyErrorException("Failed to send note to self message: " + e.getMessage());
@@ -137,8 +138,7 @@ public class SendCommand implements DbusCommand {
 
         try {
             var timestamp = signal.sendMessageWithDBusAttachments(messageText, dBusAttachments, recipients);
-            writer.println("{}", timestamp);
-
+            outputResult(timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
@@ -146,5 +146,20 @@ public class SendCommand implements DbusCommand {
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message, did not find attachment: " + e.getMessage());
         }
+    }
+
+    private void outputResult(final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter) {
+            final var writer = (PlainTextWriter) outputWriter;
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
+        }
+    }
+
+    @Override
+    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null));
     }
 }

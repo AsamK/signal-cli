@@ -4,9 +4,8 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.JsonWriter;
-import org.asamk.signal.OutputType;
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
@@ -16,10 +15,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GetUserStatusCommand implements LocalCommand {
+public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
     private final OutputWriter outputWriter;
@@ -31,11 +29,6 @@ public class GetUserStatusCommand implements LocalCommand {
 
     public GetUserStatusCommand(final OutputWriter outputWriter) {
         this.outputWriter = outputWriter;
-    }
-
-    @Override
-    public Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     @Override
@@ -60,7 +53,7 @@ public class GetUserStatusCommand implements LocalCommand {
 
             jsonWriter.write(jsonUserStatuses);
         } else {
-            final var writer = (PlainTextWriterImpl) outputWriter;
+            final var writer = (PlainTextWriter) outputWriter;
 
             for (var entry : registered.entrySet()) {
                 writer.println("{}: {}", entry.getKey(), entry.getValue());

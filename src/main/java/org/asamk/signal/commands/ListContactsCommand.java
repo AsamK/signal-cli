@@ -4,7 +4,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.manager.Manager;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
@@ -23,7 +23,7 @@ public class ListContactsCommand implements LocalCommand {
 
     @Override
     public void handleCommand(final Namespace ns, final Manager m) {
-        final var writer = (PlainTextWriterImpl) outputWriter;
+        final var writer = (PlainTextWriter) outputWriter;
 
         var contacts = m.getContacts();
         for (var c : contacts) {
