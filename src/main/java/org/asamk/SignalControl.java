@@ -26,9 +26,9 @@ public interface SignalControl extends DBusInterface {
 
     String link(String newDeviceName) throws Error.Failure;
 
-    public String version();
+    String version();
 
-    List<DBusPath> listAccounts();
+    String getObjectPath();
 
     interface Error {
 
