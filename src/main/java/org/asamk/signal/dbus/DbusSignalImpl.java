@@ -512,8 +512,31 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public boolean isRegistered() {
-        return true;
+    public boolean isRegistered(String number) {
+        try {
+            Map<String, Boolean> registered;
+            List<String> numbers = new ArrayList<String>();
+            numbers.add(number);
+            registered = m.areUsersRegistered(new HashSet<String>(numbers));
+            return registered.get(number);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Boolean> isRegistered(List<String> numbers) {
+        try {
+            Map<String, Boolean> registered;
+            List<Boolean> results = new ArrayList<Boolean> ();
+            registered = m.areUsersRegistered(new HashSet<String>(numbers));
+            for (String number : numbers) {
+                results.add(registered.get(number));
+            }
+            return results;
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
     }
 
     @Override
