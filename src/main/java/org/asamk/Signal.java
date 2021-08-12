@@ -105,7 +105,15 @@ public interface Signal extends DBusInterface {
 
     String version();
 
+    String getObjectPath();
+
     List<String> listNumbers();
+
+    List<String> listDevices() throws Error.Failure;
+
+    void updateAccount() throws Error.Failure;
+
+    List<String> listIdentity(String number);
 
     List<String> getContactNumber(final String name) throws Error.Failure;
 

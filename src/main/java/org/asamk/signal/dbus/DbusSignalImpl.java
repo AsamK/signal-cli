@@ -2,24 +2,32 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.OutputWriter;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.ErrorUtils;
+import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
@@ -55,6 +63,54 @@ public class DbusSignalImpl implements Signal {
         return objectPath;
     }
 
+    @Override
+    public void updateAccount() {
+         try {
+             m.updateAccountAttributes();
+         } catch (IOException | Error.Failure e) {
+             throw new Error.Failure("UpdateAccount error: " + e.getMessage());
+         }
+    }
+
+    @Override
+    public List<String> listIdentity(String number) {
+        List<IdentityInfo> identities;
+        IdentityInfo theirId;
+        try {
+            identities = m.getIdentities(number);
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber("Invalid number: " + e.getMessage());
+        }
+        List<String> results = new ArrayList<String>();
+        if (identities.isEmpty()) {return results;}
+        theirId = identities.get(0);
+        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
+        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
+        results.add(theirId.getTrustLevel().toString());
+        results.add(theirId.getDateAdded().toString());
+        results.add(Hex.toString(theirId.getFingerprint()));
+        results.add(digits);
+        return results;
+    }
+
+    @Override
+    public List<String> listDevices() {
+          List<Device> devices;
+          List<String> results = new ArrayList<String>();
+
+          try {
+              devices = m.getLinkedDevices();
+          } catch (IOException | Error.Failure e) {
+              throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
+          }
+
+          for (var d : devices) {
+              var name = d.getName();
+              if (name == null) {name = "null";}
+              results.add(name);
+          }
+          return results;
+    }
     @Override
     public long sendMessageWithDBusAttachments(final String message, final List<DbusAttachment> dBusAttachments, final String recipient) {
         var recipients = new ArrayList<String>(1);
