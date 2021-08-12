@@ -398,17 +398,6 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void setExpirationTimer(final String number, final int expiration) {
-        try {
-            m.setExpirationTimer(number, expiration);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        } catch (InvalidNumberException e) {
-            throw new Error.InvalidNumber(e.getMessage());
-        }
-    }
-
-    @Override
     public void setContactBlocked(final String number, final boolean blocked) {
         try {
             m.setContactBlocked(number, blocked);
