@@ -28,6 +28,8 @@ public interface SignalControl extends DBusInterface {
 
     String version();
 
+    List<DBusPath> listAccounts();
+
     String getObjectPath();
 
     interface Error {

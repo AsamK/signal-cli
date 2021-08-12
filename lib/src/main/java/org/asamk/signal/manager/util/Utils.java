@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 
@@ -34,13 +33,6 @@ public class Utils {
         InputStream stream = new FileInputStream(file);
         final var size = file.length();
         final var mime = getFileMimeType(file, "application/octet-stream");
-        return new StreamDetails(stream, mime, size);
-    }
-
-    public static StreamDetails createStreamDetailsFromURL(URL aURL) throws IOException {
-        InputStream stream = aURL.openStream();
-        final var mime = aURL.openConnection().getContentType();
-        final var size = aURL.openConnection().getContentLengthLong();
         return new StreamDetails(stream, mime, size);
     }
 

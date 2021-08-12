@@ -7,7 +7,6 @@ import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
-import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -112,36 +111,10 @@ public class DbusSignalImpl implements Signal {
           return results;
     }
     @Override
-    public long sendMessageWithDBusAttachments(final String message, final List<DbusAttachment> dBusAttachments, final String recipient) {
+    public long sendMessage(final String message, final List<String> attachments, final String recipient) {
         var recipients = new ArrayList<String>(1);
         recipients.add(recipient);
-        return sendMessageWithDBusAttachments(message, dBusAttachments, recipients);
-    }
-
-    @Override
-    public long sendMessageWithDBusAttachments(final String message, final List<DbusAttachment> dBusAttachments, final List<String> recipients) {
-        try {
-            ArrayList<String> attachmentNames = new ArrayList<>();
-            for (var dBusAttachment : dBusAttachments) {
-                attachmentNames.add(dBusAttachment.getFileName());
-            }
-            final var results = m.sendMessage(message, attachmentNames, recipients);
-            checkSendMessageResults(results.first(), results.second());
-            return results.first();
-        } catch (InvalidNumberException e) {
-            throw new Error.InvalidNumber(e.getMessage());
-        } catch (AttachmentInvalidException e) {
-            throw new Error.AttachmentInvalid(e.getMessage());
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        }
-    }
-
-    @Override
-    public long sendMessage(final String message, final List<String> attachmentNames, final String recipient) {
-        var recipients = new ArrayList<String>(1);
-        recipients.add(recipient);
-        return sendMessage(message, attachmentNames, recipients);
+        return sendMessage(message, attachments, recipients);
     }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
@@ -184,9 +157,9 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendMessage(final String message, final List<String> attachmentNames, final List<String> recipients) {
+    public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            final var results = m.sendMessage(message, attachmentNames, recipients);
+            final var results = m.sendMessage(message, attachments, recipients);
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (InvalidNumberException e) {
@@ -271,10 +244,10 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendNoteToSelfMessage(
-            final String message, final List<String> attachmentNames
+            final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final var results = m.sendSelfMessage(message, attachmentNames);
+            final var results = m.sendSelfMessage(message, attachments);
             checkSendMessageResult(results.first(), results.second());
             return results.first();
         } catch (AttachmentInvalidException e) {
@@ -284,25 +257,6 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    @Override
-    public long sendNoteToSelfMessageWithDBusAttachments(
-            final String message, final List<DbusAttachment> dBusAttachments
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
-        try {
-            ArrayList<String> attachmentNames = new ArrayList<>();
-            for (var dBusAttachment : dBusAttachments) {
-                attachmentNames.add(dBusAttachment.getFileName());
-            }
-            final var results = m.sendSelfMessage(message, attachmentNames);
-            checkSendMessageResult(results.first(), results.second());
-            return results.first();
-        } catch (AttachmentInvalidException e) {
-            throw new Error.AttachmentInvalid(e.getMessage());
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        }
-    }
-    
     @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
@@ -316,9 +270,9 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendGroupMessage(final String message, final List<String> attachmentNames, final byte[] groupId) {
+    public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            var results = m.sendGroupMessage(message, attachmentNames, GroupId.unknownVersion(groupId));
+            var results = m.sendGroupMessage(message, attachments, GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
@@ -330,26 +284,6 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    @Override
-    public long sendGroupMessageWithDBusAttachments(final String message, final List<DbusAttachment> dBusAttachments, final byte[] groupId) {
-        try {
-            ArrayList<String> attachmentNames = new ArrayList<>();
-            for (var dBusAttachment : dBusAttachments) {
-                attachmentNames.add(dBusAttachment.getFileName());
-            }
-            var results = m.sendGroupMessage(message, attachmentNames, GroupId.unknownVersion(groupId));
-            checkSendMessageResults(results.first(), results.second());
-            return results.first();
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
-            throw new Error.GroupNotFound(e.getMessage());
-        } catch (AttachmentInvalidException e) {
-            throw new Error.AttachmentInvalid(e.getMessage());
-        }
-    }
-
-        
     @Override
     public long sendGroupMessageReaction(
             final String emoji,
@@ -394,17 +328,6 @@ public class DbusSignalImpl implements Signal {
             throw new Error.InvalidNumber(e.getMessage());
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
-        }
-    }
-
-    @Override
-    public void setExpirationTimer(final String number, final int expiration) {
-        try {
-            m.setExpirationTimer(number, expiration);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        } catch (InvalidNumberException e) {
-            throw new Error.InvalidNumber(e.getMessage());
         }
     }
 

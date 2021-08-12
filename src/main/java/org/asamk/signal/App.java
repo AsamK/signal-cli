@@ -163,7 +163,7 @@ public class App {
 
             username = usernames.get(0);
         } else if (!PhoneNumberFormatter.isValidNumber(username, null)) {
-            throw new UserErrorException("Invalid username (phone number), make sure you include a plus sign (+) followed by the country code.");
+            throw new UserErrorException("Invalid username (phone number), make sure you include the country code.");
         }
 
         if (command instanceof RegistrationCommand) {
@@ -264,7 +264,6 @@ public class App {
         try {
             manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (NotRegisteredException e) {
-            logger.debug("dataPath=" + dataPath + " serviceEnvironment=" + serviceEnvironment, e);
             throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {
             logger.debug("Loading state file failed", e);

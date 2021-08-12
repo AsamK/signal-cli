@@ -150,6 +150,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         return BaseConfig.PROJECT_VERSION;
     }
 
+    @Override
     public List<DBusPath> listAccounts() {
         synchronized (receiveThreads) {
             return receiveThreads.stream()

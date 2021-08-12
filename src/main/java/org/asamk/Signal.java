@@ -4,7 +4,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
-import org.asamk.signal.dbus.DbusAttachment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,21 +15,12 @@ import java.util.Map;
  */
 public interface Signal extends DBusInterface {
 
-
-    long sendMessageWithDBusAttachments(
-            String message, List<DbusAttachment> dBusAttachments, String recipient
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
-
-    long sendMessageWithDBusAttachments(
-            String message, List<DbusAttachment> dBusAttachments, List<String> recipients
+    long sendMessage(
+            String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendMessage(
-            String message, List<String> attachmentNames, String recipient
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
-
-    long sendMessage(
-            String message, List<String> attachmentNames, List<String> recipients
+            String message, List<String> attachments, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendRemoteDeleteMessage(
@@ -54,21 +44,13 @@ public interface Signal extends DBusInterface {
     ) throws Error.InvalidNumber, Error.Failure;
 
     long sendNoteToSelfMessage(
-            String message, List<String> attachmentNames
-    ) throws Error.AttachmentInvalid, Error.Failure;
-
-    long sendNoteToSelfMessageWithDBusAttachments(
-            String message, List<DbusAttachment> dBusAttachments
+            String message, List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure;
 
     void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendGroupMessage(
-            String message, List<String> attachmentNames, byte[] groupId
-    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid;
-
-    long sendGroupMessageWithDBusAttachments(
-            String message, List<DbusAttachment> dBusAttachments, byte[] groupId
+            String message, List<String> attachments, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid;
 
     long sendGroupMessageReaction(
@@ -78,8 +60,6 @@ public interface Signal extends DBusInterface {
     String getContactName(String number) throws Error.InvalidNumber;
 
     void setContactName(String number, String name) throws Error.InvalidNumber;
-
-    void setExpirationTimer(final String number, final int expiration) throws Error.InvalidNumber;
 
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
@@ -133,7 +113,7 @@ public interface Signal extends DBusInterface {
         private final String sender;
         private final byte[] groupId;
         private final String message;
-        private final List<DbusAttachment> dBusAttachments;
+        private final List<String> attachments;
 
         public MessageReceived(
                 String objectpath,
@@ -141,14 +121,14 @@ public interface Signal extends DBusInterface {
                 String sender,
                 byte[] groupId,
                 String message,
-                List<DbusAttachment> dBusAttachments
+                List<String> attachments
         ) throws DBusException {
-            super(objectpath, timestamp, sender, groupId, message, dBusAttachments);
+            super(objectpath, timestamp, sender, groupId, message, attachments);
             this.timestamp = timestamp;
             this.sender = sender;
             this.groupId = groupId;
             this.message = message;
-            this.dBusAttachments = dBusAttachments;
+            this.attachments = attachments;
         }
 
         public long getTimestamp() {
@@ -167,10 +147,9 @@ public interface Signal extends DBusInterface {
             return message;
         }
 
-        public List<DbusAttachment> getAttachments() {
-            return dBusAttachments;
-            }
-
+        public List<String> getAttachments() {
+            return attachments;
+        }
     }
 
     class ReceiptReceived extends DBusSignal {
@@ -200,7 +179,7 @@ public interface Signal extends DBusInterface {
         private final String destination;
         private final byte[] groupId;
         private final String message;
-        private final List<DbusAttachment> dBusAttachments;
+        private final List<String> attachments;
 
         public SyncMessageReceived(
                 String objectpath,
@@ -209,15 +188,15 @@ public interface Signal extends DBusInterface {
                 String destination,
                 byte[] groupId,
                 String message,
-                List<DbusAttachment> dBusAttachments
+                List<String> attachments
         ) throws DBusException {
-            super(objectpath, timestamp, source, destination, groupId, message, dBusAttachments);
+            super(objectpath, timestamp, source, destination, groupId, message, attachments);
             this.timestamp = timestamp;
             this.source = source;
             this.destination = destination;
             this.groupId = groupId;
             this.message = message;
-            this.dBusAttachments = dBusAttachments;
+            this.attachments = attachments;
         }
 
         public long getTimestamp() {
@@ -240,8 +219,8 @@ public interface Signal extends DBusInterface {
             return message;
         }
 
-        public List<DbusAttachment> getAttachments() {
-            return dBusAttachments;
+        public List<String> getAttachments() {
+            return attachments;
         }
     }
 
