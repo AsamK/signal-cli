@@ -1274,7 +1274,7 @@ public class Manager implements Closeable {
     ) throws IOException, AttachmentInvalidException, InvalidNumberException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
         if (attachments != null) {
-            var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
+            List<SignalServiceAttachment> attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
 
             // Upload attachments here, so we only upload once even for multiple recipients
             var messageSender = createMessageSender();

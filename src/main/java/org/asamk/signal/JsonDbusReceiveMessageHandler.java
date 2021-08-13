@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.Signal;
+import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.dbus.DbusMention;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupUtils;
@@ -10,6 +11,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,13 +74,23 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                                 || message.getGroupContext().get().getGroupV1Type() == SignalServiceGroup.Type.DELIVER
                 )) {
                     try {
-                        conn.sendMessage(new Signal.MessageReceived(objectPath,
+                        List<SignalServiceAttachment> attachments = JsonDbusReceiveMessageHandler.getAttachments(message);
+                        List<DbusAttachment> dBusAttachments = JsonDbusReceiveMessageHandler.convertSignalAttachmentsToDbus(attachments);
+                        conn.sendMessage(new Signal.MessageReceivedV2(objectPath,
                                 message.getTimestamp(),
                                 getLegacyIdentifier(sender),
                                 groupId != null ? groupId : new byte[0],
                                 message.getBody().isPresent() ? message.getBody().get() : "",
                                 JsonDbusReceiveMessageHandler.getMentions(message, m),
-                                JsonDbusReceiveMessageHandler.getAttachments(message, m)));
+                                dBusAttachments
+                                ));
+                        conn.sendMessage(new Signal.MessageReceived(objectPath,
+                                message.getTimestamp(),
+                                getLegacyIdentifier(sender),
+                                groupId != null ? groupId : new byte[0],
+                                message.getBody().isPresent() ? message.getBody().get() : "",
+                                JsonDbusReceiveMessageHandler.getAttachmentNames(message, m)
+                                ));
                     } catch (DBusException e) {
                         e.printStackTrace();
                     }
@@ -95,7 +107,9 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                         var groupId = getGroupId(message);
 
                         try {
-                            conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
+                            List<SignalServiceAttachment> attachments = JsonDbusReceiveMessageHandler.getAttachments(message);
+                            List<DbusAttachment> dBusAttachments = JsonDbusReceiveMessageHandler.convertSignalAttachmentsToDbus(attachments);
+                            conn.sendMessage(new Signal.SyncMessageReceivedV2(objectPath,
                                     transcript.getTimestamp(),
                                     getLegacyIdentifier(sender),
                                     transcript.getDestination().isPresent()
@@ -104,7 +118,18 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                                     groupId != null ? groupId : new byte[0],
                                     message.getBody().isPresent() ? message.getBody().get() : "",
                                     JsonDbusReceiveMessageHandler.getMentions(message, m),
-                                    JsonDbusReceiveMessageHandler.getAttachments(message, m)));
+                                    dBusAttachments
+                                    ));
+                            conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
+                                    transcript.getTimestamp(),
+                                    getLegacyIdentifier(sender),
+                                    transcript.getDestination().isPresent()
+                                            ? getLegacyIdentifier(transcript.getDestination().get())
+                                            : "",
+                                    groupId != null ? groupId : new byte[0],
+                                    message.getBody().isPresent() ? message.getBody().get() : "",
+                                    JsonDbusReceiveMessageHandler.getAttachmentNames(message, m)
+                                    ));
                         } catch (DBusException e) {
                             e.printStackTrace();
                         }
@@ -119,7 +144,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 .serialize() : null;
     }
 
-    static private List<String> getAttachments(SignalServiceDataMessage message, Manager m) {
+    static private List<String> getAttachmentNames(SignalServiceDataMessage message, Manager m) {
         var attachments = new ArrayList<String>();
         if (message.getAttachments().isPresent()) {
             for (var attachment : message.getAttachments().get()) {
@@ -141,10 +166,34 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
         return mentions;
     }
 
+
+    static private List<SignalServiceAttachment> getAttachments(SignalServiceDataMessage message) {
+        var attachments = new ArrayList<SignalServiceAttachment>();
+        if (message.getAttachments().isPresent()) {
+            for (var attachment : message.getAttachments().get()) {
+                if (attachment.isPointer()) {
+                    attachments.add(attachment);
+                }
+            }
+        }
+        return attachments;
+    }
+
     @Override
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         super.handleMessage(envelope, content, exception);
 
         sendReceivedMessageToDbus(envelope, content, conn, objectPath, m);
+    }
+
+    static private List<DbusAttachment> convertSignalAttachmentsToDbus(List<SignalServiceAttachment> attachments) {
+        ArrayList<DbusAttachment> dBusAttachments = new ArrayList<>();
+        if (!attachments.isEmpty()) {
+            for (SignalServiceAttachment attachment : attachments) {
+                DbusAttachment dBusAttachment = new DbusAttachment(attachment);
+                dBusAttachments.add(dBusAttachment);
+            }
+        }
+        return dBusAttachments;
     }
 }

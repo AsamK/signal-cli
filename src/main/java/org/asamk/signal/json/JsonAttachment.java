@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 
+import org.asamk.signal.dbus.DbusAttachment;
+
 class JsonAttachment {
 
     @JsonProperty
@@ -18,6 +20,33 @@ class JsonAttachment {
     @JsonProperty
     final Long size;
 
+    @JsonProperty
+    Integer keyLength;
+
+    @JsonProperty
+    Integer width;
+
+    @JsonProperty
+    Integer height;
+
+    @JsonProperty
+    boolean voiceNote;
+
+    @JsonProperty
+    String caption;
+
+    @JsonProperty
+    String relay;
+
+    @JsonProperty
+    byte[] preview;
+
+    @JsonProperty
+    String digest;
+
+    @JsonProperty
+    String blurHash;
+
     JsonAttachment(SignalServiceAttachment attachment) {
         this.contentType = attachment.getContentType();
 
@@ -26,6 +55,11 @@ class JsonAttachment {
             this.id = pointer.getRemoteId().toString();
             this.filename = pointer.getFileName().orNull();
             this.size = pointer.getSize().transform(Integer::longValue).orNull();
+            this.keyLength = pointer.getKey().length;
+            this.width = pointer.getWidth();
+            this.height = pointer.getHeight();
+            this.voiceNote = pointer.getVoiceNote();
+            if (pointer.getCaption().isPresent()) {this.caption = pointer.getCaption().get();}
         } else {
             final var stream = attachment.asStream();
             this.id = null;
@@ -40,4 +74,17 @@ class JsonAttachment {
         this.id = null;
         this.size = null;
     }
+
+    JsonAttachment(DbusAttachment attachment) {
+        this.contentType = attachment.getContentType();
+        this.id = attachment.getId();
+        this.filename = attachment.getFileName();
+        this.size = attachment.getFileSize();
+        this.keyLength = attachment.getKeyLength();
+        this.width = attachment.getWidth();
+        this.height = attachment.getHeight();
+        this.voiceNote = attachment.getVoiceNote();
+        this.caption = attachment.getCaption();
+    }
+
 }

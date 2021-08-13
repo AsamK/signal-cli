@@ -11,3 +11,6 @@ local.properties
 .settings/
 out/
 .DS_Store
+.git/
+signal-cli
+bin/

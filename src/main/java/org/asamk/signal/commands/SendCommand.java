@@ -12,6 +12,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupIdFormatException;
@@ -21,9 +22,11 @@ import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -91,9 +94,17 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
             }
         }
 
-        List<String> attachments = ns.getList("attachment");
-        if (attachments == null) {
-            attachments = List.of();
+        List<String> attachmentNames = ns.getList("attachment");
+        if (attachmentNames == null) {
+            attachmentNames = List.of();
+        }
+
+        ArrayList<DbusAttachment> dBusAttachments = new ArrayList<>();
+        if (!attachmentNames.isEmpty()) {
+            for (var attachmentName : attachmentNames) {
+                DbusAttachment dBusAttachment = new DbusAttachment(attachmentName);
+                dBusAttachments.add(dBusAttachment);
+            }
         }
 
         if (groupIdString != null) {
@@ -105,7 +116,7 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
             }
 
             try {
-                var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
+                var timestamp = signal.sendGroupMessage(messageText, attachmentNames, groupId);
                 outputResult(timestamp);
                 return;
             } catch (DBusExecutionException e) {
@@ -115,25 +126,25 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
         if (isNoteToSelf) {
             try {
-                var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
+                var timestamp = signal.sendNoteToSelfMessage(messageText, attachmentNames);
                 outputResult(timestamp);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
-                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
+                throw new UntrustedKeyErrorException("Failed to send note to self message: " + e.getMessage());
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send note to self message: " + e.getMessage());
             }
         }
 
         try {
-            var timestamp = signal.sendMessage(messageText, attachments, recipients);
+            var timestamp = signal.sendMessageV2(messageText, dBusAttachments, recipients);
             outputResult(timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
             throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
         } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message, did not find attachment: " + e.getMessage());
         }
     }
 

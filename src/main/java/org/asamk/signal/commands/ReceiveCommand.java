@@ -89,6 +89,24 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                         writer.indentedWriter()
                                 .println("Id: {}", Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
                     }
+                    if (messageReceived.getAttachmentNames().size() > 0) {
+                        writer.println("Attachments:");
+                        for (var attachment : messageReceived.getAttachmentNames()) {
+                            writer.println("- Stored plaintext in: {}", attachment);
+                        }
+                    }
+                    writer.println();
+                });
+
+                dbusconnection.addSigHandler(Signal.MessageReceivedV2.class, signal, messageReceived -> {
+                    writer.println("Envelope from: {}", messageReceived.getSender());
+                    writer.println("Timestamp: {}", DateUtils.formatTimestamp(messageReceived.getTimestamp()));
+                    writer.println("Body: {}", messageReceived.getMessage());
+                    if (messageReceived.getGroupId().length > 0) {
+                        writer.println("Group info:");
+                        writer.indentedWriter()
+                                .println("Id: {}", Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
+                    }
                     if (messageReceived.getAttachments().size() > 0) {
                         writer.println("Attachments:");
                         for (var attachment : messageReceived.getAttachments()) {
@@ -104,6 +122,26 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 });
 
                 dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
+                    writer.println("Sync Envelope from: {} to: {}",
+                            syncReceived.getSource(),
+                            syncReceived.getDestination());
+                    writer.println("Timestamp: {}", DateUtils.formatTimestamp(syncReceived.getTimestamp()));
+                    writer.println("Body: {}", syncReceived.getMessage());
+                    if (syncReceived.getGroupId().length > 0) {
+                        writer.println("Group info:");
+                        writer.indentedWriter()
+                                .println("Id: {}", Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
+                    }
+                    if (syncReceived.getAttachmentNames().size() > 0) {
+                        writer.println("Attachments:");
+                        for (var attachment : syncReceived.getAttachmentNames()) {
+                            writer.println("- Stored plaintext in: {}", attachment);
+                        }
+                    }
+                    writer.println();
+                });
+
+                dbusconnection.addSigHandler(Signal.SyncMessageReceivedV2.class, signal, syncReceived -> {
                     writer.println("Sync Envelope from: {} to: {}",
                             syncReceived.getSource(),
                             syncReceived.getDestination());

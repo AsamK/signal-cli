@@ -1,7 +1,7 @@
 # signal-cli
 
 signal-cli is a commandline interface for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering, verifying, sending and receiving messages.
-To be able to link to an existing Signal-Android/signal-cli instance, signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java does not yet support [provisioning as a slave device](https://github.com/WhisperSystems/libsignal-service-java/pull/21).
+To be able to link to an existing Signal-Android/signal-cli instance, signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because libsignal-service-java does not yet support [provisioning as a secondary device](https://github.com/WhisperSystems/libsignal-service-java/pull/21).
 For registering you need a phone number where you can receive SMS or incoming calls.
 signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a dbus interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)), that can be used to send messages from any programming language that has dbus bindings.
 

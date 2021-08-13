@@ -646,6 +646,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (pointer.getCaption().isPresent()) {
                 writer.println("Caption: {}", pointer.getCaption().get());
             }
+            if (pointer.getBlurHash().isPresent()) {
+                writer.println("Blur Hash: {}", pointer.getBlurHash().get());
+            }
             if (pointer.getFileName().isPresent()) {
                 writer.println("Filename: {}", pointer.getFileName().get());
             }
