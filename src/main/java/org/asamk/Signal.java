@@ -69,6 +69,8 @@ public interface Signal extends DBusInterface {
 
     List<byte[]> getGroupIds();
 
+    List<String> getBase64GroupIds();
+
     String getGroupName(byte[] groupId);
 
     List<String> getGroupMembers(byte[] groupId);

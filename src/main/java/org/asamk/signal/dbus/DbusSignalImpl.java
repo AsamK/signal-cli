@@ -373,6 +373,16 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public List<String> getBase64GroupIds() {
+        var groups = m.getGroups();
+        var ids = new ArrayList<String>(groups.size());
+        for (var group : groups) {
+            ids.add(group.getGroupId().toBase64());
+        }
+        return ids;
+    }
+
+    @Override
     public String getGroupName(final byte[] groupId) {
         var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
