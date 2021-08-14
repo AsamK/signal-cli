@@ -2027,6 +2027,25 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext",
+  "fields":[
+    {"name":"avatar_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"id_"}, 
+    {"name":"membersE164_"}, 
+    {"name":"members_"}, 
+    {"name":"name_"}, 
+    {"name":"type_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext$Member",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"e164_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContextV2",
   "fields":[
     {"name":"bitField0_", "allowUnsafeAccess":true}, 
