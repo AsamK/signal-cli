@@ -33,8 +33,6 @@ import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.SleepTimer;
-import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
@@ -68,7 +66,6 @@ public class RegistrationManager implements Closeable {
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
 
-        final SleepTimer timer = new UptimeSleepTimer();
         GroupsV2Operations groupsV2Operations;
         try {
             groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
@@ -81,8 +78,7 @@ public class RegistrationManager implements Closeable {
                         null, account.getUsername(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
-                timer);
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
         final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),

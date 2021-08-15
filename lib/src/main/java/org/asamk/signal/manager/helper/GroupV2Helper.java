@@ -207,7 +207,7 @@ public class GroupV2Helper {
         var change = name != null ? groupOperations.createModifyGroupTitle(name) : GroupChange.Actions.newBuilder();
 
         if (description != null) {
-            change.setModifyDescription(groupOperations.createModifyGroupDescription(description));
+            change.setModifyDescription(groupOperations.createModifyGroupDescriptionAction(description));
         }
 
         if (avatarFile != null) {

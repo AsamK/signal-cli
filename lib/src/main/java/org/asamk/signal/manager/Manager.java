@@ -65,14 +65,12 @@ import org.signal.libsignal.metadata.ProtocolLegacyMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
-import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
-import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
@@ -86,19 +84,12 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.SignalServiceAccountManager;
-import org.whispersystems.signalservice.api.SignalServiceMessagePipe;
-import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
-import org.whispersystems.signalservice.api.SignalServiceMessageSender;
+import org.whispersystems.signalservice.api.InvalidMessageStructureException;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
-import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
-import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
-import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -133,9 +124,8 @@ import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserExce
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
-import org.whispersystems.signalservice.api.util.SleepTimer;
-import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -182,22 +172,12 @@ public class Manager implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(Manager.class);
 
-    private final CertificateValidator certificateValidator;
-
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
-    private final String userAgent;
+    private final SignalDependencies dependencies;
 
     private SignalAccount account;
-    private final SignalServiceAccountManager accountManager;
-    private final GroupsV2Api groupsV2Api;
-    private final GroupsV2Operations groupsV2Operations;
-    private final SignalServiceMessageReceiver messageReceiver;
-    private final ClientZkProfileOperations clientZkProfileOperations;
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
-
-    private SignalServiceMessagePipe messagePipe = null;
-    private SignalServiceMessagePipe unidentifiedMessagePipe = null;
 
     private final UnidentifiedAccessHelper unidentifiedAccessHelper;
     private final ProfileHelper profileHelper;
@@ -224,42 +204,19 @@ public class Manager implements Closeable {
     ) {
         this.account = account;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
-        this.certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
-        this.userAgent = userAgent;
-        this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
-                serviceEnvironmentConfig.getSignalServiceConfiguration())) : null;
-        final SleepTimer timer = new UptimeSleepTimer();
-        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                new DynamicCredentialsProvider(account.getUuid(),
-                        account.getUsername(),
-                        account.getPassword(),
-                        account.getDeviceId()),
-                userAgent,
-                groupsV2Operations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
-                timer);
-        this.groupsV2Api = accountManager.getGroupsV2Api();
-        final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
-                10);
 
-        this.pinHelper = new PinHelper(keyBackupService);
-        this.clientZkProfileOperations = capabilities.isGv2()
-                ? ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration())
-                .getProfileOperations()
-                : null;
-        this.messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                account.getUuid(),
+        final var credentialsProvider = new DynamicCredentialsProvider(account.getUuid(),
                 account.getUsername(),
                 account.getPassword(),
-                account.getDeviceId(),
+                account.getDeviceId());
+        this.dependencies = new SignalDependencies(account.getSelfAddress(),
+                serviceEnvironmentConfig,
                 userAgent,
-                null,
-                timer,
-                clientZkProfileOperations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+                credentialsProvider,
+                account.getSignalProtocolStore(),
+                executor,
+                sessionLock);
+        this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
 
         this.unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
                 account.getProfileStore()::getProfileKey,
@@ -267,14 +224,14 @@ public class Manager implements Closeable {
                 this::getSenderCertificate);
         this.profileHelper = new ProfileHelper(account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
-                unidentified -> unidentified ? getOrCreateUnidentifiedMessagePipe() : getOrCreateMessagePipe(),
-                () -> messageReceiver,
+                dependencies::getProfileService,
+                dependencies::getMessageReceiver,
                 this::resolveSignalServiceAddress);
         this.groupV2Helper = new GroupV2Helper(this::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
                 account::getSelfRecipientId,
-                groupsV2Operations,
-                groupsV2Api,
+                dependencies.getGroupsV2Operations(),
+                dependencies.getGroupsV2Api(),
                 this::getGroupAuthForToday,
                 this::resolveSignalServiceAddress);
         this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
@@ -350,11 +307,11 @@ public class Manager implements Closeable {
                         days);
             }
         }
-        if (accountManager.getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        if (dependencies.getAccountManager().getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             refreshPreKeys();
         }
         if (account.getUuid() == null) {
-            account.setUuid(accountManager.getOwnUuid());
+            account.setUuid(dependencies.getAccountManager().getOwnUuid());
         }
         updateAccountAttributes();
     }
@@ -376,17 +333,18 @@ public class Manager implements Closeable {
     }
 
     public void updateAccountAttributes() throws IOException {
-        accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
-                null,
-                account.getLocalRegistrationId(),
-                true,
-                // set legacy pin only if no KBS master key is set
-                account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
-                account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
-                account.getSelfUnidentifiedAccessKey(),
-                account.isUnrestrictedUnidentifiedAccess(),
-                capabilities,
-                account.isDiscoverableByPhoneNumber());
+        dependencies.getAccountManager()
+                .setAccountAttributes(account.getEncryptedDeviceName(),
+                        null,
+                        account.getLocalRegistrationId(),
+                        true,
+                        // set legacy pin only if no KBS master key is set
+                        account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
+                        account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
+                        account.getSelfUnidentifiedAccessKey(),
+                        account.isUnrestrictedUnidentifiedAccess(),
+                        capabilities,
+                        account.isDiscoverableByPhoneNumber());
     }
 
     /**
@@ -418,13 +376,14 @@ public class Manager implements Closeable {
         try (final var streamDetails = avatar == null
                 ? avatarStore.retrieveProfileAvatar(getSelfAddress())
                 : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
-            accountManager.setVersionedProfile(account.getUuid(),
-                    account.getProfileKey(),
-                    newProfile.getInternalServiceName(),
-                    newProfile.getAbout() == null ? "" : newProfile.getAbout(),
-                    newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
-                    Optional.absent(),
-                    streamDetails);
+            dependencies.getAccountManager()
+                    .setVersionedProfile(account.getUuid(),
+                            account.getProfileKey(),
+                            newProfile.getInternalServiceName(),
+                            newProfile.getAbout() == null ? "" : newProfile.getAbout(),
+                            newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
+                            Optional.absent(),
+                            streamDetails);
         }
 
         if (avatar != null) {
@@ -447,19 +406,19 @@ public class Manager implements Closeable {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
-        accountManager.setGcmId(Optional.absent());
+        dependencies.getAccountManager().setGcmId(Optional.absent());
 
         account.setRegistered(false);
     }
 
     public void deleteAccount() throws IOException {
-        accountManager.deleteAccount();
+        dependencies.getAccountManager().deleteAccount();
 
         account.setRegistered(false);
     }
 
     public List<Device> getLinkedDevices() throws IOException {
-        var devices = accountManager.getDevices();
+        var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
         var identityKey = account.getIdentityKeyPair().getPrivateKey();
         return devices.stream().map(d -> {
@@ -476,8 +435,8 @@ public class Manager implements Closeable {
     }
 
     public void removeLinkedDevices(int deviceId) throws IOException {
-        accountManager.removeDevice(deviceId);
-        var devices = accountManager.getDevices();
+        dependencies.getAccountManager().removeDevice(deviceId);
+        var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
     }
 
@@ -489,13 +448,14 @@ public class Manager implements Closeable {
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
         var identityKeyPair = getIdentityKeyPair();
-        var verificationCode = accountManager.getNewDeviceVerificationCode();
+        var verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
 
-        accountManager.addDevice(deviceIdentifier,
-                deviceKey,
-                identityKeyPair,
-                Optional.of(account.getProfileKey().serialize()),
-                verificationCode);
+        dependencies.getAccountManager()
+                .addDevice(deviceIdentifier,
+                        deviceKey,
+                        identityKeyPair,
+                        Optional.of(account.getProfileKey().serialize()),
+                        verificationCode);
         account.setMultiDevice(true);
     }
 
@@ -513,7 +473,7 @@ public class Manager implements Closeable {
             account.setRegistrationLockPin(pin.get(), masterKey);
         } else {
             // Remove legacy registration lock
-            accountManager.removeRegistrationLockV1();
+            dependencies.getAccountManager().removeRegistrationLockV1();
 
             // Remove KBS Pin
             pinHelper.removeRegistrationLockPin();
@@ -527,7 +487,7 @@ public class Manager implements Closeable {
         final var identityKeyPair = getIdentityKeyPair();
         var signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
-        accountManager.setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+        dependencies.getAccountManager().setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
     private List<PreKeyRecord> generatePreKeys() {
@@ -546,39 +506,6 @@ public class Manager implements Closeable {
         account.addSignedPreKey(record);
 
         return record;
-    }
-
-    private SignalServiceMessagePipe getOrCreateMessagePipe() {
-        if (messagePipe == null) {
-            messagePipe = messageReceiver.createMessagePipe();
-        }
-        return messagePipe;
-    }
-
-    private SignalServiceMessagePipe getOrCreateUnidentifiedMessagePipe() {
-        if (unidentifiedMessagePipe == null) {
-            unidentifiedMessagePipe = messageReceiver.createUnidentifiedMessagePipe();
-        }
-        return unidentifiedMessagePipe;
-    }
-
-    private SignalServiceMessageSender createMessageSender() {
-        return new SignalServiceMessageSender(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                account.getUuid(),
-                account.getUsername(),
-                account.getPassword(),
-                account.getDeviceId(),
-                account.getSignalProtocolStore(),
-                sessionLock,
-                userAgent,
-                account.isMultiDevice(),
-                Optional.fromNullable(messagePipe),
-                Optional.fromNullable(unidentifiedMessagePipe),
-                Optional.absent(),
-                clientZkProfileOperations,
-                executor,
-                ServiceConfig.MAX_ENVELOPE_SIZE,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
 
     public Profile getRecipientProfile(
@@ -1180,14 +1107,15 @@ public class Manager implements Closeable {
     ) throws IOException {
         final var today = currentTimeDays();
         // Returns credentials for the next 7 days
-        final var credentials = groupsV2Api.getCredentials(today);
+        final var credentials = dependencies.getGroupsV2Api().getCredentials(today);
         // TODO cache credentials until they expire
         var authCredentialResponse = credentials.get(today);
         try {
-            return groupsV2Api.getGroupsV2AuthorizationString(account.getUuid(),
-                    today,
-                    groupSecretParams,
-                    authCredentialResponse);
+            return dependencies.getGroupsV2Api()
+                    .getGroupsV2AuthorizationString(account.getUuid(),
+                            today,
+                            groupSecretParams,
+                            authCredentialResponse);
         } catch (VerificationFailedException e) {
             throw new IOException(e);
         }
@@ -1264,9 +1192,10 @@ public class Manager implements Closeable {
                 List.of(messageId),
                 System.currentTimeMillis());
 
-        createMessageSender().sendReceipt(remoteAddress,
-                unidentifiedAccessHelper.getAccessFor(resolveRecipient(remoteAddress)),
-                receiptMessage);
+        dependencies.getMessageSender()
+                .sendReceipt(remoteAddress,
+                        unidentifiedAccessHelper.getAccessFor(resolveRecipient(remoteAddress)),
+                        receiptMessage);
     }
 
     public Pair<Long, List<SendMessageResult>> sendMessage(
@@ -1277,7 +1206,7 @@ public class Manager implements Closeable {
             var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
 
             // Upload attachments here, so we only upload once even for multiple recipients
-            var messageSender = createMessageSender();
+            var messageSender = dependencies.getMessageSender();
             var attachmentPointers = new ArrayList<SignalServiceAttachment>(attachmentStreams.size());
             for (var attachment : attachmentStreams) {
                 if (attachment.isStream()) {
@@ -1349,11 +1278,6 @@ public class Manager implements Closeable {
         if (!recipientId.equals(getSelfRecipientId())) {
             sendNullMessage(recipientId);
         }
-    }
-
-    public String getContactName(String number) throws InvalidNumberException {
-        var contact = account.getContactStore().getContact(canonicalizeAndResolveRecipient(number));
-        return contact == null || contact.getName() == null ? "" : contact.getName();
     }
 
     public void setContactName(String number, String name) throws InvalidNumberException, NotMasterDeviceException {
@@ -1442,7 +1366,7 @@ public class Manager implements Closeable {
     public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
         var manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
 
         var packKey = KeyUtils.createStickerUploadKey();
         var packIdString = messageSender.uploadStickerManifest(manifest, packKey);
@@ -1536,9 +1460,9 @@ public class Manager implements Closeable {
         byte[] certificate;
         try {
             if (account.isPhoneNumberShared()) {
-                certificate = accountManager.getSenderCertificate();
+                certificate = dependencies.getAccountManager().getSenderCertificate();
             } else {
-                certificate = accountManager.getSenderCertificateForPhoneNumberPrivacy();
+                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
             }
         } catch (IOException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
@@ -1549,7 +1473,7 @@ public class Manager implements Closeable {
     }
 
     private void sendSyncMessage(SignalServiceSyncMessage message) throws IOException, UntrustedIdentityException {
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
         messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
     }
 
@@ -1604,9 +1528,10 @@ public class Manager implements Closeable {
 
     private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException {
         try {
-            return accountManager.getRegisteredUsers(ServiceConfig.getIasKeyStore(),
-                    numbers,
-                    serviceEnvironmentConfig.getCdsMrenclave());
+            return dependencies.getAccountManager()
+                    .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
+                            numbers,
+                            serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }
@@ -1623,7 +1548,7 @@ public class Manager implements Closeable {
     ) throws IOException, UntrustedIdentityException {
         final var timestamp = System.currentTimeMillis();
         var message = new SignalServiceTypingMessage(action.toSignalService(), timestamp, Optional.absent());
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
         for (var recipientId : recipientIds) {
             final var address = resolveSignalServiceAddress(recipientId);
             messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
@@ -1638,7 +1563,7 @@ public class Manager implements Closeable {
         final var message = new SignalServiceTypingMessage(action.toSignalService(),
                 timestamp,
                 Optional.of(groupId.serialize()));
-        final var messageSender = createMessageSender();
+        final var messageSender = dependencies.getMessageSender();
         final var recipientIdList = new ArrayList<>(g.getMembersWithout(account.getSelfRecipientId()));
         final var addresses = recipientIdList.stream()
                 .map(this::resolveSignalServiceAddress)
@@ -1651,14 +1576,13 @@ public class Manager implements Closeable {
     ) throws IOException {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
-        getOrCreateMessagePipe();
-        getOrCreateUnidentifiedMessagePipe();
+
         SignalServiceDataMessage message = null;
         try {
             message = messageBuilder.build();
             if (message.getGroupContext().isPresent()) {
                 try {
-                    var messageSender = createMessageSender();
+                    var messageSender = dependencies.getMessageSender();
                     final var isRecipientUpdate = false;
                     final var recipientIdList = new ArrayList<>(recipientIds);
                     final var addresses = recipientIdList.stream()
@@ -1668,7 +1592,9 @@ public class Manager implements Closeable {
                             unidentifiedAccessHelper.getAccessFor(recipientIdList),
                             isRecipientUpdate,
                             ContentHint.DEFAULT,
-                            message);
+                            message,
+                            sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
+                            () -> false);
 
                     for (var r : result) {
                         if (r.getIdentityFailure() != null) {
@@ -1712,8 +1638,6 @@ public class Manager implements Closeable {
     ) throws IOException {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
-        getOrCreateMessagePipe();
-        getOrCreateUnidentifiedMessagePipe();
         final var recipientId = account.getSelfRecipientId();
 
         final var contact = account.getContactStore().getContact(recipientId);
@@ -1726,7 +1650,7 @@ public class Manager implements Closeable {
     }
 
     private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
 
         var recipientId = account.getSelfRecipientId();
 
@@ -1741,12 +1665,7 @@ public class Manager implements Closeable {
         var syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
         try {
-            var startTime = System.currentTimeMillis();
-            messageSender.sendSyncMessage(syncMessage, unidentifiedAccess);
-            return SendMessageResult.success(recipient,
-                    unidentifiedAccess.isPresent(),
-                    false,
-                    System.currentTimeMillis() - startTime);
+            return messageSender.sendSyncMessage(syncMessage, unidentifiedAccess);
         } catch (UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(recipient, e.getIdentityKey());
         }
@@ -1755,7 +1674,7 @@ public class Manager implements Closeable {
     private SendMessageResult sendMessage(
             RecipientId recipientId, SignalServiceDataMessage message
     ) throws IOException {
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
 
         final var address = resolveSignalServiceAddress(recipientId);
         try {
@@ -1777,7 +1696,7 @@ public class Manager implements Closeable {
     }
 
     private SendMessageResult sendNullMessage(RecipientId recipientId) throws IOException {
-        var messageSender = createMessageSender();
+        var messageSender = dependencies.getMessageSender();
 
         final var address = resolveSignalServiceAddress(recipientId);
         try {
@@ -1793,12 +1712,8 @@ public class Manager implements Closeable {
         }
     }
 
-    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, ProtocolUntrustedIdentityException {
-        var cipher = new SignalServiceCipher(account.getSelfAddress(),
-                account.getSignalProtocolStore(),
-                sessionLock,
-                certificateValidator);
-        return cipher.decrypt(envelope);
+    private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, ProtocolUntrustedIdentityException, InvalidMessageStructureException {
+        return dependencies.getCipher().decrypt(envelope);
     }
 
     private void handleEndSession(RecipientId recipientId) {
@@ -2082,7 +1997,8 @@ public class Manager implements Closeable {
 
         Set<HandleAction> queuedActions = null;
 
-        final var messagePipe = getOrCreateMessagePipe();
+        final var signalWebSocket = dependencies.getSignalWebSocket();
+        signalWebSocket.connect();
 
         var hasCaughtUpWithOldMessages = false;
 
@@ -2094,7 +2010,7 @@ public class Manager implements Closeable {
             account.setLastReceiveTimestamp(System.currentTimeMillis());
             logger.debug("Checking for new message from server");
             try {
-                var result = messagePipe.readOrEmpty(timeout, unit, envelope1 -> {
+                var result = signalWebSocket.readOrEmpty(unit.toMillis(timeout), envelope1 -> {
                     final var recipientId = envelope1.hasSource()
                             ? resolveRecipient(envelope1.getSourceIdentifier())
                             : null;
@@ -2132,6 +2048,10 @@ public class Manager implements Closeable {
                 } else {
                     throw e;
                 }
+            } catch (WebSocketUnavailableException e) {
+                logger.debug("Pipe unexpectedly unavailable, connecting");
+                signalWebSocket.connect();
+                continue;
             } catch (TimeoutException e) {
                 if (returnOnTimeout) return;
                 continue;
@@ -2602,12 +2522,11 @@ public class Manager implements Closeable {
     private void retrieveGroupV2Avatar(
             GroupSecretParams groupSecretParams, String cdnKey, OutputStream outputStream
     ) throws IOException {
-        var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
 
         var tmpFile = IOUtils.createTempFile();
-        try (InputStream input = messageReceiver.retrieveGroupsV2ProfileAvatar(cdnKey,
-                tmpFile,
-                ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
+        try (InputStream input = dependencies.getMessageReceiver()
+                .retrieveGroupsV2ProfileAvatar(cdnKey, tmpFile, ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
             var encryptedData = IOUtils.readFully(input);
 
             var decryptedData = groupOperations.decryptAvatar(encryptedData);
@@ -2627,10 +2546,11 @@ public class Manager implements Closeable {
             String avatarPath, ProfileKey profileKey, OutputStream outputStream
     ) throws IOException {
         var tmpFile = IOUtils.createTempFile();
-        try (var input = messageReceiver.retrieveProfileAvatar(avatarPath,
-                tmpFile,
-                profileKey,
-                ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
+        try (var input = dependencies.getMessageReceiver()
+                .retrieveProfileAvatar(avatarPath,
+                        tmpFile,
+                        profileKey,
+                        ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
             // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
             IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
         } finally {
@@ -2678,7 +2598,8 @@ public class Manager implements Closeable {
     private InputStream retrieveAttachmentAsStream(
             SignalServiceAttachmentPointer pointer, File tmpFile
     ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        return messageReceiver.retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
+        return dependencies.getMessageReceiver()
+                .retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
     }
 
     void sendGroups() throws IOException, UntrustedIdentityException {
@@ -2979,7 +2900,10 @@ public class Manager implements Closeable {
     }
 
     private void enqueueJob(Job job) {
-        var context = new Context(account, accountManager, messageReceiver, stickerPackStore);
+        var context = new Context(account,
+                dependencies.getAccountManager(),
+                dependencies.getMessageReceiver(),
+                stickerPackStore);
         job.run(context);
     }
 
@@ -2991,15 +2915,7 @@ public class Manager implements Closeable {
     void close(boolean closeAccount) throws IOException {
         executor.shutdown();
 
-        if (messagePipe != null) {
-            messagePipe.shutdown();
-            messagePipe = null;
-        }
-
-        if (unidentifiedMessagePipe != null) {
-            unidentifiedMessagePipe.shutdown();
-            unidentifiedMessagePipe = null;
-        }
+        dependencies.getSignalWebSocket().disconnect();
 
         if (closeAccount && account != null) {
             account.close();

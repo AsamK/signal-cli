@@ -168,7 +168,11 @@ public class SignalAccount implements Closeable {
                 recipientStore::resolveRecipient,
                 identityKey,
                 registrationId);
-        signalProtocolStore = new SignalProtocolStore(preKeyStore, signedPreKeyStore, sessionStore, identityKeyStore);
+        signalProtocolStore = new SignalProtocolStore(preKeyStore,
+                signedPreKeyStore,
+                sessionStore,
+                identityKeyStore,
+                this::isMultiDevice);
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
     }
