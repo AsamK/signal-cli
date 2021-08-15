@@ -13,9 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>> {
-
-    void handleCommand(Namespace ns, Manager m) throws CommandException;
+public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>, LocalCommand {
 
     default TypeReference<Map<String, Object>> getRequestType() {
         return new TypeReference<>() {
