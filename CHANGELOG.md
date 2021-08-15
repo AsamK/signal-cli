@@ -8,7 +8,7 @@
 
 ## [0.8.5] - 2021-08-07
 ### Added
-- Source name is included in JSON receive output
+- Source name is included in JSON receive output (Thanks @technillogue)
 
 ### Fixed
 - Allow updateContact command to only set expiration timer without requiring a name parameter
