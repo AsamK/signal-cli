@@ -206,7 +206,7 @@ setExpirationTimer(number<s>,expiration<i>) -> <>::
 
 getGroupIds() -> groupList<aay>::
 getGroupIds(dummy<s>) -> groupList<as>::
-dummy           : any string (ignored by method)
+dummy           : any string (ignored by method; force output to be identical with getBase64GroupIds)
 groupList       : Array of Byte arrays representing the internal group identifiers
 base64GroupList : Array of strings representing the internal group identifiers in Base64 format
 
@@ -295,15 +295,29 @@ getObjectPath() -> objectPath<s>::
 version() -> version<s>::
 * version : Version string of signal-cli
 
-link
+link(newDeviceName<s>) -> deviceLinkUri<s>::
+* newDeviceName : Name to give new device
+* deviceLinkUri : URI of newly linked device
 
-register
+register(number<s>, voiceVerification<b>) -> <>::
+* number            : Phone number
+* voiceVerification : true = use voice verification; false = use SMS verification
 
-registerWithCaptcha
+registerWithCaptcha(number<s>, voiceVerification<b>, captcha<s>) -> <>::
+* number            : Phone number
+* voiceVerification : true = use voice verification; false = use SMS verification
+* captcha           : Captcha string
 
-verify
+verify(number<s>, verificationCode<s>) -> <>
+* number            : Phone number
+* verificationCode  : Code received from Signal after successful registration request
 
-verifyWithPin
+Command fails if PIN was set after previous registration; use verifyWithPin instead.
+
+verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>
+* number            : Phone number
+* verificationCode  : Code received from Signal after successful registration request
+* pin               : PIN you set after initial registration
 
 == Signals
 
