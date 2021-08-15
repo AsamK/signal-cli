@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager.NewDeviceRegistrationReturn;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -93,11 +94,22 @@ public class ProvisioningManager {
     }
 
     public Manager finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
-        var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
-        var number = ret.getNumber();
-
-        logger.info("Received link information from {}, linking in progress ...", number);
-
+        NewDeviceRegistrationReturn ret = null;
+        String number = null;
+        try {
+            logger.info("Waiting for link request from new device ...");
+            ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
+            number = ret.getNumber();
+            logger.info("Received link information from {}, linking in progress ...", number);
+        } catch (TimeoutException e) {
+            accountManager.cancelInFlightRequests();
+            logger.error("Timeout on linking {}", number);
+            throw e;
+        } catch (IOException f) {
+            accountManager.cancelInFlightRequests();
+            logger.error("Error on linking {}", number);
+            throw f;
+        }
         if (SignalAccount.userExists(pathConfig.getDataPath(), number) && !canRelinkExistingAccount(number)) {
             throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
         }

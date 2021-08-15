@@ -43,6 +43,8 @@ public class App {
     private final static Logger logger = LoggerFactory.getLogger(App.class);
 
     private final Namespace ns;
+    public static File dataPath;
+    public static ServiceEnvironment serviceEnvironment;
 
     static ArgumentParser buildArgumentParser() {
         var parser = ArgumentParsers.newFor("signal-cli", VERSION_0_9_0_DEFAULT_SETTINGS)
@@ -85,8 +87,14 @@ public class App {
         return parser;
     }
 
-    public App(final Namespace ns) {
+    public App(
+        final Namespace ns,
+        File dataPath,
+        ServiceEnvironment serviceEnvironment
+        ) {
         this.ns = ns;
+        this.dataPath = dataPath;
+        this.serviceEnvironment = serviceEnvironment;
     }
 
     public void init() throws CommandException {
@@ -105,7 +113,7 @@ public class App {
             throw new UserErrorException("Command doesn't support output type " + outputType.toString());
         }
 
-        var username = ns.getString("username");
+        String username = ns.getString("username");
 
         final var useDbus = ns.getBoolean("dbus");
         final var useDbusSystem = ns.getBoolean("dbus-system");
@@ -115,7 +123,7 @@ public class App {
             return;
         }
 
-        final File dataPath;
+//        final File dataPath;
         var config = ns.getString("config");
         if (config != null) {
             dataPath = new File(config);
@@ -124,7 +132,7 @@ public class App {
         }
 
         final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
-        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
+        serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
                 ? ServiceEnvironment.LIVE
                 : ServiceEnvironment.SANDBOX;
 

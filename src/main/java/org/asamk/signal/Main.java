@@ -27,9 +27,11 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.LibSignalLogger;
+import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.File;
 import java.security.Security;
 
 public class Main {
@@ -45,10 +47,12 @@ public class Main {
         var parser = App.buildArgumentParser();
 
         var ns = parser.parseArgsOrFail(args);
+        File dataPath = null;
+        ServiceEnvironment serviceEnvironment = null;
 
         int status = 0;
         try {
-            new App(ns).init();
+            new App(ns, dataPath, serviceEnvironment).init();
         } catch (CommandException e) {
             System.err.println(e.getMessage());
             status = getStatusForError(e);

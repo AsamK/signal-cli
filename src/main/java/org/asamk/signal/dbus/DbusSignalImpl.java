@@ -1,6 +1,8 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
+import org.asamk.SignalControl;
+import org.asamk.SignalControl.Error;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
@@ -250,7 +252,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
+    ) {
         try {
             final var results = m.sendSelfMessage(message, attachments);
             checkSendMessageResult(results.first(), results.second());
@@ -528,61 +530,6 @@ public class DbusSignalImpl implements Signal {
         return Base64.getEncoder().encodeToString(groupId);
     }
 
-/*
-    GroupLinkState getGroupLinkState(String value) throws UserErrorException {
-        if (value == null) {
-            return null;
-        }
-        switch (value) {
-            case "enabled":
-                return GroupLinkState.ENABLED;
-            case "enabled-with-approval":
-            case "enabledWithApproval":
-                return GroupLinkState.ENABLED_WITH_APPROVAL;
-            case "disabled":
-                return GroupLinkState.DISABLED;
-            default:
-                throw new UserErrorException("Invalid group link state: " + value);
-        }
-    }
-
-    GroupPermission getGroupPermission(String value) throws UserErrorException {
-        if (value == null) {
-            return null;
-        }
-        switch (value) {
-            case "every-member":
-            case "everyMember":
-                return GroupPermission.EVERY_MEMBER;
-            case "only-admins":
-            case "onlyAdmins":
-                return GroupPermission.ONLY_ADMINS;
-            default:
-                throw new UserErrorException("Invalid group permission: " + value);
-        }
-    }
-*/
-
-    /*
-     *
-     *
-public Pair<Long, List<SendMessageResult>> updateGroup(
-GroupId groupId,
-String name,
-String description,
-List<String> addMembers,
-List<String> removeMembers,
-List<String> addAdmins,
-List<String> removeAdmins,
-boolean resetGroupLink,
-GroupLinkState groupLinkState,
-GroupPermission addMemberPermission,
-GroupPermission editDetailsPermission,
-File avatarFile,
-Integer expirationTimer
-
- */
-
     @Override
     public String updateGroup(
             String base64GroupId,
@@ -737,8 +684,43 @@ Integer expirationTimer
     // future interface changes
     @Override
     public String version() {
-        return BaseConfig.PROJECT_VERSION;
+        return DbusSignalControlImpl.version();
     }
+
+    @Override
+    public String link() {
+        return DbusSignalControlImpl.link();
+    }
+
+    @Override
+    public String link(String newDeviceName) {
+        return DbusSignalControlImpl.link(newDeviceName);
+    }
+
+    @Override
+    public void register(
+            String number, boolean voiceVerification
+    ) {
+        DbusSignalControlImpl.register(number, voiceVerification);
+    }
+
+    @Override
+    public void registerWithCaptcha(
+            String number, boolean voiceVerification, String captcha
+    ) {
+        DbusSignalControlImpl.registerWithCaptcha(number, voiceVerification, captcha);
+    }
+
+    @Override
+    public void verify(String number, String verificationCode) {
+        DbusSignalControlImpl.verify(number, verificationCode);
+    }
+
+    @Override
+    public void verifyWithPin(String number, String verificationCode, String pin) {
+        DbusSignalControlImpl.verifyWithPin(number, verificationCode, pin);
+    }
+
 
     // Create a unique list of Numbers from Identities and Contacts to really get
     // all numbers the system knows

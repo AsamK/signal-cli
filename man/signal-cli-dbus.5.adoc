@@ -32,7 +32,7 @@ Where <type> is according to DBus specification:
 * <a>   : Array of ...
 * <s>   : String
 * <y>   : Byte
-* <b>   : Boolean (0|1)
+* <b>   : Boolean (false|true)
 * <x>   : Signed 64-bit integer (long)
 * <i>   : Signed 32-bit integer (int)
 * <>    : no return value
@@ -68,13 +68,13 @@ updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>
 * about       : About message for profile (empty if unchanged)
 * aboutEmoji  : Emoji for profile (empty if unchanged)
 * avatar      : Filename of avatar picture for profile (empty if unchanged)
-* remove      : Set to 1 if the existing avatar picture should be removed
+* remove      : Set to true if the existing avatar picture should be removed
 
 Exceptions: Failure
 
 setContactBlocked(number<s>, block<b>) -> <>::
 * number  : Phone number affected by method
-* block   : 0=remove block , 1=blocked
+* block   : false=remove block, true=block contact
 
 Messages from blocked numbers will no longer be forwarded via DBus.
 
@@ -84,7 +84,7 @@ setGroupBlocked(groupId<ay>, block<b>) -> <>::
 setGroupBlocked(base64GroupId<s>, block<b>) -> <>::
 * groupId       : Byte array representing the internal group identifier
 * base64GroupId : String representing the internal group identifier in Base64 format
-* block         : 0=remove block , 1=blocked
+* block         : false=remove block , true=block contact
 
 Messages from blocked groups will no longer be forwarded via DBus.
 
@@ -110,7 +110,7 @@ isMember(base64GroupId<s>) -> active<b>::
 * base64GroupId : String representing the internal group identifier in Base64 format
 * active        : Boolean representing whether you are a member of the group
 
-Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
+Note that this method does not raise an Exception for a non-existing/unknown group but will simply return false
 
 sendEndSessionMessage(recipients<as>) -> <>::
 * recipients : String array of phone numbers
@@ -206,7 +206,7 @@ setExpirationTimer(number<s>,expiration<i>) -> <>::
 
 getGroupIds() -> groupList<aay>::
 getGroupIds(dummy<s>) -> groupList<as>::
-dummy           : any string (ignored by method; force output to be identical with getBase64GroupIds)
+dummy           : any string (ignored by method; forces output to be identical with getBase64GroupIds)
 groupList       : Array of Byte arrays representing the internal group identifiers
 base64GroupList : Array of strings representing the internal group identifiers in Base64 format
 
@@ -246,17 +246,17 @@ Searches contacts and known profiles for a given name and returns the list of al
 
 isContactBlocked(number<s>) -> state<b>::
 * number  : Phone number
-* state   : 1=blocked, 0=not blocked
+* state   : true=blocked, false=not blocked
 
-Exceptions: None, for unknown numbers 0 (false) is returned
+Exceptions: None, for unknown numbers false is returned
 
 isGroupBlocked(groupId<ay>) -> state<b>::
 isGroupBlocked(base64GroupId<s>) -> state<b>::
 * groupId       : Byte array representing the internal group identifier
 * base64GroupId : String representing the internal group identifier in Base64 format
-* state         : 1=blocked, 0=not blocked
+* state         : true=blocked, false=not blocked
 
-Exceptions: None, for unknown groups 0 (false) is returned
+Exceptions: None, for unknown groups false is returned
 
 version() -> version<s>::
 * version : Version string of signal-cli
@@ -265,7 +265,7 @@ isRegistered(number<s>) -> result<b>::
 isRegistered(numbers<as>) -> results<ab>::
 * number  : Phone number
 * numbers : String array of phone numbers
-* result  : 1=number is registered, 0=number is not registered
+* result  : true=number is registered, false=number is not registered
 * results : Boolean array of results
 
 listDevices() -> devices<as>::
@@ -286,17 +286,15 @@ updateAccount() -> <>
 
 This command reverses an `unregister` command.
 
-
-== Methods for org.asamk.SignalControl
-
 getObjectPath() -> objectPath<s>::
 * objectPath  : The DBus object path associated with this connection
 
 version() -> version<s>::
 * version : Version string of signal-cli
 
+link() -> deviceLinkUri<s>::
 link(newDeviceName<s>) -> deviceLinkUri<s>::
-* newDeviceName : Name to give new device
+* newDeviceName : Name to give new device (defaults to "cli" if no name is given)
 * deviceLinkUri : URI of newly linked device
 
 register(number<s>, voiceVerification<b>) -> <>::

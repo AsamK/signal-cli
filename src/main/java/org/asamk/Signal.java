@@ -1,6 +1,6 @@
 package org.asamk;
 
-import org.asamk.Signal.Error;
+import org.asamk.SignalControl;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.groups.GroupId;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -131,6 +131,22 @@ public interface Signal extends DBusInterface {
     String version();
 
     String getObjectPath();
+
+    String link() throws Error.Failure;
+
+    String link(String newDeviceName) throws Error.Failure;
+
+    void register(
+            String number, boolean voiceVerification
+    ) throws Error.Failure, Error.InvalidNumber, SignalControl.Error.RequiresCaptcha;
+
+    void registerWithCaptcha(
+            final String number, final boolean voiceVerification, final String captcha
+    ) throws Error.Failure, Error.InvalidNumber, SignalControl.Error.RequiresCaptcha;
+
+    void verify(String number, String verificationCode) throws Error.Failure, Error.InvalidNumber;
+
+    void verifyWithPin(String number, String verificationCode, String pin) throws Error.Failure, Error.InvalidNumber;
 
     List<String> listNumbers();
 

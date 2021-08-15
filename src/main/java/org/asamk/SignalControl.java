@@ -12,25 +12,7 @@ import java.util.List;
  */
 public interface SignalControl extends DBusInterface {
 
-    void register(
-            String number, boolean voiceVerification
-    ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;
-
-    void registerWithCaptcha(
-            String number, boolean voiceVerification, String captcha
-    ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;
-
-    void verify(String number, String verificationCode) throws Error.Failure, Error.InvalidNumber;
-
-    void verifyWithPin(String number, String verificationCode, String pin) throws Error.Failure, Error.InvalidNumber;
-
-    String link(String newDeviceName) throws Error.Failure;
-
-    String version();
-
-    List<DBusPath> listAccounts();
-
-    String getObjectPath();
+	List<DBusPath> listAccounts();
 
     interface Error {
 

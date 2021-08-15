@@ -1,13 +1,17 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.SignalControl;
+import org.asamk.signal.App;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.PathConfig;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.freedesktop.dbus.DBusPath;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
@@ -15,6 +19,7 @@ import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
 
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +29,12 @@ import java.util.stream.Collectors;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
-    private final SignalCreator c;
-    private final Function<Manager, Thread> newManagerRunner;
+    private static SignalCreator c;
+    private static Function<Manager, Thread> newManagerRunner;
 
-    private final List<Pair<Manager, Thread>> receiveThreads = new ArrayList<>();
-    private final Object stopTrigger = new Object();
-    private final String objectPath;
+    private static List<Pair<Manager, Thread>> receiveThreads = new ArrayList<>();
+    private static Object stopTrigger = new Object();
+    private static String objectPath;
 
     public DbusSignalControlImpl(
             final SignalCreator c, final Function<Manager, Thread> newManagerRunner, final String objectPath
@@ -39,7 +44,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         this.objectPath = objectPath;
     }
 
-    public void addManager(Manager m) {
+    public static void addManager(Manager m) {
         var thread = newManagerRunner.apply(m);
         if (thread == null) {
             return;
@@ -78,30 +83,39 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         }
     }
 
+/*
     @Override
     public boolean isRemote() {
         return false;
     }
+*/
 
     @Override
     public String getObjectPath() {
         return objectPath;
     }
 
-    @Override
-    public void register(
+    public static void register(
             final String number, final boolean voiceVerification
-    ) throws Error.Failure, Error.InvalidNumber {
+    ) {
         registerWithCaptcha(number, voiceVerification, null);
     }
 
-    @Override
-    public void registerWithCaptcha(
+    public static void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
-    ) throws Error.Failure, Error.InvalidNumber {
-        try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
+    ) {
+        RegistrationManager registrationManager = null;
+        try  {
+            registrationManager = 
+                    RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
             registrationManager.register(voiceVerification, captcha);
+            System.out.println("registered");
         } catch (CaptchaRequiredException e) {
+            try {
+                registrationManager.close();
+            } catch (IOException f) {
+                throw new SignalControl.Error.Failure(f.getClass().getSimpleName() + " " + f.getMessage());
+            }
             String message = captcha == null ? "Captcha required for verification." : "Invalid captcha given.";
             throw new SignalControl.Error.RequiresCaptcha(message);
         } catch (IOException e) {
@@ -109,16 +123,16 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         }
     }
 
-    @Override
-    public void verify(final String number, final String verificationCode) throws Error.Failure, Error.InvalidNumber {
+    public static void verify(final String number, final String verificationCode) {
         verifyWithPin(number, verificationCode, null);
     }
 
-    @Override
-    public void verifyWithPin(
-            final String number, final String verificationCode, final String pin
-    ) throws Error.Failure, Error.InvalidNumber {
-        try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
+    public static void verifyWithPin(final String number, final String verificationCode, final String pin)
+    {
+        RegistrationManager registrationManager = null;
+        try {
+            registrationManager = 
+                    RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
             final Manager manager = registrationManager.verifyAccount(verificationCode, pin);
             addManager(manager);
         } catch (IOException | KeyBackupSystemNoDataException | KeyBackupServicePinException e) {
@@ -126,17 +140,20 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         }
     }
 
-    @Override
-    public String link(final String newDeviceName) throws Error.Failure {
+    public static String link() {
+        return link("cli");
+    }
+
+    public static String link(final String newDeviceName) {
         try {
-            final ProvisioningManager provisioningManager = c.getNewProvisioningManager();
+            final ProvisioningManager provisioningManager = 
+                    ProvisioningManager.init(App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
             final URI deviceLinkUri = provisioningManager.getDeviceLinkUri();
             new Thread(() -> {
                 try {
-                    final Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
+                    Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
                     addManager(manager);
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
-                    e.printStackTrace();
                 }
             }).start();
             return deviceLinkUri.toString();
@@ -145,10 +162,10 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         }
     }
 
-    @Override
-    public String version() {
+    public static String version() {
         return BaseConfig.PROJECT_VERSION;
     }
+
 
     @Override
     public List<DBusPath> listAccounts() {
