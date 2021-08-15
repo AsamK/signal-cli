@@ -472,9 +472,6 @@ public class Manager implements Closeable {
 
             account.setRegistrationLockPin(pin.get(), masterKey);
         } else {
-            // Remove legacy registration lock
-            dependencies.getAccountManager().removeRegistrationLockV1();
-
             // Remove KBS Pin
             pinHelper.removeRegistrationLockPin();
 
