@@ -5,15 +5,19 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.UpdateGroupCommand;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
+import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
@@ -32,6 +36,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -283,6 +288,11 @@ public class DbusSignalImpl implements Signal {
             throw new Error.AttachmentInvalid(e.getMessage());
         }
     }
+    @Override
+    public long sendGroupMessage(final String message, final List<String> attachments, final String base64GroupId) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
+        return sendGroupMessage(message, attachments, groupId);
+    }
 
     @Override
     public long sendGroupMessageReaction(
@@ -307,6 +317,18 @@ public class DbusSignalImpl implements Signal {
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
+    }
+
+    @Override
+    public long sendGroupMessageReaction(
+            final String emoji,
+            final boolean remove,
+            final String targetAuthor,
+            final long targetSentTimestamp,
+            final String base64GroupId
+            ) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
+        return sendGroupMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, groupId);
     }
 
     // Since contact names might be empty if not defined, also potentially return
@@ -363,21 +385,17 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void setGroupBlocked(final String base64GroupId, final boolean blocked) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
+        setGroupBlocked(groupId, blocked);
+    }
+
+    @Override
     public List<byte[]> getGroupIds() {
         var groups = m.getGroups();
         var ids = new ArrayList<byte[]>(groups.size());
         for (var group : groups) {
             ids.add(group.getGroupId().serialize());
-        }
-        return ids;
-    }
-
-    @Override
-    public List<String> getBase64GroupIds() {
-        var groups = m.getGroups();
-        var ids = new ArrayList<String>(groups.size());
-        for (var group : groups) {
-            ids.add(group.getGroupId().toBase64());
         }
         return ids;
     }
@@ -394,6 +412,54 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getGroupMembers(final byte[] groupId) {
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
+        if (group == null) {
+            return List.of();
+        } else {
+            return group.getMembers()
+                    .stream()
+                    .map(m::resolveSignalServiceAddress)
+                    .map(Util::getLegacyIdentifier)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    // To get the group Ids in base 64 format, either use the getBaseGroupIds() method, or
+    //   the getGroupIds(dummy) form, where dummy represents any string
+    @Override
+    public List<String> getBase64GroupIds() {
+        var groups = m.getGroups();
+        var ids = new ArrayList<String>(groups.size());
+        for (var group : groups) {
+            ids.add(group.getGroupId().toBase64());
+        }
+        return ids;
+    }
+
+    @Override
+    public List<String> getGroupIds(String dummy) {
+        var groups = m.getGroups();
+        var ids = new ArrayList<String>(groups.size());
+        for (var group : groups) {
+            ids.add(group.getGroupId().toBase64());
+        }
+        return ids;
+    }
+
+    @Override
+    public String getGroupName(final String base64GroupId) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
+        var group = m.getGroup(GroupId.unknownVersion(groupId));
+        if (group == null) {
+            return "";
+        } else {
+            return group.getTitle();
+        }
+    }
+
+    @Override
+    public List<String> getGroupMembers(final String base64GroupId) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
         var group = m.getGroup(GroupId.unknownVersion(groupId));
         if (group == null) {
             return List.of();
@@ -447,6 +513,169 @@ public class DbusSignalImpl implements Signal {
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
+        } catch (AttachmentInvalidException e) {
+            throw new Error.AttachmentInvalid(e.getMessage());
+        }
+    }
+
+    @Override
+    public String updateGroup(String base64GroupId, String name, List<String> members, String avatar) {
+        byte[] groupId = Base64.getDecoder().decode(base64GroupId);
+        groupId = updateGroup(groupId, name, members, avatar);
+        return Base64.getEncoder().encodeToString(groupId);
+    }
+
+/*
+    GroupLinkState getGroupLinkState(String value) throws UserErrorException {
+        if (value == null) {
+            return null;
+        }
+        switch (value) {
+            case "enabled":
+                return GroupLinkState.ENABLED;
+            case "enabled-with-approval":
+            case "enabledWithApproval":
+                return GroupLinkState.ENABLED_WITH_APPROVAL;
+            case "disabled":
+                return GroupLinkState.DISABLED;
+            default:
+                throw new UserErrorException("Invalid group link state: " + value);
+        }
+    }
+
+    GroupPermission getGroupPermission(String value) throws UserErrorException {
+        if (value == null) {
+            return null;
+        }
+        switch (value) {
+            case "every-member":
+            case "everyMember":
+                return GroupPermission.EVERY_MEMBER;
+            case "only-admins":
+            case "onlyAdmins":
+                return GroupPermission.ONLY_ADMINS;
+            default:
+                throw new UserErrorException("Invalid group permission: " + value);
+        }
+    }
+*/
+
+    /*
+     *
+     *
+public Pair<Long, List<SendMessageResult>> updateGroup(
+GroupId groupId,
+String name,
+String description,
+List<String> addMembers,
+List<String> removeMembers,
+List<String> addAdmins,
+List<String> removeAdmins,
+boolean resetGroupLink,
+GroupLinkState groupLinkState,
+GroupPermission addMemberPermission,
+GroupPermission editDetailsPermission,
+File avatarFile,
+Integer expirationTimer
+
+ */
+
+    @Override
+    public String updateGroup(
+            String base64GroupId,
+            String name,
+            String description,
+            List<String> addMembers,
+            List<String> removeMembers,
+            List<String> addAdmins,
+            List<String> removeAdmins,
+            boolean resetGroupLink,
+            String groupLinkState,
+            String addMemberPermission,
+            String editDetailsPermission,
+            String avatar,
+            Integer expirationTimer
+            ) {
+        try {
+            byte[] groupId = null;
+            File avatarFile = null;
+            if (base64GroupId.isEmpty()) {
+                throw new Error.GroupNotFound("No group specified.");
+            } else {
+                groupId = Base64.getDecoder().decode(base64GroupId);
+            }
+            if (name.isEmpty()) {
+                name = null;
+            }
+            if (description.isEmpty()) {
+                description= null;
+            }
+            if (addMembers.isEmpty()) {
+                addMembers = null;
+            }
+            if (removeMembers.isEmpty()) {
+                removeMembers = null;
+            }
+            if (addAdmins.isEmpty()) {
+                addAdmins = null;
+            }
+            if (removeAdmins.isEmpty()) {
+                removeAdmins = null;
+            }
+            if (groupLinkState.isEmpty()) {
+                groupLinkState = null;
+            }
+            if (addMemberPermission.isEmpty()) {
+                addMemberPermission = null;
+            }
+            if (editDetailsPermission.isEmpty()) {
+                editDetailsPermission = null;
+            }
+            if (avatar.isEmpty()) {
+                avatarFile = null;
+            } else {
+                avatarFile = new File(avatar);
+                //check if we are sending an empty file. If so, this tells Signal
+                // to delete the avatar, and we will delete it from the local AvatarStore
+                 long fileSize = avatarFile.length();
+                 if (fileSize == 0) {
+                     try {
+                         AvatarStore.deleteGroupAvatar(GroupId.unknownVersion(groupId));
+                     } catch (IOException e) {
+                         throw new Error.Failure(e.getMessage());
+                     }
+                 }
+            }
+            if (groupId == null) {
+                final var results = m.createGroup(name, addMembers, avatar == null ? null : new File(avatar));
+                checkSendMessageResults(0, results.second());
+                return Base64.getEncoder().encodeToString(results.first().serialize());
+            } else {
+                final var results = m.updateGroup(GroupId.unknownVersion(groupId),
+                        name,
+                        description,
+                        addMembers,
+                        removeMembers,
+                        addAdmins,
+                        removeAdmins,
+                        resetGroupLink,
+                        groupLinkState == null ? null : UpdateGroupCommand.getGroupLinkState(groupLinkState),
+                        addMemberPermission == null ? null : UpdateGroupCommand.getGroupPermission(addMemberPermission),
+                        editDetailsPermission == null ? null : UpdateGroupCommand.getGroupPermission(editDetailsPermission),
+                        avatarFile,
+                        expirationTimer
+                        );
+                if (results != null) {
+                    checkSendMessageResults(results.first(), results.second());
+                }
+                return base64GroupId;
+            }
+        } catch (UserErrorException | IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch ( GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());

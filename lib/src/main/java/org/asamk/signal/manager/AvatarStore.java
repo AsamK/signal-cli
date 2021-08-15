@@ -14,7 +14,7 @@ import java.nio.file.Files;
 
 public class AvatarStore {
 
-    private final File avatarsPath;
+    private static File avatarsPath = null;
 
     public AvatarStore(final File avatarsPath) {
         this.avatarsPath = avatarsPath;
@@ -49,7 +49,7 @@ public class AvatarStore {
         deleteAvatar(getProfileAvatarFile(address));
     }
 
-    public void deleteGroupAvatar(GroupId groupId) throws IOException {
+    public static void deleteGroupAvatar(GroupId groupId) throws IOException {
         deleteAvatar(getGroupAvatarFile(groupId));
     }
 
@@ -67,13 +67,13 @@ public class AvatarStore {
         }
     }
 
-    private void deleteAvatar(final File avatarFile) throws IOException {
+    private static void deleteAvatar(final File avatarFile) throws IOException {
         if (avatarFile.exists()) {
             Files.delete(avatarFile.toPath());
         }
     }
 
-    private File getGroupAvatarFile(GroupId groupId) {
+    private static File getGroupAvatarFile(GroupId groupId) {
         return new File(avatarsPath, "group-" + groupId.toBase64().replace("/", "_"));
     }
 

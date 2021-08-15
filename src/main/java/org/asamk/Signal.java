@@ -1,11 +1,15 @@
 package org.asamk;
 
+import org.asamk.Signal.Error;
+import org.asamk.signal.manager.AvatarStore;
+import org.asamk.signal.manager.groups.GroupId;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -69,14 +73,51 @@ public interface Signal extends DBusInterface {
 
     List<byte[]> getGroupIds();
 
-    List<String> getBase64GroupIds();
-
     String getGroupName(byte[] groupId);
 
     List<String> getGroupMembers(byte[] groupId);
 
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
+
+    String updateGroup(
+            String base64GroupId,
+            String name,
+            String description,
+            List<String> addMembers,
+            List<String> removeMembers,
+            List<String> addAdmins,
+            List<String> removeAdmins,
+            boolean resetGroupLink,
+            String groupLinkState,
+            String addMemberPermission,
+            String editDetailsPermission,
+            String avatar,
+            Integer expirationTimer
+            ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
+
+    String getGroupName(String base64GroupId);
+
+    // To get the group Ids in base 64 format, either use the getBaseGroupIds() method, or
+    //   the getGroupIds(dummy) form, where dummy represents any string
+    List<String> getBase64GroupIds();
+    List<String> getGroupIds(String dummy);
+
+    void setGroupBlocked(String base64GroupId, boolean blocked) throws Error.GroupNotFound;
+
+    List<String> getGroupMembers(String dummy);
+
+    long sendGroupMessage(
+            String message, List<String> attachments, String base64GroupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid;
+
+    long sendGroupMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String base64GroupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber;
+
+    String updateGroup(
+            String base64GroupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
 
     boolean isRegistered(String number);

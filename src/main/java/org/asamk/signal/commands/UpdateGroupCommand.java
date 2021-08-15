@@ -73,7 +73,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
-    GroupLinkState getGroupLinkState(String value) throws UserErrorException {
+    public static GroupLinkState getGroupLinkState(String value) throws UserErrorException {
         if (value == null) {
             return null;
         }
@@ -90,7 +90,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         }
     }
 
-    GroupPermission getGroupPermission(String value) throws UserErrorException {
+    public static GroupPermission getGroupPermission(String value) throws UserErrorException {
         if (value == null) {
             return null;
         }
