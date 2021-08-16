@@ -44,6 +44,7 @@ public class ListDevicesCommand implements LocalCommand {
         for (var d : devices) {
             writer.println("- Device {}{}:", d.getId(), (d.getId() == m.getDeviceId() ? " (this device)" : ""));
             writer.indent(w -> {
+                w.println("Id: {}", d.getId());
                 w.println("Name: {}", d.getName());
                 w.println("Created: {}", DateUtils.formatTimestamp(d.getCreated()));
                 w.println("Last seen: {}", DateUtils.formatTimestamp(d.getLastSeen()));

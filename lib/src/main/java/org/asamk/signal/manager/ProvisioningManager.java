@@ -179,13 +179,13 @@ public class ProvisioningManager {
         try {
             signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false);
         } catch (IOException e) {
-            logger.debug("Account in use or failed to load.", e);
+            logger.error("Account in use or failed to load.", e);
             return false;
         }
 
         try (signalAccount) {
             if (signalAccount.isMasterDevice()) {
-                logger.debug("Account is a master device.");
+                logger.error("Account is a master device.");
                 return false;
             }
 
@@ -196,7 +196,7 @@ public class ProvisioningManager {
                 return true;
             }
 
-            logger.debug("Account is still successfully linked.");
+            logger.error("Account is still successfully linked.");
             return false;
         }
     }

@@ -13,13 +13,16 @@ import org.asamk.signal.manager.UserAlreadyExists;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.freedesktop.dbus.DBusPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 
 import java.io.IOException;
-import java.lang.System.Logger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     private static List<Pair<Manager, Thread>> receiveThreads = new ArrayList<>();
     private static Object stopTrigger = new Object();
     private static String objectPath;
+
+    public static RegistrationManager registrationManager;
+    public static ProvisioningManager provisioningManager;
+
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalControlImpl.class);
 
     public DbusSignalControlImpl(
             final SignalCreator c, final Function<Manager, Thread> newManagerRunner, final String objectPath
@@ -104,19 +112,21 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     public static void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
     ) {
-        RegistrationManager registrationManager = null;
         try  {
-            registrationManager = 
-                    RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
+            try {
+                registrationManager =  RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             registrationManager.register(voiceVerification, captcha);
-            System.out.println("registered");
         } catch (CaptchaRequiredException e) {
             try {
                 registrationManager.close();
             } catch (IOException f) {
                 throw new SignalControl.Error.Failure(f.getClass().getSimpleName() + " " + f.getMessage());
             }
-            String message = captcha == null ? "Captcha required for verification." : "Invalid captcha given.";
+            String message = captcha == null ? "Captcha required for verification. Get one from https://signalcaptchas.org/registration/generate.html"
+                            : "Invalid captcha given. Get one from https://signalcaptchas.org/registration/generate.html";
             throw new SignalControl.Error.RequiresCaptcha(message);
         } catch (IOException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
@@ -129,12 +139,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     public static void verifyWithPin(final String number, final String verificationCode, final String pin)
     {
-        RegistrationManager registrationManager = null;
         try {
-            registrationManager = 
-                    RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
             final Manager manager = registrationManager.verifyAccount(verificationCode, pin);
-            addManager(manager);
+            logger.info("Registration of " + number + " verified");
+            manager.close();
+            registrationManager.close();
         } catch (IOException | KeyBackupSystemNoDataException | KeyBackupServicePinException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
@@ -146,14 +155,15 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     public static String link(final String newDeviceName) {
         try {
-            final ProvisioningManager provisioningManager = 
-                    ProvisioningManager.init(App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
+            provisioningManager = ProvisioningManager.init(App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
             final URI deviceLinkUri = provisioningManager.getDeviceLinkUri();
             new Thread(() -> {
                 try {
                     Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
-                    addManager(manager);
+                    logger.info("Linking of " + newDeviceName + " successful");
+                    manager.close();
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
                 }
             }).start();
             return deviceLinkUri.toString();

@@ -28,6 +28,7 @@ import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
@@ -37,6 +38,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
