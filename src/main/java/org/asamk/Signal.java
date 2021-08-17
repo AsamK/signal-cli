@@ -11,6 +11,7 @@ import org.whispersystems.libsignal.InvalidKeyException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -138,6 +139,10 @@ public interface Signal extends DBusInterface {
     String link() throws Error.Failure;
 
     String link(String newDeviceName) throws Error.Failure;
+
+    void addDevice(String uri) throws Error.Failure;
+
+    void removeDevice(int deviceId) throws Error.Failure;
 
     void register(
             String number, boolean voiceVerification

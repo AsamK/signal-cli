@@ -39,6 +39,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
@@ -697,6 +698,26 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String link(String newDeviceName) {
         return DbusSignalControlImpl.link(newDeviceName);
+    }
+
+    @Override
+    public void addDevice(String uri) {
+        try {
+            m.addDeviceLink(new URI(uri));
+        } catch (IOException | InvalidKeyException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + "Add device link failed. " + e.getMessage());
+        } catch (URISyntaxException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + "Device link uri has invalid format: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void removeDevice(int deviceId) {
+        try {
+            m.removeLinkedDevices(deviceId);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + "Error while removing device: " + e.getMessage());
+        }
     }
 
     @Override

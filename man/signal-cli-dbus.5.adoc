@@ -268,9 +268,6 @@ isRegistered(numbers<as>) -> results<ab>::
 * result  : true=number is registered, false=number is not registered
 * results : Boolean array of results
 
-listDevices() -> devices<as>::
-* devices  : String array of linked devices
-
 listIdentity(number<s>) -> results<a(ssss)>::
 * number   : Phone number
 * results  : Array of elements, each consisting of four strings: trust_level, date_added, fingerprint, safety_number
@@ -296,6 +293,15 @@ link() -> deviceLinkUri<s>::
 link(newDeviceName<s>) -> deviceLinkUri<s>::
 * newDeviceName : Name to give new device (defaults to "cli" if no name is given)
 * deviceLinkUri : URI of newly linked device
+
+addDevice(deviceUri<s>) -> <>::
+* deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
+
+listDevices() -> devices<as>::
+* devices  : String array of linked devices
+
+removeDevice(deviceId<i>) -> <>::
+* deviceId : Device ID to remove, obtained from listDevices() command
 
 register(number<s>, voiceVerification<b>) -> <>::
 * number            : Phone number

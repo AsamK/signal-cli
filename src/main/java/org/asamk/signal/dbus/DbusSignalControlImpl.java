@@ -6,6 +6,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.PathConfig;
@@ -26,6 +27,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -185,7 +187,6 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     public static String version() {
         return BaseConfig.PROJECT_VERSION;
     }
-
 
     @Override
     public List<DBusPath> listAccounts() {
