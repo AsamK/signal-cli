@@ -487,6 +487,26 @@
   "allDeclaredConstructors":true
 },
 {
+  "name": "org.asamk.signal.jsonrpc.JsonRpcBulkMessage",
+  "allDeclaredFields": true
+},
+{
+  "name": "org.asamk.signal.jsonrpc.JsonRpcException",
+  "allDeclaredFields": true
+},
+{
+  "name": "org.asamk.signal.jsonrpc.JsonRpcMessage",
+  "allDeclaredFields": true
+},
+{
+  "name": "org.asamk.signal.jsonrpc.JsonRpcRequest",
+  "allDeclaredFields": true
+},
+{
+  "name":"org.asamk.signal.jsonrpc.JsonRpcResponse",
+  "allDeclaredFields":true
+},
+{
   "name":"org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
