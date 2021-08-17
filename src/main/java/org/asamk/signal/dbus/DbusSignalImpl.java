@@ -7,8 +7,10 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
+import org.asamk.signal.commands.GetUserStatusCommand;
 import org.asamk.signal.commands.UpdateGroupCommand;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.AvatarStore;
@@ -28,6 +30,8 @@ import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -35,6 +39,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +61,7 @@ public class DbusSignalImpl implements Signal {
 
     private final Manager m;
     private final String objectPath;
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
     public DbusSignalImpl(final Manager m, final String objectPath) {
         this.m = m;
@@ -683,6 +689,50 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
+    @Override
+    public void updateProfile(
+            final String givenName,
+            final String familyName,
+            final String about,
+            final String aboutEmoji,
+            String avatarPath,
+            final boolean removeAvatar
+    ) {
+        try {
+            if (avatarPath.isEmpty()) {
+                avatarPath = null;
+            }
+            Optional<File> avatarFile = removeAvatar
+                    ? Optional.absent()
+                    : avatarPath == null ? null : Optional.of(new File(avatarPath));
+            m.setProfile(givenName, familyName, about, aboutEmoji, avatarFile);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public void removePin() {
+        try {
+            m.setRegistrationLockPin(Optional.absent());
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Remove pin failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Remove pin error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void setPin(String registrationLockPin)  {
+        try {
+            m.setRegistrationLockPin(Optional.of(registrationLockPin));
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Set pin error failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Set pin error: " + e.getMessage());
+        }
+    }
+
     // Provide option to query a version string in order to react on potential
     // future interface changes
     @Override
@@ -732,6 +782,17 @@ public class DbusSignalImpl implements Signal {
             String number, boolean voiceVerification, String captcha
     ) {
         DbusSignalControlImpl.registerWithCaptcha(number, voiceVerification, captcha);
+    }
+
+    @Override
+    public void unregister() {
+    	try {
+            m.unregister();
+            logger.info("Unregister succeeded, exiting.\n");
+            System.exit(0);
+    	} catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + "Unregister error: " + e.getMessage());
+    	}
     }
 
     @Override

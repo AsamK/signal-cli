@@ -1,6 +1,8 @@
 package org.asamk;
 
 import org.asamk.SignalControl;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.groups.GroupId;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -8,7 +10,10 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
 import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -129,8 +134,16 @@ public interface Signal extends DBusInterface {
     List<Boolean> isRegistered(List<String> numbers);
 
     void updateProfile(
+            String givenName, String familyName, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
+    ) throws Error.Failure;
+
+    void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+ 
+    void removePin() throws Error.Failure; 
+
+    void setPin(String registrationLockPin) throws Error.Failure; 
 
     String version();
 
@@ -151,6 +164,8 @@ public interface Signal extends DBusInterface {
     void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
     ) throws Error.Failure, Error.InvalidNumber, SignalControl.Error.RequiresCaptcha;
+
+    void unregister() throws Error.Failure;
 
     void verify(String number, String verificationCode) throws Error.Failure, Error.InvalidNumber;
 

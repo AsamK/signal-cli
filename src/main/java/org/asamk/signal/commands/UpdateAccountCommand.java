@@ -16,7 +16,7 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     }
 
     public static void attachToSubparser(final Subparser subparser) {
-        subparser.help("Update the account attributes on the signal server.");
+        subparser.help("Update the account attributes on the Signal server.");
     }
 
     @Override
