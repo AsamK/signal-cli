@@ -9,6 +9,8 @@ import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.PlainTextWriterImpl;
 import org.asamk.signal.commands.GetUserStatusCommand;
 import org.asamk.signal.commands.UpdateGroupCommand;
+import org.asamk.signal.OutputWriter;
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -17,7 +19,9 @@ import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -29,14 +33,17 @@ import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
+
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -340,6 +347,45 @@ public class DbusSignalImpl implements Signal {
             ) {
         byte[] groupId = Base64.getDecoder().decode(base64GroupId);
         return sendGroupMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, groupId);
+    }
+
+    @Override
+    public void sendTyping(boolean typingAction, String base64GroupId, List<String>recipients) {
+        final var noRecipients = recipients == null || recipients.isEmpty();
+        final var noGroup = base64GroupId == null || base64GroupId.isEmpty();
+        if (noRecipients && noGroup) {
+            throw new Error.Failure("No recipients given");
+        }
+        if (!noRecipients && !noGroup) {
+            throw new Error.Failure("You cannot specify recipients by phone number and groups at the same time");
+        }
+
+        final TypingAction action = typingAction ? TypingAction.START : TypingAction.STOP;
+
+        GroupId groupId = null;
+        if (!noGroup) {
+            try {
+                groupId = Util.decodeGroupId(base64GroupId);
+            } catch (GroupIdFormatException e) {
+                throw new Error.Failure("Invalid group id: " + e.getMessage());
+            }
+        }
+
+        try {
+            if (groupId != null) {
+                m.sendGroupTypingMessage(action, groupId);
+            } else {
+                m.sendTypingMessage(action, new HashSet<String>(recipients));
+            }
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity("Failed to send message: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to send message: " + e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new Error.Failure("Failed to send to group: " + e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.Failure("Invalid number: " + e.getMessage());
+        }
     }
 
     // Since contact names might be empty if not defined, also potentially return
@@ -786,13 +832,13 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void unregister() {
-    	try {
+        try {
             m.unregister();
             logger.info("Unregister succeeded, exiting.\n");
             System.exit(0);
-    	} catch (IOException e) {
+        } catch (IOException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + "Unregister error: " + e.getMessage());
-    	}
+        }
     }
 
     @Override

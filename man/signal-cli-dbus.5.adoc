@@ -195,6 +195,15 @@ Depending on the type of the recipient(s) field this deletes a message with one 
 
 Exceptions: Failure, InvalidNumber
 
+sendTyping(typingAction<b>, base64GroupId<s>, recipients<as>) -> <>
+* typingAction  : true = start typing, false = stop typing
+* base64GroupId : String representing the internal group identifier in Base64 format
+* recipients    : List of phone numbers
+
+Note that you must specify either the base64GroupId or the list of recipients, but not both.
+
+Exceptions: Failure, UntrustedIdentity
+
 getContactName(number<s>) -> name<s>::
 * number  : Phone number
 * name    : Contact's name in local storage (from the primary device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
