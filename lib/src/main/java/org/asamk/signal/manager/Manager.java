@@ -404,7 +404,7 @@ public class Manager implements Closeable {
 
     public void unregister() throws IOException {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
-        // If this is the master device, other users can't send messages to this number anymore.
+        // If this is the primary device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
         dependencies.getAccountManager().setGcmId(Optional.absent());
 
@@ -461,7 +461,7 @@ public class Manager implements Closeable {
 
     public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
         if (!account.isMasterDevice()) {
-            throw new RuntimeException("Only master device can set a PIN");
+            throw new RuntimeException("Only primary device can set a PIN");
         }
         if (pin.isPresent()) {
             final var masterKey = account.getPinMasterKey() != null

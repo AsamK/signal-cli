@@ -88,9 +88,9 @@ Only required if a PIN was set.
 === unregister
 
 Disable push support for this device, i.e. this device won't receive any more messages.
-If this is the master device, other users can't send messages to this number anymore.
+If this is the primary device, other users can't send messages to this number anymore.
 Use "updateAccount" to undo this.
-To remove a linked device, use "removeDevice" from the master device.
+To remove a linked device, use "removeDevice" from the primary device.
 
 *--delete-account*::
 Delete account completely from server. Cannot be undone without loss. You will
@@ -127,7 +127,7 @@ By default "cli" will be used.
 === addDevice
 
 Link another device to this device.
-Only works, if this is the master device.
+Only works if this is the primary device.
 
 *--uri* URI::
 Specify the uri contained in the QR code shown by the new device.
@@ -140,7 +140,7 @@ Show a list of linked devices.
 === removeDevice
 
 Remove a linked device.
-Only works, if this is the master device.
+Only works if this is the primary device.
 
 *-d* DEVICE_ID, *--device-id* DEVICE_ID::
 Specify the device you want to remove.
@@ -402,12 +402,12 @@ Specify the group IDs that should be unblocked in base64 encoding.
 === sendContacts
 
 Send a synchronization message with the local contacts list to all linked devices.
-This command should only be used if this is the master device.
+This command should only be used if this is the primary device.
 
 === sendSyncRequest
 
-Send a synchronization request message to the master device (for group, contacts, ...).
-The master device will respond with synchronization messages with full contact and
+Send a synchronization request message to the primary device (for group, contacts, ...).
+The primary device will respond with synchronization messages with full contact and
 group lists.
 
 === uploadStickerPack

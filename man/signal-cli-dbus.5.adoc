@@ -194,7 +194,7 @@ Exceptions: Failure, InvalidNumber
 
 getContactName(number<s>) -> name<s>::
 * number  : Phone number
-* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
+* name    : Contact's name in local storage (from the primary device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
 
 setContactName(number<s>,name<>) -> <>::
 * number  : Phone number

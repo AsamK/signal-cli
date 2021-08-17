@@ -22,7 +22,7 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
     private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
 
     public static void attachToSubparser(final Subparser subparser) {
-        subparser.help("Link another device to this device. Only works, if this is the master device.");
+        subparser.help("Link another device to this device. Only works if this is the primary device.");
         subparser.addArgument("--uri")
                 .required(true)
                 .help("Specify the uri contained in the QR code shown by the new device.");

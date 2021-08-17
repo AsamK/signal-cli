@@ -181,7 +181,7 @@ public class ProvisioningManager {
 
         try (signalAccount) {
             if (signalAccount.isMasterDevice()) {
-                logger.error("Account is a master device.");
+                logger.error("Account is a primary device.");
                 return false;
             }
 
