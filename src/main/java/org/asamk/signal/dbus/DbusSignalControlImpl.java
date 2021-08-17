@@ -5,6 +5,8 @@ import org.asamk.signal.App;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.commands.SignalCreator;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.PathConfig;
 import org.asamk.signal.manager.ProvisioningManager;
@@ -162,9 +164,17 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                     Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
                     logger.info("Linking of " + newDeviceName + " successful");
                     manager.close();
-                } catch (IOException | TimeoutException | UserAlreadyExists e) {
-                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
-                }
+                } catch (TimeoutException e) {
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "Link request timed out, please try again.");
+                } catch (IOException e) {
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "Link request error: " + e.getMessage());
+                } catch (UserAlreadyExists e) {
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "The user "
+                            + e.getUsername()
+                            + " already exists\nDelete \""
+                            + e.getFileName()
+                            + "\" before trying again.");
+                    }
             }).start();
             return deviceLinkUri.toString();
         } catch (TimeoutException | IOException e) {

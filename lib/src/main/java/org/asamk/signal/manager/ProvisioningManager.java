@@ -93,7 +93,7 @@ public class ProvisioningManager {
         NewDeviceRegistrationReturn ret = null;
         String number = null;
         try {
-            logger.info("Waiting for link request from new device ...");
+            logger.info("Waiting for addDevice request from new device ...");
             ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
             number = ret.getNumber();
             logger.info("Received link information from {}, linking in progress ...", number);
