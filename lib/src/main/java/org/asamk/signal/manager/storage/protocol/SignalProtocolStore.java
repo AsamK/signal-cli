@@ -12,7 +12,7 @@ import org.whispersystems.libsignal.state.PreKeyStore;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyStore;
-import org.whispersystems.signalservice.api.SignalServiceProtocolStore;
+import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
 
@@ -20,24 +20,28 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
-public class SignalProtocolStore implements SignalServiceProtocolStore {
+public class SignalProtocolStore implements SignalServiceDataStore {
 
     private final PreKeyStore preKeyStore;
     private final SignedPreKeyStore signedPreKeyStore;
     private final SignalServiceSessionStore sessionStore;
     private final IdentityKeyStore identityKeyStore;
+    private final Supplier<Boolean> isMultiDevice;
 
     public SignalProtocolStore(
             final PreKeyStore preKeyStore,
             final SignedPreKeyStore signedPreKeyStore,
             final SignalServiceSessionStore sessionStore,
-            final IdentityKeyStore identityKeyStore
+            final IdentityKeyStore identityKeyStore,
+            final Supplier<Boolean> isMultiDevice
     ) {
         this.preKeyStore = preKeyStore;
         this.signedPreKeyStore = signedPreKeyStore;
         this.sessionStore = sessionStore;
         this.identityKeyStore = identityKeyStore;
+        this.isMultiDevice = isMultiDevice;
     }
 
     @Override
@@ -177,9 +181,12 @@ public class SignalProtocolStore implements SignalServiceProtocolStore {
     }
 
     @Override
-    public void clearSenderKeySharedWith(
-            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
-    ) {
+    public void clearSenderKeySharedWith(final Collection<SignalProtocolAddress> addresses) {
         // TODO
+    }
+
+    @Override
+    public boolean isMultiDevice() {
+        return isMultiDevice.get();
     }
 }

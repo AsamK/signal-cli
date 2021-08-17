@@ -32,8 +32,6 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
-import org.whispersystems.signalservice.api.util.SleepTimer;
-import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.File;
@@ -62,7 +60,6 @@ public class ProvisioningManager {
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
-        final SleepTimer timer = new UptimeSleepTimer();
         GroupsV2Operations groupsV2Operations;
         try {
             groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
@@ -73,8 +70,7 @@ public class ProvisioningManager {
                 new DynamicCredentialsProvider(null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
-                timer);
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
 
     public static ProvisioningManager init(
@@ -174,7 +170,7 @@ public class ProvisioningManager {
         }
     }
 
-    private boolean canRelinkExistingAccount(final String number) throws UserAlreadyExists, IOException {
+    private boolean canRelinkExistingAccount(final String number) throws IOException {
         final SignalAccount signalAccount;
         try {
             signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false);
