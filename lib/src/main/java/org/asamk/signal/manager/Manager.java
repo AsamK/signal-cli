@@ -322,10 +322,16 @@ public class Manager implements Closeable {
      * @param numbers The set of phone number in question
      * @return A map of numbers to booleans. True if registered, false otherwise. Should never be null
      * @throws IOException if its unable to get the contacts to check if they're registered
+     * @throws InvalidNumberException if phone number is incorrectly formatted
      */
-    public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
+    public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException, InvalidNumberException {
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
-        var contactDetails = getRegisteredUsers(numbers);
+        Map<String, UUID> contactDetails = null;
+        try {
+            contactDetails = getRegisteredUsers(numbers);
+        } catch (InvalidNumberException e) {
+            throw new InvalidNumberException(e.getMessage());
+        }
 
         var registeredUsers = contactDetails.keySet();
 
@@ -924,6 +930,7 @@ public class Manager implements Closeable {
                     .map(this::resolveSignalServiceAddress)
                     .collect(Collectors.toList());
             final var newE164Members = new HashSet<String>();
+            Map<String, UUID> registeredUsers = null;
             for (var member : newMemberAddresses) {
                 if (!member.getNumber().isPresent()) {
                     continue;
@@ -931,7 +938,11 @@ public class Manager implements Closeable {
                 newE164Members.add(member.getNumber().get());
             }
 
-            final var registeredUsers = getRegisteredUsers(newE164Members);
+            try {
+                registeredUsers = getRegisteredUsers(newE164Members);
+            } catch (InvalidNumberException e) {
+                throw new IOException("Invalid number detected: " + e.getMessage());
+            }
             if (registeredUsers.size() != newE164Members.size()) {
                 // Some of the new members are not registered on Signal
                 newE164Members.removeAll(registeredUsers.keySet());
@@ -1513,25 +1524,35 @@ public class Manager implements Closeable {
         return signalServiceAddresses.stream().map(this::resolveRecipient).collect(Collectors.toSet());
     }
 
-    private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
+    private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException, InvalidNumberException {
         final var address = resolveSignalServiceAddress(recipientId);
         if (!address.getNumber().isPresent()) {
             return recipientId;
         }
         final var number = address.getNumber().get();
-        final var uuidMap = getRegisteredUsers(Set.of(number));
+        Map<String, UUID> uuidMap;
+        try {
+            uuidMap = getRegisteredUsers(Set.of(number));
+        } catch (InvalidNumberException e) {
+            logger.warn("Improperly formatted number: {}", e.getMessage());
+            uuidMap = Map.of();
+        }
         return resolveRecipientTrusted(new SignalServiceAddress(uuidMap.getOrDefault(number, null), number));
     }
 
-    private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException {
+    private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException, InvalidNumberException {
+        Map<String, UUID> registeredUsers = null;
         try {
-            return dependencies.getAccountManager()
+            registeredUsers = dependencies.getAccountManager()
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
                             numbers,
                             serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
-            throw new IOException(e);
+            throw new IOException(e.getMessage());
+        } catch (NumberFormatException e) {
+            throw new InvalidNumberException(e.getMessage());
         }
+        return registeredUsers;
     }
 
     public void sendTypingMessage(
@@ -1681,7 +1702,13 @@ public class Manager implements Closeable {
                         ContentHint.DEFAULT,
                         message);
             } catch (UnregisteredUserException e) {
-                final var newRecipientId = refreshRegisteredUser(recipientId);
+                RecipientId newRecipientId = null;
+                try {
+                    newRecipientId = refreshRegisteredUser(recipientId);
+                } catch (InvalidNumberException ine) {
+                    logger.warn("Invalid number");
+                    return SendMessageResult.unregisteredFailure(resolveSignalServiceAddress(recipientId));
+                }
                 return messageSender.sendDataMessage(resolveSignalServiceAddress(newRecipientId),
                         unidentifiedAccessHelper.getAccessFor(newRecipientId),
                         ContentHint.DEFAULT,
@@ -1700,7 +1727,13 @@ public class Manager implements Closeable {
             try {
                 return messageSender.sendNullMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId));
             } catch (UnregisteredUserException e) {
-                final var newRecipientId = refreshRegisteredUser(recipientId);
+                RecipientId newRecipientId = null;
+                try {
+                    newRecipientId = refreshRegisteredUser(recipientId);
+                } catch (InvalidNumberException ine) {
+                    logger.warn("Invalid number");
+                    return SendMessageResult.unregisteredFailure(resolveSignalServiceAddress(recipientId));
+                }
                 final var newAddress = resolveSignalServiceAddress(newRecipientId);
                 return messageSender.sendNullMessage(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId));
             }

@@ -113,7 +113,7 @@ isMember(base64GroupId<s>) -> active<b>::
 * base64GroupId : String representing the internal group identifier in Base64 format
 * active        : Boolean representing whether you are a member of the group
 
-Note that this method does not raise an Exception for a non-existing/unknown group but will simply return false
+Exceptions: None; returns false for a non-existing/unknown group
 
 sendEndSessionMessage(recipients<as>) -> <>::
 * recipients : String array of phone numbers
@@ -195,13 +195,13 @@ Depending on the type of the recipient(s) field this deletes a message with one 
 
 Exceptions: Failure, InvalidNumber
 
-sendContacts() -> <>
+sendContacts() -> <>::
 
 Sends a synchronization message with the local contacts list to all linked devices.
 
 Exceptions: Failure, UntrustedIdentity
 
-sendSyncRequest() -> <>
+sendSyncRequest() -> <>::
 
 Sends a synchronization request to the primary device (for group, contacts, ...). Only works if a secondary device is running the daemon.
 
@@ -213,7 +213,7 @@ trust(number<s>, safetyNumber<s>) -> <>::
 
 Exceptions: Failure, InvalidNumber;
 
-sendTyping(typingAction<b>, base64GroupId<s>, recipients<as>) -> <>
+sendTyping(typingAction<b>, base64GroupId<s>, recipients<as>) -> <>::
 * typingAction  : true = start typing, false = stop typing
 * base64GroupId : String representing the internal group identifier in Base64 format
 * recipients    : List of phone numbers
@@ -226,13 +226,19 @@ getContactName(number<s>) -> name<s>::
 * number  : Phone number
 * name    : Contact's name in local storage (from the primary device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
 
+Exception: InvalidNumber
+
 setContactName(number<s>,name<>) -> <>::
 * number  : Phone number
 * name    : Name to be set in contacts (in local storage with signal-cli)
 
+Exception: InvalidNumber
+
 setExpirationTimer(number<s>,expiration<i>) -> <>::
 * number     : Phone number
 * expiration : Expiration time for messages sent to this number (in seconds). Set to 0 to disable.
+
+Exception: InvalidNumber
 
 getGroupIds() -> groupList<aay>::
 getGroupIds(dummy<s>) -> groupList<as>::
@@ -242,10 +248,14 @@ base64GroupList : Array of strings representing the internal group identifiers i
 
 All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
 
+Exceptions: None
+
 getBase64GroupIds() -> groupList<as>::
 groupList : Array of strings representing the internal group identifiers in Base64 format
 
 All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
+
+Exceptions: None
 
 getGroupName(groupId<ay>) -> groupName<s>::
 getGroupName(base64GroupId<s>) -> groupName<s>::
@@ -253,7 +263,7 @@ groupName     : The display name of the group
 groupId       : Byte array representing the internal group identifier
 base64GroupId : String representing the internal group identifier in Base64 format
 
-Exceptions: None, if the group name is not found an empty string is returned
+Exceptions: None; if the group name is not found an empty string is returned
 
 getGroupMembers(groupId<ay>) -> members<as>::
 getGroupMembers(base64GroupId<s>) -> members<as>::
@@ -261,12 +271,14 @@ members       : String array with the phone numbers of all active members of a g
 groupId       : Byte array representing the internal group identifier
 base64GroupId : String representing the internal group identifier in Base64 format
 
-Exceptions: None, if the group name is not found an empty array is returned
+Exceptions: None; if the group name is not found an empty array is returned
 
 listNumbers() -> numbers<as>::
 numbers : String array of all known numbers
 
 This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
+
+Exceptions: None
 
 getContactNumber(name<s>) -> numbers<as>::
 * numbers : Array of phone numbers
@@ -274,11 +286,13 @@ getContactNumber(name<s>) -> numbers<as>::
 
 Searches contacts and known profiles for a given name and returns the list of all known numbers. May result in e.g. two entries if a contact and profile name is set.
 
+Exception: Failure
+
 isContactBlocked(number<s>) -> state<b>::
 * number  : Phone number
 * state   : true=blocked, false=not blocked
 
-Exceptions: None, for unknown numbers false is returned
+Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised.
 
 isGroupBlocked(groupId<ay>) -> state<b>::
 isGroupBlocked(base64GroupId<s>) -> state<b>::
@@ -286,10 +300,12 @@ isGroupBlocked(base64GroupId<s>) -> state<b>::
 * base64GroupId : String representing the internal group identifier in Base64 format
 * state         : true=blocked, false=not blocked
 
-Exceptions: None, for unknown groups false is returned
+Exceptions: None; for unknown groups false is returned
 
 version() -> version<s>::
 * version : Version string of signal-cli
+
+Exceptions: None
 
 isRegistered(number<s>) -> result<b>::
 isRegistered(numbers<as>) -> results<ab>::
@@ -297,6 +313,8 @@ isRegistered(numbers<as>) -> results<ab>::
 * numbers : String array of phone numbers
 * result  : true=number is registered, false=number is not registered
 * results : Boolean array of results
+
+Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised.
 
 listIdentity(number<s>) -> results<a(ssss)>::
 * number   : Phone number
@@ -309,7 +327,7 @@ listIdentity(number<s>) -> results<a(ssss)>::
 getObjectPath() -> objectPath<s>::
 * objectPath  : The DBus object path associated with this connection
 
-updateAccount() -> <>
+updateAccount() -> <>::
 
 Updates the account attributes on the Signal server.
 
@@ -351,16 +369,21 @@ removePin() -> <>::
 
 Removes registration PIN protection.
 
-verify(number<s>, verificationCode<s>) -> <>
+verify(number<s>, verificationCode<s>) -> <>::
 * number            : Phone number
 * verificationCode  : Code received from Signal after successful registration request
 
 Command fails if PIN was set after previous registration; use verifyWithPin instead.
 
-verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>
+verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>::
 * number            : Phone number
 * verificationCode  : Code received from Signal after successful registration request
 * pin               : PIN you set with setPin command after verifying previous registration
+
+uploadStickerPack(stickerPackPath<s>) -> <>::
+* stickerPackPath : Path to the sticker pack
+
+Exception: Failure
 
 == Signals
 

@@ -19,6 +19,7 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupId;
@@ -753,6 +754,9 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isRegistered(String number) {
+        if (number.isEmpty()) {
+            return false;
+        }
         try {
             Map<String, Boolean> registered;
             List<String> numbers = new ArrayList<String>();
@@ -761,14 +765,19 @@ public class DbusSignalImpl implements Signal {
             return registered.get(number);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
         }
     }
 
     @Override
     public List<Boolean> isRegistered(List<String> numbers) {
+        List<Boolean> results = new ArrayList<Boolean> ();
+        if (numbers.isEmpty()) {
+            return results;
+        }
         try {
             Map<String, Boolean> registered;
-            List<Boolean> results = new ArrayList<Boolean> ();
             registered = m.areUsersRegistered(new HashSet<String>(numbers));
             for (String number : numbers) {
                 results.add(registered.get(number));
@@ -776,6 +785,8 @@ public class DbusSignalImpl implements Signal {
             return results;
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (InvalidNumberException e) {
+            throw new Error.InvalidNumber(e.getMessage());
         }
     }
 
@@ -1012,6 +1023,19 @@ public class DbusSignalImpl implements Signal {
             return false;
         } else {
             return group.isMember(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public void uploadStickerPack(String stickerPackPath) {
+        File path = new File(stickerPackPath);
+
+        try {
+            var url = m.uploadStickerPack(path);
+        } catch (IOException e) {
+            throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
+        } catch (StickerPackInvalidException e) {
+            throw new Error.Failure("Invalid sticker pack: " + e.getMessage());
         }
     }
 }

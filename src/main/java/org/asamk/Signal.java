@@ -133,7 +133,7 @@ public interface Signal extends DBusInterface {
 
     void setGroupBlocked(String base64GroupId, boolean blocked) throws Error.GroupNotFound;
 
-    List<String> getGroupMembers(String dummy);
+    List<String> getGroupMembers(String base64GroupId);
 
     long sendGroupMessage(
             String message, List<String> attachments, String base64GroupId
@@ -147,9 +147,9 @@ public interface Signal extends DBusInterface {
             String base64GroupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound;
 
-    boolean isRegistered(String number);
+    boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
 
-    List<Boolean> isRegistered(List<String> numbers);
+    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
 
     void updateProfile(
             String givenName, String familyName, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
@@ -208,6 +208,8 @@ public interface Signal extends DBusInterface {
     boolean isMember(final byte[] groupId);
 
     void joinGroup(final String groupLink) throws Error.Failure;
+
+    void uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 

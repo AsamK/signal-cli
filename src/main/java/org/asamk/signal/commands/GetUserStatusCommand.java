@@ -11,6 +11,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -34,12 +35,14 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
         // Get a map of registration statuses
-        Map<String, Boolean> registered;
+        Map<String, Boolean> registered = null;
         try {
             registered = m.areUsersRegistered(new HashSet<>(ns.getList("number")));
         } catch (IOException e) {
             logger.debug("Failed to check registered users", e);
             throw new IOErrorException("Unable to check if users are registered");
+        } catch (InvalidNumberException e) {
+            logger.debug("Invalid number format", e);
         }
 
         // Output
