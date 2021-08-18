@@ -1,6 +1,7 @@
 package org.asamk;
 
 import org.asamk.SignalControl;
+import org.asamk.Signal.Error;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -79,6 +80,12 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber;
 
+    void sendContacts() throws Error.Failure, Error.UntrustedIdentity;
+
+    void sendSyncRequest() throws Error.Failure;
+
+    void trust(String number, String safetyNumber) throws Error.Failure, Error.InvalidNumber;
+
     void sendTyping(boolean typingAction, String base64GroupId, List<String>recipients) throws Error.Failure, Error.UntrustedIdentity;
 
     String getContactName(String number) throws Error.InvalidNumber;
@@ -151,10 +158,10 @@ public interface Signal extends DBusInterface {
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
- 
-    void removePin() throws Error.Failure; 
 
-    void setPin(String registrationLockPin) throws Error.Failure; 
+    void removePin() throws Error.Failure;
+
+    void setPin(String registrationLockPin) throws Error.Failure;
 
     String version();
 

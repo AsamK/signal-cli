@@ -195,6 +195,24 @@ Depending on the type of the recipient(s) field this deletes a message with one 
 
 Exceptions: Failure, InvalidNumber
 
+sendContacts() -> <>
+
+Sends a synchronization message with the local contacts list to all linked devices.
+
+Exceptions: Failure, UntrustedIdentity
+
+sendSyncRequest() -> <>
+
+Sends a synchronization request to the primary device (for group, contacts, ...). Only works if a secondary device is running the daemon.
+
+Exception: Failure
+
+trust(number<s>, safetyNumber<s>) -> <>::
+* number       : Phone number
+* safetyNumber : Verify the safety number associated with the phone number. 
+
+Exceptions: Failure, InvalidNumber;
+
 sendTyping(typingAction<b>, base64GroupId<s>, recipients<as>) -> <>
 * typingAction  : true = start typing, false = stop typing
 * base64GroupId : String representing the internal group identifier in Base64 format

@@ -13,6 +13,7 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.AvatarStore;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -347,6 +349,69 @@ public class DbusSignalImpl implements Signal {
             ) {
         byte[] groupId = Base64.getDecoder().decode(base64GroupId);
         return sendGroupMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, groupId);
+    }
+
+    @Override
+    public void sendContacts() {
+        try {
+            m.sendContacts();
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity("SendContacts error: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("SendContacts error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendSyncRequest() {
+        try {
+            m.requestAllSyncData();
+        } catch (IOException e) {
+            throw new Error.Failure("Request sync data error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void trust(String number, String safetyNumber){
+        if (safetyNumber != null) {
+            safetyNumber = safetyNumber.replaceAll(" ", "");
+            if (safetyNumber.length() == 66) {
+                byte[] fingerprintBytes;
+                try {
+                    fingerprintBytes = Hex.toByteArray(safetyNumber.toLowerCase(Locale.ROOT));
+                } catch (Exception e) {
+                    throw new Error.Failure(
+                            "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                }
+                boolean res;
+                try {
+                    res = m.trustIdentityVerified(number, fingerprintBytes);
+                } catch (InvalidNumberException e) {
+                    throw new Error.Failure("Failed to parse recipient: " + e.getMessage());
+                }
+                if (!res) {
+                    throw new Error.Failure(
+                            "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                }
+            } else if (safetyNumber.length() == 60) {
+                boolean res;
+                try {
+                    res = m.trustIdentityVerifiedSafetyNumber(number, safetyNumber);
+                } catch (InvalidNumberException e) {
+                    throw new Error.InvalidNumber("Failed to parse recipient: " + e.getMessage());
+                }
+                if (!res) {
+                    throw new Error.Failure(
+                            "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                }
+            } else {
+                throw new Error.Failure(
+                        "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
+            }
+        } else {
+            throw new Error.Failure(
+                    "You need to specify the fingerprint/safety number you have verified with -v SAFETY_NUMBER");
+        }
     }
 
     @Override
