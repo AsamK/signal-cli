@@ -45,21 +45,22 @@ Phone numbers always have the format +<countrycode><regional number>
 
 updateGroup(groupId<ay>, name<s>, addMembers<as>, avatar<s>) -> groupId<ay>::
 updateGroup(base64GroupId<s>, name<s>, addMembers<as>, avatar<s>) -> base64GroupId<s>::
+updateGroup(groupId<ay>, name<s>, description<s>, addMembers<s>, removeMembers<s>, addAdmins<s>, removeAdmins<s>, resetGroupLink<b>, groupLinkState<s>, addMemberPermission<s>, editDetailsPermission<s>, avatar<s> expiration<i>) -> groupId<ay>::
 updateGroup(base64GroupId<s>, name<s>, description<s>, addMembers<s>, removeMembers<s>, addAdmins<s>, removeAdmins<s>, resetGroupLink<b>, groupLinkState<s>, addMemberPermission<s>, editDetailsPermission<s>, avatar<s> expiration<i>) -> base64GroupId<s>::
-* groupId               : Byte array representing the internal group identifier
-* base64GroupId         : String representing the internal group identifier in Base64 format
+* groupId               : Byte array representing the internal group identifier (create new group if null)
+* base64GroupId         : String representing the internal group identifier in Base64 format (create new group if empty)
 * name                  : Name of group (empty if unchanged)
 * description           : Description (empty if unchanged)
 * addMembers            : String array of new members to be invited to group (empty if unchanged)
 * removeMembers         : String array of members to be removed from group (empty if unchanged)
 * addAdmins             : String array of members granted admin privileges (empty if unchanged)
 * removeAdmins          : String array of members denied admin privileges (empty if unchanged)
-* resetGroupLink        : Boolean (true = change the group link, false or empty = don't change)
+* resetGroupLink        : Boolean (true = change the group link, false = don't change)
 * groupLinkState        : String ("enabled", "enabled-with-approval", "disabled") (empty if unchanged)
 * addMemberPermission   : String of who may add members ("every-member", "only-admins") (empty if unchanged)
 * editDetailsPermission : String of who may edit group details ("every-member", "only-admins") (empty if unchanged)
 * avatar                : Filename of avatar picture to be set for group (send the name of an empty file to delete avatar; leave field empty if avatar is unchanged)
-* expiration            : Expiration time for messages sent to this number (in seconds). Set to 0 to disable. (empty if unchanged)
+* expiration            : Expiration time for messages sent to this group (in seconds). Set to 0 to disable. (empty if unchanged)
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, GroupNotFound
 
@@ -93,8 +94,8 @@ Messages from blocked groups will no longer be forwarded via DBus.
 
 Exceptions: GroupNotFound
 
-joinGroup(inviteURI<s>) -> <>::
-* inviteURI : String starting with https://signal.group which is generated when you share a group link via Signal App
+joinGroup(inviteUri<s>) -> <>::
+* inviteUri : String starting with https://signal.group which is generated when you share a group link via Signal App
 
 Exceptions: Failure
 
@@ -113,7 +114,7 @@ isMember(base64GroupId<s>) -> active<b>::
 * base64GroupId : String representing the internal group identifier in Base64 format
 * active        : Boolean representing whether you are a member of the group
 
-Exceptions: None; returns false for a non-existing/unknown group
+Exceptions: GroupNotFound
 
 sendEndSessionMessage(recipients<as>) -> <>::
 * recipients : String array of phone numbers
@@ -209,9 +210,9 @@ Exception: Failure
 
 trust(number<s>, safetyNumber<s>) -> <>::
 * number       : Phone number
-* safetyNumber : Verify the safety number associated with the phone number. 
+* safetyNumber : Verify the safety number associated with the phone number.
 
-Exceptions: Failure, InvalidNumber;
+Exceptions: Failure, InvalidNumber
 
 sendTyping(typingAction<b>, base64GroupId<s>, recipients<as>) -> <>::
 * typingAction  : true = start typing, false = stop typing
@@ -263,15 +264,47 @@ groupName     : The display name of the group
 groupId       : Byte array representing the internal group identifier
 base64GroupId : String representing the internal group identifier in Base64 format
 
-Exceptions: None; if the group name is not found an empty string is returned
+Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
 
 getGroupMembers(groupId<ay>) -> members<as>::
 getGroupMembers(base64GroupId<s>) -> members<as>::
-members       : String array with the phone numbers of all active members of a group
-groupId       : Byte array representing the internal group identifier
-base64GroupId : String representing the internal group identifier in Base64 format
+* members       : String array with the phone numbers of all active members of a group
+* groupId       : Byte array representing the internal group identifier
+* base64GroupId : String representing the internal group identifier in Base64 format
 
-Exceptions: None; if the group name is not found an empty array is returned
+Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
+
+getGroupAdminMembers(groupId<ay>) -> adminMembers<as>::
+getGroupAdminMembers(base64GroupId<s>) -> adminMembers<as>::
+* groupId       : Byte array representing the internal group identifier
+* base64GroupId : String representing the internal group identifier in Base64 format
+* adminMembers  : String array of members granted admin privileges
+
+Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
+
+getGroupPendingMembers(groupId<ay>) -> pendingMembers<as>::
+getGroupPendingMembers(base64GroupId<s>) -> pendingMembers<as>::
+* groupId        : Byte array representing the internal group identifier
+* base64GroupId  : String representing the internal group identifier in Base64 format
+* pendingMembers : String array of pending members
+
+Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
+
+getGroupRequestingMembers(groupId<ay>) -> requestingMembers<as>::
+getGroupRequestingMembers(base64GroupId<s>) -> requestingMembers<as>::
+* groupId           : Byte array representing the internal group identifier
+* base64GroupId     : String representing the internal group identifier in Base64 format
+* requestingMembers : String array of requesting members (awaiting admin approval for membership)
+
+Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
+
+getGroupInviteUri(groupId<ay>) -> inviteUri<s>::
+getGroupInviteUri(base64GroupId<s>) -> inviteUri<s>::
+* groupId       : Byte array representing the internal group identifier
+* base64GroupId : String representing the internal group identifier in Base64 format
+* inviteUri     : String starting with https://signal.group which is generated when you share a group link via Signal App
+
+Exceptions: Failure if base64GroupId or groupId is malformed; GroupNotFound
 
 listNumbers() -> numbers<as>::
 numbers : String array of all known numbers
@@ -300,7 +333,7 @@ isGroupBlocked(base64GroupId<s>) -> state<b>::
 * base64GroupId : String representing the internal group identifier in Base64 format
 * state         : true=blocked, false=not blocked
 
-Exceptions: None; for unknown groups false is returned
+Exceptions: Failure if base64GroupId or groupId is malformed; GroupNotFound
 
 isRegistered(number<s>) -> result<b>::
 isRegistered(numbers<as>) -> results<ab>::
