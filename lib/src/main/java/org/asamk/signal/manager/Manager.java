@@ -1549,6 +1549,10 @@ public class Manager implements Closeable {
                             serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e.getMessage());
+
+        /* the NumberFormatException is from Java; see SignalServiceAccountManager.java
+         * in the package org.whispersystems.signalservice.api
+         */
         } catch (NumberFormatException e) {
             throw new InvalidNumberException(e.getMessage());
         }

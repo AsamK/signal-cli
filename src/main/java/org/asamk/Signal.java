@@ -195,7 +195,7 @@ public interface Signal extends DBusInterface {
 
     void updateAccount() throws Error.Failure;
 
-    List<String> listIdentity(String number);
+    List<String> listIdentity(String number) throws Error.InvalidNumber;
 
     List<String> getContactNumber(final String name) throws Error.Failure;
 

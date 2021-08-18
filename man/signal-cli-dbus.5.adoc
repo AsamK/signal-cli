@@ -302,11 +302,6 @@ isGroupBlocked(base64GroupId<s>) -> state<b>::
 
 Exceptions: None; for unknown groups false is returned
 
-version() -> version<s>::
-* version : Version string of signal-cli
-
-Exceptions: None
-
 isRegistered(number<s>) -> result<b>::
 isRegistered(numbers<as>) -> results<ab>::
 * number  : Phone number
@@ -316,58 +311,85 @@ isRegistered(numbers<as>) -> results<ab>::
 
 Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised.
 
-listIdentity(number<s>) -> results<a(ssss)>::
-* number   : Phone number
-* results  : Array of elements, each consisting of four strings: trust_level, date_added, fingerprint, safety_number
+listIdentity(number<s>) -> identities<a(ssss)>::
+* number      : Phone number
+* identities  : Array of elements, each consisting of four strings: trust_level, date_added, fingerprint, safety_number
 ** trust_level   : String representation of trust level
 ** date_added    : String representation of date added
 ** fingerprint   : String representation of hexidecimal fingerprint
 ** safety_number : String representation of safety number (10 or 11 space-separated six-digit numbers)
 
+Exception: InvalidNumber
+
 getObjectPath() -> objectPath<s>::
 * objectPath  : The DBus object path associated with this connection
+
+Exceptions: None
 
 updateAccount() -> <>::
 
 Updates the account attributes on the Signal server.
 
-getObjectPath() -> objectPath<s>::
-* objectPath  : The DBus object path associated with this connection
+Exception: Failure
 
 version() -> version<s>::
 * version : Version string of signal-cli
+
+Exceptions: None
 
 link() -> deviceLinkUri<s>::
 link(newDeviceName<s>) -> deviceLinkUri<s>::
 * newDeviceName : Name to give new device (defaults to "cli" if no name is given)
 * deviceLinkUri : URI of newly linked device
 
+Exception: Failure
+
 addDevice(deviceUri<s>) -> <>::
 * deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
+
+Exception: Failure
 
 listDevices() -> devices<as>::
 * devices  : String array of linked devices
 
+Exception: Failure
+
 removeDevice(deviceId<i>) -> <>::
 * deviceId : Device ID to remove, obtained from listDevices() command
+
+Exception: Failure
 
 register(number<s>, voiceVerification<b>) -> <>::
 * number            : Phone number
 * voiceVerification : true = use voice verification; false = use SMS verification
+
+Exceptions: Failure, InvalidNumber, RequiresCaptcha
 
 registerWithCaptcha(number<s>, voiceVerification<b>, captcha<s>) -> <>::
 * number            : Phone number
 * voiceVerification : true = use voice verification; false = use SMS verification
 * captcha           : Captcha string
 
+Exceptions: Failure, InvalidNumber, RequiresCaptcha
+
+unregister() -> <>::
+
+Unregisters the current device from the Signal server and kills the daemon.
+
+Exception: Failure
+
 setPin(pin<s>) -> <>::
 * pin               : PIN you set after registration (resets after 7 days of inactivity)
 
 Sets a registration lock PIN, to prevent others from registering your number.
 
+Exception: Failure
+
 removePin() -> <>::
 
 Removes registration PIN protection.
+
+Exception: Failure
 
 verify(number<s>, verificationCode<s>) -> <>::
 * number            : Phone number
@@ -375,10 +397,14 @@ verify(number<s>, verificationCode<s>) -> <>::
 
 Command fails if PIN was set after previous registration; use verifyWithPin instead.
 
+Exception: Failure, InvalidNumber
+
 verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>::
 * number            : Phone number
 * verificationCode  : Code received from Signal after successful registration request
 * pin               : PIN you set with setPin command after verifying previous registration
+
+Exception: Failure, InvalidNumber
 
 uploadStickerPack(stickerPackPath<s>) -> <>::
 * stickerPackPath : Path to the sticker pack
