@@ -1083,8 +1083,6 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-
-
     @Override
     public boolean isRegistered(String number) {
         if (number.isEmpty()) {
@@ -1259,7 +1257,6 @@ public class DbusSignalImpl implements Signal {
     public void verifyWithPin(String number, String verificationCode, String pin) {
         DbusSignalControlImpl.verifyWithPin(number, verificationCode, pin);
     }
-
 
     // Create a unique list of Numbers from Identities and Contacts to really get
     // all numbers the system knows
@@ -1444,6 +1441,156 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound("Error finding group");
         } else {
             return group.isMember(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public List<String> isMember(final byte[] groupId, List<String>members, boolean setMemberStatus) {
+        GroupInfo group = null;
+        try {
+            group = m.getGroup(GroupId.unknownVersion(groupId));
+            if (group == null) {
+                throw new Error.GroupNotFound("Error finding group");
+            }
+            if (setMemberStatus) {
+                var results = m.updateGroup(group.getGroupId(),
+                        null,
+                        null,
+                        members,
+                        null,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
+            } else {
+                    var results = m.updateGroup(group.getGroupId(),
+                            null,
+                            null,
+                            null,
+                            members,
+                            null,
+                            null,
+                            false,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+            }
+            return getGroupMembers(groupId);
+        } catch (NotAGroupMemberException | InvalidNumberException | AssertionError | IOException | AttachmentInvalidException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException e) {
+            throw new Error.GroupNotFound("Group not found.");
+        }
+    }
+
+    @Override
+    public List<String> isMember(final String base64GroupId, List<String> members, boolean setMemberStatus) {
+        GroupInfo group = null;
+        byte[] groupId = null;
+        try {
+            groupId = GroupId.fromBase64(base64GroupId).serialize();
+            return isMember(groupId, members, setMemberStatus);
+        } catch (GroupIdFormatException e) {
+            throw new Error.Failure("Incorrect format: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean isAdmin(final byte[] groupId) {
+        GroupInfo group = null;
+        try {
+            group = m.getGroup(GroupId.unknownVersion(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        if (group == null) {
+            throw new Error.GroupNotFound("Error finding group");
+        } else {
+             return group.getAdminMembers().contains(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public boolean isAdmin(final String base64GroupId) {
+        GroupInfo group = null;
+        byte[] groupId = null;
+        try {
+            groupId = GroupId.fromBase64(base64GroupId).serialize();
+        } catch (GroupIdFormatException e) {
+            throw new Error.Failure("Incorrect format: " + e.getMessage());
+        }
+        try {
+            group = m.getGroup(GroupId.unknownVersion(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        if (group == null) {
+            throw new Error.GroupNotFound("Error finding group");
+        } else {
+             return group.getAdminMembers().contains(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public List<String> isAdmin(final byte[] groupId, List<String>admins, boolean setAdminStatus) {
+        GroupInfo group = null;
+        try {
+            group = m.getGroup(GroupId.unknownVersion(groupId));
+            if (group == null) {
+                throw new Error.GroupNotFound("Error finding group");
+            }
+            if (setAdminStatus) {
+                var results = m.updateGroup(group.getGroupId(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        admins,
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
+            } else {
+                    var results = m.updateGroup(group.getGroupId(),
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            admins,
+                            false,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+            }
+            return getGroupAdminMembers(groupId);
+        } catch (NotAGroupMemberException | InvalidNumberException | AssertionError | IOException | AttachmentInvalidException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException e) {
+            throw new Error.GroupNotFound("Group not found.");
+        }
+    }
+
+    @Override
+    public List<String> isAdmin(final String base64GroupId, List<String> admins, boolean setAdminStatus) {
+        GroupInfo group = null;
+        byte[] groupId = null;
+        try {
+            groupId = GroupId.fromBase64(base64GroupId).serialize();
+            return isAdmin(groupId, admins, setAdminStatus);
+        } catch (GroupIdFormatException e) {
+            throw new Error.Failure("Incorrect format: " + e.getMessage());
         }
     }
 

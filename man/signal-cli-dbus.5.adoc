@@ -108,14 +108,6 @@ Note that quitting a group will not remove the group from the getGroupIds comman
 
 Exceptions: GroupNotFound, Failure
 
-isMember(groupId<ay>) -> active<b>::
-isMember(base64GroupId<s>) -> active<b>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String representing the internal group identifier in Base64 format
-* active        : Boolean representing whether you are a member of the group
-
-Exceptions: GroupNotFound
-
 sendEndSessionMessage(recipients<as>) -> <>::
 * recipients : String array of phone numbers
 
@@ -265,6 +257,32 @@ groupId       : Byte array representing the internal group identifier
 base64GroupId : String representing the internal group identifier in Base64 format
 
 Exception: Failure if base64GroupId or groupId is malformed; GroupNotFound
+
+isMember(groupId<ay>) -> active<b>::
+isMember(base64GroupId<s>) -> active<b>::
+isMember(groupId<ay>, members<as>, setMemberStatus<b>) -> memberList<as>::
+isMember(base64GroupId<s>, members<as>, setMemberStatus<b>) -> memberList<as>::
+* groupId         : Byte array representing the internal group identifier
+* base64GroupId   : String representing the internal group identifier in Base64 format
+* members         : Phone numbers of users to add to or remove from group
+* setMemberStatus : true for add to group members; false for remove from group members
+* active          : Boolean representing whether you are a member of the group
+* memberList      : List of members after command execution
+
+Exceptions: GroupNotFound, Failure
+
+isAdmin(groupId<ay>) -> admin<b>::
+isAdmin(base64GroupId<s>) -> admin<b>::
+isAdmin(groupId<ay>, admins<as>, setAdminStatus<b>) -> adminList<as>::
+isAdmin(base64GroupId<s>, admins<as>, setAdminStatus<b>) -> adminList<as>::
+* groupId        : Byte array representing the internal group identifier
+* base64GroupId  : String representing the internal group identifier in Base64 format
+* admins         : Phone numbers of users to grant or deny admin status
+* setAdminStatus : true for add to group admins; false for remove from group admins
+* admin          : Boolean representing whether you are an admin of the group
+* adminList      : List of admins after command execution
+
+Exceptions: GroupNotFound, Failure
 
 getGroupMembers(groupId<ay>) -> members<as>::
 getGroupMembers(base64GroupId<s>) -> members<as>::

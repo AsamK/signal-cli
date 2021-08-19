@@ -233,8 +233,15 @@ public interface Signal extends DBusInterface {
     boolean isGroupBlocked(final byte[] groupId)  throws Error.GroupNotFound, Error.Failure;
     boolean isGroupBlocked(final String base64GroupId)  throws Error.GroupNotFound, Error.Failure;
 
-    boolean isMember(final byte[] groupId)  throws Error.GroupNotFound, Error.Failure;
-    boolean isMember(final String base64GroupId)  throws Error.GroupNotFound, Error.Failure;
+    boolean isMember(final byte[] groupId) throws Error.GroupNotFound, Error.Failure;
+    boolean isMember(final String base64GroupId) throws Error.GroupNotFound, Error.Failure;
+    List<String> isMember(final byte[] groupId, List<String>members, boolean setMemberStatus) throws Error.GroupNotFound, Error.Failure;
+    List<String> isMember(final String base64GroupId, List<String>members, boolean setMemberStatus) throws Error.GroupNotFound, Error.Failure;
+
+    boolean isAdmin(final byte[] groupId) throws Error.GroupNotFound, Error.Failure;
+    boolean isAdmin(final String base64GroupId) throws Error.GroupNotFound, Error.Failure;
+    List<String> isAdmin(final byte[] groupId, List<String>admins, boolean setAdminStatus) throws Error.GroupNotFound, Error.Failure;
+    List<String> isAdmin(final String base64GroupId, List<String>admins, boolean setAdminStatus) throws Error.GroupNotFound, Error.Failure;
 
     void joinGroup(final String groupLink) throws Error.Failure;
 
