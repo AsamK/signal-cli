@@ -1594,14 +1594,7 @@ public class Manager implements Closeable {
                             () -> false);
 
                     for (var r : result) {
-                        if (r.getIdentityFailure() != null) {
-                            final var recipientId = resolveRecipient(r.getAddress());
-                            final var newIdentity = account.getIdentityKeyStore()
-                                    .saveIdentity(recipientId, r.getIdentityFailure().getIdentityKey(), new Date());
-                            if (newIdentity) {
-                                account.getSessionStore().archiveSessions(recipientId);
-                            }
-                        }
+                        handlePossibleIdentityFailure(r);
                     }
 
                     return new Pair<>(timestamp, result);
@@ -1617,7 +1610,9 @@ public class Manager implements Closeable {
                     final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
                     messageBuilder.withExpiration(expirationTime);
                     message = messageBuilder.build();
-                    results.add(sendMessage(recipientId, message));
+                    final var result = sendMessage(recipientId, message);
+                    handlePossibleIdentityFailure(result);
+                    results.add(result);
                 }
                 return new Pair<>(timestamp, results);
             }
@@ -1626,6 +1621,23 @@ public class Manager implements Closeable {
                 for (var recipient : recipientIds) {
                     handleEndSession(recipient);
                 }
+            }
+        }
+    }
+
+    private void handlePossibleIdentityFailure(final SendMessageResult r) {
+        if (r.getIdentityFailure() != null) {
+            final var recipientId = resolveRecipient(r.getAddress());
+            final var identityKey = r.getIdentityFailure().getIdentityKey();
+            if (identityKey != null) {
+                final var newIdentity = account.getIdentityKeyStore()
+                        .saveIdentity(recipientId, identityKey, new Date());
+                if (newIdentity) {
+                    account.getSessionStore().archiveSessions(recipientId);
+                }
+            } else {
+                // Retrieve profile to get the current identity key from the server
+                retrieveEncryptedProfile(recipientId);
             }
         }
     }
