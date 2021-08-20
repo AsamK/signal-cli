@@ -67,8 +67,7 @@ public class App {
 
         parser.addArgument("-o", "--output")
                 .help("Choose to output in plain text or JSON")
-                .type(Arguments.enumStringType(OutputType.class))
-                .setDefault(OutputType.PLAIN_TEXT);
+                .type(Arguments.enumStringType(OutputType.class));
 
         parser.addArgument("--service-environment")
                 .help("Choose the server environment to use.")
@@ -90,19 +89,22 @@ public class App {
     }
 
     public void init() throws CommandException {
-        var outputType = ns.<OutputType>get("output");
-        var outputWriter = outputType == OutputType.JSON
-                ? new JsonWriterImpl(System.out)
-                : new PlainTextWriterImpl(System.out);
-
         var commandKey = ns.getString("command");
         var command = Commands.getCommand(commandKey);
         if (command == null) {
             throw new UserErrorException("Command not implemented!");
         }
 
-        if (!command.getSupportedOutputTypes().contains(outputType)) {
-            throw new UserErrorException("Command doesn't support output type " + outputType.toString());
+        var outputTypeInput = ns.<OutputType>get("output");
+        var outputType = outputTypeInput == null
+                ? command.getSupportedOutputTypes().stream().findFirst().orElse(null)
+                : outputTypeInput;
+        var outputWriter = outputType == null
+                ? null
+                : outputType == OutputType.JSON ? new JsonWriterImpl(System.out) : new PlainTextWriterImpl(System.out);
+
+        if (outputWriter != null && !command.getSupportedOutputTypes().contains(outputType)) {
+            throw new UserErrorException("Command doesn't support output type " + outputType);
         }
 
         var username = ns.getString("username");
