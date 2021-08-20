@@ -70,10 +70,17 @@ public class JsonRpcReader {
             final var result = requestHandler.apply(request.getMethod(), request.getParams());
             if (request.getId() != null) {
                 return JsonRpcResponse.forSuccess(result, request.getId());
+            } else {
+                logger.debug("Command '{}' succeeded but client didn't specify an id, dropping response",
+                        request.getMethod());
             }
         } catch (JsonRpcException e) {
             if (request.getId() != null) {
                 return JsonRpcResponse.forError(e.getError(), request.getId());
+            } else {
+                logger.debug("Command '{}' failed but client didn't specify an id, dropping error: {}",
+                        request.getMethod(),
+                        e.getMessage());
             }
         }
         return null;
