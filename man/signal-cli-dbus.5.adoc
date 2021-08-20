@@ -457,8 +457,9 @@ verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>::
 
 Exception: Failure, InvalidNumber
 
-uploadStickerPack(stickerPackPath<s>) -> <>::
-* stickerPackPath : Path to the sticker pack zip file or manifest.json file
+uploadStickerPack(stickerPackPath<s>) -> url<s>::
+* stickerPackPath : Path to the manifest.json file or a zip file in the same directory
+* url             : URL of sticker pack after successful upload
 
 Exception: Failure
 

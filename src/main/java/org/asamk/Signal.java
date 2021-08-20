@@ -245,7 +245,7 @@ public interface Signal extends DBusInterface {
 
     void joinGroup(final String groupLink) throws Error.Failure;
 
-    void uploadStickerPack(String stickerPackPath) throws Error.Failure;
+    String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 

@@ -1595,11 +1595,11 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void uploadStickerPack(String stickerPackPath) {
+    public String uploadStickerPack(String stickerPackPath) {
         File path = new File(stickerPackPath);
 
         try {
-            var url = m.uploadStickerPack(path);
+            return m.uploadStickerPack(path);
         } catch (IOException e) {
             throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
         } catch (StickerPackInvalidException e) {
