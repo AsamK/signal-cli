@@ -35,13 +35,14 @@ import java.util.List;
 public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
-    private final OutputWriter outputWriter;
 
-    public UpdateGroupCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "updateGroup";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Create or update a group.");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the group ID.");
         subparser.addArgument("-n", "--name").help("Specify the new group name.");
@@ -107,7 +108,9 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         GroupId groupId = null;
         final var groupIdString = ns.getString("group-id");
         if (groupIdString != null) {
@@ -163,7 +166,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
                 timestamp = results.first();
                 ErrorUtils.handleSendMessageResults(results.second());
             }
-            outputResult(timestamp, isNewGroup ? groupId : null);
+            outputResult(outputWriter, timestamp, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (GroupNotFoundException e) {
@@ -178,7 +181,9 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Signal signal, final OutputWriter outputWriter
+    ) throws CommandException {
         byte[] groupId = null;
         if (ns.getString("group-id") != null) {
             try {
@@ -209,7 +214,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         try {
             var newGroupId = signal.updateGroup(groupId, groupName, groupMembers, groupAvatar);
             if (groupId.length != newGroupId.length) {
-                outputResult(null, GroupId.unknownVersion(newGroupId));
+                outputResult(outputWriter, null, GroupId.unknownVersion(newGroupId));
             }
         } catch (Signal.Error.AttachmentInvalid e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
@@ -218,7 +223,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         }
     }
 
-    private void outputResult(final Long timestamp, final GroupId groupId) {
+    private void outputResult(final OutputWriter outputWriter, final Long timestamp, final GroupId groupId) {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             if (groupId != null) {

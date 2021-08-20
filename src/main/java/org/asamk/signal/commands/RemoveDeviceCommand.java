@@ -12,10 +12,13 @@ import java.io.IOException;
 
 public class RemoveDeviceCommand implements JsonRpcLocalCommand {
 
-    public RemoveDeviceCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "removeDevice";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Remove a linked device.");
         subparser.addArgument("-d", "--device-id", "--deviceId")
                 .type(int.class)
@@ -24,7 +27,9 @@ public class RemoveDeviceCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             int deviceId = ns.getInt("device-id");
             m.removeLinkedDevices(deviceId);

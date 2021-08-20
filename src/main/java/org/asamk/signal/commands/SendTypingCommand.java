@@ -22,10 +22,13 @@ import java.util.HashSet;
 
 public class SendTypingCommand implements JsonRpcLocalCommand {
 
-    public SendTypingCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "sendTyping";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help(
                 "Send typing message to trigger a typing indicator for the recipient. Indicator will be shown for 15seconds unless a typing STOP message is sent first.");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
@@ -34,7 +37,9 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var recipients = ns.<String>getList("recipient");
         final var groupIdString = ns.getString("group-id");
 

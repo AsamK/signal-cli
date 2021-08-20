@@ -24,16 +24,21 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
-    private final OutputWriter outputWriter;
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "receive";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Query the server for new messages.");
         subparser.addArgument("-t", "--timeout")
                 .type(double.class)
@@ -44,17 +49,13 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 .action(Arguments.storeTrue());
     }
 
-    public ReceiveCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
-    }
-
     @Override
-    public Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    public List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     public void handleCommand(
-            final Namespace ns, final Signal signal, DBusConnection dbusconnection
+            final Namespace ns, final Signal signal, DBusConnection dbusconnection, final OutputWriter outputWriter
     ) throws CommandException {
         try {
             if (outputWriter instanceof JsonWriter) {
@@ -137,7 +138,9 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         double timeout = ns.getDouble("timeout");
         var returnOnTimeout = true;
         if (timeout < 0) {

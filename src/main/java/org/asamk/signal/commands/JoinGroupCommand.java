@@ -23,19 +23,21 @@ import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
 public class JoinGroupCommand implements JsonRpcLocalCommand {
 
-    private final OutputWriter outputWriter;
-
-    public JoinGroupCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "joinGroup";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Join a group via an invitation link.");
         subparser.addArgument("--uri").required(true).help("Specify the uri with the group invitation link.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final GroupInviteLinkUrl linkUrl;
         var uri = ns.getString("uri");
         try {

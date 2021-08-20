@@ -23,13 +23,13 @@ import java.util.Map;
 
 public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
 
-    private final OutputWriter outputWriter;
-
-    public SendReactionCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "sendReaction";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send reaction to a previously received or sent message.");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
@@ -47,7 +47,9 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Signal signal, final OutputWriter outputWriter
+    ) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var groupIdString = ns.getString("group-id");
 
@@ -80,7 +82,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
             } else {
                 timestamp = signal.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
             }
-            outputResult(timestamp);
+            outputResult(outputWriter, timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {
@@ -93,11 +95,13 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        handleCommand(ns, new DbusSignalImpl(m, null));
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null), outputWriter);
     }
 
-    private void outputResult(final long timestamp) {
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             writer.println("{}", timestamp);

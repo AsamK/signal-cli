@@ -19,20 +19,23 @@ import java.io.IOException;
 public class UploadStickerPackCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
-    private final OutputWriter outputWriter;
 
-    public UploadStickerPackCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "uploadStickerPack";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Upload a new sticker pack, consisting of a manifest file and the stickers images.");
         subparser.addArgument("path")
                 .help("The path of the manifest.json or a zip file containing the sticker pack you wish to upload.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
         var path = new File(ns.getString("path"));
 

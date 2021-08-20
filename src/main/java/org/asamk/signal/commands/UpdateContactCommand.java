@@ -15,10 +15,13 @@ import java.io.IOException;
 
 public class UpdateContactCommand implements JsonRpcLocalCommand {
 
-    public UpdateContactCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "updateContact";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("number").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");
@@ -26,7 +29,9 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         var number = ns.getString("number");
 
         try {

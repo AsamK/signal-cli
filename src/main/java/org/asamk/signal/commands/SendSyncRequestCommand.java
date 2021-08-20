@@ -12,15 +12,20 @@ import java.io.IOException;
 
 public class SendSyncRequestCommand implements JsonRpcLocalCommand {
 
-    public SendSyncRequestCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "sendSyncRequest";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a synchronization request message to master device (for group, contacts, ...).");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             m.requestAllSyncData();
         } catch (IOException e) {

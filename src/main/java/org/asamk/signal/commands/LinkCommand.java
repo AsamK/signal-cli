@@ -19,19 +19,22 @@ import java.util.concurrent.TimeoutException;
 public class LinkCommand implements ProvisioningCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(LinkCommand.class);
-    private final OutputWriter outputWriter;
 
-    public LinkCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "link";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Link to an existing device, instead of registering a new number.");
         subparser.addArgument("-n", "--name").help("Specify a name to describe this new device.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final ProvisioningManager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final ProvisioningManager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
 
         var deviceName = ns.getString("name");

@@ -14,15 +14,20 @@ import java.io.IOException;
 
 public class SendContactsCommand implements JsonRpcLocalCommand {
 
-    public SendContactsCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "sendContacts";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a synchronization message with the local contacts list to all linked devices.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             m.sendContacts();
         } catch (UntrustedIdentityException e) {

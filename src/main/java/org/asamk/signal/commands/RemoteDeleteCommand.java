@@ -22,13 +22,13 @@ import java.util.Map;
 
 public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
 
-    private final OutputWriter outputWriter;
-
-    public RemoteDeleteCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "remoteDelete";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Remotely delete a previously sent message.");
         subparser.addArgument("-t", "--target-timestamp")
                 .required(true)
@@ -39,7 +39,9 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Signal signal, final OutputWriter outputWriter
+    ) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var groupIdString = ns.getString("group-id");
 
@@ -69,7 +71,7 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
             } else {
                 timestamp = signal.sendRemoteDeleteMessage(targetTimestamp, recipients);
             }
-            outputResult(timestamp);
+            outputResult(outputWriter, timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.InvalidNumber e) {
@@ -82,11 +84,13 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        handleCommand(ns, new DbusSignalImpl(m, null));
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null), outputWriter);
     }
 
-    private void outputResult(final long timestamp) {
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             writer.println("{}", timestamp);

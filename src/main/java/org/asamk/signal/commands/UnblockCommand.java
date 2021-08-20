@@ -19,17 +19,22 @@ public class UnblockCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UnblockCommand.class);
 
-    public UnblockCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "unblock";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Unblock the given contacts or groups (messages will be received again)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Group ID").nargs("*");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         for (var contactNumber : ns.<String>getList("contact")) {
             try {
                 m.setContactBlocked(contactNumber, false);

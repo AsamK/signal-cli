@@ -15,10 +15,13 @@ import java.util.Locale;
 
 public class TrustCommand implements JsonRpcLocalCommand {
 
-    public TrustCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "trust";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Set the trust level of a given number.");
         subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
         var mutTrust = subparser.addMutuallyExclusiveGroup();
@@ -30,7 +33,9 @@ public class TrustCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         var number = ns.getString("number");
         if (ns.getBoolean("trust-all-known-keys")) {
             boolean res;

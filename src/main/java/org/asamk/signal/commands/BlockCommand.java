@@ -19,17 +19,22 @@ public class BlockCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(BlockCommand.class);
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "block";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Block the given contacts or groups (no messages will be received)");
         subparser.addArgument("contact").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Group ID").nargs("*");
     }
 
-    public BlockCommand(final OutputWriter outputWriter) {
-    }
-
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         for (var contactNumber : ns.<String>getList("contact")) {
             try {
                 m.setContactBlocked(contactNumber, true);

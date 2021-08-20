@@ -11,18 +11,18 @@ import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class ListContactsCommand implements LocalCommand {
 
-    private final OutputWriter outputWriter;
-
-    public ListContactsCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "listContacts";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Show a list of known contacts with names.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) {
+    public void handleCommand(final Namespace ns, final Manager m, final OutputWriter outputWriter) {
         final var writer = (PlainTextWriter) outputWriter;
 
         var contacts = m.getContacts();

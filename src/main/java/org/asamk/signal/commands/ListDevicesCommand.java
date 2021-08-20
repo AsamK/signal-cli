@@ -19,18 +19,21 @@ import java.util.List;
 public class ListDevicesCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListDevicesCommand.class);
-    private final OutputWriter outputWriter;
 
-    public ListDevicesCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "listDevices";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Show a list of linked devices.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
 
         List<Device> devices;

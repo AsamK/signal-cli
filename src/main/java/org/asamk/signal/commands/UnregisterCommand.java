@@ -13,10 +13,13 @@ import java.io.IOException;
 
 public class UnregisterCommand implements LocalCommand {
 
-    public UnregisterCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "unregister";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Unregister the current device from the signal server.");
         subparser.addArgument("--delete-account")
                 .help("Delete account completely from server. CAUTION: Only do this if you won't use this number again!")
@@ -24,7 +27,9 @@ public class UnregisterCommand implements LocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             if (ns.getBoolean("delete-account")) {
                 m.deleteAccount();

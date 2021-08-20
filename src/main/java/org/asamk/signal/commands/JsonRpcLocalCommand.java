@@ -5,13 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.asamk.signal.OutputType;
+import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.Util;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>, LocalCommand {
 
@@ -20,13 +20,15 @@ public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>
         };
     }
 
-    default void handleCommand(Map<String, Object> request, Manager m) throws CommandException {
+    default void handleCommand(
+            Map<String, Object> request, Manager m, OutputWriter outputWriter
+    ) throws CommandException {
         Namespace commandNamespace = new JsonRpcNamespace(request == null ? Map.of() : request);
-        handleCommand(commandNamespace, m);
+        handleCommand(commandNamespace, m, outputWriter);
     }
 
-    default Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    default List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     /**

@@ -15,17 +15,22 @@ import java.io.IOException;
 
 public class SetPinCommand implements JsonRpcLocalCommand {
 
-    public SetPinCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "setPin";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Set a registration lock pin, to prevent others from registering this number.");
         subparser.addArgument("pin")
                 .help("The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             var registrationLockPin = ns.getString("pin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));

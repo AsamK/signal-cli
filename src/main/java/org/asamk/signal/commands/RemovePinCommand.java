@@ -15,15 +15,20 @@ import java.io.IOException;
 
 public class RemovePinCommand implements JsonRpcLocalCommand {
 
-    public RemovePinCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "removePin";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Remove the registration lock pin.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             m.setRegistrationLockPin(Optional.absent());
         } catch (UnauthenticatedResponseException e) {

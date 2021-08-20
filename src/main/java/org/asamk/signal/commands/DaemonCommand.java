@@ -23,15 +23,19 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DaemonCommand implements MultiLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
-    private final OutputWriter outputWriter;
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "daemon";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Run in daemon mode and provide an experimental dbus interface.");
         subparser.addArgument("--system")
                 .action(Arguments.storeTrue())
@@ -41,17 +45,15 @@ public class DaemonCommand implements MultiLocalCommand {
                 .action(Arguments.storeTrue());
     }
 
-    public DaemonCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
     @Override
-    public Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT, OutputType.JSON);
-    }
-
-    @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
@@ -63,7 +65,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
         try (var conn = DBusConnection.getConnection(busType)) {
             var objectPath = DbusConfig.getObjectPath();
-            var t = run(conn, objectPath, m, ignoreAttachments);
+            var t = run(conn, objectPath, m, outputWriter, ignoreAttachments);
 
             conn.requestBusName(DbusConfig.getBusname());
 
@@ -79,7 +81,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final List<Manager> managers, SignalCreator c
+            final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter
     ) throws CommandException {
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
@@ -94,7 +96,7 @@ public class DaemonCommand implements MultiLocalCommand {
             final var signalControl = new DbusSignalControlImpl(c, m -> {
                 try {
                     final var objectPath = DbusConfig.getObjectPath(m.getUsername());
-                    return run(conn, objectPath, m, ignoreAttachments);
+                    return run(conn, objectPath, m, outputWriter, ignoreAttachments);
                 } catch (DBusException e) {
                     logger.error("Failed to export object", e);
                     return null;
@@ -116,7 +118,7 @@ public class DaemonCommand implements MultiLocalCommand {
     }
 
     private Thread run(
-            DBusConnection conn, String objectPath, Manager m, boolean ignoreAttachments
+            DBusConnection conn, String objectPath, Manager m, OutputWriter outputWriter, boolean ignoreAttachments
     ) throws DBusException {
         conn.exportObject(new DbusSignalImpl(m, objectPath));
 

@@ -20,19 +20,22 @@ import java.util.stream.Collectors;
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
-    private final OutputWriter outputWriter;
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "getUserStatus";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Check if the specified phone number/s have been registered");
         subparser.addArgument("number").help("Phone number").nargs("+");
     }
 
-    public GetUserStatusCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
-    }
-
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         // Get a map of registration statuses
         Map<String, Boolean> registered;
         try {

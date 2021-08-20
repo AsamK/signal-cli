@@ -5,7 +5,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.RegistrationManager;
 
-public interface RegistrationCommand extends Command {
+public interface RegistrationCommand extends CliCommand {
 
     void handleCommand(Namespace ns, RegistrationManager m) throws CommandException;
 }

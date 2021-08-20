@@ -96,7 +96,7 @@ public class App {
                 : new PlainTextWriterImpl(System.out);
 
         var commandKey = ns.getString("command");
-        var command = Commands.getCommand(commandKey, outputWriter);
+        var command = Commands.getCommand(commandKey);
         if (command == null) {
             throw new UserErrorException("Command not implemented!");
         }
@@ -111,7 +111,7 @@ public class App {
         final var useDbusSystem = ns.getBoolean("dbus-system");
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
-            initDbusClient(command, username, useDbusSystem);
+            initDbusClient(command, username, useDbusSystem, outputWriter);
             return;
         }
 
@@ -142,7 +142,7 @@ public class App {
                 throw new UserErrorException("You cannot specify a username (phone number) when linking");
             }
 
-            handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment);
+            handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment, outputWriter);
             return;
         }
 
@@ -150,7 +150,11 @@ public class App {
             var usernames = Manager.getAllLocalUsernames(dataPath);
 
             if (command instanceof MultiLocalCommand) {
-                handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
+                handleMultiLocalCommand((MultiLocalCommand) command,
+                        dataPath,
+                        serviceEnvironment,
+                        usernames,
+                        outputWriter);
                 return;
             }
 
@@ -175,14 +179,17 @@ public class App {
             throw new UserErrorException("Command only works via dbus");
         }
 
-        handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment);
+        handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment, outputWriter);
     }
 
     private void handleProvisioningCommand(
-            final ProvisioningCommand command, final File dataPath, final ServiceEnvironment serviceEnvironment
+            final ProvisioningCommand command,
+            final File dataPath,
+            final ServiceEnvironment serviceEnvironment,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
-        command.handleCommand(ns, pm);
+        command.handleCommand(ns, pm, outputWriter);
     }
 
     private void handleRegistrationCommand(
@@ -212,10 +219,11 @@ public class App {
             final LocalCommand command,
             final String username,
             final File dataPath,
-            final ServiceEnvironment serviceEnvironment
+            final ServiceEnvironment serviceEnvironment,
+            final OutputWriter outputWriter
     ) throws CommandException {
         try (var m = loadManager(username, dataPath, serviceEnvironment)) {
-            command.handleCommand(ns, m);
+            command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
         }
@@ -225,7 +233,8 @@ public class App {
             final MultiLocalCommand command,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
-            final List<String> usernames
+            final List<String> usernames,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
         for (String u : usernames) {
@@ -246,7 +255,7 @@ public class App {
             public RegistrationManager getNewRegistrationManager(String username) throws IOException {
                 return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
             }
-        });
+        }, outputWriter);
 
         for (var m : managers) {
             try {
@@ -286,7 +295,7 @@ public class App {
     }
 
     private void initDbusClient(
-            final Command command, final String username, final boolean systemBus
+            final Command command, final String username, final boolean systemBus, final OutputWriter outputWriter
     ) throws CommandException {
         try {
             DBusConnection.DBusBusType busType;
@@ -300,7 +309,7 @@ public class App {
                         DbusConfig.getObjectPath(username),
                         Signal.class);
 
-                handleCommand(command, ts, dBusConn);
+                handleCommand(command, ts, dBusConn, outputWriter);
             }
         } catch (DBusException | IOException e) {
             logger.error("Dbus client failed", e);
@@ -308,11 +317,13 @@ public class App {
         }
     }
 
-    private void handleCommand(Command command, Signal ts, DBusConnection dBusConn) throws CommandException {
+    private void handleCommand(
+            Command command, Signal ts, DBusConnection dBusConn, OutputWriter outputWriter
+    ) throws CommandException {
         if (command instanceof ExtendedDbusCommand) {
-            ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn);
+            ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn, outputWriter);
         } else if (command instanceof DbusCommand) {
-            ((DbusCommand) command).handleCommand(ns, ts);
+            ((DbusCommand) command).handleCommand(ns, ts, outputWriter);
         } else {
             throw new UserErrorException("Command is not yet implemented via dbus");
         }

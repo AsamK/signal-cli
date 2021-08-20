@@ -22,7 +22,13 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "listGroups";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("List group information including names, ids, active status, blocked status and members");
         subparser.addArgument("-d", "--detailed")
                 .action(Arguments.storeTrue())
@@ -63,14 +69,10 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private final OutputWriter outputWriter;
-
-    public ListGroupsCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
-    }
-
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var groups = m.getGroups();
 
         if (outputWriter instanceof JsonWriter) {

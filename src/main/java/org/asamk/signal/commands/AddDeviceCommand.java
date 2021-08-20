@@ -21,18 +21,23 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public String getName() {
+        return "addDevice";
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Link another device to this device. Only works, if this is the master device.");
         subparser.addArgument("--uri")
                 .required(true)
                 .help("Specify the uri contained in the QR code shown by the new device.");
     }
 
-    public AddDeviceCommand(final OutputWriter outputWriter) {
-    }
-
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         try {
             m.addDeviceLink(new URI(ns.getString("uri")));
         } catch (IOException e) {

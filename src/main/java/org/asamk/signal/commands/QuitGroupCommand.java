@@ -31,13 +31,14 @@ import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 public class QuitGroupCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(QuitGroupCommand.class);
-    private final OutputWriter outputWriter;
 
-    public QuitGroupCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "quitGroup";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a quit group message to all group members and remove self from member list.");
         subparser.addArgument("-g", "--group-id", "--group").required(true).help("Specify the recipient group ID.");
         subparser.addArgument("--delete")
@@ -49,7 +50,9 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final GroupId groupId;
         try {
             groupId = Util.decodeGroupId(ns.getString("group-id"));
@@ -64,7 +67,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
                 final var results = m.sendQuitGroupMessage(groupId,
                         groupAdmins == null ? Set.of() : new HashSet<>(groupAdmins));
                 final var timestamp = results.first();
-                outputResult(timestamp);
+                outputResult(outputWriter, timestamp);
                 handleSendMessageResults(results.second());
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
@@ -84,7 +87,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private void outputResult(final long timestamp) {
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             writer.println("{}", timestamp);

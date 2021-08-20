@@ -2,11 +2,13 @@ package org.asamk.signal.commands;
 
 import org.asamk.signal.OutputType;
 
-import java.util.Set;
+import java.util.List;
 
 public interface Command {
 
-    default Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.PLAIN_TEXT);
+    String getName();
+
+    default List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.PLAIN_TEXT);
     }
 }

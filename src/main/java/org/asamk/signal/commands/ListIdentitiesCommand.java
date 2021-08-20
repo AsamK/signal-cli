@@ -21,10 +21,10 @@ import java.util.List;
 public class ListIdentitiesCommand implements LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
-    private final OutputWriter outputWriter;
 
-    public ListIdentitiesCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "listIdentities";
     }
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, IdentityInfo theirId) {
@@ -38,13 +38,16 @@ public class ListIdentitiesCommand implements LocalCommand {
                 digits);
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("List all known identity keys and their trust status, fingerprint and safety number.");
         subparser.addArgument("-n", "--number").help("Only show identity keys for the given phone number.");
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
 
         var number = ns.getString("number");

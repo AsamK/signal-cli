@@ -10,14 +10,15 @@ import java.util.Map;
 
 public class VersionCommand implements JsonRpcCommand<Void> {
 
-    private final OutputWriter outputWriter;
-
-    public VersionCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "version";
     }
 
     @Override
-    public void handleCommand(final Void request, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Void request, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final var jsonWriter = (JsonWriter) outputWriter;
         jsonWriter.write(Map.of("version", BaseConfig.PROJECT_VERSION));
     }

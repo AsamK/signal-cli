@@ -15,10 +15,13 @@ import java.io.IOException;
 
 public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
-    public UpdateProfileCommand(final OutputWriter outputWriter) {
+    @Override
+    public String getName() {
+        return "updateProfile";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Set a name, about and avatar image for the user profile");
         subparser.addArgument("--given-name", "--name").help("New profile (given) name");
         subparser.addArgument("--family-name").help("New profile family name (optional)");
@@ -31,7 +34,9 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         var givenName = ns.getString("given-name");
         var familyName = ns.getString("family-name");
         var about = ns.getString("about");

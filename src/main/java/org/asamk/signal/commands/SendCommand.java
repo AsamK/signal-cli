@@ -30,13 +30,14 @@ import java.util.Map;
 public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
-    private final OutputWriter outputWriter;
 
-    public SendCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public String getName() {
+        return "send";
     }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         final var mutuallyExclusiveGroup = subparser.addMutuallyExclusiveGroup();
@@ -53,7 +54,9 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Signal signal) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Signal signal, final OutputWriter outputWriter
+    ) throws CommandException {
         final List<String> recipients = ns.getList("recipient");
         final var isEndSession = ns.getBoolean("end-session");
         final var groupIdString = ns.getString("group-id");
@@ -106,7 +109,7 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
             try {
                 var timestamp = signal.sendGroupMessage(messageText, attachments, groupId);
-                outputResult(timestamp);
+                outputResult(outputWriter, timestamp);
                 return;
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage());
@@ -116,7 +119,7 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
         if (isNoteToSelf) {
             try {
                 var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
-                outputResult(timestamp);
+                outputResult(outputWriter, timestamp);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
                 throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
@@ -127,7 +130,7 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
 
         try {
             var timestamp = signal.sendMessage(messageText, attachments, recipients);
-            outputResult(timestamp);
+            outputResult(outputWriter, timestamp);
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
@@ -137,7 +140,7 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
         }
     }
 
-    private void outputResult(final long timestamp) {
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             writer.println("{}", timestamp);
@@ -148,7 +151,9 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
-        handleCommand(ns, new DbusSignalImpl(m, null));
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
+        handleCommand(ns, new DbusSignalImpl(m, null), outputWriter);
     }
 }

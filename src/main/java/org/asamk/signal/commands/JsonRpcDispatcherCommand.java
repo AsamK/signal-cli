@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class JsonRpcDispatcherCommand implements LocalCommand {
@@ -43,26 +43,28 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
     private static final int IO_ERROR = -3;
     private static final int UNTRUSTED_KEY_ERROR = -4;
 
-    private final OutputWriter outputWriter;
+    @Override
+    public String getName() {
+        return "jsonRpc";
+    }
 
-    public static void attachToSubparser(final Subparser subparser) {
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
         subparser.help("Take commands from standard input as line-delimited JSON RPC while receiving messages.");
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
     }
 
-    public JsonRpcDispatcherCommand(final OutputWriter outputWriter) {
-        this.outputWriter = outputWriter;
+    @Override
+    public List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.JSON);
     }
 
     @Override
-    public Set<OutputType> getSupportedOutputTypes() {
-        return Set.of(OutputType.JSON);
-    }
-
-    @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
         final boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         final var objectMapper = Util.createJsonObjectMapper();
@@ -104,7 +106,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             result[0] = s;
         };
 
-        var command = Commands.getCommand(method, commandOutputWriter);
+        var command = Commands.getCommand(method);
         if (!(command instanceof JsonRpcCommand)) {
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.METHOD_NOT_FOUND,
                     "Method not implemented",
@@ -112,7 +114,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         }
 
         try {
-            parseParamsAndRunCommand(m, objectMapper, params, (JsonRpcCommand<?>) command);
+            parseParamsAndRunCommand(m, objectMapper, params, commandOutputWriter, (JsonRpcCommand<?>) command);
         } catch (JsonMappingException e) {
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
                     e.getMessage(),
@@ -135,7 +137,11 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
     }
 
     private <T> void parseParamsAndRunCommand(
-            final Manager m, final ObjectMapper objectMapper, final TreeNode params, final JsonRpcCommand<T> command
+            final Manager m,
+            final ObjectMapper objectMapper,
+            final TreeNode params,
+            final OutputWriter outputWriter,
+            final JsonRpcCommand<T> command
     ) throws CommandException, JsonMappingException {
         T requestParams = null;
         final var requestType = command.getRequestType();
@@ -148,7 +154,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
                 throw new AssertionError(e);
             }
         }
-        command.handleCommand(requestParams, m);
+        command.handleCommand(requestParams, m, outputWriter);
     }
 
     private Thread receiveMessages(
