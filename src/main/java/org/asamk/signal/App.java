@@ -43,8 +43,6 @@ public class App {
     private final static Logger logger = LoggerFactory.getLogger(App.class);
 
     private final Namespace ns;
-    public static File dataPath;
-    public static ServiceEnvironment serviceEnvironment;
 
     static ArgumentParser buildArgumentParser() {
         var parser = ArgumentParsers.newFor("signal-cli", VERSION_0_9_0_DEFAULT_SETTINGS)
@@ -88,13 +86,9 @@ public class App {
     }
 
     public App(
-        final Namespace ns,
-        File dataPath,
-        ServiceEnvironment serviceEnvironment
+        final Namespace ns
         ) {
         this.ns = ns;
-        this.dataPath = dataPath;
-        this.serviceEnvironment = serviceEnvironment;
     }
 
     public void init() throws CommandException {
@@ -123,7 +117,7 @@ public class App {
             return;
         }
 
-//        final File dataPath;
+        final File dataPath;
         var config = ns.getString("config");
         if (config != null) {
             dataPath = new File(config);
@@ -132,7 +126,7 @@ public class App {
         }
 
         final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
-        serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
+        ServiceEnvironment serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
                 ? ServiceEnvironment.LIVE
                 : ServiceEnvironment.SANDBOX;
 
@@ -154,14 +148,19 @@ public class App {
             return;
         }
 
+        if (command instanceof MultiLocalCommand) {
+            List<String> usernames = new ArrayList<>();
+            if (username == null) {
+                usernames = Manager.getAllLocalUsernames(dataPath);
+                handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
+            } else {
+                handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, username);
+            }
+            return;
+        }
+
         if (username == null) {
             var usernames = Manager.getAllLocalUsernames(dataPath);
-
-            if (command instanceof MultiLocalCommand) {
-                handleMultiLocalCommand((MultiLocalCommand) command, dataPath, serviceEnvironment, usernames);
-                return;
-            }
-
             if (usernames.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (usernames.size() > 1) {
@@ -222,8 +221,10 @@ public class App {
             final File dataPath,
             final ServiceEnvironment serviceEnvironment
     ) throws CommandException {
-        try (var m = loadManager(username, dataPath, serviceEnvironment)) {
-            command.handleCommand(ns, m);
+        Manager m = loadManager(username, dataPath, serviceEnvironment);
+        command.handleCommand(ns, m);
+        try {
+            m.close();;
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
         }
@@ -235,16 +236,8 @@ public class App {
             final ServiceEnvironment serviceEnvironment,
             final List<String> usernames
     ) throws CommandException {
-        final var managers = new ArrayList<Manager>();
-        for (String u : usernames) {
-            try {
-                managers.add(loadManager(u, dataPath, serviceEnvironment));
-            } catch (CommandException e) {
-                logger.warn("Ignoring {}: {}", u, e.getMessage());
-            }
-        }
+        SignalCreator c = new SignalCreator() {
 
-        command.handleCommand(ns, managers, new SignalCreator() {
             @Override
             public ProvisioningManager getNewProvisioningManager() {
                 return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
@@ -254,7 +247,18 @@ public class App {
             public RegistrationManager getNewRegistrationManager(String username) throws IOException {
                 return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
             }
-        });
+        };
+
+        final var managers = new ArrayList<Manager>();
+        for (String u : usernames) {
+            try {
+                managers.add(loadManager(u, dataPath, serviceEnvironment));
+            } catch (CommandException e) {
+                logger.warn("Ignoring {}: {}", u, e.getMessage());
+            }
+        }
+
+        command.handleCommand(ns, managers, c);
 
         for (var m : managers) {
             try {
@@ -262,6 +266,42 @@ public class App {
             } catch (IOException e) {
                 logger.warn("Cleanup failed", e);
             }
+        }
+    }
+
+    private void handleMultiLocalCommand(
+            final MultiLocalCommand command,
+            final File dataPath,
+            final ServiceEnvironment serviceEnvironment,
+            final String username
+    ) throws CommandException {
+
+        SignalCreator c = new SignalCreator() {
+
+            @Override
+            public ProvisioningManager getNewProvisioningManager() {
+                return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+
+            @Override
+            public RegistrationManager getNewRegistrationManager(String username) throws IOException {
+                return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+        };
+
+        Manager manager = null;
+        try {
+            manager = loadManager(username, dataPath, serviceEnvironment);
+        } catch (CommandException e) {
+            logger.warn("Ignoring {}: {}", username, e.getMessage());
+        }
+
+        command.handleCommand(ns, manager, c);
+
+        try {
+            manager.close();
+        } catch (IOException e) {
+            logger.warn("Cleanup failed", e);
         }
     }
 

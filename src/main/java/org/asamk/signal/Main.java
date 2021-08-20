@@ -47,12 +47,10 @@ public class Main {
         var parser = App.buildArgumentParser();
 
         var ns = parser.parseArgsOrFail(args);
-        File dataPath = null;
-        ServiceEnvironment serviceEnvironment = null;
 
         int status = 0;
         try {
-            new App(ns, dataPath, serviceEnvironment).init();
+            new App(ns).init();
         } catch (CommandException e) {
             System.err.println(e.getMessage());
             status = getStatusForError(e);

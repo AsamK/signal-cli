@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.App;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.JsonDbusReceiveMessageHandler;
@@ -11,6 +12,7 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
+import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.dbus.DbusSignalControlImpl;
@@ -22,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -51,9 +54,10 @@ public class DaemonCommand implements MultiLocalCommand {
     }
 
     @Override
-    public void handleCommand(final Namespace ns, final Manager m) throws CommandException {
+    public void handleCommand(
+            final Namespace ns, final Manager manager, SignalCreator c
+    ) throws CommandException {
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
-
         DBusConnection.DBusBusType busType;
         if (ns.getBoolean("system")) {
             busType = DBusConnection.DBusBusType.SYSTEM;
@@ -62,15 +66,21 @@ public class DaemonCommand implements MultiLocalCommand {
         }
 
         try (var conn = DBusConnection.getConnection(busType)) {
-            var objectPath = DbusConfig.getObjectPath();
-            var t = run(conn, objectPath, m, ignoreAttachments);
+            final var signalControl = new DbusSignalControlImpl(c, m -> {
+                try {
+                    final var objectPath = DbusConfig.getObjectPath();
+                    return run(conn, objectPath, m, ignoreAttachments);
+                } catch (DBusException e) {
+                    logger.error("Failed to export object", e);
+                    return null;
+                }
+            }, DbusConfig.getObjectPath());
+
+            signalControl.addManager(manager);
 
             conn.requestBusName(DbusConfig.getBusname());
 
-            try {
-                t.join();
-            } catch (InterruptedException ignored) {
-            }
+            signalControl.run();
         } catch (DBusException | IOException e) {
             logger.error("Dbus command failed", e);
             throw new UnexpectedErrorException("Dbus command failed");

@@ -547,6 +547,9 @@ dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /or
 Print the group name corresponding to a groupId; the daemon runs on system bus, and was started without an explicit `-u USERNAME`::
 dbus-send --system --print-reply --type=method_call --dest='org.asamk.Signal' /org/asamk/Signal/_1234567890 org.asamk.Signal.getGroupName array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
 
+Same as above, but daemon running on the session bus::
+dbus-send --session --print-reply --type=method_call --dest='org.asamk.Signal' /org/asamk/Signal/_1234567890 org.asamk.Signal.getGroupName array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
+
 == Authors
 
 Maintained by AsamK <asamk@gmx.de>, who is assisted by other open source contributors.

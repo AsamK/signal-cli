@@ -118,9 +118,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     ) {
         try  {
             try {
-                registrationManager =  RegistrationManager.init(number, App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
+                registrationManager = c.getNewRegistrationManager(number);
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (Exception e) {
+                throw new Error.Failure(e.getMessage());
             }
             registrationManager.register(voiceVerification, captcha);
         } catch (CaptchaRequiredException e) {
@@ -159,7 +161,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     public static String link(final String newDeviceName) {
         try {
-            provisioningManager = ProvisioningManager.init(App.dataPath, App.serviceEnvironment, BaseConfig.USER_AGENT);
+            provisioningManager = c.getNewProvisioningManager();
             final URI deviceLinkUri = provisioningManager.getDeviceLinkUri();
             new Thread(() -> {
                 try {
@@ -167,11 +169,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                     logger.info("Linking of " + newDeviceName + " successful");
                     manager.close();
                 } catch (TimeoutException e) {
-                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "Link request timed out, please try again.");
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + ": Link request timed out, please try again.");
                 } catch (IOException e) {
-                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "Link request error: " + e.getMessage());
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + ": Link request error: " + e.getMessage());
                 } catch (UserAlreadyExists e) {
-                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + "The user "
+                    throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + ": The user "
                             + e.getUsername()
                             + " already exists\nDelete \""
                             + e.getFileName()
