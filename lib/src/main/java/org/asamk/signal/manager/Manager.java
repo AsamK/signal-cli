@@ -2664,14 +2664,22 @@ public class Manager implements Closeable {
         }
     }
 
-    public String computeSafetyNumber(
-            SignalServiceAddress theirAddress, IdentityKey theirIdentityKey
-    ) {
-        return Utils.computeSafetyNumber(ServiceConfig.capabilities.isUuid(),
+    public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+        final var fingerprint = Utils.computeSafetyNumber(capabilities.isUuid(),
                 account.getSelfAddress(),
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
+        return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
+    }
+
+    public byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+        final var fingerprint = Utils.computeSafetyNumber(capabilities.isUuid(),
+                account.getSelfAddress(),
+                getIdentityKeyPair().getPublicKey(),
+                theirAddress,
+                theirIdentityKey);
+        return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
     }
 
     @Deprecated

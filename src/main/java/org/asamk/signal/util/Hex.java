@@ -8,11 +8,16 @@ public class Hex {
     }
 
     public static String toString(byte[] bytes) {
+        if (bytes.length == 0) {
+            return "";
+        }
+
         var buf = new StringBuffer();
         for (final var aByte : bytes) {
             appendHexChar(buf, aByte);
             buf.append(" ");
         }
+        buf.deleteCharAt(buf.length() - 1);
         return buf.toString();
     }
 

@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.util;
 
 import org.whispersystems.libsignal.IdentityKey;
+import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
@@ -36,7 +37,7 @@ public class Utils {
         return new StreamDetails(stream, mime, size);
     }
 
-    public static String computeSafetyNumber(
+    public static Fingerprint computeSafetyNumber(
             boolean isUuidCapable,
             SignalServiceAddress ownAddress,
             IdentityKey ownIdentityKey,
@@ -56,18 +57,17 @@ public class Utils {
             // Version 1: E164 user
             version = 1;
             if (!ownAddress.getNumber().isPresent() || !theirAddress.getNumber().isPresent()) {
-                return "INVALID ID";
+                return null;
             }
             ownId = ownAddress.getNumber().get().getBytes();
             theirId = theirAddress.getNumber().get().getBytes();
         }
 
-        var fingerprint = new NumericFingerprintGenerator(5200).createFor(version,
+        return new NumericFingerprintGenerator(5200).createFor(version,
                 ownId,
                 ownIdentityKey,
                 theirId,
                 theirIdentityKey);
-        return fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
     public static SignalServiceAddress getSignalServiceAddressFromIdentifier(final String identifier) {

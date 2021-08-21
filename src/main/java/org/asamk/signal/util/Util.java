@@ -45,11 +45,18 @@ public class Util {
     }
 
     public static String formatSafetyNumber(String digits) {
+        if (digits == null) {
+            return null;
+        }
+
         final var partCount = 12;
         var partSize = digits.length() / partCount;
         var f = new StringBuilder(digits.length() + partCount);
         for (var i = 0; i < partCount; i++) {
-            f.append(digits, i * partSize, (i * partSize) + partSize).append(" ");
+            f.append(digits, i * partSize, (i * partSize) + partSize);
+            if (i != partCount - 1) {
+                f.append(" ");
+            }
         }
         return f.toString();
     }
