@@ -3,6 +3,7 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -15,8 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
-public class UploadStickerPackCommand implements LocalCommand {
+public class UploadStickerPackCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
 
@@ -36,12 +38,17 @@ public class UploadStickerPackCommand implements LocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final var writer = (PlainTextWriter) outputWriter;
         var path = new File(ns.getString("path"));
 
         try {
             var url = m.uploadStickerPack(path);
-            writer.println("{}", url);
+            if (outputWriter instanceof PlainTextWriter) {
+                final var writer = (PlainTextWriter) outputWriter;
+                writer.println("{}", url);
+            } else {
+                final var writer = (JsonWriter) outputWriter;
+                writer.write(Map.of("url", url));
+            }
         } catch (IOException e) {
             throw new IOErrorException("Upload error (maybe image size too large):" + e.getMessage());
         } catch (StickerPackInvalidException e) {
