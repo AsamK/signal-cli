@@ -33,6 +33,7 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
+import org.asamk.signal.manager.helper.SendHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
 import org.asamk.signal.manager.jobs.Context;
 import org.asamk.signal.manager.jobs.Job;
@@ -86,7 +87,6 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.InvalidMessageStructureException;
 import org.whispersystems.signalservice.api.SignalSessionLock;
-import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
@@ -111,7 +111,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
@@ -120,7 +119,6 @@ import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -179,10 +177,11 @@ public class Manager implements Closeable {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    private final UnidentifiedAccessHelper unidentifiedAccessHelper;
     private final ProfileHelper profileHelper;
     private final GroupV2Helper groupV2Helper;
     private final PinHelper pinHelper;
+    private final SendHelper sendHelper;
+
     private final AvatarStore avatarStore;
     private final AttachmentStore attachmentStore;
     private final StickerPackStore stickerPackStore;
@@ -218,7 +217,7 @@ public class Manager implements Closeable {
                 sessionLock);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
 
-        this.unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
+        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
                 account.getProfileStore()::getProfileKey,
                 this::getRecipientProfile,
                 this::getSenderCertificate);
@@ -237,6 +236,14 @@ public class Manager implements Closeable {
         this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
         this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
         this.stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
+        this.sendHelper = new SendHelper(account,
+                dependencies,
+                unidentifiedAccessHelper,
+                this::resolveSignalServiceAddress,
+                this::resolveRecipient,
+                this::handleIdentityFailure,
+                this::getGroup,
+                this::refreshRegisteredUser);
     }
 
     public String getUsername() {
@@ -396,10 +403,7 @@ public class Manager implements Closeable {
         }
         account.getProfileStore().storeProfile(account.getSelfRecipientId(), newProfile);
 
-        try {
-            sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
-        } catch (UntrustedIdentityException ignored) {
-        }
+        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
     }
 
     public void unregister() throws IOException {
@@ -653,17 +657,6 @@ public class Manager implements Closeable {
         return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
-    private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        var g = getGroup(groupId);
-        if (g == null) {
-            throw new GroupNotFoundException(groupId);
-        }
-        if (!g.isMember(account.getSelfRecipientId())) {
-            throw new NotAGroupMemberException(groupId, g.getTitle());
-        }
-        return g;
-    }
-
     private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
         var g = getGroup(groupId);
         if (g == null) {
@@ -682,12 +675,12 @@ public class Manager implements Closeable {
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
             String messageText, List<String> attachments, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
+        final var messageBuilder = createMessageBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
         }
 
-        return sendGroupMessage(messageBuilder, groupId);
+        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessageReaction(
@@ -698,20 +691,9 @@ public class Manager implements Closeable {
                 remove,
                 resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
+        final var messageBuilder = createMessageBuilder().withReaction(reaction);
 
-        return sendGroupMessage(messageBuilder, groupId);
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
-    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
-        final var g = getGroupForSending(groupId);
-
-        GroupUtils.setGroupContext(messageBuilder, g);
-        messageBuilder.withExpiration(g.getMessageExpirationTime());
-
-        return sendMessage(messageBuilder, g.getMembersWithout(account.getSelfRecipientId()));
+        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
 
     public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(
@@ -722,7 +704,7 @@ public class Manager implements Closeable {
             return quitGroupV1((GroupInfoV1) group);
         }
 
-        final var newAdmins = getSignalServiceAddresses(groupAdmins);
+        final var newAdmins = getRecipientIds(groupAdmins);
         try {
             return quitGroupV2((GroupInfoV2) group, newAdmins);
         } catch (ConflictException e) {
@@ -737,10 +719,11 @@ public class Manager implements Closeable {
                 .withId(groupInfoV1.getGroupId().serialize())
                 .build();
 
-        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
+        var messageBuilder = createMessageBuilder().asGroupMessage(group);
         groupInfoV1.removeMember(account.getSelfRecipientId());
         account.getGroupStore().updateGroup(groupInfoV1);
-        return sendMessage(messageBuilder, groupInfoV1.getMembersWithout(account.getSelfRecipientId()));
+        return sendHelper.sendGroupMessage(messageBuilder.build(),
+                groupInfoV1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
     private Pair<Long, List<SendMessageResult>> quitGroupV2(
@@ -760,7 +743,8 @@ public class Manager implements Closeable {
         groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
         var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
         account.getGroupStore().updateGroup(groupInfoV2);
-        return sendMessage(messageBuilder, groupInfoV2.getMembersWithout(account.getSelfRecipientId()));
+        return sendHelper.sendGroupMessage(messageBuilder.build(),
+                groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
     public void deleteGroup(GroupId groupId) throws IOException {
@@ -771,7 +755,7 @@ public class Manager implements Closeable {
     public Pair<GroupId, List<SendMessageResult>> createGroup(
             String name, List<String> members, File avatarFile
     ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        return createGroup(name, members == null ? null : getSignalServiceAddresses(members), avatarFile);
+        return createGroup(name, members == null ? null : getRecipientIds(members), avatarFile);
     }
 
     private Pair<GroupId, List<SendMessageResult>> createGroup(
@@ -807,7 +791,8 @@ public class Manager implements Closeable {
         messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
         account.getGroupStore().updateGroup(gv2);
 
-        final var result = sendMessage(messageBuilder, gv2.getMembersIncludingPendingWithout(selfRecipientId));
+        final var result = sendHelper.sendGroupMessage(messageBuilder.build(),
+                gv2.getMembersIncludingPendingWithout(selfRecipientId));
         return new Pair<>(gv2.getGroupId(), result.second());
     }
 
@@ -829,10 +814,10 @@ public class Manager implements Closeable {
         return updateGroup(groupId,
                 name,
                 description,
-                members == null ? null : getSignalServiceAddresses(members),
-                removeMembers == null ? null : getSignalServiceAddresses(removeMembers),
-                admins == null ? null : getSignalServiceAddresses(admins),
-                removeAdmins == null ? null : getSignalServiceAddresses(removeAdmins),
+                members == null ? null : getRecipientIds(members),
+                removeMembers == null ? null : getRecipientIds(removeMembers),
+                admins == null ? null : getRecipientIds(admins),
+                removeAdmins == null ? null : getRecipientIds(removeAdmins),
                 resetGroupLink,
                 groupLinkState,
                 addMemberPermission,
@@ -908,7 +893,8 @@ public class Manager implements Closeable {
 
         account.getGroupStore().updateGroup(gv1);
 
-        return sendMessage(messageBuilder, gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+        return sendHelper.sendGroupMessage(messageBuilder.build(),
+                gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
     private void updateGroupV1Details(
@@ -1092,7 +1078,7 @@ public class Manager implements Closeable {
 
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
         account.getGroupStore().updateGroup(group);
-        return sendMessage(messageBuilder, members);
+        return sendHelper.sendGroupMessage(messageBuilder.build(), members);
     }
 
     private static int currentTimeDays() {
@@ -1122,9 +1108,9 @@ public class Manager implements Closeable {
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
-        var group = getGroupForSending(groupId);
+        var group = getGroupForUpdating(groupId);
         if (!(group instanceof GroupInfoV1)) {
-            throw new RuntimeException("Received an invalid group request for a v2 group!");
+            throw new IOException("Received an invalid group request for a v2 group!");
         }
         g = (GroupInfoV1) group;
 
@@ -1136,7 +1122,7 @@ public class Manager implements Closeable {
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendMessage(messageBuilder, Set.of(recipientId));
+        return sendHelper.sendGroupMessage(messageBuilder.build(), Set.of(recipientId));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -1157,18 +1143,14 @@ public class Manager implements Closeable {
             throw new AttachmentInvalidException(g.getGroupId().toBase64(), e);
         }
 
-        return SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+        return createMessageBuilder().asGroupMessage(group.build()).withExpiration(g.getMessageExpirationTime());
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
         var group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
                 .withRevision(g.getGroup().getRevision())
                 .withSignedGroupChange(signedGroupChange);
-        return SignalServiceDataMessage.newBuilder()
-                .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+        return createMessageBuilder().asGroupMessage(group.build()).withExpiration(g.getMessageExpirationTime());
     }
 
     Pair<Long, List<SendMessageResult>> sendGroupInfoRequest(
@@ -1176,10 +1158,10 @@ public class Manager implements Closeable {
     ) throws IOException {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO).withId(groupId.serialize());
 
-        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
+        var messageBuilder = createMessageBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendMessage(messageBuilder, Set.of(resolveRecipient(recipient)));
+        return sendHelper.sendGroupMessage(messageBuilder.build(), Set.of(resolveRecipient(recipient)));
     }
 
     void sendReceipt(
@@ -1189,16 +1171,13 @@ public class Manager implements Closeable {
                 List.of(messageId),
                 System.currentTimeMillis());
 
-        dependencies.getMessageSender()
-                .sendReceipt(remoteAddress,
-                        unidentifiedAccessHelper.getAccessFor(resolveRecipient(remoteAddress)),
-                        receiptMessage);
+        sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(remoteAddress));
     }
 
     public Pair<Long, List<SendMessageResult>> sendMessage(
             String messageText, List<String> attachments, List<String> recipients
     ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
+        final var messageBuilder = createMessageBuilder().withBody(messageText);
         if (attachments != null) {
             var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
 
@@ -1215,33 +1194,33 @@ public class Manager implements Closeable {
 
             messageBuilder.withAttachments(attachmentPointers);
         }
-        return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
+        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
     }
 
     public Pair<Long, SendMessageResult> sendSelfMessage(
             String messageText, List<String> attachments
     ) throws IOException, AttachmentInvalidException {
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withBody(messageText);
+        final var messageBuilder = createMessageBuilder().withBody(messageText);
         if (attachments != null) {
             messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
         }
-        return sendSelfMessage(messageBuilder);
+        return sendHelper.sendSelfMessage(messageBuilder);
     }
 
     public Pair<Long, List<SendMessageResult>> sendRemoteDeleteMessage(
             long targetSentTimestamp, List<String> recipients
     ) throws IOException, InvalidNumberException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
-        return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
+        final var messageBuilder = createMessageBuilder().withRemoteDelete(delete);
+        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupRemoteDeleteMessage(
             long targetSentTimestamp, GroupId groupId
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
-        return sendGroupMessage(messageBuilder, groupId);
+        final var messageBuilder = createMessageBuilder().withRemoteDelete(delete);
+        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
 
     public Pair<Long, List<SendMessageResult>> sendMessageReaction(
@@ -1252,28 +1231,27 @@ public class Manager implements Closeable {
                 remove,
                 resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
-        return sendMessage(messageBuilder, getSignalServiceAddresses(recipients));
+        final var messageBuilder = createMessageBuilder().withReaction(reaction);
+        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
     }
 
     public Pair<Long, List<SendMessageResult>> sendEndSessionMessage(List<String> recipients) throws IOException, InvalidNumberException {
-        var messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
+        var messageBuilder = createMessageBuilder().asEndSessionMessage();
 
-        final var signalServiceAddresses = getSignalServiceAddresses(recipients);
+        final var recipientIds = getRecipientIds(recipients);
         try {
-            return sendMessage(messageBuilder, signalServiceAddresses);
-        } catch (Exception e) {
-            for (var address : signalServiceAddresses) {
-                handleEndSession(address);
+            return sendHelper.sendMessage(messageBuilder, recipientIds);
+        } finally {
+            for (var recipientId : recipientIds) {
+                handleEndSession(recipientId);
             }
-            throw e;
         }
     }
 
     void renewSession(RecipientId recipientId) throws IOException {
         account.getSessionStore().archiveSessions(recipientId);
         if (!recipientId.equals(getSelfRecipientId())) {
-            sendNullMessage(recipientId);
+            sendHelper.sendNullMessage(recipientId);
         }
     }
 
@@ -1323,8 +1301,8 @@ public class Manager implements Closeable {
     }
 
     private void sendExpirationTimerUpdate(RecipientId recipientId) throws IOException {
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
-        sendMessage(messageBuilder, Set.of(recipientId));
+        final var messageBuilder = createMessageBuilder().asExpirationUpdate();
+        sendHelper.sendMessage(messageBuilder, Set.of(recipientId));
     }
 
     /**
@@ -1350,8 +1328,8 @@ public class Manager implements Closeable {
     }
 
     private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException {
-        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
-        sendGroupMessage(messageBuilder, groupId);
+        final var messageBuilder = createMessageBuilder().asExpirationUpdate();
+        sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
 
     /**
@@ -1398,11 +1376,7 @@ public class Manager implements Closeable {
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        try {
-            sendSyncMessage(message);
-        } catch (UntrustedIdentityException e) {
-            throw new AssertionError(e);
-        }
+        sendHelper.sendSyncMessage(message);
     }
 
     private void requestSyncContacts() throws IOException {
@@ -1410,11 +1384,7 @@ public class Manager implements Closeable {
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        try {
-            sendSyncMessage(message);
-        } catch (UntrustedIdentityException e) {
-            throw new AssertionError(e);
-        }
+        sendHelper.sendSyncMessage(message);
     }
 
     private void requestSyncBlocked() throws IOException {
@@ -1422,11 +1392,7 @@ public class Manager implements Closeable {
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        try {
-            sendSyncMessage(message);
-        } catch (UntrustedIdentityException e) {
-            throw new AssertionError(e);
-        }
+        sendHelper.sendSyncMessage(message);
     }
 
     private void requestSyncConfiguration() throws IOException {
@@ -1434,11 +1400,7 @@ public class Manager implements Closeable {
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        try {
-            sendSyncMessage(message);
-        } catch (UntrustedIdentityException e) {
-            throw new AssertionError(e);
-        }
+        sendHelper.sendSyncMessage(message);
     }
 
     private void requestSyncKeys() throws IOException {
@@ -1446,11 +1408,7 @@ public class Manager implements Closeable {
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        try {
-            sendSyncMessage(message);
-        } catch (UntrustedIdentityException e) {
-            throw new AssertionError(e);
-        }
+        sendHelper.sendSyncMessage(message);
     }
 
     private byte[] getSenderCertificate() {
@@ -1469,12 +1427,7 @@ public class Manager implements Closeable {
         return certificate;
     }
 
-    private void sendSyncMessage(SignalServiceSyncMessage message) throws IOException, UntrustedIdentityException {
-        var messageSender = dependencies.getMessageSender();
-        messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
-    }
-
-    private Set<RecipientId> getSignalServiceAddresses(Collection<String> numbers) throws InvalidNumberException {
+    private Set<RecipientId> getRecipientIds(Collection<String> numbers) throws InvalidNumberException {
         final var signalServiceAddresses = new HashSet<SignalServiceAddress>(numbers.size());
         final var addressesMissingUuid = new HashSet<SignalServiceAddress>();
 
@@ -1537,188 +1490,27 @@ public class Manager implements Closeable {
     public void sendTypingMessage(
             TypingAction action, Set<String> recipients
     ) throws IOException, UntrustedIdentityException, InvalidNumberException {
-        sendTypingMessageInternal(action, getSignalServiceAddresses(recipients));
-    }
-
-    private void sendTypingMessageInternal(
-            TypingAction action, Set<RecipientId> recipientIds
-    ) throws IOException, UntrustedIdentityException {
         final var timestamp = System.currentTimeMillis();
         var message = new SignalServiceTypingMessage(action.toSignalService(), timestamp, Optional.absent());
-        var messageSender = dependencies.getMessageSender();
-        for (var recipientId : recipientIds) {
-            final var address = resolveSignalServiceAddress(recipientId);
-            messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
-        }
+        sendHelper.sendTypingMessage(message, getRecipientIds(recipients));
     }
 
     public void sendGroupTypingMessage(
             TypingAction action, GroupId groupId
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
         final var timestamp = System.currentTimeMillis();
-        final var g = getGroupForSending(groupId);
         final var message = new SignalServiceTypingMessage(action.toSignalService(),
                 timestamp,
                 Optional.of(groupId.serialize()));
-        final var messageSender = dependencies.getMessageSender();
-        final var recipientIdList = new ArrayList<>(g.getMembersWithout(account.getSelfRecipientId()));
-        final var addresses = recipientIdList.stream()
-                .map(this::resolveSignalServiceAddress)
-                .collect(Collectors.toList());
-        messageSender.sendTyping(addresses, unidentifiedAccessHelper.getAccessFor(recipientIdList), message, null);
+        sendHelper.sendGroupTypingMessage(message, groupId);
     }
 
-    private Pair<Long, List<SendMessageResult>> sendMessage(
-            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientId> recipientIds
-    ) throws IOException {
+    private SignalServiceDataMessage.Builder createMessageBuilder() {
         final var timestamp = System.currentTimeMillis();
+
+        var messageBuilder = SignalServiceDataMessage.newBuilder();
         messageBuilder.withTimestamp(timestamp);
-
-        SignalServiceDataMessage message = null;
-        try {
-            message = messageBuilder.build();
-            if (message.getGroupContext().isPresent()) {
-                try {
-                    var messageSender = dependencies.getMessageSender();
-                    final var isRecipientUpdate = false;
-                    final var recipientIdList = new ArrayList<>(recipientIds);
-                    final var addresses = recipientIdList.stream()
-                            .map(this::resolveSignalServiceAddress)
-                            .collect(Collectors.toList());
-                    var result = messageSender.sendDataMessage(addresses,
-                            unidentifiedAccessHelper.getAccessFor(recipientIdList),
-                            isRecipientUpdate,
-                            ContentHint.DEFAULT,
-                            message,
-                            sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
-                            () -> false);
-
-                    for (var r : result) {
-                        handlePossibleIdentityFailure(r);
-                    }
-
-                    return new Pair<>(timestamp, result);
-                } catch (UntrustedIdentityException e) {
-                    return new Pair<>(timestamp, List.of());
-                }
-            } else {
-                // Send to all individually, so sync messages are sent correctly
-                messageBuilder.withProfileKey(account.getProfileKey().serialize());
-                var results = new ArrayList<SendMessageResult>(recipientIds.size());
-                for (var recipientId : recipientIds) {
-                    final var contact = account.getContactStore().getContact(recipientId);
-                    final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
-                    messageBuilder.withExpiration(expirationTime);
-                    message = messageBuilder.build();
-                    final var result = sendMessage(recipientId, message);
-                    handlePossibleIdentityFailure(result);
-                    results.add(result);
-                }
-                return new Pair<>(timestamp, results);
-            }
-        } finally {
-            if (message != null && message.isEndSession()) {
-                for (var recipient : recipientIds) {
-                    handleEndSession(recipient);
-                }
-            }
-        }
-    }
-
-    private void handlePossibleIdentityFailure(final SendMessageResult r) {
-        if (r.getIdentityFailure() != null) {
-            final var recipientId = resolveRecipient(r.getAddress());
-            final var identityKey = r.getIdentityFailure().getIdentityKey();
-            if (identityKey != null) {
-                final var newIdentity = account.getIdentityKeyStore()
-                        .saveIdentity(recipientId, identityKey, new Date());
-                if (newIdentity) {
-                    account.getSessionStore().archiveSessions(recipientId);
-                }
-            } else {
-                // Retrieve profile to get the current identity key from the server
-                retrieveEncryptedProfile(recipientId);
-            }
-        }
-    }
-
-    private Pair<Long, SendMessageResult> sendSelfMessage(
-            SignalServiceDataMessage.Builder messageBuilder
-    ) throws IOException {
-        final var timestamp = System.currentTimeMillis();
-        messageBuilder.withTimestamp(timestamp);
-        final var recipientId = account.getSelfRecipientId();
-
-        final var contact = account.getContactStore().getContact(recipientId);
-        final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
-        messageBuilder.withExpiration(expirationTime);
-
-        var message = messageBuilder.build();
-        final var result = sendSelfMessage(message);
-        return new Pair<>(timestamp, result);
-    }
-
-    private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
-        var messageSender = dependencies.getMessageSender();
-
-        var recipientId = account.getSelfRecipientId();
-
-        final var unidentifiedAccess = unidentifiedAccessHelper.getAccessFor(recipientId);
-        var recipient = resolveSignalServiceAddress(recipientId);
-        var transcript = new SentTranscriptMessage(Optional.of(recipient),
-                message.getTimestamp(),
-                message,
-                message.getExpiresInSeconds(),
-                Map.of(recipient, unidentifiedAccess.isPresent()),
-                false);
-        var syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
-
-        try {
-            return messageSender.sendSyncMessage(syncMessage, unidentifiedAccess);
-        } catch (UntrustedIdentityException e) {
-            return SendMessageResult.identityFailure(recipient, e.getIdentityKey());
-        }
-    }
-
-    private SendMessageResult sendMessage(
-            RecipientId recipientId, SignalServiceDataMessage message
-    ) throws IOException {
-        var messageSender = dependencies.getMessageSender();
-
-        final var address = resolveSignalServiceAddress(recipientId);
-        try {
-            try {
-                return messageSender.sendDataMessage(address,
-                        unidentifiedAccessHelper.getAccessFor(recipientId),
-                        ContentHint.DEFAULT,
-                        message);
-            } catch (UnregisteredUserException e) {
-                final var newRecipientId = refreshRegisteredUser(recipientId);
-                return messageSender.sendDataMessage(resolveSignalServiceAddress(newRecipientId),
-                        unidentifiedAccessHelper.getAccessFor(newRecipientId),
-                        ContentHint.DEFAULT,
-                        message);
-            }
-        } catch (UntrustedIdentityException e) {
-            return SendMessageResult.identityFailure(address, e.getIdentityKey());
-        }
-    }
-
-    private SendMessageResult sendNullMessage(RecipientId recipientId) throws IOException {
-        var messageSender = dependencies.getMessageSender();
-
-        final var address = resolveSignalServiceAddress(recipientId);
-        try {
-            try {
-                return messageSender.sendNullMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId));
-            } catch (UnregisteredUserException e) {
-                final var newRecipientId = refreshRegisteredUser(recipientId);
-                final var newAddress = resolveSignalServiceAddress(newRecipientId);
-                return messageSender.sendNullMessage(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId));
-            }
-        } catch (UntrustedIdentityException e) {
-            return SendMessageResult.identityFailure(address, e.getIdentityKey());
-        }
+        return messageBuilder;
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, ProtocolUntrustedIdentityException, InvalidMessageStructureException {
@@ -2611,7 +2403,7 @@ public class Manager implements Closeable {
                 .retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
     }
 
-    void sendGroups() throws IOException, UntrustedIdentityException {
+    void sendGroups() throws IOException {
         var groupsFile = IOUtils.createTempFile();
 
         try {
@@ -2645,7 +2437,7 @@ public class Manager implements Closeable {
                             .withLength(groupsFile.length())
                             .build();
 
-                    sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
                 }
             }
         } finally {
@@ -2657,7 +2449,7 @@ public class Manager implements Closeable {
         }
     }
 
-    public void sendContacts() throws IOException, UntrustedIdentityException {
+    public void sendContacts() throws IOException {
         var contactsFile = IOUtils.createTempFile();
 
         try {
@@ -2713,7 +2505,8 @@ public class Manager implements Closeable {
                             .withLength(contactsFile.length())
                             .build();
 
-                    sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream, true)));
+                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream,
+                            true)));
                 }
             }
         } finally {
@@ -2725,7 +2518,7 @@ public class Manager implements Closeable {
         }
     }
 
-    void sendBlockedList() throws IOException, UntrustedIdentityException {
+    void sendBlockedList() throws IOException {
         var addresses = new ArrayList<SignalServiceAddress>();
         for (var record : account.getContactStore().getContacts()) {
             if (record.second().isBlocked()) {
@@ -2738,17 +2531,17 @@ public class Manager implements Closeable {
                 groupIds.add(record.getGroupId().serialize());
             }
         }
-        sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
+        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
     }
 
     private void sendVerifiedMessage(
             SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel
-    ) throws IOException, UntrustedIdentityException {
+    ) throws IOException {
         var verifiedMessage = new VerifiedMessage(destination,
                 identityKey,
                 trustLevel.toVerifiedState(),
                 System.currentTimeMillis());
-        sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 
     public List<Pair<RecipientId, Contact>> getContacts() {
@@ -2849,11 +2642,26 @@ public class Manager implements Closeable {
         try {
             var address = account.getRecipientStore().resolveServiceAddress(recipientId);
             sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
-        } catch (IOException | UntrustedIdentityException e) {
+        } catch (IOException e) {
             logger.warn("Failed to send verification sync message: {}", e.getMessage());
         }
 
         return true;
+    }
+
+    private void handleIdentityFailure(
+            final RecipientId recipientId, final SendMessageResult.IdentityFailure identityFailure
+    ) {
+        final var identityKey = identityFailure.getIdentityKey();
+        if (identityKey != null) {
+            final var newIdentity = account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
+            if (newIdentity) {
+                account.getSessionStore().archiveSessions(recipientId);
+            }
+        } else {
+            // Retrieve profile to get the current identity key from the server
+            retrieveEncryptedProfile(recipientId);
+        }
     }
 
     public String computeSafetyNumber(
