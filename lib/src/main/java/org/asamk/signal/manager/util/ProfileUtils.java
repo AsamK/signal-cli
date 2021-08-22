@@ -18,8 +18,8 @@ public class ProfileUtils {
         var profileCipher = new ProfileCipher(profileKey);
         try {
             var name = decrypt(encryptedProfile.getName(), profileCipher);
-            var about = decrypt(encryptedProfile.getAbout(), profileCipher);
-            var aboutEmoji = decrypt(encryptedProfile.getAboutEmoji(), profileCipher);
+            var about = trimZeros(decrypt(encryptedProfile.getAbout(), profileCipher));
+            var aboutEmoji = trimZeros(decrypt(encryptedProfile.getAboutEmoji(), profileCipher));
 
             final var nameParts = splitName(name);
             return new Profile(System.currentTimeMillis(),
@@ -94,5 +94,14 @@ public class ProfileUtils {
             default:
                 return new Pair<>(parts[0], parts[1]);
         }
+    }
+
+    static String trimZeros(String str) {
+        if (str == null) {
+            return null;
+        }
+
+        int pos = str.indexOf(0);
+        return pos == -1 ? str : str.substring(0, pos);
     }
 }
