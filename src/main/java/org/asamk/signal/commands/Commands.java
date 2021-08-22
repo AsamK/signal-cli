@@ -30,6 +30,7 @@ public class Commands {
         addCommand(new SendCommand());
         addCommand(new SendContactsCommand());
         addCommand(new SendReactionCommand());
+        addCommand(new SendReceiptCommand());
         addCommand(new SendSyncRequestCommand());
         addCommand(new SendTypingCommand());
         addCommand(new SetPinCommand());

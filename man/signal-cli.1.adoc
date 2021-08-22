@@ -199,6 +199,19 @@ Specify the timestamp of the message to which to react.
 *-r*, *--remove*::
 Remove a reaction.
 
+=== sendReceipt
+
+Send a read or viewed receipt to a previously received message.
+
+RECIPIENT::
+Specify the sender’s phone number.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to which to react.
+
+*--type* TYPE::
+Specify the receipt type, either `read` (the default) or `viewed`.
+
 === sendTyping
 
 Send typing message to trigger a typing indicator for the recipient.

@@ -4,6 +4,7 @@ import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.List;
 import java.util.Objects;
 
 interface HandleAction {
@@ -23,7 +24,7 @@ class SendReceiptAction implements HandleAction {
 
     @Override
     public void execute(Manager m) throws Throwable {
-        m.sendReceipt(address, timestamp);
+        m.sendDeliveryReceipt(address, List.of(timestamp));
     }
 
     @Override

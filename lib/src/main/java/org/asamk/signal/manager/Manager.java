@@ -1191,11 +1191,31 @@ public class Manager implements Closeable {
         return sendHelper.sendGroupMessage(messageBuilder.build(), Set.of(resolveRecipient(recipient)));
     }
 
-    void sendReceipt(
-            SignalServiceAddress remoteAddress, long messageId
+    public void sendReadReceipt(
+            String sender, List<Long> messageIds
+    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
+        var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
+                messageIds,
+                System.currentTimeMillis());
+
+        sendHelper.sendReceiptMessage(receiptMessage, canonicalizeAndResolveRecipient(sender));
+    }
+
+    public void sendViewedReceipt(
+            String sender, List<Long> messageIds
+    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
+        var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
+                messageIds,
+                System.currentTimeMillis());
+
+        sendHelper.sendReceiptMessage(receiptMessage, canonicalizeAndResolveRecipient(sender));
+    }
+
+    void sendDeliveryReceipt(
+            SignalServiceAddress remoteAddress, List<Long> messageIds
     ) throws IOException, UntrustedIdentityException {
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
-                List.of(messageId),
+                messageIds,
                 System.currentTimeMillis());
 
         sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(remoteAddress));
