@@ -58,7 +58,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final var groupInviteLink = group.getGroupInviteLink();
 
             writer.println(
-                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Link: {}",
+                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Message expiration: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.getDescription(),
@@ -68,6 +68,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                     resolveMembers(m, group.getPendingMembers()),
                     resolveMembers(m, group.getRequestingMembers()),
                     resolveMembers(m, group.getAdminMembers()),
+                    group.getMessageExpirationTime() == 0 ? "disabled" : group.getMessageExpirationTime() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
@@ -95,6 +96,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                         group.getDescription(),
                         group.isMember(m.getSelfRecipientId()),
                         group.isBlocked(),
+                        group.getMessageExpirationTime(),
                         resolveJsonMembers(m, group.getMembers()),
                         resolveJsonMembers(m, group.getPendingMembers()),
                         resolveJsonMembers(m, group.getRequestingMembers()),
@@ -119,6 +121,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         public final String description;
         public final boolean isMember;
         public final boolean isBlocked;
+        public final int messageExpirationTime;
 
         public final Set<JsonGroupMember> members;
         public final Set<JsonGroupMember> pendingMembers;
@@ -132,6 +135,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                 String description,
                 boolean isMember,
                 boolean isBlocked,
+                final int messageExpirationTime,
                 Set<JsonGroupMember> members,
                 Set<JsonGroupMember> pendingMembers,
                 Set<JsonGroupMember> requestingMembers,
@@ -143,6 +147,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             this.description = description;
             this.isMember = isMember;
             this.isBlocked = isBlocked;
+            this.messageExpirationTime = messageExpirationTime;
 
             this.members = members;
             this.pendingMembers = pendingMembers;
