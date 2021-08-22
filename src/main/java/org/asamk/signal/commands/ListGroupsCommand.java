@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements JsonRpcLocalCommand {
@@ -39,6 +40,14 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         return addresses.stream()
                 .map(m::resolveSignalServiceAddress)
                 .map(Util::getLegacyIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    private static Set<JsonGroupMember> resolveJsonMembers(Manager m, Set<RecipientId> addresses) {
+        return addresses.stream()
+                .map(m::resolveSignalServiceAddress)
+                .map(address -> new JsonGroupMember(address.getNumber().orNull(),
+                        address.getUuid().transform(UUID::toString).orNull()))
                 .collect(Collectors.toSet());
     }
 
@@ -86,10 +95,10 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                         group.getDescription(),
                         group.isMember(m.getSelfRecipientId()),
                         group.isBlocked(),
-                        resolveMembers(m, group.getMembers()),
-                        resolveMembers(m, group.getPendingMembers()),
-                        resolveMembers(m, group.getRequestingMembers()),
-                        resolveMembers(m, group.getAdminMembers()),
+                        resolveJsonMembers(m, group.getMembers()),
+                        resolveJsonMembers(m, group.getPendingMembers()),
+                        resolveJsonMembers(m, group.getRequestingMembers()),
+                        resolveJsonMembers(m, group.getAdminMembers()),
                         groupInviteLink == null ? null : groupInviteLink.getUrl());
             }).collect(Collectors.toList());
 
@@ -105,17 +114,17 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
 
     private static final class JsonGroup {
 
-        public String id;
-        public String name;
-        public String description;
-        public boolean isMember;
-        public boolean isBlocked;
+        public final String id;
+        public final String name;
+        public final String description;
+        public final boolean isMember;
+        public final boolean isBlocked;
 
-        public Set<String> members;
-        public Set<String> pendingMembers;
-        public Set<String> requestingMembers;
-        public Set<String> admins;
-        public String groupInviteLink;
+        public final Set<JsonGroupMember> members;
+        public final Set<JsonGroupMember> pendingMembers;
+        public final Set<JsonGroupMember> requestingMembers;
+        public final Set<JsonGroupMember> admins;
+        public final String groupInviteLink;
 
         public JsonGroup(
                 String id,
@@ -123,10 +132,10 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                 String description,
                 boolean isMember,
                 boolean isBlocked,
-                Set<String> members,
-                Set<String> pendingMembers,
-                Set<String> requestingMembers,
-                Set<String> admins,
+                Set<JsonGroupMember> members,
+                Set<JsonGroupMember> pendingMembers,
+                Set<JsonGroupMember> requestingMembers,
+                Set<JsonGroupMember> admins,
                 String groupInviteLink
         ) {
             this.id = id;
@@ -140,6 +149,17 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             this.requestingMembers = requestingMembers;
             this.admins = admins;
             this.groupInviteLink = groupInviteLink;
+        }
+    }
+
+    private static final class JsonGroupMember {
+
+        public final String number;
+        public final String uuid;
+
+        private JsonGroupMember(final String number, final String uuid) {
+            this.number = number;
+            this.uuid = uuid;
         }
     }
 }
