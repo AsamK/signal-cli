@@ -1874,7 +1874,6 @@ public class Manager implements Closeable {
                 // address/uuid in envelope is sent by server
                 resolveRecipientTrusted(envelope.getSourceAddress());
             }
-            final var notAGroupMember = isNotAGroupMember(envelope, content);
             if (!envelope.isReceipt()) {
                 try {
                     content = decryptMessage(envelope);
@@ -1910,10 +1909,13 @@ public class Manager implements Closeable {
                     queuedActions.addAll(actions);
                 }
             }
+            final var notAllowedToSendToGroup = isNotAllowedToSendToGroup(envelope, content);
             if (isMessageBlocked(envelope, content)) {
                 logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
-            } else if (notAGroupMember) {
-                logger.info("Ignoring a message from a non group member: {}", envelope.getTimestamp());
+            } else if (notAllowedToSendToGroup) {
+                logger.info("Ignoring a group message from an unauthorized sender (no member or admin): {} {}",
+                        (envelope.hasSource() ? envelope.getSourceAddress() : content.getSender()).getIdentifier(),
+                        envelope.getTimestamp());
             } else {
                 handler.handleMessage(envelope, content, exception);
             }
@@ -1976,7 +1978,7 @@ public class Manager implements Closeable {
         return sourceContact != null && sourceContact.isBlocked();
     }
 
-    private boolean isNotAGroupMember(
+    private boolean isNotAllowedToSendToGroup(
             SignalServiceEnvelope envelope, SignalServiceContent content
     ) {
         SignalServiceAddress source;
@@ -1988,23 +1990,32 @@ public class Manager implements Closeable {
             return false;
         }
 
-        if (content != null && content.getDataMessage().isPresent()) {
-            var message = content.getDataMessage().get();
-            if (message.getGroupContext().isPresent()) {
-                if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                    var groupInfo = message.getGroupContext().get().getGroupV1().get();
-                    if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
-                        return false;
-                    }
-                }
-                var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                var group = getGroup(groupId);
-                if (group != null && !group.isMember(resolveRecipient(source))) {
-                    return true;
-                }
+        if (content == null || !content.getDataMessage().isPresent()) {
+            return false;
+        }
+
+        var message = content.getDataMessage().get();
+        if (!message.getGroupContext().isPresent()) {
+            return false;
+        }
+
+        if (message.getGroupContext().get().getGroupV1().isPresent()) {
+            var groupInfo = message.getGroupContext().get().getGroupV1().get();
+            if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
+                return false;
             }
         }
-        return false;
+
+        var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+        var group = getGroup(groupId);
+        if (group == null) {
+            return false;
+        }
+
+        final var recipientId = resolveRecipient(source);
+        return !group.isMember(recipientId) || (
+                group.isAnnouncementGroup() && !group.isAdmin(recipientId)
+        );
     }
 
     private List<HandleAction> handleMessage(

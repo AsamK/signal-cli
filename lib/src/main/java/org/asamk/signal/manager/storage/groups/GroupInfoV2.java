@@ -7,6 +7,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.protos.groups.local.EnabledState;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -145,5 +146,10 @@ public class GroupInfoV2 extends GroupInfo {
         return this.group != null && this.group.hasDisappearingMessagesTimer()
                 ? this.group.getDisappearingMessagesTimer().getDuration()
                 : 0;
+    }
+
+    @Override
+    public boolean isAnnouncementGroup() {
+        return this.group != null && this.group.getIsAnnouncementGroup() == EnabledState.ENABLED;
     }
 }

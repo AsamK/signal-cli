@@ -89,6 +89,11 @@ public class GroupInfoV1 extends GroupInfo {
         return messageExpirationTime;
     }
 
+    @Override
+    public boolean isAnnouncementGroup() {
+        return false;
+    }
+
     public void addMembers(Collection<RecipientId> members) {
         this.members.addAll(members);
     }

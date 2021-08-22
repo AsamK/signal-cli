@@ -40,6 +40,8 @@ public abstract class GroupInfo {
 
     public abstract int getMessageExpirationTime();
 
+    public abstract boolean isAnnouncementGroup();
+
     public Set<RecipientId> getMembersWithout(RecipientId recipientId) {
         return getMembers().stream().filter(member -> !member.equals(recipientId)).collect(Collectors.toSet());
     }
@@ -52,6 +54,10 @@ public abstract class GroupInfo {
 
     public boolean isMember(RecipientId recipientId) {
         return getMembers().contains(recipientId);
+    }
+
+    public boolean isAdmin(RecipientId recipientId) {
+        return getAdminMembers().contains(recipientId);
     }
 
     public boolean isPendingMember(RecipientId recipientId) {
