@@ -81,6 +81,9 @@ import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
+import org.whispersystems.libsignal.fingerprint.Fingerprint;
+import org.whispersystems.libsignal.fingerprint.FingerprintParsingException;
+import org.whispersystems.libsignal.fingerprint.FingerprintVersionMismatchException;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Pair;
@@ -2669,6 +2672,25 @@ public class Manager implements Closeable {
     }
 
     /**
+     * Trust this the identity with this scannable safety number
+     *
+     * @param name         username of the identity
+     * @param safetyNumber Scannable safety number
+     */
+    public boolean trustIdentityVerifiedSafetyNumber(String name, byte[] safetyNumber) throws InvalidNumberException {
+        var recipientId = canonicalizeAndResolveRecipient(name);
+        var address = account.getRecipientStore().resolveServiceAddress(recipientId);
+        return trustIdentity(recipientId, identityKey -> {
+            final var fingerprint = computeSafetyNumberFingerprint(address, identityKey);
+            try {
+                return fingerprint != null && fingerprint.getScannableFingerprint().compareTo(safetyNumber);
+            } catch (FingerprintVersionMismatchException | FingerprintParsingException e) {
+                return false;
+            }
+        }, TrustLevel.TRUSTED_VERIFIED);
+    }
+
+    /**
      * Trust all keys of this identity without verification
      *
      * @param name username of the identity
@@ -2717,21 +2739,23 @@ public class Manager implements Closeable {
     }
 
     public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final var fingerprint = Utils.computeSafetyNumber(capabilities.isUuid(),
-                account.getSelfAddress(),
-                getIdentityKeyPair().getPublicKey(),
-                theirAddress,
-                theirIdentityKey);
+        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
     public byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final var fingerprint = Utils.computeSafetyNumber(capabilities.isUuid(),
+        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
+        return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
+    }
+
+    private Fingerprint computeSafetyNumberFingerprint(
+            final SignalServiceAddress theirAddress, final IdentityKey theirIdentityKey
+    ) {
+        return Utils.computeSafetyNumber(capabilities.isUuid(),
                 account.getSelfAddress(),
                 getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
-        return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
     }
 
     @Deprecated
