@@ -1843,7 +1843,7 @@ public class Manager implements Closeable {
     ) throws IOException, InterruptedException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
 
-        Set<HandleAction> queuedActions = null;
+        Set<HandleAction> queuedActions = new HashSet<>();
 
         final var signalWebSocket = dependencies.getSignalWebSocket();
         signalWebSocket.connect();
@@ -1872,20 +1872,17 @@ public class Manager implements Closeable {
                     // Received indicator that server queue is empty
                     hasCaughtUpWithOldMessages = true;
 
-                    if (queuedActions != null) {
-                        for (var action : queuedActions) {
-                            try {
-                                action.execute(this);
-                            } catch (Throwable e) {
-                                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                                    Thread.currentThread().interrupt();
-                                }
-                                logger.warn("Message action failed.", e);
+                    for (var action : queuedActions) {
+                        try {
+                            action.execute(this);
+                        } catch (Throwable e) {
+                            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                                Thread.currentThread().interrupt();
                             }
+                            logger.warn("Message action failed.", e);
                         }
-                        queuedActions.clear();
-                        queuedActions = null;
                     }
+                    queuedActions.clear();
 
                     // Continue to wait another timeout for new messages
                     continue;
@@ -1939,9 +1936,6 @@ public class Manager implements Closeable {
                         }
                     }
                 } else {
-                    if (queuedActions == null) {
-                        queuedActions = new HashSet<>();
-                    }
                     queuedActions.addAll(actions);
                 }
             }
