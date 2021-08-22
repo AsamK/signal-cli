@@ -11,10 +11,12 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.util.Pair;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
@@ -37,7 +39,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         // Get a map of registration statuses
-        Map<String, Boolean> registered;
+        Map<String, Pair<String, UUID>> registered;
         try {
             registered = m.areUsersRegistered(new HashSet<>(ns.getList("number")));
         } catch (IOException e) {
@@ -49,10 +51,11 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         if (outputWriter instanceof JsonWriter) {
             final var jsonWriter = (JsonWriter) outputWriter;
 
-            var jsonUserStatuses = registered.entrySet()
-                    .stream()
-                    .map(entry -> new JsonUserStatus(entry.getKey(), entry.getValue()))
-                    .collect(Collectors.toList());
+            var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
+                final var number = entry.getValue().first();
+                final var uuid = entry.getValue().second();
+                return new JsonUserStatus(entry.getKey(), number, uuid == null ? null : uuid.toString(), uuid != null);
+            }).collect(Collectors.toList());
 
             jsonWriter.write(jsonUserStatuses);
         } else {
@@ -66,12 +69,18 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     private static final class JsonUserStatus {
 
-        public String name;
+        public final String name;
 
-        public boolean isRegistered;
+        public final String number;
 
-        public JsonUserStatus(String name, boolean isRegistered) {
+        public final String uuid;
+
+        public final boolean isRegistered;
+
+        public JsonUserStatus(String name, String number, String uuid, boolean isRegistered) {
             this.name = name;
+            this.number = number;
+            this.uuid = uuid;
             this.isRegistered = isRegistered;
         }
     }

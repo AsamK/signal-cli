@@ -327,16 +327,32 @@ public class Manager implements Closeable {
      * This is used for checking a set of phone numbers for registration on Signal
      *
      * @param numbers The set of phone number in question
-     * @return A map of numbers to booleans. True if registered, false otherwise. Should never be null
+     * @return A map of numbers to canonicalized number and uuid. If a number is not registered the uuid is null.
      * @throws IOException if its unable to get the contacts to check if they're registered
      */
-    public Map<String, Boolean> areUsersRegistered(Set<String> numbers) throws IOException {
+    public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
+        Map<String, String> canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
+            try {
+                return canonicalizePhoneNumber(n);
+            } catch (InvalidNumberException e) {
+                return "";
+            }
+        }));
+
         // Note "contactDetails" has no optionals. It only gives us info on users who are registered
-        var contactDetails = getRegisteredUsers(numbers);
+        var contactDetails = getRegisteredUsers(canonicalizedNumbers.values()
+                .stream()
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet()));
 
-        var registeredUsers = contactDetails.keySet();
+        // Store numbers as recipients so we have the number/uuid association
+        contactDetails.forEach((number, uuid) -> resolveRecipientTrusted(new SignalServiceAddress(uuid, number)));
 
-        return numbers.stream().collect(Collectors.toMap(x -> x, registeredUsers::contains));
+        return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
+            final var number = canonicalizedNumbers.get(n);
+            final var uuid = contactDetails.get(number);
+            return new Pair<>(number.isEmpty() ? null : number, uuid);
+        }));
     }
 
     public void updateAccountAttributes() throws IOException {
@@ -2724,12 +2740,14 @@ public class Manager implements Closeable {
         return account.getRecipientStore().resolveServiceAddress(recipientId);
     }
 
-    public RecipientId canonicalizeAndResolveRecipient(String identifier) throws InvalidNumberException {
-        var canonicalizedNumber = UuidUtil.isUuid(identifier)
-                ? identifier
-                : PhoneNumberFormatter.formatNumber(identifier, account.getUsername());
+    private RecipientId canonicalizeAndResolveRecipient(String identifier) throws InvalidNumberException {
+        var canonicalizedNumber = UuidUtil.isUuid(identifier) ? identifier : canonicalizePhoneNumber(identifier);
 
         return resolveRecipient(canonicalizedNumber);
+    }
+
+    private String canonicalizePhoneNumber(final String number) throws InvalidNumberException {
+        return PhoneNumberFormatter.formatNumber(number, account.getUsername());
     }
 
     private RecipientId resolveRecipient(final String identifier) {

@@ -12,8 +12,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
-
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
     GROUPS_SYNC,
@@ -68,8 +66,7 @@ class JsonSyncMessage {
             this.readMessages = syncMessage.getRead()
                     .get()
                     .stream()
-                    .map(message -> new JsonSyncReadMessage(getLegacyIdentifier(message.getSender()),
-                            message.getTimestamp()))
+                    .map(JsonSyncReadMessage::new)
                     .collect(Collectors.toList());
         } else {
             this.readMessages = null;

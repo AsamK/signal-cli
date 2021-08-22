@@ -10,13 +10,21 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class JsonMessageEnvelope {
 
     @JsonProperty
+    @Deprecated
     final String source;
+
+    @JsonProperty
+    final String sourceNumber;
+
+    @JsonProperty
+    final String sourceUuid;
 
     @JsonProperty
     final String sourceName;
@@ -55,14 +63,21 @@ public class JsonMessageEnvelope {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             var source = envelope.getSourceAddress();
             this.source = getLegacyIdentifier(source);
+            this.sourceNumber = source.getNumber().orNull();
+            this.sourceUuid = source.getUuid().transform(UUID::toString).orNull();
             this.sourceDevice = envelope.getSourceDevice();
             this.relay = source.getRelay().orNull();
         } else if (envelope.isUnidentifiedSender() && content != null) {
-            this.source = getLegacyIdentifier(content.getSender());
+            final var source = content.getSender();
+            this.source = getLegacyIdentifier(source);
+            this.sourceNumber = source.getNumber().orNull();
+            this.sourceUuid = source.getUuid().transform(UUID::toString).orNull();
             this.sourceDevice = content.getSenderDevice();
             this.relay = null;
         } else {
             this.source = null;
+            this.sourceNumber = null;
+            this.sourceUuid = null;
             this.sourceDevice = null;
             this.relay = null;
         }
@@ -98,6 +113,8 @@ public class JsonMessageEnvelope {
 
     public JsonMessageEnvelope(Signal.MessageReceived messageReceived) {
         source = messageReceived.getSender();
+        sourceNumber = null;
+        sourceUuid = null;
         sourceName = null;
         sourceDevice = null;
         relay = null;
@@ -111,6 +128,8 @@ public class JsonMessageEnvelope {
 
     public JsonMessageEnvelope(Signal.ReceiptReceived receiptReceived) {
         source = receiptReceived.getSender();
+        sourceNumber = null;
+        sourceUuid = null;
         sourceName = null;
         sourceDevice = null;
         relay = null;
@@ -124,6 +143,8 @@ public class JsonMessageEnvelope {
 
     public JsonMessageEnvelope(Signal.SyncMessageReceived messageReceived) {
         source = messageReceived.getSource();
+        sourceNumber = null;
+        sourceUuid = null;
         sourceName = null;
         sourceDevice = null;
         relay = null;

@@ -6,12 +6,21 @@ import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.UUID;
+
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class JsonMention {
 
     @JsonProperty
+    @Deprecated
     final String name;
+
+    @JsonProperty
+    final String number;
+
+    @JsonProperty
+    final String uuid;
 
     @JsonProperty
     final int start;
@@ -20,8 +29,10 @@ public class JsonMention {
     final int length;
 
     JsonMention(SignalServiceDataMessage.Mention mention, Manager m) {
-        this.name = getLegacyIdentifier(m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(),
-                null)));
+        final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null));
+        this.name = getLegacyIdentifier(address);
+        this.number = address.getNumber().orNull();
+        this.uuid = address.getUuid().transform(UUID::toString).orNull();
         this.start = mention.getStart();
         this.length = mention.getLength();
     }

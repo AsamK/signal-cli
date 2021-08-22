@@ -8,6 +8,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
@@ -18,7 +19,14 @@ public class JsonQuote {
     final long id;
 
     @JsonProperty
+    @Deprecated
     final String author;
+
+    @JsonProperty
+    final String authorNumber;
+
+    @JsonProperty
+    final String authorUuid;
 
     @JsonProperty
     final String text;
@@ -32,7 +40,10 @@ public class JsonQuote {
 
     JsonQuote(SignalServiceDataMessage.Quote quote, Manager m) {
         this.id = quote.getId();
-        this.author = getLegacyIdentifier(m.resolveSignalServiceAddress(quote.getAuthor()));
+        final var address = m.resolveSignalServiceAddress(quote.getAuthor());
+        this.author = getLegacyIdentifier(address);
+        this.authorNumber = address.getNumber().orNull();
+        this.authorUuid = address.getUuid().transform(UUID::toString).orNull();
         this.text = quote.getText();
 
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {
