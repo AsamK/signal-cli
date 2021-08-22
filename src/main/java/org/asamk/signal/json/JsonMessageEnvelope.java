@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
+import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -59,7 +60,9 @@ public class JsonMessageEnvelope {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     final JsonTypingMessage typingMessage;
 
-    public JsonMessageEnvelope(SignalServiceEnvelope envelope, SignalServiceContent content, Manager m) {
+    public JsonMessageEnvelope(
+            SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception, Manager m
+    ) {
         if (!envelope.isUnidentifiedSender() && envelope.hasSource()) {
             var source = envelope.getSourceAddress();
             this.source = getLegacyIdentifier(source);
@@ -73,6 +76,14 @@ public class JsonMessageEnvelope {
             this.sourceNumber = source.getNumber().orNull();
             this.sourceUuid = source.getUuid().transform(UUID::toString).orNull();
             this.sourceDevice = content.getSenderDevice();
+            this.relay = null;
+        } else if (exception instanceof ProtocolUntrustedIdentityException) {
+            var e = (ProtocolUntrustedIdentityException) exception;
+            final var source = m.resolveSignalServiceAddress(e.getSender());
+            this.source = getLegacyIdentifier(source);
+            this.sourceNumber = source.getNumber().orNull();
+            this.sourceUuid = source.getUuid().transform(UUID::toString).orNull();
+            this.sourceDevice = e.getSenderDevice();
             this.relay = null;
         } else {
             this.source = null;

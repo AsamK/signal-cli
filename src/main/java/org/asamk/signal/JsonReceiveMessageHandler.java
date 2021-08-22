@@ -28,8 +28,9 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         if (exception != null) {
             object.put("error", new JsonError(exception));
         }
+
         if (envelope != null) {
-            object.put("envelope", new JsonMessageEnvelope(envelope, content, m));
+            object.put("envelope", new JsonMessageEnvelope(envelope, content, exception, m));
         }
 
         jsonWriter.write(object);
