@@ -407,6 +407,14 @@ public class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
+    public Pair<DecryptedGroup, GroupChange> setIsAnnouncementGroup(
+            GroupInfoV2 groupInfoV2, boolean isAnnouncementGroup
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var change = groupOperations.createAnnouncementGroupChange(isAnnouncementGroup);
+        return commitChange(groupInfoV2, change);
+    }
+
     private AccessControl.AccessRequired toAccessControl(final GroupLinkState state) {
         switch (state) {
             case DISABLED:

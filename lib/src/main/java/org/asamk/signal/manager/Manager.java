@@ -809,7 +809,8 @@ public class Manager implements Closeable {
             GroupPermission addMemberPermission,
             GroupPermission editDetailsPermission,
             File avatarFile,
-            Integer expirationTimer
+            Integer expirationTimer,
+            Boolean isAnnouncementGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
         return updateGroup(groupId,
                 name,
@@ -823,7 +824,8 @@ public class Manager implements Closeable {
                 addMemberPermission,
                 editDetailsPermission,
                 avatarFile,
-                expirationTimer);
+                expirationTimer,
+                isAnnouncementGroup);
     }
 
     private Pair<Long, List<SendMessageResult>> updateGroup(
@@ -839,7 +841,8 @@ public class Manager implements Closeable {
             final GroupPermission addMemberPermission,
             final GroupPermission editDetailsPermission,
             final File avatarFile,
-            final Integer expirationTimer
+            final Integer expirationTimer,
+            final Boolean isAnnouncementGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
         var group = getGroupForUpdating(groupId);
 
@@ -857,7 +860,8 @@ public class Manager implements Closeable {
                         addMemberPermission,
                         editDetailsPermission,
                         avatarFile,
-                        expirationTimer);
+                        expirationTimer,
+                        isAnnouncementGroup);
             } catch (ConflictException e) {
                 // Detected conflicting update, refreshing group and trying again
                 group = getGroup(groupId, true);
@@ -873,7 +877,8 @@ public class Manager implements Closeable {
                         addMemberPermission,
                         editDetailsPermission,
                         avatarFile,
-                        expirationTimer);
+                        expirationTimer,
+                        isAnnouncementGroup);
             }
         }
 
@@ -948,7 +953,8 @@ public class Manager implements Closeable {
             final GroupPermission addMemberPermission,
             final GroupPermission editDetailsPermission,
             final File avatarFile,
-            Integer expirationTimer
+            final Integer expirationTimer,
+            final Boolean isAnnouncementGroup
     ) throws IOException {
         Pair<Long, List<SendMessageResult>> result = null;
         if (group.isPendingMember(account.getSelfRecipientId())) {
@@ -1031,6 +1037,11 @@ public class Manager implements Closeable {
 
         if (expirationTimer != null) {
             var groupGroupChangePair = groupV2Helper.setMessageExpirationTimer(group, expirationTimer);
+            result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+        }
+
+        if (isAnnouncementGroup != null) {
+            var groupGroupChangePair = groupV2Helper.setIsAnnouncementGroup(group, isAnnouncementGroup);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 

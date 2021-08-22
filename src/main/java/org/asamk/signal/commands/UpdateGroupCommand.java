@@ -70,6 +70,9 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         subparser.addArgument("--set-permission-edit-details")
                 .help("Set permission to edit group details")
                 .choices("every-member", "only-admins");
+        subparser.addArgument("--set-permission-send-messages")
+                .help("Set permission to send messages")
+                .choices("every-member", "only-admins");
 
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
@@ -133,6 +136,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         var groupExpiration = ns.getInt("expiration");
         var groupAddMemberPermission = getGroupPermission(ns.getString("set-permission-add-member"));
         var groupEditDetailsPermission = getGroupPermission(ns.getString("set-permission-edit-details"));
+        var groupSendMessagesPermission = getGroupPermission(ns.getString("set-permission-send-messages"));
 
         try {
             boolean isNewGroup = false;
@@ -160,7 +164,10 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
                     groupAddMemberPermission,
                     groupEditDetailsPermission,
                     groupAvatar == null ? null : new File(groupAvatar),
-                    groupExpiration);
+                    groupExpiration,
+                    groupSendMessagesPermission == null
+                            ? null
+                            : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS);
             Long timestamp = null;
             if (results != null) {
                 timestamp = results.first();

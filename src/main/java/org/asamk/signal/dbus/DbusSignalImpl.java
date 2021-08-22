@@ -358,6 +358,7 @@ public class DbusSignalImpl implements Signal {
                         null,
                         null,
                         avatar == null ? null : new File(avatar),
+                        null,
                         null);
                 if (results != null) {
                     checkSendMessageResults(results.first(), results.second());

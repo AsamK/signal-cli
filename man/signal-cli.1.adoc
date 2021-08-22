@@ -287,6 +287,10 @@ Set permission to add new group members: `every-member`, `only-admins`
 *--set-permission-edit-details* PERMISSION::
 Set permission to edit group details: `every-member`, `only-admins`
 
+*--set-permission-send-messages* PERMISSION::
+Set permission to send messages in group: `every-member`, `only-admins`
+Groups where only admins can send messages are also called announcement groups
+
 *-e* EXPIRATION_SECONDS, *--expiration* EXPIRATION_SECONDS::
 Set expiration time of messages (seconds).
 To disable expiration set expiration time to 0.
