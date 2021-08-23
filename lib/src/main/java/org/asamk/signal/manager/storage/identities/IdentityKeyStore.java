@@ -42,17 +42,20 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
     private final RecipientResolver resolver;
     private final IdentityKeyPair identityKeyPair;
     private final int localRegistrationId;
+    private final TrustNewIdentity trustNewIdentity;
 
     public IdentityKeyStore(
             final File identitiesPath,
             final RecipientResolver resolver,
             final IdentityKeyPair identityKeyPair,
-            final int localRegistrationId
+            final int localRegistrationId,
+            final TrustNewIdentity trustNewIdentity
     ) {
         this.identitiesPath = identitiesPath;
         this.resolver = resolver;
         this.identityKeyPair = identityKeyPair;
         this.localRegistrationId = localRegistrationId;
+        this.trustNewIdentity = trustNewIdentity;
     }
 
     @Override
@@ -80,7 +83,10 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
                 return false;
             }
 
-            final var trustLevel = identityInfo == null ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
+            final var trustLevel = trustNewIdentity == TrustNewIdentity.ALWAYS || (
+                    trustNewIdentity == TrustNewIdentity.ON_FIRST_USE && identityInfo == null
+            ) ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
+            logger.debug("Storing new identity for recipient {} with trust {}", recipientId, trustLevel);
             final var newIdentityInfo = new IdentityInfo(recipientId, identityKey, trustLevel, added);
             storeIdentityLocked(recipientId, newIdentityInfo);
             return true;
@@ -108,13 +114,17 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
 
     @Override
     public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
+        if (trustNewIdentity == TrustNewIdentity.ALWAYS) {
+            return true;
+        }
+
         var recipientId = resolveRecipient(address.getName());
 
         synchronized (cachedIdentities) {
             final var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo == null) {
                 // Identity not found
-                return true;
+                return trustNewIdentity == TrustNewIdentity.ON_FIRST_USE;
             }
 
             // TODO implement possibility for different handling of incoming/outgoing trust decisions

@@ -20,6 +20,7 @@ import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,8 @@ public class ProvisioningManager {
                     deviceId,
                     ret.getIdentity(),
                     registrationId,
-                    profileKey);
+                    profileKey,
+                    TrustNewIdentity.ON_FIRST_USE);
 
             Manager m = null;
             try {
@@ -161,7 +163,7 @@ public class ProvisioningManager {
     private boolean canRelinkExistingAccount(final String number) throws IOException {
         final SignalAccount signalAccount;
         try {
-            signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false);
+            signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false, TrustNewIdentity.ON_FIRST_USE);
         } catch (IOException e) {
             logger.debug("Account in use or failed to load.", e);
             return false;

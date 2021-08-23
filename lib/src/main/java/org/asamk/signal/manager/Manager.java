@@ -43,6 +43,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
@@ -270,7 +271,11 @@ public class Manager implements Closeable {
     }
 
     public static Manager init(
-            String username, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
+            String username,
+            File settingsPath,
+            ServiceEnvironment serviceEnvironment,
+            String userAgent,
+            final TrustNewIdentity trustNewIdentity
     ) throws IOException, NotRegisteredException {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
@@ -278,7 +283,7 @@ public class Manager implements Closeable {
             throw new NotRegisteredException();
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), username, true);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username, true, trustNewIdentity);
 
         if (!account.isRegistered()) {
             throw new NotRegisteredException();

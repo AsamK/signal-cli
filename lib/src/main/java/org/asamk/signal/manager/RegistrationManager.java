@@ -21,6 +21,7 @@ import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,12 +103,13 @@ public class RegistrationManager implements Closeable {
                     username,
                     identityKey,
                     registrationId,
-                    profileKey);
+                    profileKey,
+                    TrustNewIdentity.ON_FIRST_USE);
 
             return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), username, true);
+        var account = SignalAccount.load(pathConfig.getDataPath(), username, true, TrustNewIdentity.ON_FIRST_USE);
 
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }

@@ -24,6 +24,7 @@ import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -73,6 +74,11 @@ public class App {
                 .help("Choose the server environment to use.")
                 .type(Arguments.enumStringType(ServiceEnvironmentCli.class))
                 .setDefault(ServiceEnvironmentCli.LIVE);
+
+        parser.addArgument("--trust-new-identities")
+                .help("Choose when to trust new identities.")
+                .type(Arguments.enumStringType(TrustNewIdentityCli.class))
+                .setDefault(TrustNewIdentityCli.ON_FIRST_USE);
 
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
@@ -125,11 +131,6 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
-        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
-                ? ServiceEnvironment.LIVE
-                : ServiceEnvironment.SANDBOX;
-
         if (!ServiceConfig.getCapabilities().isGv2()) {
             logger.warn("WARNING: Support for new group V2 is disabled,"
                     + " because the required native library dependency is missing: libzkgroup");
@@ -138,6 +139,16 @@ public class App {
         if (!ServiceConfig.isSignalClientAvailable()) {
             throw new UserErrorException("Missing required native library dependency: libsignal-client");
         }
+
+        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
+        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
+                ? ServiceEnvironment.LIVE
+                : ServiceEnvironment.SANDBOX;
+
+        final var trustNewIdentityCli = ns.<TrustNewIdentityCli>get("trust-new-identities");
+        final var trustNewIdentity = trustNewIdentityCli == TrustNewIdentityCli.ON_FIRST_USE
+                ? TrustNewIdentity.ON_FIRST_USE
+                : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
         if (command instanceof ProvisioningCommand) {
             if (username != null) {
@@ -156,7 +167,8 @@ public class App {
                         dataPath,
                         serviceEnvironment,
                         usernames,
-                        outputWriter);
+                        outputWriter,
+                        trustNewIdentity);
                 return;
             }
 
@@ -181,7 +193,12 @@ public class App {
             throw new UserErrorException("Command only works via dbus");
         }
 
-        handleLocalCommand((LocalCommand) command, username, dataPath, serviceEnvironment, outputWriter);
+        handleLocalCommand((LocalCommand) command,
+                username,
+                dataPath,
+                serviceEnvironment,
+                outputWriter,
+                trustNewIdentity);
     }
 
     private void handleProvisioningCommand(
@@ -222,9 +239,10 @@ public class App {
             final String username,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
-            final OutputWriter outputWriter
+            final OutputWriter outputWriter,
+            final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        try (var m = loadManager(username, dataPath, serviceEnvironment)) {
+        try (var m = loadManager(username, dataPath, serviceEnvironment, trustNewIdentity)) {
             command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
@@ -236,12 +254,13 @@ public class App {
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
             final List<String> usernames,
-            final OutputWriter outputWriter
+            final OutputWriter outputWriter,
+            final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
         for (String u : usernames) {
             try {
-                managers.add(loadManager(u, dataPath, serviceEnvironment));
+                managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
             } catch (CommandException e) {
                 logger.warn("Ignoring {}: {}", u, e.getMessage());
             }
@@ -269,11 +288,14 @@ public class App {
     }
 
     private Manager loadManager(
-            final String username, final File dataPath, final ServiceEnvironment serviceEnvironment
+            final String username,
+            final File dataPath,
+            final ServiceEnvironment serviceEnvironment,
+            final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         Manager manager;
         try {
-            manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {

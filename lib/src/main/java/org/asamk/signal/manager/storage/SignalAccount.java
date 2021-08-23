@@ -10,6 +10,7 @@ import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
@@ -106,12 +107,14 @@ public class SignalAccount implements Closeable {
         this.lock = lock;
     }
 
-    public static SignalAccount load(File dataPath, String username, boolean waitForLock) throws IOException {
+    public static SignalAccount load(
+            File dataPath, String username, boolean waitForLock, final TrustNewIdentity trustNewIdentity
+    ) throws IOException {
         final var fileName = getFileName(dataPath, username);
         final var pair = openFileChannel(fileName, waitForLock);
         try {
             var account = new SignalAccount(pair.first(), pair.second());
-            account.load(dataPath);
+            account.load(dataPath, trustNewIdentity);
             account.migrateLegacyConfigs();
 
             if (!username.equals(account.getUsername())) {
@@ -128,7 +131,12 @@ public class SignalAccount implements Closeable {
     }
 
     public static SignalAccount create(
-            File dataPath, String username, IdentityKeyPair identityKey, int registrationId, ProfileKey profileKey
+            File dataPath,
+            String username,
+            IdentityKeyPair identityKey,
+            int registrationId,
+            ProfileKey profileKey,
+            final TrustNewIdentity trustNewIdentity
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getFileName(dataPath, username);
@@ -142,7 +150,7 @@ public class SignalAccount implements Closeable {
         account.username = username;
         account.profileKey = profileKey;
 
-        account.initStores(dataPath, identityKey, registrationId);
+        account.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
                 account.recipientStore::resolveRecipient,
                 account::saveGroupStore);
@@ -157,7 +165,10 @@ public class SignalAccount implements Closeable {
     }
 
     private void initStores(
-            final File dataPath, final IdentityKeyPair identityKey, final int registrationId
+            final File dataPath,
+            final IdentityKeyPair identityKey,
+            final int registrationId,
+            final TrustNewIdentity trustNewIdentity
     ) throws IOException {
         recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, username), this::mergeRecipients);
 
@@ -167,7 +178,8 @@ public class SignalAccount implements Closeable {
         identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
                 recipientStore::resolveRecipient,
                 identityKey,
-                registrationId);
+                registrationId,
+                trustNewIdentity);
         signalProtocolStore = new SignalProtocolStore(preKeyStore,
                 signedPreKeyStore,
                 sessionStore,
@@ -186,7 +198,8 @@ public class SignalAccount implements Closeable {
             int deviceId,
             IdentityKeyPair identityKey,
             int registrationId,
-            ProfileKey profileKey
+            ProfileKey profileKey,
+            final TrustNewIdentity trustNewIdentity
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getFileName(dataPath, username);
@@ -199,10 +212,11 @@ public class SignalAccount implements Closeable {
                     deviceId,
                     identityKey,
                     registrationId,
-                    profileKey);
+                    profileKey,
+                    trustNewIdentity);
         }
 
-        final var account = load(dataPath, username, true);
+        final var account = load(dataPath, username, true, trustNewIdentity);
         account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.sessionStore.archiveAllSessions();
@@ -227,7 +241,8 @@ public class SignalAccount implements Closeable {
             int deviceId,
             IdentityKeyPair identityKey,
             int registrationId,
-            ProfileKey profileKey
+            ProfileKey profileKey,
+            final TrustNewIdentity trustNewIdentity
     ) throws IOException {
         var fileName = getFileName(dataPath, username);
         IOUtils.createPrivateFile(fileName);
@@ -237,7 +252,7 @@ public class SignalAccount implements Closeable {
 
         account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
 
-        account.initStores(dataPath, identityKey, registrationId);
+        account.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
                 account.recipientStore::resolveRecipient,
                 account::saveGroupStore);
@@ -339,7 +354,9 @@ public class SignalAccount implements Closeable {
         return !(!f.exists() || f.isDirectory());
     }
 
-    private void load(File dataPath) throws IOException {
+    private void load(
+            File dataPath, final TrustNewIdentity trustNewIdentity
+    ) throws IOException {
         JsonNode rootNode;
         synchronized (fileChannel) {
             fileChannel.position(0);
@@ -428,7 +445,7 @@ public class SignalAccount implements Closeable {
             migratedLegacyConfig = true;
         }
 
-        initStores(dataPath, identityKeyPair, registrationId);
+        initStores(dataPath, identityKeyPair, registrationId, trustNewIdentity);
 
         migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 

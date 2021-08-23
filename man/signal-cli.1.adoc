@@ -58,6 +58,13 @@ Make request via system dbus.
 *-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
 Specify if you want commands to output in either "plain-text" mode or in "json". Defaults to "plain-text"
 
+*--trust-new-identities* TRUST-MODE::
+Choose when to trust new identities:
+- `on-first-use` (default): Trust the first seen identity key from new users,
+  changed keys must be verified manually
+- `always`: Trust any new identity key without verification
+- `never`: Don't trust any unknown identity key, every key must be verified manually
+
 == Commands
 
 === register
