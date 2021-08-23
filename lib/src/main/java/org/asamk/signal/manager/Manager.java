@@ -1790,16 +1790,7 @@ public class Manager implements Closeable {
                 queuedActions.addAll(actions);
             }
         }
-        for (var action : queuedActions) {
-            try {
-                action.execute(this);
-            } catch (Throwable e) {
-                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                logger.warn("Message action failed.", e);
-            }
-        }
+        handleQueuedActions(queuedActions);
     }
 
     private List<HandleAction> retryFailedReceivedMessage(
@@ -1843,7 +1834,7 @@ public class Manager implements Closeable {
             boolean returnOnTimeout,
             boolean ignoreAttachments,
             ReceiveMessageHandler handler
-    ) throws IOException, InterruptedException {
+    ) throws IOException {
         retryFailedReceivedMessages(handler, ignoreAttachments);
 
         Set<HandleAction> queuedActions = new HashSet<>();
@@ -1875,16 +1866,7 @@ public class Manager implements Closeable {
                     // Received indicator that server queue is empty
                     hasCaughtUpWithOldMessages = true;
 
-                    for (var action : queuedActions) {
-                        try {
-                            action.execute(this);
-                        } catch (Throwable e) {
-                            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                                Thread.currentThread().interrupt();
-                            }
-                            logger.warn("Message action failed.", e);
-                        }
-                    }
+                    handleQueuedActions(queuedActions);
                     queuedActions.clear();
 
                     // Continue to wait another timeout for new messages
@@ -1892,7 +1874,8 @@ public class Manager implements Closeable {
                 }
             } catch (AssertionError e) {
                 if (e.getCause() instanceof InterruptedException) {
-                    throw (InterruptedException) e.getCause();
+                    Thread.currentThread().interrupt();
+                    break;
                 } else {
                     throw e;
                 }
@@ -1968,6 +1951,20 @@ public class Manager implements Closeable {
                 } else {
                     cachedMessage[0].delete();
                 }
+            }
+        }
+        handleQueuedActions(queuedActions);
+    }
+
+    private void handleQueuedActions(final Set<HandleAction> queuedActions) {
+        for (var action : queuedActions) {
+            try {
+                action.execute(this);
+            } catch (Throwable e) {
+                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                logger.warn("Message action failed.", e);
             }
         }
     }

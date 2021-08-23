@@ -168,8 +168,6 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);
-                } catch (InterruptedException e) {
-                    break;
                 }
             }
         });

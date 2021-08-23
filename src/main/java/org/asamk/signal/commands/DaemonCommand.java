@@ -134,8 +134,6 @@ public class DaemonCommand implements MultiLocalCommand {
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);
-                } catch (InterruptedException ignored) {
-                    break;
                 }
             }
         });
