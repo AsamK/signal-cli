@@ -40,6 +40,7 @@ public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>
             super(attrs);
         }
 
+        @Override
         public <T> T get(String dest) {
             final T value = super.get(dest);
             if (value != null) {
@@ -52,9 +53,13 @@ public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>
 
         @Override
         public <E> List<E> getList(final String dest) {
-            final List<E> value = super.getList(dest);
-            if (value != null) {
-                return value;
+            try {
+                final List<E> value = super.getList(dest);
+                if (value != null) {
+                    return value;
+                }
+            } catch (ClassCastException e) {
+                return List.of(this.<E>get(dest));
             }
 
             return super.getList(dest + "s");
