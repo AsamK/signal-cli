@@ -17,6 +17,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
@@ -697,12 +698,10 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            String messageText, List<String> attachments, GroupId groupId
+            Message message, GroupId groupId
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
-        final var messageBuilder = createMessageBuilder().withBody(messageText);
-        if (attachments != null) {
-            messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
-        }
+        final var messageBuilder = createMessageBuilder();
+        applyMessage(messageBuilder, message);
 
         return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
@@ -1230,11 +1229,19 @@ public class Manager implements Closeable {
     }
 
     public Pair<Long, List<SendMessageResult>> sendMessage(
-            String messageText, List<String> attachments, List<String> recipients
+            Message message, List<String> recipients
     ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        final var messageBuilder = createMessageBuilder().withBody(messageText);
-        if (attachments != null) {
-            var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
+        final var messageBuilder = createMessageBuilder();
+        applyMessage(messageBuilder, message);
+        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
+    }
+
+    private void applyMessage(
+            final SignalServiceDataMessage.Builder messageBuilder, final Message message
+    ) throws AttachmentInvalidException, IOException {
+        messageBuilder.withBody(message.getMessageText());
+        if (message.getAttachments() != null) {
+            var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(message.getAttachments());
 
             // Upload attachments here, so we only upload once even for multiple recipients
             var messageSender = dependencies.getMessageSender();
@@ -1249,16 +1256,11 @@ public class Manager implements Closeable {
 
             messageBuilder.withAttachments(attachmentPointers);
         }
-        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
     }
 
-    public Pair<Long, SendMessageResult> sendSelfMessage(
-            String messageText, List<String> attachments
-    ) throws IOException, AttachmentInvalidException {
-        final var messageBuilder = createMessageBuilder().withBody(messageText);
-        if (attachments != null) {
-            messageBuilder.withAttachments(AttachmentUtils.getSignalServiceAttachments(attachments));
-        }
+    public Pair<Long, SendMessageResult> sendSelfMessage(final Message message) throws IOException, AttachmentInvalidException {
+        final var messageBuilder = createMessageBuilder();
+        applyMessage(messageBuilder, message);
         return sendHelper.sendSelfMessage(messageBuilder);
     }
 

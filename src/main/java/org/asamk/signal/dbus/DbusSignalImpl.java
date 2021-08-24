@@ -5,6 +5,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -100,7 +101,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            final var results = m.sendMessage(message, attachments, recipients);
+            final var results = m.sendMessage(new Message(message, attachments), recipients);
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (InvalidNumberException e) {
@@ -188,7 +189,7 @@ public class DbusSignalImpl implements Signal {
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final var results = m.sendSelfMessage(message, attachments);
+            final var results = m.sendSelfMessage(new Message(message, attachments));
             checkSendMessageResult(results.first(), results.second());
             return results.first();
         } catch (AttachmentInvalidException e) {
@@ -213,7 +214,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            var results = m.sendGroupMessage(message, attachments, GroupId.unknownVersion(groupId));
+            var results = m.sendGroupMessage(new Message(message, attachments), GroupId.unknownVersion(groupId));
             checkSendMessageResults(results.first(), results.second());
             return results.first();
         } catch (IOException e) {
