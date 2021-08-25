@@ -317,7 +317,7 @@ public class Manager implements Closeable {
 
     public void checkAccountState() throws IOException {
         if (account.getLastReceiveTimestamp() == 0) {
-            logger.warn("The Signal protocol expects that incoming messages are regularly received.");
+            logger.info("The Signal protocol expects that incoming messages are regularly received.");
         } else {
             var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
             long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
