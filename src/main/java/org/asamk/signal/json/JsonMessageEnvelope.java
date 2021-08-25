@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -94,7 +95,7 @@ public class JsonMessageEnvelope {
         }
         String name;
         try {
-            name = m.getContactOrProfileName(this.source);
+            name = m.getContactOrProfileName(RecipientIdentifier.Single.fromString(this.source, m.getUsername()));
         } catch (InvalidNumberException | NullPointerException e) {
             name = null;
         }

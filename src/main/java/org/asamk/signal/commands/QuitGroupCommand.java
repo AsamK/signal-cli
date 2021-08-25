@@ -11,20 +11,15 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
@@ -53,22 +48,16 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final GroupId groupId;
-        try {
-            groupId = Util.decodeGroupId(ns.getString("group-id"));
-        } catch (GroupIdFormatException e) {
-            throw new UserErrorException("Invalid group id: " + e.getMessage());
-        }
+        final var groupId = CommandUtil.getGroupId(ns.getString("group-id"));
 
-        var groupAdmins = ns.<String>getList("admin");
+        var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), m.getUsername());
 
         try {
             try {
-                final var results = m.sendQuitGroupMessage(groupId,
-                        groupAdmins == null ? Set.of() : new HashSet<>(groupAdmins));
-                final var timestamp = results.first();
+                final var results = m.sendQuitGroupMessage(groupId, groupAdmins);
+                final var timestamp = results.getTimestamp();
                 outputResult(outputWriter, timestamp);
-                handleSendMessageResults(results.second());
+                handleSendMessageResults(results.getResults());
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }
@@ -80,8 +69,6 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
             throw new IOErrorException("Failed to send message: " + e.getMessage());
         } catch (GroupNotFoundException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
-        } catch (InvalidNumberException e) {
-            throw new UserErrorException("Failed to parse admin number: " + e.getMessage());
         } catch (LastGroupAdminException e) {
             throw new UserErrorException("You need to specify a new admin with --admin: " + e.getMessage());
         }

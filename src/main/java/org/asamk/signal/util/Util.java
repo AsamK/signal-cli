@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
@@ -59,10 +57,6 @@ public class Util {
             }
         }
         return f.toString();
-    }
-
-    public static GroupId decodeGroupId(String groupId) throws GroupIdFormatException {
-        return GroupId.fromBase64(groupId);
     }
 
     public static String getLegacyIdentifier(final SignalServiceAddress address) {

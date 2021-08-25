@@ -9,7 +9,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.asamk.signal.util.CommandUtil;
 
 import java.io.IOException;
 
@@ -32,20 +32,19 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var number = ns.getString("number");
+        var recipientString = ns.getString("number");
+        var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getUsername());
 
         try {
             var expiration = ns.getInt("expiration");
             if (expiration != null) {
-                m.setExpirationTimer(number, expiration);
+                m.setExpirationTimer(recipient, expiration);
             }
 
             var name = ns.getString("name");
             if (name != null) {
-                m.setContactName(number, name);
+                m.setContactName(recipient, name);
             }
-        } catch (InvalidNumberException e) {
-            throw new UserErrorException("Invalid contact number: " + e.getMessage());
         } catch (IOException e) {
             throw new IOErrorException("Update contact error: " + e.getMessage());
         } catch (NotMasterDeviceException e) {

@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.util.DateUtils;
@@ -18,7 +19,6 @@ import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMess
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -450,7 +450,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final PlainTextWriter writer, final SignalServiceDataMessage.Reaction reaction
     ) {
         writer.println("Emoji: {}", reaction.getEmoji());
-        writer.println("Target author: {}", formatContact(m.resolveSignalServiceAddress(reaction.getTargetAuthor())));
+        writer.println("Target author: {}", formatContact(reaction.getTargetAuthor()));
         writer.println("Target timestamp: {}", DateUtils.formatTimestamp(reaction.getTargetSentTimestamp()));
         writer.println("Is remove: {}", reaction.isRemove());
     }
@@ -459,7 +459,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final PlainTextWriter writer, final SignalServiceDataMessage.Quote quote
     ) {
         writer.println("Id: {}", quote.getId());
-        writer.println("Author: {}", getLegacyIdentifier(m.resolveSignalServiceAddress(quote.getAuthor())));
+        writer.println("Author: {}", formatContact(quote.getAuthor()));
         writer.println("Text: {}", quote.getText());
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {
             writer.println("Mentions:");
@@ -678,12 +678,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private String formatContact(SignalServiceAddress address) {
+        address = m.resolveSignalServiceAddress(address);
         final var number = getLegacyIdentifier(address);
-        String name = null;
-        try {
-            name = m.getContactOrProfileName(number);
-        } catch (InvalidNumberException ignored) {
-        }
+        final var name = m.getContactOrProfileName(RecipientIdentifier.Single.fromAddress(address));
         if (name == null || name.isEmpty()) {
             return number;
         } else {

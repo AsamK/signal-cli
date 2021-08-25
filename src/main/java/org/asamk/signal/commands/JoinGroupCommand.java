@@ -70,7 +70,7 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                     writer.println("Joined group \"{}\"", newGroupId.toBase64());
                 }
             }
-            handleSendMessageResults(results.second());
+            handleSendMessageResults(results.second().getResults());
         } catch (GroupPatchNotAcceptedException e) {
             throw new UserErrorException("Failed to join group, maybe already a member");
         } catch (IOException e) {

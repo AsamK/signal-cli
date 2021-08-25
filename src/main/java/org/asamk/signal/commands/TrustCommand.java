@@ -8,8 +8,8 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.Hex;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.Base64;
 import java.util.Locale;
@@ -37,14 +37,10 @@ public class TrustCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var number = ns.getString("number");
+        var recipentString = ns.getString("number");
+        var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getUsername());
         if (ns.getBoolean("trust-all-known-keys")) {
-            boolean res;
-            try {
-                res = m.trustIdentityAllKeys(number);
-            } catch (InvalidNumberException e) {
-                throw new UserErrorException("Failed to parse recipient: " + e.getMessage());
-            }
+            boolean res = m.trustIdentityAllKeys(recipient);
             if (!res) {
                 throw new UserErrorException("Failed to set the trust for this number, make sure the number is correct.");
             }
@@ -64,23 +60,13 @@ public class TrustCommand implements JsonRpcLocalCommand {
                     throw new UserErrorException(
                             "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
                 }
-                boolean res;
-                try {
-                    res = m.trustIdentityVerified(number, fingerprintBytes);
-                } catch (InvalidNumberException e) {
-                    throw new UserErrorException("Failed to parse recipient: " + e.getMessage());
-                }
+                boolean res = m.trustIdentityVerified(recipient, fingerprintBytes);
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
                 }
             } else if (safetyNumber.length() == 60) {
-                boolean res;
-                try {
-                    res = m.trustIdentityVerifiedSafetyNumber(number, safetyNumber);
-                } catch (InvalidNumberException e) {
-                    throw new UserErrorException("Failed to parse recipient: " + e.getMessage());
-                }
+                boolean res = m.trustIdentityVerifiedSafetyNumber(recipient, safetyNumber);
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
@@ -93,12 +79,7 @@ public class TrustCommand implements JsonRpcLocalCommand {
                     throw new UserErrorException(
                             "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
                 }
-                boolean res;
-                try {
-                    res = m.trustIdentityVerifiedSafetyNumber(number, scannableSafetyNumber);
-                } catch (InvalidNumberException e) {
-                    throw new UserErrorException("Failed to parse recipient: " + e.getMessage());
-                }
+                boolean res = m.trustIdentityVerifiedSafetyNumber(recipient, scannableSafetyNumber);
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");

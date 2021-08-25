@@ -7,15 +7,14 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
-import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.Base64;
 import java.util.List;
@@ -58,11 +57,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         if (number == null) {
             identities = m.getIdentities();
         } else {
-            try {
-                identities = m.getIdentities(number);
-            } catch (InvalidNumberException e) {
-                throw new UserErrorException("Invalid number: " + e.getMessage());
-            }
+            identities = m.getIdentities(CommandUtil.getSingleRecipientIdentifier(number, m.getUsername()));
         }
 
         if (outputWriter instanceof PlainTextWriter) {

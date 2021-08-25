@@ -8,12 +8,10 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class BlockCommand implements JsonRpcLocalCommand {
 
@@ -35,23 +33,22 @@ public class BlockCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        for (var contactNumber : ns.<String>getList("contact")) {
+        final var contacts = ns.<String>getList("contact");
+        for (var contact : CommandUtil.getSingleRecipientIdentifiers(contacts, m.getUsername())) {
             try {
-                m.setContactBlocked(contactNumber, true);
-            } catch (InvalidNumberException e) {
-                logger.warn("Invalid number {}: {}", contactNumber, e.getMessage());
+                m.setContactBlocked(contact, true);
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             }
         }
 
-        if (ns.<String>getList("group-id") != null) {
-            for (var groupIdString : ns.<String>getList("group-id")) {
+        final var groupIdStrings = ns.<String>getList("group-id");
+        if (groupIdStrings != null) {
+            for (var groupId : CommandUtil.getGroupIds(groupIdStrings)) {
                 try {
-                    var groupId = Util.decodeGroupId(groupIdString);
                     m.setGroupBlocked(groupId, true);
-                } catch (GroupIdFormatException | GroupNotFoundException e) {
-                    logger.warn("Invalid group id {}: {}", groupIdString, e.getMessage());
+                } catch (GroupNotFoundException e) {
+                    logger.warn("Group not found {}: {}", groupId.toBase64(), e.getMessage());
                 }
             }
         }

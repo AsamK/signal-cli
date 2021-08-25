@@ -11,7 +11,6 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -67,36 +66,34 @@ public class SendHelper {
      * Send a single message to one or multiple recipients.
      * The message is extended with the current expiration timer for each recipient.
      */
-    public Pair<Long, List<SendMessageResult>> sendMessage(
-            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientId> recipientIds
+    public SendMessageResult sendMessage(
+            final SignalServiceDataMessage.Builder messageBuilder, final RecipientId recipientId
     ) throws IOException {
-        // Send to all individually, so sync messages are sent correctly
+        final var contact = account.getContactStore().getContact(recipientId);
+        final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
+        messageBuilder.withExpiration(expirationTime);
         messageBuilder.withProfileKey(account.getProfileKey().serialize());
-        var results = new ArrayList<SendMessageResult>(recipientIds.size());
-        long timestamp = 0;
-        for (var recipientId : recipientIds) {
-            final var contact = account.getContactStore().getContact(recipientId);
-            final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
-            messageBuilder.withExpiration(expirationTime);
 
-            final var singleMessage = messageBuilder.build();
-            timestamp = singleMessage.getTimestamp();
-            final var result = sendMessage(singleMessage, recipientId);
-            handlePossibleIdentityFailure(result);
-
-            results.add(result);
-        }
-        return new Pair<>(timestamp, results);
+        final var message = messageBuilder.build();
+        final var result = sendMessage(message, recipientId);
+        handlePossibleIdentityFailure(result);
+        return result;
     }
 
     /**
      * Send a group message to the given group
      * The message is extended with the current expiration timer for the group and the group context.
      */
-    public Pair<Long, List<SendMessageResult>> sendAsGroupMessage(
+    public List<SendMessageResult> sendAsGroupMessage(
             SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
     ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
         final var g = getGroupForSending(groupId);
+        return sendAsGroupMessage(messageBuilder, g);
+    }
+
+    private List<SendMessageResult> sendAsGroupMessage(
+            final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo g
+    ) throws IOException {
         GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTime());
 
@@ -108,7 +105,7 @@ public class SendHelper {
      * Send a complete group message to the given recipients (should be current/old/new members)
      * This method should only be used for create/update/quit group messages.
      */
-    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
+    public List<SendMessageResult> sendGroupMessage(
             final SignalServiceDataMessage message, final Set<RecipientId> recipientIds
     ) throws IOException {
         List<SendMessageResult> result = sendGroupMessageInternal(message, recipientIds);
@@ -117,7 +114,7 @@ public class SendHelper {
             handlePossibleIdentityFailure(r);
         }
 
-        return new Pair<>(message.getTimestamp(), result);
+        return result;
     }
 
     public void sendReceiptMessage(
@@ -146,7 +143,7 @@ public class SendHelper {
         }
     }
 
-    public Pair<Long, SendMessageResult> sendSelfMessage(
+    public SendMessageResult sendSelfMessage(
             SignalServiceDataMessage.Builder messageBuilder
     ) throws IOException {
         final var recipientId = account.getSelfRecipientId();
@@ -155,8 +152,7 @@ public class SendHelper {
         messageBuilder.withExpiration(expirationTime);
 
         var message = messageBuilder.build();
-        final var result = sendSelfMessage(message);
-        return new Pair<>(message.getTimestamp(), result);
+        return sendSelfMessage(message);
     }
 
     public SendMessageResult sendSyncMessage(SignalServiceSyncMessage message) throws IOException {
@@ -170,18 +166,16 @@ public class SendHelper {
     }
 
     public void sendTypingMessage(
-            SignalServiceTypingMessage message, Set<RecipientId> recipientIds
+            SignalServiceTypingMessage message, RecipientId recipientId
     ) throws IOException, UntrustedIdentityException {
         var messageSender = dependencies.getMessageSender();
-        for (var recipientId : recipientIds) {
-            final var address = addressResolver.resolveSignalServiceAddress(recipientId);
-            try {
-                messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
-            } catch (UnregisteredUserException e) {
-                final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
-                final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
-                messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
-            }
+        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        try {
+            messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
+        } catch (UnregisteredUserException e) {
+            final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
+            final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
+            messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
         }
     }
 

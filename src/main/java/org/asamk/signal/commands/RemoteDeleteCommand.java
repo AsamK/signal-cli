@@ -1,5 +1,6 @@
 package org.asamk.signal.commands;
 
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -10,14 +11,15 @@ import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
-import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.ErrorUtils;
 import org.freedesktop.dbus.errors.UnknownObject;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
-import java.util.List;
+import java.io.IOException;
 import java.util.Map;
 
 public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
@@ -34,40 +36,62 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
                 .required(true)
                 .type(long.class)
                 .help("Specify the timestamp of the message to delete.");
-        subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.");
+        subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
+        subparser.addArgument("--note-to-self").action(Arguments.storeTrue());
+    }
+
+    @Override
+    public void handleCommand(
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
+    ) throws CommandException {
+        final var isNoteToSelf = ns.getBoolean("note-to-self");
+        final var recipientStrings = ns.<String>getList("recipient");
+        final var groupIdStrings = ns.<String>getList("group-id");
+
+        final var recipientIdentifiers = CommandUtil.getRecipientIdentifiers(m,
+                isNoteToSelf,
+                recipientStrings,
+                groupIdStrings);
+
+        final long targetTimestamp = ns.getLong("target-timestamp");
+
+        try {
+            final var results = m.sendRemoteDeleteMessage(targetTimestamp, recipientIdentifiers);
+            outputResult(outputWriter, results.getTimestamp());
+            ErrorUtils.handleSendMessageResults(results.getResults());
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new UserErrorException(e.getMessage());
+        } catch (IOException e) {
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+        }
     }
 
     @Override
     public void handleCommand(
             final Namespace ns, final Signal signal, final OutputWriter outputWriter
     ) throws CommandException {
-        final List<String> recipients = ns.getList("recipient");
-        final var groupIdString = ns.getString("group-id");
+        final var recipients = ns.<String>getList("recipient");
+        final var groupIdStrings = ns.<String>getList("group-id");
 
         final var noRecipients = recipients == null || recipients.isEmpty();
-        if (noRecipients && groupIdString == null) {
+        final var noGroups = groupIdStrings == null || groupIdStrings.isEmpty();
+        if (noRecipients && noGroups) {
             throw new UserErrorException("No recipients given");
         }
-        if (!noRecipients && groupIdString != null) {
+        if (!noRecipients && !noGroups) {
             throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
         }
 
         final long targetTimestamp = ns.getLong("target-timestamp");
 
-        byte[] groupId = null;
-        if (groupIdString != null) {
-            try {
-                groupId = Util.decodeGroupId(groupIdString).serialize();
-            } catch (GroupIdFormatException e) {
-                throw new UserErrorException("Invalid group id: " + e.getMessage());
-            }
-        }
-
         try {
-            long timestamp;
-            if (groupId != null) {
-                timestamp = signal.sendGroupRemoteDeleteMessage(targetTimestamp, groupId);
+            long timestamp = 0;
+            if (!noGroups) {
+                final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
+                for (final var groupId : groupIds) {
+                    timestamp = signal.sendGroupRemoteDeleteMessage(targetTimestamp, groupId.serialize());
+                }
             } else {
                 timestamp = signal.sendRemoteDeleteMessage(targetTimestamp, recipients);
             }
@@ -81,13 +105,6 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
         }
-    }
-
-    @Override
-    public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
-    ) throws CommandException {
-        handleCommand(ns, new DbusSignalImpl(m, null), outputWriter);
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {

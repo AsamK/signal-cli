@@ -2,13 +2,16 @@ package org.asamk.signal.util;
 
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
@@ -21,13 +24,27 @@ public class ErrorUtils {
     }
 
     public static void handleSendMessageResults(
-            List<SendMessageResult> results
+            Map<RecipientIdentifier, List<SendMessageResult>> mapResults
+    ) throws CommandException {
+        List<String> errors = getErrorMessagesFromSendMessageResults(mapResults);
+        handleSendMessageResultErrors(errors);
+    }
+
+    public static void handleSendMessageResults(
+            Collection<SendMessageResult> results
     ) throws CommandException {
         var errors = getErrorMessagesFromSendMessageResults(results);
         handleSendMessageResultErrors(errors);
     }
 
-    public static List<String> getErrorMessagesFromSendMessageResults(List<SendMessageResult> results) {
+    public static List<String> getErrorMessagesFromSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
+        return mapResults.values()
+                .stream()
+                .flatMap(results -> getErrorMessagesFromSendMessageResults(results).stream())
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> getErrorMessagesFromSendMessageResults(Collection<SendMessageResult> results) {
         var errors = new ArrayList<String>();
         for (var result : results) {
             var error = getErrorMessageFromSendMessageResult(result);

@@ -8,12 +8,10 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 public class UnblockCommand implements JsonRpcLocalCommand {
 
@@ -35,26 +33,20 @@ public class UnblockCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        for (var contactNumber : ns.<String>getList("contact")) {
+        for (var contactNumber : CommandUtil.getSingleRecipientIdentifiers(ns.getList("contact"), m.getUsername())) {
             try {
                 m.setContactBlocked(contactNumber, false);
-            } catch (InvalidNumberException e) {
-                logger.warn("Invalid number: {}", contactNumber);
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             }
         }
 
-        if (ns.<String>getList("group-id") != null) {
-            for (var groupIdString : ns.<String>getList("group-id")) {
-                try {
-                    var groupId = Util.decodeGroupId(groupIdString);
-                    m.setGroupBlocked(groupId, false);
-                } catch (GroupIdFormatException e) {
-                    logger.warn("Invalid group id: {}", groupIdString);
-                } catch (GroupNotFoundException e) {
-                    logger.warn("Unknown group id: {}", groupIdString);
-                }
+        final var groupIdStrings = ns.<String>getList("group-id");
+        for (var groupId : CommandUtil.getGroupIds(groupIdStrings)) {
+            try {
+                m.setGroupBlocked(groupId, false);
+            } catch (GroupNotFoundException e) {
+                logger.warn("Unknown group id: {}", groupId);
             }
         }
     }

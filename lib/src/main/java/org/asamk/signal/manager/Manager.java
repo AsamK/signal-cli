@@ -18,6 +18,9 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Message;
+import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.SendGroupMessageResults;
+import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
@@ -156,6 +159,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -353,9 +357,6 @@ public class Manager implements Closeable {
                 .stream()
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet()));
-
-        // Store numbers as recipients so we have the number/uuid association
-        contactDetails.forEach((number, uuid) -> resolveRecipientTrusted(new SignalServiceAddress(uuid, number)));
 
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);
@@ -697,31 +698,9 @@ public class Manager implements Closeable {
         return account.getGroupStore().getGroups();
     }
 
-    public Pair<Long, List<SendMessageResult>> sendGroupMessage(
-            Message message, GroupId groupId
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
-        final var messageBuilder = createMessageBuilder();
-        applyMessage(messageBuilder, message);
-
-        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendGroupMessageReaction(
-            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, GroupId groupId
-    ) throws IOException, InvalidNumberException, NotAGroupMemberException, GroupNotFoundException {
-        var targetAuthorRecipientId = canonicalizeAndResolveRecipient(targetAuthor);
-        var reaction = new SignalServiceDataMessage.Reaction(emoji,
-                remove,
-                resolveSignalServiceAddress(targetAuthorRecipientId),
-                targetSentTimestamp);
-        final var messageBuilder = createMessageBuilder().withReaction(reaction);
-
-        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendQuitGroupMessage(
-            GroupId groupId, Set<String> groupAdmins
-    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, InvalidNumberException, LastGroupAdminException {
+    public SendGroupMessageResults sendQuitGroupMessage(
+            GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
+    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
         var group = getGroupForUpdating(groupId);
         if (group instanceof GroupInfoV1) {
             return quitGroupV1((GroupInfoV1) group);
@@ -737,19 +716,19 @@ public class Manager implements Closeable {
         }
     }
 
-    private Pair<Long, List<SendMessageResult>> quitGroupV1(final GroupInfoV1 groupInfoV1) throws IOException {
+    private SendGroupMessageResults quitGroupV1(final GroupInfoV1 groupInfoV1) throws IOException {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.QUIT)
                 .withId(groupInfoV1.getGroupId().serialize())
                 .build();
 
-        var messageBuilder = createMessageBuilder().asGroupMessage(group);
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group);
         groupInfoV1.removeMember(account.getSelfRecipientId());
         account.getGroupStore().updateGroup(groupInfoV1);
-        return sendHelper.sendGroupMessage(messageBuilder.build(),
+        return sendGroupMessage(messageBuilder,
                 groupInfoV1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
-    private Pair<Long, List<SendMessageResult>> quitGroupV2(
+    private SendGroupMessageResults quitGroupV2(
             final GroupInfoV2 groupInfoV2, final Set<RecipientId> newAdmins
     ) throws LastGroupAdminException, IOException {
         final var currentAdmins = groupInfoV2.getAdminMembers();
@@ -764,9 +743,10 @@ public class Manager implements Closeable {
         }
         final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2, newAdmins);
         groupInfoV2.setGroup(groupGroupChangePair.first(), this::resolveRecipient);
-        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
         account.getGroupStore().updateGroup(groupInfoV2);
-        return sendHelper.sendGroupMessage(messageBuilder.build(),
+
+        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
+        return sendGroupMessage(messageBuilder,
                 groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
@@ -775,13 +755,13 @@ public class Manager implements Closeable {
         avatarStore.deleteGroupAvatar(groupId);
     }
 
-    public Pair<GroupId, List<SendMessageResult>> createGroup(
-            String name, List<String> members, File avatarFile
-    ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        return createGroup(name, members == null ? null : getRecipientIds(members), avatarFile);
+    public Pair<GroupId, SendGroupMessageResults> createGroup(
+            String name, Set<RecipientIdentifier.Single> members, File avatarFile
+    ) throws IOException, AttachmentInvalidException {
+        return createGroupInternal(name, members == null ? null : getRecipientIds(members), avatarFile);
     }
 
-    private Pair<GroupId, List<SendMessageResult>> createGroup(
+    private Pair<GroupId, SendGroupMessageResults> createGroupInternal(
             String name, Set<RecipientId> members, File avatarFile
     ) throws IOException, AttachmentInvalidException {
         final var selfRecipientId = account.getSelfRecipientId();
@@ -794,13 +774,12 @@ public class Manager implements Closeable {
                 members == null ? Set.of() : members,
                 avatarFile);
 
-        SignalServiceDataMessage.Builder messageBuilder;
         if (gv2Pair == null) {
             // Failed to create v2 group, creating v1 group instead
             var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
             gv1.addMembers(List.of(selfRecipientId));
             final var result = updateGroupV1(gv1, name, members, avatarFile);
-            return new Pair<>(gv1.getGroupId(), result.second());
+            return new Pair<>(gv1.getGroupId(), result);
         }
 
         final var gv2 = gv2Pair.first();
@@ -811,22 +790,23 @@ public class Manager implements Closeable {
             avatarStore.storeGroupAvatar(gv2.getGroupId(),
                     outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
         }
-        messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
+
         account.getGroupStore().updateGroup(gv2);
 
-        final var result = sendHelper.sendGroupMessage(messageBuilder.build(),
-                gv2.getMembersIncludingPendingWithout(selfRecipientId));
-        return new Pair<>(gv2.getGroupId(), result.second());
+        final var messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
+
+        final var result = sendGroupMessage(messageBuilder, gv2.getMembersIncludingPendingWithout(selfRecipientId));
+        return new Pair<>(gv2.getGroupId(), result);
     }
 
-    public Pair<Long, List<SendMessageResult>> updateGroup(
+    public SendGroupMessageResults updateGroup(
             GroupId groupId,
             String name,
             String description,
-            List<String> members,
-            List<String> removeMembers,
-            List<String> admins,
-            List<String> removeAdmins,
+            Set<RecipientIdentifier.Single> members,
+            Set<RecipientIdentifier.Single> removeMembers,
+            Set<RecipientIdentifier.Single> admins,
+            Set<RecipientIdentifier.Single> removeAdmins,
             boolean resetGroupLink,
             GroupLinkState groupLinkState,
             GroupPermission addMemberPermission,
@@ -834,8 +814,8 @@ public class Manager implements Closeable {
             File avatarFile,
             Integer expirationTimer,
             Boolean isAnnouncementGroup
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, InvalidNumberException, NotAGroupMemberException {
-        return updateGroup(groupId,
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
+        return updateGroupInternal(groupId,
                 name,
                 description,
                 members == null ? null : getRecipientIds(members),
@@ -851,7 +831,7 @@ public class Manager implements Closeable {
                 isAnnouncementGroup);
     }
 
-    private Pair<Long, List<SendMessageResult>> updateGroup(
+    private SendGroupMessageResults updateGroupInternal(
             final GroupId groupId,
             final String name,
             final String description,
@@ -913,16 +893,15 @@ public class Manager implements Closeable {
         return result;
     }
 
-    private Pair<Long, List<SendMessageResult>> updateGroupV1(
+    private SendGroupMessageResults updateGroupV1(
             final GroupInfoV1 gv1, final String name, final Set<RecipientId> members, final File avatarFile
     ) throws IOException, AttachmentInvalidException {
         updateGroupV1Details(gv1, name, members, avatarFile);
-        var messageBuilder = getGroupUpdateMessageBuilder(gv1);
 
         account.getGroupStore().updateGroup(gv1);
 
-        return sendHelper.sendGroupMessage(messageBuilder.build(),
-                gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+        var messageBuilder = getGroupUpdateMessageBuilder(gv1);
+        return sendGroupMessage(messageBuilder, gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
     }
 
     private void updateGroupV1Details(
@@ -963,7 +942,7 @@ public class Manager implements Closeable {
         }
     }
 
-    private Pair<Long, List<SendMessageResult>> updateGroupV2(
+    private SendGroupMessageResults updateGroupV2(
             final GroupInfoV2 group,
             final String name,
             final String description,
@@ -979,7 +958,7 @@ public class Manager implements Closeable {
             final Integer expirationTimer,
             final Boolean isAnnouncementGroup
     ) throws IOException {
-        Pair<Long, List<SendMessageResult>> result = null;
+        SendGroupMessageResults result = null;
         if (group.isPendingMember(account.getSelfRecipientId())) {
             var groupGroupChangePair = groupV2Helper.acceptInvite(group);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
@@ -1080,7 +1059,7 @@ public class Manager implements Closeable {
         return result;
     }
 
-    public Pair<GroupId, List<SendMessageResult>> joinGroup(
+    public Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, GroupLinkNotActiveException {
         final var groupJoinInfo = groupV2Helper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
@@ -1094,25 +1073,74 @@ public class Manager implements Closeable {
 
         if (group.getGroup() == null) {
             // Only requested member, can't send update to group members
-            return new Pair<>(group.getGroupId(), List.of());
+            return new Pair<>(group.getGroupId(), new SendGroupMessageResults(0, List.of()));
         }
 
         final var result = sendUpdateGroupV2Message(group, group.getGroup(), groupChange);
 
-        return new Pair<>(group.getGroupId(), result.second());
+        return new Pair<>(group.getGroupId(), result);
     }
 
-    private Pair<Long, List<SendMessageResult>> sendUpdateGroupV2Message(
+    private SendGroupMessageResults sendUpdateGroupV2Message(
             GroupInfoV2 group, DecryptedGroup newDecryptedGroup, GroupChange groupChange
     ) throws IOException {
         final var selfRecipientId = account.getSelfRecipientId();
         final var members = group.getMembersIncludingPendingWithout(selfRecipientId);
         group.setGroup(newDecryptedGroup, this::resolveRecipient);
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
+        account.getGroupStore().updateGroup(group);
 
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
-        account.getGroupStore().updateGroup(group);
-        return sendHelper.sendGroupMessage(messageBuilder.build(), members);
+        return sendGroupMessage(messageBuilder, members);
+    }
+
+    public SendMessageResults sendMessage(
+            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+        var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
+        long timestamp = System.currentTimeMillis();
+        messageBuilder.withTimestamp(timestamp);
+        for (final var recipient : recipients) {
+            if (recipient instanceof RecipientIdentifier.Single) {
+                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
+                final var result = sendHelper.sendMessage(messageBuilder, recipientId);
+                results.put(recipient, List.of(result));
+            } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
+                final var result = sendHelper.sendSelfMessage(messageBuilder);
+                results.put(recipient, List.of(result));
+            } else if (recipient instanceof RecipientIdentifier.Group) {
+                final var groupId = ((RecipientIdentifier.Group) recipient).groupId;
+                final var result = sendHelper.sendAsGroupMessage(messageBuilder, groupId);
+                results.put(recipient, result);
+            }
+        }
+        return new SendMessageResults(timestamp, results);
+    }
+
+    public void sendTypingMessage(
+            SignalServiceTypingMessage.Action action, Set<RecipientIdentifier> recipients
+    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException {
+        final var timestamp = System.currentTimeMillis();
+        for (var recipient : recipients) {
+            if (recipient instanceof RecipientIdentifier.Single) {
+                final var message = new SignalServiceTypingMessage(action, timestamp, Optional.absent());
+                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
+                sendHelper.sendTypingMessage(message, recipientId);
+            } else if (recipient instanceof RecipientIdentifier.Group) {
+                final var groupId = ((RecipientIdentifier.Group) recipient).groupId;
+                final var message = new SignalServiceTypingMessage(action, timestamp, Optional.of(groupId.serialize()));
+                sendHelper.sendGroupTypingMessage(message, groupId);
+            }
+        }
+    }
+
+    private SendGroupMessageResults sendGroupMessage(
+            final SignalServiceDataMessage.Builder messageBuilder, final Set<RecipientId> members
+    ) throws IOException {
+        final var timestamp = System.currentTimeMillis();
+        messageBuilder.withTimestamp(timestamp);
+        final var results = sendHelper.sendGroupMessage(messageBuilder.build(), members);
+        return new SendGroupMessageResults(timestamp, results);
     }
 
     private static int currentTimeDays() {
@@ -1138,7 +1166,7 @@ public class Manager implements Closeable {
         }
     }
 
-    Pair<Long, List<SendMessageResult>> sendGroupInfoMessage(
+    SendGroupMessageResults sendGroupInfoMessage(
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, AttachmentInvalidException {
         GroupInfoV1 g;
@@ -1156,7 +1184,7 @@ public class Manager implements Closeable {
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendHelper.sendGroupMessage(messageBuilder.build(), Set.of(recipientId));
+        return sendGroupMessage(messageBuilder, Set.of(recipientId));
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -1177,45 +1205,49 @@ public class Manager implements Closeable {
             throw new AttachmentInvalidException(g.getGroupId().toBase64(), e);
         }
 
-        return createMessageBuilder().asGroupMessage(group.build()).withExpiration(g.getMessageExpirationTime());
+        return SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build())
+                .withExpiration(g.getMessageExpirationTime());
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
         var group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
                 .withRevision(g.getGroup().getRevision())
                 .withSignedGroupChange(signedGroupChange);
-        return createMessageBuilder().asGroupMessage(group.build()).withExpiration(g.getMessageExpirationTime());
+        return SignalServiceDataMessage.newBuilder()
+                .asGroupMessage(group.build())
+                .withExpiration(g.getMessageExpirationTime());
     }
 
-    Pair<Long, List<SendMessageResult>> sendGroupInfoRequest(
+    SendGroupMessageResults sendGroupInfoRequest(
             GroupIdV1 groupId, SignalServiceAddress recipient
     ) throws IOException {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.REQUEST_INFO).withId(groupId.serialize());
 
-        var messageBuilder = createMessageBuilder().asGroupMessage(group.build());
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendHelper.sendGroupMessage(messageBuilder.build(), Set.of(resolveRecipient(recipient)));
+        return sendGroupMessage(messageBuilder, Set.of(resolveRecipient(recipient)));
     }
 
     public void sendReadReceipt(
-            String sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
+            RecipientIdentifier.Single sender, List<Long> messageIds
+    ) throws IOException, UntrustedIdentityException {
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
                 messageIds,
                 System.currentTimeMillis());
 
-        sendHelper.sendReceiptMessage(receiptMessage, canonicalizeAndResolveRecipient(sender));
+        sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
     }
 
     public void sendViewedReceipt(
-            String sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
+            RecipientIdentifier.Single sender, List<Long> messageIds
+    ) throws IOException, UntrustedIdentityException {
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
                 messageIds,
                 System.currentTimeMillis());
 
-        sendHelper.sendReceiptMessage(receiptMessage, canonicalizeAndResolveRecipient(sender));
+        sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
     }
 
     void sendDeliveryReceipt(
@@ -1228,12 +1260,12 @@ public class Manager implements Closeable {
         sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(remoteAddress));
     }
 
-    public Pair<Long, List<SendMessageResult>> sendMessage(
-            Message message, List<String> recipients
-    ) throws IOException, AttachmentInvalidException, InvalidNumberException {
-        final var messageBuilder = createMessageBuilder();
+    public SendMessageResults sendMessage(
+            Message message, Set<RecipientIdentifier> recipients
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException {
+        final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
-        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
+        return sendMessage(messageBuilder, recipients);
     }
 
     private void applyMessage(
@@ -1258,48 +1290,41 @@ public class Manager implements Closeable {
         }
     }
 
-    public Pair<Long, SendMessageResult> sendSelfMessage(final Message message) throws IOException, AttachmentInvalidException {
-        final var messageBuilder = createMessageBuilder();
-        applyMessage(messageBuilder, message);
-        return sendHelper.sendSelfMessage(messageBuilder);
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendRemoteDeleteMessage(
-            long targetSentTimestamp, List<String> recipients
-    ) throws IOException, InvalidNumberException {
-        var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
-        final var messageBuilder = createMessageBuilder().withRemoteDelete(delete);
-        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
-    }
-
-    public Pair<Long, List<SendMessageResult>> sendGroupRemoteDeleteMessage(
-            long targetSentTimestamp, GroupId groupId
+    public SendMessageResults sendRemoteDeleteMessage(
+            long targetSentTimestamp, Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
-        final var messageBuilder = createMessageBuilder().withRemoteDelete(delete);
-        return sendHelper.sendAsGroupMessage(messageBuilder, groupId);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
+        return sendMessage(messageBuilder, recipients);
     }
 
-    public Pair<Long, List<SendMessageResult>> sendMessageReaction(
-            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
-    ) throws IOException, InvalidNumberException {
-        var targetAuthorRecipientId = canonicalizeAndResolveRecipient(targetAuthor);
+    public SendMessageResults sendMessageReaction(
+            String emoji,
+            boolean remove,
+            RecipientIdentifier.Single targetAuthor,
+            long targetSentTimestamp,
+            Set<RecipientIdentifier> recipients
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+        var targetAuthorRecipientId = resolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
                 resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
-        final var messageBuilder = createMessageBuilder().withReaction(reaction);
-        return sendHelper.sendMessage(messageBuilder, getRecipientIds(recipients));
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
+        return sendMessage(messageBuilder, recipients);
     }
 
-    public Pair<Long, List<SendMessageResult>> sendEndSessionMessage(List<String> recipients) throws IOException, InvalidNumberException {
-        var messageBuilder = createMessageBuilder().asEndSessionMessage();
+    public SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException {
+        var messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
 
-        final var recipientIds = getRecipientIds(recipients);
         try {
-            return sendHelper.sendMessage(messageBuilder, recipientIds);
+            return sendMessage(messageBuilder,
+                    recipients.stream().map(RecipientIdentifier.class::cast).collect(Collectors.toSet()));
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new AssertionError(e);
         } finally {
-            for (var recipientId : recipientIds) {
+            for (var recipient : recipients) {
+                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
                 handleEndSession(recipientId);
             }
         }
@@ -1312,23 +1337,25 @@ public class Manager implements Closeable {
         }
     }
 
-    public void setContactName(String number, String name) throws InvalidNumberException, NotMasterDeviceException {
+    public void setContactName(
+            RecipientIdentifier.Single recipient, String name
+    ) throws NotMasterDeviceException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        final var recipientId = canonicalizeAndResolveRecipient(number);
+        final var recipientId = resolveRecipient(recipient);
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         account.getContactStore().storeContact(recipientId, builder.withName(name).build());
     }
 
     public void setContactBlocked(
-            String number, boolean blocked
-    ) throws InvalidNumberException, NotMasterDeviceException {
+            RecipientIdentifier.Single recipient, boolean blocked
+    ) throws NotMasterDeviceException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        setContactBlocked(canonicalizeAndResolveRecipient(number), blocked);
+        setContactBlocked(resolveRecipient(recipient), blocked);
     }
 
     private void setContactBlocked(RecipientId recipientId, boolean blocked) {
@@ -1357,20 +1384,20 @@ public class Manager implements Closeable {
                 .storeContact(recipientId, builder.withMessageExpirationTime(messageExpirationTimer).build());
     }
 
-    private void sendExpirationTimerUpdate(RecipientId recipientId) throws IOException {
-        final var messageBuilder = createMessageBuilder().asExpirationUpdate();
-        sendHelper.sendMessage(messageBuilder, Set.of(recipientId));
-    }
-
     /**
      * Change the expiration timer for a contact
      */
     public void setExpirationTimer(
-            String number, int messageExpirationTimer
-    ) throws IOException, InvalidNumberException {
-        var recipientId = canonicalizeAndResolveRecipient(number);
+            RecipientIdentifier.Single recipient, int messageExpirationTimer
+    ) throws IOException {
+        var recipientId = resolveRecipient(recipient);
         setExpirationTimer(recipientId, messageExpirationTimer);
-        sendExpirationTimerUpdate(recipientId);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
+        try {
+            sendMessage(messageBuilder, Set.of(recipient));
+        } catch (NotAGroupMemberException | GroupNotFoundException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /**
@@ -1385,7 +1412,7 @@ public class Manager implements Closeable {
     }
 
     private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException {
-        final var messageBuilder = createMessageBuilder().asExpirationUpdate();
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }
 
@@ -1395,7 +1422,7 @@ public class Manager implements Closeable {
      * @param path Path can be a path to a manifest.json file or to a zip file that contains a manifest.json file
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
-    public String uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
+    public URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
         var manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
         var messageSender = dependencies.getMessageSender();
@@ -1414,7 +1441,7 @@ public class Manager implements Closeable {
                     "pack_id="
                             + URLEncoder.encode(Hex.toStringCondensed(packId.serialize()), StandardCharsets.UTF_8)
                             + "&pack_key="
-                            + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8)).toString();
+                            + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8));
         } catch (URISyntaxException e) {
             throw new AssertionError(e);
         }
@@ -1484,12 +1511,12 @@ public class Manager implements Closeable {
         return certificate;
     }
 
-    private Set<RecipientId> getRecipientIds(Collection<String> numbers) throws InvalidNumberException {
-        final var signalServiceAddresses = new HashSet<SignalServiceAddress>(numbers.size());
+    private Set<RecipientId> getRecipientIds(Collection<RecipientIdentifier.Single> recipients) {
+        final var signalServiceAddresses = new HashSet<SignalServiceAddress>(recipients.size());
         final var addressesMissingUuid = new HashSet<SignalServiceAddress>();
 
-        for (var number : numbers) {
-            final var resolvedAddress = resolveSignalServiceAddress(canonicalizeAndResolveRecipient(number));
+        for (var number : recipients) {
+            final var resolvedAddress = resolveSignalServiceAddress(resolveRecipient(number));
             if (resolvedAddress.getUuid().isPresent()) {
                 signalServiceAddresses.add(resolvedAddress);
             } else {
@@ -1534,40 +1561,26 @@ public class Manager implements Closeable {
     }
 
     private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException {
+        final Map<String, UUID> registeredUsers;
         try {
-            return dependencies.getAccountManager()
+            registeredUsers = dependencies.getAccountManager()
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
                             numbers,
                             serviceEnvironmentConfig.getCdsMrenclave());
         } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
             throw new IOException(e);
         }
+
+        // Store numbers as recipients so we have the number/uuid association
+        registeredUsers.forEach((number, uuid) -> resolveRecipientTrusted(new SignalServiceAddress(uuid, number)));
+
+        return registeredUsers;
     }
 
     public void sendTypingMessage(
-            TypingAction action, Set<String> recipients
-    ) throws IOException, UntrustedIdentityException, InvalidNumberException {
-        final var timestamp = System.currentTimeMillis();
-        var message = new SignalServiceTypingMessage(action.toSignalService(), timestamp, Optional.absent());
-        sendHelper.sendTypingMessage(message, getRecipientIds(recipients));
-    }
-
-    public void sendGroupTypingMessage(
-            TypingAction action, GroupId groupId
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
-        final var timestamp = System.currentTimeMillis();
-        final var message = new SignalServiceTypingMessage(action.toSignalService(),
-                timestamp,
-                Optional.of(groupId.serialize()));
-        sendHelper.sendGroupTypingMessage(message, groupId);
-    }
-
-    private SignalServiceDataMessage.Builder createMessageBuilder() {
-        final var timestamp = System.currentTimeMillis();
-
-        var messageBuilder = SignalServiceDataMessage.newBuilder();
-        messageBuilder.withTimestamp(timestamp);
-        return messageBuilder;
+            TypingAction action, Set<RecipientIdentifier> recipients
+    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException {
+        sendTypingMessage(action.toSignalService(), recipients);
     }
 
     private SignalServiceContent decryptMessage(SignalServiceEnvelope envelope) throws InvalidMetadataMessageException, ProtocolInvalidMessageException, ProtocolDuplicateMessageException, ProtocolLegacyMessageException, ProtocolInvalidKeyIdException, InvalidMetadataVersionException, ProtocolInvalidVersionException, ProtocolNoSessionException, ProtocolInvalidKeyException, SelfSendException, UnsupportedDataMessageException, ProtocolUntrustedIdentityException, InvalidMessageStructureException {
@@ -2005,8 +2018,8 @@ public class Manager implements Closeable {
         return false;
     }
 
-    public boolean isContactBlocked(final String identifier) throws InvalidNumberException {
-        final var recipientId = canonicalizeAndResolveRecipient(identifier);
+    public boolean isContactBlocked(final RecipientIdentifier.Single recipient) {
+        final var recipientId = resolveRecipient(recipient);
         return isContactBlocked(recipientId);
     }
 
@@ -2607,8 +2620,8 @@ public class Manager implements Closeable {
         return account.getContactStore().getContacts();
     }
 
-    public String getContactOrProfileName(String number) throws InvalidNumberException {
-        final var recipientId = canonicalizeAndResolveRecipient(number);
+    public String getContactOrProfileName(RecipientIdentifier.Single recipientIdentifier) {
+        final var recipientId = resolveRecipient(recipientIdentifier);
         final var recipient = account.getRecipientStore().getRecipient(recipientId);
         if (recipient == null) {
             return null;
@@ -2643,19 +2656,19 @@ public class Manager implements Closeable {
         return account.getIdentityKeyStore().getIdentities();
     }
 
-    public List<IdentityInfo> getIdentities(String number) throws InvalidNumberException {
-        final var identity = account.getIdentityKeyStore().getIdentity(canonicalizeAndResolveRecipient(number));
+    public List<IdentityInfo> getIdentities(RecipientIdentifier.Single recipient) {
+        final var identity = account.getIdentityKeyStore().getIdentity(resolveRecipient(recipient));
         return identity == null ? List.of() : List.of(identity);
     }
 
     /**
      * Trust this the identity with this fingerprint
      *
-     * @param name        username of the identity
+     * @param recipient   username of the identity
      * @param fingerprint Fingerprint
      */
-    public boolean trustIdentityVerified(String name, byte[] fingerprint) throws InvalidNumberException {
-        var recipientId = canonicalizeAndResolveRecipient(name);
+    public boolean trustIdentityVerified(RecipientIdentifier.Single recipient, byte[] fingerprint) {
+        var recipientId = resolveRecipient(recipient);
         return trustIdentity(recipientId,
                 identityKey -> Arrays.equals(identityKey.serialize(), fingerprint),
                 TrustLevel.TRUSTED_VERIFIED);
@@ -2664,11 +2677,11 @@ public class Manager implements Closeable {
     /**
      * Trust this the identity with this safety number
      *
-     * @param name         username of the identity
+     * @param recipient    username of the identity
      * @param safetyNumber Safety number
      */
-    public boolean trustIdentityVerifiedSafetyNumber(String name, String safetyNumber) throws InvalidNumberException {
-        var recipientId = canonicalizeAndResolveRecipient(name);
+    public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, String safetyNumber) {
+        var recipientId = resolveRecipient(recipient);
         var address = account.getRecipientStore().resolveServiceAddress(recipientId);
         return trustIdentity(recipientId,
                 identityKey -> safetyNumber.equals(computeSafetyNumber(address, identityKey)),
@@ -2678,11 +2691,11 @@ public class Manager implements Closeable {
     /**
      * Trust this the identity with this scannable safety number
      *
-     * @param name         username of the identity
+     * @param recipient    username of the identity
      * @param safetyNumber Scannable safety number
      */
-    public boolean trustIdentityVerifiedSafetyNumber(String name, byte[] safetyNumber) throws InvalidNumberException {
-        var recipientId = canonicalizeAndResolveRecipient(name);
+    public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber) {
+        var recipientId = resolveRecipient(recipient);
         var address = account.getRecipientStore().resolveServiceAddress(recipientId);
         return trustIdentity(recipientId, identityKey -> {
             final var fingerprint = computeSafetyNumberFingerprint(address, identityKey);
@@ -2697,10 +2710,10 @@ public class Manager implements Closeable {
     /**
      * Trust all keys of this identity without verification
      *
-     * @param name username of the identity
+     * @param recipient username of the identity
      */
-    public boolean trustIdentityAllKeys(String name) throws InvalidNumberException {
-        var recipientId = canonicalizeAndResolveRecipient(name);
+    public boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) {
+        var recipientId = resolveRecipient(recipient);
         return trustIdentity(recipientId, identityKey -> true, TrustLevel.TRUSTED_UNVERIFIED);
     }
 
@@ -2782,18 +2795,23 @@ public class Manager implements Closeable {
         return account.getRecipientStore().resolveServiceAddress(recipientId);
     }
 
-    private RecipientId canonicalizeAndResolveRecipient(String identifier) throws InvalidNumberException {
-        var canonicalizedNumber = UuidUtil.isUuid(identifier) ? identifier : canonicalizePhoneNumber(identifier);
-
-        return resolveRecipient(canonicalizedNumber);
-    }
-
     private String canonicalizePhoneNumber(final String number) throws InvalidNumberException {
         return PhoneNumberFormatter.formatNumber(number, account.getUsername());
     }
 
     private RecipientId resolveRecipient(final String identifier) {
         var address = Utils.getSignalServiceAddressFromIdentifier(identifier);
+
+        return resolveRecipient(address);
+    }
+
+    private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) {
+        final SignalServiceAddress address;
+        if (recipient instanceof RecipientIdentifier.Uuid) {
+            address = new SignalServiceAddress(((RecipientIdentifier.Uuid) recipient).uuid, null);
+        } else {
+            address = new SignalServiceAddress(null, ((RecipientIdentifier.Number) recipient).number);
+        }
 
         return resolveRecipient(address);
     }

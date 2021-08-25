@@ -7,8 +7,8 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.util.CommandUtil;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 
@@ -34,7 +34,8 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final var recipient = ns.getString("recipient");
+        final var recipientString = ns.getString("recipient");
+        final var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getUsername());
 
         final var targetTimestamps = ns.<Long>getList("target-timestamp");
         final var type = ns.getString("type");
@@ -49,8 +50,6 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
             }
         } catch (IOException | UntrustedIdentityException e) {
             throw new UserErrorException("Failed to send message: " + e.getMessage());
-        } catch (InvalidNumberException e) {
-            throw new UserErrorException("Invalid number: " + e.getMessage());
         }
     }
 }
