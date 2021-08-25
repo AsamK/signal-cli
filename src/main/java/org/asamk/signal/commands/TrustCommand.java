@@ -24,7 +24,7 @@ public class TrustCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Set the trust level of a given number.");
-        subparser.addArgument("number").help("Specify the phone number, for which to set the trust.").required(true);
+        subparser.addArgument("recipient").help("Specify the phone number, for which to set the trust.").required(true);
         var mutTrust = subparser.addMutuallyExclusiveGroup();
         mutTrust.addArgument("-a", "--trust-all-known-keys")
                 .help("Trust all known keys of this user, only use this for testing.")
@@ -37,7 +37,7 @@ public class TrustCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var recipentString = ns.getString("number");
+        var recipentString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getUsername());
         if (ns.getBoolean("trust-all-known-keys")) {
             boolean res = m.trustIdentityAllKeys(recipient);

@@ -25,7 +25,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Block the given contacts or groups (no messages will be received)");
-        subparser.addArgument("contact").help("Contact number").nargs("*");
+        subparser.addArgument("recipient").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Group ID").nargs("*");
     }
 
@@ -33,7 +33,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final var contacts = ns.<String>getList("contact");
+        final var contacts = ns.<String>getList("recipient");
         for (var contact : CommandUtil.getSingleRecipientIdentifiers(contacts, m.getUsername())) {
             try {
                 m.setContactBlocked(contact, true);

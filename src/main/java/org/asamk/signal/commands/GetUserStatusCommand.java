@@ -31,7 +31,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Check if the specified phone number/s have been registered");
-        subparser.addArgument("number").help("Phone number").nargs("+");
+        subparser.addArgument("recipient").help("Phone number").nargs("+");
     }
 
     @Override
@@ -41,7 +41,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         // Get a map of registration statuses
         Map<String, Pair<String, UUID>> registered;
         try {
-            registered = m.areUsersRegistered(new HashSet<>(ns.getList("number")));
+            registered = m.areUsersRegistered(new HashSet<>(ns.getList("recipient")));
         } catch (IOException e) {
             logger.debug("Failed to check registered users", e);
             throw new IOErrorException("Unable to check if users are registered");
@@ -69,7 +69,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     private static final class JsonUserStatus {
 
-        public final String name;
+        public final String recipient;
 
         public final String number;
 
@@ -77,8 +77,8 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
         public final boolean isRegistered;
 
-        public JsonUserStatus(String name, String number, String uuid, boolean isRegistered) {
-            this.name = name;
+        public JsonUserStatus(String recipient, String number, String uuid, boolean isRegistered) {
+            this.recipient = recipient;
             this.number = number;
             this.uuid = uuid;
             this.isRegistered = isRegistered;

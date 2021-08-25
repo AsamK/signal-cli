@@ -23,7 +23,7 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the details of a given contact");
-        subparser.addArgument("number").help("Contact number");
+        subparser.addArgument("recipient").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
@@ -32,7 +32,7 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var recipientString = ns.getString("number");
+        var recipientString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getUsername());
 
         try {

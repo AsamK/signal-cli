@@ -25,7 +25,7 @@ public class UnblockCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Unblock the given contacts or groups (messages will be received again)");
-        subparser.addArgument("contact").help("Contact number").nargs("*");
+        subparser.addArgument("recipient").help("Contact number").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Group ID").nargs("*");
     }
 
@@ -33,7 +33,7 @@ public class UnblockCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        for (var contactNumber : CommandUtil.getSingleRecipientIdentifiers(ns.getList("contact"), m.getUsername())) {
+        for (var contactNumber : CommandUtil.getSingleRecipientIdentifiers(ns.getList("recipient"), m.getUsername())) {
             try {
                 m.setContactBlocked(contactNumber, false);
             } catch (NotMasterDeviceException e) {

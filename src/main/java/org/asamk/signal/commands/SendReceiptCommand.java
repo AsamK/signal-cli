@@ -27,7 +27,9 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
                 .type(long.class)
                 .nargs("+")
                 .help("Specify the timestamp of the messages for which a receipt should be sent.");
-        subparser.addArgument("--type").help("Specify the receipt type.").choices("read", "viewed").setDefault("read");
+        subparser.addArgument("--type")
+                .help("Specify the receipt type (default is read receipt).")
+                .choices("read", "viewed");
     }
 
     @Override
@@ -41,7 +43,7 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
         final var type = ns.getString("type");
 
         try {
-            if ("read".equals(type)) {
+            if (type == null || "read".equals(type)) {
                 m.sendReadReceipt(recipient, targetTimestamps);
             } else if ("viewed".equals(type)) {
                 m.sendViewedReceipt(recipient, targetTimestamps);
