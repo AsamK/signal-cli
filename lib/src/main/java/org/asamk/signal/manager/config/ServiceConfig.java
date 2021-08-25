@@ -39,7 +39,7 @@ public class ServiceConfig {
                 false,
                 zkGroupAvailable,
                 false,
-                false);
+                true);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();
