@@ -32,7 +32,7 @@ class LiveConfig {
             "fe7c1bfae98f9b073d220366ea31163ee82f6d04bead774f71ca8e5c40847bfe");
     private final static String KEY_BACKUP_MRENCLAVE = "a3baab19ef6ce6f34ab9ebb25ba722725ae44a8872dc0ff08ad6d83a9489de87";
 
-    private final static String URL = "https://textsecure-service.whispersystems.org";
+    private final static String URL = "https://chat.signal.org";
     private final static String CDN_URL = "https://cdn.signal.org";
     private final static String CDN2_URL = "https://cdn2.signal.org";
     private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api.directory.signal.org";

@@ -32,7 +32,7 @@ class SandboxConfig {
             "51a56084c0b21c6b8f62b1bc792ec9bedac4c7c3964bb08ddcab868158c09982");
     private final static String KEY_BACKUP_MRENCLAVE = "a3baab19ef6ce6f34ab9ebb25ba722725ae44a8872dc0ff08ad6d83a9489de87";
 
-    private final static String URL = "https://textsecure-service-staging.whispersystems.org";
+    private final static String URL = "https://chat.staging.signal.org";
     private final static String CDN_URL = "https://cdn-staging.signal.org";
     private final static String CDN2_URL = "https://cdn2-staging.signal.org";
     private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api-staging.directory.signal.org";
