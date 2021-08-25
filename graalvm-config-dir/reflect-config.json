@@ -338,7 +338,31 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.commands.ListContactsCommand$JsonContact",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.commands.ListDevicesCommand$JsonDevice",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.commands.ListGroupsCommand$JsonGroup",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.commands.ListGroupsCommand$JsonGroupMember",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.commands.ListIdentitiesCommand$JsonIdentity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -487,32 +511,38 @@
   "allDeclaredConstructors":true
 },
 {
-  "name": "org.asamk.signal.jsonrpc.JsonRpcBulkMessage",
+  "name":"org.asamk.signal.jsonrpc.JsonRpcBulkMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },
 {
-  "name": "org.asamk.signal.jsonrpc.JsonRpcException",
+  "name":"org.asamk.signal.jsonrpc.JsonRpcException",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },
 {
-  "name": "org.asamk.signal.jsonrpc.JsonRpcMessage",
-  "allDeclaredFields": true,
+  "name":"org.asamk.signal.jsonrpc.JsonRpcMessage",
+  "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },
 {
-  "name": "org.asamk.signal.jsonrpc.JsonRpcRequest",
-  "allDeclaredFields": true,
+  "name":"org.asamk.signal.jsonrpc.JsonRpcRequest",
+  "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcResponse",
-  "allDeclaredFields": true,
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.jsonrpc.JsonRpcResponse$Error",
+  "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
 },

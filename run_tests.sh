@@ -23,21 +23,21 @@ PATH_LINK="$PATH_TEST_CONFIG/link"
 
 ./gradlew installDist
 
-function run() {
+run() {
   set -x
   "$SIGNAL_CLI" --service-environment="sandbox" $@
   set +x
 }
 
-function run_main() {
+run_main() {
   run --config="$PATH_MAIN" $@
 }
 
-function run_linked() {
+run_linked() {
   run --config="$PATH_LINK" $@
 }
 
-function register() {
+register() {
   NUMBER=$1
   PIN=$2
   echo -n "Enter a captcha token (https://signalcaptchas.org/registration/generate.html): "
@@ -52,7 +52,7 @@ function register() {
   fi
 }
 
-function link() {
+link() {
   NUMBER=$1
   LINK_CODE_FILE="$PATH_TEST_CONFIG/link_code"
   rm -f "$LINK_CODE_FILE"
@@ -75,6 +75,40 @@ register "$NUMBER_1" "$TEST_PIN_1"
 register "$NUMBER_2"
 
 sleep 5
+
+# JSON-RPC
+FIFO_FILE="${PATH_MAIN}/dbus-fifo"
+
+rm -f "$FIFO_FILE"
+mkfifo "$FIFO_FILE"
+
+run_main -u "$NUMBER_1" send "$NUMBER_2" -m hi
+run_main -u "$NUMBER_2" jsonRpc < "$FIFO_FILE" &
+
+exec 3<> "$FIFO_FILE"
+  echo '{"jsonrpc":"2.0","id":"id","method":"updateContact","params":{"recipient":"'"$NUMBER_1"'","name":"NUMBER_1","expiration":10}}' >&3
+  echo '{"jsonrpc":"2.0","id":5,"method":"block","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
+  echo '{"jsonrpc":"2.0","id":null,"method":"unblock","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listContacts"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listGroups"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listDevices"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listIdentities"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"sendSyncRequest"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"sendContacts"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"version"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"updateAccount"}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"sendReceipt","params":{"recipient":"'"$NUMBER_1"'","targetTimestamp":1629919505575}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"sendTyping","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipient":"'"$NUMBER_1"'","message":"some text"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipients":["'"$NUMBER_1"'","'"$NUMBER_2"'"],"message":"some other text"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"updateProfile","params":{"givenName":"n1","familyName":"n2","about":"ABA","aboutEmoji":"EMO","avatar":"LICENSE"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"getUserStatus","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
+
+  # Error expected:
+  echo '{"jsonrpc":"2.0","id":7,"method":"sendReceipt","params":{"recipient":5}}' >&3
+exec 3>&-
+
+wait
 
 run_main -u "$NUMBER_1" setPin "$TEST_PIN_1"
 run_main -u "$NUMBER_2" removePin
