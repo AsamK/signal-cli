@@ -420,7 +420,7 @@ public class DbusSignalImpl implements Signal {
     public void quitGroup(final byte[] groupId) {
         var group = getGroupId(groupId);
         try {
-            m.sendQuitGroupMessage(group, Set.of());
+            m.quitGroup(group, Set.of());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (IOException | LastGroupAdminException e) {

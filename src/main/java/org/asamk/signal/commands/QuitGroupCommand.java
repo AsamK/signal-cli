@@ -54,7 +54,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
 
         try {
             try {
-                final var results = m.sendQuitGroupMessage(groupId, groupAdmins);
+                final var results = m.quitGroup(groupId, groupAdmins);
                 final var timestamp = results.getTimestamp();
                 outputResult(outputWriter, timestamp);
                 handleSendMessageResults(results.getResults());

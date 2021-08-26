@@ -665,7 +665,7 @@ public class Manager implements Closeable {
         return account.getGroupStore().getGroups();
     }
 
-    public SendGroupMessageResults sendQuitGroupMessage(
+    public SendGroupMessageResults quitGroup(
             GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
         final var newAdmins = getRecipientIds(groupAdmins);
