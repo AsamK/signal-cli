@@ -851,6 +851,11 @@ public class Manager implements Closeable {
             try {
                 content = dependencies.getCipher().decrypt(envelope);
             } catch (ProtocolUntrustedIdentityException e) {
+                if (System.currentTimeMillis() - envelope.getServerDeliveredTimestamp() > 1000L * 60 * 60 * 24 * 30) {
+                    // Envelope is more than a month old, cleaning up.
+                    cachedMessage.delete();
+                    return null;
+                }
                 if (!envelope.hasSource()) {
                     final var identifier = e.getSender();
                     final var recipientId = resolveRecipient(identifier);
