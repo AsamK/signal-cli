@@ -170,7 +170,7 @@ class RetrieveProfileAction implements HandleAction {
 
     @Override
     public void execute(Manager m) throws Throwable {
-        m.getRecipientProfile(recipientId, true);
+        m.refreshRecipientProfile(recipientId);
     }
 
     @Override

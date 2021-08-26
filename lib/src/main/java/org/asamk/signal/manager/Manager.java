@@ -58,14 +58,12 @@ import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.asamk.signal.manager.util.ProfileUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
-import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
@@ -106,8 +104,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
-import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
-import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -137,7 +133,6 @@ import java.nio.file.Files;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -205,26 +200,29 @@ public class Manager implements Closeable {
                 account.getSignalProtocolStore(),
                 executor,
                 sessionLock);
-        this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
+        this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
+        this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
+        this.stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
 
+        this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
         final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
                 account.getProfileStore()::getProfileKey,
                 this::getRecipientProfile,
                 this::getSenderCertificate);
-        this.profileHelper = new ProfileHelper(account.getProfileStore()::getProfileKey,
+        this.profileHelper = new ProfileHelper(account,
+                dependencies,
+                avatarStore,
+                account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
                 dependencies::getProfileService,
                 dependencies::getMessageReceiver,
                 this::resolveSignalServiceAddress);
-        final GroupV2Helper groupV2Helper = new GroupV2Helper(this::getRecipientProfileKeyCredential,
+        final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
                 account::getSelfRecipientId,
                 dependencies.getGroupsV2Operations(),
                 dependencies.getGroupsV2Api(),
                 this::resolveSignalServiceAddress);
-        this.avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
-        this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
-        this.stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
         this.sendHelper = new SendHelper(account,
                 dependencies,
                 unidentifiedAccessHelper,
@@ -246,7 +244,7 @@ public class Manager implements Closeable {
         return account.getUsername();
     }
 
-    public SignalServiceAddress getSelfAddress() {
+    private SignalServiceAddress getSelfAddress() {
         return account.getSelfAddress();
     }
 
@@ -377,45 +375,12 @@ public class Manager implements Closeable {
     public void setProfile(
             String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException {
-        var profile = getRecipientProfile(account.getSelfRecipientId());
-        var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
-        if (givenName != null) {
-            builder.withGivenName(givenName);
-        }
-        if (familyName != null) {
-            builder.withFamilyName(familyName);
-        }
-        if (about != null) {
-            builder.withAbout(about);
-        }
-        if (aboutEmoji != null) {
-            builder.withAboutEmoji(aboutEmoji);
-        }
-        var newProfile = builder.build();
+        profileHelper.setProfile(givenName, familyName, about, aboutEmoji, avatar);
 
-        try (final var streamDetails = avatar == null
-                ? avatarStore.retrieveProfileAvatar(getSelfAddress())
-                : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
-            dependencies.getAccountManager()
-                    .setVersionedProfile(account.getUuid(),
-                            account.getProfileKey(),
-                            newProfile.getInternalServiceName(),
-                            newProfile.getAbout() == null ? "" : newProfile.getAbout(),
-                            newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
-                            Optional.absent(),
-                            streamDetails);
-        }
+        sendSyncFetchProfileMessage();
+    }
 
-        if (avatar != null) {
-            if (avatar.isPresent()) {
-                avatarStore.storeProfileAvatar(getSelfAddress(),
-                        outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
-            } else {
-                avatarStore.deleteProfileAvatar(getSelfAddress());
-            }
-        }
-        account.getProfileStore().storeProfile(account.getSelfRecipientId(), newProfile);
-
+    private void sendSyncFetchProfileMessage() throws IOException {
         sendHelper.sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
     }
 
@@ -522,134 +487,12 @@ public class Manager implements Closeable {
         return record;
     }
 
-    public Profile getRecipientProfile(
-            RecipientId recipientId
-    ) {
-        return getRecipientProfile(recipientId, false);
+    public Profile getRecipientProfile(RecipientId recipientId) {
+        return profileHelper.getRecipientProfile(recipientId);
     }
 
-    private final Set<RecipientId> pendingProfileRequest = new HashSet<>();
-
-    Profile getRecipientProfile(
-            RecipientId recipientId, boolean force
-    ) {
-        var profile = account.getProfileStore().getProfile(recipientId);
-
-        var now = System.currentTimeMillis();
-        // Profiles are cached for 24h before retrieving them again, unless forced
-        if (!force && profile != null && now - profile.getLastUpdateTimestamp() < 24 * 60 * 60 * 1000) {
-            return profile;
-        }
-
-        synchronized (pendingProfileRequest) {
-            if (pendingProfileRequest.contains(recipientId)) {
-                return profile;
-            }
-            pendingProfileRequest.add(recipientId);
-        }
-        final SignalServiceProfile encryptedProfile;
-        try {
-            encryptedProfile = retrieveEncryptedProfile(recipientId);
-        } finally {
-            synchronized (pendingProfileRequest) {
-                pendingProfileRequest.remove(recipientId);
-            }
-        }
-        if (encryptedProfile == null) {
-            return null;
-        }
-
-        profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
-        account.getProfileStore().storeProfile(recipientId, profile);
-
-        return profile;
-    }
-
-    private Profile decryptProfileIfKeyKnown(
-            final RecipientId recipientId, final SignalServiceProfile encryptedProfile
-    ) {
-        var profileKey = account.getProfileStore().getProfileKey(recipientId);
-        if (profileKey == null) {
-            return new Profile(System.currentTimeMillis(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null),
-                    ProfileUtils.getCapabilities(encryptedProfile));
-        }
-
-        return decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
-    }
-
-    private SignalServiceProfile retrieveEncryptedProfile(RecipientId recipientId) {
-        try {
-            return retrieveProfileAndCredential(recipientId, SignalServiceProfile.RequestType.PROFILE).getProfile();
-        } catch (IOException e) {
-            logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private ProfileAndCredential retrieveProfileAndCredential(
-            final RecipientId recipientId, final SignalServiceProfile.RequestType requestType
-    ) throws IOException {
-        final var profileAndCredential = profileHelper.retrieveProfileSync(recipientId, requestType);
-        final var profile = profileAndCredential.getProfile();
-
-        try {
-            var newIdentity = account.getIdentityKeyStore()
-                    .saveIdentity(recipientId,
-                            new IdentityKey(Base64.getDecoder().decode(profile.getIdentityKey())),
-                            new Date());
-
-            if (newIdentity) {
-                account.getSessionStore().archiveSessions(recipientId);
-            }
-        } catch (InvalidKeyException ignored) {
-            logger.warn("Got invalid identity key in profile for {}",
-                    resolveSignalServiceAddress(recipientId).getIdentifier());
-        }
-        return profileAndCredential;
-    }
-
-    private ProfileKeyCredential getRecipientProfileKeyCredential(RecipientId recipientId) {
-        var profileKeyCredential = account.getProfileStore().getProfileKeyCredential(recipientId);
-        if (profileKeyCredential != null) {
-            return profileKeyCredential;
-        }
-
-        ProfileAndCredential profileAndCredential;
-        try {
-            profileAndCredential = retrieveProfileAndCredential(recipientId,
-                    SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL);
-        } catch (IOException e) {
-            logger.warn("Failed to retrieve profile key credential, ignoring: {}", e.getMessage());
-            return null;
-        }
-
-        profileKeyCredential = profileAndCredential.getProfileKeyCredential().orNull();
-        account.getProfileStore().storeProfileKeyCredential(recipientId, profileKeyCredential);
-
-        var profileKey = account.getProfileStore().getProfileKey(recipientId);
-        if (profileKey != null) {
-            final var profile = decryptProfileAndDownloadAvatar(recipientId,
-                    profileKey,
-                    profileAndCredential.getProfile());
-            account.getProfileStore().storeProfile(recipientId, profile);
-        }
-
-        return profileKeyCredential;
-    }
-
-    private Profile decryptProfileAndDownloadAvatar(
-            final RecipientId recipientId, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
-    ) {
-        if (encryptedProfile.getAvatar() != null) {
-            downloadProfileAvatar(resolveSignalServiceAddress(recipientId), encryptedProfile.getAvatar(), profileKey);
-        }
-
-        return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
+    public void refreshRecipientProfile(RecipientId recipientId) {
+        profileHelper.refreshRecipientProfile(recipientId);
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
@@ -1784,7 +1627,7 @@ public class Manager implements Closeable {
                 if (syncMessage.getFetchType().isPresent()) {
                     switch (syncMessage.getFetchType().get()) {
                         case LOCAL_PROFILE:
-                            getRecipientProfile(account.getSelfRecipientId(), true);
+                            actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
                         case STORAGE_MANIFEST:
                             // TODO
                     }
@@ -1820,20 +1663,6 @@ public class Manager implements Closeable {
         }
     }
 
-    private void downloadProfileAvatar(
-            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
-    ) {
-        try {
-            avatarStore.storeProfileAvatar(address,
-                    outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
-        } catch (Throwable e) {
-            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            logger.warn("Failed to download profile avatar, ignoring: {}", e.getMessage());
-        }
-    }
-
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
         return attachmentStore.getAttachmentFile(attachmentId);
     }
@@ -1859,28 +1688,6 @@ public class Manager implements Closeable {
                     outputStream -> retrieveAttachmentPointer(pointer, outputStream));
         } catch (IOException e) {
             logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
-        }
-    }
-
-    private void retrieveProfileAvatar(
-            String avatarPath, ProfileKey profileKey, OutputStream outputStream
-    ) throws IOException {
-        var tmpFile = IOUtils.createTempFile();
-        try (var input = dependencies.getMessageReceiver()
-                .retrieveProfileAvatar(avatarPath,
-                        tmpFile,
-                        profileKey,
-                        ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE)) {
-            // Use larger buffer size to prevent AssertionError: Need: 12272 but only have: 8192 ...
-            IOUtils.copyStream(input, outputStream, (int) ServiceConfig.AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE);
-        } finally {
-            try {
-                Files.delete(tmpFile.toPath());
-            } catch (IOException e) {
-                logger.warn("Failed to delete received profile avatar temp file “{}”, ignoring: {}",
-                        tmpFile,
-                        e.getMessage());
-            }
         }
     }
 
@@ -2069,17 +1876,15 @@ public class Manager implements Closeable {
 
     public String getContactOrProfileName(RecipientIdentifier.Single recipientIdentifier) {
         final var recipientId = resolveRecipient(recipientIdentifier);
-        final var recipient = account.getRecipientStore().getRecipient(recipientId);
-        if (recipient == null) {
-            return null;
+
+        final var contact = account.getRecipientStore().getContact(recipientId);
+        if (contact != null && !Util.isEmpty(contact.getName())) {
+            return contact.getName();
         }
 
-        if (recipient.getContact() != null && !Util.isEmpty(recipient.getContact().getName())) {
-            return recipient.getContact().getName();
-        }
-
-        if (recipient.getProfile() != null && recipient.getProfile() != null) {
-            return recipient.getProfile().getDisplayName();
+        final var profile = getRecipientProfile(recipientId);
+        if (profile != null) {
+            return profile.getDisplayName();
         }
 
         return null;
@@ -2188,7 +1993,7 @@ public class Manager implements Closeable {
             }
         } else {
             // Retrieve profile to get the current identity key from the server
-            retrieveEncryptedProfile(recipientId);
+            refreshRecipientProfile(recipientId);
         }
     }
 
