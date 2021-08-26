@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GroupV2Helper {
@@ -59,8 +60,6 @@ public class GroupV2Helper {
 
     private final GroupsV2Api groupsV2Api;
 
-    private final GroupAuthorizationProvider groupAuthorizationProvider;
-
     private final SignalServiceAddressResolver addressResolver;
 
     public GroupV2Helper(
@@ -69,7 +68,6 @@ public class GroupV2Helper {
             final SelfRecipientIdProvider selfRecipientIdProvider,
             final GroupsV2Operations groupsV2Operations,
             final GroupsV2Api groupsV2Api,
-            final GroupAuthorizationProvider groupAuthorizationProvider,
             final SignalServiceAddressResolver addressResolver
     ) {
         this.profileKeyCredentialProvider = profileKeyCredentialProvider;
@@ -77,14 +75,12 @@ public class GroupV2Helper {
         this.selfRecipientIdProvider = selfRecipientIdProvider;
         this.groupsV2Operations = groupsV2Operations;
         this.groupsV2Api = groupsV2Api;
-        this.groupAuthorizationProvider = groupAuthorizationProvider;
         this.addressResolver = addressResolver;
     }
 
     public DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) {
         try {
-            final var groupsV2AuthorizationString = groupAuthorizationProvider.getAuthorizationForToday(
-                    groupSecretParams);
+            final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             return groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
             logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
@@ -99,7 +95,7 @@ public class GroupV2Helper {
 
         return groupsV2Api.getGroupJoinInfo(groupSecretParams,
                 Optional.fromNullable(password).transform(GroupLinkPassword::serialize),
-                groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams));
+                getGroupAuthForToday(groupSecretParams));
     }
 
     public Pair<GroupInfoV2, DecryptedGroup> createGroup(
@@ -116,7 +112,7 @@ public class GroupV2Helper {
         final GroupsV2AuthorizationString groupAuthForToday;
         final DecryptedGroup decryptedGroup;
         try {
-            groupAuthForToday = groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams);
+            groupAuthForToday = getGroupAuthForToday(groupSecretParams);
             groupsV2Api.putNewGroup(newGroup, groupAuthForToday);
             decryptedGroup = groupsV2Api.getGroup(groupSecretParams, groupAuthForToday);
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
@@ -214,7 +210,7 @@ public class GroupV2Helper {
             final var avatarBytes = readAvatarBytes(avatarFile);
             var avatarCdnKey = groupsV2Api.uploadAvatar(avatarBytes,
                     groupSecretParams,
-                    groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams));
+                    getGroupAuthForToday(groupSecretParams));
             change.setModifyAvatar(GroupChange.Actions.ModifyAvatarAction.newBuilder().setAvatar(avatarCdnKey));
         }
 
@@ -487,7 +483,7 @@ public class GroupV2Helper {
         }
 
         var signedGroupChange = groupsV2Api.patchGroup(changeActions,
-                groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams),
+                getGroupAuthForToday(groupSecretParams),
                 Optional.absent());
 
         return new Pair<>(decryptedGroupState, signedGroupChange);
@@ -503,7 +499,7 @@ public class GroupV2Helper {
         final var changeActions = change.setRevision(nextRevision).build();
 
         return groupsV2Api.patchGroup(changeActions,
-                groupAuthorizationProvider.getAuthorizationForToday(groupSecretParams),
+                getGroupAuthForToday(groupSecretParams),
                 Optional.fromNullable(password).transform(GroupLinkPassword::serialize));
     }
 
@@ -533,5 +529,27 @@ public class GroupV2Helper {
         }
 
         return null;
+    }
+
+    private static int currentTimeDays() {
+        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
+    }
+
+    private GroupsV2AuthorizationString getGroupAuthForToday(
+            final GroupSecretParams groupSecretParams
+    ) throws IOException {
+        final var today = currentTimeDays();
+        // Returns credentials for the next 7 days
+        final var credentials = groupsV2Api.getCredentials(today);
+        // TODO cache credentials until they expire
+        var authCredentialResponse = credentials.get(today);
+        final var uuid = addressResolver.resolveSignalServiceAddress(this.selfRecipientIdProvider.getSelfRecipientId())
+                .getUuid()
+                .get();
+        try {
+            return groupsV2Api.getGroupsV2AuthorizationString(uuid, today, groupSecretParams, authCredentialResponse);
+        } catch (VerificationFailedException e) {
+            throw new IOException(e);
+        }
     }
 }
