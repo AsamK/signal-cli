@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -12,6 +13,8 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class UnblockCommand implements JsonRpcLocalCommand {
 
@@ -38,6 +41,8 @@ public class UnblockCommand implements JsonRpcLocalCommand {
                 m.setContactBlocked(contactNumber, false);
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
+            } catch (IOException e) {
+                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage());
             }
         }
 
@@ -47,6 +52,8 @@ public class UnblockCommand implements JsonRpcLocalCommand {
                 m.setGroupBlocked(groupId, false);
             } catch (GroupNotFoundException e) {
                 logger.warn("Unknown group id: {}", groupId);
+            } catch (IOException e) {
+                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage());
             }
         }
     }

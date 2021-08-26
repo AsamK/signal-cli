@@ -91,6 +91,11 @@ public class GroupHelper {
         return getGroup(groupId, false);
     }
 
+    public boolean isGroupBlocked(final GroupId groupId) {
+        var group = getGroup(groupId);
+        return group != null && group.isBlocked();
+    }
+
     public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
         try {
             avatarStore.storeGroupAvatar(groupId,
@@ -298,6 +303,16 @@ public class GroupHelper {
     public void deleteGroup(GroupId groupId) throws IOException {
         account.getGroupStore().deleteGroup(groupId);
         avatarStore.deleteGroupAvatar(groupId);
+    }
+
+    public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
+        var group = getGroup(groupId);
+        if (group == null) {
+            throw new GroupNotFoundException(groupId);
+        }
+
+        group.setBlocked(blocked);
+        account.getGroupStore().updateGroup(group);
     }
 
     public SendGroupMessageResults sendGroupInfoRequest(

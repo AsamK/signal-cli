@@ -253,6 +253,8 @@ public class DbusSignalImpl implements Signal {
             m.setContactBlocked(getSingleRecipientIdentifier(number, m.getUsername()), blocked);
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
         }
     }
 
@@ -262,6 +264,8 @@ public class DbusSignalImpl implements Signal {
             m.setGroupBlocked(getGroupId(groupId), blocked);
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
         }
     }
 

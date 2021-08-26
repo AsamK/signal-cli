@@ -131,6 +131,16 @@ public class SendHelper {
         return result;
     }
 
+    public void sendDeliveryReceipt(
+            RecipientId recipientId, List<Long> messageIds
+    ) throws IOException, UntrustedIdentityException {
+        var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
+                messageIds,
+                System.currentTimeMillis());
+
+        sendReceiptMessage(receiptMessage, recipientId);
+    }
+
     public void sendReceiptMessage(
             final SignalServiceReceiptMessage receiptMessage, final RecipientId recipientId
     ) throws IOException, UntrustedIdentityException {
