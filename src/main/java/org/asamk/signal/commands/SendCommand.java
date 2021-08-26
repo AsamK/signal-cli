@@ -85,7 +85,8 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
                 m.sendEndSessionMessage(singleRecipients);
                 return;
             } catch (IOException e) {
-                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")");
             }
         }
 
@@ -108,7 +109,8 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
             outputResult(outputWriter, results.getTimestamp());
             ErrorUtils.handleSendMessageResults(results.getResults());
         } catch (AttachmentInvalidException | IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         }
@@ -141,9 +143,11 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
                 signal.sendEndSessionMessage(recipients);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
-                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
+                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")");
             } catch (DBusExecutionException e) {
-                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")");
             }
         }
 
@@ -182,7 +186,8 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
                 outputResult(outputWriter, timestamp);
                 return;
             } catch (Signal.Error.UntrustedIdentity e) {
-                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
+                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")");
             } catch (DBusExecutionException e) {
                 throw new UnexpectedErrorException("Failed to send note to self message: " + e.getMessage());
             }
@@ -194,9 +199,11 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (UnknownObject e) {
             throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
         } catch (Signal.Error.UntrustedIdentity e) {
-            throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage());
+            throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 

@@ -66,7 +66,11 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
                 m.deleteGroup(groupId);
             }
         } catch (IOException e) {
-            throw new IOErrorException("Failed to send message: " + e.getMessage());
+            throw new IOErrorException("Failed to send message: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")");
         } catch (GroupNotFoundException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (LastGroupAdminException e) {

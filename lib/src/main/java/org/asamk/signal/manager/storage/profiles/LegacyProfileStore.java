@@ -8,10 +8,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class LegacyProfileStore {
                 for (var entry : node) {
                     var name = entry.hasNonNull("name") ? entry.get("name").asText() : null;
                     var uuid = entry.hasNonNull("uuid") ? UuidUtil.parseOrNull(entry.get("uuid").asText()) : null;
-                    final var serviceAddress = new SignalServiceAddress(uuid, name);
+                    final var address = new RecipientAddress(uuid, name);
                     ProfileKey profileKey = null;
                     try {
                         profileKey = new ProfileKey(Base64.getDecoder().decode(entry.get("profileKey").asText()));
@@ -61,7 +61,7 @@ public class LegacyProfileStore {
                     }
                     var lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
                     var profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
-                    profileEntries.add(new LegacySignalProfileEntry(serviceAddress,
+                    profileEntries.add(new LegacySignalProfileEntry(address,
                             profileKey,
                             lastUpdateTimestamp,
                             profile,

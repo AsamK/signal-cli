@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements JsonRpcLocalCommand {
@@ -46,8 +45,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
     private static Set<JsonGroupMember> resolveJsonMembers(Manager m, Set<RecipientId> addresses) {
         return addresses.stream()
                 .map(m::resolveSignalServiceAddress)
-                .map(address -> new JsonGroupMember(address.getNumber().orNull(),
-                        address.getUuid().transform(UUID::toString).orNull()))
+                .map(address -> new JsonGroupMember(address.getNumber().orNull(), address.getUuid().toString()))
                 .collect(Collectors.toSet());
     }
 

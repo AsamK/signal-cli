@@ -136,8 +136,8 @@ run_main -u "$NUMBER_2" listGroups -d
 run_main -u "$NUMBER_2" --output=json listGroups -d
 run_main -u "$NUMBER_1" receive
 run_main -u "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
-run_main -u "$NUMBER_1" block "$GROUP_ID"
-run_main -u "$NUMBER_1" unblock "$GROUP_ID"
+run_main -u "$NUMBER_1" --verbose block -g "$GROUP_ID"
+run_main -u "$NUMBER_1" --verbose unblock -g "$GROUP_ID"
 
 ## Identities
 run_main -u "$NUMBER_1" listIdentities

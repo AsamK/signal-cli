@@ -74,9 +74,14 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
         } catch (GroupPatchNotAcceptedException e) {
             throw new UserErrorException("Failed to join group, maybe already a member");
         } catch (IOException e) {
-            throw new IOErrorException("Failed to send message: " + e.getMessage());
+            throw new IOErrorException("Failed to send message: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")");
         } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         } catch (GroupLinkNotActiveException e) {
             throw new UserErrorException("Group link is not valid: " + e.getMessage());
         }

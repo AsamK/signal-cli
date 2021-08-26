@@ -6,7 +6,6 @@ import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
-import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
@@ -177,7 +176,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
      * @param identifier can be either a serialized uuid or a e164 phone number
      */
     private RecipientId resolveRecipient(String identifier) {
-        return resolver.resolveRecipient(Utils.getSignalServiceAddressFromIdentifier(identifier));
+        return resolver.resolveRecipient(identifier);
     }
 
     private File getIdentityFile(final RecipientId recipientId) {

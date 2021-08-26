@@ -48,11 +48,11 @@ public class Utils {
         byte[] ownId;
         byte[] theirId;
 
-        if (isUuidCapable && ownAddress.getUuid().isPresent() && theirAddress.getUuid().isPresent()) {
+        if (isUuidCapable) {
             // Version 2: UUID user
             version = 2;
-            ownId = UuidUtil.toByteArray(ownAddress.getUuid().get());
-            theirId = UuidUtil.toByteArray(theirAddress.getUuid().get());
+            ownId = UuidUtil.toByteArray(ownAddress.getUuid());
+            theirId = UuidUtil.toByteArray(theirAddress.getUuid());
         } else {
             // Version 1: E164 user
             version = 1;
@@ -68,13 +68,5 @@ public class Utils {
                 ownIdentityKey,
                 theirId,
                 theirIdentityKey);
-    }
-
-    public static SignalServiceAddress getSignalServiceAddressFromIdentifier(final String identifier) {
-        if (UuidUtil.isUuid(identifier)) {
-            return new SignalServiceAddress(UuidUtil.parseOrNull(identifier), null);
-        } else {
-            return new SignalServiceAddress(null, identifier);
-        }
     }
 }

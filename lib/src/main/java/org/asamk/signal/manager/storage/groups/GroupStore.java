@@ -14,6 +14,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupUtils;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
@@ -22,7 +23,6 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.util.Hex;
 
@@ -78,7 +78,7 @@ public class GroupStore {
                 final var g1 = (Storage.GroupV1) g;
                 final var members = g1.members.stream().map(m -> {
                     if (m.recipientId == null) {
-                        return recipientResolver.resolveRecipient(new SignalServiceAddress(UuidUtil.parseOrNull(m.uuid),
+                        return recipientResolver.resolveRecipient(new RecipientAddress(UuidUtil.parseOrNull(m.uuid),
                                 m.number));
                     }
 
@@ -343,17 +343,17 @@ public class GroupStore {
                 }
             }
 
-            private static final class JsonSignalServiceAddress {
+            private static final class JsonRecipientAddress {
 
                 public String uuid;
 
                 public String number;
 
                 // For deserialization
-                public JsonSignalServiceAddress() {
+                public JsonRecipientAddress() {
                 }
 
-                JsonSignalServiceAddress(final String uuid, final String number) {
+                JsonRecipientAddress(final String uuid, final String number) {
                     this.uuid = uuid;
                     this.number = number;
                 }
@@ -370,7 +370,7 @@ public class GroupStore {
                         if (address.recipientId != null) {
                             jgen.writeNumber(address.recipientId);
                         } else if (address.uuid != null) {
-                            jgen.writeObject(new JsonSignalServiceAddress(address.uuid, address.number));
+                            jgen.writeObject(new JsonRecipientAddress(address.uuid, address.number));
                         } else {
                             jgen.writeString(address.number);
                         }
@@ -393,7 +393,7 @@ public class GroupStore {
                         } else if (n.isNumber()) {
                             addresses.add(new Member(n.numberValue().longValue(), null, null));
                         } else {
-                            var address = jsonParser.getCodec().treeToValue(n, JsonSignalServiceAddress.class);
+                            var address = jsonParser.getCodec().treeToValue(n, JsonRecipientAddress.class);
                             addresses.add(new Member(null, address.uuid, address.number));
                         }
                     }

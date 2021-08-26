@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.asamk.signal.manager.util.Utils;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.asamk.signal.manager.storage.Utils;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -45,12 +45,12 @@ public class LegacyJsonSessionStore {
                     }
 
                     var uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
-                    final var serviceAddress = uuid == null
-                            ? Utils.getSignalServiceAddressFromIdentifier(sessionName)
-                            : new SignalServiceAddress(uuid, sessionName);
+                    final var address = uuid == null
+                            ? Utils.getRecipientAddressFromIdentifier(sessionName)
+                            : new RecipientAddress(uuid, sessionName);
                     final var deviceId = session.get("deviceId").asInt();
                     final var record = Base64.getDecoder().decode(session.get("record").asText());
-                    var sessionInfo = new LegacySessionInfo(serviceAddress, deviceId, record);
+                    var sessionInfo = new LegacySessionInfo(address, deviceId, record);
                     sessions.add(sessionInfo);
                 }
             }

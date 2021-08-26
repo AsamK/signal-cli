@@ -130,6 +130,11 @@ public class SignalProtocolStore implements SignalServiceDataStore {
     }
 
     @Override
+    public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
+        return sessionStore.getAllAddressesWithActiveSessions(addressNames);
+    }
+
+    @Override
     public SignedPreKeyRecord loadSignedPreKey(int signedPreKeyId) throws InvalidKeyIdException {
         return signedPreKeyStore.loadSignedPreKey(signedPreKeyId);
     }
@@ -188,5 +193,12 @@ public class SignalProtocolStore implements SignalServiceDataStore {
     @Override
     public boolean isMultiDevice() {
         return isMultiDevice.get();
+    }
+
+    @Override
+    public Transaction beginTransaction() {
+        return () -> {
+            // No-op transaction should be safe, as it's only a performance improvement
+        };
     }
 }

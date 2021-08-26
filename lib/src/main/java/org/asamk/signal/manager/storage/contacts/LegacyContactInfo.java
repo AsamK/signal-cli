@@ -3,7 +3,7 @@ package org.asamk.signal.manager.storage.contacts;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 import java.util.UUID;
 
@@ -42,7 +42,7 @@ public class LegacyContactInfo {
     }
 
     @JsonIgnore
-    public SignalServiceAddress getAddress() {
-        return new SignalServiceAddress(uuid, number);
+    public RecipientAddress getAddress() {
+        return new RecipientAddress(uuid, number);
     }
 }

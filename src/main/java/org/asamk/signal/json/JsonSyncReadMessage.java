@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 
-import java.util.UUID;
-
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 class JsonSyncReadMessage {
@@ -27,7 +25,7 @@ class JsonSyncReadMessage {
         final var sender = readMessage.getSender();
         this.sender = getLegacyIdentifier(sender);
         this.senderNumber = sender.getNumber().orNull();
-        this.senderUuid = sender.getUuid().transform(UUID::toString).orNull();
+        this.senderUuid = sender.getUuid().toString();
         this.timestamp = readMessage.getTimestamp();
     }
 }

@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
@@ -13,8 +14,8 @@ import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
-import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
@@ -42,6 +43,20 @@ public class SendHelper {
     private final IdentityFailureHandler identityFailureHandler;
     private final GroupProvider groupProvider;
     private final RecipientRegistrationRefresher recipientRegistrationRefresher;
+
+    private final SignalServiceMessageSender.IndividualSendEvents sendEvents = new SignalServiceMessageSender.IndividualSendEvents() {
+        @Override
+        public void onMessageEncrypted() {
+        }
+
+        @Override
+        public void onMessageSent() {
+        }
+
+        @Override
+        public void onSyncMessageSent() {
+        }
+    };
 
     public SendHelper(
             final SignalAccount account,
@@ -145,9 +160,12 @@ public class SendHelper {
             final SignalServiceReceiptMessage receiptMessage, final RecipientId recipientId
     ) throws IOException, UntrustedIdentityException {
         final var messageSender = dependencies.getMessageSender();
-        messageSender.sendReceipt(addressResolver.resolveSignalServiceAddress(recipientId),
-                unidentifiedAccessHelper.getAccessFor(recipientId),
-                receiptMessage);
+        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        try {
+            messageSender.sendReceipt(address, unidentifiedAccessHelper.getAccessFor(recipientId), receiptMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new UntrustedIdentityException(address);
+        }
     }
 
     public SendMessageResult sendNullMessage(RecipientId recipientId) throws IOException {
@@ -162,7 +180,7 @@ public class SendHelper {
                 final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
                 return messageSender.sendNullMessage(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId));
             }
-        } catch (UntrustedIdentityException e) {
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
     }
@@ -183,7 +201,7 @@ public class SendHelper {
         var messageSender = dependencies.getMessageSender();
         try {
             return messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
-        } catch (UntrustedIdentityException e) {
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
@@ -195,11 +213,15 @@ public class SendHelper {
         var messageSender = dependencies.getMessageSender();
         final var address = addressResolver.resolveSignalServiceAddress(recipientId);
         try {
-            messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
-        } catch (UnregisteredUserException e) {
-            final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
-            final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
-            messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
+            try {
+                messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
+            } catch (UnregisteredUserException e) {
+                final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
+                final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
+                messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
+            }
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new UntrustedIdentityException(address);
         }
     }
 
@@ -247,7 +269,7 @@ public class SendHelper {
                     message,
                     sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
                     () -> false);
-        } catch (UntrustedIdentityException e) {
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return List.of();
         }
     }
@@ -263,15 +285,17 @@ public class SendHelper {
                 return messageSender.sendDataMessage(address,
                         unidentifiedAccessHelper.getAccessFor(recipientId),
                         ContentHint.DEFAULT,
-                        message);
+                        message,
+                        sendEvents);
             } catch (UnregisteredUserException e) {
                 final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
                 return messageSender.sendDataMessage(addressResolver.resolveSignalServiceAddress(newRecipientId),
                         unidentifiedAccessHelper.getAccessFor(newRecipientId),
                         ContentHint.DEFAULT,
-                        message);
+                        message,
+                        sendEvents);
             }
-        } catch (UntrustedIdentityException e) {
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
     }

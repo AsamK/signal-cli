@@ -273,7 +273,7 @@ public final class ProfileHelper {
 
     private Single<ProfileAndCredential> retrieveProfile(
             RecipientId recipientId, SignalServiceProfile.RequestType requestType
-    ) throws IOException {
+    ) {
         var unidentifiedAccess = getUnidentifiedAccess(recipientId);
         var profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(recipientId));
 
@@ -286,7 +286,7 @@ public final class ProfileHelper {
             Optional<ProfileKey> profileKey,
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
-    ) throws IOException {
+    ) {
         var profileService = profileServiceProvider.getProfileService();
 
         Single<ServiceResponse<ProfileAndCredential>> responseSingle;
@@ -294,11 +294,7 @@ public final class ProfileHelper {
             responseSingle = profileService.getProfile(address, profileKey, unidentifiedAccess, requestType);
         } catch (NoClassDefFoundError e) {
             // Native zkgroup lib not available for ProfileKey
-            if (!address.getNumber().isPresent()) {
-                throw new NotFoundException("Can't request profile without number");
-            }
-            var addressWithoutUuid = new SignalServiceAddress(Optional.absent(), address.getNumber());
-            responseSingle = profileService.getProfile(addressWithoutUuid, profileKey, unidentifiedAccess, requestType);
+            responseSingle = profileService.getProfile(address, Optional.absent(), unidentifiedAccess, requestType);
         }
 
         return responseSingle.map(pair -> {

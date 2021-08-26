@@ -8,7 +8,6 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.manager.Manager;
 
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
@@ -47,7 +46,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                 final var address = m.resolveSignalServiceAddress(contactPair.first());
                 final var contact = contactPair.second();
                 return new JsonContact(address.getNumber().orNull(),
-                        address.getUuid().transform(UUID::toString).orNull(),
+                        address.getUuid().toString(),
                         contact.getName(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime());

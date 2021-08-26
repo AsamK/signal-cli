@@ -1,12 +1,12 @@
 package org.asamk.signal.manager.storage.profiles;
 
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class LegacySignalProfileEntry {
 
-    private final SignalServiceAddress serviceAddress;
+    private final RecipientAddress address;
 
     private final ProfileKey profileKey;
 
@@ -17,21 +17,21 @@ public class LegacySignalProfileEntry {
     private final ProfileKeyCredential profileKeyCredential;
 
     public LegacySignalProfileEntry(
-            final SignalServiceAddress serviceAddress,
+            final RecipientAddress address,
             final ProfileKey profileKey,
             final long lastUpdateTimestamp,
             final SignalProfile profile,
             final ProfileKeyCredential profileKeyCredential
     ) {
-        this.serviceAddress = serviceAddress;
+        this.address = address;
         this.profileKey = profileKey;
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.profile = profile;
         this.profileKeyCredential = profileKeyCredential;
     }
 
-    public SignalServiceAddress getServiceAddress() {
-        return serviceAddress;
+    public RecipientAddress getAddress() {
+        return address;
     }
 
     public ProfileKey getProfileKey() {

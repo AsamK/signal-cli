@@ -60,7 +60,7 @@ public class Util {
     }
 
     public static String getLegacyIdentifier(final SignalServiceAddress address) {
-        return address.getNumber().or(() -> address.getUuid().get().toString());
+        return address.getNumber().or(() -> address.getUuid().toString());
     }
 
     public static ObjectMapper createJsonObjectMapper() {

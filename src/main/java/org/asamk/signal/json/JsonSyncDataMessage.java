@@ -6,8 +6,6 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 
-import java.util.UUID;
-
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 class JsonSyncDataMessage extends JsonDataMessage {
@@ -29,7 +27,7 @@ class JsonSyncDataMessage extends JsonDataMessage {
             final var address = transcriptMessage.getDestination().get();
             this.destination = getLegacyIdentifier(address);
             this.destinationNumber = address.getNumber().orNull();
-            this.destinationUuid = address.getUuid().transform(UUID::toString).orNull();
+            this.destinationUuid = address.getUuid().toString();
         } else {
             this.destination = null;
             this.destinationNumber = null;

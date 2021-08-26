@@ -152,7 +152,7 @@ public class SignalAccount implements Closeable {
 
         account.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
-                account.recipientStore::resolveRecipient,
+                account.recipientStore,
                 account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
 
@@ -174,9 +174,9 @@ public class SignalAccount implements Closeable {
 
         preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, username));
         signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, username));
-        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore::resolveRecipient);
+        sessionStore = new SessionStore(getSessionsPath(dataPath, username), recipientStore);
         identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, username),
-                recipientStore::resolveRecipient,
+                recipientStore,
                 identityKey,
                 registrationId,
                 trustNewIdentity);
@@ -254,7 +254,7 @@ public class SignalAccount implements Closeable {
 
         account.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
-                account.recipientStore::resolveRecipient,
+                account.recipientStore,
                 account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
 
@@ -453,12 +453,10 @@ public class SignalAccount implements Closeable {
             groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
             groupStore = GroupStore.fromStorage(groupStoreStorage,
                     getGroupCachePath(dataPath, username),
-                    recipientStore::resolveRecipient,
+                    recipientStore,
                     this::saveGroupStore);
         } else {
-            groupStore = new GroupStore(getGroupCachePath(dataPath, username),
-                    recipientStore::resolveRecipient,
-                    this::saveGroupStore);
+            groupStore = new GroupStore(getGroupCachePath(dataPath, username), recipientStore, this::saveGroupStore);
         }
 
         if (rootNode.hasNonNull("stickerStore")) {
@@ -572,7 +570,7 @@ public class SignalAccount implements Closeable {
             var profileStoreNode = rootNode.get("profileStore");
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
-                var recipientId = recipientStore.resolveRecipient(profileEntry.getServiceAddress());
+                var recipientId = recipientStore.resolveRecipient(profileEntry.getAddress());
                 recipientStore.storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
                 recipientStore.storeProfileKey(recipientId, profileEntry.getProfileKey());
                 final var profile = profileEntry.getProfile();

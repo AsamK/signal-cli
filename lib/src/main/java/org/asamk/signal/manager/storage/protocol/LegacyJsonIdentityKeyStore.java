@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import org.asamk.signal.manager.TrustLevel;
-import org.asamk.signal.manager.util.Utils;
+import org.asamk.signal.manager.storage.Utils;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -55,11 +55,11 @@ public class LegacyJsonIdentityKeyStore {
         return localRegistrationId;
     }
 
-    private LegacyIdentityInfo getIdentity(SignalServiceAddress serviceAddress) {
+    private LegacyIdentityInfo getIdentity(RecipientAddress address) {
         long maxDate = 0;
         LegacyIdentityInfo maxIdentity = null;
         for (var id : this.identities) {
-            if (!id.address.matches(serviceAddress)) {
+            if (!id.getAddress().matches(address)) {
                 continue;
             }
 
@@ -98,16 +98,16 @@ public class LegacyJsonIdentityKeyStore {
                     var uuid = trustedKey.hasNonNull("uuid")
                             ? UuidUtil.parseOrNull(trustedKey.get("uuid").asText())
                             : null;
-                    final var serviceAddress = uuid == null
-                            ? Utils.getSignalServiceAddressFromIdentifier(trustedKeyName)
-                            : new SignalServiceAddress(uuid, trustedKeyName);
+                    final var address = uuid == null
+                            ? Utils.getRecipientAddressFromIdentifier(trustedKeyName)
+                            : new RecipientAddress(uuid, trustedKeyName);
                     try {
                         var id = new IdentityKey(Base64.getDecoder().decode(trustedKey.get("identityKey").asText()), 0);
                         var trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
                                 "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
                         var added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
                                 .asLong()) : new Date();
-                        identities.add(new LegacyIdentityInfo(serviceAddress, id, trustLevel, added));
+                        identities.add(new LegacyIdentityInfo(address, id, trustLevel, added));
                     } catch (InvalidKeyException e) {
                         logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
                     }

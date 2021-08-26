@@ -7,8 +7,8 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.util.CommandUtil;
-import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 
 import java.io.IOException;
 
@@ -51,7 +51,8 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
                 throw new UserErrorException("Unknown receipt type: " + type);
             }
         } catch (IOException | UntrustedIdentityException e) {
-            throw new UserErrorException("Failed to send message: " + e.getMessage());
+            throw new UserErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 }

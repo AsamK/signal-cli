@@ -9,7 +9,6 @@ import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.EnabledState;
 import org.signal.zkgroup.groups.GroupMasterKey;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.Set;
@@ -89,7 +88,7 @@ public class GroupInfoV2 extends GroupInfo {
         }
         return group.getMembersList()
                 .stream()
-                .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(m -> UuidUtil.parseOrThrow(m.getUuid().toByteArray()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -101,7 +100,7 @@ public class GroupInfoV2 extends GroupInfo {
         }
         return group.getPendingMembersList()
                 .stream()
-                .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(m -> UuidUtil.parseOrThrow(m.getUuid().toByteArray()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -113,7 +112,7 @@ public class GroupInfoV2 extends GroupInfo {
         }
         return group.getRequestingMembersList()
                 .stream()
-                .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(m -> UuidUtil.parseOrThrow(m.getUuid().toByteArray()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -126,7 +125,7 @@ public class GroupInfoV2 extends GroupInfo {
         return group.getMembersList()
                 .stream()
                 .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
-                .map(m -> new SignalServiceAddress(UuidUtil.parseOrThrow(m.getUuid().toByteArray()), null))
+                .map(m -> UuidUtil.parseOrThrow(m.getUuid().toByteArray()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }

@@ -64,7 +64,8 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 
@@ -104,7 +105,8 @@ public class RemoteDeleteCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (Signal.Error.GroupNotFound e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 

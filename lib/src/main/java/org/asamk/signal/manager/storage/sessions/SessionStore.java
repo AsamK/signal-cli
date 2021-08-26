@@ -3,7 +3,6 @@ package org.asamk.signal.manager.storage.sessions;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
-import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.NoSessionException;
@@ -23,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -150,6 +150,19 @@ public class SessionStore implements SignalServiceSessionStore {
         }
     }
 
+    @Override
+    public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
+        final var recipientIdToNameMap = addressNames.stream()
+                .collect(Collectors.toMap(this::resolveRecipient, name -> name));
+        synchronized (cachedSessions) {
+            return recipientIdToNameMap.keySet()
+                    .stream()
+                    .flatMap(recipientId -> getKeysLocked(recipientId).stream())
+                    .map(key -> new SignalProtocolAddress(recipientIdToNameMap.get(key.recipientId), key.getDeviceId()))
+                    .collect(Collectors.toSet());
+        }
+    }
+
     public void archiveAllSessions() {
         synchronized (cachedSessions) {
             final var keys = getKeysLocked();
@@ -198,7 +211,7 @@ public class SessionStore implements SignalServiceSessionStore {
      * @param identifier can be either a serialized uuid or a e164 phone number
      */
     private RecipientId resolveRecipient(String identifier) {
-        return resolver.resolveRecipient(Utils.getSignalServiceAddressFromIdentifier(identifier));
+        return resolver.resolveRecipient(identifier);
     }
 
     private Key getKey(final SignalProtocolAddress address) {

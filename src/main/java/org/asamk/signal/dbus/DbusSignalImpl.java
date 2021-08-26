@@ -21,6 +21,7 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
@@ -244,6 +245,8 @@ public class DbusSignalImpl implements Signal {
             m.setContactName(getSingleRecipientIdentifier(number, m.getUsername()), name);
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
+        } catch (UnregisteredUserException e) {
+            throw new Error.Failure("Contact is not registered.");
         }
     }
 

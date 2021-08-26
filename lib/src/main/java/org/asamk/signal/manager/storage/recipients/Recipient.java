@@ -2,13 +2,12 @@ package org.asamk.signal.manager.storage.recipients;
 
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public class Recipient {
 
     private final RecipientId recipientId;
 
-    private final SignalServiceAddress address;
+    private final RecipientAddress address;
 
     private final Contact contact;
 
@@ -20,7 +19,7 @@ public class Recipient {
 
     public Recipient(
             final RecipientId recipientId,
-            final SignalServiceAddress address,
+            final RecipientAddress address,
             final Contact contact,
             final ProfileKey profileKey,
             final ProfileKeyCredential profileKeyCredential,
@@ -62,7 +61,7 @@ public class Recipient {
         return recipientId;
     }
 
-    public SignalServiceAddress getAddress() {
+    public RecipientAddress getAddress() {
         return address;
     }
 
@@ -85,7 +84,7 @@ public class Recipient {
     public static final class Builder {
 
         private RecipientId recipientId;
-        private SignalServiceAddress address;
+        private RecipientAddress address;
         private Contact contact;
         private ProfileKey profileKey;
         private ProfileKeyCredential profileKeyCredential;
@@ -99,7 +98,7 @@ public class Recipient {
             return this;
         }
 
-        public Builder withAddress(final SignalServiceAddress val) {
+        public Builder withAddress(final RecipientAddress val) {
             address = val;
             return this;
         }

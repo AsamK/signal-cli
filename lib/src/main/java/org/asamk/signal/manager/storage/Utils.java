@@ -9,7 +9,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.whispersystems.signalservice.api.util.UuidUtil;
+
 import java.io.InvalidObjectException;
+import java.util.Optional;
 
 public class Utils {
 
@@ -36,5 +40,13 @@ public class Utils {
         }
 
         return node;
+    }
+
+    public static RecipientAddress getRecipientAddressFromIdentifier(final String identifier) {
+        if (UuidUtil.isUuid(identifier)) {
+            return new RecipientAddress(UuidUtil.parseOrThrow(identifier));
+        } else {
+            return new RecipientAddress(Optional.empty(), Optional.of(identifier));
+        }
     }
 }

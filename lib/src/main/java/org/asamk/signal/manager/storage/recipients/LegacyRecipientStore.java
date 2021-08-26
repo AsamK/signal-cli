@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -18,28 +17,27 @@ public class LegacyRecipientStore {
 
     @JsonProperty("recipientStore")
     @JsonDeserialize(using = RecipientStoreDeserializer.class)
-    private final List<SignalServiceAddress> addresses = new ArrayList<>();
+    private final List<RecipientAddress> addresses = new ArrayList<>();
 
-    public List<SignalServiceAddress> getAddresses() {
+    public List<RecipientAddress> getAddresses() {
         return addresses;
     }
 
-    public static class RecipientStoreDeserializer extends JsonDeserializer<List<SignalServiceAddress>> {
+    public static class RecipientStoreDeserializer extends JsonDeserializer<List<RecipientAddress>> {
 
         @Override
-        public List<SignalServiceAddress> deserialize(
+        public List<RecipientAddress> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-            var addresses = new ArrayList<SignalServiceAddress>();
+            var addresses = new ArrayList<RecipientAddress>();
 
             if (node.isArray()) {
                 for (var recipient : node) {
                     var recipientName = recipient.get("name").asText();
                     var uuid = UuidUtil.parseOrThrow(recipient.get("uuid").asText());
-                    final var serviceAddress = new SignalServiceAddress(uuid, recipientName);
-                    addresses.add(serviceAddress);
+                    addresses.add(new RecipientAddress(uuid, recipientName));
                 }
             }
 

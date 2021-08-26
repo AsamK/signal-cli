@@ -18,7 +18,6 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListIdentitiesCommand implements JsonRpcLocalCommand {
@@ -72,7 +71,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                 var safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(address, id.getIdentityKey()));
                 var scannableSafetyNumber = m.computeSafetyNumberForScanning(address, id.getIdentityKey());
                 return new JsonIdentity(address.getNumber().orNull(),
-                        address.getUuid().transform(UUID::toString).orNull(),
+                        address.getUuid().toString(),
                         Hex.toString(id.getFingerprint()),
                         safetyNumber,
                         scannableSafetyNumber == null

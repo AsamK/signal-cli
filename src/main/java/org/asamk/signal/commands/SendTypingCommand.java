@@ -8,13 +8,13 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
-import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -59,7 +59,8 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
         try {
             m.sendTypingMessage(action, recipientIdentifiers);
         } catch (IOException | UntrustedIdentityException e) {
-            throw new UserErrorException("Failed to send message: " + e.getMessage());
+            throw new UserErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         }

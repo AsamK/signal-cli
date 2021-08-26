@@ -32,9 +32,7 @@ public abstract class RecipientIdentifier {
         }
 
         public static Single fromAddress(SignalServiceAddress address) {
-            return address.getUuid().isPresent()
-                    ? new Uuid(address.getUuid().get())
-                    : new Number(address.getNumber().get());
+            return new Uuid(address.getUuid());
         }
     }
 

@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-
-import java.util.UUID;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
@@ -29,10 +26,10 @@ public class JsonMention {
     final int length;
 
     JsonMention(SignalServiceDataMessage.Mention mention, Manager m) {
-        final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid(), null));
+        final var address = m.resolveSignalServiceAddress(mention.getUuid());
         this.name = getLegacyIdentifier(address);
         this.number = address.getNumber().orNull();
-        this.uuid = address.getUuid().transform(UUID::toString).orNull();
+        this.uuid = address.getUuid().toString();
         this.start = mention.getStart();
         this.length = mention.getLength();
     }

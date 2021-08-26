@@ -8,7 +8,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
@@ -43,7 +42,7 @@ public class JsonQuote {
         final var address = m.resolveSignalServiceAddress(quote.getAuthor());
         this.author = getLegacyIdentifier(address);
         this.authorNumber = address.getNumber().orNull();
-        this.authorUuid = address.getUuid().transform(UUID::toString).orNull();
+        this.authorUuid = address.getUuid().toString();
         this.text = quote.getText();
 
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {

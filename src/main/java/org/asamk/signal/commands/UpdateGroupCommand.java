@@ -174,7 +174,8 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 
@@ -210,7 +211,8 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (Signal.Error.AttachmentInvalid e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());
+            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                    .getSimpleName() + ")");
         }
     }
 

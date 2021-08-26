@@ -45,7 +45,7 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                 e.printStackTrace();
             }
         } else if (content != null) {
-            final var sender = !envelope.isUnidentifiedSender() && envelope.hasSource()
+            final var sender = !envelope.isUnidentifiedSender() && envelope.hasSourceUuid()
                     ? envelope.getSourceAddress()
                     : content.getSender();
             if (content.getReceiptMessage().isPresent()) {

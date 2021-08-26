@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.ByteArrayInputStream;
@@ -30,9 +31,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class RecipientStore implements ContactsStore, ProfileStore {
+public class RecipientStore implements RecipientResolver, ContactsStore, ProfileStore {
 
     private final static Logger logger = LoggerFactory.getLogger(RecipientStore.class);
 
@@ -51,9 +53,8 @@ public class RecipientStore implements ContactsStore, ProfileStore {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
             final var recipients = storage.recipients.stream().map(r -> {
                 final var recipientId = new RecipientId(r.id);
-                final var address = new SignalServiceAddress(org.whispersystems.libsignal.util.guava.Optional.fromNullable(
-                        r.uuid).transform(UuidUtil::parseOrThrow),
-                        org.whispersystems.libsignal.util.guava.Optional.fromNullable(r.number));
+                final var address = new RecipientAddress(Optional.ofNullable(r.uuid).map(UuidUtil::parseOrThrow),
+                        Optional.ofNullable(r.number));
 
                 Contact contact = null;
                 if (r.contact != null) {
@@ -119,7 +120,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
         this.lastId = lastId;
     }
 
-    public SignalServiceAddress resolveServiceAddress(RecipientId recipientId) {
+    public RecipientAddress resolveRecipientAddress(RecipientId recipientId) {
         synchronized (recipients) {
             return getRecipient(recipientId).getAddress();
         }
@@ -134,24 +135,52 @@ public class RecipientStore implements ContactsStore, ProfileStore {
         }
     }
 
-    @Deprecated
-    public SignalServiceAddress resolveServiceAddress(SignalServiceAddress address) {
-        return resolveServiceAddress(resolveRecipient(address, false));
-    }
-
+    @Override
     public RecipientId resolveRecipient(UUID uuid) {
-        return resolveRecipient(new SignalServiceAddress(uuid, null), false);
+        return resolveRecipient(new RecipientAddress(uuid), false);
     }
 
-    public RecipientId resolveRecipient(String number) {
-        return resolveRecipient(new SignalServiceAddress(null, number), false);
+    @Override
+    public RecipientId resolveRecipient(final String identifier) {
+        return resolveRecipient(Utils.getRecipientAddressFromIdentifier(identifier), false);
     }
 
-    public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
+    public RecipientId resolveRecipient(
+            final String number, Supplier<UUID> uuidSupplier
+    ) throws UnregisteredUserException {
+        final Optional<Recipient> byNumber;
+        synchronized (recipients) {
+            byNumber = findByNumberLocked(number);
+        }
+        if (byNumber.isEmpty() || byNumber.get().getAddress().getUuid().isEmpty()) {
+            final var uuid = uuidSupplier.get();
+            if (uuid == null) {
+                throw new UnregisteredUserException(number, null);
+            }
+
+            return resolveRecipient(new RecipientAddress(uuid, number), false);
+        }
+        return byNumber.get().getRecipientId();
+    }
+
+    public RecipientId resolveRecipient(RecipientAddress address) {
+        return resolveRecipient(address, false);
+    }
+
+    @Override
+    public RecipientId resolveRecipient(final SignalServiceAddress address) {
+        return resolveRecipient(new RecipientAddress(address), false);
+    }
+
+    public RecipientId resolveRecipientTrusted(RecipientAddress address) {
         return resolveRecipient(address, true);
     }
 
-    public List<RecipientId> resolveRecipientsTrusted(List<SignalServiceAddress> addresses) {
+    public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
+        return resolveRecipient(new RecipientAddress(address), true);
+    }
+
+    public List<RecipientId> resolveRecipientsTrusted(List<RecipientAddress> addresses) {
         final List<RecipientId> recipientIds;
         final List<Pair<RecipientId, RecipientId>> toBeMerged = new ArrayList<>();
         synchronized (recipients) {
@@ -167,10 +196,6 @@ public class RecipientStore implements ContactsStore, ProfileStore {
             recipientMergeHandler.mergeRecipients(pair.first(), pair.second());
         }
         return recipientIds;
-    }
-
-    public RecipientId resolveRecipient(SignalServiceAddress address) {
-        return resolveRecipient(address, false);
     }
 
     @Override
@@ -262,7 +287,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
      * @param isHighTrust true, if the number/uuid connection was obtained from a trusted source.
      *                    Has no effect, if the address contains only a number or a uuid.
      */
-    private RecipientId resolveRecipient(SignalServiceAddress address, boolean isHighTrust) {
+    private RecipientId resolveRecipient(RecipientAddress address, boolean isHighTrust) {
         final Pair<RecipientId, Optional<RecipientId>> pair;
         synchronized (recipients) {
             pair = resolveRecipientLocked(address, isHighTrust);
@@ -278,30 +303,26 @@ public class RecipientStore implements ContactsStore, ProfileStore {
     }
 
     private Pair<RecipientId, Optional<RecipientId>> resolveRecipientLocked(
-            SignalServiceAddress address, boolean isHighTrust
+            RecipientAddress address, boolean isHighTrust
     ) {
-        final var byNumber = !address.getNumber().isPresent()
+        final var byNumber = address.getNumber().isEmpty()
                 ? Optional.<Recipient>empty()
-                : findByNameLocked(address.getNumber().get());
-        final var byUuid = !address.getUuid().isPresent()
+                : findByNumberLocked(address.getNumber().get());
+        final var byUuid = address.getUuid().isEmpty() || address.getUuid().get().equals(UuidUtil.UNKNOWN_UUID)
                 ? Optional.<Recipient>empty()
                 : findByUuidLocked(address.getUuid().get());
 
         if (byNumber.isEmpty() && byUuid.isEmpty()) {
             logger.debug("Got new recipient, both uuid and number are unknown");
 
-            if (isHighTrust || !address.getUuid().isPresent() || !address.getNumber().isPresent()) {
+            if (isHighTrust || address.getUuid().isEmpty() || address.getNumber().isEmpty()) {
                 return new Pair<>(addNewRecipientLocked(address), Optional.empty());
             }
 
-            return new Pair<>(addNewRecipientLocked(new SignalServiceAddress(address.getUuid().get(), null)),
-                    Optional.empty());
+            return new Pair<>(addNewRecipientLocked(new RecipientAddress(address.getUuid().get())), Optional.empty());
         }
 
-        if (!isHighTrust
-                || !address.getUuid().isPresent()
-                || !address.getNumber().isPresent()
-                || byNumber.equals(byUuid)) {
+        if (!isHighTrust || address.getUuid().isEmpty() || address.getNumber().isEmpty() || byNumber.equals(byUuid)) {
             return new Pair<>(byUuid.or(() -> byNumber).map(Recipient::getRecipientId).get(), Optional.empty());
         }
 
@@ -317,7 +338,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
                         "Got recipient existing with number, but different uuid, so stripping its number and adding new recipient");
 
                 updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                        new SignalServiceAddress(byNumber.get().getAddress().getUuid().get(), null));
+                        new RecipientAddress(byNumber.get().getAddress().getUuid().get()));
                 return new Pair<>(addNewRecipientLocked(address), Optional.empty());
             }
 
@@ -331,7 +352,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
                     "Got separate recipients for high trust number and uuid, recipient for number has different uuid, so stripping its number");
 
             updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                    new SignalServiceAddress(byNumber.get().getAddress().getUuid().get(), null));
+                    new RecipientAddress(byNumber.get().getAddress().getUuid().get()));
             updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
             return new Pair<>(byUuid.get().getRecipientId(), Optional.empty());
         }
@@ -342,14 +363,14 @@ public class RecipientStore implements ContactsStore, ProfileStore {
         return new Pair<>(byUuid.get().getRecipientId(), byNumber.map(Recipient::getRecipientId));
     }
 
-    private RecipientId addNewRecipientLocked(final SignalServiceAddress serviceAddress) {
+    private RecipientId addNewRecipientLocked(final RecipientAddress address) {
         final var nextRecipientId = nextIdLocked();
-        storeRecipientLocked(nextRecipientId, new Recipient(nextRecipientId, serviceAddress, null, null, null, null));
+        storeRecipientLocked(nextRecipientId, new Recipient(nextRecipientId, address, null, null, null, null));
         return nextRecipientId;
     }
 
     private void updateRecipientAddressLocked(
-            final RecipientId recipientId, final SignalServiceAddress address
+            final RecipientId recipientId, final RecipientAddress address
     ) {
         final var recipient = recipients.get(recipientId);
         storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withAddress(address).build());
@@ -380,7 +401,7 @@ public class RecipientStore implements ContactsStore, ProfileStore {
         saveLocked();
     }
 
-    private Optional<Recipient> findByNameLocked(final String number) {
+    private Optional<Recipient> findByNumberLocked(final String number) {
         return recipients.entrySet()
                 .stream()
                 .filter(entry -> entry.getValue().getAddress().getNumber().isPresent() && number.equals(entry.getValue()
@@ -431,8 +452,8 @@ public class RecipientStore implements ContactsStore, ProfileStore {
                                     .map(Enum::name)
                                     .collect(Collectors.toSet()));
             return new Storage.Recipient(pair.getKey().getId(),
-                    recipient.getAddress().getNumber().orNull(),
-                    recipient.getAddress().getUuid().transform(UUID::toString).orNull(),
+                    recipient.getAddress().getNumber().orElse(null),
+                    recipient.getAddress().getUuid().map(UUID::toString).orElse(null),
                     recipient.getProfileKey() == null
                             ? null
                             : base64.encodeToString(recipient.getProfileKey().serialize()),

@@ -1,30 +1,30 @@
 package org.asamk.signal.manager.storage.protocol;
 
 import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.whispersystems.libsignal.IdentityKey;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Date;
 
 public class LegacyIdentityInfo {
 
-    SignalServiceAddress address;
+    RecipientAddress address;
     IdentityKey identityKey;
     TrustLevel trustLevel;
     Date added;
 
-    LegacyIdentityInfo(SignalServiceAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
+    LegacyIdentityInfo(RecipientAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
         this.address = address;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;
         this.added = added;
     }
 
-    public SignalServiceAddress getAddress() {
+    public RecipientAddress getAddress() {
         return address;
     }
 
-    public void setAddress(final SignalServiceAddress address) {
+    public void setAddress(final RecipientAddress address) {
         this.address = address;
     }
 
