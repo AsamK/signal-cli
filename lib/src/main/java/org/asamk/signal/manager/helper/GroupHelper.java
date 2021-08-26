@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
@@ -59,6 +60,7 @@ public class GroupHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
+    private final AttachmentHelper attachmentHelper;
     private final SendHelper sendHelper;
     private final GroupV2Helper groupV2Helper;
     private final AvatarStore avatarStore;
@@ -68,6 +70,7 @@ public class GroupHelper {
     public GroupHelper(
             final SignalAccount account,
             final SignalDependencies dependencies,
+            final AttachmentHelper attachmentHelper,
             final SendHelper sendHelper,
             final GroupV2Helper groupV2Helper,
             final AvatarStore avatarStore,
@@ -76,6 +79,7 @@ public class GroupHelper {
     ) {
         this.account = account;
         this.dependencies = dependencies;
+        this.attachmentHelper = attachmentHelper;
         this.sendHelper = sendHelper;
         this.groupV2Helper = groupV2Helper;
         this.avatarStore = avatarStore;
@@ -85,6 +89,15 @@ public class GroupHelper {
 
     public GroupInfo getGroup(GroupId groupId) {
         return getGroup(groupId, false);
+    }
+
+    public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
+        try {
+            avatarStore.storeGroupAvatar(groupId,
+                    outputStream -> attachmentHelper.retrieveAttachment(avatar, outputStream));
+        } catch (IOException e) {
+            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
+        }
     }
 
     public Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupIdV1 groupId) throws IOException {
@@ -280,6 +293,11 @@ public class GroupHelper {
             group = getGroup(groupId, true);
             return quitGroupV2((GroupInfoV2) group, newAdmins);
         }
+    }
+
+    public void deleteGroup(GroupId groupId) throws IOException {
+        account.getGroupStore().deleteGroup(groupId);
+        avatarStore.deleteGroupAvatar(groupId);
     }
 
     public SendGroupMessageResults sendGroupInfoRequest(

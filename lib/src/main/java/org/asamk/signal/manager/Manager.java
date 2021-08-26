@@ -35,11 +35,13 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.helper.AttachmentHelper;
 import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
+import org.asamk.signal.manager.helper.SyncHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
 import org.asamk.signal.manager.jobs.Context;
 import org.asamk.signal.manager.jobs.Job;
@@ -55,8 +57,6 @@ import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
-import org.asamk.signal.manager.util.AttachmentUtils;
-import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.asamk.signal.manager.util.Utils;
@@ -69,7 +69,6 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
-import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.FingerprintParsingException;
@@ -82,30 +81,15 @@ import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsOutputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
-import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -113,23 +97,17 @@ import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableExcept
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -165,6 +143,8 @@ public class Manager implements Closeable {
     private final ProfileHelper profileHelper;
     private final PinHelper pinHelper;
     private final SendHelper sendHelper;
+    private final SyncHelper syncHelper;
+    private final AttachmentHelper attachmentHelper;
     private final GroupHelper groupHelper;
 
     private final AvatarStore avatarStore;
@@ -204,6 +184,7 @@ public class Manager implements Closeable {
         this.attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
         this.stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
 
+        this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
         final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
                 account.getProfileStore()::getProfileKey,
@@ -233,8 +214,16 @@ public class Manager implements Closeable {
                 this::refreshRegisteredUser);
         this.groupHelper = new GroupHelper(account,
                 dependencies,
+                attachmentHelper,
                 sendHelper,
                 groupV2Helper,
+                avatarStore,
+                this::resolveSignalServiceAddress,
+                this::resolveRecipient);
+        this.syncHelper = new SyncHelper(account,
+                attachmentHelper,
+                sendHelper,
+                groupHelper,
                 avatarStore,
                 this::resolveSignalServiceAddress,
                 this::resolveRecipient);
@@ -376,12 +365,7 @@ public class Manager implements Closeable {
             String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException {
         profileHelper.setProfile(givenName, familyName, about, aboutEmoji, avatar);
-
-        sendSyncFetchProfileMessage();
-    }
-
-    private void sendSyncFetchProfileMessage() throws IOException {
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
+        syncHelper.sendSyncFetchProfileMessage();
     }
 
     public void unregister() throws IOException {
@@ -495,15 +479,6 @@ public class Manager implements Closeable {
         profileHelper.refreshRecipientProfile(recipientId);
     }
 
-    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
-        final var streamDetails = avatarStore.retrieveContactAvatar(address);
-        if (streamDetails == null) {
-            return Optional.absent();
-        }
-
-        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
-    }
-
     public List<GroupInfo> getGroups() {
         return account.getGroupStore().getGroups();
     }
@@ -516,8 +491,7 @@ public class Manager implements Closeable {
     }
 
     public void deleteGroup(GroupId groupId) throws IOException {
-        account.getGroupStore().deleteGroup(groupId);
-        avatarStore.deleteGroupAvatar(groupId);
+        groupHelper.deleteGroup(groupId);
     }
 
     public Pair<GroupId, SendGroupMessageResults> createGroup(
@@ -660,21 +634,9 @@ public class Manager implements Closeable {
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException {
         messageBuilder.withBody(message.getMessageText());
-        if (message.getAttachments() != null) {
-            var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(message.getAttachments());
-
-            // Upload attachments here, so we only upload once even for multiple recipients
-            var messageSender = dependencies.getMessageSender();
-            var attachmentPointers = new ArrayList<SignalServiceAttachment>(attachmentStreams.size());
-            for (var attachment : attachmentStreams) {
-                if (attachment.isStream()) {
-                    attachmentPointers.add(messageSender.uploadAttachment(attachment.asStream()));
-                } else if (attachment.isPointer()) {
-                    attachmentPointers.add(attachment.asPointer());
-                }
-            }
-
-            messageBuilder.withAttachments(attachmentPointers);
+        final var attachments = message.getAttachments();
+        if (attachments != null) {
+            messageBuilder.withAttachments(attachmentHelper.uploadAttachments(attachments));
         }
     }
 
@@ -822,51 +784,7 @@ public class Manager implements Closeable {
     }
 
     public void requestAllSyncData() throws IOException {
-        requestSyncGroups();
-        requestSyncContacts();
-        requestSyncBlocked();
-        requestSyncConfiguration();
-        requestSyncKeys();
-    }
-
-    private void requestSyncGroups() throws IOException {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
-    }
-
-    private void requestSyncContacts() throws IOException {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
-    }
-
-    private void requestSyncBlocked() throws IOException {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
-    }
-
-    private void requestSyncConfiguration() throws IOException {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
-    }
-
-    private void requestSyncKeys() throws IOException {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        syncHelper.requestAllSyncData();
     }
 
     private byte[] getSenderCertificate() {
@@ -984,7 +902,7 @@ public class Manager implements Closeable {
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 var avatar = groupInfo.getAvatar().get();
-                                downloadGroupAvatar(groupV1.getGroupId(), avatar);
+                                groupHelper.downloadGroupAvatar(groupV1.getGroupId(), avatar);
                             }
 
                             if (groupInfo.getName().isPresent()) {
@@ -1059,13 +977,31 @@ public class Manager implements Closeable {
         if (!ignoreAttachments) {
             if (message.getAttachments().isPresent()) {
                 for (var attachment : message.getAttachments().get()) {
-                    downloadAttachment(attachment);
+                    attachmentHelper.downloadAttachment(attachment);
                 }
             }
             if (message.getSharedContacts().isPresent()) {
                 for (var contact : message.getSharedContacts().get()) {
                     if (contact.getAvatar().isPresent()) {
-                        downloadAttachment(contact.getAvatar().get().getAttachment());
+                        attachmentHelper.downloadAttachment(contact.getAvatar().get().getAttachment());
+                    }
+                }
+            }
+            if (message.getPreviews().isPresent()) {
+                final var previews = message.getPreviews().get();
+                for (var preview : previews) {
+                    if (preview.getImage().isPresent()) {
+                        attachmentHelper.downloadAttachment(preview.getImage().get());
+                    }
+                }
+            }
+            if (message.getQuote().isPresent()) {
+                final var quote = message.getQuote().get();
+
+                for (var quotedAttachment : quote.getAttachments()) {
+                    final var thumbnail = quotedAttachment.getThumbnail();
+                    if (thumbnail != null) {
+                        attachmentHelper.downloadAttachment(thumbnail);
                     }
                 }
             }
@@ -1081,24 +1017,6 @@ public class Manager implements Closeable {
                 this.account.setProfileKey(profileKey);
             }
             this.account.getProfileStore().storeProfileKey(resolveRecipient(source), profileKey);
-        }
-        if (message.getPreviews().isPresent()) {
-            final var previews = message.getPreviews().get();
-            for (var preview : previews) {
-                if (preview.getImage().isPresent()) {
-                    downloadAttachment(preview.getImage().get());
-                }
-            }
-        }
-        if (message.getQuote().isPresent()) {
-            final var quote = message.getQuote().get();
-
-            for (var quotedAttachment : quote.getAttachments()) {
-                final var thumbnail = quotedAttachment.getThumbnail();
-                if (thumbnail != null) {
-                    downloadAttachment(thumbnail);
-                }
-            }
         }
         if (message.getSticker().isPresent()) {
             final var messageSticker = message.getSticker().get();
@@ -1441,65 +1359,11 @@ public class Manager implements Closeable {
                     // TODO Handle rm.isConfigurationRequest(); rm.isKeysRequest();
                 }
                 if (syncMessage.getGroups().isPresent()) {
-                    File tmpFile = null;
                     try {
-                        tmpFile = IOUtils.createTempFile();
                         final var groupsMessage = syncMessage.getGroups().get();
-                        try (var attachmentAsStream = retrieveAttachmentAsStream(groupsMessage.asPointer(), tmpFile)) {
-                            var s = new DeviceGroupsInputStream(attachmentAsStream);
-                            DeviceGroup g;
-                            while (true) {
-                                try {
-                                    g = s.read();
-                                } catch (IOException e) {
-                                    logger.warn("Sync groups contained invalid group, ignoring: {}", e.getMessage());
-                                    continue;
-                                }
-                                if (g == null) {
-                                    break;
-                                }
-                                var syncGroup = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(g.getId()));
-                                if (syncGroup != null) {
-                                    if (g.getName().isPresent()) {
-                                        syncGroup.name = g.getName().get();
-                                    }
-                                    syncGroup.addMembers(g.getMembers()
-                                            .stream()
-                                            .map(this::resolveRecipient)
-                                            .collect(Collectors.toSet()));
-                                    if (!g.isActive()) {
-                                        syncGroup.removeMember(account.getSelfRecipientId());
-                                    } else {
-                                        // Add ourself to the member set as it's marked as active
-                                        syncGroup.addMembers(List.of(account.getSelfRecipientId()));
-                                    }
-                                    syncGroup.blocked = g.isBlocked();
-                                    if (g.getColor().isPresent()) {
-                                        syncGroup.color = g.getColor().get();
-                                    }
-
-                                    if (g.getAvatar().isPresent()) {
-                                        downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get());
-                                    }
-                                    syncGroup.archived = g.isArchived();
-                                    account.getGroupStore().updateGroup(syncGroup);
-                                }
-                            }
-                        }
+                        attachmentHelper.retrieveAttachment(groupsMessage, syncHelper::handleSyncDeviceGroups);
                     } catch (Exception e) {
-                        logger.warn("Failed to handle received sync groups “{}”, ignoring: {}",
-                                tmpFile,
-                                e.getMessage());
-                    } finally {
-                        if (tmpFile != null) {
-                            try {
-                                Files.delete(tmpFile.toPath());
-                            } catch (IOException e) {
-                                logger.warn("Failed to delete received groups temp file “{}”, ignoring: {}",
-                                        tmpFile,
-                                        e.getMessage());
-                            }
-                        }
+                        logger.warn("Failed to handle received sync groups, ignoring: {}", e.getMessage());
                     }
                 }
                 if (syncMessage.getBlockedList().isPresent()) {
@@ -1520,75 +1384,12 @@ public class Manager implements Closeable {
                     }
                 }
                 if (syncMessage.getContacts().isPresent()) {
-                    File tmpFile = null;
                     try {
-                        tmpFile = IOUtils.createTempFile();
                         final var contactsMessage = syncMessage.getContacts().get();
-                        try (var attachmentAsStream = retrieveAttachmentAsStream(contactsMessage.getContactsStream()
-                                .asPointer(), tmpFile)) {
-                            var s = new DeviceContactsInputStream(attachmentAsStream);
-                            DeviceContact c;
-                            while (true) {
-                                try {
-                                    c = s.read();
-                                } catch (IOException e) {
-                                    logger.warn("Sync contacts contained invalid contact, ignoring: {}",
-                                            e.getMessage());
-                                    continue;
-                                }
-                                if (c == null) {
-                                    break;
-                                }
-                                if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
-                                    account.setProfileKey(c.getProfileKey().get());
-                                }
-                                final var recipientId = resolveRecipientTrusted(c.getAddress());
-                                var contact = account.getContactStore().getContact(recipientId);
-                                final var builder = contact == null
-                                        ? Contact.newBuilder()
-                                        : Contact.newBuilder(contact);
-                                if (c.getName().isPresent()) {
-                                    builder.withName(c.getName().get());
-                                }
-                                if (c.getColor().isPresent()) {
-                                    builder.withColor(c.getColor().get());
-                                }
-                                if (c.getProfileKey().isPresent()) {
-                                    account.getProfileStore().storeProfileKey(recipientId, c.getProfileKey().get());
-                                }
-                                if (c.getVerified().isPresent()) {
-                                    final var verifiedMessage = c.getVerified().get();
-                                    account.getIdentityKeyStore()
-                                            .setIdentityTrustLevel(resolveRecipientTrusted(verifiedMessage.getDestination()),
-                                                    verifiedMessage.getIdentityKey(),
-                                                    TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
-                                }
-                                if (c.getExpirationTimer().isPresent()) {
-                                    builder.withMessageExpirationTime(c.getExpirationTimer().get());
-                                }
-                                builder.withBlocked(c.isBlocked());
-                                builder.withArchived(c.isArchived());
-                                account.getContactStore().storeContact(recipientId, builder.build());
-
-                                if (c.getAvatar().isPresent()) {
-                                    downloadContactAvatar(c.getAvatar().get(), c.getAddress());
-                                }
-                            }
-                        }
+                        attachmentHelper.retrieveAttachment(contactsMessage.getContactsStream(),
+                                syncHelper::handleSyncDeviceContacts);
                     } catch (Exception e) {
-                        logger.warn("Failed to handle received sync contacts “{}”, ignoring: {}",
-                                tmpFile,
-                                e.getMessage());
-                    } finally {
-                        if (tmpFile != null) {
-                            try {
-                                Files.delete(tmpFile.toPath());
-                            } catch (IOException e) {
-                                logger.warn("Failed to delete received contacts temp file “{}”, ignoring: {}",
-                                        tmpFile,
-                                        e.getMessage());
-                            }
-                        }
+                        logger.warn("Failed to handle received sync contacts, ignoring: {}", e.getMessage());
                     }
                 }
                 if (syncMessage.getVerified().isPresent()) {
@@ -1647,227 +1448,20 @@ public class Manager implements Closeable {
         return actions;
     }
 
-    private void downloadContactAvatar(SignalServiceAttachment avatar, SignalServiceAddress address) {
-        try {
-            avatarStore.storeContactAvatar(address, outputStream -> retrieveAttachment(avatar, outputStream));
-        } catch (IOException e) {
-            logger.warn("Failed to download avatar for contact {}, ignoring: {}", address, e.getMessage());
-        }
-    }
-
-    private void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
-        try {
-            avatarStore.storeGroupAvatar(groupId, outputStream -> retrieveAttachment(avatar, outputStream));
-        } catch (IOException e) {
-            logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
-        }
-    }
-
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
         return attachmentStore.getAttachmentFile(attachmentId);
     }
 
-    private void downloadAttachment(final SignalServiceAttachment attachment) {
-        if (!attachment.isPointer()) {
-            logger.warn("Invalid state, can't store an attachment stream.");
-        }
-
-        var pointer = attachment.asPointer();
-        if (pointer.getPreview().isPresent()) {
-            final var preview = pointer.getPreview().get();
-            try {
-                attachmentStore.storeAttachmentPreview(pointer.getRemoteId(),
-                        outputStream -> outputStream.write(preview, 0, preview.length));
-            } catch (IOException e) {
-                logger.warn("Failed to download attachment preview, ignoring: {}", e.getMessage());
-            }
-        }
-
-        try {
-            attachmentStore.storeAttachment(pointer.getRemoteId(),
-                    outputStream -> retrieveAttachmentPointer(pointer, outputStream));
-        } catch (IOException e) {
-            logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
-        }
-    }
-
-    private void retrieveAttachment(
-            final SignalServiceAttachment attachment, final OutputStream outputStream
-    ) throws IOException {
-        if (attachment.isPointer()) {
-            var pointer = attachment.asPointer();
-            retrieveAttachmentPointer(pointer, outputStream);
-        } else {
-            var stream = attachment.asStream();
-            IOUtils.copyStream(stream.getInputStream(), outputStream);
-        }
-    }
-
-    private void retrieveAttachmentPointer(
-            SignalServiceAttachmentPointer pointer, OutputStream outputStream
-    ) throws IOException {
-        var tmpFile = IOUtils.createTempFile();
-        try (var input = retrieveAttachmentAsStream(pointer, tmpFile)) {
-            IOUtils.copyStream(input, outputStream);
-        } catch (MissingConfigurationException | InvalidMessageException e) {
-            throw new IOException(e);
-        } finally {
-            try {
-                Files.delete(tmpFile.toPath());
-            } catch (IOException e) {
-                logger.warn("Failed to delete received attachment temp file “{}”, ignoring: {}",
-                        tmpFile,
-                        e.getMessage());
-            }
-        }
-    }
-
-    private InputStream retrieveAttachmentAsStream(
-            SignalServiceAttachmentPointer pointer, File tmpFile
-    ) throws IOException, InvalidMessageException, MissingConfigurationException {
-        return dependencies.getMessageReceiver()
-                .retrieveAttachment(pointer, tmpFile, ServiceConfig.MAX_ATTACHMENT_SIZE);
-    }
-
     void sendGroups() throws IOException {
-        var groupsFile = IOUtils.createTempFile();
-
-        try {
-            try (OutputStream fos = new FileOutputStream(groupsFile)) {
-                var out = new DeviceGroupsOutputStream(fos);
-                for (var record : getGroups()) {
-                    if (record instanceof GroupInfoV1) {
-                        var groupInfo = (GroupInfoV1) record;
-                        out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
-                                Optional.fromNullable(groupInfo.name),
-                                groupInfo.getMembers()
-                                        .stream()
-                                        .map(this::resolveSignalServiceAddress)
-                                        .collect(Collectors.toList()),
-                                groupHelper.createGroupAvatarAttachment(groupInfo.getGroupId()),
-                                groupInfo.isMember(account.getSelfRecipientId()),
-                                Optional.of(groupInfo.messageExpirationTime),
-                                Optional.fromNullable(groupInfo.color),
-                                groupInfo.blocked,
-                                Optional.absent(),
-                                groupInfo.archived));
-                    }
-                }
-            }
-
-            if (groupsFile.exists() && groupsFile.length() > 0) {
-                try (var groupsFileStream = new FileInputStream(groupsFile)) {
-                    var attachmentStream = SignalServiceAttachment.newStreamBuilder()
-                            .withStream(groupsFileStream)
-                            .withContentType("application/octet-stream")
-                            .withLength(groupsFile.length())
-                            .build();
-
-                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
-                }
-            }
-        } finally {
-            try {
-                Files.delete(groupsFile.toPath());
-            } catch (IOException e) {
-                logger.warn("Failed to delete groups temp file “{}”, ignoring: {}", groupsFile, e.getMessage());
-            }
-        }
+        syncHelper.sendGroups();
     }
 
     public void sendContacts() throws IOException {
-        var contactsFile = IOUtils.createTempFile();
-
-        try {
-            try (OutputStream fos = new FileOutputStream(contactsFile)) {
-                var out = new DeviceContactsOutputStream(fos);
-                for (var contactPair : account.getContactStore().getContacts()) {
-                    final var recipientId = contactPair.first();
-                    final var contact = contactPair.second();
-                    final var address = resolveSignalServiceAddress(recipientId);
-
-                    var currentIdentity = account.getIdentityKeyStore().getIdentity(recipientId);
-                    VerifiedMessage verifiedMessage = null;
-                    if (currentIdentity != null) {
-                        verifiedMessage = new VerifiedMessage(address,
-                                currentIdentity.getIdentityKey(),
-                                currentIdentity.getTrustLevel().toVerifiedState(),
-                                currentIdentity.getDateAdded().getTime());
-                    }
-
-                    var profileKey = account.getProfileStore().getProfileKey(recipientId);
-                    out.write(new DeviceContact(address,
-                            Optional.fromNullable(contact.getName()),
-                            createContactAvatarAttachment(address),
-                            Optional.fromNullable(contact.getColor()),
-                            Optional.fromNullable(verifiedMessage),
-                            Optional.fromNullable(profileKey),
-                            contact.isBlocked(),
-                            Optional.of(contact.getMessageExpirationTime()),
-                            Optional.absent(),
-                            contact.isArchived()));
-                }
-
-                if (account.getProfileKey() != null) {
-                    // Send our own profile key as well
-                    out.write(new DeviceContact(account.getSelfAddress(),
-                            Optional.absent(),
-                            Optional.absent(),
-                            Optional.absent(),
-                            Optional.absent(),
-                            Optional.of(account.getProfileKey()),
-                            false,
-                            Optional.absent(),
-                            Optional.absent(),
-                            false));
-                }
-            }
-
-            if (contactsFile.exists() && contactsFile.length() > 0) {
-                try (var contactsFileStream = new FileInputStream(contactsFile)) {
-                    var attachmentStream = SignalServiceAttachment.newStreamBuilder()
-                            .withStream(contactsFileStream)
-                            .withContentType("application/octet-stream")
-                            .withLength(contactsFile.length())
-                            .build();
-
-                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream,
-                            true)));
-                }
-            }
-        } finally {
-            try {
-                Files.delete(contactsFile.toPath());
-            } catch (IOException e) {
-                logger.warn("Failed to delete contacts temp file “{}”, ignoring: {}", contactsFile, e.getMessage());
-            }
-        }
+        syncHelper.sendContacts();
     }
 
     void sendBlockedList() throws IOException {
-        var addresses = new ArrayList<SignalServiceAddress>();
-        for (var record : account.getContactStore().getContacts()) {
-            if (record.second().isBlocked()) {
-                addresses.add(resolveSignalServiceAddress(record.first()));
-            }
-        }
-        var groupIds = new ArrayList<byte[]>();
-        for (var record : getGroups()) {
-            if (record.isBlocked()) {
-                groupIds.add(record.getGroupId().serialize());
-            }
-        }
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
-    }
-
-    private void sendVerifiedMessage(
-            SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel
-    ) throws IOException {
-        var verifiedMessage = new VerifiedMessage(destination,
-                identityKey,
-                trustLevel.toVerifiedState(),
-                System.currentTimeMillis());
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+        syncHelper.sendBlockedList();
     }
 
     public List<Pair<RecipientId, Contact>> getContacts() {
@@ -1974,7 +1568,7 @@ public class Manager implements Closeable {
         account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identity.getIdentityKey(), trustLevel);
         try {
             var address = account.getRecipientStore().resolveServiceAddress(recipientId);
-            sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
+            syncHelper.sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
         } catch (IOException e) {
             logger.warn("Failed to send verification sync message: {}", e.getMessage());
         }
