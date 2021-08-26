@@ -12,6 +12,7 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupPermission;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -195,7 +196,7 @@ public class GroupHelper {
             final File avatarFile,
             final Integer expirationTimer,
             final Boolean isAnnouncementGroup
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         var group = getGroupForUpdating(groupId);
 
         if (group instanceof GroupInfoV2) {
@@ -410,13 +411,13 @@ public class GroupHelper {
      */
     private void setExpirationTimer(
             GroupInfoV1 groupInfoV1, int messageExpirationTimer
-    ) throws NotAGroupMemberException, GroupNotFoundException, IOException {
+    ) throws NotAGroupMemberException, GroupNotFoundException, IOException, GroupSendingNotAllowedException {
         groupInfoV1.messageExpirationTime = messageExpirationTimer;
         account.getGroupStore().updateGroup(groupInfoV1);
         sendExpirationTimerUpdate(groupInfoV1.getGroupId());
     }
 
-    private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+    private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         sendHelper.sendAsGroupMessage(messageBuilder, groupId);
     }

@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -86,19 +87,32 @@ public class SendHelper {
      */
     public List<SendMessageResult> sendAsGroupMessage(
             SignalServiceDataMessage.Builder messageBuilder, GroupId groupId
-    ) throws IOException, GroupNotFoundException, NotAGroupMemberException {
+    ) throws IOException, GroupNotFoundException, NotAGroupMemberException, GroupSendingNotAllowedException {
         final var g = getGroupForSending(groupId);
         return sendAsGroupMessage(messageBuilder, g);
     }
 
     private List<SendMessageResult> sendAsGroupMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo g
-    ) throws IOException {
+    ) throws IOException, GroupSendingNotAllowedException {
         GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTime());
 
+        final var message = messageBuilder.build();
         final var recipients = g.getMembersWithout(account.getSelfRecipientId());
-        return sendGroupMessage(messageBuilder.build(), recipients);
+
+        if (g.isAnnouncementGroup() && !g.isAdmin(account.getSelfRecipientId())) {
+            if (message.getBody().isPresent()
+                    || message.getAttachments().isPresent()
+                    || message.getQuote().isPresent()
+                    || message.getPreviews().isPresent()
+                    || message.getMentions().isPresent()
+                    || message.getSticker().isPresent()) {
+                throw new GroupSendingNotAllowedException(g.getGroupId(), g.getTitle());
+            }
+        }
+
+        return sendGroupMessage(message, recipients);
     }
 
     /**
@@ -181,8 +195,11 @@ public class SendHelper {
 
     public void sendGroupTypingMessage(
             SignalServiceTypingMessage message, GroupId groupId
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var g = getGroupForSending(groupId);
+        if (g.isAnnouncementGroup() && !g.isAdmin(account.getSelfRecipientId())) {
+            throw new GroupSendingNotAllowedException(groupId, g.getTitle());
+        }
         final var messageSender = dependencies.getMessageSender();
         final var recipientIdList = new ArrayList<>(g.getMembersWithout(account.getSelfRecipientId()));
         final var addresses = recipientIdList.stream()

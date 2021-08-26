@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
@@ -77,7 +78,7 @@ public class DbusSignalImpl implements Signal {
             throw new Error.AttachmentInvalid(e.getMessage());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -104,7 +105,7 @@ public class DbusSignalImpl implements Signal {
             return results.getTimestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -120,7 +121,7 @@ public class DbusSignalImpl implements Signal {
             return results.getTimestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -158,7 +159,7 @@ public class DbusSignalImpl implements Signal {
             return results.getTimestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -176,7 +177,7 @@ public class DbusSignalImpl implements Signal {
             throw new Error.AttachmentInvalid(e.getMessage());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -200,7 +201,7 @@ public class DbusSignalImpl implements Signal {
             return results.getTimestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
@@ -225,7 +226,7 @@ public class DbusSignalImpl implements Signal {
             return results.getTimestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
     }
@@ -337,7 +338,7 @@ public class DbusSignalImpl implements Signal {
             }
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());

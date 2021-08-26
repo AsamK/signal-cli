@@ -11,6 +11,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
@@ -59,7 +60,7 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
             m.sendTypingMessage(action, recipientIdentifiers);
         } catch (IOException | UntrustedIdentityException e) {
             throw new UserErrorException("Failed to send message: " + e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         }
     }

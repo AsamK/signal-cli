@@ -17,6 +17,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupPermission;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
@@ -170,7 +171,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
             outputResult(outputWriter, timestamp, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());

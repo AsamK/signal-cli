@@ -13,6 +13,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
@@ -76,7 +77,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
                     recipientIdentifiers);
             outputResult(outputWriter, results.getTimestamp());
             ErrorUtils.handleSendMessageResults(results.getResults());
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage());

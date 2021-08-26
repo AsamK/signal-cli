@@ -31,6 +31,7 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupPermission;
+import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -697,7 +698,7 @@ public class Manager implements Closeable {
             File avatarFile,
             Integer expirationTimer,
             Boolean isAnnouncementGroup
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException {
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         return groupHelper.updateGroup(groupId,
                 name,
                 description,
@@ -722,7 +723,7 @@ public class Manager implements Closeable {
 
     public SendMessageResults sendMessage(
             SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         long timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
@@ -745,7 +746,7 @@ public class Manager implements Closeable {
 
     public void sendTypingMessage(
             SignalServiceTypingMessage.Action action, Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var timestamp = System.currentTimeMillis();
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single) {
@@ -806,7 +807,7 @@ public class Manager implements Closeable {
 
     public SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients);
@@ -836,7 +837,7 @@ public class Manager implements Closeable {
 
     public SendMessageResults sendRemoteDeleteMessage(
             long targetSentTimestamp, Set<RecipientIdentifier> recipients
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
         return sendMessage(messageBuilder, recipients);
@@ -848,7 +849,7 @@ public class Manager implements Closeable {
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var targetAuthorRecipientId = resolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
@@ -864,7 +865,7 @@ public class Manager implements Closeable {
         try {
             return sendMessage(messageBuilder,
                     recipients.stream().map(RecipientIdentifier.class::cast).collect(Collectors.toSet()));
-        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         } finally {
             for (var recipient : recipients) {
@@ -931,7 +932,7 @@ public class Manager implements Closeable {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         try {
             sendMessage(messageBuilder, Set.of(recipient));
-        } catch (NotAGroupMemberException | GroupNotFoundException e) {
+        } catch (NotAGroupMemberException | GroupNotFoundException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         }
     }
@@ -1109,7 +1110,7 @@ public class Manager implements Closeable {
 
     public void sendTypingMessage(
             TypingAction action, Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException {
+    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         sendTypingMessage(action.toSignalService(), recipients);
     }
 
@@ -1530,9 +1531,20 @@ public class Manager implements Closeable {
         }
 
         final var recipientId = resolveRecipient(source);
-        return !group.isMember(recipientId) || (
-                group.isAnnouncementGroup() && !group.isAdmin(recipientId)
-        );
+        if (!group.isMember(recipientId)) {
+            return true;
+        }
+
+        if (group.isAnnouncementGroup() && !group.isAdmin(recipientId)) {
+            return message.getBody().isPresent()
+                    || message.getAttachments().isPresent()
+                    || message.getQuote()
+                    .isPresent()
+                    || message.getPreviews().isPresent()
+                    || message.getMentions().isPresent()
+                    || message.getSticker().isPresent();
+        }
+        return false;
     }
 
     private List<HandleAction> handleMessage(
