@@ -107,8 +107,6 @@ public final class IncomingMessageHandler {
                 // address/uuid is validated by unidentified sender certificate
                 account.getRecipientStore().resolveRecipientTrusted(content.getSender());
             }
-
-            actions.addAll(handleMessage(envelope, content, ignoreAttachments));
         }
 
         if (isMessageBlocked(envelope, content)) {
@@ -118,6 +116,7 @@ public final class IncomingMessageHandler {
                     (envelope.hasSource() ? envelope.getSourceAddress() : content.getSender()).getIdentifier(),
                     envelope.getTimestamp());
         } else {
+            actions.addAll(handleMessage(envelope, content, ignoreAttachments));
             handler.handleMessage(envelope, content, exception);
         }
         return new Pair<>(actions, exception);
