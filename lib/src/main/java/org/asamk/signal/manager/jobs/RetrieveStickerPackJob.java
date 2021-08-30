@@ -32,7 +32,9 @@ public class RetrieveStickerPackJob implements Job {
         }
         logger.debug("Retrieving sticker pack {}.", Hex.toStringCondensed(packId.serialize()));
         try {
-            final var manifest = context.getMessageReceiver().retrieveStickerManifest(packId.serialize(), packKey);
+            final var manifest = context.getDependencies()
+                    .getMessageReceiver()
+                    .retrieveStickerManifest(packId.serialize(), packKey);
 
             final var stickerIds = new HashSet<Integer>();
             if (manifest.getCover().isPresent()) {
@@ -43,7 +45,9 @@ public class RetrieveStickerPackJob implements Job {
             }
 
             for (var id : stickerIds) {
-                final var inputStream = context.getMessageReceiver().retrieveSticker(packId.serialize(), packKey, id);
+                final var inputStream = context.getDependencies()
+                        .getMessageReceiver()
+                        .retrieveSticker(packId.serialize(), packKey, id);
                 context.getStickerPackStore().storeSticker(packId, id, o -> IOUtils.copyStream(inputStream, o));
             }
 

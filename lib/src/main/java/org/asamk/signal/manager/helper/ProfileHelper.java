@@ -45,8 +45,6 @@ public final class ProfileHelper {
     private final AvatarStore avatarStore;
     private final ProfileKeyProvider profileKeyProvider;
     private final UnidentifiedAccessProvider unidentifiedAccessProvider;
-    private final ProfileServiceProvider profileServiceProvider;
-    private final MessageReceiverProvider messageReceiverProvider;
     private final SignalServiceAddressResolver addressResolver;
 
     public ProfileHelper(
@@ -55,8 +53,6 @@ public final class ProfileHelper {
             final AvatarStore avatarStore,
             final ProfileKeyProvider profileKeyProvider,
             final UnidentifiedAccessProvider unidentifiedAccessProvider,
-            final ProfileServiceProvider profileServiceProvider,
-            final MessageReceiverProvider messageReceiverProvider,
             final SignalServiceAddressResolver addressResolver
     ) {
         this.account = account;
@@ -64,8 +60,6 @@ public final class ProfileHelper {
         this.avatarStore = avatarStore;
         this.profileKeyProvider = profileKeyProvider;
         this.unidentifiedAccessProvider = unidentifiedAccessProvider;
-        this.profileServiceProvider = profileServiceProvider;
-        this.messageReceiverProvider = messageReceiverProvider;
         this.addressResolver = addressResolver;
     }
 
@@ -218,7 +212,7 @@ public final class ProfileHelper {
     }
 
     private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
-        return messageReceiverProvider.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent());
+        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent());
     }
 
     private ProfileAndCredential retrieveProfileAndCredential(
@@ -287,7 +281,7 @@ public final class ProfileHelper {
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
     ) {
-        var profileService = profileServiceProvider.getProfileService();
+        var profileService = dependencies.getProfileService();
 
         Single<ServiceResponse<ProfileAndCredential>> responseSingle;
         try {

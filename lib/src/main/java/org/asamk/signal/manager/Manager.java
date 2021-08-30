@@ -164,8 +164,7 @@ public class Manager implements Closeable {
                 return LEGACY_LOCK::unlock;
             }
         };
-        this.dependencies = new SignalDependencies(account.getSelfAddress(),
-                serviceEnvironmentConfig,
+        this.dependencies = new SignalDependencies(serviceEnvironmentConfig,
                 userAgent,
                 credentialsProvider,
                 account.getSignalProtocolStore(),
@@ -186,8 +185,6 @@ public class Manager implements Closeable {
                 avatarStore,
                 account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
-                dependencies::getProfileService,
-                dependencies::getMessageReceiver,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
@@ -220,8 +217,7 @@ public class Manager implements Closeable {
                 this::resolveSignalServiceAddress);
 
         this.context = new Context(account,
-                dependencies.getAccountManager(),
-                dependencies.getMessageReceiver(),
+                dependencies,
                 stickerPackStore,
                 sendHelper,
                 groupHelper,
@@ -1149,10 +1145,6 @@ public class Manager implements Closeable {
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address) {
-        if (address.matches(account.getSelfAddress())) {
-            return account.getSelfAddress();
-        }
-
         return resolveSignalServiceAddress(resolveRecipient(address));
     }
 
