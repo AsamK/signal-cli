@@ -28,6 +28,8 @@ public interface SignalControl extends DBusInterface {
 
     public String version();
 
+    public boolean isRegistered();
+
     List<DBusPath> listAccounts();
 
     interface Error {
