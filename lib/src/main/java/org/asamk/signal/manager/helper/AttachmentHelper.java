@@ -88,9 +88,9 @@ public class AttachmentHelper {
             SignalServiceAttachment attachment, AttachmentHandler consumer
     ) throws IOException {
         if (attachment.isStream()) {
-            try (var input = attachment.asStream().getInputStream()) {
-                consumer.handle(input);
-            }
+            var input = attachment.asStream().getInputStream();
+            // don't close input stream here, it might be reused later (e.g. with contact sync messages ...)
+            consumer.handle(input);
             return;
         }
 

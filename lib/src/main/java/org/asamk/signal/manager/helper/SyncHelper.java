@@ -215,7 +215,7 @@ public class SyncHelper {
         sendHelper.sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 
-    public void handleSyncDeviceContacts(final InputStream input) {
+    public void handleSyncDeviceContacts(final InputStream input) throws IOException {
         final var s = new DeviceContactsInputStream(input);
         DeviceContact c;
         while (true) {
@@ -226,8 +226,7 @@ public class SyncHelper {
                     logger.warn("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
                     continue;
                 } else {
-                    logger.warn("Failed to read sync contacts", e);
-                    break;
+                    throw e;
                 }
             }
             if (c == null) {
