@@ -151,6 +151,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public boolean isRegistered() {
+        return false;
+    }
+
+    @Override
     public List<DBusPath> listAccounts() {
         synchronized (receiveThreads) {
             return receiveThreads.stream()
