@@ -79,6 +79,28 @@ public final class IncomingMessageHandler {
         this.jobExecutor = jobExecutor;
     }
 
+    public Pair<List<HandleAction>, Exception> handleRetryEnvelope(
+            final SignalServiceEnvelope envelope,
+            final boolean ignoreAttachments,
+            final Manager.ReceiveMessageHandler handler
+    ) {
+        SignalServiceContent content = null;
+        if (!envelope.isReceipt()) {
+            try {
+                content = dependencies.getCipher().decrypt(envelope);
+            } catch (ProtocolUntrustedIdentityException e) {
+                final var recipientId = account.getRecipientStore().resolveRecipient(e.getSender());
+                final var exception = new UntrustedIdentityException(addressResolver.resolveSignalServiceAddress(
+                        recipientId), e.getSenderDevice());
+                return new Pair<>(List.of(), exception);
+            } catch (Exception e) {
+                return new Pair<>(List.of(), e);
+            }
+        }
+        final var actions = checkAndHandleMessage(envelope, content, ignoreAttachments, handler, null);
+        return new Pair<>(actions, null);
+    }
+
     public Pair<List<HandleAction>, Exception> handleEnvelope(
             final SignalServiceEnvelope envelope,
             final boolean ignoreAttachments,
@@ -108,35 +130,48 @@ public final class IncomingMessageHandler {
             } catch (Exception e) {
                 exception = e;
             }
-
-            if (!envelope.hasSourceUuid() && content != null) {
-                // Store uuid if we don't have it already
-                // address/uuid is validated by unidentified sender certificate
-                account.getRecipientStore().resolveRecipientTrusted(content.getSender());
-            }
         }
 
+        actions.addAll(checkAndHandleMessage(envelope, content, ignoreAttachments, handler, exception));
+        return new Pair<>(actions, exception);
+    }
+
+    private List<HandleAction> checkAndHandleMessage(
+            final SignalServiceEnvelope envelope,
+            final SignalServiceContent content,
+            final boolean ignoreAttachments,
+            final Manager.ReceiveMessageHandler handler,
+            final Exception exception
+    ) {
+        if (!envelope.hasSourceUuid() && content != null) {
+            // Store uuid if we don't have it already
+            // address/uuid is validated by unidentified sender certificate
+            account.getRecipientStore().resolveRecipientTrusted(content.getSender());
+        }
         if (isMessageBlocked(envelope, content)) {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
+            return List.of();
         } else if (isNotAllowedToSendToGroup(envelope, content)) {
             logger.info("Ignoring a group message from an unauthorized sender (no member or admin): {} {}",
                     (envelope.hasSourceUuid() ? envelope.getSourceAddress() : content.getSender()).getIdentifier(),
                     envelope.getTimestamp());
+            return List.of();
         } else {
-            actions.addAll(handleMessage(envelope, content, ignoreAttachments));
+            List<HandleAction> actions;
+            if (content != null) {
+                actions = handleMessage(envelope, content, ignoreAttachments);
+            } else {
+                actions = List.of();
+            }
             handler.handleMessage(envelope, content, exception);
+            return actions;
         }
-        return new Pair<>(actions, exception);
     }
 
     public List<HandleAction> handleMessage(
             SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments
     ) {
         var actions = new ArrayList<HandleAction>();
-        if (content == null) {
-            return actions;
-        }
-
         final RecipientId sender;
         if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
             sender = recipientResolver.resolveRecipient(envelope.getSourceAddress());
