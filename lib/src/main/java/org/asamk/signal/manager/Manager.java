@@ -385,6 +385,13 @@ public class Manager implements Closeable {
     }
 
     public void deleteAccount() throws IOException {
+        try {
+            pinHelper.removeRegistrationLockPin();
+        } catch (UnauthenticatedResponseException e) {
+            logger.warn("Failed to remove registration lock pin");
+        }
+        account.setRegistrationLockPin(null, null);
+
         dependencies.getAccountManager().deleteAccount();
 
         account.setRegistered(false);
