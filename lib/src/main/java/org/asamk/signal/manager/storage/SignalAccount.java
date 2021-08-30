@@ -21,6 +21,7 @@ import org.asamk.signal.manager.storage.protocol.SignalProtocolStore;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
 import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
@@ -789,7 +790,7 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientId getSelfRecipientId() {
-        return recipientStore.resolveRecipientTrusted(getSelfAddress());
+        return recipientStore.resolveRecipientTrusted(new RecipientAddress(uuid, username));
     }
 
     public String getEncryptedDeviceName() {

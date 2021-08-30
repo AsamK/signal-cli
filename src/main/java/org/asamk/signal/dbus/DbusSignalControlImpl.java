@@ -13,6 +13,7 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
+import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -99,6 +100,10 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     public void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
     ) throws Error.Failure, Error.InvalidNumber {
+        if (!PhoneNumberFormatter.isValidNumber(number, null)) {
+            throw new SignalControl.Error.InvalidNumber(
+                    "Invalid username (phone number), make sure you include the country code.");
+        }
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.register(voiceVerification, captcha);
         } catch (CaptchaRequiredException e) {

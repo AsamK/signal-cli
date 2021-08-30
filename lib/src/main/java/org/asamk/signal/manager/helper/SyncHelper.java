@@ -222,8 +222,13 @@ public class SyncHelper {
             try {
                 c = s.read();
             } catch (IOException e) {
-                logger.warn("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
-                continue;
+                if (e.getMessage() != null && e.getMessage().contains("Missing contact address!")) {
+                    logger.warn("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
+                    continue;
+                } else {
+                    logger.warn("Failed to read sync contacts", e);
+                    break;
+                }
             }
             if (c == null) {
                 break;

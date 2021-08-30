@@ -58,7 +58,6 @@ import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.asamk.signal.manager.util.Utils;
-import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
@@ -165,8 +164,7 @@ public class Manager implements Closeable {
                 return LEGACY_LOCK::unlock;
             }
         };
-        this.dependencies = new SignalDependencies(account.getSelfAddress(),
-                serviceEnvironmentConfig,
+        this.dependencies = new SignalDependencies(serviceEnvironmentConfig,
                 userAgent,
                 credentialsProvider,
                 account.getSignalProtocolStore(),
@@ -187,8 +185,6 @@ public class Manager implements Closeable {
                 avatarStore,
                 account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
-                dependencies::getProfileService,
-                dependencies::getMessageReceiver,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
                 this::getRecipientProfile,
@@ -221,8 +217,7 @@ public class Manager implements Closeable {
                 this::resolveSignalServiceAddress);
 
         this.context = new Context(account,
-                dependencies.getAccountManager(),
-                dependencies.getMessageReceiver(),
+                dependencies,
                 stickerPackStore,
                 sendHelper,
                 groupHelper,
@@ -386,6 +381,13 @@ public class Manager implements Closeable {
     }
 
     public void deleteAccount() throws IOException {
+        try {
+            pinHelper.removeRegistrationLockPin();
+        } catch (UnauthenticatedResponseException e) {
+            logger.warn("Failed to remove registration lock pin");
+        }
+        account.setRegistrationLockPin(null, null);
+
         dependencies.getAccountManager().deleteAccount();
 
         account.setRegistered(false);
@@ -818,37 +820,33 @@ public class Manager implements Closeable {
     ) {
         var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {
+            cachedMessage.delete();
             return null;
         }
-        SignalServiceContent content = null;
-        List<HandleAction> actions = null;
-        if (!envelope.isReceipt()) {
-            try {
-                content = dependencies.getCipher().decrypt(envelope);
-            } catch (ProtocolUntrustedIdentityException e) {
-                if (System.currentTimeMillis() - envelope.getServerDeliveredTimestamp() > 1000L * 60 * 60 * 24 * 30) {
-                    // Envelope is more than a month old, cleaning up.
-                    cachedMessage.delete();
-                    return null;
-                }
-                if (!envelope.hasSourceUuid()) {
-                    final var identifier = e.getSender();
-                    final var recipientId = account.getRecipientStore().resolveRecipient(identifier);
-                    try {
-                        account.getMessageCache().replaceSender(cachedMessage, recipientId);
-                    } catch (IOException ioException) {
-                        logger.warn("Failed to move cached message to recipient folder: {}", ioException.getMessage());
-                    }
-                }
-                return null;
-            } catch (Exception er) {
-                // All other errors are not recoverable, so delete the cached message
+
+        final var result = incomingMessageHandler.handleRetryEnvelope(envelope, ignoreAttachments, handler);
+        final var actions = result.first();
+        final var exception = result.second();
+
+        if (exception instanceof UntrustedIdentityException) {
+            if (System.currentTimeMillis() - envelope.getServerDeliveredTimestamp() > 1000L * 60 * 60 * 24 * 30) {
+                // Envelope is more than a month old, cleaning up.
                 cachedMessage.delete();
                 return null;
             }
-            actions = incomingMessageHandler.handleMessage(envelope, content, ignoreAttachments);
+            if (!envelope.hasSourceUuid()) {
+                final var identifier = ((UntrustedIdentityException) exception).getSender();
+                final var recipientId = account.getRecipientStore().resolveRecipient(identifier);
+                try {
+                    account.getMessageCache().replaceSender(cachedMessage, recipientId);
+                } catch (IOException ioException) {
+                    logger.warn("Failed to move cached message to recipient folder: {}", ioException.getMessage());
+                }
+            }
+            return null;
         }
-        handler.handleMessage(envelope, content, null);
+
+        // If successful and for all other errors that are not recoverable, delete the cached message
         cachedMessage.delete();
         return actions;
     }
@@ -1147,10 +1145,6 @@ public class Manager implements Closeable {
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address) {
-        if (address.matches(account.getSelfAddress())) {
-            return account.getSelfAddress();
-        }
-
         return resolveSignalServiceAddress(resolveRecipient(address));
     }
 

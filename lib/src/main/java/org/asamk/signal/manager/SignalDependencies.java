@@ -3,7 +3,6 @@ package org.asamk.signal.manager;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
-import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -18,32 +17,41 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.ProfileService;
-import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
 
 public class SignalDependencies {
 
-    private final SignalServiceAccountManager accountManager;
-    private final GroupsV2Api groupsV2Api;
-    private final GroupsV2Operations groupsV2Operations;
+    private final Object LOCK = new Object();
 
-    private final SignalWebSocket signalWebSocket;
-    private final SignalServiceMessageReceiver messageReceiver;
-    private final SignalServiceMessageSender messageSender;
+    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
+    private final String userAgent;
+    private final DynamicCredentialsProvider credentialsProvider;
+    private final SignalServiceDataStore dataStore;
+    private final ExecutorService executor;
+    private final SignalSessionLock sessionLock;
 
-    private final KeyBackupService keyBackupService;
-    private final ProfileService profileService;
-    private final SignalServiceCipher cipher;
+    private SignalServiceAccountManager accountManager;
+    private GroupsV2Api groupsV2Api;
+    private GroupsV2Operations groupsV2Operations;
+    private ClientZkOperations clientZkOperations;
+
+    private SignalWebSocket signalWebSocket;
+    private SignalServiceMessageReceiver messageReceiver;
+    private SignalServiceMessageSender messageSender;
+
+    private KeyBackupService keyBackupService;
+    private ProfileService profileService;
+    private SignalServiceCipher cipher;
 
     public SignalDependencies(
-            final SignalServiceAddress selfAddress,
             final ServiceEnvironmentConfig serviceEnvironmentConfig,
             final String userAgent,
             final DynamicCredentialsProvider credentialsProvider,
@@ -51,100 +59,134 @@ public class SignalDependencies {
             final ExecutorService executor,
             final SignalSessionLock sessionLock
     ) {
-        this.groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
-                serviceEnvironmentConfig.getSignalServiceConfiguration())) : null;
-        final SleepTimer timer = new UptimeSleepTimer();
-        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                credentialsProvider,
-                userAgent,
-                groupsV2Operations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-        this.groupsV2Api = accountManager.getGroupsV2Api();
-        this.keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
-                10);
-        final ClientZkProfileOperations clientZkProfileOperations = capabilities.isGv2() ? ClientZkOperations.create(
-                serviceEnvironmentConfig.getSignalServiceConfiguration()).getProfileOperations() : null;
-        this.messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                credentialsProvider,
-                userAgent,
-                clientZkProfileOperations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-
-        final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
-        final WebSocketFactory webSocketFactory = new WebSocketFactory() {
-            @Override
-            public WebSocketConnection createWebSocket() {
-                return new WebSocketConnection("normal",
-                        serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                        Optional.of(credentialsProvider),
-                        userAgent,
-                        healthMonitor);
-            }
-
-            @Override
-            public WebSocketConnection createUnidentifiedWebSocket() {
-                return new WebSocketConnection("unidentified",
-                        serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                        Optional.absent(),
-                        userAgent,
-                        healthMonitor);
-            }
-        };
-        this.signalWebSocket = new SignalWebSocket(webSocketFactory);
-        healthMonitor.monitor(signalWebSocket);
-        this.profileService = new ProfileService(clientZkProfileOperations, messageReceiver, signalWebSocket);
-
-        final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
-        this.cipher = new SignalServiceCipher(selfAddress, dataStore, sessionLock, certificateValidator);
-        this.messageSender = new SignalServiceMessageSender(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                credentialsProvider,
-                dataStore,
-                sessionLock,
-                userAgent,
-                signalWebSocket,
-                Optional.absent(),
-                clientZkProfileOperations,
-                executor,
-                ServiceConfig.MAX_ENVELOPE_SIZE,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
+        this.userAgent = userAgent;
+        this.credentialsProvider = credentialsProvider;
+        this.dataStore = dataStore;
+        this.executor = executor;
+        this.sessionLock = sessionLock;
     }
 
     public SignalServiceAccountManager getAccountManager() {
-        return accountManager;
+        return getOrCreate(() -> accountManager,
+                () -> accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                        credentialsProvider,
+                        userAgent,
+                        getGroupsV2Operations(),
+                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
     public GroupsV2Api getGroupsV2Api() {
-        return groupsV2Api;
+        return getOrCreate(() -> groupsV2Api, () -> groupsV2Api = getAccountManager().getGroupsV2Api());
     }
 
     public GroupsV2Operations getGroupsV2Operations() {
-        return groupsV2Operations;
+        return getOrCreate(() -> groupsV2Operations,
+                () -> groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
+                        serviceEnvironmentConfig.getSignalServiceConfiguration())) : null);
+    }
+
+    private ClientZkOperations getClientZkOperations() {
+        return getOrCreate(() -> clientZkOperations,
+                () -> clientZkOperations = capabilities.isGv2()
+                        ? ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration())
+                        : null);
     }
 
     public SignalWebSocket getSignalWebSocket() {
-        return signalWebSocket;
+        return getOrCreate(() -> signalWebSocket, () -> {
+            final var timer = new UptimeSleepTimer();
+            final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
+            final var webSocketFactory = new WebSocketFactory() {
+                @Override
+                public WebSocketConnection createWebSocket() {
+                    return new WebSocketConnection("normal",
+                            serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                            Optional.of(credentialsProvider),
+                            userAgent,
+                            healthMonitor);
+                }
+
+                @Override
+                public WebSocketConnection createUnidentifiedWebSocket() {
+                    return new WebSocketConnection("unidentified",
+                            serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                            Optional.absent(),
+                            userAgent,
+                            healthMonitor);
+                }
+            };
+            signalWebSocket = new SignalWebSocket(webSocketFactory);
+            healthMonitor.monitor(signalWebSocket);
+        });
     }
 
     public SignalServiceMessageReceiver getMessageReceiver() {
-        return messageReceiver;
+        return getOrCreate(() -> messageReceiver,
+                () -> messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                        credentialsProvider,
+                        userAgent,
+                        getClientZkOperations().getProfileOperations(),
+                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
     public SignalServiceMessageSender getMessageSender() {
-        return messageSender;
+        return getOrCreate(() -> messageSender,
+                () -> messageSender = new SignalServiceMessageSender(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                        credentialsProvider,
+                        dataStore,
+                        sessionLock,
+                        userAgent,
+                        getSignalWebSocket(),
+                        Optional.absent(),
+                        getClientZkOperations().getProfileOperations(),
+                        executor,
+                        ServiceConfig.MAX_ENVELOPE_SIZE,
+                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
     public KeyBackupService getKeyBackupService() {
-        return keyBackupService;
+        return getOrCreate(() -> keyBackupService,
+                () -> keyBackupService = getAccountManager().getKeyBackupService(ServiceConfig.getIasKeyStore(),
+                        serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
+                        serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
+                        serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
+                        10));
     }
 
     public ProfileService getProfileService() {
-        return profileService;
+        return getOrCreate(() -> profileService,
+                () -> profileService = new ProfileService(getClientZkOperations().getProfileOperations(),
+                        getMessageReceiver(),
+                        getSignalWebSocket()));
     }
 
     public SignalServiceCipher getCipher() {
-        return cipher;
+        return getOrCreate(() -> cipher, () -> {
+            final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
+            final var address = new SignalServiceAddress(credentialsProvider.getUuid(), credentialsProvider.getE164());
+            cipher = new SignalServiceCipher(address, dataStore, sessionLock, certificateValidator);
+        });
+    }
+
+    private <T> T getOrCreate(Supplier<T> supplier, Callable creator) {
+        var value = supplier.get();
+        if (value != null) {
+            return value;
+        }
+
+        synchronized (LOCK) {
+            value = supplier.get();
+            if (value != null) {
+                return value;
+            }
+            creator.call();
+            return supplier.get();
+        }
+    }
+
+    private interface Callable {
+
+        void call();
     }
 }
