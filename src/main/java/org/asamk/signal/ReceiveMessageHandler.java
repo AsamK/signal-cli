@@ -235,6 +235,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final var deviceId = callMessage.getDestinationDeviceId().get();
             writer.println("Destination device id: {}", deviceId);
         }
+        if (callMessage.getGroupId().isPresent()) {
+            final var groupId = GroupId.unknownVersion(callMessage.getGroupId().get());
+            writer.println("Destination group id: {}", groupId);
+        }
+        if (callMessage.getTimestamp().isPresent()) {
+            writer.println("Timestamp: {}", DateUtils.formatTimestamp(callMessage.getTimestamp().get()));
+        }
         if (callMessage.getAnswerMessage().isPresent()) {
             var answerMessage = callMessage.getAnswerMessage().get();
             writer.println("Answer message: {}, sdp: {})", answerMessage.getId(), answerMessage.getSdp());
@@ -260,7 +267,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (callMessage.getOpaqueMessage().isPresent()) {
             final var opaqueMessage = callMessage.getOpaqueMessage().get();
-            writer.println("Opaque message: size {}", opaqueMessage.getOpaque().length);
+            writer.println("Opaque message: size {}, urgency: {}",
+                    opaqueMessage.getOpaque().length,
+                    opaqueMessage.getUrgency().name());
         }
     }
 
