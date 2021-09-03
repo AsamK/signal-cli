@@ -58,6 +58,16 @@ public class SendHelper {
         }
     };
 
+    private final SignalServiceMessageSender.LegacyGroupEvents legacyGroupEvents = new SignalServiceMessageSender.LegacyGroupEvents() {
+        @Override
+        public void onMessageSent() {
+        }
+
+        @Override
+        public void onSyncMessageSent() {
+        }
+    };
+
     public SendHelper(
             final SignalAccount account,
             final SignalDependencies dependencies,
@@ -267,6 +277,7 @@ public class SendHelper {
                     isRecipientUpdate,
                     ContentHint.DEFAULT,
                     message,
+                    legacyGroupEvents,
                     sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
                     () -> false);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {

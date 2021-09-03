@@ -2272,7 +2272,6 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"e164_"}, 
-    {"name":"relay_"}, 
     {"name":"uuid_"}
   ]
 },
