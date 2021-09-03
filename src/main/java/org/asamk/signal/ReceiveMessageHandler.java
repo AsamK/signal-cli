@@ -82,6 +82,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         DateUtils.formatTimestamp(content.getServerReceivedTimestamp()),
                         DateUtils.formatTimestamp(content.getServerDeliveredTimestamp()));
 
+                if (content.getSenderKeyDistributionMessage().isPresent()) {
+                    final var message = content.getSenderKeyDistributionMessage().get();
+                    writer.println("Received a sender key distribution message for distributionId {}",
+                            message.getDistributionId());
+                }
+
                 if (content.getDataMessage().isPresent()) {
                     var message = content.getDataMessage().get();
                     printDataMessage(writer, message);

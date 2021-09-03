@@ -30,6 +30,7 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -173,10 +174,20 @@ public final class IncomingMessageHandler {
     ) {
         var actions = new ArrayList<HandleAction>();
         final RecipientId sender;
+        final int senderDeviceId;
         if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
             sender = recipientResolver.resolveRecipient(envelope.getSourceAddress());
+            senderDeviceId = envelope.getSourceDevice();
         } else {
             sender = recipientResolver.resolveRecipient(content.getSender());
+            senderDeviceId = content.getSenderDevice();
+        }
+
+        if (content.getSenderKeyDistributionMessage().isPresent()) {
+            final var message = content.getSenderKeyDistributionMessage().get();
+            final var protocolAddress = new SignalProtocolAddress(addressResolver.resolveSignalServiceAddress(sender)
+                    .getIdentifier(), senderDeviceId);
+            dependencies.getMessageSender().processSenderKeyDistributionMessage(protocolAddress, message);
         }
 
         if (content.getDataMessage().isPresent()) {

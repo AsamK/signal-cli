@@ -24,6 +24,7 @@ import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
+import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
@@ -95,6 +96,7 @@ public class SignalAccount implements Closeable {
     private SignedPreKeyStore signedPreKeyStore;
     private SessionStore sessionStore;
     private IdentityKeyStore identityKeyStore;
+    private SenderKeyStore senderKeyStore;
     private GroupStore groupStore;
     private GroupStore.Storage groupStoreStorage;
     private RecipientStore recipientStore;
@@ -181,10 +183,15 @@ public class SignalAccount implements Closeable {
                 identityKey,
                 registrationId,
                 trustNewIdentity);
+        senderKeyStore = new SenderKeyStore(getSharedSenderKeysFile(dataPath, username),
+                getSenderKeysPath(dataPath, username),
+                recipientStore::resolveRecipientAddress,
+                recipientStore);
         signalProtocolStore = new SignalProtocolStore(preKeyStore,
                 signedPreKeyStore,
                 sessionStore,
                 identityKeyStore,
+                senderKeyStore,
                 this::isMultiDevice);
 
         messageCache = new MessageCache(getMessageCachePath(dataPath, username));
@@ -221,6 +228,7 @@ public class SignalAccount implements Closeable {
         account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.sessionStore.archiveAllSessions();
+        account.senderKeyStore.deleteAll();
         account.clearAllPreKeys();
         return account;
     }
@@ -303,6 +311,7 @@ public class SignalAccount implements Closeable {
         identityKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         messageCache.mergeRecipients(recipientId, toBeMergedRecipientId);
         groupStore.mergeRecipients(recipientId, toBeMergedRecipientId);
+        senderKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public static File getFileName(File dataPath, String username) {
@@ -341,6 +350,14 @@ public class SignalAccount implements Closeable {
 
     private static File getSessionsPath(File dataPath, String username) {
         return new File(getUserPath(dataPath, username), "sessions");
+    }
+
+    private static File getSenderKeysPath(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "sender-keys");
+    }
+
+    private static File getSharedSenderKeysFile(File dataPath, String username) {
+        return new File(getUserPath(dataPath, username), "shared-sender-keys-store");
     }
 
     private static File getRecipientsStoreFile(File dataPath, String username) {
@@ -768,6 +785,10 @@ public class SignalAccount implements Closeable {
         return stickerStore;
     }
 
+    public SenderKeyStore getSenderKeyStore() {
+        return senderKeyStore;
+    }
+
     public MessageCache getMessageCache() {
         return messageCache;
     }
@@ -932,6 +953,7 @@ public class SignalAccount implements Closeable {
         save();
 
         getSessionStore().archiveAllSessions();
+        senderKeyStore.deleteAll();
         final var recipientId = getRecipientStore().resolveRecipientTrusted(getSelfAddress());
         final var publicKey = getIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
