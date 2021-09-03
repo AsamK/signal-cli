@@ -109,11 +109,7 @@ public class SessionStore implements SignalServiceSessionStore {
 
         synchronized (cachedSessions) {
             final var session = loadSessionLocked(key);
-            if (session == null) {
-                return false;
-            }
-
-            return session.hasSenderChain() && session.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
+            return isActive(session);
         }
     }
 
@@ -158,6 +154,7 @@ public class SessionStore implements SignalServiceSessionStore {
             return recipientIdToNameMap.keySet()
                     .stream()
                     .flatMap(recipientId -> getKeysLocked(recipientId).stream())
+                    .filter(key -> isActive(this.loadSessionLocked(key)))
                     .map(key -> new SignalProtocolAddress(recipientIdToNameMap.get(key.recipientId), key.getDeviceId()))
                     .collect(Collectors.toSet());
         }
@@ -319,6 +316,12 @@ public class SessionStore implements SignalServiceSessionStore {
         } catch (IOException e) {
             logger.error("Failed to delete session file {}: {}", file, e.getMessage());
         }
+    }
+
+    private static boolean isActive(SessionRecord record) {
+        return record != null
+                && record.hasSenderChain()
+                && record.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
     }
 
     private static final class Key {
