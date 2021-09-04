@@ -172,7 +172,9 @@ public class Manager implements Closeable {
                 executor,
                 sessionLock);
         final var avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
-        final var attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
+        final var attachmentStore = new AttachmentStore(new File(pathConfig.getAttachmentsPath(),
+                account.getUsername()));
+
         final var stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
 
         this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
