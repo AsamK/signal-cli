@@ -179,7 +179,8 @@ public class SessionStore implements SignalServiceSessionStore {
 
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         synchronized (cachedSessions) {
-            final var otherHasSession = getKeysLocked(toBeMergedRecipientId).size() > 0;
+            final var keys = getKeysLocked(toBeMergedRecipientId);
+            final var otherHasSession = keys.size() > 0;
             if (!otherHasSession) {
                 return;
             }
@@ -189,8 +190,7 @@ public class SessionStore implements SignalServiceSessionStore {
                 logger.debug("To be merged recipient had sessions, deleting.");
                 deleteAllSessions(toBeMergedRecipientId);
             } else {
-                logger.debug("To be merged recipient had sessions, re-assigning to the new recipient.");
-                final var keys = getKeysLocked(toBeMergedRecipientId);
+                logger.debug("Only to be merged recipient had sessions, re-assigning to the new recipient.");
                 for (var key : keys) {
                     final var session = loadSessionLocked(key);
                     deleteSessionLocked(key);
