@@ -141,6 +141,7 @@ public class Manager implements Closeable {
     private final IncomingMessageHandler incomingMessageHandler;
 
     private final Context context;
+    private boolean hasCaughtUpWithOldMessages = false;
 
     Manager(
             SignalAccount account,
@@ -865,7 +866,7 @@ public class Manager implements Closeable {
         final var signalWebSocket = dependencies.getSignalWebSocket();
         signalWebSocket.connect();
 
-        var hasCaughtUpWithOldMessages = false;
+        hasCaughtUpWithOldMessages = false;
 
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
@@ -885,10 +886,13 @@ public class Manager implements Closeable {
                     envelope = result.get();
                 } else {
                     // Received indicator that server queue is empty
-                    hasCaughtUpWithOldMessages = true;
-
                     handleQueuedActions(queuedActions);
                     queuedActions.clear();
+
+                    hasCaughtUpWithOldMessages = true;
+                    synchronized (this) {
+                        this.notifyAll();
+                    }
 
                     // Continue to wait another timeout for new messages
                     continue;
@@ -936,16 +940,26 @@ public class Manager implements Closeable {
         handleQueuedActions(queuedActions);
     }
 
+    public boolean hasCaughtUpWithOldMessages() {
+        return hasCaughtUpWithOldMessages;
+    }
+
     private void handleQueuedActions(final Collection<HandleAction> queuedActions) {
+        var interrupted = false;
         for (var action : queuedActions) {
             try {
                 action.execute(context);
             } catch (Throwable e) {
-                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
+                if ((e instanceof AssertionError || e instanceof RuntimeException)
+                        && e.getCause() instanceof InterruptedException) {
+                    interrupted = true;
+                    continue;
                 }
                 logger.warn("Message action failed.", e);
             }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
         }
     }
 
