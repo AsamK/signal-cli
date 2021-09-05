@@ -477,6 +477,11 @@ public class DbusSignalImpl implements Signal {
             return group.isMember(m.getSelfRecipientId());
         }
     }
+    
+    @Override
+    public String getAccount() {
+        return m.getUsername();
+    }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
         var error = ErrorUtils.getErrorMessageFromSendMessageResult(result);

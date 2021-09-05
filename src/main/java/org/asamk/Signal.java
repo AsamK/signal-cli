@@ -93,6 +93,8 @@ public interface Signal extends DBusInterface {
 
     boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
 
+    String getAccount();
+    
     byte[] joinGroup(final String groupLink) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
