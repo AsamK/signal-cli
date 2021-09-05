@@ -35,7 +35,9 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.internal.ServiceResponse;
 import org.whispersystems.signalservice.internal.push.LockedException;
+import org.whispersystems.signalservice.internal.push.RequestVerificationCodeResponse;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -115,13 +117,19 @@ public class RegistrationManager implements Closeable {
     }
 
     public void register(boolean voiceVerification, String captcha) throws IOException {
+        final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
-            accountManager.requestVoiceVerificationCode(getDefaultLocale(),
+            response = accountManager.requestVoiceVerificationCode(getDefaultLocale(),
                     Optional.fromNullable(captcha),
+                    Optional.absent(),
                     Optional.absent());
         } else {
-            accountManager.requestSmsVerificationCode(false, Optional.fromNullable(captcha), Optional.absent());
+            response = accountManager.requestSmsVerificationCode(false,
+                    Optional.fromNullable(captcha),
+                    Optional.absent(),
+                    Optional.absent());
         }
+        handleResponseException(response);
     }
 
     private Locale getDefaultLocale() {
@@ -143,7 +151,7 @@ public class RegistrationManager implements Closeable {
         VerifyAccountResponse response;
         MasterKey masterKey;
         try {
-            response = verifyAccountWithCode(verificationCode, null, null);
+            response = verifyAccountWithCode(verificationCode, null);
 
             masterKey = null;
             pin = null;
@@ -154,20 +162,18 @@ public class RegistrationManager implements Closeable {
 
             var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
             if (registrationLockData == null) {
-                response = verifyAccountWithCode(verificationCode, pin, null);
-                masterKey = null;
-            } else {
-                var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
-                try {
-                    response = verifyAccountWithCode(verificationCode, null, registrationLock);
-                } catch (LockedException _e) {
-                    throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
-                }
-                masterKey = registrationLockData.getMasterKey();
+                throw e;
             }
+
+            var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
+            try {
+                response = verifyAccountWithCode(verificationCode, registrationLock);
+            } catch (LockedException _e) {
+                throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
+            }
+            masterKey = registrationLockData.getMasterKey();
         }
 
-        // TODO response.isStorageCapable()
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.finishRegistration(UuidUtil.parseOrNull(response.getUuid()), masterKey, pin);
 
@@ -179,6 +185,9 @@ public class RegistrationManager implements Closeable {
             m.refreshPreKeys();
             // Set an initial empty profile so user can be added to groups
             m.setProfile(null, null, null, null, null);
+            if (response.isStorageCapable()) {
+                m.retrieveRemoteStorage();
+            }
 
             final var result = m;
             m = null;
@@ -192,18 +201,29 @@ public class RegistrationManager implements Closeable {
     }
 
     private VerifyAccountResponse verifyAccountWithCode(
-            final String verificationCode, final String legacyPin, final String registrationLock
+            final String verificationCode, final String registrationLock
     ) throws IOException {
-        return accountManager.verifyAccountWithCode(verificationCode,
-                null,
-                account.getLocalRegistrationId(),
-                true,
-                legacyPin,
-                registrationLock,
-                account.getSelfUnidentifiedAccessKey(),
-                account.isUnrestrictedUnidentifiedAccess(),
-                ServiceConfig.capabilities,
-                account.isDiscoverableByPhoneNumber());
+        final ServiceResponse<VerifyAccountResponse> response;
+        if (registrationLock == null) {
+            response = accountManager.verifyAccount(verificationCode,
+                    account.getLocalRegistrationId(),
+                    true,
+                    account.getSelfUnidentifiedAccessKey(),
+                    account.isUnrestrictedUnidentifiedAccess(),
+                    ServiceConfig.capabilities,
+                    account.isDiscoverableByPhoneNumber());
+        } else {
+            response = accountManager.verifyAccountWithRegistrationLockPin(verificationCode,
+                    account.getLocalRegistrationId(),
+                    true,
+                    registrationLock,
+                    account.getSelfUnidentifiedAccessKey(),
+                    account.isUnrestrictedUnidentifiedAccess(),
+                    ServiceConfig.capabilities,
+                    account.isDiscoverableByPhoneNumber());
+        }
+        handleResponseException(response);
+        return response.getResult().get();
     }
 
     @Override
@@ -211,6 +231,17 @@ public class RegistrationManager implements Closeable {
         if (account != null) {
             account.close();
             account = null;
+        }
+    }
+
+    private void handleResponseException(final ServiceResponse<?> response) throws IOException {
+        final var throwableOptional = response.getExecutionError().or(response.getApplicationError());
+        if (throwableOptional.isPresent()) {
+            if (throwableOptional.get() instanceof IOException) {
+                throw (IOException) throwableOptional.get();
+            } else {
+                throw new IOException(throwableOptional.get());
+            }
         }
     }
 }

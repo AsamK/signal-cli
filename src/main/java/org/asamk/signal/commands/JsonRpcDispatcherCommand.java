@@ -75,6 +75,16 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
                 objectMapper.valueToTree(s),
                 null)), m, ignoreAttachments);
 
+        // Maybe this should be handled inside the Manager
+        while (!m.hasCaughtUpWithOldMessages()) {
+            try {
+                synchronized (m) {
+                    m.wait();
+                }
+            } catch (InterruptedException ignored) {
+            }
+        }
+
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         final var jsonRpcReader = new JsonRpcReader(jsonRpcSender, () -> {

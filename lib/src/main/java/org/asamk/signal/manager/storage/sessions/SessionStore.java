@@ -109,11 +109,7 @@ public class SessionStore implements SignalServiceSessionStore {
 
         synchronized (cachedSessions) {
             final var session = loadSessionLocked(key);
-            if (session == null) {
-                return false;
-            }
-
-            return session.hasSenderChain() && session.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
+            return isActive(session);
         }
     }
 
@@ -158,6 +154,7 @@ public class SessionStore implements SignalServiceSessionStore {
             return recipientIdToNameMap.keySet()
                     .stream()
                     .flatMap(recipientId -> getKeysLocked(recipientId).stream())
+                    .filter(key -> isActive(this.loadSessionLocked(key)))
                     .map(key -> new SignalProtocolAddress(recipientIdToNameMap.get(key.recipientId), key.getDeviceId()))
                     .collect(Collectors.toSet());
         }
@@ -182,7 +179,8 @@ public class SessionStore implements SignalServiceSessionStore {
 
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         synchronized (cachedSessions) {
-            final var otherHasSession = getKeysLocked(toBeMergedRecipientId).size() > 0;
+            final var keys = getKeysLocked(toBeMergedRecipientId);
+            final var otherHasSession = keys.size() > 0;
             if (!otherHasSession) {
                 return;
             }
@@ -192,8 +190,7 @@ public class SessionStore implements SignalServiceSessionStore {
                 logger.debug("To be merged recipient had sessions, deleting.");
                 deleteAllSessions(toBeMergedRecipientId);
             } else {
-                logger.debug("To be merged recipient had sessions, re-assigning to the new recipient.");
-                final var keys = getKeysLocked(toBeMergedRecipientId);
+                logger.debug("Only to be merged recipient had sessions, re-assigning to the new recipient.");
                 for (var key : keys) {
                     final var session = loadSessionLocked(key);
                     deleteSessionLocked(key);
@@ -319,6 +316,12 @@ public class SessionStore implements SignalServiceSessionStore {
         } catch (IOException e) {
             logger.error("Failed to delete session file {}: {}", file, e.getMessage());
         }
+    }
+
+    private static boolean isActive(SessionRecord record) {
+        return record != null
+                && record.hasSenderChain()
+                && record.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
     }
 
     private static final class Key {

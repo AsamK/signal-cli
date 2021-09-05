@@ -42,6 +42,7 @@ import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
+import org.asamk.signal.manager.helper.StorageHelper;
 import org.asamk.signal.manager.helper.SyncHelper;
 import org.asamk.signal.manager.helper.UnidentifiedAccessHelper;
 import org.asamk.signal.manager.jobs.Context;
@@ -133,6 +134,7 @@ public class Manager implements Closeable {
 
     private final ProfileHelper profileHelper;
     private final PinHelper pinHelper;
+    private final StorageHelper storageHelper;
     private final SendHelper sendHelper;
     private final SyncHelper syncHelper;
     private final AttachmentHelper attachmentHelper;
@@ -141,6 +143,7 @@ public class Manager implements Closeable {
     private final IncomingMessageHandler incomingMessageHandler;
 
     private final Context context;
+    private boolean hasCaughtUpWithOldMessages = false;
 
     Manager(
             SignalAccount account,
@@ -208,6 +211,7 @@ public class Manager implements Closeable {
                 avatarStore,
                 this::resolveSignalServiceAddress,
                 account.getRecipientStore());
+        this.storageHelper = new StorageHelper(account, dependencies, groupHelper);
         this.contactHelper = new ContactHelper(account);
         this.syncHelper = new SyncHelper(account,
                 attachmentHelper,
@@ -222,7 +226,8 @@ public class Manager implements Closeable {
                 sendHelper,
                 groupHelper,
                 syncHelper,
-                profileHelper);
+                profileHelper,
+                storageHelper);
         var jobExecutor = new JobExecutor(context);
 
         this.incomingMessageHandler = new IncomingMessageHandler(account,
@@ -310,7 +315,7 @@ public class Manager implements Closeable {
         if (account.getUuid() == null) {
             account.setUuid(dependencies.getAccountManager().getOwnUuid());
         }
-        updateAccountAttributes();
+        updateAccountAttributes(null);
     }
 
     /**
@@ -342,14 +347,21 @@ public class Manager implements Closeable {
         }));
     }
 
-    public void updateAccountAttributes() throws IOException {
+    public void updateAccountAttributes(String deviceName) throws IOException {
+        final String encryptedDeviceName;
+        if (deviceName == null) {
+            encryptedDeviceName = account.getEncryptedDeviceName();
+        } else {
+            final var privateKey = account.getIdentityKeyPair().getPrivateKey();
+            encryptedDeviceName = DeviceNameUtil.encryptDeviceName(deviceName, privateKey);
+            account.setEncryptedDeviceName(encryptedDeviceName);
+        }
         dependencies.getAccountManager()
-                .setAccountAttributes(account.getEncryptedDeviceName(),
+                .setAccountAttributes(encryptedDeviceName,
                         null,
                         account.getLocalRegistrationId(),
                         true,
-                        // set legacy pin only if no KBS master key is set
-                        account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
+                        null,
                         account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
                         account.getSelfUnidentifiedAccessKey(),
                         account.isUnrestrictedUnidentifiedAccess(),
@@ -739,6 +751,13 @@ public class Manager implements Closeable {
 
     public void requestAllSyncData() throws IOException {
         syncHelper.requestAllSyncData();
+        retrieveRemoteStorage();
+    }
+
+    void retrieveRemoteStorage() throws IOException {
+        if (account.getStorageKey() != null) {
+            storageHelper.readDataFromStorage();
+        }
     }
 
     private byte[] getSenderCertificate() {
@@ -865,7 +884,7 @@ public class Manager implements Closeable {
         final var signalWebSocket = dependencies.getSignalWebSocket();
         signalWebSocket.connect();
 
-        var hasCaughtUpWithOldMessages = false;
+        hasCaughtUpWithOldMessages = false;
 
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
@@ -885,10 +904,13 @@ public class Manager implements Closeable {
                     envelope = result.get();
                 } else {
                     // Received indicator that server queue is empty
-                    hasCaughtUpWithOldMessages = true;
-
                     handleQueuedActions(queuedActions);
                     queuedActions.clear();
+
+                    hasCaughtUpWithOldMessages = true;
+                    synchronized (this) {
+                        this.notifyAll();
+                    }
 
                     // Continue to wait another timeout for new messages
                     continue;
@@ -936,16 +958,26 @@ public class Manager implements Closeable {
         handleQueuedActions(queuedActions);
     }
 
+    public boolean hasCaughtUpWithOldMessages() {
+        return hasCaughtUpWithOldMessages;
+    }
+
     private void handleQueuedActions(final Collection<HandleAction> queuedActions) {
+        var interrupted = false;
         for (var action : queuedActions) {
             try {
                 action.execute(context);
             } catch (Throwable e) {
-                if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
+                if ((e instanceof AssertionError || e instanceof RuntimeException)
+                        && e.getCause() instanceof InterruptedException) {
+                    interrupted = true;
+                    continue;
                 }
                 logger.warn("Message action failed.", e);
             }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
         }
     }
 

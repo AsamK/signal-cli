@@ -44,20 +44,6 @@ public class SendHelper {
     private final GroupProvider groupProvider;
     private final RecipientRegistrationRefresher recipientRegistrationRefresher;
 
-    private final SignalServiceMessageSender.IndividualSendEvents sendEvents = new SignalServiceMessageSender.IndividualSendEvents() {
-        @Override
-        public void onMessageEncrypted() {
-        }
-
-        @Override
-        public void onMessageSent() {
-        }
-
-        @Override
-        public void onSyncMessageSent() {
-        }
-    };
-
     public SendHelper(
             final SignalAccount account,
             final SignalDependencies dependencies,
@@ -267,6 +253,7 @@ public class SendHelper {
                     isRecipientUpdate,
                     ContentHint.DEFAULT,
                     message,
+                    SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
                     sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
                     () -> false);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
@@ -286,14 +273,14 @@ public class SendHelper {
                         unidentifiedAccessHelper.getAccessFor(recipientId),
                         ContentHint.DEFAULT,
                         message,
-                        sendEvents);
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY);
             } catch (UnregisteredUserException e) {
                 final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
                 return messageSender.sendDataMessage(addressResolver.resolveSignalServiceAddress(newRecipientId),
                         unidentifiedAccessHelper.getAccessFor(newRecipientId),
                         ContentHint.DEFAULT,
                         message,
-                        sendEvents);
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY);
             }
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());

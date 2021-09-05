@@ -10,6 +10,7 @@
 
 ### Added
 - New global parameter `--trust-new-identities=always` to allow trusting any new identity key without verification
+- New parameter `--device-name` for `updateAccount` command to update the device name
 
 ## [0.8.5] - 2021-08-07
 ### Added

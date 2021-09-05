@@ -20,6 +20,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsI
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
+import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
@@ -213,6 +214,11 @@ public class SyncHelper {
                 trustLevel.toVerifiedState(),
                 System.currentTimeMillis());
         sendHelper.sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+    }
+
+    public void sendKeysMessage() throws IOException {
+        var keysMessage = new KeysMessage(Optional.fromNullable(account.getStorageKey()));
+        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 
     public void handleSyncDeviceContacts(final InputStream input) throws IOException {

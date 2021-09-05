@@ -8,12 +8,14 @@ import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
+import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendReceiptAction;
 import org.asamk.signal.manager.actions.SendSyncBlockedListAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
+import org.asamk.signal.manager.actions.SendSyncKeysAction;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
@@ -30,6 +32,7 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -173,10 +176,20 @@ public final class IncomingMessageHandler {
     ) {
         var actions = new ArrayList<HandleAction>();
         final RecipientId sender;
+        final int senderDeviceId;
         if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
             sender = recipientResolver.resolveRecipient(envelope.getSourceAddress());
+            senderDeviceId = envelope.getSourceDevice();
         } else {
             sender = recipientResolver.resolveRecipient(content.getSender());
+            senderDeviceId = content.getSenderDevice();
+        }
+
+        if (content.getSenderKeyDistributionMessage().isPresent()) {
+            final var message = content.getSenderKeyDistributionMessage().get();
+            final var protocolAddress = new SignalProtocolAddress(addressResolver.resolveSignalServiceAddress(sender)
+                    .getIdentifier(), senderDeviceId);
+            dependencies.getMessageSender().processSenderKeyDistributionMessage(protocolAddress, message);
         }
 
         if (content.getDataMessage().isPresent()) {
@@ -226,7 +239,10 @@ public final class IncomingMessageHandler {
             if (rm.isBlockedListRequest()) {
                 actions.add(SendSyncBlockedListAction.create());
             }
-            // TODO Handle rm.isConfigurationRequest(); rm.isKeysRequest();
+            if (rm.isKeysRequest()) {
+                actions.add(SendSyncKeysAction.create());
+            }
+            // TODO Handle rm.isConfigurationRequest();
         }
         if (syncMessage.getGroups().isPresent()) {
             logger.warn("Received a group v1 sync message, that can't be handled anymore, ignoring.");
@@ -296,7 +312,7 @@ public final class IncomingMessageHandler {
                 case LOCAL_PROFILE:
                     actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
                 case STORAGE_MANIFEST:
-                    // TODO
+                    actions.add(RetrieveStorageDataAction.create());
             }
         }
         if (syncMessage.getKeys().isPresent()) {
@@ -304,6 +320,7 @@ public final class IncomingMessageHandler {
             if (keysMessage.getStorageService().isPresent()) {
                 final var storageKey = keysMessage.getStorageService().get();
                 account.setStorageKey(storageKey);
+                actions.add(RetrieveStorageDataAction.create());
             }
         }
         if (syncMessage.getConfiguration().isPresent()) {

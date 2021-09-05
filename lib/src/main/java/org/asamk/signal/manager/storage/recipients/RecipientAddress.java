@@ -18,6 +18,7 @@ public class RecipientAddress {
      * @param e164 The phone number of the user, if available.
      */
     public RecipientAddress(Optional<UUID> uuid, Optional<String> e164) {
+        uuid = uuid.isPresent() && uuid.get().equals(UuidUtil.UNKNOWN_UUID) ? Optional.empty() : uuid;
         if (!uuid.isPresent() && !e164.isPresent()) {
             throw new AssertionError("Must have either a UUID or E164 number!");
         }
@@ -31,13 +32,11 @@ public class RecipientAddress {
     }
 
     public RecipientAddress(SignalServiceAddress address) {
-        this.uuid = Optional.of(address.getUuid());
-        this.e164 = Optional.ofNullable(address.getNumber().orNull());
+        this(Optional.of(address.getUuid()), Optional.ofNullable(address.getNumber().orNull()));
     }
 
     public RecipientAddress(UUID uuid) {
-        this.uuid = Optional.of(uuid);
-        this.e164 = Optional.empty();
+        this(Optional.of(uuid), Optional.empty());
     }
 
     public Optional<String> getNumber() {
