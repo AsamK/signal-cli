@@ -308,7 +308,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         final var byNumber = address.getNumber().isEmpty()
                 ? Optional.<Recipient>empty()
                 : findByNumberLocked(address.getNumber().get());
-        final var byUuid = address.getUuid().isEmpty() || address.getUuid().get().equals(UuidUtil.UNKNOWN_UUID)
+        final var byUuid = address.getUuid().isEmpty()
                 ? Optional.<Recipient>empty()
                 : findByUuidLocked(address.getUuid().get());
 
