@@ -110,6 +110,9 @@ CAUTION: Only delete your account if you won't use this number again!
 Update the account attributes on the signal server.
 Can fix problems with receiving messages.
 
+*-n* NAME, *--device-name* NAME::
+Set a new device name for the main or linked device
+
 === setPin
 
 Set a registration lock pin, to prevent others from registering this number.

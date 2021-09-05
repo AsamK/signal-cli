@@ -311,7 +311,7 @@ public class Manager implements Closeable {
         if (account.getUuid() == null) {
             account.setUuid(dependencies.getAccountManager().getOwnUuid());
         }
-        updateAccountAttributes();
+        updateAccountAttributes(null);
     }
 
     /**
@@ -343,14 +343,21 @@ public class Manager implements Closeable {
         }));
     }
 
-    public void updateAccountAttributes() throws IOException {
+    public void updateAccountAttributes(String deviceName) throws IOException {
+        final String encryptedDeviceName;
+        if (deviceName == null) {
+            encryptedDeviceName = account.getEncryptedDeviceName();
+        } else {
+            final var privateKey = account.getIdentityKeyPair().getPrivateKey();
+            encryptedDeviceName = DeviceNameUtil.encryptDeviceName(deviceName, privateKey);
+            account.setEncryptedDeviceName(encryptedDeviceName);
+        }
         dependencies.getAccountManager()
-                .setAccountAttributes(account.getEncryptedDeviceName(),
+                .setAccountAttributes(encryptedDeviceName,
                         null,
                         account.getLocalRegistrationId(),
                         true,
-                        // set legacy pin only if no KBS master key is set
-                        account.getPinMasterKey() == null ? account.getRegistrationLockPin() : null,
+                        null,
                         account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
                         account.getSelfUnidentifiedAccessKey(),
                         account.isUnrestrictedUnidentifiedAccess(),

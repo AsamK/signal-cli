@@ -20,14 +20,16 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the account attributes on the signal server.");
+        subparser.addArgument("-n", "--device-name").help("Specify a name to describe this device.");
     }
 
     @Override
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        var deviceName = ns.getString("device-name");
         try {
-            m.updateAccountAttributes();
+            m.updateAccountAttributes(deviceName);
         } catch (IOException e) {
             throw new IOErrorException("UpdateAccount error: " + e.getMessage());
         }

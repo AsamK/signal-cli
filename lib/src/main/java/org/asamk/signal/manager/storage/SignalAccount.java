@@ -818,6 +818,11 @@ public class SignalAccount implements Closeable {
         return encryptedDeviceName;
     }
 
+    public void setEncryptedDeviceName(final String encryptedDeviceName) {
+        this.encryptedDeviceName = encryptedDeviceName;
+        save();
+    }
+
     public int getDeviceId() {
         return deviceId;
     }
