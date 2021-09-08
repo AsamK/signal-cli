@@ -37,7 +37,7 @@ public class UnregisterCommand implements LocalCommand {
                 m.unregister();
             }
         } catch (IOException e) {
-            throw new IOErrorException("Unregister error: " + e.getMessage());
+            throw new IOErrorException("Unregister error: " + e.getMessage(), e);
         }
     }
 }

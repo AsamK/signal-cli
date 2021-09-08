@@ -49,7 +49,7 @@ public class RegisterCommand implements RegistrationCommand {
             }
             throw new UserErrorException(message);
         } catch (IOException e) {
-            throw new IOErrorException("Request verify error: " + e.getMessage());
+            throw new IOErrorException("Request verify error: " + e.getMessage(), e);
         }
     }
 }

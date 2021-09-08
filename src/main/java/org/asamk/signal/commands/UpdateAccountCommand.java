@@ -31,7 +31,7 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
         try {
             m.updateAccountAttributes(deviceName);
         } catch (IOException e) {
-            throw new IOErrorException("UpdateAccount error: " + e.getMessage());
+            throw new IOErrorException("UpdateAccount error: " + e.getMessage(), e);
         }
     }
 }

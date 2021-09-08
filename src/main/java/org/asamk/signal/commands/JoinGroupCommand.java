@@ -78,10 +78,10 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                     + e.getMessage()
                     + " ("
                     + e.getClass().getSimpleName()
-                    + ")");
+                    + ")", e);
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")");
+                    .getSimpleName() + ")", e);
         } catch (GroupLinkNotActiveException e) {
             throw new UserErrorException("Group link is not valid: " + e.getMessage());
         }

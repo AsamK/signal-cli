@@ -49,7 +49,7 @@ public class LinkCommand implements ProvisioningCommand {
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
-            throw new IOErrorException("Link request error: " + e.getMessage());
+            throw new IOErrorException("Link request error: " + e.getMessage(), e);
         } catch (UserAlreadyExists e) {
             throw new UserErrorException("The user "
                     + e.getUsername()

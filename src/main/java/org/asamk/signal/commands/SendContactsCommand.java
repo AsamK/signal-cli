@@ -29,7 +29,7 @@ public class SendContactsCommand implements JsonRpcLocalCommand {
         try {
             m.sendContacts();
         } catch (IOException e) {
-            throw new IOErrorException("SendContacts error: " + e.getMessage());
+            throw new IOErrorException("SendContacts error: " + e.getMessage(), e);
         }
     }
 }

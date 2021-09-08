@@ -88,6 +88,6 @@ public class ErrorUtils {
         for (var error : errors) {
             message.append(error).append("\n");
         }
-        throw new IOErrorException(message.toString());
+        throw new IOErrorException(message.toString(), null);
     }
 }

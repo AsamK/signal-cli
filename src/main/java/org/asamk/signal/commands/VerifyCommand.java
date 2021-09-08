@@ -44,9 +44,9 @@ public class VerifyCommand implements RegistrationCommand {
         } catch (KeyBackupServicePinException e) {
             throw new UserErrorException("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
         } catch (KeyBackupSystemNoDataException e) {
-            throw new UnexpectedErrorException("Verification failed! No KBS data.");
+            throw new UnexpectedErrorException("Verification failed! No KBS data.", e);
         } catch (IOException e) {
-            throw new IOErrorException("Verify error: " + e.getMessage());
+            throw new IOErrorException("Verify error: " + e.getMessage(), e);
         }
     }
 }

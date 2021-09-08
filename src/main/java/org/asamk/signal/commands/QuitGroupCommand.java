@@ -70,7 +70,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
                     + e.getMessage()
                     + " ("
                     + e.getClass().getSimpleName()
-                    + ")");
+                    + ")", e);
         } catch (GroupNotFoundException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (LastGroupAdminException e) {

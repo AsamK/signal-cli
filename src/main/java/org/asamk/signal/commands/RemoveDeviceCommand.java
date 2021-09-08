@@ -34,7 +34,7 @@ public class RemoveDeviceCommand implements JsonRpcLocalCommand {
             int deviceId = ns.getInt("device-id");
             m.removeLinkedDevices(deviceId);
         } catch (IOException e) {
-            throw new IOErrorException("Error while removing device: " + e.getMessage());
+            throw new IOErrorException("Error while removing device: " + e.getMessage(), e);
         }
     }
 }

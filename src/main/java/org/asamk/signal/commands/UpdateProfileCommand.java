@@ -51,7 +51,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         try {
             m.setProfile(givenName, familyName, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
-            throw new IOErrorException("Update profile error: " + e.getMessage());
+            throw new IOErrorException("Update profile error: " + e.getMessage(), e);
         }
     }
 }

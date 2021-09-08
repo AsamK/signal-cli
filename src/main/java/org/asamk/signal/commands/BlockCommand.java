@@ -43,7 +43,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             } catch (IOException e) {
-                throw new UnexpectedErrorException("Failed to sync block to linked devices: " + e.getMessage());
+                throw new UnexpectedErrorException("Failed to sync block to linked devices: " + e.getMessage(), e);
             }
         }
 
@@ -55,7 +55,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
                 } catch (GroupNotFoundException e) {
                     logger.warn("Group not found {}: {}", groupId.toBase64(), e.getMessage());
                 } catch (IOException e) {
-                    throw new UnexpectedErrorException("Failed to sync block to linked devices: " + e.getMessage());
+                    throw new UnexpectedErrorException("Failed to sync block to linked devices: " + e.getMessage(), e);
                 }
             }
         }
