@@ -184,7 +184,11 @@ public class RegistrationManager implements Closeable {
 
             m.refreshPreKeys();
             // Set an initial empty profile so user can be added to groups
-            m.setProfile(null, null, null, null, null);
+            try {
+                m.setProfile(null, null, null, null, null);
+            } catch (NoClassDefFoundError e) {
+                logger.warn("Failed to set default profile: {}", e.getMessage());
+            }
             if (response.isStorageCapable()) {
                 m.retrieveRemoteStorage();
             }
