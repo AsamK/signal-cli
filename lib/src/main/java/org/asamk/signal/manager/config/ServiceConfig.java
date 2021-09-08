@@ -1,6 +1,8 @@
 package org.asamk.signal.manager.config;
 
 import org.signal.zkgroup.internal.Native;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
 
@@ -14,6 +16,8 @@ import java.util.List;
 import okhttp3.Interceptor;
 
 public class ServiceConfig {
+
+    private final static Logger logger = LoggerFactory.getLogger(ServiceConfig.class);
 
     public final static int PREKEY_MINIMUM_COUNT = 20;
     public final static int PREKEY_BATCH_SIZE = 100;
@@ -31,7 +35,8 @@ public class ServiceConfig {
         try {
             Native.serverPublicParamsCheckValidContentsJNI(new byte[]{});
             zkGroupAvailable = true;
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            logger.warn("Failed to call libzkgroup: {}", e.getMessage());
             zkGroupAvailable = false;
         }
         capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, zkGroupAvailable, true, true);
@@ -53,7 +58,8 @@ public class ServiceConfig {
         try {
             org.signal.client.internal.Native.DeviceTransfer_GeneratePrivateKey();
             return true;
-        } catch (UnsatisfiedLinkError ignored) {
+        } catch (UnsatisfiedLinkError e) {
+            logger.warn("Failed to call libsignal-client: {}", e.getMessage());
             return false;
         }
     }
