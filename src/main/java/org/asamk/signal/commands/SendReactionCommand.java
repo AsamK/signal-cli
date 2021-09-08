@@ -81,7 +81,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")");
+                    .getSimpleName() + ")", e);
         }
     }
 
@@ -129,7 +129,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")");
+                    .getSimpleName() + ")", e);
         }
     }
 

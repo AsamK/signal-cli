@@ -42,12 +42,12 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
             m.addDeviceLink(new URI(ns.getString("uri")));
         } catch (IOException e) {
             logger.error("Add device link failed", e);
-            throw new IOErrorException("Add device link failed");
+            throw new IOErrorException("Add device link failed", e);
         } catch (URISyntaxException e) {
             throw new UserErrorException("Device link uri has invalid format: " + e.getMessage());
         } catch (InvalidKeyException e) {
             logger.error("Add device link failed", e);
-            throw new UnexpectedErrorException("Add device link failed.");
+            throw new UnexpectedErrorException("Add device link failed.", e);
         }
     }
 }

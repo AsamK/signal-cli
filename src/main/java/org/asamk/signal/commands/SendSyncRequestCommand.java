@@ -29,7 +29,7 @@ public class SendSyncRequestCommand implements JsonRpcLocalCommand {
         try {
             m.requestAllSyncData();
         } catch (IOException e) {
-            throw new IOErrorException("Request sync data error: " + e.getMessage());
+            throw new IOErrorException("Request sync data error: " + e.getMessage(), e);
         }
     }
 }

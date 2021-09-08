@@ -50,7 +50,7 @@ public class UploadStickerPackCommand implements JsonRpcLocalCommand {
                 writer.write(Map.of("url", url));
             }
         } catch (IOException e) {
-            throw new IOErrorException("Upload error (maybe image size too large):" + e.getMessage());
+            throw new IOErrorException("Upload error (maybe image size too large):" + e.getMessage(), e);
         } catch (StickerPackInvalidException e) {
             throw new UserErrorException("Invalid sticker pack: " + e.getMessage());
         }

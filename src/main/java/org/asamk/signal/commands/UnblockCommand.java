@@ -42,7 +42,7 @@ public class UnblockCommand implements JsonRpcLocalCommand {
             } catch (NotMasterDeviceException e) {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             } catch (IOException e) {
-                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage());
+                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage(), e);
             }
         }
 
@@ -53,7 +53,7 @@ public class UnblockCommand implements JsonRpcLocalCommand {
             } catch (GroupNotFoundException e) {
                 logger.warn("Unknown group id: {}", groupId);
             } catch (IOException e) {
-                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage());
+                throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage(), e);
             }
         }
     }

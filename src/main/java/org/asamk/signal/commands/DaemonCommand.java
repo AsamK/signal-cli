@@ -75,7 +75,7 @@ public class DaemonCommand implements MultiLocalCommand {
             }
         } catch (DBusException | IOException e) {
             logger.error("Dbus command failed", e);
-            throw new UnexpectedErrorException("Dbus command failed");
+            throw new UnexpectedErrorException("Dbus command failed", e);
         }
     }
 
@@ -113,7 +113,7 @@ public class DaemonCommand implements MultiLocalCommand {
             signalControl.run();
         } catch (DBusException | IOException e) {
             logger.error("Dbus command failed", e);
-            throw new UnexpectedErrorException("Dbus command failed");
+            throw new UnexpectedErrorException("Dbus command failed", e);
         }
     }
 

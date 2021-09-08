@@ -126,7 +126,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             }
         } catch (DBusException e) {
             logger.error("Dbus client failed", e);
-            throw new UnexpectedErrorException("Dbus client failed");
+            throw new UnexpectedErrorException("Dbus client failed", e);
         }
         while (true) {
             try {
@@ -157,7 +157,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                     ignoreAttachments,
                     handler);
         } catch (IOException e) {
-            throw new IOErrorException("Error while receiving messages: " + e.getMessage());
+            throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
         }
     }
 }

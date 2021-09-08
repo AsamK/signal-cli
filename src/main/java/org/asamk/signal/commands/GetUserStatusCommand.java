@@ -43,8 +43,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         try {
             registered = m.areUsersRegistered(new HashSet<>(ns.getList("recipient")));
         } catch (IOException e) {
-            logger.debug("Failed to check registered users", e);
-            throw new IOErrorException("Unable to check if users are registered");
+            throw new IOErrorException("Unable to check if users are registered", e);
         }
 
         // Output

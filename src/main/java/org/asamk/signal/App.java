@@ -16,6 +16,7 @@ import org.asamk.signal.commands.ProvisioningCommand;
 import org.asamk.signal.commands.RegistrationCommand;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -225,7 +226,7 @@ public class App {
                     + e.getMessage()
                     + " ("
                     + e.getClass().getSimpleName()
-                    + ")");
+                    + ")", e);
         }
         try (var m = manager) {
             command.handleCommand(ns, m);
@@ -299,20 +300,19 @@ public class App {
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + username + " is not registered.");
         } catch (Throwable e) {
-            logger.debug("Loading state file failed", e);
             throw new UnexpectedErrorException("Error loading state file for user "
                     + username
                     + ": "
                     + e.getMessage()
                     + " ("
                     + e.getClass().getSimpleName()
-                    + ")");
+                    + ")", e);
         }
 
         try {
             manager.checkAccountState();
         } catch (IOException e) {
-            throw new UnexpectedErrorException("Error while checking account " + username + ": " + e.getMessage());
+            throw new IOErrorException("Error while checking account " + username + ": " + e.getMessage(), e);
         }
 
         return manager;
@@ -337,7 +337,7 @@ public class App {
             }
         } catch (DBusException | IOException e) {
             logger.error("Dbus client failed", e);
-            throw new UnexpectedErrorException("Dbus client failed");
+            throw new UnexpectedErrorException("Dbus client failed", e);
         }
     }
 

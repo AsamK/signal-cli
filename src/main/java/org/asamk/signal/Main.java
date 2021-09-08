@@ -40,7 +40,8 @@ public class Main {
         installSecurityProviderWorkaround();
 
         // Configuring the logger needs to happen before any logger is initialized
-        configureLogging(isVerbose(args));
+        final var isVerbose = isVerbose(args);
+        configureLogging(isVerbose);
 
         var parser = App.buildArgumentParser();
 
@@ -51,6 +52,9 @@ public class Main {
             new App(ns).init();
         } catch (CommandException e) {
             System.err.println(e.getMessage());
+            if (isVerbose && e.getCause() != null) {
+                e.getCause().printStackTrace();
+            }
             status = getStatusForError(e);
         }
         System.exit(status);

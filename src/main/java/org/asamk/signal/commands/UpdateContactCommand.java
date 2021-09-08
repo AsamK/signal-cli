@@ -46,7 +46,7 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
                 m.setContactName(recipient, name);
             }
         } catch (IOException e) {
-            throw new IOErrorException("Update contact error: " + e.getMessage());
+            throw new IOErrorException("Update contact error: " + e.getMessage(), e);
         } catch (NotMasterDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         }

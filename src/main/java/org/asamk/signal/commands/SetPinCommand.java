@@ -35,9 +35,10 @@ public class SetPinCommand implements JsonRpcLocalCommand {
             var registrationLockPin = ns.getString("pin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
         } catch (UnauthenticatedResponseException e) {
-            throw new UnexpectedErrorException("Set pin error failed with unauthenticated response: " + e.getMessage());
+            throw new UnexpectedErrorException("Set pin error failed with unauthenticated response: " + e.getMessage(),
+                    e);
         } catch (IOException e) {
-            throw new IOErrorException("Set pin error: " + e.getMessage());
+            throw new IOErrorException("Set pin error: " + e.getMessage(), e);
         }
     }
 }

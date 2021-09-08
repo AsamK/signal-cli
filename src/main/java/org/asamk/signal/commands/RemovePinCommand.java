@@ -32,9 +32,9 @@ public class RemovePinCommand implements JsonRpcLocalCommand {
         try {
             m.setRegistrationLockPin(Optional.absent());
         } catch (UnauthenticatedResponseException e) {
-            throw new UnexpectedErrorException("Remove pin failed with unauthenticated response: " + e.getMessage());
+            throw new UnexpectedErrorException("Remove pin failed with unauthenticated response: " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new IOErrorException("Remove pin error: " + e.getMessage());
+            throw new IOErrorException("Remove pin error: " + e.getMessage(), e);
         }
     }
 }

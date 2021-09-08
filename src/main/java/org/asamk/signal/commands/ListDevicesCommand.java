@@ -40,8 +40,7 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
         try {
             devices = m.getLinkedDevices();
         } catch (IOException e) {
-            logger.debug("Failed to get linked devices", e);
-            throw new IOErrorException("Failed to get linked devices: " + e.getMessage());
+            throw new IOErrorException("Failed to get linked devices: " + e.getMessage(), e);
         }
 
         if (outputWriter instanceof PlainTextWriter) {
@@ -71,10 +70,7 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
         public final long lastSeenTimestamp;
 
         private JsonDevice(
-                final long id,
-                final String name,
-                final long createdTimestamp,
-                final long lastSeenTimestamp
+                final long id, final String name, final long createdTimestamp, final long lastSeenTimestamp
         ) {
             this.id = id;
             this.name = name;
