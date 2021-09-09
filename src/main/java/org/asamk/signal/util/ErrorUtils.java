@@ -67,7 +67,7 @@ public class ErrorUtils {
         } else if (result.getProofRequiredFailure() != null) {
             final var failure = result.getProofRequiredFailure();
             return String.format(
-                    "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with token \"%s\", or wait \"%d\" seconds",
+                    "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with challenge token \"%s\", or wait \"%d\" seconds",
                     identifier,
                     failure.getOptions()
                             .stream()
