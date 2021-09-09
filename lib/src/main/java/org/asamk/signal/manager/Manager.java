@@ -405,6 +405,10 @@ public class Manager implements Closeable {
         account.setRegistered(false);
     }
 
+    public void submitRateLimitRecaptchaChallenge(String challenge, String captcha) throws IOException {
+        dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
+    }
+
     public List<Device> getLinkedDevices() throws IOException {
         var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
