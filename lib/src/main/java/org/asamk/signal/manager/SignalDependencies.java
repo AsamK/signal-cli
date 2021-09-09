@@ -3,6 +3,7 @@ package org.asamk.signal.manager;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
+import org.signal.zkgroup.profiles.ClientZkProfileOperations;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -93,6 +94,11 @@ public class SignalDependencies {
                         : null);
     }
 
+    private ClientZkProfileOperations getClientZkProfileOperations() {
+        final var clientZkOperations = getClientZkOperations();
+        return clientZkOperations == null ? null : clientZkOperations.getProfileOperations();
+    }
+
     public SignalWebSocket getSignalWebSocket() {
         return getOrCreate(() -> signalWebSocket, () -> {
             final var timer = new UptimeSleepTimer();
@@ -126,7 +132,7 @@ public class SignalDependencies {
                 () -> messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                         credentialsProvider,
                         userAgent,
-                        getClientZkOperations().getProfileOperations(),
+                        getClientZkProfileOperations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
@@ -139,7 +145,7 @@ public class SignalDependencies {
                         userAgent,
                         getSignalWebSocket(),
                         Optional.absent(),
-                        getClientZkOperations().getProfileOperations(),
+                        getClientZkProfileOperations(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
@@ -156,7 +162,7 @@ public class SignalDependencies {
 
     public ProfileService getProfileService() {
         return getOrCreate(() -> profileService,
-                () -> profileService = new ProfileService(getClientZkOperations().getProfileOperations(),
+                () -> profileService = new ProfileService(getClientZkProfileOperations(),
                         getMessageReceiver(),
                         getSignalWebSocket()));
     }
