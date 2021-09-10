@@ -58,16 +58,20 @@ public class ErrorUtils {
 
     public static String getErrorMessageFromSendMessageResult(SendMessageResult result) {
         var identifier = getLegacyIdentifier(result.getAddress());
-        if (result.isNetworkFailure()) {
-            return String.format("Network failure for \"%s\"", identifier);
-        } else if (result.isUnregisteredFailure()) {
-            return String.format("Unregistered user \"%s\"", identifier);
-        } else if (result.getIdentityFailure() != null) {
-            return String.format("Untrusted Identity for \"%s\"", identifier);
-        } else if (result.getProofRequiredFailure() != null) {
+        if (result.getProofRequiredFailure() != null) {
             final var failure = result.getProofRequiredFailure();
             return String.format(
-                    "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with token \"%s\", or wait \"%d\" seconds",
+                    "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with challenge token \"%s\", or wait \"%d\" seconds.\n"
+                            + (
+                            failure.getOptions().contains(ProofRequiredException.Option.RECAPTCHA)
+                                    ?
+                                    "To get the captcha token, go to https://signalcaptchas.org/registration/generate.html\n"
+                                            + "Check the developer tools (F12) console for a failed redirect to signalcaptcha://\n"
+                                            + "Everything after signalcaptcha:// is the captcha token.\n"
+                                            + "Use the following command to submit the captcha token:\n"
+                                            + "signal-cli submitRateLimitChallenge --challenge CHALLENGE_TOKEN --captcha CAPTCHA_TOKEN"
+                                    : ""
+                    ),
                     identifier,
                     failure.getOptions()
                             .stream()
@@ -75,6 +79,12 @@ public class ErrorUtils {
                             .collect(Collectors.joining(", ")),
                     failure.getToken(),
                     failure.getRetryAfterSeconds());
+        } else if (result.isNetworkFailure()) {
+            return String.format("Network failure for \"%s\"", identifier);
+        } else if (result.isUnregisteredFailure()) {
+            return String.format("Unregistered user \"%s\"", identifier);
+        } else if (result.getIdentityFailure() != null) {
+            return String.format("Untrusted Identity for \"%s\"", identifier);
         }
         return null;
     }

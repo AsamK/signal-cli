@@ -34,6 +34,7 @@ public class Commands {
         addCommand(new SendSyncRequestCommand());
         addCommand(new SendTypingCommand());
         addCommand(new SetPinCommand());
+        addCommand(new SubmitRateLimitChallengeCommand());
         addCommand(new TrustCommand());
         addCommand(new UnblockCommand());
         addCommand(new UnregisterCommand());
