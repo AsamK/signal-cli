@@ -61,7 +61,8 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
             final var writer = (PlainTextWriter) outputWriter;
 
             for (var entry : registered.entrySet()) {
-                writer.println("{}: {}", entry.getKey(), entry.getValue());
+                final var uuid = entry.getValue().second();
+                writer.println("{}: {}", entry.getKey(), uuid != null);
             }
         }
     }
