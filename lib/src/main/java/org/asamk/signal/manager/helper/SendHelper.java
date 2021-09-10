@@ -23,6 +23,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
+import org.whispersystems.signalservice.api.push.exceptions.RateLimitException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 
 import java.io.IOException;
@@ -285,6 +286,9 @@ public class SendHelper {
             }
         } catch (ProofRequiredException e) {
             return SendMessageResult.proofRequiredFailure(address, e);
+        } catch (RateLimitException e) {
+            logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
+            return SendMessageResult.networkFailure(address);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
