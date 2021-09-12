@@ -40,6 +40,7 @@ import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.GroupV2Helper;
 import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
+import org.asamk.signal.manager.helper.PreKeyHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
 import org.asamk.signal.manager.helper.StorageHelper;
@@ -62,14 +63,11 @@ import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
-import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.FingerprintParsingException;
 import org.whispersystems.libsignal.fingerprint.FingerprintVersionMismatchException;
-import org.whispersystems.libsignal.state.PreKeyRecord;
-import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
@@ -141,6 +139,7 @@ public class Manager implements Closeable {
     private final GroupHelper groupHelper;
     private final ContactHelper contactHelper;
     private final IncomingMessageHandler incomingMessageHandler;
+    private final PreKeyHelper preKeyHelper;
 
     private final Context context;
     private boolean hasCaughtUpWithOldMessages = false;
@@ -219,6 +218,7 @@ public class Manager implements Closeable {
                 groupHelper,
                 avatarStore,
                 this::resolveSignalServiceAddress);
+        preKeyHelper = new PreKeyHelper(account, dependencies);
 
         this.context = new Context(account,
                 dependencies,
@@ -247,10 +247,6 @@ public class Manager implements Closeable {
 
     public RecipientId getSelfRecipientId() {
         return account.getSelfRecipientId();
-    }
-
-    private IdentityKeyPair getIdentityKeyPair() {
-        return account.getIdentityKeyPair();
     }
 
     public int getDeviceId() {
@@ -309,9 +305,7 @@ public class Manager implements Closeable {
                         days);
             }
         }
-        if (dependencies.getAccountManager().getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-            refreshPreKeys();
-        }
+        preKeyHelper.refreshPreKeysIfNecessary();
         if (account.getUuid() == null) {
             account.setUuid(dependencies.getAccountManager().getOwnUuid());
         }
@@ -439,7 +433,7 @@ public class Manager implements Closeable {
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
-        var identityKeyPair = getIdentityKeyPair();
+        var identityKeyPair = account.getIdentityKeyPair();
         var verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
 
         dependencies.getAccountManager()
@@ -472,29 +466,7 @@ public class Manager implements Closeable {
     }
 
     void refreshPreKeys() throws IOException {
-        var oneTimePreKeys = generatePreKeys();
-        final var identityKeyPair = getIdentityKeyPair();
-        var signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
-
-        dependencies.getAccountManager().setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
-    }
-
-    private List<PreKeyRecord> generatePreKeys() {
-        final var offset = account.getPreKeyIdOffset();
-
-        var records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
-        account.addPreKeys(records);
-
-        return records;
-    }
-
-    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
-        final var signedPreKeyId = account.getNextSignedPreKeyId();
-
-        var record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
-        account.addSignedPreKey(record);
-
-        return record;
+        preKeyHelper.refreshPreKeys();
     }
 
     public Profile getRecipientProfile(RecipientId recipientId) {
@@ -1175,7 +1147,7 @@ public class Manager implements Closeable {
     ) {
         return Utils.computeSafetyNumber(capabilities.isUuid(),
                 account.getSelfAddress(),
-                getIdentityKeyPair().getPublicKey(),
+                account.getIdentityKeyPair().getPublicKey(),
                 theirAddress,
                 theirIdentityKey);
     }
