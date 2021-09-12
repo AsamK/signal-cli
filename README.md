@@ -89,6 +89,10 @@ dependencies. If you have a recent gradle version installed, you can replace `./
 
         ./gradlew distTar
 
+5. Compile and run signal-cli:
+
+        ./gradlew run --args="--help"
+
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
 It is possible to build a native binary with [GraalVM](https://www.graalvm.org).

@@ -64,12 +64,3 @@ tasks.withType<Jar> {
         )
     }
 }
-
-tasks.withType<JavaExec> {
-    val appArgs: String? by project
-    if (appArgs != null) {
-        // allow passing command-line arguments to the main application e.g.:
-        // $ gradle run -PappArgs="['-u', '+...', 'daemon', '--json']"
-        args = groovy.util.Eval.me(appArgs) as MutableList<String>
-    }
-}
