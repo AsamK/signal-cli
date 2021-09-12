@@ -1,16 +1,31 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.9.0] - 2021-09-12
+**Attention**: Now requires native libsignal-client version 0.9
+
 ### Breaking changes
-- Removed deprecated `--json` parameter, use `--output=json` instead
+- Removed deprecated `--json` parameter, use global parameter `--output=json` instead
 - Json output format of `listGroups` command changed:
-  Members are now arrays of `{"number":"...","uuid":"..."}` instead of arrays of strings.
+  Members are now arrays of `{"number":"...","uuid":"..."}` objects instead of arrays of strings.
 - Removed deprecated fallback data paths, only `$XDG_DATA_HOME/signal-cli` is used now
   For those still using the old paths (`$HOME/.config/signal`, `$HOME/.config/textsecure`) you need to move those to the new location.
 
 ### Added
 - New global parameter `--trust-new-identities=always` to allow trusting any new identity key without verification
-- New parameter `--device-name` for `updateAccount` command to update the device name
+- New parameter `--device-name` for `updateAccount` command to change the device name (also works for the main device)
+- New SignalControl DBus interface, to register/verify/link new accounts
+- New `jsonRpc` command that provides a JSON-RPC based API on stdout/stdin
+- Support for announcement groups
+- New parameter `--set-permission-send-messages` for `updateGroup` to create an announcement group
+- New `sendReceipt` command to send read and viewed receipts
+- Support for receiving sender key messages, mobile apps can now send messages more efficiently with server-side fan-out to groups with signal-cli members.
+- Support for reading data from remote Signal storage. Now v2 groups will be shown after linking a new device.
+- New `submitRateLimitChallenge` command that can be used to lift some rate-limits by solving a captcha
+
+### Fixed
+- Store identity key correctly when sending a message after a recipient has changed keys
 
 ## [0.8.5] - 2021-08-07
 ### Added
