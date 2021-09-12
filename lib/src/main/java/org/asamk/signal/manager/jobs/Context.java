@@ -3,6 +3,7 @@ package org.asamk.signal.manager.jobs;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.StickerPackStore;
 import org.asamk.signal.manager.helper.GroupHelper;
+import org.asamk.signal.manager.helper.PreKeyHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
 import org.asamk.signal.manager.helper.SendHelper;
 import org.asamk.signal.manager.helper.StorageHelper;
@@ -19,6 +20,7 @@ public class Context {
     private final SyncHelper syncHelper;
     private final ProfileHelper profileHelper;
     private final StorageHelper storageHelper;
+    private final PreKeyHelper preKeyHelper;
 
     public Context(
             final SignalAccount account,
@@ -28,7 +30,8 @@ public class Context {
             final GroupHelper groupHelper,
             final SyncHelper syncHelper,
             final ProfileHelper profileHelper,
-            final StorageHelper storageHelper
+            final StorageHelper storageHelper,
+            final PreKeyHelper preKeyHelper
     ) {
         this.account = account;
         this.dependencies = dependencies;
@@ -38,6 +41,7 @@ public class Context {
         this.syncHelper = syncHelper;
         this.profileHelper = profileHelper;
         this.storageHelper = storageHelper;
+        this.preKeyHelper = preKeyHelper;
     }
 
     public SignalAccount getAccount() {
@@ -70,5 +74,9 @@ public class Context {
 
     public StorageHelper getStorageHelper() {
         return storageHelper;
+    }
+
+    public PreKeyHelper getPreKeyHelper() {
+        return preKeyHelper;
     }
 }

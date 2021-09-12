@@ -6,6 +6,7 @@ import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
+import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
 import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
@@ -87,6 +88,11 @@ public final class IncomingMessageHandler {
             final boolean ignoreAttachments,
             final Manager.ReceiveMessageHandler handler
     ) {
+        final List<HandleAction> actions = new ArrayList<>();
+        if (envelope.isPreKeySignalMessage()) {
+            actions.add(RefreshPreKeysAction.create());
+        }
+
         SignalServiceContent content = null;
         if (!envelope.isReceipt()) {
             try {
@@ -100,7 +106,7 @@ public final class IncomingMessageHandler {
                 return new Pair<>(List.of(), e);
             }
         }
-        final var actions = checkAndHandleMessage(envelope, content, ignoreAttachments, handler, null);
+        actions.addAll(checkAndHandleMessage(envelope, content, ignoreAttachments, handler, null));
         return new Pair<>(actions, null);
     }
 

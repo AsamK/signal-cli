@@ -227,7 +227,8 @@ public class Manager implements Closeable {
                 groupHelper,
                 syncHelper,
                 profileHelper,
-                storageHelper);
+                storageHelper,
+                preKeyHelper);
         var jobExecutor = new JobExecutor(context);
 
         this.incomingMessageHandler = new IncomingMessageHandler(account,
