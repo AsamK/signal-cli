@@ -13,6 +13,7 @@ import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendReceiptAction;
+import org.asamk.signal.manager.actions.SendRetryMessageRequestAction;
 import org.asamk.signal.manager.actions.SendSyncBlockedListAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
@@ -23,12 +24,17 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.jobs.RetrieveStickerPackJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
+import org.signal.libsignal.metadata.ProtocolInvalidKeyException;
+import org.signal.libsignal.metadata.ProtocolInvalidKeyIdException;
 import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
+import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
+import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -59,6 +65,7 @@ public final class IncomingMessageHandler {
     private final ContactHelper contactHelper;
     private final AttachmentHelper attachmentHelper;
     private final SyncHelper syncHelper;
+    private final ProfileProvider profileProvider;
     private final JobExecutor jobExecutor;
 
     public IncomingMessageHandler(
@@ -70,6 +77,7 @@ public final class IncomingMessageHandler {
             final ContactHelper contactHelper,
             final AttachmentHelper attachmentHelper,
             final SyncHelper syncHelper,
+            final ProfileProvider profileProvider,
             final JobExecutor jobExecutor
     ) {
         this.account = account;
@@ -80,6 +88,7 @@ public final class IncomingMessageHandler {
         this.contactHelper = contactHelper;
         this.attachmentHelper = attachmentHelper;
         this.syncHelper = syncHelper;
+        this.profileProvider = profileProvider;
         this.jobExecutor = jobExecutor;
     }
 
@@ -131,11 +140,24 @@ public final class IncomingMessageHandler {
                 actions.add(new RetrieveProfileAction(recipientId));
                 exception = new UntrustedIdentityException(addressResolver.resolveSignalServiceAddress(recipientId),
                         e.getSenderDevice());
-            } catch (ProtocolInvalidMessageException e) {
+            } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
-                logger.debug("Received invalid message, queuing renew session action.");
-                actions.add(new RenewSessionAction(sender));
+                final var senderProfile = profileProvider.getProfile(sender);
+                final var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
+                if (senderProfile != null
+                        && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
+                        && selfProfile != null
+                        && selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
+                    logger.debug("Received invalid message, requesting message resend.");
+                    actions.add(new SendRetryMessageRequestAction(sender, e, envelope));
+                } else {
+                    logger.debug("Received invalid message, queuing renew session action.");
+                    actions.add(new RenewSessionAction(sender));
+                }
                 exception = e;
+            } catch (SelfSendException e) {
+                logger.debug("Dropping unidentified message from self.");
+                return new Pair<>(List.of(), null);
             } catch (Exception e) {
                 exception = e;
             }

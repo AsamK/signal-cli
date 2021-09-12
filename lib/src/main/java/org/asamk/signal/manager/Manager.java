@@ -239,6 +239,7 @@ public class Manager implements Closeable {
                 contactHelper,
                 attachmentHelper,
                 syncHelper,
+                this::getRecipientProfile,
                 jobExecutor);
     }
 
@@ -876,11 +877,11 @@ public class Manager implements Closeable {
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
-                logger.debug("New message received from server");
                 if (result.isPresent()) {
                     envelope = result.get();
+                    logger.debug("New message received from server");
                 } else {
-                    // Received indicator that server queue is empty
+                    logger.debug("Received indicator that server queue is empty");
                     handleQueuedActions(queuedActions);
                     queuedActions.clear();
 
