@@ -65,6 +65,10 @@ public class ProfileUtils {
         if (encryptedProfile.getCapabilities().isSenderKey()) {
             capabilities.add(Profile.Capability.senderKey);
         }
+        if (encryptedProfile.getCapabilities().isAnnouncementGroup()) {
+            capabilities.add(Profile.Capability.announcementGroup);
+        }
+
         return capabilities;
     }
 
