@@ -8,6 +8,7 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Util;
 import org.slf4j.helpers.MessageFormatter;
+import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -113,6 +114,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     var typingMessage = content.getTypingMessage().get();
                     printTypingMessage(writer.indentedWriter(), typingMessage);
                 }
+                if (content.getDecryptionErrorMessage().isPresent()) {
+                    writer.println("Received a decryption error message (resend request)");
+                    var decryptionErrorMessage = content.getDecryptionErrorMessage().get();
+                    printDecryptionErrorMessage(writer.indentedWriter(), decryptionErrorMessage);
+                }
             }
         } else {
             writer.println("Unknown message received.");
@@ -213,6 +219,15 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final var groupId = GroupId.unknownVersion(typingMessage.getGroupId().get());
             printGroupInfo(writer.indentedWriter(), groupId);
         }
+    }
+
+    private void printDecryptionErrorMessage(
+            final PlainTextWriter writer, final DecryptionErrorMessage decryptionErrorMessage
+    ) {
+        writer.println("Device id: {}", decryptionErrorMessage.getDeviceId());
+        writer.println("Timestamp: {}", DateUtils.formatTimestamp(decryptionErrorMessage.getTimestamp()));
+        writer.println("Ratchet key: {}",
+                decryptionErrorMessage.getRatchetKey().isPresent() ? "is present" : "not present");
     }
 
     private void printReceiptMessage(

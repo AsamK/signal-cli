@@ -134,7 +134,8 @@ public class Profile {
         gv2,
         storage,
         gv1Migration,
-        senderKey;
+        senderKey,
+        announcementGroup;
 
         static Capability valueOfOrNull(String value) {
             try {

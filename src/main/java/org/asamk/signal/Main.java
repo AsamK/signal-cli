@@ -56,6 +56,9 @@ public class Main {
                 e.getCause().printStackTrace();
             }
             status = getStatusForError(e);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            status = 2;
         }
         System.exit(status);
     }

@@ -362,6 +362,8 @@ Trust all known keys of this user, only use this for testing.
 
 *-v* VERIFIED_SAFETY_NUMBER, *--verified-safety-number* VERIFIED_SAFETY_NUMBER::
 Specify the safety number of the key, only use this option if you have verified the safety number.
+Can be either the plain text numbers shown in the app or the bytes from the QR-code,
+encoded as base64.
 
 === updateProfile
 

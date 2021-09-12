@@ -18,6 +18,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"java.util.UUID",
+  "methods":[{"name":"<init>","parameterTypes":["long","long"] }]
+},
+{
   "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"
 },
 {
@@ -28,10 +32,12 @@
     {"name":"getLocalRegistrationId","parameterTypes":[] }, 
     {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
     {"name":"loadPreKey","parameterTypes":["int"] }, 
+    {"name":"loadSenderKey","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","java.util.UUID"] }, 
     {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
     {"name":"loadSignedPreKey","parameterTypes":["int"] }, 
     {"name":"removePreKey","parameterTypes":["int"] }, 
     {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
+    {"name":"storeSenderKey","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","java.util.UUID","org.whispersystems.libsignal.groups.state.SenderKeyRecord"] }, 
     {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
   ]
 },
@@ -67,8 +73,22 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.whispersystems.libsignal.groups.state.SenderKeyRecord",
+  "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
+    {"name":"nativeHandle","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.whispersystems.libsignal.groups.state.SenderKeyStore"
+},
+{
   "name":"org.whispersystems.libsignal.logging.Log",
   "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.libsignal.protocol.PlaintextContent",
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
@@ -76,6 +96,9 @@
     {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"nativeHandle","parameterTypes":[] }
   ]
+},
+{
+  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage"
 },
 {
   "name":"org.whispersystems.libsignal.protocol.SignalMessage",

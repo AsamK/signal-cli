@@ -17,6 +17,11 @@ public class RecipientId {
     }
 
     @Override
+    public String toString() {
+        return "RecipientId{" + "id=" + id + '}';
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

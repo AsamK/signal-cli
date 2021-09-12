@@ -5,5 +5,5 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 public interface ProfileProvider {
 
-    Profile getProfile(RecipientId address);
+    Profile getProfile(RecipientId recipientId);
 }

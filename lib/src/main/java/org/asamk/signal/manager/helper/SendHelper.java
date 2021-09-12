@@ -13,6 +13,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
@@ -23,6 +24,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
+import org.whispersystems.signalservice.api.push.exceptions.RateLimitException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 
 import java.io.IOException;
@@ -150,6 +152,25 @@ public class SendHelper {
         final var address = addressResolver.resolveSignalServiceAddress(recipientId);
         try {
             messageSender.sendReceipt(address, unidentifiedAccessHelper.getAccessFor(recipientId), receiptMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new UntrustedIdentityException(address);
+        }
+    }
+
+    public void sendRetryReceipt(
+            DecryptionErrorMessage errorMessage, RecipientId recipientId, Optional<GroupId> groupId
+    ) throws IOException, UntrustedIdentityException {
+        var messageSender = dependencies.getMessageSender();
+        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        logger.debug("Sending retry receipt for {} to {}, device: {}",
+                errorMessage.getTimestamp(),
+                recipientId,
+                errorMessage.getDeviceId());
+        try {
+            messageSender.sendRetryReceipt(address,
+                    unidentifiedAccessHelper.getAccessFor(recipientId),
+                    groupId.transform(GroupId::serialize),
+                    errorMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new UntrustedIdentityException(address);
         }
@@ -285,6 +306,9 @@ public class SendHelper {
             }
         } catch (ProofRequiredException e) {
             return SendMessageResult.proofRequiredFailure(address, e);
+        } catch (RateLimitException e) {
+            logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
+            return SendMessageResult.networkFailure(address);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         }
