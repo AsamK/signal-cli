@@ -11,17 +11,22 @@ if [ ! -z "$GRAALVM_HOME" ]; then
   export JAVA_HOME=$GRAALVM_HOME
   export SIGNAL_CLI_OPTS='-agentlib:native-image-agent=config-merge-dir=graalvm-config-dir/'
 fi
-export SIGNAL_CLI="$PWD/build/install/signal-cli/bin/signal-cli"
 
 NUMBER_1="$1"
 NUMBER_2="$2"
 TEST_PIN_1=456test_pin_foo123
+NATIVE=1
 
 PATH_TEST_CONFIG="$PWD/build/test-config"
 PATH_MAIN="$PATH_TEST_CONFIG/main"
 PATH_LINK="$PATH_TEST_CONFIG/link"
 
-./gradlew installDist
+if [ "$NATIVE" -eq 1 ]; then
+	SIGNAL_CLI="$PWD/build/native/nativeCompile/signal-cli"
+else
+	./gradlew installDist
+	SIGNAL_CLI="$PWD/build/install/signal-cli/bin/signal-cli"
+fi
 
 run() {
   set -x

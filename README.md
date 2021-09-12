@@ -98,9 +98,9 @@ This is still experimental and will not work in all situations.
 2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
 3. Execute Gradle:
 
-        ./gradlew assembleNativeImage
+        ./gradlew nativeCompile
 
-   The binary is available at *build/native-image/signal-cli*
+   The binary is available at *build/native/nativeCompile/signal-cli*
 
 ## FAQ and Troubleshooting
 For frequently asked questions and issues have a look at the [wiki](https://github.com/AsamK/signal-cli/wiki/FAQ)
