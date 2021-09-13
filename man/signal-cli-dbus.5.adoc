@@ -33,6 +33,7 @@ Where <type> is according to DBus specification:
 * <ay>  : Byte Array
 * <aay> : Array of Byte Arrays
 * <as>  : String Array
+* <ax>  : Array of signed 64 bit integer
 * <b>   : Boolean (0|1)
 * <x>   : Signed 64 bit integer
 * <>    : no return value
@@ -124,6 +125,19 @@ sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 Depending on the type of the recipient field this sends a message to one or multiple recipients.
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
+
+sendTyping(recipient<s>, stop<b>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : True, if typing state should be stopped
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity
+
+
+sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+
+Exceptions: Failure, UntrustedIdentity
 
 sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
 * emoji               : Unicode grapheme cluster of the emoji
