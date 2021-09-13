@@ -125,6 +125,19 @@ Depending on the type of the recipient field this sends a message to one or mult
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
 
+sendTyping(recipient<s>, stop<b>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : True, if typing state should be stopped
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity
+
+
+sendReceipt(recipient<s>, targetSentTimestamp<x>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Long, can be used to identify the corresponding signal message
+
+Exceptions: Failure, UntrustedIdentity
+
 sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
 * emoji               : Unicode grapheme cluster of the emoji
 * remove              : Boolean, whether a previously sent reaction (emoji) should be removed

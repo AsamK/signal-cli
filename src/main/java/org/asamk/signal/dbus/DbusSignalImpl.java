@@ -5,8 +5,10 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -162,6 +164,42 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendTyping(
+            final String recipient, final Boolean stop
+    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
+        try {
+            var recipients = new ArrayList<String>(1);
+            recipients.add(recipient);
+            m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
+                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                            .map(RecipientIdentifier.class::cast)
+                            .collect(Collectors.toSet()));
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendReceipt(
+            final String recipient, final long targetSentTimestamp
+    ) throws Error.Failure, Error.UntrustedIdentity {
+        try {
+            var timestamps = new ArrayList<Long>(1);
+            timestamps.add(targetSentTimestamp);
+
+            m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getUsername()), timestamps);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity(e.getMessage());
         }
     }
 
