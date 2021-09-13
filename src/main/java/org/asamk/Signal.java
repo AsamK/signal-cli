@@ -22,11 +22,11 @@ public interface Signal extends DBusInterface {
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     void sendTyping(
-            String recipient, Boolean stop
+            String recipient, boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
 
-    void sendReceipt(
-            String recipient, long targetSentTimestamp
+    void sendReadReceipt(
+            String recipient, List<Long> targetSentTimestamp
     ) throws Error.Failure, Error.UntrustedIdentity;
 
     long sendRemoteDeleteMessage(

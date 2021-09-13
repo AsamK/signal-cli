@@ -169,7 +169,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void sendTyping(
-            final String recipient, final Boolean stop
+            final String recipient, final boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
         try {
             var recipients = new ArrayList<String>(1);
@@ -188,13 +188,10 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void sendReceipt(
-            final String recipient, final long targetSentTimestamp
+    public void sendReadReceipt(
+            final String recipient, final List<Long> timestamps
     ) throws Error.Failure, Error.UntrustedIdentity {
         try {
-            var timestamps = new ArrayList<Long>(1);
-            timestamps.add(targetSentTimestamp);
-
             m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getUsername()), timestamps);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
