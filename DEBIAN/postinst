@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" != "configure" ]; then
+    exit 0
+fi
+
+# Touch and set permisions of files
+if [ -z "$2" ]; then
+    if [ -d /var/lib/signal-cli ]; then
+		chown signal-cli:signal-cli /var/lib/signal-cli
+	fi
+	
+	if [ -d /opt/signal ]; then
+		chown -R signal-cli:signal-cli /opt/signal
+	fi
+	systemctl daemon-reload
+	systemctl enable signal.service
+	systemctl reload dbus.service
+	service signal start
+fi
+
+exit 0
