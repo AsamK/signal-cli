@@ -1,0 +1,7 @@
+Package: signal-cli
+Version: 0.9.0
+Architecture: armhf
+Depends: default-jre-headless, dbus, adduser
+Maintainer: adimarantis@gmail.com
+Description: Command line interface for the Signal Messenger
+

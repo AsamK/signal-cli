@@ -1,0 +1,45 @@
+#! /bin/sh
+# preinst script for signal-cli
+
+set -e
+
+addsignaluser() {
+    # creating signal-cli group if he isn't already there
+    if ! getent group signal-cli >/dev/null; then
+        addgroup --system signal-cli >/dev/null
+    fi
+
+    # creating signal-cli user if he isn't already there
+    if ! getent passwd signal-cli >/dev/null; then
+        adduser \
+          --system \
+          --disabled-login \
+          --ingroup signal-cli \
+          --no-create-home \
+          --home /nonexistent \
+          --gecos "signal-cli user" \
+          --shell /bin/false \
+          nginx  >/dev/null
+    fi
+}
+
+case "$1" in
+    install)
+        addsignaluser
+        ;;
+    upgrade)
+        addsignaluser
+        ;;
+
+    abort-upgrade)
+        ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 0
+        ;;
+esac
+
+
+
+exit 0
