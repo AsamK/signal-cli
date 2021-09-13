@@ -33,6 +33,7 @@ Where <type> is according to DBus specification:
 * <ay>  : Byte Array
 * <aay> : Array of Byte Arrays
 * <as>  : String Array
+* <ax>  : Array of signed 64 bit integer
 * <b>   : Boolean (0|1)
 * <x>   : Signed 64 bit integer
 * <>    : no return value
@@ -132,9 +133,9 @@ sendTyping(recipient<s>, stop<b>) -> <>::
 Exceptions: Failure, GroupNotFound, UntrustedIdentity
 
 
-sendReceipt(recipient<s>, targetSentTimestamp<x>) -> <>::
+sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
 * recipient             : Phone number of a single recipient
-* targetSentTimestamp   : Long, can be used to identify the corresponding signal message
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
 
 Exceptions: Failure, UntrustedIdentity
 
