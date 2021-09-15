@@ -58,7 +58,7 @@ public class RegistrationManager implements Closeable {
     private final SignalServiceAccountManager accountManager;
     private final PinHelper pinHelper;
 
-    public RegistrationManager(
+    private RegistrationManager(
             SignalAccount account,
             PathConfig pathConfig,
             ServiceEnvironmentConfig serviceEnvironmentConfig,
