@@ -177,9 +177,9 @@ public class RegistrationManager implements Closeable {
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         account.finishRegistration(UuidUtil.parseOrNull(response.getUuid()), masterKey, pin);
 
-        Manager m = null;
+        ManagerImpl m = null;
         try {
-            m = new Manager(account, pathConfig, serviceEnvironmentConfig, userAgent);
+            m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
             account = null;
 
             m.refreshPreKeys();
