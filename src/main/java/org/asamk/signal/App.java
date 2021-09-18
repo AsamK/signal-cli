@@ -161,7 +161,7 @@ public class App {
         }
 
         if (username == null) {
-            var usernames = Manager.getAllLocalUsernames(dataPath);
+            var usernames = Manager.getAllLocalNumbers(dataPath);
 
             if (command instanceof MultiLocalCommand) {
                 handleMultiLocalCommand((MultiLocalCommand) command,

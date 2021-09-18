@@ -33,7 +33,7 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         var recipientString = ns.getString("recipient");
-        var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getUsername());
+        var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
 
         try {
             var expiration = ns.getInt("expiration");

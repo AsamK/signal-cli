@@ -57,6 +57,16 @@ public class RecipientAddress {
         }
     }
 
+    public String getLegacyIdentifier() {
+        if (e164.isPresent()) {
+            return e164.get();
+        } else if (uuid.isPresent()) {
+            return uuid.get().toString();
+        } else {
+            throw new AssertionError("Given the checks in the constructor, this should not be possible.");
+        }
+    }
+
     public boolean matches(RecipientAddress other) {
         return (uuid.isPresent() && other.uuid.isPresent() && uuid.get().equals(other.uuid.get())) || (
                 e164.isPresent() && other.e164.isPresent() && e164.get().equals(other.e164.get())

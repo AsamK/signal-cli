@@ -1,6 +1,8 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -17,12 +19,10 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.groups.GroupInfo;
-import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
-import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 public interface Manager extends Closeable {
 
     static Manager init(
-            String username,
+            String number,
             File settingsPath,
             ServiceEnvironment serviceEnvironment,
             String userAgent,
@@ -59,11 +59,11 @@ public interface Manager extends Closeable {
     ) throws IOException, NotRegisteredException {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
-        if (!SignalAccount.userExists(pathConfig.getDataPath(), username)) {
+        if (!SignalAccount.userExists(pathConfig.getDataPath(), number)) {
             throw new NotRegisteredException();
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), username, true, trustNewIdentity);
+        var account = SignalAccount.load(pathConfig.getDataPath(), number, true, trustNewIdentity);
 
         if (!account.isRegistered()) {
             throw new NotRegisteredException();
@@ -74,7 +74,7 @@ public interface Manager extends Closeable {
         return new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
     }
 
-    static List<String> getAllLocalUsernames(File settingsPath) {
+    static List<String> getAllLocalNumbers(File settingsPath) {
         var pathConfig = PathConfig.createDefault(settingsPath);
         final var dataPath = pathConfig.getDataPath();
         final var files = dataPath.listFiles();
@@ -90,11 +90,7 @@ public interface Manager extends Closeable {
                 .collect(Collectors.toList());
     }
 
-    String getUsername();
-
-    RecipientId getSelfRecipientId();
-
-    int getDeviceId();
+    String getSelfNumber();
 
     void checkAccountState() throws IOException;
 
@@ -120,9 +116,9 @@ public interface Manager extends Closeable {
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException;
 
-    Profile getRecipientProfile(RecipientId recipientId);
+    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredUserException;
 
-    List<GroupInfo> getGroups();
+    List<Group> getGroups();
 
     SendGroupMessageResults quitGroup(
             GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
@@ -221,15 +217,15 @@ public interface Manager extends Closeable {
 
     void sendContacts() throws IOException;
 
-    List<Pair<RecipientId, Contact>> getContacts();
+    List<Pair<RecipientAddress, Contact>> getContacts();
 
-    String getContactOrProfileName(RecipientIdentifier.Single recipientIdentifier);
+    String getContactOrProfileName(RecipientIdentifier.Single recipient);
 
-    GroupInfo getGroup(GroupId groupId);
+    Group getGroup(GroupId groupId);
 
-    List<IdentityInfo> getIdentities();
+    List<Identity> getIdentities();
 
-    List<IdentityInfo> getIdentities(RecipientIdentifier.Single recipient);
+    List<Identity> getIdentities(RecipientIdentifier.Single recipient);
 
     boolean trustIdentityVerified(RecipientIdentifier.Single recipient, byte[] fingerprint);
 
@@ -241,13 +237,7 @@ public interface Manager extends Closeable {
 
     String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey);
 
-    byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey);
-
     SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address);
-
-    SignalServiceAddress resolveSignalServiceAddress(UUID uuid);
-
-    SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId);
 
     @Override
     void close() throws IOException;

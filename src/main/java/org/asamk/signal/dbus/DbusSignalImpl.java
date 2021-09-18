@@ -8,6 +8,7 @@ import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
@@ -17,9 +18,9 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.util.ErrorUtils;
-import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
@@ -45,8 +46,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
-
 public class DbusSignalImpl implements Signal {
 
     private final Manager m;
@@ -65,6 +64,11 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getObjectPath() {
         return objectPath;
+    }
+
+    @Override
+    public String getNumber() {
+        return m.getSelfNumber();
     }
 
     @Override
@@ -123,7 +127,7 @@ public class DbusSignalImpl implements Signal {
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
             final var results = m.sendMessage(new Message(message, attachments),
-                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
 
@@ -153,7 +157,7 @@ public class DbusSignalImpl implements Signal {
     ) {
         try {
             final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
-                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
             checkSendMessageResults(results.getTimestamp(), results.getResults());
@@ -205,9 +209,9 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendMessageReaction(emoji,
                     remove,
-                    getSingleRecipientIdentifier(targetAuthor, m.getUsername()),
+                    getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
-                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
             checkSendMessageResults(results.getTimestamp(), results.getResults());
@@ -227,7 +231,7 @@ public class DbusSignalImpl implements Signal {
             var recipients = new ArrayList<String>(1);
             recipients.add(recipient);
             m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
-                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
         } catch (IOException e) {
@@ -241,10 +245,10 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void sendReadReceipt(
-            final String recipient, final List<Long> timestamps
+            final String recipient, final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
         try {
-            m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getUsername()), timestamps);
+            m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (UntrustedIdentityException e) {
@@ -291,7 +295,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
-            final var results = m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getUsername()));
+            final var results = m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getSelfNumber()));
             checkSendMessageResults(results.getTimestamp(), results.getResults());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -325,7 +329,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendMessageReaction(emoji,
                     remove,
-                    getSingleRecipientIdentifier(targetAuthor, m.getUsername()),
+                    getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
                     Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
             checkSendMessageResults(results.getTimestamp(), results.getResults());
@@ -341,13 +345,13 @@ public class DbusSignalImpl implements Signal {
     // the profile name
     @Override
     public String getContactName(final String number) {
-        return m.getContactOrProfileName(getSingleRecipientIdentifier(number, m.getUsername()));
+        return m.getContactOrProfileName(getSingleRecipientIdentifier(number, m.getSelfNumber()));
     }
 
     @Override
     public void setContactName(final String number, final String name) {
         try {
-            m.setContactName(getSingleRecipientIdentifier(number, m.getUsername()), name);
+            m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name);
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (UnregisteredUserException e) {
@@ -358,7 +362,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void setExpirationTimer(final String number, final int expiration) {
         try {
-            m.setExpirationTimer(getSingleRecipientIdentifier(number, m.getUsername()), expiration);
+            m.setExpirationTimer(getSingleRecipientIdentifier(number, m.getSelfNumber()), expiration);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
@@ -367,7 +371,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void setContactBlocked(final String number, final boolean blocked) {
         try {
-            m.setContactBlocked(getSingleRecipientIdentifier(number, m.getUsername()), blocked);
+            m.setContactBlocked(getSingleRecipientIdentifier(number, m.getSelfNumber()), blocked);
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {
@@ -412,11 +416,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return List.of();
         } else {
-            return group.getMembers()
-                    .stream()
-                    .map(m::resolveSignalServiceAddress)
-                    .map(Util::getLegacyIdentifier)
-                    .collect(Collectors.toList());
+            return group.getMembers().stream().map(RecipientAddress::getLegacyIdentifier).collect(Collectors.toList());
         }
     }
 
@@ -432,7 +432,7 @@ public class DbusSignalImpl implements Signal {
             if (avatar.isEmpty()) {
                 avatar = null;
             }
-            final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getUsername());
+            final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getSelfNumber());
             if (groupId == null) {
                 final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
                 checkSendMessageResults(results.second().getTimestamp(), results.second().getResults());
@@ -573,10 +573,9 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        return Stream.concat(m.getIdentities().stream().map(IdentityInfo::getRecipientId),
+        return Stream.concat(m.getIdentities().stream().map(Identity::getRecipient),
                 m.getContacts().stream().map(Pair::first))
-                .map(m::resolveSignalServiceAddress)
-                .map(a -> a.getNumber().orNull())
+                .map(a -> a.getNumber().orElse(null))
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -589,16 +588,19 @@ public class DbusSignalImpl implements Signal {
         var contacts = m.getContacts();
         for (var c : contacts) {
             if (name.equals(c.second().getName())) {
-                numbers.add(getLegacyIdentifier(m.resolveSignalServiceAddress(c.first())));
+                numbers.add(c.first().getLegacyIdentifier());
             }
         }
         // Try profiles if no contact name was found
         for (var identity : m.getIdentities()) {
-            final var recipientId = identity.getRecipientId();
-            final var address = m.resolveSignalServiceAddress(recipientId);
-            var number = address.getNumber().orNull();
+            final var address = identity.getRecipient();
+            var number = address.getNumber().orElse(null);
             if (number != null) {
-                var profile = m.getRecipientProfile(recipientId);
+                Profile profile = null;
+                try {
+                    profile = m.getRecipientProfile(RecipientIdentifier.Single.fromAddress(address));
+                } catch (UnregisteredUserException ignored) {
+                }
                 if (profile != null && profile.getDisplayName().equals(name)) {
                     numbers.add(number);
                 }
@@ -639,7 +641,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isContactBlocked(final String number) {
-        return m.isContactBlocked(getSingleRecipientIdentifier(number, m.getUsername()));
+        return m.isContactBlocked(getSingleRecipientIdentifier(number, m.getSelfNumber()));
     }
 
     @Override
@@ -658,7 +660,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return false;
         } else {
-            return group.isMember(m.getSelfRecipientId());
+            return group.isMember();
         }
     }
 

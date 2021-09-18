@@ -9,13 +9,13 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.storage.groups.GroupInfo;
-import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements JsonRpcLocalCommand {
@@ -35,44 +35,41 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                 .help("List the members and group invite links of each group. If output=json, then this is always set");
     }
 
-    private static Set<String> resolveMembers(Manager m, Set<RecipientId> addresses) {
-        return addresses.stream()
-                .map(m::resolveSignalServiceAddress)
-                .map(Util::getLegacyIdentifier)
-                .collect(Collectors.toSet());
+    private static Set<String> resolveMembers(Set<RecipientAddress> addresses) {
+        return addresses.stream().map(RecipientAddress::getLegacyIdentifier).collect(Collectors.toSet());
     }
 
-    private static Set<JsonGroupMember> resolveJsonMembers(Manager m, Set<RecipientId> addresses) {
+    private static Set<JsonGroupMember> resolveJsonMembers(Set<RecipientAddress> addresses) {
         return addresses.stream()
-                .map(m::resolveSignalServiceAddress)
-                .map(address -> new JsonGroupMember(address.getNumber().orNull(), address.getUuid().toString()))
+                .map(address -> new JsonGroupMember(address.getNumber().orElse(null),
+                        address.getUuid().map(UUID::toString).orElse(null)))
                 .collect(Collectors.toSet());
     }
 
     private static void printGroupPlainText(
-            PlainTextWriter writer, Manager m, GroupInfo group, boolean detailed
+            PlainTextWriter writer, Group group, boolean detailed
     ) {
         if (detailed) {
-            final var groupInviteLink = group.getGroupInviteLink();
+            final var groupInviteLink = group.getGroupInviteLinkUrl();
 
             writer.println(
                     "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Message expiration: {} Link: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
                     group.getDescription(),
-                    group.isMember(m.getSelfRecipientId()),
+                    group.isMember(),
                     group.isBlocked(),
-                    resolveMembers(m, group.getMembers()),
-                    resolveMembers(m, group.getPendingMembers()),
-                    resolveMembers(m, group.getRequestingMembers()),
-                    resolveMembers(m, group.getAdminMembers()),
+                    resolveMembers(group.getMembers()),
+                    resolveMembers(group.getPendingMembers()),
+                    resolveMembers(group.getRequestingMembers()),
+                    resolveMembers(group.getAdminMembers()),
                     group.getMessageExpirationTime() == 0 ? "disabled" : group.getMessageExpirationTime() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
                     group.getGroupId().toBase64(),
                     group.getTitle(),
-                    group.isMember(m.getSelfRecipientId()),
+                    group.isMember(),
                     group.isBlocked());
         }
     }
@@ -87,18 +84,18 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final var jsonWriter = (JsonWriter) outputWriter;
 
             var jsonGroups = groups.stream().map(group -> {
-                final var groupInviteLink = group.getGroupInviteLink();
+                final var groupInviteLink = group.getGroupInviteLinkUrl();
 
                 return new JsonGroup(group.getGroupId().toBase64(),
                         group.getTitle(),
                         group.getDescription(),
-                        group.isMember(m.getSelfRecipientId()),
+                        group.isMember(),
                         group.isBlocked(),
                         group.getMessageExpirationTime(),
-                        resolveJsonMembers(m, group.getMembers()),
-                        resolveJsonMembers(m, group.getPendingMembers()),
-                        resolveJsonMembers(m, group.getRequestingMembers()),
-                        resolveJsonMembers(m, group.getAdminMembers()),
+                        resolveJsonMembers(group.getMembers()),
+                        resolveJsonMembers(group.getPendingMembers()),
+                        resolveJsonMembers(group.getRequestingMembers()),
+                        resolveJsonMembers(group.getAdminMembers()),
                         groupInviteLink == null ? null : groupInviteLink.getUrl());
             }).collect(Collectors.toList());
 
@@ -107,7 +104,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final var writer = (PlainTextWriter) outputWriter;
             boolean detailed = ns.getBoolean("detailed");
             for (var group : groups) {
-                printGroupPlainText(writer, m, group, detailed);
+                printGroupPlainText(writer, group, detailed);
             }
         }
     }

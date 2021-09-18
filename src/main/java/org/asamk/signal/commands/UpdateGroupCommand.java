@@ -116,7 +116,7 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         final var groupIdString = ns.getString("group-id");
         var groupId = CommandUtil.getGroupId(groupIdString);
 
-        final var localNumber = m.getUsername();
+        final var localNumber = m.getSelfNumber();
 
         var groupName = ns.getString("name");
         var groupDescription = ns.getString("description");

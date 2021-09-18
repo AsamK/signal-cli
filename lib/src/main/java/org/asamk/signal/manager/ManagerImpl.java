@@ -18,6 +18,8 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -52,6 +54,7 @@ import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
@@ -196,7 +199,7 @@ public class ManagerImpl implements Manager {
                 this::resolveSignalServiceAddress,
                 account.getRecipientStore(),
                 this::handleIdentityFailure,
-                this::getGroup,
+                this::getGroupInfo,
                 this::refreshRegisteredUser);
         this.groupHelper = new GroupHelper(account,
                 dependencies,
@@ -240,18 +243,8 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public String getUsername() {
+    public String getSelfNumber() {
         return account.getUsername();
-    }
-
-    @Override
-    public RecipientId getSelfRecipientId() {
-        return account.getSelfRecipientId();
-    }
-
-    @Override
-    public int getDeviceId() {
-        return account.getDeviceId();
     }
 
     @Override
@@ -385,7 +378,11 @@ public class ManagerImpl implements Manager {
                     logger.debug("Failed to decrypt device name, maybe plain text?", e);
                 }
             }
-            return new Device(d.getId(), deviceName, d.getCreated(), d.getLastSeen());
+            return new Device(d.getId(),
+                    deviceName,
+                    d.getCreated(),
+                    d.getLastSeen(),
+                    d.getId() == account.getDeviceId());
         }).collect(Collectors.toList());
     }
 
@@ -442,13 +439,48 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(RecipientId recipientId) {
+    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredUserException {
+        return profileHelper.getRecipientProfile(resolveRecipient(recipient));
+    }
+
+    private Profile getRecipientProfile(RecipientId recipientId) {
         return profileHelper.getRecipientProfile(recipientId);
     }
 
     @Override
-    public List<GroupInfo> getGroups() {
-        return account.getGroupStore().getGroups();
+    public List<Group> getGroups() {
+        return account.getGroupStore().getGroups().stream().map(this::toGroup).collect(Collectors.toList());
+    }
+
+    private Group toGroup(final GroupInfo groupInfo) {
+        if (groupInfo == null) {
+            return null;
+        }
+
+        return new Group(groupInfo.getGroupId(),
+                groupInfo.getTitle(),
+                groupInfo.getDescription(),
+                groupInfo.getGroupInviteLink(),
+                groupInfo.getMembers()
+                        .stream()
+                        .map(account.getRecipientStore()::resolveRecipientAddress)
+                        .collect(Collectors.toSet()),
+                groupInfo.getPendingMembers()
+                        .stream()
+                        .map(account.getRecipientStore()::resolveRecipientAddress)
+                        .collect(Collectors.toSet()),
+                groupInfo.getRequestingMembers()
+                        .stream()
+                        .map(account.getRecipientStore()::resolveRecipientAddress)
+                        .collect(Collectors.toSet()),
+                groupInfo.getAdminMembers()
+                        .stream()
+                        .map(account.getRecipientStore()::resolveRecipientAddress)
+                        .collect(Collectors.toSet()),
+                groupInfo.isBlocked(),
+                groupInfo.getMessageExpirationTime(),
+                groupInfo.isAnnouncementGroup(),
+                groupInfo.isMember(account.getSelfRecipientId()));
     }
 
     @Override
@@ -973,15 +1005,19 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public List<Pair<RecipientId, Contact>> getContacts() {
-        return account.getContactStore().getContacts();
+    public List<Pair<RecipientAddress, Contact>> getContacts() {
+        return account.getContactStore()
+                .getContacts()
+                .stream()
+                .map(p -> new Pair<>(account.getRecipientStore().resolveRecipientAddress(p.first()), p.second()))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public String getContactOrProfileName(RecipientIdentifier.Single recipientIdentifier) {
+    public String getContactOrProfileName(RecipientIdentifier.Single recipient) {
         final RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipientIdentifier);
+            recipientId = resolveRecipient(recipient);
         } catch (UnregisteredUserException e) {
             return null;
         }
@@ -1000,24 +1036,46 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public GroupInfo getGroup(GroupId groupId) {
+    public Group getGroup(GroupId groupId) {
+        return toGroup(groupHelper.getGroup(groupId));
+    }
+
+    public GroupInfo getGroupInfo(GroupId groupId) {
         return groupHelper.getGroup(groupId);
     }
 
     @Override
-    public List<IdentityInfo> getIdentities() {
-        return account.getIdentityKeyStore().getIdentities();
+    public List<Identity> getIdentities() {
+        return account.getIdentityKeyStore()
+                .getIdentities()
+                .stream()
+                .map(this::toIdentity)
+                .collect(Collectors.toList());
+    }
+
+    private Identity toIdentity(final IdentityInfo identityInfo) {
+        if (identityInfo == null) {
+            return null;
+        }
+
+        final var address = account.getRecipientStore().resolveRecipientAddress(identityInfo.getRecipientId());
+        return new Identity(address,
+                identityInfo.getIdentityKey(),
+                computeSafetyNumber(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
+                computeSafetyNumberForScanning(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
+                identityInfo.getTrustLevel(),
+                identityInfo.getDateAdded());
     }
 
     @Override
-    public List<IdentityInfo> getIdentities(RecipientIdentifier.Single recipient) {
+    public List<Identity> getIdentities(RecipientIdentifier.Single recipient) {
         IdentityInfo identity;
         try {
             identity = account.getIdentityKeyStore().getIdentity(resolveRecipient(recipient));
         } catch (UnregisteredUserException e) {
             identity = null;
         }
-        return identity == null ? List.of() : List.of(identity);
+        return identity == null ? List.of() : List.of(toIdentity(identity));
     }
 
     /**
@@ -1144,8 +1202,7 @@ public class ManagerImpl implements Manager {
         return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
-    @Override
-    public byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
+    private byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
         final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
     }
@@ -1165,13 +1222,7 @@ public class ManagerImpl implements Manager {
         return resolveSignalServiceAddress(resolveRecipient(address));
     }
 
-    @Override
-    public SignalServiceAddress resolveSignalServiceAddress(UUID uuid) {
-        return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(uuid));
-    }
-
-    @Override
-    public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
+    private SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
         final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
         if (address.getUuid().isPresent()) {
             return address.toSignalServiceAddress();
@@ -1180,13 +1231,15 @@ public class ManagerImpl implements Manager {
         // Address in recipient store doesn't have a uuid, this shouldn't happen
         // Try to retrieve the uuid from the server
         final var number = address.getNumber().get();
+        final UUID uuid;
         try {
-            return resolveSignalServiceAddress(getRegisteredUser(number));
+            uuid = getRegisteredUser(number);
         } catch (IOException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number, e);
             // Return SignalServiceAddress with unknown UUID
             return address.toSignalServiceAddress();
         }
+        return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(uuid));
     }
 
     private Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredUserException {

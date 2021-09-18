@@ -160,7 +160,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         synchronized (receiveThreads) {
             return receiveThreads.stream()
                     .map(Pair::first)
-                    .map(Manager::getUsername)
+                    .map(Manager::getSelfNumber)
                     .map(u -> new DBusPath(DbusConfig.getObjectPath(u)))
                     .collect(Collectors.toList());
         }

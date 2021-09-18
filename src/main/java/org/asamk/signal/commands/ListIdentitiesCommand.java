@@ -8,7 +8,7 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
@@ -29,9 +29,9 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         return "listIdentities";
     }
 
-    private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, IdentityInfo theirId) {
-        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
-        var digits = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
+    private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, Identity theirId) {
+        final SignalServiceAddress address = theirId.getRecipient().toSignalServiceAddress();
+        var digits = Util.formatSafetyNumber(theirId.getSafetyNumber());
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
                 address.getNumber().orNull(),
                 theirId.getTrustLevel(),
@@ -52,11 +52,11 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         var number = ns.getString("number");
 
-        List<IdentityInfo> identities;
+        List<Identity> identities;
         if (number == null) {
             identities = m.getIdentities();
         } else {
-            identities = m.getIdentities(CommandUtil.getSingleRecipientIdentifier(number, m.getUsername()));
+            identities = m.getIdentities(CommandUtil.getSingleRecipientIdentifier(number, m.getSelfNumber()));
         }
 
         if (outputWriter instanceof PlainTextWriter) {
@@ -67,9 +67,9 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         } else {
             final var writer = (JsonWriter) outputWriter;
             final var jsonIdentities = identities.stream().map(id -> {
-                final var address = m.resolveSignalServiceAddress(id.getRecipientId());
-                var safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(address, id.getIdentityKey()));
-                var scannableSafetyNumber = m.computeSafetyNumberForScanning(address, id.getIdentityKey());
+                final var address = id.getRecipient().toSignalServiceAddress();
+                var safetyNumber = Util.formatSafetyNumber(id.getSafetyNumber());
+                var scannableSafetyNumber = id.getScannableSafetyNumber();
                 return new JsonIdentity(address.getNumber().orNull(),
                         address.getUuid().toString(),
                         Hex.toString(id.getFingerprint()),

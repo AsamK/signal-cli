@@ -86,7 +86,7 @@ public class JsonMessageEnvelope {
         }
         String name;
         try {
-            name = m.getContactOrProfileName(RecipientIdentifier.Single.fromString(this.source, m.getUsername()));
+            name = m.getContactOrProfileName(RecipientIdentifier.Single.fromString(this.source, m.getSelfNumber()));
         } catch (InvalidNumberException | NullPointerException e) {
             name = null;
         }

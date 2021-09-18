@@ -72,7 +72,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
         try {
             final var results = m.sendMessageReaction(emoji,
                     isRemove,
-                    CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getUsername()),
+                    CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetTimestamp,
                     recipientIdentifiers);
             outputResult(outputWriter, results.getTimestamp());

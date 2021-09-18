@@ -13,6 +13,8 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
+    String getNumber();
+
     long sendMessage(
             String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
@@ -26,7 +28,7 @@ public interface Signal extends DBusInterface {
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
 
     void sendReadReceipt(
-            String recipient, List<Long> targetSentTimestamp
+            String recipient, List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity;
 
     long sendRemoteDeleteMessage(
