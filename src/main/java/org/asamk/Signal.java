@@ -41,6 +41,10 @@ public interface Signal extends DBusInterface {
             long targetSentTimestamp, byte[] groupId
     ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
 
+    long sendGroupRemoteDeleteMessage(
+            long targetSentTimestamp, String base64GroupId
+    ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
+
     long sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
     ) throws Error.InvalidNumber, Error.Failure;
@@ -59,8 +63,16 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.InvalidGroupId;
 
+    long sendGroupMessage(
+            String message, List<String> attachments, String base64GroupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.InvalidGroupId;
+
     long sendGroupMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
+    ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber, Error.InvalidGroupId;
+
+    long sendGroupMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String base64GroupId
     ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber, Error.InvalidGroupId;
 
     String getContactName(String number) throws Error.InvalidNumber;
@@ -71,14 +83,28 @@ public interface Signal extends DBusInterface {
 
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
 
+    void setGroupBlocked(String base64GroupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
+
     List<byte[]> getGroupIds();
 
+    List<String> getGroupIds(String dummy);
+
+    List<String> getGroupIdsBase64();
+    
     String getGroupName(byte[] groupId) throws Error.InvalidGroupId;
+
+    String getGroupName(String base64GroupId) throws Error.InvalidGroupId, Error.Failure;
 
     List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
 
+    List<String> getGroupMembers(String base64GroupId) throws Error.InvalidGroupId, Error.Failure;
+
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
+
+    String updateGroup(
+            String base64GroupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
     boolean isRegistered();
@@ -95,11 +121,17 @@ public interface Signal extends DBusInterface {
 
     void quitGroup(final byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.InvalidGroupId;
 
+    void quitGroup(final String base64GroupId) throws Error.GroupNotFound, Error.Failure, Error.InvalidGroupId;
+
     boolean isContactBlocked(final String number) throws Error.InvalidNumber;
 
     boolean isGroupBlocked(final byte[] groupId) throws Error.InvalidGroupId;
 
+    boolean isGroupBlocked(final String base64GroupId) throws Error.InvalidGroupId, Error.Failure;
+
     boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
+
+    boolean isMember(final String base64GroupId) throws Error.InvalidGroupId, Error.Failure;
 
     byte[] joinGroup(final String groupLink) throws Error.Failure;
 
