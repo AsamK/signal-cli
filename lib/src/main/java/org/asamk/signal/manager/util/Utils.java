@@ -14,10 +14,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.util.Optional;
 
 public class Utils {
+    public static Optional<String> getExtensionByStringHandling(String filename) {
+        return Optional.ofNullable(filename)
+        .filter(f -> f.contains("."))
+        .map(f -> f.substring(filename.lastIndexOf(".") + 1));
+    }
 
     public static String getFileMimeType(File file, String defaultMimeType) throws IOException {
+        if (getExtensionByStringHandling(file.toPath().toString()).get().equals("webp")) {
+            return "image/webp";
+        }
         var mime = Files.probeContentType(file.toPath());
         if (mime == null) {
             try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
