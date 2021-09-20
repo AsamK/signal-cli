@@ -125,7 +125,7 @@ class JsonDataMessage {
         mentions = null;
         sticker = null;
         contacts = null;
-        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
+        attachments = messageReceived.getAttachmentNames().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 
     public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {
@@ -140,6 +140,6 @@ class JsonDataMessage {
         mentions = null;
         sticker = null;
         contacts = null;
-        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
+        attachments = messageReceived.getAttachmentNames().stream().map(JsonAttachment::new).collect(Collectors.toList());
     }
 }

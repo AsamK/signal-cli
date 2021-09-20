@@ -90,10 +90,10 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                         writer.indentedWriter()
                                 .println("Id: {}", Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
                     }
-                    if (messageReceived.getAttachments().size() > 0) {
+                    if (messageReceived.getAttachmentNames().size() > 0) {
                         writer.println("Attachments:");
-                        for (var attachment : messageReceived.getAttachments()) {
-                            writer.println("- Stored plaintext in: {}", attachment);
+                        for (var attachmentName : messageReceived.getAttachmentNames()) {
+                            writer.println("- Stored plaintext in: {}", attachmentName);
                         }
                     }
                     writer.println();
@@ -115,10 +115,10 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                         writer.indentedWriter()
                                 .println("Id: {}", Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
                     }
-                    if (syncReceived.getAttachments().size() > 0) {
+                    if (syncReceived.getAttachmentNames().size() > 0) {
                         writer.println("Attachments:");
-                        for (var attachment : syncReceived.getAttachments()) {
-                            writer.println("- Stored plaintext in: {}", attachment);
+                        for (var attachmentName : syncReceived.getAttachmentNames()) {
+                            writer.println("- Stored plaintext in: {}", attachmentName);
                         }
                     }
                     writer.println();

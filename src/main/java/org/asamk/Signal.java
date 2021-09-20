@@ -1,11 +1,15 @@
 package org.asamk;
 
+import org.asamk.signal.dbus.DbusAttachment;
+import org.asamk.signal.dbus.DbusMention;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DBus interface for the org.asamk.Signal service.
@@ -14,11 +18,11 @@ import java.util.List;
 public interface Signal extends DBusInterface {
 
     long sendMessage(
-            String message, List<String> attachments, String recipient
+            String message, List<String> attachmentNames, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendMessage(
-            String message, List<String> attachments, List<String> recipients
+            String message, List<String> attachmentNames, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     void sendTyping(
@@ -50,13 +54,13 @@ public interface Signal extends DBusInterface {
     ) throws Error.InvalidNumber, Error.Failure;
 
     long sendNoteToSelfMessage(
-            String message, List<String> attachments
+            String message, List<String> attachmentNames
     ) throws Error.AttachmentInvalid, Error.Failure;
 
     void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
     long sendGroupMessage(
-            String message, List<String> attachments, byte[] groupId
+            String message, List<String> attachmentNames, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.InvalidGroupId;
 
     long sendGroupMessageReaction(
@@ -77,11 +81,11 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
 
+    boolean isRegistered();
+
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
-
-    boolean isRegistered();
 
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
@@ -109,7 +113,7 @@ public interface Signal extends DBusInterface {
         private final String sender;
         private final byte[] groupId;
         private final String message;
-        private final List<String> attachments;
+        private final List<String> attachmentNames;
 
         public MessageReceived(
                 String objectpath,
@@ -117,13 +121,61 @@ public interface Signal extends DBusInterface {
                 String sender,
                 byte[] groupId,
                 String message,
-                List<String> attachments
+                List<String> attachmentNames
         ) throws DBusException {
-            super(objectpath, timestamp, sender, groupId, message, attachments);
+            super(objectpath, timestamp, sender, groupId, message, attachmentNames);
             this.timestamp = timestamp;
             this.sender = sender;
             this.groupId = groupId;
             this.message = message;
+            this.attachmentNames = attachmentNames;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public String getSender() {
+            return sender;
+        }
+
+        public byte[] getGroupId() {
+            return groupId;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public List<String> getAttachmentNames() {
+            return attachmentNames;
+        }
+    }
+
+    class MessageReceivedV2 extends DBusSignal {
+
+        private final long timestamp;
+        private final String sender;
+        private final byte[] groupId;
+        private final String message;
+        private final List<DbusMention> mentions;
+        private final List<DbusAttachment> attachments;
+
+        public MessageReceivedV2(
+                String objectpath,
+                long timestamp,
+                String sender,
+                byte[] groupId,
+                String message,
+                List<DbusMention> mentions,
+                List<DbusAttachment> attachments
+        ) throws DBusException {
+            super(objectpath, timestamp, sender, groupId, message, mentions, attachments);
+            this.timestamp = timestamp;
+            this.sender = sender;
+            this.groupId = groupId;
+            this.message = message;
+            this.mentions = mentions;
             this.attachments = attachments;
         }
 
@@ -143,7 +195,11 @@ public interface Signal extends DBusInterface {
             return message;
         }
 
-        public List<String> getAttachments() {
+        public List<DbusMention> getMentions() {
+            return mentions;
+        }
+
+        public List<DbusAttachment> getAttachments() {
             return attachments;
         }
     }
@@ -175,7 +231,7 @@ public interface Signal extends DBusInterface {
         private final String destination;
         private final byte[] groupId;
         private final String message;
-        private final List<String> attachments;
+        private final List<String> attachmentNames;
 
         public SyncMessageReceived(
                 String objectpath,
@@ -184,15 +240,15 @@ public interface Signal extends DBusInterface {
                 String destination,
                 byte[] groupId,
                 String message,
-                List<String> attachments
+                List<String> attachmentNames
         ) throws DBusException {
-            super(objectpath, timestamp, source, destination, groupId, message, attachments);
+            super(objectpath, timestamp, source, destination, groupId, message, attachmentNames);
             this.timestamp = timestamp;
             this.source = source;
             this.destination = destination;
             this.groupId = groupId;
             this.message = message;
-            this.attachments = attachments;
+            this.attachmentNames = attachmentNames;
         }
 
         public long getTimestamp() {
@@ -215,7 +271,65 @@ public interface Signal extends DBusInterface {
             return message;
         }
 
-        public List<String> getAttachments() {
+        public List<String> getAttachmentNames() {
+            return attachmentNames;
+        }
+    }
+
+    class SyncMessageReceivedV2 extends DBusSignal {
+
+        private final long timestamp;
+        private final String source;
+        private final String destination;
+        private final byte[] groupId;
+        private final String message;
+        private final List<DbusMention> mentions;
+        private final List<DbusAttachment> attachments;
+
+        public SyncMessageReceivedV2(
+                String objectpath,
+                long timestamp,
+                String source,
+                String destination,
+                byte[] groupId,
+                String message,
+                List<DbusMention> mentions,
+                List<DbusAttachment> attachments
+        ) throws DBusException {
+            super(objectpath, timestamp, source, destination, groupId, message, mentions, attachments);
+            this.timestamp = timestamp;
+            this.source = source;
+            this.destination = destination;
+            this.groupId = groupId;
+            this.message = message;
+            this.mentions = mentions;
+            this.attachments = attachments;
+        }
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public String getDestination() {
+            return destination;
+        }
+
+        public byte[] getGroupId() {
+            return groupId;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public List<DbusMention> getMentions() {
+            return mentions;
+        }
+
+        public List<DbusAttachment> getAttachments() {
             return attachments;
         }
     }

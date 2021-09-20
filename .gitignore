@@ -1,3 +1,4 @@
+.gitignore
 .gradle/
 .idea/*
 !.idea/codeStyles/
@@ -11,3 +12,7 @@ local.properties
 .settings/
 out/
 .DS_Store
+.asciidoctorconfig.adoc
+patches/
+signal-cli
+/bin/

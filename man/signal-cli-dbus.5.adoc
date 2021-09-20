@@ -238,13 +238,8 @@ isRegistred -> result<b>::
 == Signals
 
 SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
+
 The sync message is received when the user sends a message from a linked device.
-
-ReceiptReceived (timestamp<x>, sender<s>)::
-* timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
-* sender    : Phone number of the sender
-
-This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
 MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as>)::
 * timestamp   : Integer value that is used by the system to send a ReceiptReceived reply
@@ -254,6 +249,59 @@ MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as
 * attachments : String array of filenames for the attachments. These files are located in the signal-cli storage and the current user needs to have read access there
 
 This signal is received whenever we get a private message or a message is posted in a group we are an active member
+
+SyncMessageReceivedV2 (timestamp<x>, sender<s>, destination<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<a(sssxibiiss)>)::
+* timestamp     : Integer value that is used by the system to send a ReceiptReceived reply
+* sender        : Phone number of the sender
+* destination   : UUID (legacy identifier) of the destination
+* groupId       : Byte array representing the internal group identifier (empty when private message)
+* message       : Message text
+* mentions      : Struct array of mentions: number, position, length
+** number       : String phone number
+** position     : Integer starting position of mention within message
+** length       : Integer length of mention within message
+* attachments   : Struct array of attachment metadata.
+** contentType  :  String representing the MIME type of the attachment
+** fileName     :  String representing file name if given by the Signal servers
+** id           :  String representing remote identifier of attachment. This the name used by signal-cli to store the attachment, and the current user needs to have read access
+** size         :  Long representing size of attachment in bytes
+** keyLength    :  Integer representing key length
+** voiceNote    :  boolean representing whether this attachment is a voice note
+** width        :  Integer representation of width in pixels (0 if not image)
+** height       :  Integer representation of height in pixels (0 if not image)
+** caption      :  String representing photo caption
+** blurHash     :  String representing blur hash
+
+The sync message is received when the user sends a message from a linked device.
+
+MessageReceivedV2(timestamp<x>, sender<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<a(sssxibiiss)>)::
+* timestamp     : Integer value that is used by the system to send a ReceiptReceived reply
+* sender        : Phone number of the sender
+* groupId       : Byte array representing the internal group identifier (empty when private message)
+* message       : Message text
+* mentions      : Struct array of mentions: number, position, length
+** number       : String phone number
+** position     : Integer starting position of mention within message
+** length       : Integer length of mention within message
+* attachments   : Struct array of attachment metadata.
+** contentType  :  String representing the MIME type of the attachment
+** fileName     :  String representing file name if given by the Signal servers
+** id           :  String representing remote identifier of attachment. This the name used by signal-cli to store the attachment, and the current user needs to have read access
+** size         :  Long representing size of attachment in bytes
+** keyLength    :  Integer representing key length
+** voiceNote    :  boolean representing whether this attachment is a voice note
+** width        :  Integer representation of width in pixels (0 if not image)
+** height       :  Integer representation of height in pixels (0 if not image)
+** caption      :  String representing photo caption
+** blurHash     :  String representing blur hash
+
+This signal is received whenever we get a private message or a message is posted in a group we are an active member
+
+ReceiptReceived (timestamp<x>, sender<s>)::
+* timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
+* sender    : Phone number of the sender
+
+This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
 == Examples
 
