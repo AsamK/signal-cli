@@ -229,6 +229,19 @@ isGroupBlocked(groupId<ay>) -> state<b>::
 
 Exceptions: None, for unknown groups 0 (false) is returned
 
+removePin() -> <>::
+
+Removes registration PIN protection.
+
+Exception: Failure
+
+setPin(pin<s>) -> <>::
+* pin               : PIN you set after registration (resets after 7 days of inactivity)
+
+Sets a registration lock PIN, to prevent others from registering your number.
+
+Exception: Failure
+
 version() -> version<s>::
 * version : Version string of signal-cli
 

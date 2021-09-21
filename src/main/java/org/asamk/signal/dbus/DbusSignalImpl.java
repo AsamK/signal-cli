@@ -18,6 +18,7 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
+
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -25,6 +26,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -410,6 +412,28 @@ public class DbusSignalImpl implements Signal {
             m.setProfile(name, null, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public void removePin() {
+        try {
+            m.setRegistrationLockPin(Optional.absent());
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Remove pin failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Remove pin error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void setPin(String registrationLockPin)  {
+        try {
+            m.setRegistrationLockPin(Optional.of(registrationLockPin));
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Set pin error failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Set pin error: " + e.getMessage());
         }
     }
 
