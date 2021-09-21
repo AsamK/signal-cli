@@ -18,7 +18,6 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
-
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -427,7 +426,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void setPin(String registrationLockPin)  {
+    public void setPin(String registrationLockPin) {
         try {
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
         } catch (UnauthenticatedResponseException e) {
