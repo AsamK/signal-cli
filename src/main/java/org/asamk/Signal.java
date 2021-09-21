@@ -81,7 +81,9 @@ public interface Signal extends DBusInterface {
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    boolean isRegistered();
+    boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
+
+    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
 
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar

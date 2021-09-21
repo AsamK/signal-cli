@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -388,8 +389,28 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public boolean isRegistered() {
-        return true;
+    public boolean isRegistered(String number) {
+        List<Boolean> result = isRegistered(List.of(number));
+        return result.get(0);
+    }
+
+    @Override
+    public List<Boolean> isRegistered(List<String> numbers) {
+        List<Boolean> results = new ArrayList<Boolean> ();
+        if (numbers.isEmpty()) {
+            return results;
+        }
+        try {
+            Map<String, Pair<String, UUID>> registered;
+            registered = m.areUsersRegistered(new HashSet<String>(numbers));
+            for (String number : numbers) {
+                UUID uuid = registered.get(number).second();
+                results.add(uuid != null);
+            }
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        return results;
     }
 
     @Override
