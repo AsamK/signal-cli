@@ -1,10 +1,13 @@
 package org.asamk;
 
+import org.asamk.Signal.Error;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
+import org.whispersystems.libsignal.util.guava.Optional;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -86,6 +89,10 @@ public interface Signal extends DBusInterface {
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+
+    void removePin();
+
+    void setPin(String registrationLockPin);
 
     String version();
 
