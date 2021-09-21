@@ -334,6 +334,11 @@ Exceptions: Failure, InvalidNumber
 
 === Other methods
 
+addDevice(deviceUri<s>) -> <>::
+* deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
+
+Exception: Failure
+
 listDevices() -> devices<as>::
 * devices  : String array of linked devices
 
@@ -345,6 +350,11 @@ listNumbers() -> numbers<as>::
 This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
 
 Exceptions: None
+
+removeDevice(deviceId<i>) -> <>::
+* deviceId : Device ID to remove, obtained from listDevices() command
+
+Exception: Failure
 
 sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)

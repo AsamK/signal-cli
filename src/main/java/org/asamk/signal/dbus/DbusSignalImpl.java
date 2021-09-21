@@ -20,6 +20,7 @@ import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
@@ -29,6 +30,8 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -59,6 +62,26 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getObjectPath() {
         return objectPath;
+    }
+
+    @Override
+    public void addDevice(String uri) {
+        try {
+            m.addDeviceLink(new URI(uri));
+        } catch (IOException | InvalidKeyException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
+        } catch (URISyntaxException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Device link uri has invalid format: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void removeDevice(int deviceId) {
+        try {
+            m.removeLinkedDevices(deviceId);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + ": Error while removing device: " + e.getMessage());
+        }
     }
 
     @Override

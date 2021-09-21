@@ -83,6 +83,10 @@ public interface Signal extends DBusInterface {
 
     boolean isRegistered();
 
+    void addDevice(String uri) throws Error.Failure;
+
+    void removeDevice(int deviceId) throws Error.Failure;
+
     List<String> listDevices() throws Error.Failure;
 
     void updateAccount(String deviceName) throws Error.Failure;
