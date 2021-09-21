@@ -247,14 +247,17 @@ public class DbusManagerImpl implements Manager {
     public void sendTypingMessage(
             final TypingAction action, final Set<RecipientIdentifier> recipients
     ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        List<String> groupIdStrings = new ArrayList<>();
+        List<String> numbers = new ArrayList<>();
+        boolean typingAction = (action == TypingAction.START);
         for (final var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single) {
-                signal.sendTyping(((RecipientIdentifier.Single) recipient).getIdentifier(),
-                        action == TypingAction.STOP);
+                numbers.add(((RecipientIdentifier.Single) recipient).getIdentifier());
             } else if (recipient instanceof RecipientIdentifier.Group) {
-                throw new UnsupportedOperationException();
+                groupIdStrings.add(((RecipientIdentifier.Group) recipient).groupId.toBase64());
             }
         }
+        signal.sendTyping(typingAction, groupIdStrings, numbers);
     }
 
     @Override

@@ -132,6 +132,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public String link() throws Error.Failure {
+        return link("cli");
+    }
+
+    @Override
     public String link(final String newDeviceName) throws Error.Failure {
         try {
             final ProvisioningManager provisioningManager = c.getNewProvisioningManager();

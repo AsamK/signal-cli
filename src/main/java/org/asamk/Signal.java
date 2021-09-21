@@ -22,47 +22,39 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
-    long sendMessage(
-            String message, List<String> attachments, List<String> recipients
-    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
+    List<String> getGroupAdminMembers(final byte[] groupId);
 
-    void sendTyping(
-            String recipient, boolean stop
-    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+    List<byte[]> getGroupIds();
 
-    void sendReadReceipt(
-            String recipient, List<Long> messageIds
-    ) throws Error.Failure, Error.UntrustedIdentity;
+    byte[] getGroupId(String groupName) throws Error.GroupNotFound;
 
-    long sendRemoteDeleteMessage(
-            long targetSentTimestamp, String recipient
-    ) throws Error.Failure, Error.InvalidNumber;
+    List<String> getGroupIdStrings();
 
-    long sendRemoteDeleteMessage(
-            long targetSentTimestamp, List<String> recipients
-    ) throws Error.Failure, Error.InvalidNumber;
+    String getGroupIdString(String groupName) throws Error.GroupNotFound;
 
-    long sendGroupRemoteDeleteMessage(
-            long targetSentTimestamp, byte[] groupId
-    ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
+    String getGroupInviteUri(byte[] groupId);
 
-    long sendMessageReaction(
-            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
-    ) throws Error.InvalidNumber, Error.Failure;
+    List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
 
-    long sendMessageReaction(
-            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
-    ) throws Error.InvalidNumber, Error.Failure;
+    String getGroupName(byte[] groupId) throws Error.InvalidGroupId;
 
-    void sendContacts() throws Error.Failure;
+    List<String> getGroupNames();
 
-    void sendSyncRequest() throws Error.Failure;
+    List<String> getGroupPendingMembers(final byte[] groupId);
 
-    long sendNoteToSelfMessage(
-            String message, List<String> attachments
-    ) throws Error.AttachmentInvalid, Error.Failure;
+    List<String> getGroupRequestingMembers(final byte[] groupId);
 
-    void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
+    boolean isAdmin(final byte[] groupId);
+
+    boolean isGroupAnnounceOnly(byte[] groupId);
+
+    boolean isGroupBlocked(final byte[] groupId) throws Error.InvalidGroupId;
+
+    boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
+
+    byte[] joinGroup(final String groupLink) throws Error.Failure;
+
+    void quitGroup(final byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.InvalidGroupId;
 
     long sendGroupMessage(
             String message, List<String> attachments, byte[] groupId
@@ -72,33 +64,35 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber, Error.InvalidGroupId;
 
-    String getContactName(String number) throws Error.InvalidNumber;
+    long sendGroupRemoteDeleteMessage(
+            long targetSentTimestamp, byte[] groupId
+    ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
 
-    void setContactName(String number, String name) throws Error.InvalidNumber;
+    void setGroupAnnounceOnly(byte[] groupId, boolean isAnnouncementGroup);
 
     void setExpirationTimer(final String number, final int expiration) throws Error.Failure;
 
-    void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
-
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
 
-    List<byte[]> getGroupIds();
-
-    String getGroupName(byte[] groupId) throws Error.InvalidGroupId;
-
-    List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
+    List<String> updateAdmins(final byte[] groupId, List<String>admins, boolean addToAdmins) throws Error.GroupNotFound, Error.InvalidGroupId, Error.Failure;
 
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    boolean isRegistered() throws Error.Failure, Error.InvalidNumber;
+    byte[] updateGroup(
+            byte[] groupId, String name, String description, List<String> addMembers, List<String> removeMembers, List<String> addAdmins, List<String> removeAdmins, boolean resetGroupLink, String groupLinkState, String addMemberPermission, String editDetailsPermission, String avatar, Integer expirationTimer, Boolean isAnnouncementGroup
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
+    byte[] updateGroup(
+            byte[] groupId, String name, String description, List<String> addMembers, List<String> removeMembers, List<String> addAdmins, List<String> removeAdmins, boolean resetGroupLink, String groupLinkState, String addMemberPermission, String editDetailsPermission, String avatar, Integer expirationTimer
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
+    List<String> updateMembers(final byte[] groupId, List<String> members, boolean addToMembers);
 
-    void addDevice(String uri) throws Error.InvalidUri;
+    void sendContacts() throws Error.Failure;
+
+    void sendSyncRequest() throws Error.Failure;
 
     DBusPath getDevice(long deviceId);
 
@@ -115,9 +109,13 @@ public interface Signal extends DBusInterface {
             boolean removeAvatar
     ) throws Error.Failure;
 
-    void updateProfile(
-            String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
-    ) throws Error.Failure;
+    void addDevice(String uri) throws Error.Failure, Error.InvalidUri;
+
+    void setContactBlocked(final String number, final boolean blocked) throws Error.Failure;
+
+    boolean isRegistered();
+    boolean isRegistered(String number);
+    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure;
 
     void removePin();
 
@@ -125,19 +123,51 @@ public interface Signal extends DBusInterface {
 
     String version();
 
-    List<String> listNumbers();
+    String getContactName(String number) throws Error.InvalidNumber;
 
     List<String> getContactNumber(final String name) throws Error.Failure;
 
-    void quitGroup(final byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.InvalidGroupId;
-
     boolean isContactBlocked(final String number) throws Error.InvalidNumber;
 
-    boolean isGroupBlocked(final byte[] groupId) throws Error.InvalidGroupId;
+    void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
-    boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
+    long sendMessage(
+            String message, List<String> attachments, List<String> recipients
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
-    byte[] joinGroup(final String groupLink) throws Error.Failure;
+    long sendMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
+    ) throws Error.InvalidNumber, Error.Failure;
+
+    long sendMessageReaction(
+            String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
+    ) throws Error.InvalidNumber, Error.Failure;
+
+    void sendReadReceipt(
+            String recipient, List<Long> targetSentTimestamp
+    ) throws Error.Failure, Error.UntrustedIdentity;
+
+    long sendRemoteDeleteMessage(
+            long targetSentTimestamp, String recipient
+    ) throws Error.Failure, Error.InvalidNumber;
+
+    long sendRemoteDeleteMessage(
+            long targetSentTimestamp, List<String> recipients
+    ) throws Error.Failure, Error.InvalidNumber;
+
+    void setContactName(String number, String name) throws Error.InvalidNumber;
+
+    List<String> listNumbers();
+
+    long sendNoteToSelfMessage(
+            String message, List<String> attachments
+    ) throws Error.AttachmentInvalid, Error.Failure;
+
+    void sendTyping(boolean typingAction, List<String> groupIdStrings, List<String> numbers) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+
+    void updateProfile(
+            String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
+    ) throws Error.Failure;
 
     String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
@@ -265,6 +295,11 @@ public interface Signal extends DBusInterface {
     interface Device extends DBusInterface, Properties {
 
         void removeDevice() throws Error.Failure;
+
+        String getDeviceName() throws Error.Failure;
+
+        void setDeviceName(String deviceName) throws Error.Failure;
+
     }
 
     interface Error {

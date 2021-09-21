@@ -24,6 +24,7 @@ public interface SignalControl extends DBusInterface {
 
     void verifyWithPin(String number, String verificationCode, String pin) throws Error.Failure, Error.InvalidNumber;
 
+    String link() throws Error.Failure;
     String link(String newDeviceName) throws Error.Failure;
 
     public String version();
