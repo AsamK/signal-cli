@@ -34,7 +34,7 @@ Where <type> is according to DBus specification:
 * <aay> : Array of Byte Arrays
 * <as>  : String Array
 * <ax>  : Array of signed 64 bit integer
-* <b>   : Boolean (0|1)
+* <b>   : Boolean (false|true)
 * <x>   : Signed 64 bit integer
 * <>    : no return value
 
@@ -57,13 +57,13 @@ updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>
 * about       : About message for profile (empty if unchanged)
 * aboutEmoji  : Emoji for profile (empty if unchanged)
 * avatar      : Filename of avatar picture for profile (empty if unchanged)
-* remove      : Set to 1 if the existing avatar picture should be removed
+* remove      : Set to true if the existing avatar picture should be removed
 
 Exceptions: Failure
 
 setContactBlocked(number<s>, block<b>) -> <>::
 * number  : Phone number affected by method
-* block   : 0=remove block , 1=blocked
+* block   : false=remove block , true=block
 
 Messages from blocked numbers will no longer be forwarded via DBus.
 
@@ -71,7 +71,7 @@ Exceptions: InvalidNumber
 
 setGroupBlocked(groupId<ay>, block<b>) -> <>::
 * groupId : Byte array representing the internal group identifier
-* block   : 0=remove block , 1=blocked
+* block   : false=remove block , true=blocked
 
 Messages from blocked groups will no longer be forwarded via DBus.
 
@@ -92,7 +92,7 @@ Exceptions: GroupNotFound, Failure
 isMember(groupId<ay>) -> active<b>::
 * groupId : Byte array representing the internal group identifier
 
-Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
+Note that this method does not raise an Exception for a non-existing/unknown group but will simply return false
 
 sendEndSessionMessage(recipients<as>) -> <>::
 * recipients : Array of phone numbers 
@@ -219,21 +219,21 @@ Searches contacts and known profiles for a given name and returns the list of al
 
 isContactBlocked(number<s>) -> state<b>::
 * number  : Phone number
-* state   : 1=blocked, 0=not blocked
+* state   : true=blocked, false=not blocked
 
-Exceptions: None, for unknown numbers 0 (false) is returned
+Exceptions: None; for unknown numbers false is returned
 
 isGroupBlocked(groupId<ay>) -> state<b>::
 * groupId : Byte array representing the internal group identifier
-* state   : 1=blocked, 0=not blocked
+* state   : true=blocked, false=not blocked
 
-Exceptions: None, for unknown groups 0 (false) is returned
+Exceptions: None; for unknown groups false is returned
 
 version() -> version<s>::
 * version : Version string of signal-cli
 
 isRegistred -> result<b>::
-* result : Currently always returns 1=true
+* result : Currently always returns true
 
 == Signals
 
@@ -309,7 +309,7 @@ Send a text message (without attachment) to a contact::
 dbus-send --print-reply --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal org.asamk.Signal.sendMessage string:"Message text goes here" array:string: string:+123456789
 
 Send a group message::
-dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachmnt1','/path/to/attachmnt2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
+dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachment1','/path/to/attachment2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
 
 Print the group name corresponding to a groupId; the daemon runs on system bus, and was started without an explicit `-u USERNAME`::
 dbus-send --system --print-reply --type=method_call --dest='org.asamk.Signal' /org/asamk/Signal/_1234567890 org.asamk.Signal.getGroupName array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
