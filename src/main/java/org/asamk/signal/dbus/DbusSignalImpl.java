@@ -6,6 +6,7 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
@@ -58,6 +59,34 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getObjectPath() {
         return objectPath;
+    }
+
+    @Override
+    public List<String> listDevices() {
+        List<Device> devices;
+        List<String> results = new ArrayList<String>();
+
+        try {
+            devices = m.getLinkedDevices();
+        } catch (IOException | Error.Failure e) {
+            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
+        }
+
+        for (var d : devices) {
+            var name = d.getName();
+            if (name == null) {name = "null";}
+            results.add(name);
+        }
+        return results;
+    }
+
+    @Override
+    public void updateAccount(String deviceName) {
+        try {
+            m.updateAccountAttributes(deviceName);
+        } catch (IOException | Signal.Error.Failure e) {
+            throw new Error.Failure("UpdateAccount error: " + e.getMessage());
+        }
     }
 
     @Override
