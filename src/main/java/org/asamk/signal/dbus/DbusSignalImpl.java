@@ -2,6 +2,7 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -16,13 +17,18 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
+import org.asamk.signal.util.Hex;
+
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
@@ -32,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -264,6 +271,75 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<String> listIdentity(String number) {
+        List<IdentityInfo> identities;
+        IdentityInfo theirId;
+        try {
+            RecipientIdentifier.Single recipient = CommandUtil.getSingleRecipientIdentifier(number, m.getUsername());
+            identities = m.getIdentities(recipient);
+        } catch (UserErrorException e) {
+            throw new Error.InvalidNumber("Invalid number: " + e.getMessage());
+        }
+        List<String> results = new ArrayList<String>();
+        if (identities.isEmpty()) {return results;}
+        theirId = identities.get(0);
+        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
+		var safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
+		var scannableSafetyNumber = m.computeSafetyNumberForScanning(address, theirId.getIdentityKey());
+
+        results.add(theirId.getTrustLevel().toString());
+        results.add(theirId.getDateAdded().toString());
+        results.add(Hex.toString(theirId.getFingerprint()));
+        results.add(safetyNumber);
+        return results;
+    }
+
+    @Override
+    public void trust(String number, String safetyNumber){
+        if (safetyNumber != null) {
+            safetyNumber = safetyNumber.replaceAll(" ", "");
+            if (safetyNumber.length() == 66) {
+                byte[] fingerprintBytes;
+                try {
+                    fingerprintBytes = Hex.toByteArray(safetyNumber.toLowerCase(Locale.ROOT));
+                } catch (Exception e) {
+                    throw new Error.Failure(
+                            "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                }
+                boolean res;
+                try {
+                    RecipientIdentifier.Single recipient = CommandUtil.getSingleRecipientIdentifier(number, m.getUsername());
+                    res = m.trustIdentityVerified(recipient, fingerprintBytes);
+                } catch (UserErrorException e) {
+                    throw new Error.Failure("Failed to parse recipient: " + e.getMessage());
+                }
+                if (!res) {
+                    throw new Error.Failure(
+                            "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                }
+            } else if (safetyNumber.length() == 60) {
+                boolean res;
+                try {
+                    RecipientIdentifier.Single recipient = CommandUtil.getSingleRecipientIdentifier(number, m.getUsername());
+                    res = m.trustIdentityVerifiedSafetyNumber(recipient, safetyNumber);
+                } catch (UserErrorException e) {
+                    throw new Error.InvalidNumber("Failed to parse recipient: " + e.getMessage());
+                }
+                if (!res) {
+                    throw new Error.Failure(
+                            "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                }
+            } else {
+                throw new Error.Failure(
+                        "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
+            }
+        } else {
+            throw new Error.Failure(
+                    "You need to specify the fingerprint/safety number you have verified with -v SAFETY_NUMBER");
         }
     }
 
