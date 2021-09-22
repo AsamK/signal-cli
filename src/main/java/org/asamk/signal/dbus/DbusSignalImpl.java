@@ -72,7 +72,7 @@ public class DbusSignalImpl implements Signal {
         } catch (IOException | InvalidKeyException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
         } catch (URISyntaxException e) {
-            throw new Error.Failure(e.getClass().getSimpleName() + " Device link uri has invalid format: " + e.getMessage());
+            throw new Error.InvalidUri(e.getClass().getSimpleName() + " Device link uri has invalid format: " + e.getMessage());
         }
     }
 
