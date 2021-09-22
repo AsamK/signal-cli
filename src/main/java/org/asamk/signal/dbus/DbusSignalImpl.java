@@ -395,6 +395,28 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void updateProfile(
+            final String givenName,
+            final String familyName,
+            final String about,
+            final String aboutEmoji,
+            String avatarPath,
+            final boolean removeAvatar
+            ) {
+        try {
+            if (avatarPath.isEmpty()) {
+                avatarPath = null;
+            }
+            Optional<File> avatarFile = removeAvatar
+                    ? Optional.absent()
+                            : avatarPath == null ? null : Optional.of(new File(avatarPath));
+            m.setProfile(givenName, familyName, about, aboutEmoji, avatarFile);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateProfile(
             final String name,
             final String about,
             final String aboutEmoji,
