@@ -300,16 +300,17 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public List<Map<String, Variant<?>>> listIdentities() {
+    public Map<String, Variant<?>> listIdentities() {
         List<String> numbers = listNumbers();
-        List<Map<String, Variant<?>>> results = new ArrayList<>();
+        Map<String, Variant<?>> result = new HashMap<>();
+        if (numbers.isEmpty()) {return result;}
         for (String number:numbers) {
             Map<String, Variant<?>> identity = listIdentities(number);
             if (! identity.isEmpty()) {
-                results.add(identity);
+                result.put(number, identity.get(number));
             }
         }
-        return results;
+        return result;
     }
 
     @Override

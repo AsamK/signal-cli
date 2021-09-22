@@ -65,7 +65,7 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber, Error.InvalidGroupId;
 
-    List<Map<String, Variant<?>>> listIdentities();
+    Map<String, Variant<?>> listIdentities();
 
     Map<String, Variant<?>> listIdentities(String number) throws Error.InvalidNumber;
 

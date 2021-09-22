@@ -193,13 +193,13 @@ setContactName(number<s>,name<>) -> <>::
 
 listIdentities() -> identities<a{sv}>::
 * contactNumber  : Phone number of contact
-* identities     : Array of dictionaries with key contactNumber and values listed below
+* identities     : Array of dictionary entries with key contactNumber and values listed below
 ** trustLevel    : String representation of trust level
 ** dateAdded     : String representation of date added
 ** fingerprint   : String representation of hexadecimal fingerprint
 ** safetyNumber  : String representation of safety number (10 or 11 space-separated six-digit numbers)
 
-Returns an array of dictionaries for all contacts (obtained by listNumbers() and screened to exclude those with no identity information). For each dictionary, the key is the contactNumber and the value is a list of four strings: trustLevel, dateAdded, fingerprint, safetyNumber.
+Returns an array of dictionary entries for all contacts (obtained by listNumbers() and screened to exclude those with no identity information). For each dictionary, the key is the contactNumber and the value is a list of four strings: trustLevel, dateAdded, fingerprint, safetyNumber.
 
 Exceptions: None
 
