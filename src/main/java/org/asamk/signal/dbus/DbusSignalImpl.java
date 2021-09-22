@@ -24,6 +24,7 @@ import org.asamk.signal.util.Util;
 import org.asamk.signal.util.Hex;
 
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.types.Variant;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -275,26 +277,38 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public List<String> listIdentity(String number) {
+    public Map<String, Variant<?>> listIdentities(String number) {
         List<IdentityInfo> identities;
-        IdentityInfo theirId;
+        HashMap<String, Variant<?>> result = new HashMap<>();
         try {
             RecipientIdentifier.Single recipient = CommandUtil.getSingleRecipientIdentifier(number, m.getUsername());
             identities = m.getIdentities(recipient);
         } catch (UserErrorException e) {
             throw new Error.InvalidNumber("Invalid number: " + e.getMessage());
         }
-        List<String> results = new ArrayList<String>();
-        if (identities.isEmpty()) {return results;}
-        theirId = identities.get(0);
-        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
-		var safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
-		var scannableSafetyNumber = m.computeSafetyNumberForScanning(address, theirId.getIdentityKey());
+        if (identities.isEmpty()) {return result;}
+        IdentityInfo theirId = identities.get(0);
 
-        results.add(theirId.getTrustLevel().toString());
-        results.add(theirId.getDateAdded().toString());
-        results.add(Hex.toString(theirId.getFingerprint()));
-        results.add(safetyNumber);
+        final SignalServiceAddress address = m.resolveSignalServiceAddress(theirId.getRecipientId());
+        String safetyNumber = Util.formatSafetyNumber(m.computeSafetyNumber(address, theirId.getIdentityKey()));
+        result.put(number, new Variant<String[]>(new String[]{
+                theirId.getTrustLevel().toString(),
+                theirId.getDateAdded().toString(),
+                Hex.toString(theirId.getFingerprint()),
+                safetyNumber}));
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Variant<?>>> listIdentities() {
+        List<String> numbers = listNumbers();
+        List<Map<String, Variant<?>>> results = new ArrayList<>();
+        for (String number:numbers) {
+            Map<String, Variant<?>> identity = listIdentities(number);
+            if (! identity.isEmpty()) {
+                results.add(identity);
+            }
+        }
         return results;
     }
 

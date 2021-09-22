@@ -4,8 +4,10 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
+import org.freedesktop.dbus.types.Variant;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * DBus interface for the org.asamk.Signal service.
@@ -63,7 +65,9 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.InvalidNumber, Error.InvalidGroupId;
 
-    List<String> listIdentity(String number) throws Error.InvalidNumber;
+    List<Map<String, Variant<?>>> listIdentities();
+
+    Map<String, Variant<?>> listIdentities(String number) throws Error.InvalidNumber;
 
     void trust(String number, String safetyNumber) throws Error.Failure, Error.InvalidNumber;
 
