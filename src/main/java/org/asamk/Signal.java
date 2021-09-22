@@ -91,6 +91,10 @@ public interface Signal extends DBusInterface {
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
 
+    void removePin();
+
+    void setPin(String registrationLockPin);
+
     String version();
 
     List<String> listNumbers();
