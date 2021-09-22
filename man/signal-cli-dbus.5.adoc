@@ -379,6 +379,19 @@ updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>
 
 Exceptions: Failure
 
+removePin() -> <>::
+
+Removes registration PIN protection.
+
+Exception: Failure
+
+setPin(pin<s>) -> <>::
+* pin               : PIN you set after registration (resets after 7 days of inactivity)
+
+Sets a registration lock PIN, to prevent others from registering your number.
+
+Exception: Failure
+
 version() -> version<s>::
 * version : Version string of signal-cli
 
