@@ -7,7 +7,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 
 == Name
 
-signal-cli-dbus - DBus API for signal-cli(1)
+DBus API for signal-cli - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
@@ -29,17 +29,20 @@ method(arg1<type>, arg2<type>, ...) -> return<type>
 
 Where <type> is according to DBus specification:
 
-* <a>   : Array of ...
 * <s>   : String
-* <y>   : Byte
-* <b>   : Boolean (false|true)
-* <x>   : Signed 64-bit integer (long)
-* <i>   : Signed 32-bit integer (int)
+* <ay>  : Byte Array
+* <aay> : Array of Byte Arrays
+* <as>  : String Array
+* <ax>  : Array of signed 64 bit integer
+* <b>   : Boolean (0|1)
+* <x>   : Signed 64 bit integer
 * <>    : no return value
 
 Exceptions are the names of the Java Exceptions returned in the body field. They typically contain an additional message with details. All Exceptions begin with "org.asamk.Signal.Error." which is omitted here for better readability.
 
 Phone numbers always have the format +<countrycode><regional number>
+
+== Methods
 
 === Control methods
 These methods are available if the daemon is started anonymously (without an explicit `-u USERNAME`). 
@@ -97,57 +100,40 @@ version() -> version<s>::
 
 Exceptions: None
 
-=== Methods for groups
+=== Other methods
 
-getGroupIds() -> groupList<aay>::
-groupList : Array of Byte arrays representing the internal group identifiers
+updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
+* groupId  : Byte array representing the internal group identifier
+* newName  : New name of group (empty if unchanged)
+* members  : String array of new members to be invited to group
+* avatar   : Filename of avatar picture to be set for group (empty if none)
 
-All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
+Exceptions: AttachmentInvalid, Failure, InvalidNumber, GroupNotFound
 
-Exceptions: None
+updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>::
+* newName     : New name for your own profile (empty if unchanged)
+* about       : About message for profile (empty if unchanged)
+* aboutEmoji  : Emoji for profile (empty if unchanged)
+* avatar      : Filename of avatar picture for profile (empty if unchanged)
+* remove      : Set to 1 if the existing avatar picture should be removed
 
-getGroupIds(dummy<s>) -> groupList<as>::
-* dummy     : any string (ignored by method; forces output to be identical with getGroupIdsBase64)
-* groupList : Array of strings representing the internal group identifiers
+Exceptions: Failure
 
-Exceptions: None
+setContactBlocked(number<s>, block<b>) -> <>::
+* number  : Phone number affected by method
+* block   : 0=remove block , 1=blocked
 
-getGroupIdsBase64() -> groupList<as>::
-* groupList : Array of strings representing the internal group identifiers
+Messages from blocked numbers will no longer be forwarded via DBus.
 
-Exceptions: None
+Exceptions: InvalidNumber
 
-getGroupMembers(groupId<ay>) -> members<as>::
-getGroupMembers(base64GroupId<s>) -> members<as>::
-* members       : String array with the phone numbers of all active members of a group
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
+setGroupBlocked(groupId<ay>, block<b>) -> <>::
+* groupId : Byte array representing the internal group identifier
+* block   : 0=remove block , 1=blocked
 
-Exceptions: InvalidGroupId, Failure
+Messages from blocked groups will no longer be forwarded via DBus.
 
-getGroupName(groupId<ay>) -> groupName<s>::
-getGroupName(base64GroupId<s>) -> groupName<s>::
-* groupName     : The display name of the group
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-
-Exceptions: InvalidGroupId, Failure
-
-isGroupBlocked(groupId<ay>) -> state<b>::
-isGroupBlocked(base64GroupId<s>) -> state<b>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-* state         : false=not blocked, true=blocked
-
-Exceptions: None; for unknown groups false is returned
-
-isMember(groupId<ay>) -> active<b>::
-isMember(base64GroupId<s>) -> active<b>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-* active        : true=active member; false=not active member
-
-InvalidGroupId, Failure
+Exceptions: GroupNotFound
 
 joinGroup(inviteURI<s>) -> <>::
 * inviteURI : String starting with https://signal.group which is generated when you share a group link via Signal App
@@ -155,125 +141,71 @@ joinGroup(inviteURI<s>) -> <>::
 Exceptions: Failure
 
 quitGroup(groupId<ay>) -> <>::
-quitGroup(base64GroupId<s>) -> <>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
+* groupId : Byte array representing the internal group identifier
 
 Note that quitting a group will not remove the group from the getGroupIds command, but set it inactive which can be tested with isMember()
 
 Exceptions: GroupNotFound, Failure
 
+isMember(groupId<ay>) -> active<b>::
+* groupId : Byte array representing the internal group identifier
+
+Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
+
+sendEndSessionMessage(recipients<as>) -> <>::
+* recipients : Array of phone numbers 
+
+Exceptions: Failure, InvalidNumber, UntrustedIdentity
+
 sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
-sendGroupMessage(message<s>, attachments<as>, base64GroupId<s>) -> timestamp<x>::
-* message       : Text to send (can be UTF8)
-* attachments   : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-* timestamp     : Can be used to identify the corresponding signal reply
+* message     : Text to send (can be UTF8)
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
+* groupId     : Byte array representing the internal group identifier
+* timestamp   : Can be used to identify the corresponding signal reply
 
 Exceptions: GroupNotFound, Failure, AttachmentInvalid
 
-sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
-sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, base64GroupId<s>) -> timestamp<x>::
-* emoji               : Unicode grapheme cluster of the emoji
-* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
-* targetAuthor        : String with the phone number of the author of the message to which to react
-* targetSentTimestamp : Long representing timestamp of the message to which to react
-* groupId             : Byte array with base64 encoded group identifier
-* base64GroupId       : String with base64 encoded group identifier
-* timestamp           : Long, can be used to identify the corresponding signal reply
+sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
+* message     : Text to send (can be UTF8)
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
+* timestamp   : Can be used to identify the corresponding signal reply
 
-Exceptions: Failure, InvalidNumber, GroupNotFound
-
-sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
-sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, base64GroupId<s>) -> timestamp<x>::
-* targetSentTimestamp : Long representing timestamp of the message to delete
-* groupId             : Byte array with base64 encoded group identifier
-* base64GroupId       : String with base64 encoded group identifier
-* timestamp           : Long, can be used to identify the corresponding signal reply
-
-Exceptions: Failure, GroupNotFound, InvalidGroupId
-
-setGroupBlocked(groupId<ay>, block<b>) -> <>::
-setGroupBlocked(base64GroupId<s>, block<b>) -> <>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-* block         : false=remove block, true=blocked
-
-Messages from blocked groups will no longer be forwarded via DBus.
-
-Exceptions: GroupNotFound
-
-updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
-updateGroup(base64GroupId<s>, newName<s>, members<as>, avatar<s>) -> base64GroupId<s>::
-* groupId       : Byte array representing the internal group identifier
-* base64GroupId : String with base64 encoded group identifier
-* newName       : New name of group (empty if unchanged)
-* members       : String array of new members to be invited to group
-* avatar        : Filename of avatar picture to be set for group (empty if none)
-
-If groupId (or base64GroupId) is empty, creates a group with a random identifier
-and returns it. Otherwise, updates group as indicated.
-
-Exceptions: AttachmentInvalid, Failure, InvalidNumber, GroupNotFound
-
-=== Methods for individual(s)
-
-getContactName(number<s>) -> name<s>::
-* number  : Phone number
-* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
-
-Exception: InvalidNumber
-
-getContactNumber(name<s>) -> numbers<as>::
-* numbers : String array of phone numbers
-* name    : Contact or profile name ("firstname lastname")
-
-Searches contacts and known profiles for a given name and returns the list of all known numbers. May result in e.g. two entries if a contact and profile name is set.
-
-Exception: Failure
-
-isContactBlocked(number<s>) -> state<b>::
-* number  : Phone number
-* state   : true=blocked, false=not blocked
-
-Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised.
-
-isRegistered(number<s>) -> result<b>::
-isRegistered(numbers<as>) -> results<ab>::
-* number  : Phone number
-* numbers : String array of phone numbers
-* result  : true=number is registered, false=number is not registered
-* results : Boolean array of results
-
-Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised.
-
-listIdentity(number<s>) -> identities<a(ssss)>::
-* number      : Phone number
-* identities  : Array of elements, each consisting of four strings: trust_level, date_added, fingerprint, safety_number
-** trust_level   : String representation of trust level
-** date_added    : String representation of date added
-** fingerprint   : String representation of hexadecimal fingerprint
-** safety_number : String representation of safety number (10 or 11 space-separated six-digit numbers)
-
-Exception: InvalidNumber
-
-sendEndSessionMessage(recipients<as>) -> <>::
-* recipients : Array of phone numbers
-
-Exceptions: Failure, InvalidNumber, UntrustedIdentity
+Exceptions: Failure, AttachmentInvalid
 
 sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
 sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * recipient   : Phone number of a single recipient
-* recipients  : Array of phone numbers
+* recipients  : Array of phone numbers 
 * timestamp   : Can be used to identify the corresponding signal reply
 
 Depending on the type of the recipient field this sends a message to one or multiple recipients.
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
+
+sendTyping(recipient<s>, stop<b>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : True, if typing state should be stopped
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity
+
+
+sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+
+Exceptions: Failure, UntrustedIdentity
+
+sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+* emoji               : Unicode grapheme cluster of the emoji
+* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
+* targetAuthor        : String with the phone number of the author of the message to which to react
+* targetSentTimestamp : Long representing timestamp of the message to which to react
+* groupId             : Byte array with base64 encoded group identifier
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Exceptions: Failure, InvalidNumber, GroupNotFound
 
 sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
 sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
@@ -289,11 +221,12 @@ Depending on the type of the recipient(s) field this sends a reaction to one or 
 
 Exceptions: Failure, InvalidNumber
 
-sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+* targetSentTimestamp : Long representing timestamp of the message to delete
+* groupId             : Byte array with base64 encoded group identifier
+* timestamp           : Long, can be used to identify the corresponding signal reply
 
-Exceptions: Failure, UntrustedIdentity
+Exceptions: Failure, GroupNotFound
 
 sendRemoteDeleteMessage(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
 sendRemoteDeleteMessage(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
@@ -306,78 +239,53 @@ Depending on the type of the recipient(s) field this deletes a message with one 
 
 Exceptions: Failure, InvalidNumber
 
-sendTyping(recipient<s>, stop<b>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : True, if typing state should be stopped
-
-Exceptions: Failure, GroupNotFound, UntrustedIdentity
-
-setContactBlocked(number<s>, block<b>) -> <>::
-* number  : Phone number affected by method
-* block   : false=remove block , true=blocked
-
-Messages from blocked numbers will no longer be forwarded via DBus.
-
-Exceptions: InvalidNumber
+getContactName(number<s>) -> name<s>::
+* number  : Phone number
+* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
 
 setContactName(number<s>,name<>) -> <>::
 * number  : Phone number
 * name    : Name to be set in contacts (in local storage with signal-cli)
 
-Exceptions: InvalidNumber
+getGroupIds() -> groupList<aay>::
+groupList : Array of Byte arrays representing the internal group identifiers
 
-trust(number<s>, safetyNumber<s>) -> <>::
-* number       : Phone number
-* safetyNumber : Verify the safety number associated with the phone number.
+All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
 
-Exceptions: Failure, InvalidNumber
+getGroupName(groupId<ay>) -> groupName<s>::
+groupName : The display name of the group 
+groupId   : Byte array representing the internal group identifier
 
-=== Other methods
+Exceptions: None, if the group name is not found an empty string is returned
 
-addDevice(deviceUri<s>) -> <>::
-* deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
+getGroupMembers(groupId<ay>) -> members<as>::
+members   : String array with the phone numbers of all active members of a group
+groupId   : Byte array representing the internal group identifier
 
-Exception: Failure
-
-listDevices() -> devices<as>::
-* devices  : String array of linked devices
-
-Exception: Failure
+Exceptions: None, if the group name is not found an empty array is returned
 
 listNumbers() -> numbers<as>::
-* numbers : String array of all known numbers
+numbers : String array of all known numbers
 
 This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
 
-Exceptions: None
+getContactNumber(name<s>) -> numbers<as>::
+* numbers : Array of phone number
+* name    : Contact or profile name ("firstname lastname")
 
-removeDevice(deviceId<i>) -> <>::
-* deviceId : Device ID to remove, obtained from listDevices() command
+Searches contacts and known profiles for a given name and returns the list of all known numbers. May result in e.g. two entries if a contact and profile name is set.
 
-Exception: Failure
+isContactBlocked(number<s>) -> state<b>::
+* number  : Phone number
+* state   : 1=blocked, 0=not blocked
 
-sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
-* message     : Text to send (can be UTF8)
-* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
-* timestamp   : Can be used to identify the corresponding signal reply
+Exceptions: None, for unknown numbers 0 (false) is returned
 
-Exceptions: Failure, AttachmentInvalid
+isGroupBlocked(groupId<ay>) -> state<b>::
+* groupId : Byte array representing the internal group identifier
+* state   : 1=blocked, 0=not blocked
 
-updateAccount(deviceName<s>) -> <>::
-* deviceName : New name 
-
-Set a new name for this device (main or linked).
-
-Exception: Failure
-
-updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>::
-* newName     : New name for your own profile (empty if unchanged)
-* about       : About message for profile (empty if unchanged)
-* aboutEmoji  : Emoji for profile (empty if unchanged)
-* avatar      : Filename of avatar picture for profile (empty if unchanged)
-* remove      : Set to true if the existing avatar picture should be removed
-
-Exceptions: Failure
+Exceptions: None, for unknown groups 0 (false) is returned
 
 removePin() -> <>::
 
@@ -395,17 +303,41 @@ Exception: Failure
 version() -> version<s>::
 * version : Version string of signal-cli
 
+isRegistred -> result<b>::
+* result : Currently always returns 1=true
+
+addDevice(deviceUri<s>) -> <>::
+* deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
+
+Exception: InvalidUri
+
+listDevices() -> devices<as>::
+* devices  : String array of linked devices
+
+Exception: Failure
+
+removeDevice(deviceId<i>) -> <>::
+* deviceId : Device ID to remove, obtained from listDevices() command
+
+Exception: Failure
+
+updateDeviceName(deviceName<s>) -> <>::
+* deviceName : New name 
+
+Set a new name for this device (main or linked).
+
+Exception: Failure
+
 == Signals
 
 SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
-
 The sync message is received when the user sends a message from a linked device.
 
 ReceiptReceived (timestamp<x>, sender<s>)::
 * timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
 * sender    : Phone number of the sender
 
-The sync message is received when the user sends a message from a linked device.
+This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
 MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as>)::
 * timestamp   : Integer value that is used by the system to send a ReceiptReceived reply
@@ -416,66 +348,13 @@ MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as
 
 This signal is received whenever we get a private message or a message is posted in a group we are an active member
 
-SyncMessageReceivedV2 (timestamp<x>, sender<s>, destination<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<a(sssxibiiss)>)::
-* timestamp     : Integer value that is used by the system to send a ReceiptReceived reply
-* sender        : Phone number of the sender
-* destination   : UUID (legacy identifier) of the destination
-* groupId       : Byte array representing the internal group identifier (empty when private message)
-* message       : Message text
-* mentions      : Struct array of mentions: number, position, length
-** number       : String phone number
-** position     : Integer starting position of mention within message
-** length       : Integer length of mention within message
-* attachments   : Struct array of attachment metadata.
-** contentType  :  String representing the MIME type of the attachment
-** fileName     :  String representing file name if given by the Signal servers
-** id           :  String representing remote identifier of attachment. This the name used by signal-cli to store the attachment, and the current user needs to have read access
-** size         :  Long representing size of attachment in bytes
-** keyLength    :  Integer representing key length
-** voiceNote    :  boolean representing whether this attachment is a voice note
-** width        :  Integer representation of width in pixels (0 if not image)
-** height       :  Integer representation of height in pixels (0 if not image)
-** caption      :  String representing photo caption
-** blurHash     :  String representing blur hash
-
-The sync message is received when the user sends a message from a linked device.
-
-MessageReceivedV2(timestamp<x>, sender<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<a(sssxibiiss)>)::
-* timestamp     : Integer value that is used by the system to send a ReceiptReceived reply
-* sender        : Phone number of the sender
-* groupId       : Byte array representing the internal group identifier (empty when private message)
-* message       : Message text
-* mentions      : Struct array of mentions: number, position, length
-** number       : String phone number
-** position     : Integer starting position of mention within message
-** length       : Integer length of mention within message
-* attachments   : Struct array of attachment metadata.
-** contentType  :  String representing the MIME type of the attachment
-** fileName     :  String representing file name if given by the Signal servers
-** id           :  String representing remote identifier of attachment. This the name used by signal-cli to store the attachment, and the current user needs to have read access
-** size         :  Long representing size of attachment in bytes
-** keyLength    :  Integer representing key length
-** voiceNote    :  boolean representing whether this attachment is a voice note
-** width        :  Integer representation of width in pixels (0 if not image)
-** height       :  Integer representation of height in pixels (0 if not image)
-** caption      :  String representing photo caption
-** blurHash     :  String representing blur hash
-
-This signal is received whenever we get a private message or a message is posted in a group we are an active member
-
-ReceiptReceived (timestamp<x>, sender<s>)::
-* timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
-* sender    : Phone number of the sender
-
-This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
-
 == Examples
 
 Send a text message (without attachment) to a contact::
 dbus-send --print-reply --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal org.asamk.Signal.sendMessage string:"Message text goes here" array:string: string:+123456789
 
 Send a group message::
-dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachment1','/path/to/attachment2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
+dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachmnt1','/path/to/attachmnt2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
 
 Print the group name corresponding to a groupId; the daemon runs on system bus, and was started without an explicit `-u USERNAME`::
 dbus-send --system --print-reply --type=method_call --dest='org.asamk.Signal' /org/asamk/Signal/_1234567890 org.asamk.Signal.getGroupName array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185

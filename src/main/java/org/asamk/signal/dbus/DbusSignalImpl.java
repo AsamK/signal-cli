@@ -96,16 +96,13 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
         }
 
-        for (var d : devices) {
-            var name = d.getName();
-            if (name == null) {name = "null";}
-            results.add(name);
-        }
-        return results;
+        return devices.stream()
+            .map(d -> d.getName() == null ? "" : d.getName())
+            .collect(Collectors.toList());
     }
 
     @Override
-    public void updateAccount(String deviceName) {
+    public void updateDeviceName(String deviceName) {
         try {
             m.updateAccountAttributes(deviceName);
         } catch (IOException | Signal.Error.Failure e) {

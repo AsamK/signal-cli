@@ -83,13 +83,13 @@ public interface Signal extends DBusInterface {
 
     boolean isRegistered();
 
-    void addDevice(String uri) throws Error.Failure;
+    void addDevice(String uri) throws Error.InvalidUri;
 
     void removeDevice(int deviceId) throws Error.Failure;
 
     List<String> listDevices() throws Error.Failure;
 
-    void updateAccount(String deviceName) throws Error.Failure;
+    void updateDeviceName(String deviceName) throws Error.Failure;
 
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
@@ -237,6 +237,13 @@ public interface Signal extends DBusInterface {
         class AttachmentInvalid extends DBusExecutionException {
 
             public AttachmentInvalid(final String message) {
+                super(message);
+            }
+        }
+
+        class InvalidUri extends DBusExecutionException {
+
+            public InvalidUri(final String message) {
                 super(message);
             }
         }
