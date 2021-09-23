@@ -107,6 +107,8 @@ public interface Signal extends DBusInterface {
 
     byte[] joinGroup(final String groupLink) throws Error.Failure;
 
+    String uploadStickerPack(String stickerPackPath) throws Error.Failure;
+
     class MessageReceived extends DBusSignal {
 
         private final long timestamp;

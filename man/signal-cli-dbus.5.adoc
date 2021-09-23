@@ -248,6 +248,12 @@ version() -> version<s>::
 isRegistred -> result<b>::
 * result : Currently always returns 1=true
 
+uploadStickerPack(stickerPackPath<s>) -> url<s>::
+* stickerPackPath : Path to the manifest.json file or a zip file in the same directory
+* url             : URL of sticker pack after successful upload
+
+Exception: Failure
+
 == Signals
 
 SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
