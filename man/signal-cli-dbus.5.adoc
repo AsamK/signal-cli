@@ -107,6 +107,18 @@ sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
 
 Exceptions: GroupNotFound, Failure, AttachmentInvalid
 
+sendContacts() -> <>::
+
+Sends a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+
+Exceptions: Failure
+
+sendSyncRequest() -> <>::
+
+Sends a synchronization request to the primary device (for group, contacts, ...). Only works if sent from a secondary device.
+
+Exception: Failure
+
 sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
