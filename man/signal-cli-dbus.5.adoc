@@ -114,6 +114,22 @@ sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 
 Exceptions: Failure, AttachmentInvalid
 
+unlisten() -> <>::
+unlisten(keepData<b>) -> <>::
+* keepData  : true or omitted = keep files in data directory; false = delete files
+
+Stops the current device from listening to DBus. In single-user mode, kills the daemon.
+
+Exception: Failure
+
+unregister() -> <>::
+unregister(keepData<b>) -> <>::
+* keepData  : true or omitted = keep files in data directory; false = delete files
+
+Unregisters the current device. In single-user mode, kills the daemon.
+
+Exception: Failure
+
 sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
 sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)

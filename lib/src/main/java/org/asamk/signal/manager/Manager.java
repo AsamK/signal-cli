@@ -132,6 +132,7 @@ public class Manager implements Closeable {
 
     private final ProfileHelper profileHelper;
     private final PinHelper pinHelper;
+    private final PathConfig pathConfig;
     private final StorageHelper storageHelper;
     private final SendHelper sendHelper;
     private final SyncHelper syncHelper;
@@ -152,6 +153,7 @@ public class Manager implements Closeable {
     ) {
         this.account = account;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
+        this.pathConfig = pathConfig;
 
         final var credentialsProvider = new DynamicCredentialsProvider(account.getUuid(),
                 account.getUsername(),
@@ -241,6 +243,10 @@ public class Manager implements Closeable {
                 syncHelper,
                 this::getRecipientProfile,
                 jobExecutor);
+    }
+
+    public PathConfig getPathConfig() {
+        return pathConfig;
     }
 
     public String getUsername() {
@@ -867,8 +873,12 @@ public class Manager implements Closeable {
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
-            account.setLastReceiveTimestamp(System.currentTimeMillis());
+            if (account == null) {
+                logger.debug("Account closed.");
+                break;
+            }
             logger.debug("Checking for new message from server");
+            account.setLastReceiveTimestamp(System.currentTimeMillis());
             try {
                 var result = signalWebSocket.readOrEmpty(unit.toMillis(timeout), envelope1 -> {
                     final var recipientId = envelope1.hasSourceUuid()
@@ -900,7 +910,7 @@ public class Manager implements Closeable {
                 } else {
                     throw e;
                 }
-            } catch (WebSocketUnavailableException e) {
+            } catch (IOException e) {
                 logger.debug("Pipe unexpectedly unavailable, connecting");
                 signalWebSocket.connect();
                 continue;

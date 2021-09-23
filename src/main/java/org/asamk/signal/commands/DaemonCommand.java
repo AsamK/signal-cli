@@ -13,9 +13,11 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusSignalControlImpl;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
@@ -28,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 public class DaemonCommand implements MultiLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
+    public static DBusConnection.DBusBusType dBusType;
+    public static TrustNewIdentity trustNewIdentity;
+    public static OutputWriter outputWriter;
 
     @Override
     public String getName() {
@@ -54,6 +59,20 @@ public class DaemonCommand implements MultiLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        handleCommand(ns, m, null, outputWriter, null);
+    }
+
+    @Override
+    public void handleCommand(final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter
+    ) throws CommandException {
+        handleCommand(ns, managers, c, outputWriter, null);
+    }
+
+    @Override
+    public void handleCommand(
+            final Namespace ns, final Manager m, final SignalCreator c, final OutputWriter outputWriter, final TrustNewIdentity trustNewIdentity
+    ) throws CommandException {
+        //single-user mode
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
@@ -61,6 +80,22 @@ public class DaemonCommand implements MultiLocalCommand {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
+        }
+        this.dBusType = busType;
+        this.trustNewIdentity = trustNewIdentity;
+        this.outputWriter = outputWriter;
+        if (System.getProperty("os.name").toLowerCase().startsWith("mac ")) {
+            String dBusVar = System.getenv("DBUS_LAUNCHD_SESSION_BUS_SOCKET");
+
+            if (dBusVar == null || dBusVar.isBlank()) {
+                String message = "\n\n" +
+                        "*************************************" +
+                        "\n\nDBUS_LAUNCHD_SESSION_BUS_SOCKET is not set. Issue the command:\n\n" +
+                        "export DBUS_LAUNCHD_SESSION_BUS_SOCKET=$(launchctl getenv DBUS_LAUNCHD_SESSION_BUS_SOCKET)\n" +
+                        "\nand then try again.\n\n" +
+                        "*************************************";
+                throw new UserErrorException(message);
+            }
         }
 
         try (var conn = DBusConnection.getConnection(busType)) {
@@ -73,7 +108,10 @@ public class DaemonCommand implements MultiLocalCommand {
                 t.join();
             } catch (InterruptedException ignored) {
             }
-        } catch (DBusException | IOException e) {
+        } catch (DBusException e) {
+            logger.error("Dbus command failed", e);
+            throw new UserErrorException("Dbus command failed, daemon already started on this bus.");
+        } catch (IOException e) {
             logger.error("Dbus command failed", e);
             throw new UnexpectedErrorException("Dbus command failed", e);
         }
@@ -81,8 +119,9 @@ public class DaemonCommand implements MultiLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter
+            final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter, TrustNewIdentity trustNewIdentity
     ) throws CommandException {
+        //anonymous mode
         boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
 
         DBusConnection.DBusBusType busType;
@@ -90,6 +129,22 @@ public class DaemonCommand implements MultiLocalCommand {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
+        }
+        this.dBusType = busType;
+        this.trustNewIdentity = trustNewIdentity;
+        this.outputWriter = outputWriter;
+        if (System.getProperty("os.name").toLowerCase().startsWith("mac ")) {
+            String dBusVar = System.getenv("DBUS_LAUNCHD_SESSION_BUS_SOCKET");
+
+            if (dBusVar == null || dBusVar.isBlank()) {
+                String message = "\n\n" +
+                        "*************************************" +
+                        "\n\nDBUS_LAUNCHD_SESSION_BUS_SOCKET is not set. Issue the command:\n\n" +
+                        "export DBUS_LAUNCHD_SESSION_BUS_SOCKET=$(launchctl getenv DBUS_LAUNCHD_SESSION_BUS_SOCKET)\n\n" +
+                        "and then try again.\n\n" +
+                        "*************************************";
+                throw new UserErrorException(message);
+            }
         }
 
         try (var conn = DBusConnection.getConnection(busType)) {
@@ -111,7 +166,10 @@ public class DaemonCommand implements MultiLocalCommand {
             conn.requestBusName(DbusConfig.getBusname());
 
             signalControl.run();
-        } catch (DBusException | IOException e) {
+        } catch (DBusException e) {
+            logger.error("Dbus command failed", e);
+            throw new UserErrorException("Dbus command failed, daemon already started on this bus.");
+        } catch (IOException e ) {
             logger.error("Dbus command failed", e);
             throw new UnexpectedErrorException("Dbus command failed", e);
         }

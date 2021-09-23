@@ -83,6 +83,12 @@ public interface Signal extends DBusInterface {
 
     boolean isRegistered();
 
+    void unlisten() throws Error.Failure;
+    void unlisten(boolean keepData) throws Error.Failure;
+
+    void unregister() throws Error.Failure;
+    void unregister(boolean keepData) throws Error.Failure;
+
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;

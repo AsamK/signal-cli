@@ -1,10 +1,12 @@
 package org.asamk.signal.dbus;
-
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.DbusConfig;
+import org.asamk.signal.commands.DaemonCommand;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.PathConfig;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -18,7 +20,12 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
+
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
@@ -29,13 +36,18 @@ import org.whispersystems.signalservice.internal.contacts.crypto.Unauthenticated
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,6 +57,7 @@ public class DbusSignalImpl implements Signal {
 
     private final Manager m;
     private final String objectPath;
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
     public DbusSignalImpl(final Manager m, final String objectPath) {
         this.m = m;
@@ -443,6 +456,54 @@ public class DbusSignalImpl implements Signal {
         return BaseConfig.PROJECT_VERSION;
     }
 
+    public void unlisten() {
+        unlisten(true);
+    }
+
+    @Override
+    public void unlisten(boolean keepData) {
+        try {
+            if (!keepData) {
+                removeUserData(m.getUsername());
+            }
+            String objectPath = DbusConfig.getObjectPath(m.getUsername());
+            DBusConnection.DBusBusType busType = DaemonCommand.dBusType;
+            var conn = DBusConnection.getConnection(busType);
+            //if single-user mode, just close the manager because we're exiting anyway
+            //else unexport the object
+            try {
+                //this will generate an error if we are in anonymous mode
+                conn.exportObject(new DbusSignalImpl(m, objectPath));
+                //no error, hence single-user mode
+                m.close();
+                logger.info("unExported dbus object: " + DbusConfig.getObjectPath());
+            } catch (DBusException ignore) {
+                //anonymous mode
+                conn.unExportObject(objectPath);
+                m.close();
+                logger.info("unExported dbus object: " + objectPath);
+            }
+        } catch (IOException | DBusException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Unlisten error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void unregister() {
+        unregister(true);
+    }
+
+    @Override
+    public void unregister(boolean keepData) {
+        try {
+            m.unregister();
+            DBusConnection.DBusBusType busType = DaemonCommand.dBusType;
+            unlisten(keepData);
+        } catch (Exception e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + "Unregister error: " + e.getMessage());
+        }
+    }
+
     // Create a unique list of Numbers from Identities and Contacts to really get
     // all numbers the system knows
     @Override
@@ -624,6 +685,28 @@ public class DbusSignalImpl implements Signal {
             return GroupId.unknownVersion(groupId);
         } catch (Throwable e) {
             throw new Error.InvalidGroupId("Invalid group id: " + e.getMessage());
+        }
+    }
+
+    private void removeUserData(String number) {
+        PathConfig pathConfig = m.getPathConfig();
+        File dataPath = pathConfig.getDataPath();
+        number.replaceFirst("_", "+");
+        String eraseFileName = dataPath.getAbsolutePath() + File.separator + number;
+        File eraseFile = new File(eraseFileName);
+        if (eraseFile.delete()) {
+            logger.info("erased " + eraseFileName);
+        } else {
+            logger.error("erase failed for " + eraseFileName);
+        }
+        String erasePath = dataPath.getAbsolutePath() + File.separator + number + ".d/";
+        Path rootPath = Paths.get(erasePath);
+        try (Stream<Path> walk = Files.walk(rootPath)) {
+            walk.sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " RemoveUserData failed. " + e.getMessage());
         }
     }
 }

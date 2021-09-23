@@ -4,10 +4,13 @@ import org.asamk.SignalControl;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.commands.SignalCreator;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.freedesktop.dbus.DBusPath;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
@@ -140,9 +143,16 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                 try {
                     final Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
                     addManager(manager);
-                } catch (IOException | TimeoutException | UserAlreadyExists e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {
+                    throw new Error.Failure("Link request error: " + e.getMessage());
+                } catch (TimeoutException e) {
+                    throw new Error.Failure("Link request timed out, please try again.");
+                } catch (UserAlreadyExists e) {
+                    throw new Error.Failure("The user "
+                             + e.getUsername()
+                             + " already exists\nDelete \""
+                             + e.getFileName()
+                             + "\" before trying again.");                }
             }).start();
             return deviceLinkUri.toString();
         } catch (TimeoutException | IOException e) {
