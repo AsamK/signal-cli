@@ -468,8 +468,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isRegistered() {
-        var result = isRegistered(List.of(m.getUsername()));
-        return result.get(0);
+        return true;
     }
 
     @Override
@@ -480,21 +479,22 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<Boolean> isRegistered(List<String> numbers) {
-        var results = new ArrayList<Boolean> ();
-        Map<String, Pair<String, UUID>> registered;
+        var results = new ArrayList<Boolean>();
         if (numbers.isEmpty()) {
             return results;
         }
+
+        Map<String, Pair<String, UUID>> registered;
         try {
-            registered = m.areUsersRegistered(new HashSet<String>(numbers));
+            registered = m.areUsersRegistered(new HashSet<>(numbers));
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
-        for (String number : numbers) {
-            UUID uuid = registered.get(number).second();
-            results.add(uuid != null);
-        }
-        return results;
+
+        return numbers.stream().map(number -> {
+            var uuid = registered.get(number).second();
+            return uuid != null;
+        }).collect(Collectors.toList());
     }
 
     @Override
