@@ -203,6 +203,24 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void sendContacts() {
+        try {
+            m.sendContacts();
+        } catch (IOException e) {
+            throw new Error.Failure("SendContacts error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendSyncRequest() {
+        try {
+            m.requestAllSyncData();
+        } catch (IOException e) {
+            throw new Error.Failure("Request sync data error: " + e.getMessage());
+        }
+    }
+
+    @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
