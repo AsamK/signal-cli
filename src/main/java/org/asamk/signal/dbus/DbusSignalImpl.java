@@ -5,6 +5,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Message;
@@ -251,6 +252,24 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void sendContacts() {
+        try {
+            m.sendContacts();
+        } catch (IOException e) {
+            throw new Error.Failure("SendContacts error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendSyncRequest() {
+        try {
+            m.requestAllSyncData();
+        } catch (IOException e) {
+            throw new Error.Failure("Request sync data error: " + e.getMessage());
+        }
+    }
+
+    @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
@@ -332,6 +351,15 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (UnregisteredUserException e) {
             throw new Error.Failure("Contact is not registered.");
+        }
+    }
+
+    @Override
+    public void setExpirationTimer(final String number, final int expiration) {
+        try {
+            m.setExpirationTimer(getSingleRecipientIdentifier(number, m.getUsername()), expiration);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
         }
     }
 
@@ -582,6 +610,18 @@ public class DbusSignalImpl implements Signal {
             return false;
         } else {
             return group.isMember(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public String uploadStickerPack(String stickerPackPath) {
+        File path = new File(stickerPackPath);
+        try {
+            return m.uploadStickerPack(path).toString();
+        } catch (IOException e) {
+            throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
+        } catch (StickerPackInvalidException e) {
+            throw new Error.Failure("Invalid sticker pack: " + e.getMessage());
         }
     }
 

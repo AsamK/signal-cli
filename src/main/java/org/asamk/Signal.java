@@ -49,6 +49,10 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws Error.InvalidNumber, Error.Failure;
 
+    void sendContacts() throws Error.Failure;
+
+    void sendSyncRequest() throws Error.Failure;
+
     long sendNoteToSelfMessage(
             String message, List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure;
@@ -66,6 +70,8 @@ public interface Signal extends DBusInterface {
     String getContactName(String number) throws Error.InvalidNumber;
 
     void setContactName(String number, String name) throws Error.InvalidNumber;
+
+    void setExpirationTimer(final String number, final int expiration) throws Error.Failure;
 
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
@@ -114,6 +120,8 @@ public interface Signal extends DBusInterface {
     boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
 
     byte[] joinGroup(final String groupLink) throws Error.Failure;
+
+    String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 
