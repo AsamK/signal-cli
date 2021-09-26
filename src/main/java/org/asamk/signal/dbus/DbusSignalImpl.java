@@ -73,7 +73,9 @@ public class DbusSignalImpl implements Signal {
         } catch (IOException | InvalidKeyException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
         } catch (URISyntaxException e) {
-            throw new Error.InvalidUri(e.getClass().getSimpleName() + " Device link uri has invalid format: " + e.getMessage());
+            throw new Error.InvalidUri(e.getClass().getSimpleName()
+                    + " Device link uri has invalid format: "
+                    + e.getMessage());
         }
     }
 
@@ -97,9 +99,7 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
         }
 
-        return devices.stream()
-            .map(d -> d.getName() == null ? "" : d.getName())
-            .collect(Collectors.toList());
+        return devices.stream().map(d -> d.getName() == null ? "" : d.getName()).collect(Collectors.toList());
     }
 
     @Override
