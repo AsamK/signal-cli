@@ -322,8 +322,15 @@ Exception: Failure
 version() -> version<s>::
 * version : Version string of signal-cli
 
-isRegistred -> result<b>::
-* result : Currently always returns 1=true
+isRegistered() -> result<b>::
+isRegistered(number<s>) -> result<b>::
+isRegistered(numbers<as>) -> results<ab>::
+* number  : Phone number
+* numbers : String array of phone numbers
+* result  : true=number is registered, false=number is not registered
+* results : Boolean array of results
+
+Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised. If no number is given, returns whether you are registered (presumably true).
 
 addDevice(deviceUri<s>) -> <>::
 * deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
