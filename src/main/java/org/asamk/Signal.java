@@ -71,6 +71,8 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name) throws Error.InvalidNumber;
 
+    void setExpirationTimer(final String number, final int expiration) throws Error.Failure;
+
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;

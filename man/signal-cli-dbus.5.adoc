@@ -61,6 +61,13 @@ updateProfile(newName<s>, about <s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>
 
 Exceptions: Failure
 
+
+setExpirationTimer(number<s>, expiration<i>) -> <>::
+* number     : Phone number of recipient
+* expiration : int32 for the number of seconds before messages to this recipient disappear. Set to 0 to disable expiration.
+
+Exceptions: Failure
+
 setContactBlocked(number<s>, block<b>) -> <>::
 * number  : Phone number affected by method
 * block   : 0=remove block , 1=blocked
