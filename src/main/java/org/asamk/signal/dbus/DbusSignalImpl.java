@@ -5,6 +5,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -533,6 +534,18 @@ public class DbusSignalImpl implements Signal {
             return false;
         } else {
             return group.isMember(m.getSelfRecipientId());
+        }
+    }
+
+    @Override
+    public String uploadStickerPack(String stickerPackPath) {
+        File path = new File(stickerPackPath);
+        try {
+            return m.uploadStickerPack(path).toString();
+        } catch (IOException e) {
+            throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
+        } catch (StickerPackInvalidException e) {
+            throw new Error.Failure("Invalid sticker pack: " + e.getMessage());
         }
     }
 
