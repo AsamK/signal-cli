@@ -102,6 +102,10 @@ public interface Signal extends DBusInterface {
     void updateDeviceName(String deviceName) throws Error.Failure;
 
     void updateProfile(
+            String givenName, String familyName, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
+    ) throws Error.Failure;
+
+    void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
 
