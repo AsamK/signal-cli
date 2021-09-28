@@ -416,7 +416,7 @@ public final class IncomingMessageHandler {
         }
 
         final var recipientId = recipientResolver.resolveRecipient(source);
-        if (!group.isMember(recipientId)) {
+        if (!group.isMember(recipientId) && !(group.isPendingMember(recipientId) && message.isGroupV2Update())) {
             return true;
         }
 
