@@ -12,14 +12,9 @@ public abstract class RecipientIdentifier {
 
     public static class NoteToSelf extends RecipientIdentifier {
 
-        @Override
-        public boolean equals(final Object obj) {
-            return obj instanceof NoteToSelf;
-        }
+        public static NoteToSelf INSTANCE = new NoteToSelf();
 
-        @Override
-        public int hashCode() {
-            return 5;
+        private NoteToSelf() {
         }
     }
 

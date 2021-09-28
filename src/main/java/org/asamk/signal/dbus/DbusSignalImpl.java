@@ -276,7 +276,7 @@ public class DbusSignalImpl implements Signal {
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
             final var results = m.sendMessage(new Message(message, attachments),
-                    Set.of(new RecipientIdentifier.NoteToSelf()));
+                    Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
             checkSendMessageResults(results.getTimestamp(), results.getResults());
             return results.getTimestamp();
         } catch (AttachmentInvalidException e) {
