@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
-    String getNumber();
+    String getSelfNumber();
 
     long sendMessage(
             String message, List<String> attachments, String recipient

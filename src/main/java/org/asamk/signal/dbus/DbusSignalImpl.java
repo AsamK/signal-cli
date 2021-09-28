@@ -67,7 +67,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public String getNumber() {
+    public String getSelfNumber() {
         return m.getSelfNumber();
     }
 
@@ -96,8 +96,6 @@ public class DbusSignalImpl implements Signal {
     @Override
     public List<String> listDevices() {
         List<Device> devices;
-        List<String> results = new ArrayList<String>();
-
         try {
             devices = m.getLinkedDevices();
         } catch (IOException | Error.Failure e) {
@@ -345,7 +343,8 @@ public class DbusSignalImpl implements Signal {
     // the profile name
     @Override
     public String getContactName(final String number) {
-        return m.getContactOrProfileName(getSingleRecipientIdentifier(number, m.getSelfNumber()));
+        final var name = m.getContactOrProfileName(getSingleRecipientIdentifier(number, m.getSelfNumber()));
+        return name == null ? "" : name;
     }
 
     @Override
@@ -403,7 +402,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getGroupName(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
-        if (group == null) {
+        if (group == null || group.getTitle() == null) {
             return "";
         } else {
             return group.getTitle();
@@ -423,15 +422,9 @@ public class DbusSignalImpl implements Signal {
     @Override
     public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) {
         try {
-            if (groupId.length == 0) {
-                groupId = null;
-            }
-            if (name.isEmpty()) {
-                name = null;
-            }
-            if (avatar.isEmpty()) {
-                avatar = null;
-            }
+            groupId = nullIfEmpty(groupId);
+            name = nullIfEmpty(name);
+            avatar = nullIfEmpty(avatar);
             final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getSelfNumber());
             if (groupId == null) {
                 final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
@@ -499,17 +492,19 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void updateProfile(
-            final String givenName,
-            final String familyName,
-            final String about,
-            final String aboutEmoji,
+            String givenName,
+            String familyName,
+            String about,
+            String aboutEmoji,
             String avatarPath,
             final boolean removeAvatar
     ) {
         try {
-            if (avatarPath.isEmpty()) {
-                avatarPath = null;
-            }
+            givenName = nullIfEmpty(givenName);
+            familyName = nullIfEmpty(familyName);
+            about = nullIfEmpty(about);
+            aboutEmoji = nullIfEmpty(aboutEmoji);
+            avatarPath = nullIfEmpty(avatarPath);
             Optional<File> avatarFile = removeAvatar
                     ? Optional.absent()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
@@ -527,17 +522,7 @@ public class DbusSignalImpl implements Signal {
             String avatarPath,
             final boolean removeAvatar
     ) {
-        try {
-            if (avatarPath.isEmpty()) {
-                avatarPath = null;
-            }
-            Optional<File> avatarFile = removeAvatar
-                    ? Optional.absent()
-                    : avatarPath == null ? null : Optional.of(new File(avatarPath));
-            m.setProfile(name, null, about, aboutEmoji, avatarFile);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        }
+        updateProfile(name, "", about, aboutEmoji, avatarPath, removeAvatar);
     }
 
     @Override
@@ -765,5 +750,13 @@ public class DbusSignalImpl implements Signal {
         } catch (Throwable e) {
             throw new Error.InvalidGroupId("Invalid group id: " + e.getMessage());
         }
+    }
+
+    private byte[] nullIfEmpty(final byte[] array) {
+        return array.length == 0 ? null : array;
+    }
+
+    private String nullIfEmpty(final String name) {
+        return name.isEmpty() ? null : name;
     }
 }

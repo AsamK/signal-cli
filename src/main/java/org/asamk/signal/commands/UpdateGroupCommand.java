@@ -4,7 +4,6 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.Signal;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
@@ -21,17 +20,14 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
+public class UpdateGroupCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
 
@@ -174,43 +170,6 @@ public class UpdateGroupCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
-        }
-    }
-
-    @Override
-    public void handleCommand(
-            final Namespace ns, final Signal signal, final OutputWriter outputWriter
-    ) throws CommandException {
-        var groupId = CommandUtil.getGroupId(ns.getString("group-id"));
-
-        var groupName = ns.getString("name");
-        if (groupName == null) {
-            groupName = "";
-        }
-
-        List<String> groupMembers = ns.getList("member");
-        if (groupMembers == null) {
-            groupMembers = new ArrayList<>();
-        }
-
-        var groupAvatar = ns.getString("avatar");
-        if (groupAvatar == null) {
-            groupAvatar = "";
-        }
-
-        try {
-            var newGroupId = signal.updateGroup(groupId == null ? new byte[0] : groupId.serialize(),
-                    groupName,
-                    groupMembers,
-                    groupAvatar);
-            if (groupId == null) {
-                outputResult(outputWriter, null, GroupId.unknownVersion(newGroupId));
-            }
-        } catch (Signal.Error.AttachmentInvalid e) {
-            throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
-        } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
         }
