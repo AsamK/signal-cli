@@ -5,8 +5,12 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.StickerPackInvalidException;
+import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -17,15 +21,19 @@ import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.Util;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
+import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,6 +65,51 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getObjectPath() {
         return objectPath;
+    }
+
+    @Override
+    public void addDevice(String uri) {
+        try {
+            m.addDeviceLink(new URI(uri));
+        } catch (IOException | InvalidKeyException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
+        } catch (URISyntaxException e) {
+            throw new Error.InvalidUri(e.getClass().getSimpleName()
+                    + " Device link uri has invalid format: "
+                    + e.getMessage());
+        }
+    }
+
+    @Override
+    public void removeDevice(int deviceId) {
+        try {
+            m.removeLinkedDevices(deviceId);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + ": Error while removing device: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<String> listDevices() {
+        List<Device> devices;
+        List<String> results = new ArrayList<String>();
+
+        try {
+            devices = m.getLinkedDevices();
+        } catch (IOException | Error.Failure e) {
+            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
+        }
+
+        return devices.stream().map(d -> d.getName() == null ? "" : d.getName()).collect(Collectors.toList());
+    }
+
+    @Override
+    public void updateDeviceName(String deviceName) {
+        try {
+            m.updateAccountAttributes(deviceName);
+        } catch (IOException | Signal.Error.Failure e) {
+            throw new Error.Failure("UpdateAccount error: " + e.getMessage());
+        }
     }
 
     @Override
@@ -166,6 +220,57 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void sendTyping(
+            final String recipient, final boolean stop
+    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
+        try {
+            var recipients = new ArrayList<String>(1);
+            recipients.add(recipient);
+            m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
+                    getSingleRecipientIdentifiers(recipients, m.getUsername()).stream()
+                            .map(RecipientIdentifier.class::cast)
+                            .collect(Collectors.toSet()));
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendReadReceipt(
+            final String recipient, final List<Long> timestamps
+    ) throws Error.Failure, Error.UntrustedIdentity {
+        try {
+            m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getUsername()), timestamps);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendContacts() {
+        try {
+            m.sendContacts();
+        } catch (IOException e) {
+            throw new Error.Failure("SendContacts error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendSyncRequest() {
+        try {
+            m.requestAllSyncData();
+        } catch (IOException e) {
+            throw new Error.Failure("Request sync data error: " + e.getMessage());
+        }
+    }
+
+    @Override
     public long sendNoteToSelfMessage(
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
@@ -247,6 +352,15 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (UnregisteredUserException e) {
             throw new Error.Failure("Contact is not registered.");
+        }
+    }
+
+    @Override
+    public void setExpirationTimer(final String number, final int expiration) {
+        try {
+            m.setExpirationTimer(getSingleRecipientIdentifier(number, m.getUsername()), expiration);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
         }
     }
 
@@ -358,6 +472,32 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public boolean isRegistered(String number) {
+        var result = isRegistered(List.of(number));
+        return result.get(0);
+    }
+
+    @Override
+    public List<Boolean> isRegistered(List<String> numbers) {
+        var results = new ArrayList<Boolean>();
+        if (numbers.isEmpty()) {
+            return results;
+        }
+
+        Map<String, Pair<String, UUID>> registered;
+        try {
+            registered = m.areUsersRegistered(new HashSet<>(numbers));
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+
+        return numbers.stream().map(number -> {
+            var uuid = registered.get(number).second();
+            return uuid != null;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public void updateProfile(
             final String name,
             final String about,
@@ -375,6 +515,28 @@ public class DbusSignalImpl implements Signal {
             m.setProfile(name, null, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
+    public void removePin() {
+        try {
+            m.setRegistrationLockPin(Optional.absent());
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Remove pin failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Remove pin error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void setPin(String registrationLockPin) {
+        try {
+            m.setRegistrationLockPin(Optional.of(registrationLockPin));
+        } catch (UnauthenticatedResponseException e) {
+            throw new Error.Failure("Set pin error failed with unauthenticated response: " + e.getMessage());
+        } catch (IOException e) {
+            throw new Error.Failure("Set pin error: " + e.getMessage());
         }
     }
 
@@ -481,6 +643,18 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getAccount() {
         return m.getUsername();
+    }
+
+    @Override
+    public String uploadStickerPack(String stickerPackPath) {
+        File path = new File(stickerPackPath);
+        try {
+            return m.uploadStickerPack(path).toString();
+        } catch (IOException e) {
+            throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
+        } catch (StickerPackInvalidException e) {
+            throw new Error.Failure("Invalid sticker pack: " + e.getMessage());
+        }
     }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {

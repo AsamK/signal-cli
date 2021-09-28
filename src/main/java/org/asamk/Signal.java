@@ -21,6 +21,14 @@ public interface Signal extends DBusInterface {
             String message, List<String> attachments, List<String> recipients
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
+    void sendTyping(
+            String recipient, boolean stop
+    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+
+    void sendReadReceipt(
+            String recipient, List<Long> targetSentTimestamp
+    ) throws Error.Failure, Error.UntrustedIdentity;
+
     long sendRemoteDeleteMessage(
             long targetSentTimestamp, String recipient
     ) throws Error.Failure, Error.InvalidNumber;
@@ -41,6 +49,10 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws Error.InvalidNumber, Error.Failure;
 
+    void sendContacts() throws Error.Failure;
+
+    void sendSyncRequest() throws Error.Failure;
+
     long sendNoteToSelfMessage(
             String message, List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure;
@@ -59,6 +71,8 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name) throws Error.InvalidNumber;
 
+    void setExpirationTimer(final String number, final int expiration) throws Error.Failure;
+
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
@@ -73,11 +87,27 @@ public interface Signal extends DBusInterface {
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    boolean isRegistered();
+    boolean isRegistered() throws Error.Failure, Error.InvalidNumber;
+
+    boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
+
+    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
+
+    void addDevice(String uri) throws Error.InvalidUri;
+
+    void removeDevice(int deviceId) throws Error.Failure;
+
+    List<String> listDevices() throws Error.Failure;
+
+    void updateDeviceName(String deviceName) throws Error.Failure;
 
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+
+    void removePin();
+
+    void setPin(String registrationLockPin);
 
     String version();
 
@@ -96,6 +126,8 @@ public interface Signal extends DBusInterface {
     String getAccount();
     
     byte[] joinGroup(final String groupLink) throws Error.Failure;
+
+    String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 
@@ -219,6 +251,13 @@ public interface Signal extends DBusInterface {
         class AttachmentInvalid extends DBusExecutionException {
 
             public AttachmentInvalid(final String message) {
+                super(message);
+            }
+        }
+
+        class InvalidUri extends DBusExecutionException {
+
+            public InvalidUri(final String message) {
                 super(message);
             }
         }
