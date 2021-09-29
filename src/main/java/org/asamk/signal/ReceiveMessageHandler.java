@@ -61,13 +61,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     final var recipientName = getLegacyIdentifier(m.resolveSignalServiceAddress(e.getSender()));
                     writer.println(
                             "Use 'signal-cli -u {} listIdentities -n {}', verify the key and run 'signal-cli -u {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
-                            m.getUsername(),
+                            m.getSelfNumber(),
                             recipientName,
-                            m.getUsername(),
+                            m.getSelfNumber(),
                             recipientName);
                     writer.println(
                             "If you don't care about security, use 'signal-cli -u {} trust -a {}' to trust it without verification",
-                            m.getUsername(),
+                            m.getSelfNumber(),
                             recipientName);
                 } else {
                     writer.println("Exception: {} ({})", exception.getMessage(), exception.getClass().getSimpleName());
@@ -657,7 +657,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private void printMention(
             PlainTextWriter writer, SignalServiceDataMessage.Mention mention
     ) {
-        final var address = m.resolveSignalServiceAddress(mention.getUuid());
+        final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid()));
         writer.println("- {}: {} (length: {})", formatContact(address), mention.getStart(), mention.getLength());
     }
 

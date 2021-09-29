@@ -4,13 +4,11 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.Signal;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
-import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
@@ -22,8 +20,6 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.IOUtils;
-import org.freedesktop.dbus.errors.UnknownObject;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
+public class SendCommand implements JsonRpcLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
 
@@ -113,97 +109,6 @@ public class SendCommand implements DbusCommand, JsonRpcLocalCommand {
                     .getSimpleName() + ")", e);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
-        }
-    }
-
-    @Override
-    public void handleCommand(
-            final Namespace ns, final Signal signal, final OutputWriter outputWriter
-    ) throws CommandException {
-        final var recipients = ns.<String>getList("recipient");
-        final var isEndSession = ns.getBoolean("end-session");
-        final var groupIdStrings = ns.<String>getList("group-id");
-        final var isNoteToSelf = ns.getBoolean("note-to-self");
-
-        final var noRecipients = recipients == null || recipients.isEmpty();
-        final var noGroups = groupIdStrings == null || groupIdStrings.isEmpty();
-        if ((noRecipients && isEndSession) || (noRecipients && noGroups && !isNoteToSelf)) {
-            throw new UserErrorException("No recipients given");
-        }
-        if (!noRecipients && !noGroups) {
-            throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
-        }
-        if (!noRecipients && isNoteToSelf) {
-            throw new UserErrorException(
-                    "You cannot specify recipients by phone number and note to self at the same time");
-        }
-
-        if (isEndSession) {
-            try {
-                signal.sendEndSessionMessage(recipients);
-                return;
-            } catch (Signal.Error.UntrustedIdentity e) {
-                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                        .getSimpleName() + ")");
-            } catch (DBusExecutionException e) {
-                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                        .getSimpleName() + ")", e);
-            }
-        }
-
-        var messageText = ns.getString("message");
-        if (messageText == null) {
-            try {
-                messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
-            } catch (IOException e) {
-                throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
-            }
-        }
-
-        List<String> attachments = ns.getList("attachment");
-        if (attachments == null) {
-            attachments = List.of();
-        }
-
-        if (!noGroups) {
-            final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
-
-            try {
-                long timestamp = 0;
-                for (final var groupId : groupIds) {
-                    timestamp = signal.sendGroupMessage(messageText, attachments, groupId.serialize());
-                }
-                outputResult(outputWriter, timestamp);
-                return;
-            } catch (DBusExecutionException e) {
-                throw new UnexpectedErrorException("Failed to send group message: " + e.getMessage(), e);
-            }
-        }
-
-        if (isNoteToSelf) {
-            try {
-                var timestamp = signal.sendNoteToSelfMessage(messageText, attachments);
-                outputResult(outputWriter, timestamp);
-                return;
-            } catch (Signal.Error.UntrustedIdentity e) {
-                throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                        .getSimpleName() + ")");
-            } catch (DBusExecutionException e) {
-                throw new UnexpectedErrorException("Failed to send note to self message: " + e.getMessage(), e);
-            }
-        }
-
-        try {
-            var timestamp = signal.sendMessage(messageText, attachments, recipients);
-            outputResult(outputWriter, timestamp);
-        } catch (UnknownObject e) {
-            throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
-        } catch (Signal.Error.UntrustedIdentity e) {
-            throw new UntrustedKeyErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")");
-        } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
         }
     }
 

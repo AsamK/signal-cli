@@ -25,10 +25,10 @@ public class CommandUtil {
     ) throws UserErrorException {
         final var recipientIdentifiers = new HashSet<RecipientIdentifier>();
         if (isNoteToSelf) {
-            recipientIdentifiers.add(new RecipientIdentifier.NoteToSelf());
+            recipientIdentifiers.add(RecipientIdentifier.NoteToSelf.INSTANCE);
         }
         if (recipientStrings != null) {
-            final var localNumber = m.getUsername();
+            final var localNumber = m.getSelfNumber();
             recipientIdentifiers.addAll(CommandUtil.getSingleRecipientIdentifiers(recipientStrings, localNumber));
         }
         if (groupIdStrings != null) {

@@ -50,7 +50,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var groupId = CommandUtil.getGroupId(ns.getString("group-id"));
 
-        var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), m.getUsername());
+        var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), m.getSelfNumber());
 
         try {
             try {

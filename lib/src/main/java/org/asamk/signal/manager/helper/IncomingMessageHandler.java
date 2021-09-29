@@ -144,7 +144,8 @@ public final class IncomingMessageHandler {
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
                 final var senderProfile = profileProvider.getProfile(sender);
                 final var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
-                if (senderProfile != null
+                if (e.getSenderDevice() != account.getDeviceId()
+                        && senderProfile != null
                         && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
                         && selfProfile != null
                         && selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
@@ -415,7 +416,7 @@ public final class IncomingMessageHandler {
         }
 
         final var recipientId = recipientResolver.resolveRecipient(source);
-        if (!group.isMember(recipientId)) {
+        if (!group.isMember(recipientId) && !(group.isPendingMember(recipientId) && message.isGroupV2Update())) {
             return true;
         }
 

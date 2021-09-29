@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -12,14 +13,9 @@ public abstract class RecipientIdentifier {
 
     public static class NoteToSelf extends RecipientIdentifier {
 
-        @Override
-        public boolean equals(final Object obj) {
-            return obj instanceof NoteToSelf;
-        }
+        public static NoteToSelf INSTANCE = new NoteToSelf();
 
-        @Override
-        public int hashCode() {
-            return 5;
+        private NoteToSelf() {
         }
     }
 
@@ -34,6 +30,17 @@ public abstract class RecipientIdentifier {
         public static Single fromAddress(SignalServiceAddress address) {
             return new Uuid(address.getUuid());
         }
+
+        public static Single fromAddress(RecipientAddress address) {
+            if (address.getNumber().isPresent()) {
+                return new Number(address.getNumber().get());
+            } else if (address.getUuid().isPresent()) {
+                return new Uuid(address.getUuid().get());
+            }
+            throw new AssertionError("RecipientAddress without identifier");
+        }
+
+        public abstract String getIdentifier();
     }
 
     public static class Uuid extends Single {
@@ -58,6 +65,11 @@ public abstract class RecipientIdentifier {
         public int hashCode() {
             return uuid.hashCode();
         }
+
+        @Override
+        public String getIdentifier() {
+            return uuid.toString();
+        }
     }
 
     public static class Number extends Single {
@@ -81,6 +93,11 @@ public abstract class RecipientIdentifier {
         @Override
         public int hashCode() {
             return number.hashCode();
+        }
+
+        @Override
+        public String getIdentifier() {
+            return number;
         }
     }
 

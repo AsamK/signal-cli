@@ -95,7 +95,7 @@ public class DaemonCommand implements MultiLocalCommand {
         try (var conn = DBusConnection.getConnection(busType)) {
             final var signalControl = new DbusSignalControlImpl(c, m -> {
                 try {
-                    final var objectPath = DbusConfig.getObjectPath(m.getUsername());
+                    final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
                     return run(conn, objectPath, m, outputWriter, ignoreAttachments);
                 } catch (DBusException e) {
                     logger.error("Failed to export object", e);

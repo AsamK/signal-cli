@@ -4,7 +4,6 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.Signal;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
@@ -17,13 +16,11 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
-import org.freedesktop.dbus.errors.UnknownObject;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
+public class SendReactionCommand implements JsonRpcLocalCommand {
 
     @Override
     public String getName() {
@@ -72,7 +69,7 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
         try {
             final var results = m.sendMessageReaction(emoji,
                     isRemove,
-                    CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getUsername()),
+                    CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetTimestamp,
                     recipientIdentifiers);
             outputResult(outputWriter, results.getTimestamp());
@@ -80,54 +77,6 @@ public class SendReactionCommand implements DbusCommand, JsonRpcLocalCommand {
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
-        }
-    }
-
-    @Override
-    public void handleCommand(
-            final Namespace ns, final Signal signal, final OutputWriter outputWriter
-    ) throws CommandException {
-        final var recipients = ns.<String>getList("recipient");
-        final var groupIdStrings = ns.<String>getList("group-id");
-
-        final var noRecipients = recipients == null || recipients.isEmpty();
-        final var noGroups = groupIdStrings == null || groupIdStrings.isEmpty();
-        if (noRecipients && noGroups) {
-            throw new UserErrorException("No recipients given");
-        }
-        if (!noRecipients && !noGroups) {
-            throw new UserErrorException("You cannot specify recipients by phone number and groups at the same time");
-        }
-
-        final var emoji = ns.getString("emoji");
-        final var isRemove = ns.getBoolean("remove");
-        final var targetAuthor = ns.getString("target-author");
-        final var targetTimestamp = ns.getLong("target-timestamp");
-
-        try {
-            long timestamp = 0;
-            if (!noGroups) {
-                final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
-                for (final var groupId : groupIds) {
-                    timestamp = signal.sendGroupMessageReaction(emoji,
-                            isRemove,
-                            targetAuthor,
-                            targetTimestamp,
-                            groupId.serialize());
-                }
-            } else {
-                timestamp = signal.sendMessageReaction(emoji, isRemove, targetAuthor, targetTimestamp, recipients);
-            }
-            outputResult(outputWriter, timestamp);
-        } catch (UnknownObject e) {
-            throw new UserErrorException("Failed to find dbus object, maybe missing the -u flag: " + e.getMessage());
-        } catch (Signal.Error.InvalidNumber e) {
-            throw new UserErrorException("Invalid number: " + e.getMessage());
-        } catch (Signal.Error.GroupNotFound e) {
-            throw new UserErrorException("Failed to send to group: " + e.getMessage());
-        } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
         }

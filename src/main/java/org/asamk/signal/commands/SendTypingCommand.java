@@ -45,7 +45,7 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
 
         final var recipientIdentifiers = new HashSet<RecipientIdentifier>();
         if (recipientStrings != null) {
-            final var localNumber = m.getUsername();
+            final var localNumber = m.getSelfNumber();
             recipientIdentifiers.addAll(CommandUtil.getSingleRecipientIdentifiers(recipientStrings, localNumber));
         }
         if (groupIdStrings != null) {
