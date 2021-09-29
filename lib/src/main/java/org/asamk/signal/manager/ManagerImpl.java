@@ -320,6 +320,31 @@ public class ManagerImpl implements Manager {
                         account.isDiscoverableByPhoneNumber());
     }
 
+    @Override
+    public void updateConfiguration(
+            final Boolean readReceipts,
+            final Boolean unidentifiedDeliveryIndicators,
+            final Boolean typingIndicators,
+            final Boolean linkPreviews
+    ) throws IOException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
+        if (readReceipts != null) {
+            account.getConfigurationStore().setReadReceipts(readReceipts);
+        }
+        if (unidentifiedDeliveryIndicators != null) {
+            account.getConfigurationStore().setUnidentifiedDeliveryIndicators(unidentifiedDeliveryIndicators);
+        }
+        if (typingIndicators != null) {
+            account.getConfigurationStore().setTypingIndicators(typingIndicators);
+        }
+        if (linkPreviews != null) {
+            account.getConfigurationStore().setLinkPreviews(linkPreviews);
+        }
+        syncHelper.sendConfigurationMessage();
+    }
+
     /**
      * @param givenName  if null, the previous givenName will be kept
      * @param familyName if null, the previous familyName will be kept

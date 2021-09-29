@@ -98,6 +98,13 @@ public interface Manager extends Closeable {
 
     void updateAccountAttributes(String deviceName) throws IOException;
 
+    void updateConfiguration(
+            final Boolean readReceipts,
+            final Boolean unidentifiedDeliveryIndicators,
+            final Boolean typingIndicators,
+            final Boolean linkPreviews
+    ) throws IOException, NotMasterDeviceException;
+
     void setProfile(
             String givenName, String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException;

@@ -14,6 +14,7 @@ import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
@@ -219,6 +220,15 @@ public class SyncHelper {
     public void sendKeysMessage() throws IOException {
         var keysMessage = new KeysMessage(Optional.fromNullable(account.getStorageKey()));
         sendHelper.sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
+    }
+
+    public void sendConfigurationMessage() throws IOException {
+        final var config = account.getConfigurationStore();
+        var configurationMessage = new ConfigurationMessage(Optional.fromNullable(config.getReadReceipts()),
+                Optional.fromNullable(config.getUnidentifiedDeliveryIndicators()),
+                Optional.fromNullable(config.getTypingIndicators()),
+                Optional.fromNullable(config.getLinkPreviews()));
+        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
     public void handleSyncDeviceContacts(final InputStream input) throws IOException {

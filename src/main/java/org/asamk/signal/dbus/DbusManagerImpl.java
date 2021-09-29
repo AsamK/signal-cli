@@ -94,6 +94,16 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void updateConfiguration(
+            final Boolean readReceipts,
+            final Boolean unidentifiedDeliveryIndicators,
+            final Boolean typingIndicators,
+            final Boolean linkPreviews
+    ) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setProfile(
             final String givenName,
             final String familyName,

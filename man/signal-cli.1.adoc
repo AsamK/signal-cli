@@ -113,6 +113,23 @@ Can fix problems with receiving messages.
 *-n* NAME, *--device-name* NAME::
 Set a new device name for the main or linked device
 
+=== updateConfiguration
+
+Update signal configs and sync them to linked devices.
+This command only works on the main devices.
+
+*--read-receipts* {true,false}::
+Indicates if Signal should send read receipts.
+
+*--unidentified-delivery-indicators* {true,false}::
+Indicates if Signal should show unidentified delivery indicators.
+
+*--typing-indicators* {true,false}::
+Indicates if Signal should send/show typing indicators.
+
+*--link-previews* {true,false}::
+Indicates if Signal should generate link previews.
+
 === setPin
 
 Set a registration lock pin, to prevent others from registering this number.

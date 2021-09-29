@@ -15,6 +15,7 @@ import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendReceiptAction;
 import org.asamk.signal.manager.actions.SendRetryMessageRequestAction;
 import org.asamk.signal.manager.actions.SendSyncBlockedListAction;
+import org.asamk.signal.manager.actions.SendSyncConfigurationAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
 import org.asamk.signal.manager.actions.SendSyncKeysAction;
@@ -271,7 +272,9 @@ public final class IncomingMessageHandler {
             if (rm.isKeysRequest()) {
                 actions.add(SendSyncKeysAction.create());
             }
-            // TODO Handle rm.isConfigurationRequest();
+            if (rm.isConfigurationRequest()) {
+                actions.add(SendSyncConfigurationAction.create());
+            }
         }
         if (syncMessage.getGroups().isPresent()) {
             logger.warn("Received a group v1 sync message, that can't be handled anymore, ignoring.");
@@ -353,7 +356,13 @@ public final class IncomingMessageHandler {
             }
         }
         if (syncMessage.getConfiguration().isPresent()) {
-            // TODO
+            final var configurationMessage = syncMessage.getConfiguration().get();
+            account.getConfigurationStore().setReadReceipts(configurationMessage.getReadReceipts().orNull());
+            account.getConfigurationStore().setLinkPreviews(configurationMessage.getLinkPreviews().orNull());
+            account.getConfigurationStore().setTypingIndicators(configurationMessage.getTypingIndicators().orNull());
+            account.getConfigurationStore()
+                    .setUnidentifiedDeliveryIndicators(configurationMessage.getUnidentifiedDeliveryIndicators()
+                            .orNull());
         }
         return actions;
     }
