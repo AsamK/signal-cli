@@ -41,7 +41,7 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
-        final var action = ns.getBoolean("stop") ? TypingAction.STOP : TypingAction.START;
+        final var action = Boolean.TRUE.equals(ns.getBoolean("stop")) ? TypingAction.STOP : TypingAction.START;
 
         final var recipientIdentifiers = new HashSet<RecipientIdentifier>();
         if (recipientStrings != null) {

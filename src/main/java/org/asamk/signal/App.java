@@ -117,8 +117,8 @@ public class App {
 
         var username = ns.getString("username");
 
-        final var useDbus = ns.getBoolean("dbus");
-        final var useDbusSystem = ns.getBoolean("dbus-system");
+        final var useDbus = Boolean.TRUE.equals(ns.getBoolean("dbus"));
+        final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
             initDbusClient(command, username, useDbusSystem, outputWriter);

@@ -64,14 +64,5 @@ public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>
 
             return super.getList(dest + "s");
         }
-
-        @Override
-        public Boolean getBoolean(String dest) {
-            Boolean maybeGotten = this.get(dest);
-            if (maybeGotten == null) {
-                maybeGotten = false;
-            }
-            return maybeGotten;
-        }
     }
 }

@@ -42,7 +42,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         var about = ns.getString("about");
         var aboutEmoji = ns.getString("about-emoji");
         var avatarPath = ns.getString("avatar");
-        boolean removeAvatar = ns.getBoolean("remove-avatar");
+        boolean removeAvatar = Boolean.TRUE.equals(ns.getBoolean("remove-avatar"));
 
         Optional<File> avatarFile = removeAvatar
                 ? Optional.absent()

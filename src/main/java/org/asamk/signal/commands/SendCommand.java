@@ -58,7 +58,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final var isNoteToSelf = ns.getBoolean("note-to-self");
+        final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
 
@@ -67,7 +67,7 @@ public class SendCommand implements JsonRpcLocalCommand {
                 recipientStrings,
                 groupIdStrings);
 
-        final var isEndSession = ns.getBoolean("end-session");
+        final var isEndSession = Boolean.TRUE.equals(ns.getBoolean("end-session"));
         if (isEndSession) {
             final var singleRecipients = recipientIdentifiers.stream()
                     .filter(r -> r instanceof RecipientIdentifier.Single)

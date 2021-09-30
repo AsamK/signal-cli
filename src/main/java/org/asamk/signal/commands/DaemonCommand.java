@@ -54,10 +54,10 @@ public class DaemonCommand implements MultiLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
+        boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
         DBusConnection.DBusBusType busType;
-        if (ns.getBoolean("system")) {
+        if (Boolean.TRUE.equals(ns.getBoolean("system"))) {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
@@ -83,10 +83,10 @@ public class DaemonCommand implements MultiLocalCommand {
     public void handleCommand(
             final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter
     ) throws CommandException {
-        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
+        boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
         DBusConnection.DBusBusType busType;
-        if (ns.getBoolean("system")) {
+        if (Boolean.TRUE.equals(ns.getBoolean("system"))) {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;

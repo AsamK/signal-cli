@@ -102,7 +102,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             jsonWriter.write(jsonGroups);
         } else {
             final var writer = (PlainTextWriter) outputWriter;
-            boolean detailed = ns.getBoolean("detailed");
+            boolean detailed = Boolean.TRUE.equals(ns.getBoolean("detailed"));
             for (var group : groups) {
                 printGroupPlainText(writer, group, detailed);
             }

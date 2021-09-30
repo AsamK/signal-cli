@@ -65,7 +65,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
+        final boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
         final var objectMapper = Util.createJsonObjectMapper();
         final var jsonRpcSender = new JsonRpcSender((JsonWriter) outputWriter);

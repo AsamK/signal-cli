@@ -80,7 +80,7 @@ public class Main {
             return false;
         }
 
-        return ns.getBoolean("verbose");
+        return Boolean.TRUE.equals(ns.getBoolean("verbose"));
     }
 
     private static void configureLogging(final boolean verbose) {

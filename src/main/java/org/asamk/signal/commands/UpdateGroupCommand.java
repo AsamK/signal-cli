@@ -121,7 +121,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), localNumber);
         var groupRemoveAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("remove-admin"), localNumber);
         var groupAvatar = ns.getString("avatar");
-        var groupResetLink = ns.getBoolean("reset-link");
+        var groupResetLink = Boolean.TRUE.equals(ns.getBoolean("reset-link"));
         var groupLinkState = getGroupLinkState(ns.getString("link"));
         var groupExpiration = ns.getInt("expiration");
         var groupAddMemberPermission = getGroupPermission(ns.getString("set-permission-add-member"));
