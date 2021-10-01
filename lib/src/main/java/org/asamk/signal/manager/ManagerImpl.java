@@ -330,17 +330,19 @@ public class ManagerImpl implements Manager {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
+
+        final var configurationStore = account.getConfigurationStore();
         if (readReceipts != null) {
-            account.getConfigurationStore().setReadReceipts(readReceipts);
+            configurationStore.setReadReceipts(readReceipts);
         }
         if (unidentifiedDeliveryIndicators != null) {
-            account.getConfigurationStore().setUnidentifiedDeliveryIndicators(unidentifiedDeliveryIndicators);
+            configurationStore.setUnidentifiedDeliveryIndicators(unidentifiedDeliveryIndicators);
         }
         if (typingIndicators != null) {
-            account.getConfigurationStore().setTypingIndicators(typingIndicators);
+            configurationStore.setTypingIndicators(typingIndicators);
         }
         if (linkPreviews != null) {
-            account.getConfigurationStore().setLinkPreviews(linkPreviews);
+            configurationStore.setLinkPreviews(linkPreviews);
         }
         syncHelper.sendConfigurationMessage();
     }

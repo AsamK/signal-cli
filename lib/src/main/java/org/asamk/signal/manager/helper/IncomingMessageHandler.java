@@ -357,12 +357,12 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getConfiguration().isPresent()) {
             final var configurationMessage = syncMessage.getConfiguration().get();
-            account.getConfigurationStore().setReadReceipts(configurationMessage.getReadReceipts().orNull());
-            account.getConfigurationStore().setLinkPreviews(configurationMessage.getLinkPreviews().orNull());
-            account.getConfigurationStore().setTypingIndicators(configurationMessage.getTypingIndicators().orNull());
-            account.getConfigurationStore()
-                    .setUnidentifiedDeliveryIndicators(configurationMessage.getUnidentifiedDeliveryIndicators()
-                            .orNull());
+            final var configurationStore = account.getConfigurationStore();
+            configurationStore.setReadReceipts(configurationMessage.getReadReceipts().orNull());
+            configurationStore.setLinkPreviews(configurationMessage.getLinkPreviews().orNull());
+            configurationStore.setTypingIndicators(configurationMessage.getTypingIndicators().orNull());
+            configurationStore.setUnidentifiedDeliveryIndicators(configurationMessage.getUnidentifiedDeliveryIndicators()
+                    .orNull());
         }
         return actions;
     }
