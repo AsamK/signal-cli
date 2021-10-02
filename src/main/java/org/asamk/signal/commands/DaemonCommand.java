@@ -120,7 +120,10 @@ public class DaemonCommand implements MultiLocalCommand {
     private Thread run(
             DBusConnection conn, String objectPath, Manager m, OutputWriter outputWriter, boolean ignoreAttachments
     ) throws DBusException {
-        conn.exportObject(new DbusSignalImpl(m, objectPath));
+        final var signal = new DbusSignalImpl(m, conn, objectPath);
+        conn.exportObject(signal);
+        final var initThread = new Thread(signal::initObjects);
+        initThread.start();
 
         logger.info("Exported dbus object: " + objectPath);
 
@@ -136,6 +139,11 @@ public class DaemonCommand implements MultiLocalCommand {
                     logger.warn("Receiving messages failed, retrying", e);
                 }
             }
+            try {
+                initThread.join();
+            } catch (InterruptedException ignored) {
+            }
+            signal.close();
         });
 
         thread.start();

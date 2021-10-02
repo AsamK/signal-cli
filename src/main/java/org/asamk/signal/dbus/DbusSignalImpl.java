@@ -7,7 +7,6 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
-import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -21,6 +20,9 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.util.ErrorUtils;
+import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
@@ -49,16 +51,24 @@ import java.util.stream.Stream;
 public class DbusSignalImpl implements Signal {
 
     private final Manager m;
+    private final DBusConnection connection;
     private final String objectPath;
 
-    public DbusSignalImpl(final Manager m, final String objectPath) {
+    private DBusPath thisDevice;
+    private final List<DBusPath> devices = new ArrayList<>();
+
+    public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
         this.m = m;
+        this.connection = connection;
         this.objectPath = objectPath;
     }
 
-    @Override
-    public boolean isRemote() {
-        return false;
+    public void initObjects() {
+        updateDevices();
+    }
+
+    public void close() {
+        unExportDevices();
     }
 
     @Override
@@ -85,33 +95,51 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void removeDevice(int deviceId) {
-        try {
-            m.removeLinkedDevices(deviceId);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getClass().getSimpleName() + ": Error while removing device: " + e.getMessage());
-        }
+    public DBusPath getDevice(long deviceId) {
+        updateDevices();
+        return new DBusPath(getDeviceObjectPath(objectPath, deviceId));
     }
 
     @Override
-    public List<String> listDevices() {
-        List<Device> devices;
+    public List<DBusPath> listDevices() {
+        updateDevices();
+        return this.devices;
+    }
+
+    private void updateDevices() {
+        List<org.asamk.signal.manager.api.Device> linkedDevices;
         try {
-            devices = m.getLinkedDevices();
+            linkedDevices = m.getLinkedDevices();
         } catch (IOException | Error.Failure e) {
             throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
         }
 
-        return devices.stream().map(d -> d.getName() == null ? "" : d.getName()).collect(Collectors.toList());
+        unExportDevices();
+
+        linkedDevices.forEach(d -> {
+            final var object = new DbusSignalDeviceImpl(d);
+            final var deviceObjectPath = object.getObjectPath();
+            try {
+                connection.exportObject(object);
+            } catch (DBusException e) {
+                e.printStackTrace();
+            }
+            if (d.isThisDevice()) {
+                thisDevice = new DBusPath(deviceObjectPath);
+            }
+            this.devices.add(new DBusPath(deviceObjectPath));
+        });
+    }
+
+    private void unExportDevices() {
+        this.devices.stream().map(DBusPath::getPath).forEach(connection::unExportObject);
+        this.devices.clear();
     }
 
     @Override
-    public void updateDeviceName(String deviceName) {
-        try {
-            m.updateAccountAttributes(deviceName);
-        } catch (IOException | Signal.Error.Failure e) {
-            throw new Error.Failure("UpdateAccount error: " + e.getMessage());
-        }
+    public DBusPath getThisDevice() {
+        updateDevices();
+        return thisDevice;
     }
 
     @Override
@@ -758,5 +786,54 @@ public class DbusSignalImpl implements Signal {
 
     private String nullIfEmpty(final String name) {
         return name.isEmpty() ? null : name;
+    }
+
+    private static String getDeviceObjectPath(String basePath, long deviceId) {
+        return basePath + "/Devices/" + deviceId;
+    }
+
+    public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
+
+        private final org.asamk.signal.manager.api.Device device;
+
+        public DbusSignalDeviceImpl(final org.asamk.signal.manager.api.Device device) {
+            super();
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Device",
+                    List.of(new DbusProperty<>("Id", device::getId),
+                            new DbusProperty<>("Name",
+                                    () -> device.getName() == null ? "" : device.getName(),
+                                    this::setDeviceName),
+                            new DbusProperty<>("Created", device::getCreated),
+                            new DbusProperty<>("LastSeen", device::getLastSeen))));
+            this.device = device;
+        }
+
+        @Override
+        public String getObjectPath() {
+            return getDeviceObjectPath(objectPath, device.getId());
+        }
+
+        @Override
+        public void removeDevice() throws Error.Failure {
+            try {
+                m.removeLinkedDevices(device.getId());
+                updateDevices();
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            }
+        }
+
+        private void setDeviceName(String name) {
+            if (!device.isThisDevice()) {
+                throw new Error.Failure("Only the name of this device can be changed");
+            }
+            try {
+                m.updateAccountAttributes(name);
+                // update device list
+                updateDevices();
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            }
+        }
     }
 }

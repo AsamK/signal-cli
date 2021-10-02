@@ -1,6 +1,7 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -25,6 +26,10 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
@@ -58,9 +63,11 @@ import java.util.stream.Collectors;
 public class DbusManagerImpl implements Manager {
 
     private final Signal signal;
+    private final DBusConnection connection;
 
-    public DbusManagerImpl(final Signal signal) {
+    public DbusManagerImpl(final Signal signal, DBusConnection connection) {
         this.signal = signal;
+        this.connection = connection;
     }
 
     @Override
@@ -89,7 +96,8 @@ public class DbusManagerImpl implements Manager {
     @Override
     public void updateAccountAttributes(final String deviceName) throws IOException {
         if (deviceName != null) {
-            signal.updateDeviceName(deviceName);
+            final var devicePath = signal.getThisDevice();
+            getRemoteObject(devicePath, Signal.Device.class).Set("org.asamk.Signal.Device", "Name", deviceName);
         }
     }
 
@@ -136,15 +144,21 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public List<Device> getLinkedDevices() throws IOException {
-        return signal.listDevices()
-                .stream()
-                .map(name -> new Device(-1, name, 0, 0, false))
-                .collect(Collectors.toList());
+        final var thisDevice = signal.getThisDevice();
+        return signal.listDevices().stream().map(devicePath -> {
+            final var device = getRemoteObject(devicePath, Signal.Device.class).GetAll("org.asamk.Signal.Device");
+            return new Device((long) device.get("Id").getValue(),
+                    (String) device.get("Name").getValue(),
+                    (long) device.get("Created").getValue(),
+                    (long) device.get("LastSeen").getValue(),
+                    thisDevice.equals(devicePath));
+        }).collect(Collectors.toList());
     }
 
     @Override
-    public void removeLinkedDevices(final int deviceId) throws IOException {
-        signal.removeDevice(deviceId);
+    public void removeLinkedDevices(final long deviceId) throws IOException {
+        final var devicePath = signal.getDevice(deviceId);
+        getRemoteObject(devicePath, Signal.Device.class).removeDevice();
     }
 
     @Override
@@ -493,5 +507,13 @@ public class DbusManagerImpl implements Manager {
 
     private String emptyIfNull(final String string) {
         return string == null ? "" : string;
+    }
+
+    private <T extends DBusInterface> T getRemoteObject(final DBusPath devicePath, final Class<T> type) {
+        try {
+            return connection.getRemoteObject(DbusConfig.getBusname(), devicePath.getPath(), type);
+        } catch (DBusException e) {
+            throw new AssertionError(e);
+        }
     }
 }

@@ -414,7 +414,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void removeLinkedDevices(int deviceId) throws IOException {
+    public void removeLinkedDevices(long deviceId) throws IOException {
         dependencies.getAccountManager().removeDevice(deviceId);
         var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);

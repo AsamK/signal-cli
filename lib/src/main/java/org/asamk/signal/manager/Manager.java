@@ -117,7 +117,7 @@ public interface Manager extends Closeable {
 
     List<Device> getLinkedDevices() throws IOException;
 
-    void removeLinkedDevices(int deviceId) throws IOException;
+    void removeLinkedDevices(long deviceId) throws IOException;
 
     void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException;
 

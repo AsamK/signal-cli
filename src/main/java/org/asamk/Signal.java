@@ -1,8 +1,11 @@
 package org.asamk;
 
+import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.annotations.DBusProperty;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.messages.DBusSignal;
 
 import java.util.List;
@@ -97,11 +100,11 @@ public interface Signal extends DBusInterface {
 
     void addDevice(String uri) throws Error.InvalidUri;
 
-    void removeDevice(int deviceId) throws Error.Failure;
+    DBusPath getDevice(long deviceId);
 
-    List<String> listDevices() throws Error.Failure;
+    List<DBusPath> listDevices() throws Error.Failure;
 
-    void updateDeviceName(String deviceName) throws Error.Failure;
+    DBusPath getThisDevice();
 
     void updateProfile(
             String givenName,
@@ -253,6 +256,15 @@ public interface Signal extends DBusInterface {
         public List<String> getAttachments() {
             return attachments;
         }
+    }
+
+    @DBusProperty(name = "Id", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Name", type = String.class)
+    @DBusProperty(name = "Created", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "LastSeen", type = String.class, access = DBusProperty.Access.READ)
+    interface Device extends DBusInterface, Properties {
+
+        void removeDevice() throws Error.Failure;
     }
 
     interface Error {

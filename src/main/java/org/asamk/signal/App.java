@@ -349,7 +349,7 @@ public class App {
             ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn, outputWriter);
         } else if (command instanceof LocalCommand) {
             try {
-                ((LocalCommand) command).handleCommand(ns, new DbusManagerImpl(ts), outputWriter);
+                ((LocalCommand) command).handleCommand(ns, new DbusManagerImpl(ts, dBusConn), outputWriter);
             } catch (UnsupportedOperationException e) {
                 throw new UserErrorException("Command is not yet implemented via dbus", e);
             } catch (DBusExecutionException e) {
