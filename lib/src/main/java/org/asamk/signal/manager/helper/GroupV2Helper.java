@@ -6,6 +6,7 @@ import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -35,6 +36,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
 import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2ChangeException;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
@@ -78,10 +80,16 @@ public class GroupV2Helper {
         this.addressResolver = addressResolver;
     }
 
-    public DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) {
+    public DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) throws NotAGroupMemberException {
         try {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             return groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
+        } catch (NonSuccessfulResponseCodeException e) {
+            if (e.getCode() == 403) {
+                throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
+            }
+            logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
+            return null;
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
             logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
             return null;
