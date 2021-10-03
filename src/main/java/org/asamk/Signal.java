@@ -262,7 +262,7 @@ public interface Signal extends DBusInterface {
         }
     }
 
-    @DBusProperty(name = "Id", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Id", type = Long.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "Name", type = String.class)
     @DBusProperty(name = "Created", type = String.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "LastSeen", type = String.class, access = DBusProperty.Access.READ)
