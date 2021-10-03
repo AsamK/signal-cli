@@ -188,6 +188,10 @@ public class StorageHelper {
             return;
         }
 
+        if (!accountRecord.getE164().equals(account.getUsername())) {
+            // TODO implement changed number handling
+        }
+
         account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());
         account.getConfigurationStore().setTypingIndicators(accountRecord.isTypingIndicatorsEnabled());
         account.getConfigurationStore()

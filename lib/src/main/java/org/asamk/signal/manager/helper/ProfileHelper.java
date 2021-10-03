@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import io.reactivex.rxjava3.core.Single;
@@ -136,7 +137,8 @@ public final class ProfileHelper {
                             newProfile.getAbout() == null ? "" : newProfile.getAbout(),
                             newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
                             Optional.absent(),
-                            streamDetails);
+                            streamDetails,
+                            List.of(/* TODO */));
         }
 
         if (avatar != null) {

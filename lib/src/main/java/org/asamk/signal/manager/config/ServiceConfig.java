@@ -39,7 +39,13 @@ public class ServiceConfig {
             logger.warn("Failed to call libzkgroup: {}", e.getMessage());
             zkGroupAvailable = false;
         }
-        capabilities = new AccountAttributes.Capabilities(false, zkGroupAvailable, false, zkGroupAvailable, true, true);
+        capabilities = new AccountAttributes.Capabilities(false,
+                zkGroupAvailable,
+                false,
+                zkGroupAvailable,
+                true,
+                true,
+                false);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();
