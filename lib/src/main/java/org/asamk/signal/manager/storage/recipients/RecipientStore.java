@@ -89,6 +89,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             r.profile.familyName,
                             r.profile.about,
                             r.profile.aboutEmoji,
+                            r.profile.avatarUrlPath,
                             Profile.UnidentifiedAccessMode.valueOfOrUnknown(r.profile.unidentifiedAccessMode),
                             r.profile.capabilities.stream()
                                     .map(Profile.Capability::valueOfOrNull)
@@ -445,6 +446,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             recipient.getProfile().getFamilyName(),
                             recipient.getProfile().getAbout(),
                             recipient.getProfile().getAboutEmoji(),
+                            recipient.getProfile().getAvatarUrlPath(),
                             recipient.getProfile().getUnidentifiedAccessMode().name(),
                             recipient.getProfile()
                                     .getCapabilities()
@@ -558,6 +560,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 public String familyName;
                 public String about;
                 public String aboutEmoji;
+                public String avatarUrlPath;
                 public String unidentifiedAccessMode;
                 public Set<String> capabilities;
 
@@ -571,6 +574,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                         final String familyName,
                         final String about,
                         final String aboutEmoji,
+                        final String avatarUrlPath,
                         final String unidentifiedAccessMode,
                         final Set<String> capabilities
                 ) {
@@ -579,6 +583,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                     this.familyName = familyName;
                     this.about = about;
                     this.aboutEmoji = aboutEmoji;
+                    this.avatarUrlPath = avatarUrlPath;
                     this.unidentifiedAccessMode = unidentifiedAccessMode;
                     this.capabilities = capabilities;
                 }

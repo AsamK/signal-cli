@@ -17,6 +17,8 @@ public class Profile {
 
     private final String aboutEmoji;
 
+    private final String avatarUrlPath;
+
     private final UnidentifiedAccessMode unidentifiedAccessMode;
 
     private final Set<Capability> capabilities;
@@ -27,6 +29,7 @@ public class Profile {
             final String familyName,
             final String about,
             final String aboutEmoji,
+            final String avatarUrlPath,
             final UnidentifiedAccessMode unidentifiedAccessMode,
             final Set<Capability> capabilities
     ) {
@@ -35,6 +38,7 @@ public class Profile {
         this.familyName = familyName;
         this.about = about;
         this.aboutEmoji = aboutEmoji;
+        this.avatarUrlPath = avatarUrlPath;
         this.unidentifiedAccessMode = unidentifiedAccessMode;
         this.capabilities = capabilities;
     }
@@ -45,6 +49,7 @@ public class Profile {
         familyName = builder.familyName;
         about = builder.about;
         aboutEmoji = builder.aboutEmoji;
+        avatarUrlPath = builder.avatarUrlPath;
         unidentifiedAccessMode = builder.unidentifiedAccessMode;
         capabilities = builder.capabilities;
     }
@@ -60,6 +65,7 @@ public class Profile {
         builder.familyName = copy.getFamilyName();
         builder.about = copy.getAbout();
         builder.aboutEmoji = copy.getAboutEmoji();
+        builder.avatarUrlPath = copy.getAvatarUrlPath();
         builder.unidentifiedAccessMode = copy.getUnidentifiedAccessMode();
         builder.capabilities = copy.getCapabilities();
         return builder;
@@ -107,6 +113,10 @@ public class Profile {
         return aboutEmoji;
     }
 
+    public String getAvatarUrlPath() {
+        return avatarUrlPath;
+    }
+
     public UnidentifiedAccessMode getUnidentifiedAccessMode() {
         return unidentifiedAccessMode;
     }
@@ -152,6 +162,7 @@ public class Profile {
         private String familyName;
         private String about;
         private String aboutEmoji;
+        private String avatarUrlPath;
         private UnidentifiedAccessMode unidentifiedAccessMode = UnidentifiedAccessMode.UNKNOWN;
         private Set<Capability> capabilities = Collections.emptySet();
         private long lastUpdateTimestamp = 0;
@@ -176,6 +187,11 @@ public class Profile {
 
         public Builder withAboutEmoji(final String val) {
             aboutEmoji = val;
+            return this;
+        }
+
+        public Builder withAvatarUrlPath(final String val) {
+            avatarUrlPath = val;
             return this;
         }
 

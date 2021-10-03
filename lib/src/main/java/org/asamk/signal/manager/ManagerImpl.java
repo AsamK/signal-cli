@@ -209,7 +209,7 @@ public class ManagerImpl implements Manager {
                 avatarStore,
                 this::resolveSignalServiceAddress,
                 account.getRecipientStore());
-        this.storageHelper = new StorageHelper(account, dependencies, groupHelper);
+        this.storageHelper = new StorageHelper(account, dependencies, groupHelper, profileHelper);
         this.contactHelper = new ContactHelper(account);
         this.syncHelper = new SyncHelper(account,
                 attachmentHelper,

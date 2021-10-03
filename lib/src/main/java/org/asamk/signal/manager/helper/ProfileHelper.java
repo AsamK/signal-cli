@@ -33,6 +33,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import io.reactivex.rxjava3.core.Single;
@@ -111,6 +112,17 @@ public final class ProfileHelper {
     public void setProfile(
             String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException {
+        setProfile(true, givenName, familyName, about, aboutEmoji, avatar);
+    }
+
+    public void setProfile(
+            boolean uploadProfile,
+            String givenName,
+            final String familyName,
+            String about,
+            String aboutEmoji,
+            Optional<File> avatar
+    ) throws IOException {
         var profile = getRecipientProfile(account.getSelfRecipientId());
         var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
         if (givenName != null) {
@@ -127,18 +139,22 @@ public final class ProfileHelper {
         }
         var newProfile = builder.build();
 
-        try (final var streamDetails = avatar == null
-                ? avatarStore.retrieveProfileAvatar(account.getSelfAddress())
-                : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
-            dependencies.getAccountManager()
-                    .setVersionedProfile(account.getUuid(),
-                            account.getProfileKey(),
-                            newProfile.getInternalServiceName(),
-                            newProfile.getAbout() == null ? "" : newProfile.getAbout(),
-                            newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
-                            Optional.absent(),
-                            streamDetails,
-                            List.of(/* TODO */));
+        if (uploadProfile) {
+            try (final var streamDetails = avatar == null
+                    ? avatarStore.retrieveProfileAvatar(account.getSelfAddress())
+                    : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
+                final var avatarPath = dependencies.getAccountManager()
+                        .setVersionedProfile(account.getUuid(),
+                                account.getProfileKey(),
+                                newProfile.getInternalServiceName(),
+                                newProfile.getAbout() == null ? "" : newProfile.getAbout(),
+                                newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
+                                Optional.absent(),
+                                streamDetails,
+                                List.of(/* TODO */));
+                builder.withAvatarUrlPath(avatarPath.orNull());
+                newProfile = builder.build();
+            }
         }
 
         if (avatar != null) {
@@ -197,6 +213,7 @@ public final class ProfileHelper {
                     null,
                     null,
                     null,
+                    null,
                     ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null),
                     ProfileUtils.getCapabilities(encryptedProfile));
         }
@@ -242,13 +259,21 @@ public final class ProfileHelper {
     private Profile decryptProfileAndDownloadAvatar(
             final RecipientId recipientId, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {
-        if (encryptedProfile.getAvatar() != null) {
-            downloadProfileAvatar(addressResolver.resolveSignalServiceAddress(recipientId),
-                    encryptedProfile.getAvatar(),
-                    profileKey);
-        }
+        final var avatarPath = encryptedProfile.getAvatar();
+        downloadProfileAvatar(recipientId, avatarPath, profileKey);
 
         return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
+    }
+
+    public void downloadProfileAvatar(
+            final RecipientId recipientId, final String avatarPath, final ProfileKey profileKey
+    ) {
+        var profile = account.getProfileStore().getProfile(recipientId);
+        if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
+            downloadProfileAvatar(addressResolver.resolveSignalServiceAddress(recipientId), avatarPath, profileKey);
+            var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
+            account.getProfileStore().storeProfile(recipientId, builder.withAvatarUrlPath(avatarPath).build());
+        }
     }
 
     private ProfileAndCredential retrieveProfileSync(
@@ -310,6 +335,15 @@ public final class ProfileHelper {
     private void downloadProfileAvatar(
             SignalServiceAddress address, String avatarPath, ProfileKey profileKey
     ) {
+        if (avatarPath == null) {
+            try {
+                avatarStore.deleteProfileAvatar(address);
+            } catch (IOException e) {
+                logger.warn("Failed to delete local profile avatar, ignoring: {}", e.getMessage());
+            }
+            return;
+        }
+
         try {
             avatarStore.storeProfileAvatar(address,
                     outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
