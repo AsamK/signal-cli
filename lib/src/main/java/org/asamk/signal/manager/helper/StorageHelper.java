@@ -188,6 +188,12 @@ public class StorageHelper {
             return;
         }
 
+        account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());
+        account.getConfigurationStore().setTypingIndicators(accountRecord.isTypingIndicatorsEnabled());
+        account.getConfigurationStore()
+                .setUnidentifiedDeliveryIndicators(accountRecord.isSealedSenderIndicatorsEnabled());
+        account.getConfigurationStore().setLinkPreviews(accountRecord.isLinkPreviewsEnabled());
+
         if (accountRecord.getProfileKey().isPresent()) {
             try {
                 account.setProfileKey(new ProfileKey(accountRecord.getProfileKey().get()));
