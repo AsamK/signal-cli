@@ -241,7 +241,7 @@ Exceptions: Failure, InvalidNumber, UntrustedIdentity
 
 sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
-* attachments : String array of filenames or URLs to send as attachments
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * groupId     : Byte array representing the internal group identifier
 * timestamp   : Long, can be used to identify the corresponding Signal reply
 
@@ -261,7 +261,7 @@ Exceptions: Failure
 
 sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
-* attachments : String array of filenames or URLs to send as attachments
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * timestamp   : Long, can be used to identify the corresponding Signal reply
 
 Exceptions: Failure, AttachmentInvalid
@@ -269,7 +269,7 @@ Exceptions: Failure, AttachmentInvalid
 sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
 sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
-* attachments : String array of filenames or URLs to send as attachments
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * recipient   : Phone number of a single recipient
 * recipients  : String array of phone numbers
 * timestamp   : Long, can be used to identify the corresponding Signal reply
