@@ -141,6 +141,10 @@ public interface Signal extends DBusInterface {
 
     String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
+    void setConfiguration(boolean readReceipts, boolean unidentifiedDeliveryIndicators, boolean typingIndicators, boolean linkPreviews) throws Error.IOError, Error.UserError;
+
+    List<Boolean> getConfiguration();
+
     class MessageReceived extends DBusSignal {
 
         private final long timestamp;
@@ -314,6 +318,20 @@ public interface Signal extends DBusInterface {
         class UntrustedIdentity extends DBusExecutionException {
 
             public UntrustedIdentity(final String message) {
+                super(message);
+            }
+        }
+
+        class IOError extends DBusExecutionException {
+
+            public IOError(final String message) {
+                super(message);
+            }
+        }
+
+        class UserError extends DBusExecutionException {
+
+            public UserError(final String message) {
                 super(message);
             }
         }

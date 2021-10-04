@@ -105,6 +105,8 @@ public interface Manager extends Closeable {
             final Boolean linkPreviews
     ) throws IOException, NotMasterDeviceException;
 
+    List<Boolean> getConfiguration() throws IOException, NotMasterDeviceException;
+
     void setProfile(
             String givenName, String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException;

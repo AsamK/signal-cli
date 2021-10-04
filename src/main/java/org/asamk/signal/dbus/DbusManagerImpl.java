@@ -108,7 +108,17 @@ public class DbusManagerImpl implements Manager {
             final Boolean typingIndicators,
             final Boolean linkPreviews
     ) throws IOException {
-        throw new UnsupportedOperationException();
+        signal.setConfiguration(
+                readReceipts,
+                unidentifiedDeliveryIndicators,
+                typingIndicators,
+                linkPreviews
+                );
+    }
+
+    @Override
+    public List<Boolean> getConfiguration() {
+        return signal.getConfiguration();
     }
 
     @Override

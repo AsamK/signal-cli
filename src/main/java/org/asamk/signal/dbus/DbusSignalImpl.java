@@ -1,6 +1,7 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
+import org.asamk.Signal.Error;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
@@ -683,10 +684,34 @@ public class DbusSignalImpl implements Signal {
         try {
             return m.uploadStickerPack(path).toString();
         } catch (IOException e) {
-            throw new Error.Failure("Upload error (maybe image size is too large):" + e.getMessage());
+            throw new Error.IOError("Upload error (maybe image size is too large):" + e.getMessage());
         } catch (StickerPackInvalidException e) {
             throw new Error.Failure("Invalid sticker pack: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void setConfiguration(boolean readReceipts, boolean unidentifiedDeliveryIndicators, boolean typingIndicators, boolean linkPreviews) {
+          try {
+              m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+          } catch (IOException e) {
+              throw new Error.IOError("UpdateAccount error: " + e.getMessage());
+          } catch (NotMasterDeviceException e) {
+              throw new Error.UserError("This command doesn't work on linked devices.");
+          }
+    }
+
+    @Override
+    public List<Boolean> getConfiguration() {
+        List<Boolean> config = new ArrayList<>(4);
+        try {
+            config = m.getConfiguration();
+        } catch (IOException e) {
+            throw new Error.IOError("Configuration storage error: " + e.getMessage());
+        } catch (NotMasterDeviceException e) {
+            throw new Error.UserError("This command doesn't work on linked devices.");
+        }
+        return config;
     }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {

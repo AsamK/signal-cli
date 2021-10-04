@@ -263,7 +263,7 @@ Exceptions: Failure, InvalidNumber
 
 getContactName(number<s>) -> name<s>::
 * number  : Phone number
-* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
+* name    : Contact's name in local storage (from the primary device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
 
 setContactName(number<s>,name<>) -> <>::
 * number  : Phone number
@@ -361,7 +361,27 @@ uploadStickerPack(stickerPackPath<s>) -> url<s>::
 * stickerPackPath : Path to the manifest.json file or a zip file in the same directory
 * url             : URL of sticker pack after successful upload
 
-Exception: Failure
+Exception: Failure, IOError
+
+getConfiguration() -> [readReceipts<b>, unidentifiedDeliveryIndicators<b>, typingIndicators<b>, linkPreviews<b>] -> <>::
+* readReceipts                   : Should Signal send read receipts (true/false).
+* unidentifiedDeliveryIndicators : Should Signal show unidentified delivery indicators (true/false).
+* typingIndicators               : Should Signal send/show typing indicators (true/false).
+* linkPreviews                   : Should Signal generate link previews (true/false).
+
+Gets an array of four booleans as indicated. Only works from primary device.
+
+Exceptions: IOError, UserError
+
+setConfiguration(readReceipts<b>, unidentifiedDeliveryIndicators<b>, typingIndicators<b>, linkPreviews<b>) -> <>::
+* readReceipts                   : Should Signal send read receipts (true/false).
+* unidentifiedDeliveryIndicators : Should Signal show unidentified delivery indicators (true/false).
+* typingIndicators               : Should Signal send/show typing indicators (true/false).
+* linkPreviews                   : Should Signal generate link previews (true/false).
+
+Update Signal configurations and sync them to linked devices. Only works from primary device.
+
+Exceptions: IOError, UserError
 
 == Signals
 

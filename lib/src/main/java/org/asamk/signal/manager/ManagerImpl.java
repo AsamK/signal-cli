@@ -347,6 +347,19 @@ public class ManagerImpl implements Manager {
         syncHelper.sendConfigurationMessage();
     }
 
+    @Override
+    public List<Boolean> getConfiguration() throws IOException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
+        final var configurationStore = account.getConfigurationStore();
+        final Boolean readReceipts = configurationStore.getReadReceipts();
+        final Boolean unidentifiedDeliveryIndicators = configurationStore.getUnidentifiedDeliveryIndicators();
+        final Boolean typingIndicators = configurationStore.getTypingIndicators();
+        final Boolean linkPreviews = configurationStore.getLinkPreviews();
+        return List.of(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+    }
+
     /**
      * @param givenName  if null, the previous givenName will be kept
      * @param familyName if null, the previous familyName will be kept
