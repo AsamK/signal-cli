@@ -494,13 +494,16 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus interface.
-If no `-u` username is given, all local users will be exported as separate dbus
-objects under the same bus name.
+If no `-u` username is given, zero or more local users as specified by the
+`--number` option will be exported as separate dbus objects under the same bus name.
+If `--number` is omitted, all local users will be exported.
 
 *--system*::
 Use DBus system bus instead of user bus.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
+*--number* [NUMBER [NUMBER ...]]::
+List of zero or more  numbers for anonymous daemon to listen to (default=all)
 
 == Examples
 

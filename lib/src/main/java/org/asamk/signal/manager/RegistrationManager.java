@@ -116,8 +116,9 @@ public class RegistrationManager implements Closeable {
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }
 
-    public void register(boolean voiceVerification, String captcha) throws IOException {
+    public void register(boolean voiceVerification, String captchaString) throws IOException {
         final ServiceResponse<RequestVerificationCodeResponse> response;
+        final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
         if (voiceVerification) {
             response = accountManager.requestVoiceVerificationCode(getDefaultLocale(),
                     Optional.fromNullable(captcha),

@@ -248,6 +248,11 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public SignalAccount getAccount() {
+        return account;
+    }
+
+    @Override
     public void checkAccountState() throws IOException {
         if (account.getLastReceiveTimestamp() == 0) {
             logger.info("The Signal protocol expects that incoming messages are regularly received.");

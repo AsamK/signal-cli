@@ -23,6 +23,7 @@ import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -77,6 +78,11 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void checkAccountState() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SignalAccount getAccount() {
         throw new UnsupportedOperationException();
     }
 

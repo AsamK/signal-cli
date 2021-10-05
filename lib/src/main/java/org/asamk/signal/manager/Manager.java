@@ -94,6 +94,8 @@ public interface Manager extends Closeable {
 
     void checkAccountState() throws IOException;
 
+    SignalAccount getAccount();
+
     Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException;
 
     void updateAccountAttributes(String deviceName) throws IOException;

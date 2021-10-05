@@ -67,6 +67,14 @@ listAccounts() -> accountList<as>::
 
 Exceptions: None
 
+listen(number<s>) -> <>::
+* number            : Phone number
+
+Starting checking the Signal servers on behalf of this number, and export a DBus object path for it. 
+Fails if user is not already registered.
+
+Exceptions: Failure
+
 register(number<s>, voiceVerification<b>) -> <>::
 * number            : Phone number
 * voiceVerification : true = use voice verification; false = use SMS verification
@@ -77,6 +85,8 @@ registerWithCaptcha(number<s>, voiceVerification<b>, captcha<s>) -> <>::
 * number            : Phone number
 * voiceVerification : true = use voice verification; false = use SMS verification
 * captcha           : Captcha string
+
+Captcha strings may be obtained from `https://signalcaptchas.org/registration/generate.html`
 
 Exceptions: Failure, InvalidNumber, RequiresCaptcha
 

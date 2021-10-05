@@ -28,6 +28,8 @@ public interface SignalControl extends DBusInterface {
 
     public String version();
 
+    void listen(String number) throws Error.Failure;
+
     List<DBusPath> listAccounts();
 
     interface Error {

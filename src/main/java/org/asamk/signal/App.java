@@ -36,6 +36,7 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,12 +126,12 @@ public class App {
             return;
         }
 
-        final File dataPath;
+        final File settingsPath;
         var config = ns.getString("config");
         if (config != null) {
-            dataPath = new File(config);
+            settingsPath = new File(config);
         } else {
-            dataPath = getDefaultDataPath();
+            settingsPath = getDefaultSettingsPath();
         }
 
         if (!ServiceConfig.getCapabilities().isGv2()) {
@@ -157,22 +158,24 @@ public class App {
                 throw new UserErrorException("You cannot specify a username (phone number) when linking");
             }
 
-            handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment, outputWriter);
+            handleProvisioningCommand((ProvisioningCommand) command, settingsPath, serviceEnvironment, outputWriter);
+            return;
+        }
+
+        if (command instanceof MultiLocalCommand) {
+            List<String> usernames = new ArrayList<>();
+            if (username == null) {
+                //anonymous mode
+                handleMultiLocalCommand((MultiLocalCommand) command, settingsPath, serviceEnvironment, usernames, outputWriter, trustNewIdentity);
+            } else {
+                //single-user mode
+                handleMultiLocalCommand((MultiLocalCommand) command, settingsPath, serviceEnvironment, username, outputWriter, trustNewIdentity);
+            }
             return;
         }
 
         if (username == null) {
-            var usernames = Manager.getAllLocalNumbers(dataPath);
-
-            if (command instanceof MultiLocalCommand) {
-                handleMultiLocalCommand((MultiLocalCommand) command,
-                        dataPath,
-                        serviceEnvironment,
-                        usernames,
-                        outputWriter,
-                        trustNewIdentity);
-                return;
-            }
+            var usernames = Manager.getAllLocalNumbers(settingsPath);
 
             if (usernames.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
@@ -187,7 +190,7 @@ public class App {
         }
 
         if (command instanceof RegistrationCommand) {
-            handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceEnvironment);
+            handleRegistrationCommand((RegistrationCommand) command, username, settingsPath, serviceEnvironment);
             return;
         }
 
@@ -197,7 +200,7 @@ public class App {
 
         handleLocalCommand((LocalCommand) command,
                 username,
-                dataPath,
+                settingsPath,
                 serviceEnvironment,
                 outputWriter,
                 trustNewIdentity);
@@ -205,23 +208,23 @@ public class App {
 
     private void handleProvisioningCommand(
             final ProvisioningCommand command,
-            final File dataPath,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final OutputWriter outputWriter
     ) throws CommandException {
-        var pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+        var pm = ProvisioningManager.init(settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
         command.handleCommand(ns, pm, outputWriter);
     }
 
     private void handleRegistrationCommand(
             final RegistrationCommand command,
             final String username,
-            final File dataPath,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment
     ) throws CommandException {
         final RegistrationManager manager;
         try {
-            manager = RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            manager = RegistrationManager.init(username, settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading or creating state file: "
                     + e.getMessage()
@@ -231,6 +234,7 @@ public class App {
         }
         try (var m = manager) {
             command.handleCommand(ns, m);
+            m.close();
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
         }
@@ -239,13 +243,14 @@ public class App {
     private void handleLocalCommand(
             final LocalCommand command,
             final String username,
-            final File dataPath,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        try (var m = loadManager(username, dataPath, serviceEnvironment, trustNewIdentity)) {
+        try (var m = loadManager(username, settingsPath, serviceEnvironment, trustNewIdentity)) {
             command.handleCommand(ns, m, outputWriter);
+            m.close();
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
         }
@@ -253,32 +258,35 @@ public class App {
 
     private void handleMultiLocalCommand(
             final MultiLocalCommand command,
-            final File dataPath,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final List<String> usernames,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        final var managers = new ArrayList<Manager>();
-        for (String u : usernames) {
-            try {
-                managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
-            } catch (CommandException e) {
-                logger.warn("Ignoring {}: {}", u, e.getMessage());
+        SignalCreator c = new SignalCreator() {
+            @Override
+            public File getSettingsPath() {
+                return settingsPath;
             }
-        }
 
-        command.handleCommand(ns, managers, new SignalCreator() {
+            @Override
+            public ServiceEnvironment getServiceEnvironment() {
+                return serviceEnvironment;
+            }
             @Override
             public ProvisioningManager getNewProvisioningManager() {
-                return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+                return ProvisioningManager.init(settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
             }
 
             @Override
             public RegistrationManager getNewRegistrationManager(String username) throws IOException {
-                return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+                return RegistrationManager.init(username, settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
             }
-        }, outputWriter);
+        };
+
+        final var managers = new ArrayList<Manager>();
+        command.handleCommand(ns, managers, c, outputWriter, trustNewIdentity);
 
         for (var m : managers) {
             try {
@@ -289,17 +297,67 @@ public class App {
         }
     }
 
-    private Manager loadManager(
+    private void handleMultiLocalCommand(
+            final MultiLocalCommand command,
+            final File settingsPath,
+            final ServiceEnvironment serviceEnvironment,
             final String username,
-            final File dataPath,
+            final OutputWriter outputWriter,
+            final TrustNewIdentity trustNewIdentity
+    ) throws CommandException {
+
+        SignalCreator c = new SignalCreator() {
+            @Override
+            public File getSettingsPath() {
+                return settingsPath;
+            }
+
+            @Override
+            public ServiceEnvironment getServiceEnvironment() {
+                return serviceEnvironment;
+            }
+
+            @Override
+            public ProvisioningManager getNewProvisioningManager() {
+                return ProvisioningManager.init(settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+
+            @Override
+            public RegistrationManager getNewRegistrationManager(String username) throws IOException {
+                return RegistrationManager.init(username, settingsPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            }
+
+        };
+
+        Manager manager = null;
+        try {
+            manager = loadManager(username, settingsPath, serviceEnvironment, trustNewIdentity);
+        } catch (CommandException e) {
+            logger.warn("Ignoring {}: {}", username, e.getMessage());
+        }
+
+        command.handleCommand(ns, manager, c, outputWriter, trustNewIdentity);
+
+        try {
+            manager.close();
+        } catch (IOException e) {
+            logger.warn("Cleanup failed", e);
+        }
+    }
+
+    public static Manager loadManager(
+            final String username,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         Manager manager;
         try {
-            manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
+            manager = Manager.init(username, settingsPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + username + " is not registered.");
+        } catch (OverlappingFileLockException e) {
+            throw new UserErrorException("User " + username + " is already listening.");
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading state file for user "
                     + username
@@ -313,6 +371,13 @@ public class App {
         try {
             manager.checkAccountState();
         } catch (IOException e) {
+            /*    In case account isn't registered on Signal servers, close it locally,
+             *    thus removing the FileLock so another daemon can get it.
+             */
+            try {
+                manager.getAccount().close();
+            } catch (IOException ignore) {
+            }
             throw new IOErrorException("Error while checking account " + username + ": " + e.getMessage(), e);
         }
 
@@ -361,9 +426,9 @@ public class App {
     }
 
     /**
-     * @return the default data directory to be used by signal-cli.
+     * @return the default settings directory to be used by signal-cli.
      */
-    private static File getDefaultDataPath() {
+    private static File getDefaultSettingsPath() {
         return new File(IOUtils.getDataHomeDir(), "signal-cli");
     }
 }
