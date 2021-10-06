@@ -1,5 +1,7 @@
 package org.asamk;
 
+import org.asamk.signal.commands.exceptions.IOErrorException;
+
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.annotations.DBusProperty;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -140,6 +142,8 @@ public interface Signal extends DBusInterface {
     byte[] joinGroup(final String groupLink) throws Error.Failure;
 
     String uploadStickerPack(String stickerPackPath) throws Error.Failure;
+
+    void submitRateLimitChallenge(String challenge, String captchaString) throws IOErrorException;
 
     class MessageReceived extends DBusSignal {
 
