@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.SignalServiceAccountManager.NewDeviceRegistrationReturn;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -90,7 +91,13 @@ public class ProvisioningManager {
     }
 
     public Manager finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
-        var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
+        NewDeviceRegistrationReturn ret;
+        logger.info("Waiting for addDevice request...");
+        try {
+            ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
+        } catch (IOException | TimeoutException e) {
+            throw new TimeoutException(e.getMessage());
+        }
         var number = ret.getNumber();
 
         logger.info("Received link information from {}, linking in progress ...", number);

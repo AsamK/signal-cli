@@ -922,8 +922,12 @@ public class ManagerImpl implements Manager {
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
-            account.setLastReceiveTimestamp(System.currentTimeMillis());
+            if (account == null) {
+                logger.debug("Account closed.");
+                break;
+            }
             logger.debug("Checking for new message from server");
+            account.setLastReceiveTimestamp(System.currentTimeMillis());
             try {
                 var result = signalWebSocket.readOrEmpty(unit.toMillis(timeout), envelope1 -> {
                     final var recipientId = envelope1.hasSourceUuid()
@@ -955,7 +959,7 @@ public class ManagerImpl implements Manager {
                 } else {
                     throw e;
                 }
-            } catch (WebSocketUnavailableException e) {
+            } catch (IOException e) {
                 logger.debug("Pipe unexpectedly unavailable, connecting");
                 signalWebSocket.connect();
                 continue;

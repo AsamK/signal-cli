@@ -8,6 +8,7 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.messages.DBusSignal;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  */
 public interface Signal extends DBusInterface {
 
-    String getSelfNumber();
+	String getSelfNumber();
 
     long sendMessage(
             String message, List<String> attachments, String recipient

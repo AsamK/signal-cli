@@ -1,5 +1,6 @@
 package org.asamk;
 
+import org.asamk.Signal.Error;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -24,11 +25,17 @@ public interface SignalControl extends DBusInterface {
 
     void verifyWithPin(String number, String verificationCode, String pin) throws Error.Failure, Error.InvalidNumber;
 
+    void listen(String number) throws Error.Failure;
+
+    void unlisten(String number) throws Error.Failure;
+
+    void unregister(String number) throws Error.Failure;
+    void unregister(String number, boolean keepData) throws Error.Failure;
+
+
     String link(String newDeviceName) throws Error.Failure;
 
     public String version();
-
-    void listen(String number) throws Error.Failure;
 
     List<DBusPath> listAccounts();
 

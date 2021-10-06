@@ -70,7 +70,7 @@ Exceptions: None
 listen(number<s>) -> <>::
 * number            : Phone number
 
-Starting checking the Signal servers on behalf of this number, and export a DBus object path for it. 
+Start checking the Signal servers on behalf of this number, and export a DBus object path for it.
 Fails if user is not already registered.
 
 Exceptions: Failure
@@ -89,6 +89,23 @@ registerWithCaptcha(number<s>, voiceVerification<b>, captcha<s>) -> <>::
 Captcha strings may be obtained from `https://signalcaptchas.org/registration/generate.html`
 
 Exceptions: Failure, InvalidNumber, RequiresCaptcha
+
+unlisten(number<s>) -> <>::
+* number            : Phone number
+* keepData  : true or omitted = keep files in data directory; false = delete files
+
+Stops the current device from listening to DBus. In single-user mode, kills the daemon.
+
+Exception: Failure
+
+unregister(number<s>) -> <>::
+unregister(number<s>, keepData<b>) -> <>::
+* number            : Phone number
+* keepData  : true or omitted = keep files in data directory; false = delete files
+
+Unregisters the current device. In single-user mode, kills the daemon.
+
+Exception: Failure
 
 verify(number<s>, verificationCode<s>) -> <>::
 * number            : Phone number
@@ -173,7 +190,7 @@ isMember(groupId<ay>) -> active<b>::
 Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
 
 sendEndSessionMessage(recipients<as>) -> <>::
-* recipients : Array of phone numbers 
+* recipients : Array of phone numbers
 
 Exceptions: Failure, InvalidNumber, UntrustedIdentity
 
@@ -209,7 +226,7 @@ sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
 * message     : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
 * recipient   : Phone number of a single recipient
-* recipients  : Array of phone numbers 
+* recipients  : Array of phone numbers
 * timestamp   : Can be used to identify the corresponding signal reply
 
 Depending on the type of the recipient field this sends a message to one or multiple recipients.
@@ -285,7 +302,7 @@ groupList : Array of Byte arrays representing the internal group identifiers
 All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
 
 getGroupName(groupId<ay>) -> groupName<s>::
-groupName : The display name of the group 
+groupName : The display name of the group
 groupId   : Byte array representing the internal group identifier
 
 Exceptions: None, if the group name is not found an empty string is returned
@@ -361,7 +378,7 @@ removeDevice(deviceId<i>) -> <>::
 Exception: Failure
 
 updateDeviceName(deviceName<s>) -> <>::
-* deviceName : New name 
+* deviceName : New name
 
 Set a new name for this device (main or linked).
 

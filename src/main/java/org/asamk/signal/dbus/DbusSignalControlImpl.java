@@ -13,11 +13,15 @@ import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.DaemonCommand;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.PathConfig;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
 import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 
 import org.freedesktop.dbus.DBusPath;
@@ -38,7 +42,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +54,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
@@ -164,6 +173,53 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public void unregister(String number) {
+        unregister(number, true);
+    }
+
+    @Override
+    public void unregister(String number, boolean keepData) {
+        try {
+            List<Manager> managers = new ArrayList<>();
+            Manager manager = null;
+
+            synchronized (receiveThreads) {
+                managers = receiveThreads.stream()
+                        .map(Pair::first)
+                        .collect(Collectors.toList());
+            }
+
+            if (managers.size() == 0) {
+                throw new Error.Failure("Unregister error: no manager found.");
+            }
+
+            for (Manager m : managers) {
+                try {
+                    m.getSelfNumber();
+                } catch (NullPointerException ignore) {
+                    continue;
+                }
+                if (m.getSelfNumber().equals(number)) {
+                    manager = m;
+                    break;
+                }
+            }
+            if (manager == null) {
+                throw new Error.Failure("Unregister error, " + number + " is not listening.");
+            }
+
+            manager.unregister();
+            DBusConnection.DBusBusType busType = DaemonCommand.dBusType;
+            if (!keepData) {
+                removeUserData(number);
+            }
+            unlisten(number);
+        } catch (Exception e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Unregister error: " + e.getMessage());
+        }
+    }
+
+    @Override
     public String link(final String newDeviceName) throws Error.Failure {
         try {
             final ProvisioningManager provisioningManager = c.getNewProvisioningManager();
@@ -243,6 +299,59 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public void unlisten(String number) {
+        try {
+            List<Manager> managers = new ArrayList<>();
+            Manager manager = null;
+
+            synchronized (receiveThreads) {
+                managers = receiveThreads.stream()
+                        .map(Pair::first)
+                        .collect(Collectors.toList());
+            }
+
+            if (managers.size() == 0) {
+                throw new Error.Failure("Unlisten error: no manager found.");
+            }
+
+            for (Manager m : managers) {
+                try {
+                    m.getSelfNumber();
+                } catch (NullPointerException ignore) {
+                    continue;
+                }
+                if (m.getSelfNumber().equals(number)) {
+                    manager = m;
+                    break;
+                }
+            }
+            if (manager == null) {
+                throw new Error.Failure("Unlisten error, " + number + " is already not listening.");
+            }
+
+            String objectPath = DbusConfig.getObjectPath(number);
+            DBusConnection.DBusBusType busType = DaemonCommand.dBusType;
+            var conn = DBusConnection.getConnection(busType);
+            //if single-user mode, just close the manager because we're exiting anyway
+            //else unexport the object
+            try {
+                //this will generate an error if we are in anonymous mode
+                conn.exportObject(new DbusSignalImpl(manager, conn, objectPath));
+                //no error, hence single-user mode
+                manager.close();
+                logger.info("unExported dbus object: " + DbusConfig.getObjectPath());
+            } catch (DBusException ignore) {
+                //anonymous mode
+                conn.unExportObject(objectPath);
+                manager.close();
+                logger.info("unExported dbus object: " + objectPath);
+            }
+          } catch (IOException | DBusException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " Unlisten error: " + e.getMessage());
+        }
+    }
+
+    @Override
     public List<DBusPath> listAccounts() {
         synchronized (receiveThreads) {
             return receiveThreads.stream()
@@ -250,6 +359,27 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                     .map(Manager::getSelfNumber)
                     .map(u -> new DBusPath(DbusConfig.getObjectPath(u)))
                     .collect(Collectors.toList());
+        }
+    }
+
+    private void removeUserData(String number) {
+        File dataPath = PathConfig.createDefault(c.getSettingsPath()).getDataPath();
+        number.replaceFirst("_", "+");
+        String eraseFileName = dataPath.getAbsolutePath() + File.separator + number;
+        File eraseFile = new File(eraseFileName);
+        if (eraseFile.delete()) {
+            logger.info("erased " + eraseFileName);
+        } else {
+            logger.error("erase failed for " + eraseFileName);
+        }
+        String erasePath = dataPath.getAbsolutePath() + File.separator + number + ".d/";
+        Path rootPath = Paths.get(erasePath);
+        try (Stream<Path> walk = Files.walk(rootPath)) {
+            walk.sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getClass().getSimpleName() + " RemoveUserData failed. " + e.getMessage());
         }
     }
 }

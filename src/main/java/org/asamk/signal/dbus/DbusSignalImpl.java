@@ -1,7 +1,10 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
+import org.asamk.Signal.Error;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.DbusConfig;
+import org.asamk.signal.commands.DaemonCommand;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -20,10 +23,13 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.util.ErrorUtils;
+
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -35,16 +41,21 @@ import org.whispersystems.signalservice.internal.contacts.crypto.Unauthenticated
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,6 +64,7 @@ public class DbusSignalImpl implements Signal {
     private final Manager m;
     private final DBusConnection connection;
     private final String objectPath;
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
     private DBusPath thisDevice;
     private final List<DBusPath> devices = new ArrayList<>();
@@ -67,8 +79,9 @@ public class DbusSignalImpl implements Signal {
         updateDevices();
     }
 
-    public void close() {
+    public void close() throws IOException {
         unExportDevices();
+        m.close();
     }
 
     @Override

@@ -216,7 +216,10 @@ public class DaemonCommand implements MultiLocalCommand {
                 initThread.join();
             } catch (InterruptedException ignored) {
             }
-            signal.close();
+            try {
+                signal.close();
+            } catch (IOException ignored) {
+            }
         });
 
         thread.start();
