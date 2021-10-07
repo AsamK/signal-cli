@@ -303,6 +303,15 @@ ReceiptReceived (timestamp<x>, sender<s>)::
 
 This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
+ReceiptReceivedV2 (timestamp<x>, sender<s>, isDeliveryReceipt<b>, isReadReceipt<b>, isViewedReceipt<b>)::
+* timestamp         : Integer value that can be used to associate this e.g. with a sendMessage()
+* sender            : Phone number of the sender
+* isDeliveryReceipt : boolean representing whether a delivery receipt was received
+* isReadReceipt     : boolean representing whether a read receipt was received
+* isViewedReceipt   : boolean representing whether a viewed receipt was received
+
+This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
+
 == Examples
 
 Send a text message (without attachment) to a contact::

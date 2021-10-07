@@ -12,6 +12,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
+import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +43,18 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
         if (envelope.isReceipt()) {
             try {
                 conn.sendMessage(new Signal.ReceiptReceived(objectPath, envelope.getTimestamp(),
-                        // A receipt envelope always has a source address
                         getLegacyIdentifier(envelope.getSourceAddress())));
+                if (content.getReceiptMessage().isPresent()) {
+                    SignalServiceReceiptMessage receiptMessage = content.getReceiptMessage().get();
+                    conn.sendMessage(new Signal.ReceiptReceivedV2(objectPath, envelope.getTimestamp(),
+                            // A receipt envelope always has a source address
+                            getLegacyIdentifier(envelope.getSourceAddress()),
+                            receiptMessage.isDeliveryReceipt(),
+                            receiptMessage.isReadReceipt(),
+                            receiptMessage.isViewedReceipt()
+                            ));
+                }
+
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -53,12 +64,20 @@ public class JsonDbusReceiveMessageHandler extends JsonReceiveMessageHandler {
                     : content.getSender();
             if (content.getReceiptMessage().isPresent()) {
                 final var receiptMessage = content.getReceiptMessage().get();
-                if (receiptMessage.isDeliveryReceipt()) {
+                if (receiptMessage.isDeliveryReceipt() || receiptMessage.isReadReceipt() || receiptMessage.isViewedReceipt()) {
                     for (long timestamp : receiptMessage.getTimestamps()) {
                         try {
+                            //send both signals; only one is relevant
                             conn.sendMessage(new Signal.ReceiptReceived(objectPath,
                                     timestamp,
                                     getLegacyIdentifier(sender)));
+                            conn.sendMessage(new Signal.ReceiptReceivedV2(objectPath,
+                                    timestamp,
+                                    getLegacyIdentifier(sender),
+                                    receiptMessage.isDeliveryReceipt(),
+                                    receiptMessage.isReadReceipt(),
+                                    receiptMessage.isViewedReceipt()
+                                    ));
                         } catch (DBusException e) {
                             e.printStackTrace();
                         }

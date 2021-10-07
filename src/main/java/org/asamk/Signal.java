@@ -224,6 +224,51 @@ public interface Signal extends DBusInterface {
         }
     }
 
+    class ReceiptReceivedV2 extends DBusSignal {
+
+        private final long timestamp;
+        private final String sender;
+        private final boolean isDelivery;
+        private final boolean isRead;
+        private final boolean isViewed;
+
+        public ReceiptReceivedV2(
+                String objectpath,
+                long timestamp,
+                String sender,
+                boolean isDelivery,
+                boolean isRead,
+                boolean isViewed
+                ) throws DBusException {
+            super(objectpath, timestamp, sender, isDelivery, isRead, isViewed);
+            this.timestamp = timestamp;
+            this.sender = sender;
+            this.isDelivery = isDelivery;
+            this.isRead = isRead;
+            this.isViewed = isViewed;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public String getSender() {
+            return sender;
+        }
+
+        public boolean isDelivery() {
+            return isDelivery;
+        }
+
+        public boolean isRead() {
+            return isRead;
+        }
+
+        public boolean isViewed() {
+            return isViewed;
+        }
+    }
+
     class SyncMessageReceived extends DBusSignal {
 
         private final long timestamp;
