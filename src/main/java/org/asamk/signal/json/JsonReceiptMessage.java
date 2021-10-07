@@ -32,7 +32,7 @@ class JsonReceiptMessage {
     }
 
     private JsonReceiptMessage(
-            final long when, final boolean isDelivery, final boolean isRead, final List<Long> timestamps
+            final long when, final boolean isDelivery, final boolean isRead, final boolean isViewed, final List<Long> timestamps
     ) {
         this.when = when;
         this.isDelivery = isDelivery;
@@ -42,6 +42,6 @@ class JsonReceiptMessage {
     }
 
     static JsonReceiptMessage deliveryReceipt(final long when, final List<Long> timestamps) {
-        return new JsonReceiptMessage(when, true, false, timestamps);
+        return new JsonReceiptMessage(when, true, false, false, timestamps);
     }
 }
