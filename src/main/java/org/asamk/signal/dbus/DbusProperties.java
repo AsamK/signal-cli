@@ -51,6 +51,7 @@ public abstract class DbusProperties implements Properties {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, Variant<?>> GetAll(final String interface_name) {
         final var handler = getHandlerOptional(interface_name);
         if (handler.isEmpty()) {
@@ -61,6 +62,9 @@ public abstract class DbusProperties implements Properties {
                 .getProperties()
                 .stream()
                 .filter(p -> p.getGetter() != null)
-                .collect(Collectors.toMap(DbusProperty::getName, p -> new Variant<>(p.getGetter().get())));
+                .collect(Collectors.toMap(DbusProperty::getName, p -> {
+                    final Object o = p.getGetter().get();
+                    return o instanceof Variant ? (Variant<Object>) o : new Variant<>(o);
+                }));
     }
 }
