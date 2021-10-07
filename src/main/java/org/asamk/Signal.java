@@ -92,8 +92,6 @@ public interface Signal extends DBusInterface {
 
     List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
 
-    boolean isRegistered();
-
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
