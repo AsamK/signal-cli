@@ -212,8 +212,13 @@ sendTyping(recipient<s>, stop<b>) -> <>::
 
 Exceptions: Failure, GroupNotFound, UntrustedIdentity
 
-
 sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+
+Exceptions: Failure, UntrustedIdentity
+
+sendViewedReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
 * recipient             : Phone number of a single recipient
 * targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
 

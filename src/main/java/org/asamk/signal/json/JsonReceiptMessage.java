@@ -18,12 +18,16 @@ class JsonReceiptMessage {
     final boolean isRead;
 
     @JsonProperty
+    final boolean isViewed;
+
+    @JsonProperty
     final List<Long> timestamps;
 
     JsonReceiptMessage(SignalServiceReceiptMessage receiptMessage) {
         this.when = receiptMessage.getWhen();
         this.isDelivery = receiptMessage.isDeliveryReceipt();
         this.isRead = receiptMessage.isReadReceipt();
+        this.isViewed = receiptMessage.isViewedReceipt();
         this.timestamps = receiptMessage.getTimestamps();
     }
 
@@ -33,6 +37,7 @@ class JsonReceiptMessage {
         this.when = when;
         this.isDelivery = isDelivery;
         this.isRead = isRead;
+        this.isViewed = isViewed;
         this.timestamps = timestamps;
     }
 
