@@ -3,7 +3,9 @@ package org.asamk;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 
 import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.annotations.DBusProperty;
+import org.freedesktop.dbus.annotations.Position;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -104,7 +106,7 @@ public interface Signal extends DBusInterface {
 
     DBusPath getDevice(long deviceId);
 
-    List<DBusPath> listDevices() throws Error.Failure;
+    List<StructDevice> listDevices() throws Error.Failure;
 
     DBusPath getThisDevice();
 
@@ -259,6 +261,36 @@ public interface Signal extends DBusInterface {
 
         public List<String> getAttachments() {
             return attachments;
+        }
+    }
+
+    class StructDevice extends Struct {
+
+        @Position(0)
+        DBusPath objectPath;
+
+        @Position(1)
+        Long id;
+
+        @Position(2)
+        String name;
+
+        public StructDevice(final DBusPath objectPath, final Long id, final String name) {
+            this.objectPath = objectPath;
+            this.id = id;
+            this.name = name;
+        }
+
+        public DBusPath getObjectPath() {
+            return objectPath;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
