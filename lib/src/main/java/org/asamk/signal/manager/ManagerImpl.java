@@ -25,13 +25,12 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -505,9 +504,12 @@ public class ManagerImpl implements Manager {
                         .map(account.getRecipientStore()::resolveRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.isBlocked(),
-                groupInfo.getMessageExpirationTime(),
-                groupInfo.isAnnouncementGroup(),
-                groupInfo.isMember(account.getSelfRecipientId()));
+                groupInfo.getMessageExpirationTimer(),
+                groupInfo.getPermissionAddMember(),
+                groupInfo.getPermissionEditDetails(),
+                groupInfo.getPermissionSendMessage(),
+                groupInfo.isMember(account.getSelfRecipientId()),
+                groupInfo.isAdmin(account.getSelfRecipientId()));
     }
 
     @Override
@@ -532,35 +534,22 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientIdentifier.Single> members,
-            Set<RecipientIdentifier.Single> removeMembers,
-            Set<RecipientIdentifier.Single> admins,
-            Set<RecipientIdentifier.Single> removeAdmins,
-            boolean resetGroupLink,
-            GroupLinkState groupLinkState,
-            GroupPermission addMemberPermission,
-            GroupPermission editDetailsPermission,
-            File avatarFile,
-            Integer expirationTimer,
-            Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         return groupHelper.updateGroup(groupId,
-                name,
-                description,
-                members == null ? null : resolveRecipients(members),
-                removeMembers == null ? null : resolveRecipients(removeMembers),
-                admins == null ? null : resolveRecipients(admins),
-                removeAdmins == null ? null : resolveRecipients(removeAdmins),
-                resetGroupLink,
-                groupLinkState,
-                addMemberPermission,
-                editDetailsPermission,
-                avatarFile,
-                expirationTimer,
-                isAnnouncementGroup);
+                updateGroup.getName(),
+                updateGroup.getDescription(),
+                updateGroup.getMembers() == null ? null : resolveRecipients(updateGroup.getMembers()),
+                updateGroup.getRemoveMembers() == null ? null : resolveRecipients(updateGroup.getRemoveMembers()),
+                updateGroup.getAdmins() == null ? null : resolveRecipients(updateGroup.getAdmins()),
+                updateGroup.getRemoveAdmins() == null ? null : resolveRecipients(updateGroup.getRemoveAdmins()),
+                updateGroup.isResetGroupLink(),
+                updateGroup.getGroupLinkState(),
+                updateGroup.getAddMemberPermission(),
+                updateGroup.getEditDetailsPermission(),
+                updateGroup.getAvatarFile(),
+                updateGroup.getExpirationTimer(),
+                updateGroup.getIsAnnouncementGroup());
     }
 
     @Override

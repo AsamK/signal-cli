@@ -63,7 +63,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                     resolveMembers(group.getPendingMembers()),
                     resolveMembers(group.getRequestingMembers()),
                     resolveMembers(group.getAdminMembers()),
-                    group.getMessageExpirationTime() == 0 ? "disabled" : group.getMessageExpirationTime() + "s",
+                    group.getMessageExpirationTimer() == 0 ? "disabled" : group.getMessageExpirationTimer() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
@@ -91,11 +91,14 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                         group.getDescription(),
                         group.isMember(),
                         group.isBlocked(),
-                        group.getMessageExpirationTime(),
+                        group.getMessageExpirationTimer(),
                         resolveJsonMembers(group.getMembers()),
                         resolveJsonMembers(group.getPendingMembers()),
                         resolveJsonMembers(group.getRequestingMembers()),
                         resolveJsonMembers(group.getAdminMembers()),
+                        group.getPermissionAddMember().name(),
+                        group.getPermissionEditDetails().name(),
+                        group.getPermissionSendMessage().name(),
                         groupInviteLink == null ? null : groupInviteLink.getUrl());
             }).collect(Collectors.toList());
 
@@ -122,6 +125,9 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         public final Set<JsonGroupMember> pendingMembers;
         public final Set<JsonGroupMember> requestingMembers;
         public final Set<JsonGroupMember> admins;
+        public final String permissionAddMember;
+        public final String permissionEditDetails;
+        public final String permissionSendMessage;
         public final String groupInviteLink;
 
         public JsonGroup(
@@ -135,6 +141,9 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                 Set<JsonGroupMember> pendingMembers,
                 Set<JsonGroupMember> requestingMembers,
                 Set<JsonGroupMember> admins,
+                final String permissionAddMember,
+                final String permissionEditDetails,
+                final String permissionSendMessage,
                 String groupInviteLink
         ) {
             this.id = id;
@@ -148,6 +157,9 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             this.pendingMembers = pendingMembers;
             this.requestingMembers = requestingMembers;
             this.admins = admins;
+            this.permissionAddMember = permissionAddMember;
+            this.permissionEditDetails = permissionEditDetails;
+            this.permissionSendMessage = permissionSendMessage;
             this.groupInviteLink = groupInviteLink;
         }
     }

@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage.groups;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 import java.util.Set;
@@ -38,9 +39,15 @@ public abstract class GroupInfo {
 
     public abstract void setBlocked(boolean blocked);
 
-    public abstract int getMessageExpirationTime();
+    public abstract int getMessageExpirationTimer();
 
     public abstract boolean isAnnouncementGroup();
+
+    public abstract GroupPermission getPermissionAddMember();
+
+    public abstract GroupPermission getPermissionEditDetails();
+
+    public abstract GroupPermission getPermissionSendMessage();
 
     public Set<RecipientId> getMembersWithout(RecipientId recipientId) {
         return getMembers().stream().filter(member -> !member.equals(recipientId)).collect(Collectors.toSet());

@@ -8,13 +8,12 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -138,20 +137,7 @@ public interface Manager extends Closeable {
     ) throws IOException, AttachmentInvalidException;
 
     SendGroupMessageResults updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientIdentifier.Single> members,
-            Set<RecipientIdentifier.Single> removeMembers,
-            Set<RecipientIdentifier.Single> admins,
-            Set<RecipientIdentifier.Single> removeAdmins,
-            boolean resetGroupLink,
-            GroupLinkState groupLinkState,
-            GroupPermission addMemberPermission,
-            GroupPermission editDetailsPermission,
-            File avatarFile,
-            Integer expirationTimer,
-            Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException;
 
     Pair<GroupId, SendGroupMessageResults> joinGroup(
