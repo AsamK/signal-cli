@@ -363,8 +363,14 @@ uploadStickerPack(stickerPackPath<s>) -> url<s>::
 
 Exception: Failure
 
-== Signals
+submitRateLimitChallenge(challenge<s>, captcha<s>) -> <>::
+* challenge : The challenge token taken from the proof required error.
+* captcha   : The captcha token from the solved captcha on the Signal website..
+Can be used to lift some rate-limits by solving a captcha.
 
+Exception: IOErrorException
+
+== Signalss
 SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
 The sync message is received when the user sends a message from a linked device.
 
