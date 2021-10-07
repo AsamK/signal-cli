@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.configuration.ConfigurationStore;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
@@ -103,6 +104,8 @@ public class SignalAccount implements Closeable {
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
     private StickerStore.Storage stickerStoreStorage;
+    private ConfigurationStore configurationStore;
+    private ConfigurationStore.Storage configurationStoreStorage;
 
     private MessageCache messageCache;
 
@@ -159,6 +162,7 @@ public class SignalAccount implements Closeable {
                 account.recipientStore,
                 account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
+        account.configurationStore = new ConfigurationStore(account::saveConfigurationStore);
 
         account.registered = false;
 
@@ -267,6 +271,7 @@ public class SignalAccount implements Closeable {
                 account.recipientStore,
                 account::saveGroupStore);
         account.stickerStore = new StickerStore(account::saveStickerStore);
+        account.configurationStore = new ConfigurationStore(account::saveConfigurationStore);
 
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.migrateLegacyConfigs();
@@ -491,6 +496,15 @@ public class SignalAccount implements Closeable {
             stickerStore = new StickerStore(this::saveStickerStore);
         }
 
+        if (rootNode.hasNonNull("configurationStore")) {
+            configurationStoreStorage = jsonProcessor.convertValue(rootNode.get("configurationStore"),
+                    ConfigurationStore.Storage.class);
+            configurationStore = ConfigurationStore.fromStorage(configurationStoreStorage,
+                    this::saveConfigurationStore);
+        } else {
+            configurationStore = new ConfigurationStore(this::saveConfigurationStore);
+        }
+
         migratedLegacyConfig = loadLegacyThreadStore(rootNode) || migratedLegacyConfig;
 
         if (migratedLegacyConfig) {
@@ -617,6 +631,7 @@ public class SignalAccount implements Closeable {
                             profile.getFamilyName(),
                             profile.getAbout(),
                             profile.getAboutEmoji(),
+                            null,
                             profile.isUnrestrictedUnidentifiedAccess()
                                     ? Profile.UnidentifiedAccessMode.UNRESTRICTED
                                     : profile.getUnidentifiedAccess() != null
@@ -677,6 +692,11 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    private void saveConfigurationStore(ConfigurationStore.Storage storage) {
+        this.configurationStoreStorage = storage;
+        save();
+    }
+
     private void save() {
         synchronized (fileChannel) {
             var rootNode = jsonProcessor.createObjectNode();
@@ -707,7 +727,8 @@ public class SignalAccount implements Closeable {
                             profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
                     .putPOJO("groupStore", groupStoreStorage)
-                    .putPOJO("stickerStore", stickerStoreStorage);
+                    .putPOJO("stickerStore", stickerStoreStorage)
+                    .putPOJO("configurationStore", configurationStoreStorage);
             try {
                 try (var output = new ByteArrayOutputStream()) {
                     // Write to memory first to prevent corrupting the file in case of serialization errors
@@ -795,6 +816,10 @@ public class SignalAccount implements Closeable {
 
     public SenderKeyStore getSenderKeyStore() {
         return senderKeyStore;
+    }
+
+    public ConfigurationStore getConfigurationStore() {
+        return configurationStore;
     }
 
     public MessageCache getMessageCache() {

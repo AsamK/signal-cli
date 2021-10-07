@@ -36,7 +36,8 @@ public class UnblockCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        for (var contactNumber : CommandUtil.getSingleRecipientIdentifiers(ns.getList("recipient"), m.getUsername())) {
+        for (var contactNumber : CommandUtil.getSingleRecipientIdentifiers(ns.getList("recipient"),
+                m.getSelfNumber())) {
             try {
                 m.setContactBlocked(contactNumber, false);
             } catch (NotMasterDeviceException e) {

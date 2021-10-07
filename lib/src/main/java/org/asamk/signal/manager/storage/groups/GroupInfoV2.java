@@ -22,16 +22,23 @@ public class GroupInfoV2 extends GroupInfo {
     private boolean blocked;
     private DecryptedGroup group; // stored as a file with hexadecimal groupId as name
     private RecipientResolver recipientResolver;
+    private boolean permissionDenied;
 
     public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey) {
         this.groupId = groupId;
         this.masterKey = masterKey;
     }
 
-    public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey, final boolean blocked) {
+    public GroupInfoV2(
+            final GroupIdV2 groupId,
+            final GroupMasterKey masterKey,
+            final boolean blocked,
+            final boolean permissionDenied
+    ) {
         this.groupId = groupId;
         this.masterKey = masterKey;
         this.blocked = blocked;
+        this.permissionDenied = permissionDenied;
     }
 
     @Override
@@ -44,6 +51,9 @@ public class GroupInfoV2 extends GroupInfo {
     }
 
     public void setGroup(final DecryptedGroup group, final RecipientResolver recipientResolver) {
+        if (group != null) {
+            this.permissionDenied = false;
+        }
         this.group = group;
         this.recipientResolver = recipientResolver;
     }
@@ -150,5 +160,13 @@ public class GroupInfoV2 extends GroupInfo {
     @Override
     public boolean isAnnouncementGroup() {
         return this.group != null && this.group.getIsAnnouncementGroup() == EnabledState.ENABLED;
+    }
+
+    public void setPermissionDenied(final boolean permissionDenied) {
+        this.permissionDenied = permissionDenied;
+    }
+
+    public boolean isPermissionDenied() {
+        return permissionDenied;
     }
 }

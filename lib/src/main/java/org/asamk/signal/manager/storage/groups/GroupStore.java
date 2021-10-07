@@ -104,7 +104,7 @@ public class GroupStore {
                 throw new AssertionError("Invalid master key for group " + groupId.toBase64());
             }
 
-            return new GroupInfoV2(groupId, masterKey, g2.blocked);
+            return new GroupInfoV2(groupId, masterKey, g2.blocked, g2.permissionDenied);
         }).collect(Collectors.toMap(GroupInfo::getGroupId, g -> g));
 
         return new GroupStore(groupCachePath, groups, recipientResolver, saver);
@@ -268,13 +268,13 @@ public class GroupStore {
             final var g2 = (GroupInfoV2) g;
             return new Storage.GroupV2(g2.getGroupId().toBase64(),
                     Base64.getEncoder().encodeToString(g2.getMasterKey().serialize()),
-                    g2.isBlocked());
+                    g2.isBlocked(),
+                    g2.isPermissionDenied());
         }).collect(Collectors.toList()));
     }
 
     public static class Storage {
 
-        //        @JsonSerialize(using = GroupsSerializer.class)
         @JsonDeserialize(using = GroupsDeserializer.class)
         public List<Storage.Group> groups;
 
@@ -408,46 +408,24 @@ public class GroupStore {
             public String groupId;
             public String masterKey;
             public boolean blocked;
+            public boolean permissionDenied;
 
             // For deserialization
             private GroupV2() {
             }
 
-            public GroupV2(final String groupId, final String masterKey, final boolean blocked) {
+            public GroupV2(
+                    final String groupId, final String masterKey, final boolean blocked, final boolean permissionDenied
+            ) {
                 this.groupId = groupId;
                 this.masterKey = masterKey;
                 this.blocked = blocked;
+                this.permissionDenied = permissionDenied;
             }
         }
 
     }
 
-    //    private static class GroupsSerializer extends JsonSerializer<List<Storage.Group>> {
-//
-//        @Override
-//        public void serialize(
-//                final List<Storage.Group> groups, final JsonGenerator jgen, final SerializerProvider provider
-//        ) throws IOException {
-//            jgen.writeStartArray(groups.size());
-//            for (var group : groups) {
-//                if (group instanceof GroupInfoV1) {
-//                    jgen.writeObject(group);
-//                } else if (group instanceof GroupInfoV2) {
-//                    final var groupV2 = (GroupInfoV2) group;
-//                    jgen.writeStartObject();
-//                    jgen.writeStringField("groupId", groupV2.getGroupId().toBase64());
-//                    jgen.writeStringField("masterKey",
-//                            Base64.getEncoder().encodeToString(groupV2.getMasterKey().serialize()));
-//                    jgen.writeBooleanField("blocked", groupV2.isBlocked());
-//                    jgen.writeEndObject();
-//                } else {
-//                    throw new AssertionError("Unknown group version");
-//                }
-//            }
-//            jgen.writeEndArray();
-//        }
-//    }
-//
     private static class GroupsDeserializer extends JsonDeserializer<List<Storage.Group>> {
 
         @Override

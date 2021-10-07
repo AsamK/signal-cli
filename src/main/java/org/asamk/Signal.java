@@ -2,9 +2,12 @@ package org.asamk;
 
 import org.asamk.signal.dbus.DbusAttachment;
 import org.asamk.signal.dbus.DbusMention;
+import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.annotations.DBusProperty;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.messages.DBusSignal;
 
 import java.util.ArrayList;
@@ -16,6 +19,8 @@ import java.util.Map;
  * Including emitted Signals and returned Errors.
  */
 public interface Signal extends DBusInterface {
+
+    String getSelfNumber();
 
     long sendMessage(
             String message, List<String> attachmentNames, String recipient
@@ -30,7 +35,7 @@ public interface Signal extends DBusInterface {
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
 
     void sendReadReceipt(
-            String recipient, List<Long> targetSentTimestamp
+            String recipient, List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity;
 
     long sendRemoteDeleteMessage(
@@ -53,6 +58,10 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws Error.InvalidNumber, Error.Failure;
 
+    void sendContacts() throws Error.Failure;
+
+    void sendSyncRequest() throws Error.Failure;
+
     long sendNoteToSelfMessage(
             String message, List<String> attachmentNames
     ) throws Error.AttachmentInvalid, Error.Failure;
@@ -71,6 +80,8 @@ public interface Signal extends DBusInterface {
 
     void setContactName(String number, String name) throws Error.InvalidNumber;
 
+    void setExpirationTimer(final String number, final int expiration) throws Error.Failure;
+
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
@@ -87,9 +98,36 @@ public interface Signal extends DBusInterface {
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
+    boolean isRegistered() throws Error.Failure, Error.InvalidNumber;
+
+    boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
+
+    List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
+
+    void addDevice(String uri) throws Error.InvalidUri;
+
+    DBusPath getDevice(long deviceId);
+
+    List<DBusPath> listDevices() throws Error.Failure;
+
+    DBusPath getThisDevice();
+
+    void updateProfile(
+            String givenName,
+            String familyName,
+            String about,
+            String aboutEmoji,
+            String avatarPath,
+            boolean removeAvatar
+    ) throws Error.Failure;
+
     void updateProfile(
             String name, String about, String aboutEmoji, String avatarPath, boolean removeAvatar
     ) throws Error.Failure;
+
+    void removePin();
+
+    void setPin(String registrationLockPin);
 
     String version();
 
@@ -106,6 +144,8 @@ public interface Signal extends DBusInterface {
     boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
 
     byte[] joinGroup(final String groupLink) throws Error.Failure;
+
+    String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
     class MessageReceived extends DBusSignal {
 
@@ -379,11 +419,27 @@ public interface Signal extends DBusInterface {
         }
     }
 
+    @DBusProperty(name = "Id", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Name", type = String.class)
+    @DBusProperty(name = "Created", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "LastSeen", type = String.class, access = DBusProperty.Access.READ)
+    interface Device extends DBusInterface, Properties {
+
+        void removeDevice() throws Error.Failure;
+    }
+
     interface Error {
 
         class AttachmentInvalid extends DBusExecutionException {
 
             public AttachmentInvalid(final String message) {
+                super(message);
+            }
+        }
+
+        class InvalidUri extends DBusExecutionException {
+
+            public InvalidUri(final String message) {
                 super(message);
             }
         }

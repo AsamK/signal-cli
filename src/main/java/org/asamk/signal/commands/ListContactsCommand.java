@@ -8,9 +8,8 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.manager.Manager;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class ListContactsCommand implements JsonRpcLocalCommand {
 
@@ -33,7 +32,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
             for (var c : contacts) {
                 final var contact = c.second();
                 writer.println("Number: {} Name: {} Blocked: {} Message expiration: {}",
-                        getLegacyIdentifier(m.resolveSignalServiceAddress(c.first())),
+                        c.first().getLegacyIdentifier(),
                         contact.getName(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime() == 0
@@ -43,10 +42,10 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
         } else {
             final var writer = (JsonWriter) outputWriter;
             final var jsonContacts = contacts.stream().map(contactPair -> {
-                final var address = m.resolveSignalServiceAddress(contactPair.first());
+                final var address = contactPair.first();
                 final var contact = contactPair.second();
-                return new JsonContact(address.getNumber().orNull(),
-                        address.getUuid().toString(),
+                return new JsonContact(address.getNumber().orElse(null),
+                        address.getUuid().map(UUID::toString).orElse(null),
                         contact.getName(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime());

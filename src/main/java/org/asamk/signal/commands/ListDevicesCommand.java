@@ -46,7 +46,7 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
         if (outputWriter instanceof PlainTextWriter) {
             final var writer = (PlainTextWriter) outputWriter;
             for (var d : devices) {
-                writer.println("- Device {}{}:", d.getId(), (d.getId() == m.getDeviceId() ? " (this device)" : ""));
+                writer.println("- Device {}{}:", d.getId(), (d.isThisDevice() ? " (this device)" : ""));
                 writer.indent(w -> {
                     w.println("Name: {}", d.getName());
                     w.println("Created: {}", DateUtils.formatTimestamp(d.getCreated()));

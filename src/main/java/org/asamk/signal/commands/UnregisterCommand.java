@@ -31,7 +31,7 @@ public class UnregisterCommand implements LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         try {
-            if (ns.getBoolean("delete-account")) {
+            if (Boolean.TRUE.equals(ns.getBoolean("delete-account"))) {
                 m.deleteAccount();
             } else {
                 m.unregister();

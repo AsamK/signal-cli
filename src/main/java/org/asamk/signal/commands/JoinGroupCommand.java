@@ -57,14 +57,14 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
             var newGroupId = results.first();
             if (outputWriter instanceof JsonWriter) {
                 final var writer = (JsonWriter) outputWriter;
-                if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
+                if (!m.getGroup(newGroupId).isMember()) {
                     writer.write(Map.of("groupId", newGroupId.toBase64(), "onlyRequested", true));
                 } else {
                     writer.write(Map.of("groupId", newGroupId.toBase64()));
                 }
             } else {
                 final var writer = (PlainTextWriter) outputWriter;
-                if (!m.getGroup(newGroupId).isMember(m.getSelfRecipientId())) {
+                if (!m.getGroup(newGroupId).isMember()) {
                     writer.println("Requested to join group \"{}\"", newGroupId.toBase64());
                 } else {
                     writer.println("Joined group \"{}\"", newGroupId.toBase64());

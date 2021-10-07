@@ -39,6 +39,7 @@ public class Commands {
         addCommand(new UnblockCommand());
         addCommand(new UnregisterCommand());
         addCommand(new UpdateAccountCommand());
+        addCommand(new UpdateConfigurationCommand());
         addCommand(new UpdateContactCommand());
         addCommand(new UpdateGroupCommand());
         addCommand(new UpdateProfileCommand());

@@ -37,7 +37,7 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final var recipientString = ns.getString("recipient");
-        final var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getUsername());
+        final var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
 
         final var targetTimestamps = ns.<Long>getList("target-timestamp");
         final var type = ns.getString("type");

@@ -54,10 +54,10 @@ public class DaemonCommand implements MultiLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
+        boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
         DBusConnection.DBusBusType busType;
-        if (ns.getBoolean("system")) {
+        if (Boolean.TRUE.equals(ns.getBoolean("system"))) {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
@@ -83,10 +83,10 @@ public class DaemonCommand implements MultiLocalCommand {
     public void handleCommand(
             final Namespace ns, final List<Manager> managers, final SignalCreator c, final OutputWriter outputWriter
     ) throws CommandException {
-        boolean ignoreAttachments = ns.getBoolean("ignore-attachments");
+        boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
         DBusConnection.DBusBusType busType;
-        if (ns.getBoolean("system")) {
+        if (Boolean.TRUE.equals(ns.getBoolean("system"))) {
             busType = DBusConnection.DBusBusType.SYSTEM;
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
@@ -95,7 +95,7 @@ public class DaemonCommand implements MultiLocalCommand {
         try (var conn = DBusConnection.getConnection(busType)) {
             final var signalControl = new DbusSignalControlImpl(c, m -> {
                 try {
-                    final var objectPath = DbusConfig.getObjectPath(m.getUsername());
+                    final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
                     return run(conn, objectPath, m, outputWriter, ignoreAttachments);
                 } catch (DBusException e) {
                     logger.error("Failed to export object", e);
@@ -120,7 +120,10 @@ public class DaemonCommand implements MultiLocalCommand {
     private Thread run(
             DBusConnection conn, String objectPath, Manager m, OutputWriter outputWriter, boolean ignoreAttachments
     ) throws DBusException {
-        conn.exportObject(new DbusSignalImpl(m, objectPath));
+        final var signal = new DbusSignalImpl(m, conn, objectPath);
+        conn.exportObject(signal);
+        final var initThread = new Thread(signal::initObjects);
+        initThread.start();
 
         logger.info("Exported dbus object: " + objectPath);
 
@@ -136,6 +139,11 @@ public class DaemonCommand implements MultiLocalCommand {
                     logger.warn("Receiving messages failed, retrying", e);
                 }
             }
+            try {
+                initThread.join();
+            } catch (InterruptedException ignored) {
+            }
+            signal.close();
         });
 
         thread.start();

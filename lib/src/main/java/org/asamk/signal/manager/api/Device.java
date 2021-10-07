@@ -6,12 +6,14 @@ public class Device {
     private final String name;
     private final long created;
     private final long lastSeen;
+    private final boolean thisDevice;
 
-    public Device(long id, String name, long created, long lastSeen) {
+    public Device(long id, String name, long created, long lastSeen, final boolean thisDevice) {
         this.id = id;
         this.name = name;
         this.created = created;
         this.lastSeen = lastSeen;
+        this.thisDevice = thisDevice;
     }
 
     public long getId() {
@@ -28,5 +30,9 @@ public class Device {
 
     public long getLastSeen() {
         return lastSeen;
+    }
+
+    public boolean isThisDevice() {
+        return thisDevice;
     }
 }

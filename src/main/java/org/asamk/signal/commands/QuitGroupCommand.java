@@ -50,7 +50,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var groupId = CommandUtil.getGroupId(ns.getString("group-id"));
 
-        var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), m.getUsername());
+        var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), m.getSelfNumber());
 
         try {
             try {
@@ -61,7 +61,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }
-            if (ns.getBoolean("delete")) {
+            if (Boolean.TRUE.equals(ns.getBoolean("delete"))) {
                 logger.debug("Deleting group {}", groupId);
                 m.deleteGroup(groupId);
             }

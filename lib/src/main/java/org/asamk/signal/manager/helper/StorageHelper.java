@@ -32,13 +32,18 @@ public class StorageHelper {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
     private final GroupHelper groupHelper;
+    private final ProfileHelper profileHelper;
 
     public StorageHelper(
-            final SignalAccount account, final SignalDependencies dependencies, final GroupHelper groupHelper
+            final SignalAccount account,
+            final SignalDependencies dependencies,
+            final GroupHelper groupHelper,
+            final ProfileHelper profileHelper
     ) {
         this.account = account;
         this.dependencies = dependencies;
         this.groupHelper = groupHelper;
+        this.profileHelper = profileHelper;
     }
 
     public void readDataFromStorage() throws IOException {
@@ -188,13 +193,37 @@ public class StorageHelper {
             return;
         }
 
+        if (!accountRecord.getE164().equals(account.getUsername())) {
+            // TODO implement changed number handling
+        }
+
+        account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());
+        account.getConfigurationStore().setTypingIndicators(accountRecord.isTypingIndicatorsEnabled());
+        account.getConfigurationStore()
+                .setUnidentifiedDeliveryIndicators(accountRecord.isSealedSenderIndicatorsEnabled());
+        account.getConfigurationStore().setLinkPreviews(accountRecord.isLinkPreviewsEnabled());
+
         if (accountRecord.getProfileKey().isPresent()) {
+            ProfileKey profileKey;
             try {
-                account.setProfileKey(new ProfileKey(accountRecord.getProfileKey().get()));
+                profileKey = new ProfileKey(accountRecord.getProfileKey().get());
             } catch (InvalidInputException e) {
                 logger.warn("Received invalid profile key from storage");
+                profileKey = null;
+            }
+            if (profileKey != null) {
+                account.setProfileKey(profileKey);
+                final var avatarPath = accountRecord.getAvatarUrlPath().orNull();
+                profileHelper.downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, profileKey);
             }
         }
+
+        profileHelper.setProfile(false,
+                accountRecord.getGivenName().orNull(),
+                accountRecord.getFamilyName().orNull(),
+                null,
+                null,
+                null);
     }
 
     private SignalStorageRecord getSignalStorageRecord(final StorageId accountId) throws IOException {

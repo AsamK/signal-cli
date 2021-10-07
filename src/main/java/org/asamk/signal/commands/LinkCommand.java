@@ -44,7 +44,7 @@ public class LinkCommand implements ProvisioningCommand {
         try {
             writer.println("{}", m.getDeviceLinkUri());
             try (var manager = m.finishDeviceLink(deviceName)) {
-                writer.println("Associated with: {}", manager.getUsername());
+                writer.println("Associated with: {}", manager.getSelfNumber());
             }
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
@@ -52,7 +52,7 @@ public class LinkCommand implements ProvisioningCommand {
             throw new IOErrorException("Link request error: " + e.getMessage(), e);
         } catch (UserAlreadyExists e) {
             throw new UserErrorException("The user "
-                    + e.getUsername()
+                    + e.getNumber()
                     + " already exists\nDelete \""
                     + e.getFileName()
                     + "\" before trying again.");

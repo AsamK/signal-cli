@@ -37,7 +37,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final var contacts = ns.<String>getList("recipient");
-        for (var contact : CommandUtil.getSingleRecipientIdentifiers(contacts, m.getUsername())) {
+        for (var contact : CommandUtil.getSingleRecipientIdentifiers(contacts, m.getSelfNumber())) {
             try {
                 m.setContactBlocked(contact, true);
             } catch (NotMasterDeviceException e) {

@@ -38,8 +38,8 @@ public class TrustCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         var recipentString = ns.getString("recipient");
-        var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getUsername());
-        if (ns.getBoolean("trust-all-known-keys")) {
+        var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getSelfNumber());
+        if (Boolean.TRUE.equals(ns.getBoolean("trust-all-known-keys"))) {
             boolean res = m.trustIdentityAllKeys(recipient);
             if (!res) {
                 throw new UserErrorException("Failed to set the trust for this number, make sure the number is correct.");

@@ -8,7 +8,6 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.asamk.Signal;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
-import org.asamk.signal.commands.DbusCommand;
 import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.MultiLocalCommand;
@@ -19,6 +18,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.dbus.DbusManagerImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotRegisteredException;
 import org.asamk.signal.manager.ProvisioningManager;
@@ -29,6 +29,7 @@ import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -116,8 +117,8 @@ public class App {
 
         var username = ns.getString("username");
 
-        final var useDbus = ns.getBoolean("dbus");
-        final var useDbusSystem = ns.getBoolean("dbus-system");
+        final var useDbus = Boolean.TRUE.equals(ns.getBoolean("dbus"));
+        final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
             initDbusClient(command, username, useDbusSystem, outputWriter);
@@ -161,7 +162,7 @@ public class App {
         }
 
         if (username == null) {
-            var usernames = Manager.getAllLocalUsernames(dataPath);
+            var usernames = Manager.getAllLocalNumbers(dataPath);
 
             if (command instanceof MultiLocalCommand) {
                 handleMultiLocalCommand((MultiLocalCommand) command,
@@ -346,8 +347,14 @@ public class App {
     ) throws CommandException {
         if (command instanceof ExtendedDbusCommand) {
             ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn, outputWriter);
-        } else if (command instanceof DbusCommand) {
-            ((DbusCommand) command).handleCommand(ns, ts, outputWriter);
+        } else if (command instanceof LocalCommand) {
+            try {
+                ((LocalCommand) command).handleCommand(ns, new DbusManagerImpl(ts, dBusConn), outputWriter);
+            } catch (UnsupportedOperationException e) {
+                throw new UserErrorException("Command is not yet implemented via dbus", e);
+            } catch (DBusExecutionException e) {
+                throw new UnexpectedErrorException(e.getMessage(), e);
+            }
         } else {
             throw new UserErrorException("Command is not yet implemented via dbus");
         }
