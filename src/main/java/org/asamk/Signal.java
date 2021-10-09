@@ -326,6 +326,13 @@ public interface Signal extends DBusInterface {
             }
         }
 
+        class DeviceNotFound extends DBusExecutionException {
+
+            public DeviceNotFound(final String message) {
+                super(message);
+            }
+        }
+
         class GroupNotFound extends DBusExecutionException {
 
             public GroupNotFound(final String message) {

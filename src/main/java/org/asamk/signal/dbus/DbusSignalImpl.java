@@ -111,7 +111,11 @@ public class DbusSignalImpl implements Signal {
     @Override
     public DBusPath getDevice(long deviceId) {
         updateDevices();
-        return new DBusPath(getDeviceObjectPath(objectPath, deviceId));
+        final var deviceOptional = devices.stream().filter(g -> g.getId().equals(deviceId)).findFirst();
+        if (deviceOptional.isEmpty()) {
+            throw new Error.DeviceNotFound("Device not found");
+        }
+        return deviceOptional.get().getObjectPath();
     }
 
     @Override
