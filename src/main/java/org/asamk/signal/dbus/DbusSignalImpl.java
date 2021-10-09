@@ -3,6 +3,7 @@ package org.asamk.signal.dbus;
 import org.asamk.Signal;
 import org.asamk.Signal.Error;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -56,7 +57,7 @@ public class DbusSignalImpl implements Signal {
     private final String objectPath;
 
     private DBusPath thisDevice;
-    private final List<DBusPath> devices = new ArrayList<>();
+    private final List<StructDevice> devices = new ArrayList<>();
 
     public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
         this.m = m;
@@ -83,6 +84,18 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void submitRateLimitChallenge(String challenge, String captchaString) throws IOErrorException {
+        final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
+
+        try {
+            m.submitRateLimitRecaptchaChallenge(challenge, captcha);
+        } catch (IOException e) {
+            throw new IOErrorException("Submit challenge error: " + e.getMessage(), e);
+        }
+
+    }
+
+    @Override
     public void addDevice(String uri) {
         try {
             m.addDeviceLink(new URI(uri));
@@ -102,39 +115,9 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public List<DBusPath> listDevices() {
+    public List<StructDevice> listDevices() {
         updateDevices();
         return this.devices;
-    }
-
-    private void updateDevices() {
-        List<org.asamk.signal.manager.api.Device> linkedDevices;
-        try {
-            linkedDevices = m.getLinkedDevices();
-        } catch (IOException | Error.Failure e) {
-            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
-        }
-
-        unExportDevices();
-
-        linkedDevices.forEach(d -> {
-            final var object = new DbusSignalDeviceImpl(d);
-            final var deviceObjectPath = object.getObjectPath();
-            try {
-                connection.exportObject(object);
-            } catch (DBusException e) {
-                e.printStackTrace();
-            }
-            if (d.isThisDevice()) {
-                thisDevice = new DBusPath(deviceObjectPath);
-            }
-            this.devices.add(new DBusPath(deviceObjectPath));
-        });
-    }
-
-    private void unExportDevices() {
-        this.devices.stream().map(DBusPath::getPath).forEach(connection::unExportObject);
-        this.devices.clear();
     }
 
     @Override
@@ -813,8 +796,45 @@ public class DbusSignalImpl implements Signal {
         return name.isEmpty() ? null : name;
     }
 
+    private String emptyIfNull(final String string) {
+        return string == null ? "" : string;
+    }
+
     private static String getDeviceObjectPath(String basePath, long deviceId) {
         return basePath + "/Devices/" + deviceId;
+    }
+
+    private void updateDevices() {
+        List<org.asamk.signal.manager.api.Device> linkedDevices;
+        try {
+            linkedDevices = m.getLinkedDevices();
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
+        }
+
+        unExportDevices();
+
+        linkedDevices.forEach(d -> {
+            final var object = new DbusSignalDeviceImpl(d);
+            final var deviceObjectPath = object.getObjectPath();
+            try {
+                connection.exportObject(object);
+            } catch (DBusException e) {
+                e.printStackTrace();
+            }
+            if (d.isThisDevice()) {
+                thisDevice = new DBusPath(deviceObjectPath);
+            }
+            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), d.getId(), emptyIfNull(d.getName())));
+        });
+    }
+
+    private void unExportDevices() {
+        this.devices.stream()
+                .map(StructDevice::getObjectPath)
+                .map(DBusPath::getPath)
+                .forEach(connection::unExportObject);
+        this.devices.clear();
     }
 
     public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
@@ -822,12 +842,9 @@ public class DbusSignalImpl implements Signal {
         private final org.asamk.signal.manager.api.Device device;
 
         public DbusSignalDeviceImpl(final org.asamk.signal.manager.api.Device device) {
-            super();
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Device",
                     List.of(new DbusProperty<>("Id", device::getId),
-                            new DbusProperty<>("Name",
-                                    () -> device.getName() == null ? "" : device.getName(),
-                                    this::setDeviceName),
+                            new DbusProperty<>("Name", () -> emptyIfNull(device.getName()), this::setDeviceName),
                             new DbusProperty<>("Created", device::getCreated),
                             new DbusProperty<>("LastSeen", device::getLastSeen))));
             this.device = device;
