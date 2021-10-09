@@ -29,14 +29,17 @@ method(arg1<type>, arg2<type>, ...) -> return<type>
 
 Where <type> is according to DBus specification:
 
-* <s>   : String
-* <ay>  : Byte Array
-* <aay> : Array of Byte Arrays
-* <as>  : String Array
-* <ax>  : Array of signed 64 bit integer
-* <b>   : Boolean (0|1)
-* <x>   : Signed 64 bit integer
+* <a>   : Array of ... (comma-separated list)
+* (...) : Struct (cannot be sent via `dbus-send`)
+* <b>   : Boolean (false|true) (boolean:)
+* <i>   : Signed 32-bit (int) integer (int32:)
+* <o>   : DBusPath object (objpath:)
+* <s>   : String (string:)
+* <x>   : Signed 64-bit (long) integer (int64:)
+* <y>   : Unsigned 8-bit (byte) integer (byte:)
 * <>    : no return value
+
+The final parenthetical value (such as "boolean:") is the type indicator used by `dbus-send`.
 
 Exceptions are the names of the Java Exceptions returned in the body field. They typically contain an additional message with details. All Exceptions begin with "org.asamk.Signal.Error." which is omitted here for better readability.
 
@@ -340,8 +343,11 @@ addDevice(deviceUri<s>) -> <>::
 
 Exception: InvalidUri
 
-listDevices() -> devices<as>::
-* devices  : String array of linked devices
+listDevices() -> devices<a(oxs)>::
+* devices      : Array of structs (objectPath, id, name)
+** objectPath   : DBusPath representing the device's object path
+** id           : Long representing the deviceId
+** name         : String representing the device's name
 
 Exception: Failure
 
@@ -370,7 +376,7 @@ Can be used to lift some rate-limits by solving a captcha.
 
 Exception: IOErrorException
 
-== Signalss
+== Signals
 SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
 The sync message is received when the user sends a message from a linked device.
 
