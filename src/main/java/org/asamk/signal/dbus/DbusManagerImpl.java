@@ -30,7 +30,6 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -535,13 +534,6 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityAllKeys(final RecipientIdentifier.Single recipient) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String computeSafetyNumber(
-            final SignalServiceAddress theirAddress, final IdentityKey theirIdentityKey
-    ) {
         throw new UnsupportedOperationException();
     }
 

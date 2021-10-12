@@ -22,7 +22,6 @@ import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -227,8 +226,6 @@ public interface Manager extends Closeable {
     boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber);
 
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient);
-
-    String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey);
 
     SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address);
 
