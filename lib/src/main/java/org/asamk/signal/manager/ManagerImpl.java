@@ -176,14 +176,13 @@ public class ManagerImpl implements Manager {
 
         this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
-        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
-                account.getProfileStore()::getProfileKey,
-                this::getRecipientProfile,
-                this::getSenderCertificate);
+        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account,
+                dependencies,
+                account::getProfileKey,
+                this::getRecipientProfile);
         this.profileHelper = new ProfileHelper(account,
                 dependencies,
                 avatarStore,
-                account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
@@ -780,22 +779,6 @@ public class ManagerImpl implements Manager {
         if (account.getStorageKey() != null) {
             storageHelper.readDataFromStorage();
         }
-    }
-
-    private byte[] getSenderCertificate() {
-        byte[] certificate;
-        try {
-            if (account.isPhoneNumberShared()) {
-                certificate = dependencies.getAccountManager().getSenderCertificate();
-            } else {
-                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
-            return null;
-        }
-        // TODO cache for a day
-        return certificate;
     }
 
     private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
