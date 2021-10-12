@@ -52,6 +52,8 @@ public class BlockCommand implements JsonRpcLocalCommand {
             for (var groupId : CommandUtil.getGroupIds(groupIdStrings)) {
                 try {
                     m.setGroupBlocked(groupId, true);
+                } catch (NotMasterDeviceException e) {
+                    throw new UserErrorException("This command doesn't work on linked devices.");
                 } catch (GroupNotFoundException e) {
                     logger.warn("Group not found {}: {}", groupId.toBase64(), e.getMessage());
                 } catch (IOException e) {

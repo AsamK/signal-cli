@@ -405,6 +405,8 @@ public class DbusSignalImpl implements Signal {
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
         try {
             m.setGroupBlocked(getGroupId(groupId), blocked);
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (IOException e) {
@@ -1060,6 +1062,8 @@ public class DbusSignalImpl implements Signal {
         private void setIsBlocked(final boolean isBlocked) {
             try {
                 m.setGroupBlocked(groupId, isBlocked);
+            } catch (NotMasterDeviceException e) {
+                throw new Error.Failure("This command doesn't work on linked devices.");
             } catch (GroupNotFoundException e) {
                 throw new Error.GroupNotFound(e.getMessage());
             } catch (IOException e) {

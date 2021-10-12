@@ -184,7 +184,7 @@ public interface Manager extends Closeable {
 
     void setGroupBlocked(
             GroupId groupId, boolean blocked
-    ) throws GroupNotFoundException, IOException;
+    ) throws GroupNotFoundException, IOException, NotMasterDeviceException;
 
     void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer

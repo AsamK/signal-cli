@@ -714,7 +714,10 @@ public class ManagerImpl implements Manager {
     @Override
     public void setGroupBlocked(
             final GroupId groupId, final boolean blocked
-    ) throws GroupNotFoundException, IOException {
+    ) throws GroupNotFoundException, IOException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
         groupHelper.setGroupBlocked(groupId, blocked);
         // TODO cycle our profile key
         syncHelper.sendBlockedList();
