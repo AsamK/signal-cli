@@ -129,7 +129,7 @@ Exceptions: None, if the group name is not found an empty array is returned
 joinGroup(inviteURI<s>) -> <>::
 * inviteURI : String starting with https://signal.group/#
 
-If the link requires admin approval, this adds you to the requesting members list. Otherwise, this adds you to the pending members list.
+Behavior of this method depends on the `requirePermission` parameter of the `enableLink` method. If permission is required, `joinGroup` adds you to the requesting members list. Permission may be granted based on the group's `PermissionAddMember` property (`ONLY_ADMINS` or `EVERY_MEMBER`). If permission is not required, `joinGroup` admits you immediately to the group.
 
 Exceptions: Failure
 
@@ -203,7 +203,7 @@ To get all properties, use:
 addAdmins(recipients<as>) -> <>::
 * recipients  : String array of phone numbers
 
-Grant admit privileges to recipients.
+Grant admin privileges to recipients.
 
 Exceptions: Failure
 
