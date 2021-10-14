@@ -160,10 +160,6 @@ public interface Signal extends DBusInterface {
 
     String uploadStickerPack(String stickerPackPath) throws Error.Failure;
 
-    void setConfiguration(boolean readReceipts, boolean unidentifiedDeliveryIndicators, boolean typingIndicators, boolean linkPreviews) throws Error.IOError, Error.UserError;
-
-    List<Boolean> getConfiguration();
-
     void submitRateLimitChallenge(String challenge, String captchaString) throws IOErrorException;
 
     class MessageReceived extends DBusSignal {
@@ -320,6 +316,13 @@ public interface Signal extends DBusInterface {
     interface Device extends DBusInterface, Properties {
 
         void removeDevice() throws Error.Failure;
+    }
+
+    @DBusProperty(name = "ConfigurationReadReceipts", type = Boolean.class)
+    @DBusProperty(name = "ConfigurationUnidentifiedDeliveryIndicators", type = Boolean.class)
+    @DBusProperty(name = "ConfigurationTypingIndicators", type = Boolean.class)
+    @DBusProperty(name = "ConfigurationLinkPreviews", type = Boolean.class)
+    interface Configuration extends DBusInterface, Properties {
     }
 
     class StructGroup extends Struct {

@@ -2,12 +2,14 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -29,6 +31,8 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -65,6 +69,8 @@ public class DbusSignalImpl implements Signal {
     private final List<StructDevice> devices = new ArrayList<>();
     private final List<StructGroup> groups = new ArrayList<>();
 
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
+
     public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
         this.m = m;
         this.connection = connection;
@@ -74,10 +80,13 @@ public class DbusSignalImpl implements Signal {
     public void initObjects() {
         updateDevices();
         updateGroups();
+        updateConfiguration();
     }
 
     public void close() {
         unExportDevices();
+        unExportGroups();
+        unExportConfiguration();
     }
 
     @Override
@@ -702,30 +711,6 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    @Override
-    public void setConfiguration(boolean readReceipts, boolean unidentifiedDeliveryIndicators, boolean typingIndicators, boolean linkPreviews) {
-          try {
-              m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
-          } catch (IOException e) {
-              throw new Error.IOError("UpdateAccount error: " + e.getMessage());
-          } catch (NotMasterDeviceException e) {
-              throw new Error.UserError("This command doesn't work on linked devices.");
-          }
-    }
-
-    @Override
-    public List<Boolean> getConfiguration() {
-        List<Boolean> config = new ArrayList<>(4);
-        try {
-            config = m.getConfiguration();
-        } catch (IOException e) {
-            throw new Error.IOError("Configuration storage error: " + e.getMessage());
-        } catch (NotMasterDeviceException e) {
-            throw new Error.UserError("This command doesn't work on linked devices.");
-        }
-        return config;
-    }
-
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
         var error = ErrorUtils.getErrorMessageFromSendMessageResult(result);
 
@@ -852,6 +837,7 @@ public class DbusSignalImpl implements Signal {
             final var deviceObjectPath = object.getObjectPath();
             try {
                 connection.exportObject(object);
+                logger.info("Exported dbus object: " + deviceObjectPath);
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -888,6 +874,7 @@ public class DbusSignalImpl implements Signal {
             final var object = new DbusSignalGroupImpl(g.getGroupId());
             try {
                 connection.exportObject(object);
+                logger.info("Exported dbus object: " + object.getObjectPath());
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -901,6 +888,82 @@ public class DbusSignalImpl implements Signal {
         this.groups.stream().map(StructGroup::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
         this.groups.clear();
     }
+
+    private void unExportConfiguration() {
+        final var object = getConfigurationObjectPath(objectPath);
+        connection.unExportObject(object);
+    }
+
+    private static String getConfigurationObjectPath(String basePath) {
+        return basePath + "/Configuration";
+    }
+
+    private void updateConfiguration() {
+
+        Boolean readReceipts = null;
+        Boolean unidentifiedDeliveryIndicators = null;
+        Boolean typingIndicators = null;
+        Boolean linkPreviews = null;
+        List<Boolean> configuration = new ArrayList<>(4);
+
+        try {
+            configuration = m.getConfiguration();
+        } catch (NotMasterDeviceException e) {
+            logger.info("Not exporting Configuration for " + m.getSelfNumber() + ": " + e.getMessage());
+            return;
+        } catch (IOException e) {
+            throw new Error.IOError(objectPath + e.getMessage());
+        } catch (NullPointerException e) {
+            logger.info("No configuration found, creating one for " + m.getSelfNumber() + ": " + e.getMessage());
+            readReceipts = true;
+            unidentifiedDeliveryIndicators = true;
+            typingIndicators = true;
+            linkPreviews = true;
+        }
+        if (readReceipts == null) {
+            try {
+                readReceipts = configuration.get(0);
+            } catch (NullPointerException e) {
+                readReceipts = true;
+            }
+        }
+        if (unidentifiedDeliveryIndicators == null) {
+            try {
+                unidentifiedDeliveryIndicators = configuration.get(1);
+            } catch (NullPointerException e) {
+                unidentifiedDeliveryIndicators = true;
+            }
+        }
+        if (typingIndicators == null) {
+            try {
+                typingIndicators = configuration.get(2);
+            } catch (NullPointerException e) {
+                typingIndicators = true;
+            }
+        }
+        if (linkPreviews == null) {
+            try {
+                linkPreviews = configuration.get(3);
+            } catch (NullPointerException e) {
+                linkPreviews = true;
+            }
+        }
+
+        try {
+            unExportConfiguration();
+            m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+            final var object = new DbusSignalConfigurationImpl(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+            connection.exportObject(object);
+            logger.info("Exported dbus object: " + objectPath + "/Configuration");
+        } catch (NotMasterDeviceException ignore) {
+            /* already caught */
+        } catch (IOException e) {
+            throw new Error.IOError(objectPath + e.getMessage());
+        } catch (DBusException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
 
@@ -940,6 +1003,124 @@ public class DbusSignalImpl implements Signal {
                 updateDevices();
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
+            }
+        }
+    }
+
+    public class DbusSignalConfigurationImpl extends DbusProperties implements Signal.Configuration {
+
+        private final Boolean readReceipts;
+        private final Boolean unidentifiedDeliveryIndicators;
+        private final Boolean typingIndicators;
+        private final Boolean linkPreviews;
+
+        public DbusSignalConfigurationImpl(final Boolean readReceipts, final Boolean unidentifiedDeliveryIndicators, final Boolean typingIndicators, final Boolean linkPreviews) {
+            this.readReceipts = readReceipts;
+            this.unidentifiedDeliveryIndicators = unidentifiedDeliveryIndicators;
+            this.typingIndicators = typingIndicators;
+            this.linkPreviews = linkPreviews;
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Configuration",
+                    List.of(new DbusProperty<>("ConfigurationReadReceipts", () -> getReadReceipts(), this::setReadReceipts),
+                            new DbusProperty<>("ConfigurationUnidentifiedDeliveryIndicators", () -> getUnidentifiedDeliveryIndicators(), this::setUnidentifiedDeliveryIndicators),
+                            new DbusProperty<>("ConfigurationTypingIndicators", () -> getTypingIndicators(), this::setTypingIndicators),
+                            new DbusProperty<>("ConfigurationLinkPreviews", () -> getLinkPreviews(), this::setLinkPreviews)
+                            )
+                    ));
+
+        }
+
+        @Override
+        public String getObjectPath() {
+              return getConfigurationObjectPath(objectPath);
+        }
+
+        public void setReadReceipts(Boolean readReceipts) {
+            setConfiguration(readReceipts, null, null, null);
+        }
+
+        public void setUnidentifiedDeliveryIndicators(Boolean unidentifiedDeliveryIndicators) {
+            setConfiguration(null, unidentifiedDeliveryIndicators, null, null);
+        }
+
+        public void setTypingIndicators(Boolean typingIndicators) {
+            setConfiguration(null, null, typingIndicators, null);
+        }
+
+        public void setLinkPreviews(Boolean linkPreviews) {
+            setConfiguration(null, null, null, linkPreviews);
+        }
+
+        private void setConfiguration(Boolean readReceipts, Boolean unidentifiedDeliveryIndicators, Boolean typingIndicators, Boolean linkPreviews) {
+            try {
+                if (readReceipts == null) {
+                    readReceipts = m.getConfiguration().get(0);
+                }
+                if (unidentifiedDeliveryIndicators == null) {
+                    unidentifiedDeliveryIndicators = m.getConfiguration().get(1);
+                }
+                if (typingIndicators == null) {
+                    typingIndicators = m.getConfiguration().get(2);
+                }
+                if (linkPreviews == null) {
+                    linkPreviews = m.getConfiguration().get(3);
+                }
+                m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+            } catch (IOException e) {
+                throw new Error.IOError("UpdateAccount error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
+            }
+        }
+
+        public List<Boolean> getConfiguration() {
+            List<Boolean> config = new ArrayList<>(4);
+            try {
+                config = m.getConfiguration();
+            } catch (IOException e) {
+                throw new Error.IOError("Configuration storage error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
+            }
+            return config;
+        }
+
+        public Boolean getReadReceipts() {
+            try {
+                return m.getConfiguration().get(0);
+            } catch (IOException e) {
+                throw new Error.IOError("Configuration storage error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
+            }
+        }
+
+        public Boolean getUnidentifiedDeliveryIndicators() {
+            try {
+                return m.getConfiguration().get(1);
+            } catch (IOException e) {
+                throw new Error.IOError("Configuration storage error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
+            }
+        }
+
+        public Boolean getTypingIndicators() {
+            try {
+                return m.getConfiguration().get(2);
+            } catch (IOException e) {
+                throw new Error.IOError("Configuration storage error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
+            }
+        }
+
+        public Boolean getLinkPreviews() {
+            try {
+                return m.getConfiguration().get(3);
+            } catch (IOException e) {
+                throw new Error.IOError("Configuration storage error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.UserError("This command doesn't work on linked devices.");
             }
         }
     }

@@ -67,4 +67,5 @@ public abstract class DbusProperties implements Properties {
                     return o instanceof Variant ? (Variant<Object>) o : new Variant<>(o);
                 }));
     }
+
 }

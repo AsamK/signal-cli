@@ -364,6 +364,26 @@ removeDevice() -> <>::
 
 Exceptions: Failure
 
+=== Configuration properties
+The configuration's object path, which exists only for primary devices, is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber + "/Configuration"
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+
+Configurations have the following (case-sensitive) properties:
+* ConfigurationReadReceipts<b>                   : should send read receipts (true/false)
+* ConfigurationUnidentifiedDeliveryIndicators<b> : should show unidentified delivery indicators (true/false)
+* ConfigurationTypingIndicators<b>               : should send/show typing indicators (true/false)
+* ConfigurationLinkPreviews<b>                   : should generate link previews (true/false)
+
+To get a property, use (replacing `--session` with `--system` if needed):
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Get string:org.asamk.Signal.Configuration string:$PROPERTY_NAME`
+
+To set a property, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Set string:org.asamk.Signal.Configuration string:$PROPERTY_NAME variant:$PROPERTY_TYPE:$PROPERTY_VALUE`
+
+To get all properties, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Configuration`
+
 === Other methods
 
 getContactName(number<s>) -> name<s>::
@@ -529,27 +549,7 @@ uploadStickerPack(stickerPackPath<s>) -> url<s>::
 * stickerPackPath : Path to the manifest.json file or a zip file in the same directory
 * url             : URL of sticker pack after successful upload
 
-Exception: Failure, IOError
-
-getConfiguration() -> [readReceipts<b>, unidentifiedDeliveryIndicators<b>, typingIndicators<b>, linkPreviews<b>] -> <>::
-* readReceipts                   : Should Signal send read receipts (true/false).
-* unidentifiedDeliveryIndicators : Should Signal show unidentified delivery indicators (true/false).
-* typingIndicators               : Should Signal send/show typing indicators (true/false).
-* linkPreviews                   : Should Signal generate link previews (true/false).
-
-Gets an array of four booleans as indicated. Only works from primary device.
-
-Exceptions: IOError, UserError
-
-setConfiguration(readReceipts<b>, unidentifiedDeliveryIndicators<b>, typingIndicators<b>, linkPreviews<b>) -> <>::
-* readReceipts                   : Should Signal send read receipts (true/false).
-* unidentifiedDeliveryIndicators : Should Signal show unidentified delivery indicators (true/false).
-* typingIndicators               : Should Signal send/show typing indicators (true/false).
-* linkPreviews                   : Should Signal generate link previews (true/false).
-
-Update Signal configurations and sync them to linked devices. Only works from primary device.
-
-Exceptions: IOError, UserError
+Exceptions: Failure
 
 version() -> version<s>::
 * version : Version string of signal-cli
