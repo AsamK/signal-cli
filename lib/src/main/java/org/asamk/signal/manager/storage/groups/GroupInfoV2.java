@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage.groups;
 
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.storageservice.protos.groups.AccessControl;
@@ -151,7 +152,7 @@ public class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
-    public int getMessageExpirationTime() {
+    public int getMessageExpirationTimer() {
         return this.group != null && this.group.hasDisappearingMessagesTimer()
                 ? this.group.getDisappearingMessagesTimer().getDuration()
                 : 0;
@@ -162,11 +163,46 @@ public class GroupInfoV2 extends GroupInfo {
         return this.group != null && this.group.getIsAnnouncementGroup() == EnabledState.ENABLED;
     }
 
+    @Override
+    public GroupPermission getPermissionAddMember() {
+        final var accessControl = getAccessControl();
+        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.getMembers());
+    }
+
+    @Override
+    public GroupPermission getPermissionEditDetails() {
+        final var accessControl = getAccessControl();
+        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.getAttributes());
+    }
+
+    @Override
+    public GroupPermission getPermissionSendMessage() {
+        return isAnnouncementGroup() ? GroupPermission.ONLY_ADMINS : GroupPermission.EVERY_MEMBER;
+    }
+
     public void setPermissionDenied(final boolean permissionDenied) {
         this.permissionDenied = permissionDenied;
     }
 
     public boolean isPermissionDenied() {
         return permissionDenied;
+    }
+
+    private AccessControl getAccessControl() {
+        if (this.group == null || !this.group.hasAccessControl()) {
+            return null;
+        }
+
+        return this.group.getAccessControl();
+    }
+
+    private static GroupPermission toGroupPermission(final AccessControl.AccessRequired permission) {
+        switch (permission) {
+            case ADMINISTRATOR:
+                return GroupPermission.ONLY_ADMINS;
+            case MEMBER:
+            default:
+                return GroupPermission.EVERY_MEMBER;
+        }
     }
 }

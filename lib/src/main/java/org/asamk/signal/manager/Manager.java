@@ -8,13 +8,12 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -23,7 +22,6 @@ import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -140,20 +138,7 @@ public interface Manager extends Closeable {
     ) throws IOException, AttachmentInvalidException;
 
     SendGroupMessageResults updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientIdentifier.Single> members,
-            Set<RecipientIdentifier.Single> removeMembers,
-            Set<RecipientIdentifier.Single> admins,
-            Set<RecipientIdentifier.Single> removeAdmins,
-            boolean resetGroupLink,
-            GroupLinkState groupLinkState,
-            GroupPermission addMemberPermission,
-            GroupPermission editDetailsPermission,
-            File avatarFile,
-            Integer expirationTimer,
-            Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException;
 
     Pair<GroupId, SendGroupMessageResults> joinGroup(
@@ -200,7 +185,7 @@ public interface Manager extends Closeable {
 
     void setGroupBlocked(
             GroupId groupId, boolean blocked
-    ) throws GroupNotFoundException, IOException;
+    ) throws GroupNotFoundException, IOException, NotMasterDeviceException;
 
     void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer
@@ -243,8 +228,6 @@ public interface Manager extends Closeable {
     boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber);
 
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient);
-
-    String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey);
 
     SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address);
 

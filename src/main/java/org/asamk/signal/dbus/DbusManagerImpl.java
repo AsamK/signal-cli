@@ -15,9 +15,9 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
@@ -30,7 +30,6 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -193,8 +192,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public List<Group> getGroups() {
-        final var groupIds = signal.getGroupIds();
-        return groupIds.stream().map(id -> getGroup(GroupId.unknownVersion(id))).collect(Collectors.toList());
+        final var groups = signal.listGroups();
+        return groups.stream().map(Signal.StructGroup::getObjectPath).map(this::getGroup).collect(Collectors.toList());
     }
 
     @Override
@@ -204,7 +203,8 @@ public class DbusManagerImpl implements Manager {
         if (groupAdmins.size() > 0) {
             throw new UnsupportedOperationException();
         }
-        signal.quitGroup(groupId.serialize());
+        final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
+        group.quitGroup();
         return new SendGroupMessageResults(0, List.of());
     }
 
@@ -217,8 +217,7 @@ public class DbusManagerImpl implements Manager {
     public Pair<GroupId, SendGroupMessageResults> createGroup(
             final String name, final Set<RecipientIdentifier.Single> members, final File avatarFile
     ) throws IOException, AttachmentInvalidException {
-        final var newGroupId = signal.updateGroup(new byte[0],
-                emptyIfNull(name),
+        final var newGroupId = signal.createGroup(emptyIfNull(name),
                 members.stream().map(RecipientIdentifier.Single::getIdentifier).collect(Collectors.toList()),
                 avatarFile == null ? "" : avatarFile.getPath());
         return new Pair<>(GroupId.unknownVersion(newGroupId), new SendGroupMessageResults(0, List.of()));
@@ -226,25 +225,76 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            final GroupId groupId,
-            final String name,
-            final String description,
-            final Set<RecipientIdentifier.Single> members,
-            final Set<RecipientIdentifier.Single> removeMembers,
-            final Set<RecipientIdentifier.Single> admins,
-            final Set<RecipientIdentifier.Single> removeAdmins,
-            final boolean resetGroupLink,
-            final GroupLinkState groupLinkState,
-            final GroupPermission addMemberPermission,
-            final GroupPermission editDetailsPermission,
-            final File avatarFile,
-            final Integer expirationTimer,
-            final Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
-        signal.updateGroup(groupId.serialize(),
-                emptyIfNull(name),
-                members.stream().map(RecipientIdentifier.Single::getIdentifier).collect(Collectors.toList()),
-                avatarFile == null ? "" : avatarFile.getPath());
+        final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
+        if (updateGroup.getName() != null) {
+            group.Set("org.asamk.Signal.Group", "Name", updateGroup.getName());
+        }
+        if (updateGroup.getDescription() != null) {
+            group.Set("org.asamk.Signal.Group", "Description", updateGroup.getDescription());
+        }
+        if (updateGroup.getAvatarFile() != null) {
+            group.Set("org.asamk.Signal.Group",
+                    "Avatar",
+                    updateGroup.getAvatarFile() == null ? "" : updateGroup.getAvatarFile().getPath());
+        }
+        if (updateGroup.getExpirationTimer() != null) {
+            group.Set("org.asamk.Signal.Group", "MessageExpirationTimer", updateGroup.getExpirationTimer());
+        }
+        if (updateGroup.getAddMemberPermission() != null) {
+            group.Set("org.asamk.Signal.Group", "PermissionAddMember", updateGroup.getAddMemberPermission().name());
+        }
+        if (updateGroup.getEditDetailsPermission() != null) {
+            group.Set("org.asamk.Signal.Group", "PermissionEditDetails", updateGroup.getEditDetailsPermission().name());
+        }
+        if (updateGroup.getIsAnnouncementGroup() != null) {
+            group.Set("org.asamk.Signal.Group",
+                    "PermissionSendMessage",
+                    updateGroup.getIsAnnouncementGroup()
+                            ? GroupPermission.ONLY_ADMINS.name()
+                            : GroupPermission.EVERY_MEMBER.name());
+        }
+        if (updateGroup.getMembers() != null) {
+            group.addMembers(updateGroup.getMembers()
+                    .stream()
+                    .map(RecipientIdentifier.Single::getIdentifier)
+                    .collect(Collectors.toList()));
+        }
+        if (updateGroup.getRemoveMembers() != null) {
+            group.removeMembers(updateGroup.getRemoveMembers()
+                    .stream()
+                    .map(RecipientIdentifier.Single::getIdentifier)
+                    .collect(Collectors.toList()));
+        }
+        if (updateGroup.getAdmins() != null) {
+            group.addAdmins(updateGroup.getAdmins()
+                    .stream()
+                    .map(RecipientIdentifier.Single::getIdentifier)
+                    .collect(Collectors.toList()));
+        }
+        if (updateGroup.getRemoveAdmins() != null) {
+            group.removeAdmins(updateGroup.getRemoveAdmins()
+                    .stream()
+                    .map(RecipientIdentifier.Single::getIdentifier)
+                    .collect(Collectors.toList()));
+        }
+        if (updateGroup.isResetGroupLink()) {
+            group.resetLink();
+        }
+        if (updateGroup.getGroupLinkState() != null) {
+            switch (updateGroup.getGroupLinkState()) {
+                case DISABLED:
+                    group.disableLink();
+                    break;
+                case ENABLED:
+                    group.enableLink(false);
+                    break;
+                case ENABLED_WITH_APPROVAL:
+                    group.enableLink(true);
+                    break;
+            }
+        }
         return new SendGroupMessageResults(0, List.of());
     }
 
@@ -354,7 +404,12 @@ public class DbusManagerImpl implements Manager {
     public void setGroupBlocked(
             final GroupId groupId, final boolean blocked
     ) throws GroupNotFoundException, IOException {
-        signal.setGroupBlocked(groupId.serialize(), blocked);
+        setGroupProperty(groupId, "IsBlocked", blocked);
+    }
+
+    private void setGroupProperty(final GroupId groupId, final String propertyName, final boolean blocked) {
+        final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
+        group.Set("org.asamk.Signal.Group", propertyName, blocked);
     }
 
     @Override
@@ -421,19 +476,41 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public Group getGroup(final GroupId groupId) {
-        final var id = groupId.serialize();
-        return new Group(groupId,
-                signal.getGroupName(id),
-                null,
-                null,
-                signal.getGroupMembers(id).stream().map(m -> new RecipientAddress(null, m)).collect(Collectors.toSet()),
-                Set.of(),
-                Set.of(),
-                Set.of(),
-                signal.isGroupBlocked(id),
-                0,
-                false,
-                signal.isMember(id));
+        final var groupPath = signal.getGroup(groupId.serialize());
+        return getGroup(groupPath);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Group getGroup(final DBusPath groupPath) {
+        final var group = getRemoteObject(groupPath, Signal.Group.class).GetAll("org.asamk.Signal.Group");
+        final var id = (byte[]) group.get("Id").getValue();
+        try {
+            return new Group(GroupId.unknownVersion(id),
+                    (String) group.get("Name").getValue(),
+                    (String) group.get("Description").getValue(),
+                    GroupInviteLinkUrl.fromUri((String) group.get("GroupInviteLink").getValue()),
+                    ((List<String>) group.get("Members").getValue()).stream()
+                            .map(m -> new RecipientAddress(null, m))
+                            .collect(Collectors.toSet()),
+                    ((List<String>) group.get("PendingMembers").getValue()).stream()
+                            .map(m -> new RecipientAddress(null, m))
+                            .collect(Collectors.toSet()),
+                    ((List<String>) group.get("RequestingMembers").getValue()).stream()
+                            .map(m -> new RecipientAddress(null, m))
+                            .collect(Collectors.toSet()),
+                    ((List<String>) group.get("Admins").getValue()).stream()
+                            .map(m -> new RecipientAddress(null, m))
+                            .collect(Collectors.toSet()),
+                    (boolean) group.get("IsBlocked").getValue(),
+                    (int) group.get("MessageExpirationTimer").getValue(),
+                    GroupPermission.valueOf((String) group.get("PermissionAddMember").getValue()),
+                    GroupPermission.valueOf((String) group.get("PermissionEditDetails").getValue()),
+                    GroupPermission.valueOf((String) group.get("PermissionSendMessage").getValue()),
+                    (boolean) group.get("IsMember").getValue(),
+                    (boolean) group.get("IsAdmin").getValue());
+        } catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
+            throw new AssertionError(e);
+        }
     }
 
     @Override
@@ -467,13 +544,6 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityAllKeys(final RecipientIdentifier.Single recipient) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String computeSafetyNumber(
-            final SignalServiceAddress theirAddress, final IdentityKey theirIdentityKey
-    ) {
         throw new UnsupportedOperationException();
     }
 

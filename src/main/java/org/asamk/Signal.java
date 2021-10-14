@@ -1,7 +1,6 @@
 package org.asamk;
 
 import org.asamk.signal.commands.exceptions.IOErrorException;
-
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.annotations.DBusProperty;
@@ -84,14 +83,27 @@ public interface Signal extends DBusInterface {
 
     void setContactBlocked(String number, boolean blocked) throws Error.InvalidNumber;
 
+    @Deprecated
     void setGroupBlocked(byte[] groupId, boolean blocked) throws Error.GroupNotFound, Error.InvalidGroupId;
 
+    @Deprecated
     List<byte[]> getGroupIds();
 
+    DBusPath getGroup(byte[] groupId);
+
+    List<StructGroup> listGroups();
+
+    @Deprecated
     String getGroupName(byte[] groupId) throws Error.InvalidGroupId;
 
+    @Deprecated
     List<String> getGroupMembers(byte[] groupId) throws Error.InvalidGroupId;
 
+    byte[] createGroup(
+            String name, List<String> members, String avatar
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber;
+
+    @Deprecated
     byte[] updateGroup(
             byte[] groupId, String name, List<String> members, String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
@@ -133,12 +145,15 @@ public interface Signal extends DBusInterface {
 
     List<String> getContactNumber(final String name) throws Error.Failure;
 
+    @Deprecated
     void quitGroup(final byte[] groupId) throws Error.GroupNotFound, Error.Failure, Error.InvalidGroupId;
 
     boolean isContactBlocked(final String number) throws Error.InvalidNumber;
 
+    @Deprecated
     boolean isGroupBlocked(final byte[] groupId) throws Error.InvalidGroupId;
 
+    @Deprecated
     boolean isMember(final byte[] groupId) throws Error.InvalidGroupId;
 
     byte[] joinGroup(final String groupLink) throws Error.Failure;
@@ -307,6 +322,71 @@ public interface Signal extends DBusInterface {
         void removeDevice() throws Error.Failure;
     }
 
+    class StructGroup extends Struct {
+
+        @Position(0)
+        DBusPath objectPath;
+
+        @Position(1)
+        byte[] id;
+
+        @Position(2)
+        String name;
+
+        public StructGroup(final DBusPath objectPath, final byte[] id, final String name) {
+            this.objectPath = objectPath;
+            this.id = id;
+            this.name = name;
+        }
+
+        public DBusPath getObjectPath() {
+            return objectPath;
+        }
+
+        public byte[] getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    @DBusProperty(name = "Id", type = Byte[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Name", type = String.class)
+    @DBusProperty(name = "Description", type = String.class)
+    @DBusProperty(name = "Avatar", type = String.class, access = DBusProperty.Access.WRITE)
+    @DBusProperty(name = "IsBlocked", type = Boolean.class)
+    @DBusProperty(name = "IsMember", type = Boolean.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "IsAdmin", type = Boolean.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "MessageExpirationTimer", type = Integer.class)
+    @DBusProperty(name = "Members", type = String[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "PendingMembers", type = String[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "RequestingMembers", type = String[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Admins", type = String[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "PermissionAddMember", type = String.class)
+    @DBusProperty(name = "PermissionEditDetails", type = String.class)
+    @DBusProperty(name = "PermissionSendMessage", type = String.class)
+    @DBusProperty(name = "GroupInviteLink", type = String.class, access = DBusProperty.Access.READ)
+    interface Group extends DBusInterface, Properties {
+
+        void quitGroup() throws Error.Failure, Error.LastGroupAdmin;
+
+        void addMembers(List<String> recipients) throws Error.Failure;
+
+        void removeMembers(List<String> recipients) throws Error.Failure;
+
+        void addAdmins(List<String> recipients) throws Error.Failure;
+
+        void removeAdmins(List<String> recipients) throws Error.Failure;
+
+        void resetLink() throws Error.Failure;
+
+        void disableLink() throws Error.Failure;
+
+        void enableLink(boolean requiresApproval) throws Error.Failure;
+    }
+
     interface Error {
 
         class AttachmentInvalid extends DBusExecutionException {
@@ -330,6 +410,13 @@ public interface Signal extends DBusInterface {
             }
         }
 
+        class DeviceNotFound extends DBusExecutionException {
+
+            public DeviceNotFound(final String message) {
+                super(message);
+            }
+        }
+
         class GroupNotFound extends DBusExecutionException {
 
             public GroupNotFound(final String message) {
@@ -340,6 +427,13 @@ public interface Signal extends DBusInterface {
         class InvalidGroupId extends DBusExecutionException {
 
             public InvalidGroupId(final String message) {
+                super(message);
+            }
+        }
+
+        class LastGroupAdmin extends DBusExecutionException {
+
+            public LastGroupAdmin(final String message) {
                 super(message);
             }
         }

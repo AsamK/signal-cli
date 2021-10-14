@@ -100,7 +100,7 @@ public class SendHelper {
             final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo g
     ) throws IOException, GroupSendingNotAllowedException {
         GroupUtils.setGroupContext(messageBuilder, g);
-        messageBuilder.withExpiration(g.getMessageExpirationTime());
+        messageBuilder.withExpiration(g.getMessageExpirationTimer());
 
         final var message = messageBuilder.build();
         final var recipients = g.getMembersWithout(account.getSelfRecipientId());

@@ -1,11 +1,16 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,24 +18,39 @@ import static org.whispersystems.signalservice.internal.util.Util.getSecretBytes
 
 public class UnidentifiedAccessHelper {
 
+    private final static Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
+
+    private final SignalAccount account;
+    private final SignalDependencies dependencies;
     private final SelfProfileKeyProvider selfProfileKeyProvider;
-
-    private final ProfileKeyProvider profileKeyProvider;
-
     private final ProfileProvider profileProvider;
 
-    private final UnidentifiedAccessSenderCertificateProvider senderCertificateProvider;
-
     public UnidentifiedAccessHelper(
+            final SignalAccount account,
+            final SignalDependencies dependencies,
             final SelfProfileKeyProvider selfProfileKeyProvider,
-            final ProfileKeyProvider profileKeyProvider,
-            final ProfileProvider profileProvider,
-            final UnidentifiedAccessSenderCertificateProvider senderCertificateProvider
+            final ProfileProvider profileProvider
     ) {
+        this.account = account;
+        this.dependencies = dependencies;
         this.selfProfileKeyProvider = selfProfileKeyProvider;
-        this.profileKeyProvider = profileKeyProvider;
         this.profileProvider = profileProvider;
-        this.senderCertificateProvider = senderCertificateProvider;
+    }
+
+    private byte[] getSenderCertificate() {
+        byte[] certificate;
+        try {
+            if (account.isPhoneNumberShared()) {
+                certificate = dependencies.getAccountManager().getSenderCertificate();
+            } else {
+                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
+            return null;
+        }
+        // TODO cache for a day
+        return certificate;
     }
 
     private byte[] getSelfUnidentifiedAccessKey() {
@@ -45,7 +65,7 @@ public class UnidentifiedAccessHelper {
 
         switch (targetProfile.getUnidentifiedAccessMode()) {
             case ENABLED:
-                var theirProfileKey = profileKeyProvider.getProfileKey(recipient);
+                var theirProfileKey = account.getProfileStore().getProfileKey(recipient);
                 if (theirProfileKey == null) {
                     return null;
                 }
@@ -60,7 +80,7 @@ public class UnidentifiedAccessHelper {
 
     public Optional<UnidentifiedAccessPair> getAccessForSync() {
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
-        var selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
+        var selfUnidentifiedAccessCertificate = getSenderCertificate();
 
         if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
             return Optional.absent();
@@ -82,7 +102,7 @@ public class UnidentifiedAccessHelper {
     public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
         var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
-        var selfUnidentifiedAccessCertificate = senderCertificateProvider.getSenderCertificate();
+        var selfUnidentifiedAccessCertificate = getSenderCertificate();
 
         if (recipientUnidentifiedAccessKey == null
                 || selfUnidentifiedAccessKey == null
