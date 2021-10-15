@@ -25,13 +25,12 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -39,6 +38,7 @@ import org.asamk.signal.manager.helper.AttachmentHelper;
 import org.asamk.signal.manager.helper.ContactHelper;
 import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.GroupV2Helper;
+import org.asamk.signal.manager.helper.IdentityHelper;
 import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.PreKeyHelper;
@@ -60,15 +60,10 @@ import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
-import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.libsignal.fingerprint.Fingerprint;
-import org.whispersystems.libsignal.fingerprint.FingerprintParsingException;
-import org.whispersystems.libsignal.fingerprint.FingerprintVersionMismatchException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
@@ -99,9 +94,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -113,7 +106,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
@@ -139,6 +131,7 @@ public class ManagerImpl implements Manager {
     private final ContactHelper contactHelper;
     private final IncomingMessageHandler incomingMessageHandler;
     private final PreKeyHelper preKeyHelper;
+    private final IdentityHelper identityHelper;
 
     private final Context context;
     private boolean hasCaughtUpWithOldMessages = false;
@@ -177,14 +170,13 @@ public class ManagerImpl implements Manager {
 
         this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
-        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
-                account.getProfileStore()::getProfileKey,
-                this::getRecipientProfile,
-                this::getSenderCertificate);
+        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account,
+                dependencies,
+                account::getProfileKey,
+                this::getRecipientProfile);
         this.profileHelper = new ProfileHelper(account,
                 dependencies,
                 avatarStore,
-                account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
@@ -240,6 +232,11 @@ public class ManagerImpl implements Manager {
                 syncHelper,
                 this::getRecipientProfile,
                 jobExecutor);
+        this.identityHelper = new IdentityHelper(account,
+                dependencies,
+                this::resolveSignalServiceAddress,
+                syncHelper,
+                profileHelper);
     }
 
     @Override
@@ -505,9 +502,12 @@ public class ManagerImpl implements Manager {
                         .map(account.getRecipientStore()::resolveRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.isBlocked(),
-                groupInfo.getMessageExpirationTime(),
-                groupInfo.isAnnouncementGroup(),
-                groupInfo.isMember(account.getSelfRecipientId()));
+                groupInfo.getMessageExpirationTimer(),
+                groupInfo.getPermissionAddMember(),
+                groupInfo.getPermissionEditDetails(),
+                groupInfo.getPermissionSendMessage(),
+                groupInfo.isMember(account.getSelfRecipientId()),
+                groupInfo.isAdmin(account.getSelfRecipientId()));
     }
 
     @Override
@@ -532,35 +532,22 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientIdentifier.Single> members,
-            Set<RecipientIdentifier.Single> removeMembers,
-            Set<RecipientIdentifier.Single> admins,
-            Set<RecipientIdentifier.Single> removeAdmins,
-            boolean resetGroupLink,
-            GroupLinkState groupLinkState,
-            GroupPermission addMemberPermission,
-            GroupPermission editDetailsPermission,
-            File avatarFile,
-            Integer expirationTimer,
-            Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         return groupHelper.updateGroup(groupId,
-                name,
-                description,
-                members == null ? null : resolveRecipients(members),
-                removeMembers == null ? null : resolveRecipients(removeMembers),
-                admins == null ? null : resolveRecipients(admins),
-                removeAdmins == null ? null : resolveRecipients(removeAdmins),
-                resetGroupLink,
-                groupLinkState,
-                addMemberPermission,
-                editDetailsPermission,
-                avatarFile,
-                expirationTimer,
-                isAnnouncementGroup);
+                updateGroup.getName(),
+                updateGroup.getDescription(),
+                updateGroup.getMembers() == null ? null : resolveRecipients(updateGroup.getMembers()),
+                updateGroup.getRemoveMembers() == null ? null : resolveRecipients(updateGroup.getRemoveMembers()),
+                updateGroup.getAdmins() == null ? null : resolveRecipients(updateGroup.getAdmins()),
+                updateGroup.getRemoveAdmins() == null ? null : resolveRecipients(updateGroup.getRemoveAdmins()),
+                updateGroup.isResetGroupLink(),
+                updateGroup.getGroupLinkState(),
+                updateGroup.getAddMemberPermission(),
+                updateGroup.getEditDetailsPermission(),
+                updateGroup.getAvatarFile(),
+                updateGroup.getExpirationTimer(),
+                updateGroup.getIsAnnouncementGroup());
     }
 
     @Override
@@ -726,7 +713,10 @@ public class ManagerImpl implements Manager {
     @Override
     public void setGroupBlocked(
             final GroupId groupId, final boolean blocked
-    ) throws GroupNotFoundException, IOException {
+    ) throws GroupNotFoundException, IOException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
         groupHelper.setGroupBlocked(groupId, blocked);
         // TODO cycle our profile key
         syncHelper.sendBlockedList();
@@ -791,22 +781,6 @@ public class ManagerImpl implements Manager {
         if (account.getStorageKey() != null) {
             storageHelper.readDataFromStorage();
         }
-    }
-
-    private byte[] getSenderCertificate() {
-        byte[] certificate;
-        try {
-            if (account.isPhoneNumberShared()) {
-                certificate = dependencies.getAccountManager().getSenderCertificate();
-            } else {
-                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
-            return null;
-        }
-        // TODO cache for a day
-        return certificate;
     }
 
     private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
@@ -1067,7 +1041,7 @@ public class ManagerImpl implements Manager {
         return toGroup(groupHelper.getGroup(groupId));
     }
 
-    public GroupInfo getGroupInfo(GroupId groupId) {
+    private GroupInfo getGroupInfo(GroupId groupId) {
         return groupHelper.getGroup(groupId);
     }
 
@@ -1088,8 +1062,9 @@ public class ManagerImpl implements Manager {
         final var address = account.getRecipientStore().resolveRecipientAddress(identityInfo.getRecipientId());
         return new Identity(address,
                 identityInfo.getIdentityKey(),
-                computeSafetyNumber(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
-                computeSafetyNumberForScanning(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
+                identityHelper.computeSafetyNumber(identityInfo.getRecipientId(), identityInfo.getIdentityKey()),
+                identityHelper.computeSafetyNumberForScanning(identityInfo.getRecipientId(),
+                        identityInfo.getIdentityKey()).getSerialized(),
                 identityInfo.getTrustLevel(),
                 identityInfo.getDateAdded());
     }
@@ -1119,9 +1094,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        return trustIdentity(recipientId,
-                identityKey -> Arrays.equals(identityKey.serialize(), fingerprint),
-                TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerified(recipientId, fingerprint);
     }
 
     /**
@@ -1138,10 +1111,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        var address = resolveSignalServiceAddress(recipientId);
-        return trustIdentity(recipientId,
-                identityKey -> safetyNumber.equals(computeSafetyNumber(address, identityKey)),
-                TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
     }
 
     /**
@@ -1158,15 +1128,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        var address = resolveSignalServiceAddress(recipientId);
-        return trustIdentity(recipientId, identityKey -> {
-            final var fingerprint = computeSafetyNumberFingerprint(address, identityKey);
-            try {
-                return fingerprint != null && fingerprint.getScannableFingerprint().compareTo(safetyNumber);
-            } catch (FingerprintVersionMismatchException | FingerprintParsingException e) {
-                return false;
-            }
-        }, TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
     }
 
     /**
@@ -1182,66 +1144,13 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        return trustIdentity(recipientId, identityKey -> true, TrustLevel.TRUSTED_UNVERIFIED);
-    }
-
-    private boolean trustIdentity(
-            RecipientId recipientId, Function<IdentityKey, Boolean> verifier, TrustLevel trustLevel
-    ) {
-        var identity = account.getIdentityKeyStore().getIdentity(recipientId);
-        if (identity == null) {
-            return false;
-        }
-
-        if (!verifier.apply(identity.getIdentityKey())) {
-            return false;
-        }
-
-        account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identity.getIdentityKey(), trustLevel);
-        try {
-            var address = resolveSignalServiceAddress(recipientId);
-            syncHelper.sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
-        } catch (IOException e) {
-            logger.warn("Failed to send verification sync message: {}", e.getMessage());
-        }
-
-        return true;
+        return identityHelper.trustIdentityAllKeys(recipientId);
     }
 
     private void handleIdentityFailure(
             final RecipientId recipientId, final SendMessageResult.IdentityFailure identityFailure
     ) {
-        final var identityKey = identityFailure.getIdentityKey();
-        if (identityKey != null) {
-            final var newIdentity = account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
-            if (newIdentity) {
-                account.getSessionStore().archiveSessions(recipientId);
-            }
-        } else {
-            // Retrieve profile to get the current identity key from the server
-            profileHelper.refreshRecipientProfile(recipientId);
-        }
-    }
-
-    @Override
-    public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
-        return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
-    }
-
-    private byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
-        return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
-    }
-
-    private Fingerprint computeSafetyNumberFingerprint(
-            final SignalServiceAddress theirAddress, final IdentityKey theirIdentityKey
-    ) {
-        return Utils.computeSafetyNumber(capabilities.isUuid(),
-                account.getSelfAddress(),
-                account.getIdentityKeyPair().getPublicKey(),
-                theirAddress,
-                theirIdentityKey);
+        this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
     }
 
     @Override
@@ -1316,5 +1225,4 @@ public class ManagerImpl implements Manager {
         }
         account = null;
     }
-
 }

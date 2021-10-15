@@ -639,7 +639,7 @@ public class GroupHelper {
 
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+                .withExpiration(g.getMessageExpirationTimer());
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
@@ -648,7 +648,7 @@ public class GroupHelper {
                 .withSignedGroupChange(signedGroupChange);
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+                .withExpiration(g.getMessageExpirationTimer());
     }
 
     private SendGroupMessageResults sendUpdateGroupV2Message(

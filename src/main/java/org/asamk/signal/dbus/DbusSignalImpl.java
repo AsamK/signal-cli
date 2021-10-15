@@ -2,6 +2,7 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -11,9 +12,12 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -24,6 +28,7 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.types.Variant;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -38,6 +43,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +62,8 @@ public class DbusSignalImpl implements Signal {
     private final String objectPath;
 
     private DBusPath thisDevice;
-    private final List<DBusPath> devices = new ArrayList<>();
+    private final List<StructDevice> devices = new ArrayList<>();
+    private final List<StructGroup> groups = new ArrayList<>();
 
     public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
         this.m = m;
@@ -65,6 +73,7 @@ public class DbusSignalImpl implements Signal {
 
     public void initObjects() {
         updateDevices();
+        updateGroups();
     }
 
     public void close() {
@@ -79,6 +88,18 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getSelfNumber() {
         return m.getSelfNumber();
+    }
+
+    @Override
+    public void submitRateLimitChallenge(String challenge, String captchaString) throws IOErrorException {
+        final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
+
+        try {
+            m.submitRateLimitRecaptchaChallenge(challenge, captcha);
+        } catch (IOException e) {
+            throw new IOErrorException("Submit challenge error: " + e.getMessage(), e);
+        }
+
     }
 
     @Override
@@ -97,43 +118,17 @@ public class DbusSignalImpl implements Signal {
     @Override
     public DBusPath getDevice(long deviceId) {
         updateDevices();
-        return new DBusPath(getDeviceObjectPath(objectPath, deviceId));
+        final var deviceOptional = devices.stream().filter(g -> g.getId().equals(deviceId)).findFirst();
+        if (deviceOptional.isEmpty()) {
+            throw new Error.DeviceNotFound("Device not found");
+        }
+        return deviceOptional.get().getObjectPath();
     }
 
     @Override
-    public List<DBusPath> listDevices() {
+    public List<StructDevice> listDevices() {
         updateDevices();
         return this.devices;
-    }
-
-    private void updateDevices() {
-        List<org.asamk.signal.manager.api.Device> linkedDevices;
-        try {
-            linkedDevices = m.getLinkedDevices();
-        } catch (IOException | Error.Failure e) {
-            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
-        }
-
-        unExportDevices();
-
-        linkedDevices.forEach(d -> {
-            final var object = new DbusSignalDeviceImpl(d);
-            final var deviceObjectPath = object.getObjectPath();
-            try {
-                connection.exportObject(object);
-            } catch (DBusException e) {
-                e.printStackTrace();
-            }
-            if (d.isThisDevice()) {
-                thisDevice = new DBusPath(deviceObjectPath);
-            }
-            this.devices.add(new DBusPath(deviceObjectPath));
-        });
-    }
-
-    private void unExportDevices() {
-        this.devices.stream().map(DBusPath::getPath).forEach(connection::unExportObject);
-        this.devices.clear();
     }
 
     @Override
@@ -410,6 +405,8 @@ public class DbusSignalImpl implements Signal {
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
         try {
             m.setGroupBlocked(getGroupId(groupId), blocked);
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (IOException e) {
@@ -428,6 +425,22 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public DBusPath getGroup(final byte[] groupId) {
+        updateGroups();
+        final var groupOptional = groups.stream().filter(g -> Arrays.equals(g.getId(), groupId)).findFirst();
+        if (groupOptional.isEmpty()) {
+            throw new Error.GroupNotFound("Group not found");
+        }
+        return groupOptional.get().getObjectPath();
+    }
+
+    @Override
+    public List<StructGroup> listGroups() {
+        updateGroups();
+        return groups;
+    }
+
+    @Override
     public String getGroupName(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
         if (group == null || group.getTitle() == null) {
@@ -443,8 +456,16 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return List.of();
         } else {
-            return group.getMembers().stream().map(RecipientAddress::getLegacyIdentifier).collect(Collectors.toList());
+            final var members = group.getMembers();
+            return getRecipientStrings(members);
         }
+    }
+
+    @Override
+    public byte[] createGroup(
+            final String name, final List<String> members, final String avatar
+    ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber {
+        return updateGroup(new byte[0], name, members, avatar);
     }
 
     @Override
@@ -460,19 +481,11 @@ public class DbusSignalImpl implements Signal {
                 return results.first().serialize();
             } else {
                 final var results = m.updateGroup(getGroupId(groupId),
-                        name,
-                        null,
-                        memberIdentifiers,
-                        null,
-                        null,
-                        null,
-                        false,
-                        null,
-                        null,
-                        null,
-                        avatar == null ? null : new File(avatar),
-                        null,
-                        null);
+                        UpdateGroup.newBuilder()
+                                .withName(name)
+                                .withMembers(memberIdentifiers)
+                                .withAvatarFile(avatar == null ? null : new File(avatar))
+                                .build());
                 if (results != null) {
                     checkSendMessageResults(results.getTimestamp(), results.getResults());
                 }
@@ -752,6 +765,10 @@ public class DbusSignalImpl implements Signal {
         throw new Error.Failure(message.toString());
     }
 
+    private static List<String> getRecipientStrings(final Set<RecipientAddress> members) {
+        return members.stream().map(RecipientAddress::getLegacyIdentifier).collect(Collectors.toList());
+    }
+
     private static Set<RecipientIdentifier.Single> getSingleRecipientIdentifiers(
             final Collection<String> recipientStrings, final String localNumber
     ) throws DBusExecutionException {
@@ -788,8 +805,77 @@ public class DbusSignalImpl implements Signal {
         return name.isEmpty() ? null : name;
     }
 
+    private String emptyIfNull(final String string) {
+        return string == null ? "" : string;
+    }
+
     private static String getDeviceObjectPath(String basePath, long deviceId) {
         return basePath + "/Devices/" + deviceId;
+    }
+
+    private void updateDevices() {
+        List<org.asamk.signal.manager.api.Device> linkedDevices;
+        try {
+            linkedDevices = m.getLinkedDevices();
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to get linked devices: " + e.getMessage());
+        }
+
+        unExportDevices();
+
+        linkedDevices.forEach(d -> {
+            final var object = new DbusSignalDeviceImpl(d);
+            final var deviceObjectPath = object.getObjectPath();
+            try {
+                connection.exportObject(object);
+            } catch (DBusException e) {
+                e.printStackTrace();
+            }
+            if (d.isThisDevice()) {
+                thisDevice = new DBusPath(deviceObjectPath);
+            }
+            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), d.getId(), emptyIfNull(d.getName())));
+        });
+    }
+
+    private void unExportDevices() {
+        this.devices.stream()
+                .map(StructDevice::getObjectPath)
+                .map(DBusPath::getPath)
+                .forEach(connection::unExportObject);
+        this.devices.clear();
+    }
+
+    private static String getGroupObjectPath(String basePath, byte[] groupId) {
+        return basePath + "/Groups/" + Base64.getEncoder()
+                .encodeToString(groupId)
+                .replace("+", "_")
+                .replace("/", "_")
+                .replace("=", "_");
+    }
+
+    private void updateGroups() {
+        List<org.asamk.signal.manager.api.Group> groups;
+        groups = m.getGroups();
+
+        unExportGroups();
+
+        groups.forEach(g -> {
+            final var object = new DbusSignalGroupImpl(g.getGroupId());
+            try {
+                connection.exportObject(object);
+            } catch (DBusException e) {
+                e.printStackTrace();
+            }
+            this.groups.add(new StructGroup(new DBusPath(object.getObjectPath()),
+                    g.getGroupId().serialize(),
+                    emptyIfNull(g.getTitle())));
+        });
+    }
+
+    private void unExportGroups() {
+        this.groups.stream().map(StructGroup::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
+        this.groups.clear();
     }
 
     public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
@@ -797,12 +883,9 @@ public class DbusSignalImpl implements Signal {
         private final org.asamk.signal.manager.api.Device device;
 
         public DbusSignalDeviceImpl(final org.asamk.signal.manager.api.Device device) {
-            super();
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Device",
                     List.of(new DbusProperty<>("Id", device::getId),
-                            new DbusProperty<>("Name",
-                                    () -> device.getName() == null ? "" : device.getName(),
-                                    this::setDeviceName),
+                            new DbusProperty<>("Name", () -> emptyIfNull(device.getName()), this::setDeviceName),
                             new DbusProperty<>("Created", device::getCreated),
                             new DbusProperty<>("LastSeen", device::getLastSeen))));
             this.device = device;
@@ -833,6 +916,170 @@ public class DbusSignalImpl implements Signal {
                 updateDevices();
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
+            }
+        }
+    }
+
+    public class DbusSignalGroupImpl extends DbusProperties implements Signal.Group {
+
+        private final GroupId groupId;
+
+        public DbusSignalGroupImpl(final GroupId groupId) {
+            this.groupId = groupId;
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Group",
+                    List.of(new DbusProperty<>("Id", groupId::serialize),
+                            new DbusProperty<>("Name", () -> emptyIfNull(getGroup().getTitle()), this::setGroupName),
+                            new DbusProperty<>("Description",
+                                    () -> emptyIfNull(getGroup().getDescription()),
+                                    this::setGroupDescription),
+                            new DbusProperty<>("Avatar", this::setGroupAvatar),
+                            new DbusProperty<>("IsBlocked", () -> getGroup().isBlocked(), this::setIsBlocked),
+                            new DbusProperty<>("IsMember", () -> getGroup().isMember()),
+                            new DbusProperty<>("IsAdmin", () -> getGroup().isAdmin()),
+                            new DbusProperty<>("MessageExpirationTimer",
+                                    () -> getGroup().getMessageExpirationTimer(),
+                                    this::setMessageExpirationTime),
+                            new DbusProperty<>("Members",
+                                    () -> new Variant<>(getRecipientStrings(getGroup().getMembers()), "as")),
+                            new DbusProperty<>("PendingMembers",
+                                    () -> new Variant<>(getRecipientStrings(getGroup().getPendingMembers()), "as")),
+                            new DbusProperty<>("RequestingMembers",
+                                    () -> new Variant<>(getRecipientStrings(getGroup().getRequestingMembers()), "as")),
+                            new DbusProperty<>("Admins",
+                                    () -> new Variant<>(getRecipientStrings(getGroup().getAdminMembers()), "as")),
+                            new DbusProperty<>("PermissionAddMember",
+                                    () -> getGroup().getPermissionAddMember().name(),
+                                    this::setGroupPermissionAddMember),
+                            new DbusProperty<>("PermissionEditDetails",
+                                    () -> getGroup().getPermissionEditDetails().name(),
+                                    this::setGroupPermissionEditDetails),
+                            new DbusProperty<>("PermissionSendMessage",
+                                    () -> getGroup().getPermissionSendMessage().name(),
+                                    this::setGroupPermissionSendMessage),
+                            new DbusProperty<>("GroupInviteLink", () -> {
+                                final var groupInviteLinkUrl = getGroup().getGroupInviteLinkUrl();
+                                return groupInviteLinkUrl == null ? "" : groupInviteLinkUrl.getUrl();
+                            }))));
+        }
+
+        @Override
+        public String getObjectPath() {
+            return getGroupObjectPath(objectPath, groupId.serialize());
+        }
+
+        @Override
+        public void quitGroup() throws Error.Failure {
+            try {
+                m.quitGroup(groupId, Set.of());
+            } catch (GroupNotFoundException | NotAGroupMemberException e) {
+                throw new Error.GroupNotFound(e.getMessage());
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            } catch (LastGroupAdminException e) {
+                throw new Error.LastGroupAdmin(e.getMessage());
+            }
+        }
+
+        @Override
+        public void addMembers(final List<String> recipients) throws Error.Failure {
+            final var memberIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber());
+            updateGroup(UpdateGroup.newBuilder().withMembers(memberIdentifiers).build());
+        }
+
+        @Override
+        public void removeMembers(final List<String> recipients) throws Error.Failure {
+            final var memberIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber());
+            updateGroup(UpdateGroup.newBuilder().withRemoveMembers(memberIdentifiers).build());
+        }
+
+        @Override
+        public void addAdmins(final List<String> recipients) throws Error.Failure {
+            final var memberIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber());
+            updateGroup(UpdateGroup.newBuilder().withAdmins(memberIdentifiers).build());
+        }
+
+        @Override
+        public void removeAdmins(final List<String> recipients) throws Error.Failure {
+            final var memberIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber());
+            updateGroup(UpdateGroup.newBuilder().withRemoveAdmins(memberIdentifiers).build());
+        }
+
+        @Override
+        public void resetLink() throws Error.Failure {
+            updateGroup(UpdateGroup.newBuilder().withResetGroupLink(true).build());
+        }
+
+        @Override
+        public void disableLink() throws Error.Failure {
+            updateGroup(UpdateGroup.newBuilder().withGroupLinkState(GroupLinkState.DISABLED).build());
+        }
+
+        @Override
+        public void enableLink(final boolean requiresApproval) throws Error.Failure {
+            updateGroup(UpdateGroup.newBuilder()
+                    .withGroupLinkState(requiresApproval
+                            ? GroupLinkState.ENABLED_WITH_APPROVAL
+                            : GroupLinkState.ENABLED)
+                    .build());
+        }
+
+        private org.asamk.signal.manager.api.Group getGroup() {
+            return m.getGroup(groupId);
+        }
+
+        private void setGroupName(final String name) {
+            updateGroup(UpdateGroup.newBuilder().withName(name).build());
+        }
+
+        private void setGroupDescription(final String description) {
+            updateGroup(UpdateGroup.newBuilder().withDescription(description).build());
+        }
+
+        private void setGroupAvatar(final String avatar) {
+            updateGroup(UpdateGroup.newBuilder().withAvatarFile(new File(avatar)).build());
+        }
+
+        private void setMessageExpirationTime(final int expirationTime) {
+            updateGroup(UpdateGroup.newBuilder().withExpirationTimer(expirationTime).build());
+        }
+
+        private void setGroupPermissionAddMember(final String permission) {
+            updateGroup(UpdateGroup.newBuilder().withAddMemberPermission(GroupPermission.valueOf(permission)).build());
+        }
+
+        private void setGroupPermissionEditDetails(final String permission) {
+            updateGroup(UpdateGroup.newBuilder()
+                    .withEditDetailsPermission(GroupPermission.valueOf(permission))
+                    .build());
+        }
+
+        private void setGroupPermissionSendMessage(final String permission) {
+            updateGroup(UpdateGroup.newBuilder()
+                    .withIsAnnouncementGroup(GroupPermission.valueOf(permission) == GroupPermission.ONLY_ADMINS)
+                    .build());
+        }
+
+        private void setIsBlocked(final boolean isBlocked) {
+            try {
+                m.setGroupBlocked(groupId, isBlocked);
+            } catch (NotMasterDeviceException e) {
+                throw new Error.Failure("This command doesn't work on linked devices.");
+            } catch (GroupNotFoundException e) {
+                throw new Error.GroupNotFound(e.getMessage());
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            }
+        }
+
+        private void updateGroup(final UpdateGroup updateGroup) {
+            try {
+                m.updateGroup(groupId, updateGroup);
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+                throw new Error.GroupNotFound(e.getMessage());
+            } catch (AttachmentInvalidException e) {
+                throw new Error.AttachmentInvalid(e.getMessage());
             }
         }
     }

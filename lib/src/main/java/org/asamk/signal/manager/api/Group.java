@@ -2,6 +2,7 @@ package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 import java.util.Set;
@@ -17,9 +18,13 @@ public class Group {
     private final Set<RecipientAddress> requestingMembers;
     private final Set<RecipientAddress> adminMembers;
     private final boolean isBlocked;
-    private final int messageExpirationTime;
-    private final boolean isAnnouncementGroup;
+    private final int messageExpirationTimer;
+
+    private final GroupPermission permissionAddMember;
+    private final GroupPermission permissionEditDetails;
+    private final GroupPermission permissionSendMessage;
     private final boolean isMember;
+    private final boolean isAdmin;
 
     public Group(
             final GroupId groupId,
@@ -31,9 +36,12 @@ public class Group {
             final Set<RecipientAddress> requestingMembers,
             final Set<RecipientAddress> adminMembers,
             final boolean isBlocked,
-            final int messageExpirationTime,
-            final boolean isAnnouncementGroup,
-            final boolean isMember
+            final int messageExpirationTimer,
+            final GroupPermission permissionAddMember,
+            final GroupPermission permissionEditDetails,
+            final GroupPermission permissionSendMessage,
+            final boolean isMember,
+            final boolean isAdmin
     ) {
         this.groupId = groupId;
         this.title = title;
@@ -44,9 +52,12 @@ public class Group {
         this.requestingMembers = requestingMembers;
         this.adminMembers = adminMembers;
         this.isBlocked = isBlocked;
-        this.messageExpirationTime = messageExpirationTime;
-        this.isAnnouncementGroup = isAnnouncementGroup;
+        this.messageExpirationTimer = messageExpirationTimer;
+        this.permissionAddMember = permissionAddMember;
+        this.permissionEditDetails = permissionEditDetails;
+        this.permissionSendMessage = permissionSendMessage;
         this.isMember = isMember;
+        this.isAdmin = isAdmin;
     }
 
     public GroupId getGroupId() {
@@ -85,15 +96,27 @@ public class Group {
         return isBlocked;
     }
 
-    public int getMessageExpirationTime() {
-        return messageExpirationTime;
+    public int getMessageExpirationTimer() {
+        return messageExpirationTimer;
     }
 
-    public boolean isAnnouncementGroup() {
-        return isAnnouncementGroup;
+    public GroupPermission getPermissionAddMember() {
+        return permissionAddMember;
+    }
+
+    public GroupPermission getPermissionEditDetails() {
+        return permissionEditDetails;
+    }
+
+    public GroupPermission getPermissionSendMessage() {
+        return permissionSendMessage;
     }
 
     public boolean isMember() {
         return isMember;
+    }
+
+    public boolean isAdmin() {
+        return isAdmin;
     }
 }

@@ -51,6 +51,8 @@ public class UnblockCommand implements JsonRpcLocalCommand {
         for (var groupId : CommandUtil.getGroupIds(groupIdStrings)) {
             try {
                 m.setGroupBlocked(groupId, false);
+            } catch (NotMasterDeviceException e) {
+                throw new UserErrorException("This command doesn't work on linked devices.");
             } catch (GroupNotFoundException e) {
                 logger.warn("Unknown group id: {}", groupId);
             } catch (IOException e) {

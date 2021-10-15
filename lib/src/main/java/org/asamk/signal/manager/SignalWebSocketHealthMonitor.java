@@ -101,6 +101,7 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
             if (healthState.mismatchErrorTracker.addSample(System.currentTimeMillis())) {
                 logger.warn("Received too many mismatch device errors, forcing new websockets.");
                 signalWebSocket.forceNewWebSockets();
+                signalWebSocket.connect();
             }
         }
     }
@@ -146,6 +147,7 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
                                     + " needed by: "
                                     + keepAliveRequiredSinceTime);
                             signalWebSocket.forceNewWebSockets();
+                            signalWebSocket.connect();
                         } else {
                             signalWebSocket.sendKeepAlive();
                         }

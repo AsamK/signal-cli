@@ -45,7 +45,6 @@ public final class ProfileHelper {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
     private final AvatarStore avatarStore;
-    private final ProfileKeyProvider profileKeyProvider;
     private final UnidentifiedAccessProvider unidentifiedAccessProvider;
     private final SignalServiceAddressResolver addressResolver;
 
@@ -53,14 +52,12 @@ public final class ProfileHelper {
             final SignalAccount account,
             final SignalDependencies dependencies,
             final AvatarStore avatarStore,
-            final ProfileKeyProvider profileKeyProvider,
             final UnidentifiedAccessProvider unidentifiedAccessProvider,
             final SignalServiceAddressResolver addressResolver
     ) {
         this.account = account;
         this.dependencies = dependencies;
         this.avatarStore = avatarStore;
-        this.profileKeyProvider = profileKeyProvider;
         this.unidentifiedAccessProvider = unidentifiedAccessProvider;
         this.addressResolver = addressResolver;
     }
@@ -296,7 +293,7 @@ public final class ProfileHelper {
             RecipientId recipientId, SignalServiceProfile.RequestType requestType
     ) {
         var unidentifiedAccess = getUnidentifiedAccess(recipientId);
-        var profileKey = Optional.fromNullable(profileKeyProvider.getProfileKey(recipientId));
+        var profileKey = Optional.fromNullable(account.getProfileStore().getProfileKey(recipientId));
 
         final var address = addressResolver.resolveSignalServiceAddress(recipientId);
         return retrieveProfile(address, profileKey, unidentifiedAccess, requestType);

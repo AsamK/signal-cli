@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.groups;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
+import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
@@ -85,13 +86,28 @@ public class GroupInfoV1 extends GroupInfo {
     }
 
     @Override
-    public int getMessageExpirationTime() {
+    public int getMessageExpirationTimer() {
         return messageExpirationTime;
     }
 
     @Override
     public boolean isAnnouncementGroup() {
         return false;
+    }
+
+    @Override
+    public GroupPermission getPermissionAddMember() {
+        return GroupPermission.EVERY_MEMBER;
+    }
+
+    @Override
+    public GroupPermission getPermissionEditDetails() {
+        return GroupPermission.EVERY_MEMBER;
+    }
+
+    @Override
+    public GroupPermission getPermissionSendMessage() {
+        return GroupPermission.EVERY_MEMBER;
     }
 
     public void addMembers(Collection<RecipientId> members) {
