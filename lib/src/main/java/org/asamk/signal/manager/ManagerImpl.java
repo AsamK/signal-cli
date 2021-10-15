@@ -939,9 +939,11 @@ public class ManagerImpl implements Manager {
 
             if (hasCaughtUpWithOldMessages) {
                 handleQueuedActions(queuedActions);
+                queuedActions.clear();
             }
             if (cachedMessage[0] != null) {
                 if (exception instanceof UntrustedIdentityException) {
+                    logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
                     final var recipientId = resolveRecipient(address);
                     if (!envelope.hasSourceUuid()) {
@@ -958,6 +960,7 @@ public class ManagerImpl implements Manager {
             }
         }
         handleQueuedActions(queuedActions);
+        queuedActions.clear();
     }
 
     @Override
@@ -966,6 +969,7 @@ public class ManagerImpl implements Manager {
     }
 
     private void handleQueuedActions(final Collection<HandleAction> queuedActions) {
+        logger.debug("Handling message actions");
         var interrupted = false;
         for (var action : queuedActions) {
             try {
