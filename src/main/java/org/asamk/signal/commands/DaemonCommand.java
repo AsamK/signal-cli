@@ -125,7 +125,7 @@ public class DaemonCommand implements MultiLocalCommand {
         final var initThread = new Thread(signal::initObjects);
         initThread.start();
 
-        logger.info("Exported dbus object: " + objectPath);
+        logger.debug("Exported dbus object: " + objectPath);
 
         final var thread = new Thread(() -> {
             while (!Thread.interrupted()) {

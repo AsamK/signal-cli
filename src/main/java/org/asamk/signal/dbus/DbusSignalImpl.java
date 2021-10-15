@@ -837,7 +837,7 @@ public class DbusSignalImpl implements Signal {
             final var deviceObjectPath = object.getObjectPath();
             try {
                 connection.exportObject(object);
-                logger.info("Exported dbus object: " + deviceObjectPath);
+                logger.debug("Exported dbus object: " + deviceObjectPath);
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -874,7 +874,7 @@ public class DbusSignalImpl implements Signal {
             final var object = new DbusSignalGroupImpl(g.getGroupId());
             try {
                 connection.exportObject(object);
-                logger.info("Exported dbus object: " + object.getObjectPath());
+                logger.debug("Exported dbus object: " + object.getObjectPath());
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -909,7 +909,7 @@ public class DbusSignalImpl implements Signal {
         try {
             configuration = m.getConfiguration();
         } catch (NotMasterDeviceException e) {
-            logger.info("Not exporting Configuration for " + m.getSelfNumber() + ": " + e.getMessage());
+            logger.debug("Not exporting Configuration for " + m.getSelfNumber() + ": " + e.getMessage());
             return;
         } catch (IOException e) {
             throw new Error.IOError(objectPath + e.getMessage());
@@ -954,7 +954,7 @@ public class DbusSignalImpl implements Signal {
             m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
             final var object = new DbusSignalConfigurationImpl(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
             connection.exportObject(object);
-            logger.info("Exported dbus object: " + objectPath + "/Configuration");
+            logger.debug("Exported dbus object: " + objectPath + "/Configuration");
         } catch (NotMasterDeviceException ignore) {
             /* already caught */
         } catch (IOException e) {
