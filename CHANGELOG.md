@@ -1,6 +1,25 @@
 # Changelog
 
 ## [Unreleased]
+**Attention**: Now requires native libzkgroup version 0.8
+
+### Added
+- New command `updateConfiguration` which allows setting configurations for linked devices
+- Improved dbus daemon for group handling, groups are now exported as separate dbus objects
+- Linked devices can be managed via dbus
+- New dbus methods sendTyping and sendReadReceipt (Thanks @JtheSaw)
+- New dbus methods submitRateLimitChallenge, isRegistered, listDevices, setExpirationTimer, sendContacts, sendSyncRequest, uploadStickerPack, setPin and removePin (Thanks @John Freed)
+- New dbus method getSelfNumber
+
+### Fixed
+- Do not send message resend request to own device
+- Allow message from pending member to accept group invitations
+- Fix issue which could cause signal-cli to repeatedly sending the same delivery receipts
+- Reconnect websocket after connection loss
+
+### Changed
+- Use new provisioning URL `sgnl://linkdevice` instead of `tsdevice:/`
+- The gradle command to build a graalvm native image is now `./gradlew nativeCompile`
 
 ## [0.9.0] - 2021-09-12
 **Attention**: Now requires native libsignal-client version 0.9
@@ -189,6 +208,142 @@ See https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal fo
 ### Fixed
 - Issue where some messages were sent with an old counter index
 
-## Older
+## [0.6.11] - 2020-10-14
+- Fix issue with receiving message reactions
 
-Look at the [release tags](https://github.com/AsamK/signal-cli/releases) for information about older releases.
+## [0.6.10] - 2020-09-11
+- Fix issue when retrieving profiles
+- Workaround issue with libzkgroup on platforms other than linux x86_64
+
+## [0.6.9] - 2020-09-10
+- Minor bug fixes and improvements
+- dbus functionality now works on FreeBSD
+- signal-cli now requires Java 11
+
+**Warning: this version only works on Linux x86_64, will be fixed in 0.6.10**
+
+## [0.6.8] - 2020-05-22
+- Switch to hypfvieh dbus-java, which doesn't require a native library anymore (drops requirement of libmatthew-unix-java)
+- Bugfixes for messages with uuids
+- Add `--expiration` parameter to `updateContact` command to set expiration timer
+
+## [0.6.7] - 2020-04-03
+- Send command now returns the timestamp of the sent message
+- DBus daemon: Publish received sync message to SyncMessageReceived signal
+- Fix issue with resolving e164/uuid addresses for sessions
+- Fix pack key length for sticker upload
+
+## [0.6.6] - 2020-03-29
+- Added listContacts command
+- Added block/unblock commands to block contacts and groups
+- Added uploadStickerPack command to upload sticker packs (see man page for more details)
+- Full support for sending and receiving unidentified sender messages
+- Support for message reactions with emojis
+- Internal: support recipients with uuids
+
+## [0.6.5] - 2019-11-11
+Supports receiving messages sent with unidentified sender
+
+## [0.6.4] - 2019-11-02
+- Fix rounding error for attachment ids in json output
+- Add additional info to json output
+- Add commands to update profile name and avatar
+- Add command to update contact names
+
+## [0.6.3] - 2019-09-05
+Bug fixes and small improvements
+
+## [0.6.2] - 2018-12-16
+- Fixes sending of group messages
+
+## [0.6.1] - 2018-12-09
+- Added getGroupIds dbus command
+- Use "NativePRNG" pseudo random number generator, if available
+- Switch default data path:
+  `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`)
+  Existing data paths will continue to work (used as fallback)
+
+## [0.6.0] - 2018-05-03
+- Simple json output
+- dbus signal for receiving messages
+- Registration lock PIN
+- Output quoted message
+
+## [0.5.6] - 2017-06-16
+* new listGroups command
+* Support for attachments with file names
+* Support for complete contacts sync
+* Support for contact verification sync 
+* DBus interface:
+ * Get/Set group info
+ * Get/Set contact info
+
+## [0.5.5] - 2017-02-18
+- fix receiving messages on linked devices
+- add unregister command
+
+## [0.5.4] - 2017-02-17
+- Fix linking of new devices
+
+## [0.5.3] - 2017-01-29
+* New commandline paramter for receive: --ignore-attachments
+* Updated dependencies
+
+## [0.5.2] - 2016-12-16
+- Add support for group info requests
+- Improve closing of file streams
+
+## [0.5.1] - 2016-11-18
+- Support new safety numbers (https://whispersystems.org/blog/safety-number-updates/)
+- Add a man page
+- Support sending disappearing messages, if the recipient has activated it
+
+## [0.5.0] - 2016-08-29
+- Check if a number is registered on Signal, before adding it to a group
+- Prevent sending to groups that the user has quit
+- Commands to trust new identity keys (see README)
+- Messages from untrusted identities are stored on disk and decrypted when the user trusts the identity
+- Timestamps shown in ISO 8601 format
+
+## [0.4.1] - 2016-07-18
+- Fix issue with creating groups
+- Lock config file to prevent parallel access by multiple instances of signal-cli
+- Improve return codes, always return non-zero code, when sending failed
+
+## [0.4.0] - 2016-06-19
+- Linking to Signal-Desktop and Signal-Android is now possible (Provisioning)
+- Added a contact store, mainly for syncing contacts with linked devices (editing not yet possible via cli)
+- Avatars for groups and contacts are now stored (new folder "avatars" in the config path)
+
+## [0.3.1] - 2016-04-03
+- Fix running with Oracle JRE 8
+- Fix registering
+- Fix unicode warning when compiling with non utf8 locale
+
+## [0.3.0] - 2016-04-02
+- Renamed textsecure-cli to signal-cli, following the rename of libtextsecure-java to libsignal-service-java
+- The experimental dbus interface was also renamed to org.asamk.Signal
+- Upload new prekeys to the server, when there are less than 20 left, prekeys are needed to create new sessions
+
+## [0.2.1] - 2016-02-10
+- Improve dbus service
+- New command line argument --config to specify config directory
+
+## [0.2.0] - 2015-12-30
+Added an experimental dbus interface, for sending and receiving messages (The interface is unstable and may change with future releases).
+
+This release works with Java 7 and 8.
+
+## [0.1.0] - 2015-11-28
+Add support for creating/updating groups and sending to them
+
+## [0.0.5] - 2015-11-21
+- Add receive timeout commandline parameter
+- Show message group info
+
+## [0.0.4] - 2015-09-22
+
+## [0.0.3] - 2015-08-07
+
+## [0.0.2] - 2015-07-08
+First release
