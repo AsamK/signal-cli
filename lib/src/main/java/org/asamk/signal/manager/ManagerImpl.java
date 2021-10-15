@@ -887,6 +887,8 @@ public class ManagerImpl implements Manager {
         signalWebSocket.connect();
 
         hasCaughtUpWithOldMessages = false;
+        var backOffCounter = 0;
+        final var MAX_BACKOFF_COUNTER = 9;
 
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
@@ -901,6 +903,8 @@ public class ManagerImpl implements Manager {
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
+                backOffCounter = 0;
+
                 if (result.isPresent()) {
                     envelope = result.get();
                     logger.debug("New message received from server");
@@ -924,11 +928,24 @@ public class ManagerImpl implements Manager {
                 } else {
                     throw e;
                 }
-            } catch (WebSocketUnavailableException e) {
-                logger.debug("Pipe unexpectedly unavailable, connecting");
-                signalWebSocket.connect();
-                continue;
+            } catch (IOException e) {
+                logger.debug("Pipe unexpectedly unavailable: {}", e.getMessage());
+                if (e instanceof WebSocketUnavailableException || "Connection closed!".equals(e.getMessage())) {
+                    final var sleepMilliseconds = 100 * (long) Math.pow(2, backOffCounter);
+                    backOffCounter = Math.min(backOffCounter + 1, MAX_BACKOFF_COUNTER);
+                    logger.warn("Connection closed unexpectedly, reconnecting in {} ms", sleepMilliseconds);
+                    try {
+                        Thread.sleep(sleepMilliseconds);
+                    } catch (InterruptedException interruptedException) {
+                        return;
+                    }
+                    hasCaughtUpWithOldMessages = false;
+                    signalWebSocket.connect();
+                    continue;
+                }
+                throw e;
             } catch (TimeoutException e) {
+                backOffCounter = 0;
                 if (returnOnTimeout) return;
                 continue;
             }
