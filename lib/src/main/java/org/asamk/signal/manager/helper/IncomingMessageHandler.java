@@ -358,11 +358,19 @@ public final class IncomingMessageHandler {
         if (syncMessage.getConfiguration().isPresent()) {
             final var configurationMessage = syncMessage.getConfiguration().get();
             final var configurationStore = account.getConfigurationStore();
-            configurationStore.setReadReceipts(configurationMessage.getReadReceipts().orNull());
-            configurationStore.setLinkPreviews(configurationMessage.getLinkPreviews().orNull());
-            configurationStore.setTypingIndicators(configurationMessage.getTypingIndicators().orNull());
-            configurationStore.setUnidentifiedDeliveryIndicators(configurationMessage.getUnidentifiedDeliveryIndicators()
-                    .orNull());
+            if (configurationMessage.getReadReceipts().isPresent()) {
+                configurationStore.setReadReceipts(configurationMessage.getReadReceipts().get());
+            }
+            if (configurationMessage.getLinkPreviews().isPresent()) {
+                configurationStore.setLinkPreviews(configurationMessage.getLinkPreviews().get());
+            }
+            if (configurationMessage.getTypingIndicators().isPresent()) {
+                configurationStore.setTypingIndicators(configurationMessage.getTypingIndicators().get());
+            }
+            if (configurationMessage.getUnidentifiedDeliveryIndicators().isPresent()) {
+                configurationStore.setUnidentifiedDeliveryIndicators(configurationMessage.getUnidentifiedDeliveryIndicators()
+                        .get());
+            }
         }
         return actions;
     }
