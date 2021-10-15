@@ -68,6 +68,7 @@ public class DaemonCommand implements MultiLocalCommand {
             var t = run(conn, objectPath, m, outputWriter, ignoreAttachments);
 
             conn.requestBusName(DbusConfig.getBusname());
+            logger.info("DBus daemon running in single-user mode for " + m.getSelfNumber());
 
             try {
                 t.join();
@@ -109,6 +110,7 @@ public class DaemonCommand implements MultiLocalCommand {
             }
 
             conn.requestBusName(DbusConfig.getBusname());
+            logger.info("DBus daemon running in anonymous mode");
 
             signalControl.run();
         } catch (DBusException | IOException e) {
