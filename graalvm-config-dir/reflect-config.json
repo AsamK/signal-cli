@@ -1492,6 +1492,12 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfile$Badge",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfile$Capabilities",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2179,6 +2185,17 @@
     {"name":"groupIds_"}, 
     {"name":"numbers_"}, 
     {"name":"uuids_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Configuration",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"linkPreviews_"}, 
+    {"name":"provisioningVersion_"}, 
+    {"name":"readReceipts_"}, 
+    {"name":"typingIndicators_"}, 
+    {"name":"unidentifiedDeliveryIndicators_"}
   ]
 },
 {

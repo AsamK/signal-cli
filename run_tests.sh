@@ -15,7 +15,7 @@ fi
 NUMBER_1="$1"
 NUMBER_2="$2"
 TEST_PIN_1=456test_pin_foo123
-NATIVE=1
+NATIVE=0
 
 PATH_TEST_CONFIG="$PWD/build/test-config"
 PATH_MAIN="$PATH_TEST_CONFIG/main"
