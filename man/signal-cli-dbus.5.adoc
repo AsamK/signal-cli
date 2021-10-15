@@ -491,12 +491,6 @@ setContactName(number<s>,name<>) -> <>::
 * number  : Phone number
 * name    : Name to be set in contacts (in local storage with signal-cli)
 
-Exceptions: None; for unknown numbers false is returned
-
-isGroupBlocked(groupId<ay>) -> state<b>::
-* groupId : Byte array representing the internal group identifier
-* state   : true=blocked, false=not blocked
-
 Exceptions: InvalidNumber, Failure
 
 setExpirationTimer(number<s>, expiration<i>) -> <>::
@@ -551,16 +545,13 @@ SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>, messa
 * message     : Message text
 * attachments : String array of filenames in the signal-cli storage (~/.local/share/signal-cli/attachments/)
 
-SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>, message<s>, attachments<as>)::
-* timestamp   : Integer value that is used by the system to send a ReceiptReceived reply
-* sender      : Phone number of the sender
-* destination : The DBus destination code
-* groupId     : Byte array representing the internal group identifier (empty when private message)
-* message     : Message text
-* attachments : String array of filenames in the signal-cli storage (~/.local/share/signal-cli/attachments/)
-
-
 The sync message is received when the user sends a message from a linked device.
+
+ReceiptReceived (timestamp<x>, sender<s>)::
+* timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
+* sender    : Phone number of the sender
+
+This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
 MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as>)::
 * timestamp   : Integer value that is used by the system to send a ReceiptReceived reply
@@ -595,6 +586,15 @@ SyncMessageReceivedV2 (timestamp<x>, sender<s>, destination<s>, groupId<ay>, mes
 
 The sync message is received when the user sends a message from a linked device.
 
+ReceiptReceivedV2 (timestamp<x>, sender<s>, isDeliveryReceipt<b>, isReadReceipt<b>, isViewedReceipt<b>)::
+* timestamp         : Integer value that can be used to associate this e.g. with a sendMessage()
+* sender            : Phone number of the sender
+* isDeliveryReceipt : boolean representing whether a delivery receipt was received
+* isReadReceipt     : boolean representing whether a read receipt was received
+* isViewedReceipt   : boolean representing whether a viewed receipt was received
+
+This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
+
 MessageReceivedV2(timestamp<x>, sender<s>, groupId<ay>, message<s>, mentions<a(sii)>, attachments<a(sssxibiiss)>)::
 * timestamp     : Integer value that is used by the system to send a ReceiptReceived reply
 * sender        : Phone number of the sender
@@ -617,21 +617,6 @@ MessageReceivedV2(timestamp<x>, sender<s>, groupId<ay>, message<s>, mentions<a(s
 ** blurHash     :  String representing blur hash
 
 This signal is received whenever we get a private message or a message is posted in a group we are an active member
-
-ReceiptReceived (timestamp<x>, sender<s>)::
-* timestamp : Integer value that can be used to associate this e.g. with a sendMessage()
-* sender    : Phone number of the sender
-
-This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
-
-ReceiptReceivedV2 (timestamp<x>, sender<s>, isDeliveryReceipt<b>, isReadReceipt<b>, isViewedReceipt<b>)::
-* timestamp         : Integer value that can be used to associate this e.g. with a sendMessage()
-* sender            : Phone number of the sender
-* isDeliveryReceipt : boolean representing whether a delivery receipt was received
-* isReadReceipt     : boolean representing whether a read receipt was received
-* isViewedReceipt   : boolean representing whether a viewed receipt was received
-
-This signal is sent by each recipient (e.g. each group member) after the message was successfully delivered to the device
 
 == Examples
 
