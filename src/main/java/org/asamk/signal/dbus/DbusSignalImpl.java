@@ -78,6 +78,7 @@ public class DbusSignalImpl implements Signal {
 
     public void close() {
         unExportDevices();
+        unExportGroups();
     }
 
     @Override
