@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.9.1] - 2021-10-16
 **Attention**: Now requires native libzkgroup version 0.8
 
 ### Added
@@ -14,7 +16,7 @@
 ### Fixed
 - Do not send message resend request to own device
 - Allow message from pending member to accept group invitations
-- Fix issue which could cause signal-cli to repeatedly sending the same delivery receipts
+- Fix issue which could cause signal-cli to repeatedly send the same delivery receipts
 - Reconnect websocket after connection loss
 
 ### Changed
