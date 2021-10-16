@@ -31,7 +31,13 @@ public interface Signal extends DBusInterface {
 
     void sendTyping(
             String recipient, boolean stop
+    ) throws Error.Failure, Error.UntrustedIdentity;
+
+    void sendTyping(
+            boolean stop, List<String> groupIdStrings, List<String> numbers
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+
+    List<byte[]> getGroupsByName(String groupName);
 
     void sendReadReceipt(
             String recipient, List<Long> messageIds

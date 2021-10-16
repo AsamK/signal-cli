@@ -8,6 +8,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -23,7 +24,9 @@ import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.ErrorUtils;
+
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -192,6 +195,25 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public List<byte[]> getGroupsByName(String groupName) {
+        List<byte[]>groupList = new ArrayList<>();
+        List<byte[]>result = new ArrayList<>();
+        groupList = getGroupIds();
+        org.asamk.signal.manager.api.Group group = null;
+        for (byte[] groupId : groupList) {
+            try {
+                group = m.getGroup(getGroupId(groupId));
+            } catch (AssertionError e) {
+                throw new Error.Failure(e.getMessage());
+            }
+            if (group.getTitle().equals(groupName)) {
+                result.add(groupId);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public long sendGroupRemoteDeleteMessage(
             final long targetSentTimestamp, final byte[] groupId
     ) {
@@ -242,26 +264,6 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
-        }
-    }
-
-    @Override
-    public void sendTyping(
-            final String recipient, final boolean stop
-    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
-        try {
-            var recipients = new ArrayList<String>(1);
-            recipients.add(recipient);
-            m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
-                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
-                            .map(RecipientIdentifier.class::cast)
-                            .collect(Collectors.toSet()));
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
-            throw new Error.GroupNotFound(e.getMessage());
-        } catch (UntrustedIdentityException e) {
-            throw new Error.UntrustedIdentity(e.getMessage());
         }
     }
 
@@ -363,6 +365,44 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
+    @Override
+    public void sendTyping(String recipient, boolean stop) {
+        List<String> numbers = Arrays.asList(recipient);
+        List<String> groupIdStrings = Arrays.asList();
+        sendTyping(stop, null, numbers);
+    }
+
+    @Override
+    public void sendTyping(boolean stop, List<String> groupIdStrings, List<String> numbers) {
+        final boolean noNumbers = numbers == null || numbers.isEmpty();
+        final boolean noGroup = groupIdStrings == null || groupIdStrings.isEmpty();
+        if (noNumbers && noGroup) {
+            throw new Error.Failure("No recipients given");
+        }
+
+        final TypingAction action = stop ? TypingAction.STOP : TypingAction.START;
+        final var timestamp = System.currentTimeMillis();
+        final var localNumber = m.getSelfNumber();
+        Set<RecipientIdentifier> recipients = new HashSet<RecipientIdentifier>();
+
+        try {
+            if (!noGroup) {
+                recipients.addAll(CommandUtil.getGroupIdentifiers(groupIdStrings));
+            }
+
+            if (!noNumbers) {
+                recipients.addAll(CommandUtil.getSingleRecipientIdentifiers(numbers, localNumber));
+            }
+            m.sendTypingMessage(action, recipients);
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to send message: " + e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.InvalidGroupId("Invalid group id: " + e.getMessage());
+        } catch (Exception e) {
+            throw new Error.UntrustedIdentity("Failed to send message: " + e.getMessage());
+        }
+    }
+
     // Since contact names might be empty if not defined, also potentially return
     // the profile name
     @Override
@@ -404,10 +444,19 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
+        GroupId group = null;
         try {
-            m.setGroupBlocked(getGroupId(groupId), blocked);
+            group = getGroupId(groupId);
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        if (group == null) {
+            throw new Error.InvalidGroupId("GroupId is null.");
+        }
+        try {
+            m.setGroupBlocked(group, blocked);
         } catch (NotMasterDeviceException e) {
-            throw new Error.Failure("This command doesn't work on linked devices.");
+            throw new Error.Failure("This command doesn't work on linked device");
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (IOException e) {
@@ -443,9 +492,14 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public String getGroupName(final byte[] groupId) {
-        var group = m.getGroup(getGroupId(groupId));
-        if (group == null || group.getTitle() == null) {
-            return "";
+        org.asamk.signal.manager.api.Group group = null;
+        try {
+            group = m.getGroup(getGroupId(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        if (group == null) {
+            throw new Error.InvalidGroupId("GroupId is null.");
         } else {
             return group.getTitle();
         }
@@ -453,9 +507,14 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getGroupMembers(final byte[] groupId) {
-        var group = m.getGroup(getGroupId(groupId));
+        org.asamk.signal.manager.api.Group group = null;
+        try {
+            group = m.getGroup(getGroupId(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
         if (group == null) {
-            return List.of();
+            throw new Error.InvalidGroupId("GroupId is null.");
         } else {
             final var members = group.getMembers();
             return getRecipientStrings(members);
@@ -638,7 +697,15 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void quitGroup(final byte[] groupId) {
-        var group = getGroupId(groupId);
+        GroupId group = null;
+        try {
+            group = getGroupId(groupId);
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
+        if (group == null) {
+            throw new Error.InvalidGroupId("GroupId is null.");
+        }
         try {
             m.quitGroup(group, Set.of());
         } catch (GroupNotFoundException | NotAGroupMemberException e) {
@@ -673,9 +740,14 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isGroupBlocked(final byte[] groupId) {
-        var group = m.getGroup(getGroupId(groupId));
+        org.asamk.signal.manager.api.Group group = null;
+        try {
+            group = m.getGroup(getGroupId(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
         if (group == null) {
-            return false;
+            throw new Error.InvalidGroupId("GroupId is null.");
         } else {
             return group.isBlocked();
         }
@@ -683,9 +755,14 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public boolean isMember(final byte[] groupId) {
-        var group = m.getGroup(getGroupId(groupId));
+        org.asamk.signal.manager.api.Group group = null;
+        try {
+            group = m.getGroup(getGroupId(groupId));
+        } catch (AssertionError e) {
+            throw new Error.Failure(e.getMessage());
+        }
         if (group == null) {
-            return false;
+            throw new Error.InvalidGroupId("GroupId is null.");
         } else {
             return group.isMember();
         }
@@ -848,6 +925,20 @@ public class DbusSignalImpl implements Signal {
     }
 
     private static String getGroupObjectPath(String basePath, byte[] groupId) {
+        /* note that DBus cannot provide a one-to-one reverse translation
+         * of groupPath to groupId. This is because Signal uses base64 for
+         * its group strings, converting any slash (/) to an underscore but
+         * retaining any plus (+) symbol.
+         *
+         * But DBus forbids both slash and plus, so both must be converted
+         * to an underscore, as DBus provides for only 63 of the 64 characters.
+         *
+         * The solution is to use the groupPath to get the Id group property,
+         * which is an array of bytes, then use Base64.getEncoder().encodeToString(groupId)
+         * to obtain the groupIdString. Note that it is theoretically possible, though
+         * extremely unlikely, that two different groups will map to the same groupPath.
+         *
+         */
         return basePath + "/Groups/" + Base64.getEncoder()
                 .encodeToString(groupId)
                 .replace("+", "_")
