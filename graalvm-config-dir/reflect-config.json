@@ -317,6 +317,16 @@
   "allDeclaredClasses":true
 },
 {
+  "name":"org.asamk.Signal$Device",
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.asamk.Signal$Group",
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
+},
+{
   "name":"org.asamk.Signal$MessageReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true
@@ -327,9 +337,22 @@
   "allPublicConstructors":true
 },
 {
+  "name":"org.asamk.Signal$StructDevice",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.asamk.Signal$StructGroup",
+  "allDeclaredFields":true
+},
+{
   "name":"org.asamk.Signal$SyncMessageReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true
+},
+{
+  "name":"org.asamk.SignalControl",
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
 },
 {
   "name":"org.asamk.signal.commands.GetUserStatusCommand$JsonUserStatus",
@@ -1113,6 +1136,15 @@
   "name":"org.freedesktop.dbus.interfaces.Peer",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true
+},
+{
+  "name":"org.freedesktop.dbus.interfaces.Properties",
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.freedesktop.dbus.interfaces.Properties$PropertiesChanged",
+  "allPublicConstructors":true
 },
 {
   "name":"org.objectweb.asm.util.TraceMethodVisitor"
