@@ -1081,11 +1081,12 @@ public class ManagerImpl implements Manager {
         }
 
         final var address = account.getRecipientStore().resolveRecipientAddress(identityInfo.getRecipientId());
+        final var scannableFingerprint = identityHelper.computeSafetyNumberForScanning(identityInfo.getRecipientId(),
+                identityInfo.getIdentityKey());
         return new Identity(address,
                 identityInfo.getIdentityKey(),
                 identityHelper.computeSafetyNumber(identityInfo.getRecipientId(), identityInfo.getIdentityKey()),
-                identityHelper.computeSafetyNumberForScanning(identityInfo.getRecipientId(),
-                        identityInfo.getIdentityKey()).getSerialized(),
+                scannableFingerprint == null ? null : scannableFingerprint.getSerialized(),
                 identityInfo.getTrustLevel(),
                 identityInfo.getDateAdded());
     }
