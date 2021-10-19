@@ -134,16 +134,15 @@ public class ProvisioningManager {
                 try {
                     m.refreshPreKeys();
                 } catch (Exception e) {
-                    logger.error("Failed to check new account state.");
-                    throw e;
+                    logger.error("Failed to refresh pre keys.");
                 }
 
                 logger.debug("Requesting sync data");
                 try {
                     m.requestAllSyncData();
                 } catch (Exception e) {
-                    logger.error("Failed to request sync messages from linked device.");
-                    throw e;
+                    logger.error(
+                            "Failed to request sync messages from linked device, data can be requested again with `sendSyncRequest`.");
                 }
 
                 final var result = m;
