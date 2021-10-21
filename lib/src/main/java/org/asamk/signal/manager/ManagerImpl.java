@@ -873,7 +873,16 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void receiveMessages(
+    public void receiveMessages(long timeout, TimeUnit unit, ReceiveMessageHandler handler) throws IOException {
+        receiveMessages(timeout, unit, true, handler);
+    }
+
+    @Override
+    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
+        receiveMessages(1L, TimeUnit.HOURS, false, handler);
+    }
+
+    private void receiveMessages(
             long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
         retryFailedReceivedMessages(handler);

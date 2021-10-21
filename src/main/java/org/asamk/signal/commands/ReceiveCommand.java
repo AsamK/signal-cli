@@ -142,17 +142,16 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         double timeout = ns.getDouble("timeout");
-        var returnOnTimeout = true;
-        if (timeout < 0) {
-            returnOnTimeout = false;
-            timeout = 3600;
-        }
         boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
         m.setIgnoreAttachments(ignoreAttachments);
         try {
             final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
                     (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
-            m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, returnOnTimeout, handler);
+            if (timeout < 0) {
+                m.receiveMessages(handler);
+            } else {
+                m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, handler);
+            }
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
         }

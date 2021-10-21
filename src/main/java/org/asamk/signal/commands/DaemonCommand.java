@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class DaemonCommand implements MultiLocalCommand {
 
@@ -135,7 +134,7 @@ public class DaemonCommand implements MultiLocalCommand {
                     final var receiveMessageHandler = outputWriter instanceof JsonWriter
                             ? new JsonDbusReceiveMessageHandler(m, (JsonWriter) outputWriter, conn, objectPath)
                             : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
-                    m.receiveMessages(1, TimeUnit.HOURS, false, receiveMessageHandler);
+                    m.receiveMessages(receiveMessageHandler);
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);

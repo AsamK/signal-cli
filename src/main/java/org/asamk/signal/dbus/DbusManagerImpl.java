@@ -424,8 +424,13 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void receiveMessages(final ReceiveMessageHandler handler) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void receiveMessages(
-            final long timeout, final TimeUnit unit, final boolean returnOnTimeout, final ReceiveMessageHandler handler
+            final long timeout, final TimeUnit unit, final ReceiveMessageHandler handler
     ) throws IOException {
         throw new UnsupportedOperationException();
     }

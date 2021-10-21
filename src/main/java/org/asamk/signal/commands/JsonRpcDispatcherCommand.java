@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class JsonRpcDispatcherCommand implements LocalCommand {
 
@@ -173,7 +172,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             while (!Thread.interrupted()) {
                 try {
                     final var receiveMessageHandler = new JsonReceiveMessageHandler(m, jsonWriter);
-                    m.receiveMessages(1, TimeUnit.HOURS, false, receiveMessageHandler);
+                    m.receiveMessages(receiveMessageHandler);
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);
