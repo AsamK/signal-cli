@@ -424,6 +424,21 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void addReceiveHandler(final ReceiveMessageHandler handler) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeReceiveHandler(final ReceiveMessageHandler handler) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isReceiving() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void receiveMessages(final ReceiveMessageHandler handler) throws IOException {
         throw new UnsupportedOperationException();
     }

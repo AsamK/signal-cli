@@ -70,10 +70,11 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         final var objectMapper = Util.createJsonObjectMapper();
         final var jsonRpcSender = new JsonRpcSender((JsonWriter) outputWriter);
 
-        final var receiveThread = receiveMessages(s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification(
-                "receive",
-                objectMapper.valueToTree(s),
-                null)), m);
+        final var receiveMessageHandler = new JsonReceiveMessageHandler(m,
+                s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive",
+                        objectMapper.valueToTree(s),
+                        null)));
+        m.addReceiveHandler(receiveMessageHandler);
 
         // Maybe this should be handled inside the Manager
         while (!m.hasCaughtUpWithOldMessages()) {
@@ -97,11 +98,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         jsonRpcReader.readRequests((method, params) -> handleRequest(m, objectMapper, method, params),
                 response -> logger.debug("Received unexpected response for id {}", response.getId()));
 
-        receiveThread.interrupt();
-        try {
-            receiveThread.join();
-        } catch (InterruptedException ignored) {
-        }
+        m.removeReceiveHandler(receiveMessageHandler);
     }
 
     private JsonNode handleRequest(
@@ -165,23 +162,5 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             }
         }
         command.handleCommand(requestParams, m, outputWriter);
-    }
-
-    private Thread receiveMessages(JsonWriter jsonWriter, Manager m) {
-        final var thread = new Thread(() -> {
-            while (!Thread.interrupted()) {
-                try {
-                    final var receiveMessageHandler = new JsonReceiveMessageHandler(m, jsonWriter);
-                    m.receiveMessages(receiveMessageHandler);
-                    break;
-                } catch (IOException e) {
-                    logger.warn("Receiving messages failed, retrying", e);
-                }
-            }
-        });
-
-        thread.start();
-
-        return thread;
     }
 }

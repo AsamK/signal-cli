@@ -194,6 +194,20 @@ public interface Manager extends Closeable {
     void requestAllSyncData() throws IOException;
 
     /**
+     * Add a handler to receive new messages.
+     * Will start receiving messages from server, if not already started.
+     */
+    void addReceiveHandler(ReceiveMessageHandler handler);
+
+    /**
+     * Remove a handler to receive new messages.
+     * Will stop receiving messages from server, if this was the last registered receiver.
+     */
+    void removeReceiveHandler(ReceiveMessageHandler handler);
+
+    boolean isReceiving();
+
+    /**
      * Receive new messages from server, returns if no new message arrive in a timespan of timeout.
      */
     void receiveMessages(long timeout, TimeUnit unit, ReceiveMessageHandler handler) throws IOException;

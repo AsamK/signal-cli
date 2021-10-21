@@ -71,6 +71,9 @@ public class DaemonCommand implements MultiLocalCommand {
 
             try {
                 t.join();
+                synchronized (this) {
+                    wait();
+                }
             } catch (InterruptedException ignored) {
             }
         } catch (DBusException | IOException e) {
@@ -128,27 +131,11 @@ public class DaemonCommand implements MultiLocalCommand {
 
         logger.info("Exported dbus object: " + objectPath);
 
-        final var thread = new Thread(() -> {
-            while (!Thread.interrupted()) {
-                try {
-                    final var receiveMessageHandler = outputWriter instanceof JsonWriter
-                            ? new JsonDbusReceiveMessageHandler(m, (JsonWriter) outputWriter, conn, objectPath)
-                            : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
-                    m.receiveMessages(receiveMessageHandler);
-                    break;
-                } catch (IOException e) {
-                    logger.warn("Receiving messages failed, retrying", e);
-                }
-            }
-            try {
-                initThread.join();
-            } catch (InterruptedException ignored) {
-            }
-            signal.close();
-        });
-
-        thread.start();
-
-        return thread;
+        final var receiveMessageHandler = outputWriter instanceof JsonWriter ? new JsonDbusReceiveMessageHandler(m,
+                (JsonWriter) outputWriter,
+                conn,
+                objectPath) : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
+        m.addReceiveHandler(receiveMessageHandler);
+        return initThread;
     }
 }
