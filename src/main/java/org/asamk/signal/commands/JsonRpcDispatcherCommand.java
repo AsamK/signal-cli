@@ -66,6 +66,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        m.setIgnoreAttachments(ignoreAttachments);
 
         final var objectMapper = Util.createJsonObjectMapper();
         final var jsonRpcSender = new JsonRpcSender((JsonWriter) outputWriter);
@@ -73,7 +74,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         final var receiveThread = receiveMessages(s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification(
                 "receive",
                 objectMapper.valueToTree(s),
-                null)), m, ignoreAttachments);
+                null)), m);
 
         // Maybe this should be handled inside the Manager
         while (!m.hasCaughtUpWithOldMessages()) {
@@ -167,14 +168,12 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         command.handleCommand(requestParams, m, outputWriter);
     }
 
-    private Thread receiveMessages(
-            JsonWriter jsonWriter, Manager m, boolean ignoreAttachments
-    ) {
+    private Thread receiveMessages(JsonWriter jsonWriter, Manager m) {
         final var thread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 try {
                     final var receiveMessageHandler = new JsonReceiveMessageHandler(m, jsonWriter);
-                    m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, receiveMessageHandler);
+                    m.receiveMessages(1, TimeUnit.HOURS, false, receiveMessageHandler);
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);

@@ -55,6 +55,7 @@ public class DaemonCommand implements MultiLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        m.setIgnoreAttachments(ignoreAttachments);
 
         DBusConnection.DBusBusType busType;
         if (Boolean.TRUE.equals(ns.getBoolean("system"))) {
@@ -65,7 +66,7 @@ public class DaemonCommand implements MultiLocalCommand {
 
         try (var conn = DBusConnection.getConnection(busType)) {
             var objectPath = DbusConfig.getObjectPath();
-            var t = run(conn, objectPath, m, outputWriter, ignoreAttachments);
+            var t = run(conn, objectPath, m, outputWriter);
 
             conn.requestBusName(DbusConfig.getBusname());
 
@@ -94,9 +95,10 @@ public class DaemonCommand implements MultiLocalCommand {
 
         try (var conn = DBusConnection.getConnection(busType)) {
             final var signalControl = new DbusSignalControlImpl(c, m -> {
+                m.setIgnoreAttachments(ignoreAttachments);
                 try {
                     final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
-                    return run(conn, objectPath, m, outputWriter, ignoreAttachments);
+                    return run(conn, objectPath, m, outputWriter);
                 } catch (DBusException e) {
                     logger.error("Failed to export object", e);
                     return null;
@@ -118,7 +120,7 @@ public class DaemonCommand implements MultiLocalCommand {
     }
 
     private Thread run(
-            DBusConnection conn, String objectPath, Manager m, OutputWriter outputWriter, boolean ignoreAttachments
+            DBusConnection conn, String objectPath, Manager m, OutputWriter outputWriter
     ) throws DBusException {
         final var signal = new DbusSignalImpl(m, conn, objectPath);
         conn.exportObject(signal);
@@ -133,7 +135,7 @@ public class DaemonCommand implements MultiLocalCommand {
                     final var receiveMessageHandler = outputWriter instanceof JsonWriter
                             ? new JsonDbusReceiveMessageHandler(m, (JsonWriter) outputWriter, conn, objectPath)
                             : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
-                    m.receiveMessages(1, TimeUnit.HOURS, false, ignoreAttachments, receiveMessageHandler);
+                    m.receiveMessages(1, TimeUnit.HOURS, false, receiveMessageHandler);
                     break;
                 } catch (IOException e) {
                     logger.warn("Receiving messages failed, retrying", e);

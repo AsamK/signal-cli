@@ -135,6 +135,7 @@ public class ManagerImpl implements Manager {
 
     private final Context context;
     private boolean hasCaughtUpWithOldMessages = false;
+    private boolean ignoreAttachments = false;
 
     ManagerImpl(
             SignalAccount account,
@@ -824,10 +825,10 @@ public class ManagerImpl implements Manager {
         return registeredUsers;
     }
 
-    private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
+    private void retryFailedReceivedMessages(ReceiveMessageHandler handler) {
         Set<HandleAction> queuedActions = new HashSet<>();
         for (var cachedMessage : account.getMessageCache().getCachedMessages()) {
-            var actions = retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
+            var actions = retryFailedReceivedMessage(handler, cachedMessage);
             if (actions != null) {
                 queuedActions.addAll(actions);
             }
@@ -836,7 +837,7 @@ public class ManagerImpl implements Manager {
     }
 
     private List<HandleAction> retryFailedReceivedMessage(
-            final ReceiveMessageHandler handler, final boolean ignoreAttachments, final CachedMessage cachedMessage
+            final ReceiveMessageHandler handler, final CachedMessage cachedMessage
     ) {
         var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {
@@ -873,13 +874,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void receiveMessages(
-            long timeout,
-            TimeUnit unit,
-            boolean returnOnTimeout,
-            boolean ignoreAttachments,
-            ReceiveMessageHandler handler
+            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
-        retryFailedReceivedMessages(handler, ignoreAttachments);
+        retryFailedReceivedMessages(handler);
 
         Set<HandleAction> queuedActions = new HashSet<>();
 
@@ -978,6 +975,11 @@ public class ManagerImpl implements Manager {
         }
         handleQueuedActions(queuedActions);
         queuedActions.clear();
+    }
+
+    @Override
+    public void setIgnoreAttachments(final boolean ignoreAttachments) {
+        this.ignoreAttachments = ignoreAttachments;
     }
 
     @Override

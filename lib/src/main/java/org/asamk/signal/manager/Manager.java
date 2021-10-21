@@ -194,12 +194,10 @@ public interface Manager extends Closeable {
     void requestAllSyncData() throws IOException;
 
     void receiveMessages(
-            long timeout,
-            TimeUnit unit,
-            boolean returnOnTimeout,
-            boolean ignoreAttachments,
-            ReceiveMessageHandler handler
+            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException;
+
+    void setIgnoreAttachments(boolean ignoreAttachments);
 
     boolean hasCaughtUpWithOldMessages();
 
