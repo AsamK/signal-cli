@@ -128,11 +128,18 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             logger.error("Dbus client failed", e);
             throw new UnexpectedErrorException("Dbus client failed", e);
         }
+
+        double timeout = ns.getDouble("timeout");
+        long timeoutMilliseconds = timeout < 0 ? 10000 : (long) (timeout * 1000);
+
         while (true) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(timeoutMilliseconds);
             } catch (InterruptedException ignored) {
-                return;
+                break;
+            }
+            if (timeout >= 0) {
+                break;
             }
         }
     }
