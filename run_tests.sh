@@ -45,7 +45,7 @@ run_linked() {
 register() {
   NUMBER=$1
   PIN=$2
-  echo -n "Enter a captcha token (https://signalcaptchas.org/registration/generate.html): "
+  echo -n "Enter a captcha token (https://signalcaptchas.org/staging/challenge/generate.html): "
   read CAPTCHA
   run_main -u "$NUMBER" register --captcha "$CAPTCHA"
   echo -n "Enter validation code for ${NUMBER}: "
@@ -80,6 +80,20 @@ register "$NUMBER_1" "$TEST_PIN_1"
 register "$NUMBER_2"
 
 sleep 5
+
+
+## DBus
+run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running || true
+run_main daemon &
+DAEMON_PID=$!
+sleep 10
+echo send
+run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m hii
+run_main -u "$NUMBER_2" --dbus receive
+echo kill
+kill "$DAEMON_PID"
+echo killed
+
 
 # JSON-RPC
 FIFO_FILE="${PATH_MAIN}/dbus-fifo"
@@ -183,15 +197,6 @@ for OUTPUT in "plain-text" "json"; do
 done
 
 run_main -u "$NUMBER_1" removeDevice -d 2
-
-## DBus
-#run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running
-#run_main daemon &
-#DAEMON_PID=$!
-#sleep 5
-#run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m hii
-#run_main -u "$NUMBER_2" --dbus receive
-#kill "$DAEMON_PID"
 
 ## Unregister
 run_main -u "$NUMBER_1" unregister

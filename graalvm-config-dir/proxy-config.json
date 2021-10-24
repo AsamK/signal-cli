@@ -1,4 +1,8 @@
 [
-  ["org.asamk.Signal"],
-  ["org.freedesktop.dbus.interfaces.DBus"]
+  {
+    "interfaces":["org.asamk.Signal"]}
+  ,
+  {
+    "interfaces":["org.freedesktop.dbus.interfaces.DBus"]}
+  
 ]

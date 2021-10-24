@@ -33,6 +33,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -228,7 +229,8 @@ public final class ProfileHelper {
     }
 
     private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
-        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent());
+        final var locale = Locale.getDefault();
+        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent(), locale);
     }
 
     private ProfileAndCredential retrieveProfileAndCredential(
@@ -308,11 +310,16 @@ public final class ProfileHelper {
         var profileService = dependencies.getProfileService();
 
         Single<ServiceResponse<ProfileAndCredential>> responseSingle;
+        final var locale = Locale.getDefault();
         try {
-            responseSingle = profileService.getProfile(address, profileKey, unidentifiedAccess, requestType);
+            responseSingle = profileService.getProfile(address, profileKey, unidentifiedAccess, requestType, locale);
         } catch (NoClassDefFoundError e) {
             // Native zkgroup lib not available for ProfileKey
-            responseSingle = profileService.getProfile(address, Optional.absent(), unidentifiedAccess, requestType);
+            responseSingle = profileService.getProfile(address,
+                    Optional.absent(),
+                    unidentifiedAccess,
+                    requestType,
+                    locale);
         }
 
         return responseSingle.map(pair -> {
