@@ -65,7 +65,7 @@ public class ErrorUtils {
                             + (
                             failure.getOptions().contains(ProofRequiredException.Option.RECAPTCHA)
                                     ?
-                                    "To get the captcha token, go to https://signalcaptchas.org/registration/generate.html\n"
+                                    "To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html\n"
                                             + "Check the developer tools (F12) console for a failed redirect to signalcaptcha://\n"
                                             + "Everything after signalcaptcha:// is the captcha token.\n"
                                             + "Use the following command to submit the captcha token:\n"
