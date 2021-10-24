@@ -34,7 +34,7 @@ repositories {
 dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on:1.69")
     implementation("net.sourceforge.argparse4j:argparse4j:0.9.0")
-    implementation("com.github.hypfvieh:dbus-java:3.3.0")
+    implementation("com.github.hypfvieh:dbus-java:3.3.1")
     implementation("org.slf4j:slf4j-simple:1.7.30")
     implementation(project(":lib"))
 }
