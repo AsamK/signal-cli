@@ -1,36 +1,18 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
-public class JsonContactName {
+public record JsonContactName(
+        String display, String given, String family, String prefix, String suffix, String middle
+) {
 
-    @JsonProperty
-    private final String display;
-
-    @JsonProperty
-    private final String given;
-
-    @JsonProperty
-    private final String family;
-
-    @JsonProperty
-    private final String prefix;
-
-    @JsonProperty
-    private final String suffix;
-
-    @JsonProperty
-    private final String middle;
-
-    public JsonContactName(SharedContact.Name name) {
-        display = Util.getStringIfNotBlank(name.getDisplay());
-        given = Util.getStringIfNotBlank(name.getGiven());
-        family = Util.getStringIfNotBlank(name.getFamily());
-        prefix = Util.getStringIfNotBlank(name.getPrefix());
-        suffix = Util.getStringIfNotBlank(name.getSuffix());
-        middle = Util.getStringIfNotBlank(name.getMiddle());
+    static JsonContactName from(SharedContact.Name name) {
+        return new JsonContactName(Util.getStringIfNotBlank(name.getDisplay()),
+                Util.getStringIfNotBlank(name.getGiven()),
+                Util.getStringIfNotBlank(name.getFamily()),
+                Util.getStringIfNotBlank(name.getPrefix()),
+                Util.getStringIfNotBlank(name.getSuffix()),
+                Util.getStringIfNotBlank(name.getMiddle()));
     }
 }

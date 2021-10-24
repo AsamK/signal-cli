@@ -127,8 +127,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                 var results = m.createGroup(groupName,
                         groupMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
-                timestamp = results.second().getTimestamp();
-                ErrorUtils.handleSendMessageResults(results.second().getResults());
+                timestamp = results.second().timestamp();
+                ErrorUtils.handleSendMessageResults(results.second().results());
                 groupId = results.first();
                 groupName = null;
                 groupMembers = null;
@@ -154,8 +154,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                                     : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS)
                             .build());
             if (results != null) {
-                timestamp = results.getTimestamp();
-                ErrorUtils.handleSendMessageResults(results.getResults());
+                timestamp = results.timestamp();
+                ErrorUtils.handleSendMessageResults(results.results());
             }
             outputResult(outputWriter, timestamp, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {

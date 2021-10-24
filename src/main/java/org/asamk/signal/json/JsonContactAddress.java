@@ -1,48 +1,29 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.asamk.signal.util.Util;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
-public class JsonContactAddress {
+public record JsonContactAddress(
+        SharedContact.PostalAddress.Type type,
+        String label,
+        String street,
+        String pobox,
+        String neighborhood,
+        String city,
+        String region,
+        String postcode,
+        String country
+) {
 
-    @JsonProperty
-    private final SharedContact.PostalAddress.Type type;
-
-    @JsonProperty
-    private final String label;
-
-    @JsonProperty
-    private final String street;
-
-    @JsonProperty
-    private final String pobox;
-
-    @JsonProperty
-    private final String neighborhood;
-
-    @JsonProperty
-    private final String city;
-
-    @JsonProperty
-    private final String region;
-
-    @JsonProperty
-    private final String postcode;
-
-    @JsonProperty
-    private final String country;
-
-    public JsonContactAddress(SharedContact.PostalAddress address) {
-        type = address.getType();
-        label = Util.getStringIfNotBlank(address.getLabel());
-        street = Util.getStringIfNotBlank(address.getStreet());
-        pobox = Util.getStringIfNotBlank(address.getPobox());
-        neighborhood = Util.getStringIfNotBlank(address.getNeighborhood());
-        city = Util.getStringIfNotBlank(address.getCity());
-        region = Util.getStringIfNotBlank(address.getRegion());
-        postcode = Util.getStringIfNotBlank(address.getPostcode());
-        country = Util.getStringIfNotBlank(address.getCountry());
+    static JsonContactAddress from(SharedContact.PostalAddress address) {
+        return new JsonContactAddress(address.getType(),
+                Util.getStringIfNotBlank(address.getLabel()),
+                Util.getStringIfNotBlank(address.getStreet()),
+                Util.getStringIfNotBlank(address.getPobox()),
+                Util.getStringIfNotBlank(address.getNeighborhood()),
+                Util.getStringIfNotBlank(address.getCity()),
+                Util.getStringIfNotBlank(address.getRegion()),
+                Util.getStringIfNotBlank(address.getPostcode()),
+                Util.getStringIfNotBlank(address.getCountry()));
     }
 }

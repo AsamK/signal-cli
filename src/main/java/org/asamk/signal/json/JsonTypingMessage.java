@@ -1,28 +1,26 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 
 import java.util.Base64;
 
-class JsonTypingMessage {
+record JsonTypingMessage(
+        String action, long timestamp, @JsonInclude(JsonInclude.Include.NON_NULL) String groupId
+) {
 
-    @JsonProperty
-    final String action;
+    JsonTypingMessage(final String action, final long timestamp, final String groupId) {
+        this.action = action;
+        this.timestamp = timestamp;
+        this.groupId = groupId;
+    }
 
-    @JsonProperty
-    final long timestamp;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final String groupId;
-
-    JsonTypingMessage(SignalServiceTypingMessage typingMessage) {
-        this.action = typingMessage.getAction().name();
-        this.timestamp = typingMessage.getTimestamp();
+    static JsonTypingMessage from(SignalServiceTypingMessage typingMessage) {
+        final var action = typingMessage.getAction().name();
+        final var timestamp = typingMessage.getTimestamp();
         final var encoder = Base64.getEncoder();
-        this.groupId = typingMessage.getGroupId().transform(encoder::encodeToString).orNull();
+        final var groupId = typingMessage.getGroupId().transform(encoder::encodeToString).orNull();
+        return new JsonTypingMessage(action, timestamp, groupId);
     }
 }

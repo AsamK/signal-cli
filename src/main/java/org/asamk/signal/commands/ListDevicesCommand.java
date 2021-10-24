@@ -45,36 +45,21 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
 
         if (outputWriter instanceof PlainTextWriter writer) {
             for (var d : devices) {
-                writer.println("- Device {}{}:", d.getId(), (d.isThisDevice() ? " (this device)" : ""));
+                writer.println("- Device {}{}:", d.id(), (d.isThisDevice() ? " (this device)" : ""));
                 writer.indent(w -> {
-                    w.println("Name: {}", d.getName());
-                    w.println("Created: {}", DateUtils.formatTimestamp(d.getCreated()));
-                    w.println("Last seen: {}", DateUtils.formatTimestamp(d.getLastSeen()));
+                    w.println("Name: {}", d.name());
+                    w.println("Created: {}", DateUtils.formatTimestamp(d.created()));
+                    w.println("Last seen: {}", DateUtils.formatTimestamp(d.lastSeen()));
                 });
             }
         } else {
             final var writer = (JsonWriter) outputWriter;
             final var jsonDevices = devices.stream()
-                    .map(d -> new JsonDevice(d.getId(), d.getName(), d.getCreated(), d.getLastSeen()))
+                    .map(d -> new JsonDevice(d.id(), d.name(), d.created(), d.lastSeen()))
                     .collect(Collectors.toList());
             writer.write(jsonDevices);
         }
     }
 
-    private static final class JsonDevice {
-
-        public final long id;
-        public final String name;
-        public final long createdTimestamp;
-        public final long lastSeenTimestamp;
-
-        private JsonDevice(
-                final long id, final String name, final long createdTimestamp, final long lastSeenTimestamp
-        ) {
-            this.id = id;
-            this.name = name;
-            this.createdTimestamp = createdTimestamp;
-            this.lastSeenTimestamp = lastSeenTimestamp;
-        }
-    }
+    private record JsonDevice(long id, String name, long createdTimestamp, long lastSeenTimestamp) {}
 }

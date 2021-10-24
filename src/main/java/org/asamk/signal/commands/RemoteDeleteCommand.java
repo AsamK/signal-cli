@@ -56,8 +56,8 @@ public class RemoteDeleteCommand implements JsonRpcLocalCommand {
 
         try {
             final var results = m.sendRemoteDeleteMessage(targetTimestamp, recipientIdentifiers);
-            outputResult(outputWriter, results.getTimestamp());
-            ErrorUtils.handleSendMessageResults(results.getResults());
+            outputResult(outputWriter, results.timestamp());
+            ErrorUtils.handleSendMessageResults(results.results());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {

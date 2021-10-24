@@ -169,9 +169,9 @@ public class ManagerImpl implements Manager {
                 account.getSignalProtocolStore(),
                 executor,
                 sessionLock);
-        final var avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
-        final var attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
-        final var stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
+        final var avatarStore = new AvatarStore(pathConfig.avatarsPath());
+        final var attachmentStore = new AttachmentStore(pathConfig.attachmentsPath());
+        final var stickerPackStore = new StickerPackStore(pathConfig.stickerPacksPath());
 
         this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
@@ -426,7 +426,7 @@ public class ManagerImpl implements Manager {
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
         var info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
 
-        addDevice(info.deviceIdentifier, info.deviceKey);
+        addDevice(info.deviceIdentifier(), info.deviceKey());
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
@@ -642,8 +642,8 @@ public class ManagerImpl implements Manager {
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException {
-        messageBuilder.withBody(message.getMessageText());
-        final var attachments = message.getAttachments();
+        messageBuilder.withBody(message.messageText());
+        final var attachments = message.attachments();
         if (attachments != null) {
             messageBuilder.withAttachments(attachmentHelper.uploadAttachments(attachments));
         }

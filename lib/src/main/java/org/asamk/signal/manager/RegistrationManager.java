@@ -96,12 +96,12 @@ public class RegistrationManager implements Closeable {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
         final var serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
-        if (!SignalAccount.userExists(pathConfig.getDataPath(), number)) {
+        if (!SignalAccount.userExists(pathConfig.dataPath(), number)) {
             var identityKey = KeyUtils.generateIdentityKeyPair();
             var registrationId = KeyHelper.generateRegistrationId(false);
 
             var profileKey = KeyUtils.createProfileKey();
-            var account = SignalAccount.create(pathConfig.getDataPath(),
+            var account = SignalAccount.create(pathConfig.dataPath(),
                     number,
                     identityKey,
                     registrationId,
@@ -111,7 +111,7 @@ public class RegistrationManager implements Closeable {
             return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), number, true, TrustNewIdentity.ON_FIRST_USE);
+        var account = SignalAccount.load(pathConfig.dataPath(), number, true, TrustNewIdentity.ON_FIRST_USE);
 
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }

@@ -16,8 +16,7 @@ import java.util.Map;
 public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>, LocalCommand {
 
     default TypeReference<Map<String, Object>> getRequestType() {
-        return new TypeReference<>() {
-        };
+        return new TypeReference<>() {};
     }
 
     default void handleCommand(

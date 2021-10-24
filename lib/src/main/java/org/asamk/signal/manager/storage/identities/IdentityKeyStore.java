@@ -185,7 +185,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         } catch (IOException e) {
             throw new AssertionError("Failed to create identities path", e);
         }
-        return new File(identitiesPath, String.valueOf(recipientId.getId()));
+        return new File(identitiesPath, String.valueOf(recipientId.id()));
     }
 
     private IdentityInfo loadIdentityLocked(final RecipientId recipientId) {
@@ -203,9 +203,9 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         try (var inputStream = new FileInputStream(file)) {
             var storage = objectMapper.readValue(inputStream, IdentityStorage.class);
 
-            var id = new IdentityKey(Base64.getDecoder().decode(storage.getIdentityKey()));
-            var trustLevel = TrustLevel.fromInt(storage.getTrustLevel());
-            var added = new Date(storage.getAddedTimestamp());
+            var id = new IdentityKey(Base64.getDecoder().decode(storage.identityKey()));
+            var trustLevel = TrustLevel.fromInt(storage.trustLevel());
+            var added = new Date(storage.addedTimestamp());
 
             final var identityInfo = new IdentityInfo(recipientId, id, trustLevel, added);
             cachedIdentities.put(recipientId, identityInfo);
@@ -251,32 +251,5 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         }
     }
 
-    private static final class IdentityStorage {
-
-        private String identityKey;
-        private int trustLevel;
-        private long addedTimestamp;
-
-        // For deserialization
-        private IdentityStorage() {
-        }
-
-        private IdentityStorage(final String identityKey, final int trustLevel, final long addedTimestamp) {
-            this.identityKey = identityKey;
-            this.trustLevel = trustLevel;
-            this.addedTimestamp = addedTimestamp;
-        }
-
-        public String getIdentityKey() {
-            return identityKey;
-        }
-
-        public int getTrustLevel() {
-            return trustLevel;
-        }
-
-        public long getAddedTimestamp() {
-            return addedTimestamp;
-        }
-    }
+    private record IdentityStorage(String identityKey, int trustLevel, long addedTimestamp) {}
 }

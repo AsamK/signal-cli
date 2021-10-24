@@ -76,7 +76,7 @@ public class MessageCache {
             return messageCachePath;
         }
 
-        var sender = String.valueOf(recipientId.getId());
+        var sender = String.valueOf(recipientId.id());
         return new File(messageCachePath, sender.replace("/", "_"));
     }
 

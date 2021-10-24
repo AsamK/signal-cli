@@ -643,7 +643,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
         var group = m.getGroup(groupId);
         if (group != null) {
-            writer.println("Name: {}", group.getTitle());
+            writer.println("Name: {}", group.title());
         } else {
             writer.println("Name: <Unknown group>");
         }

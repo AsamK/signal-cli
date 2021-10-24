@@ -153,8 +153,8 @@ public class DbusSignalImpl implements Signal {
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
 
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
         } catch (IOException e) {
@@ -182,8 +182,8 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -198,8 +198,8 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
                     Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -236,8 +236,8 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -303,8 +303,8 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendMessage(new Message(message, attachments),
                     Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
         } catch (IOException e) {
@@ -318,7 +318,7 @@ public class DbusSignalImpl implements Signal {
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
             final var results = m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getSelfNumber()));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
+            checkSendMessageResults(results.timestamp(), results.results());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
@@ -329,8 +329,8 @@ public class DbusSignalImpl implements Signal {
         try {
             var results = m.sendMessage(new Message(message, attachments),
                     Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -354,8 +354,8 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
                     Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
-            checkSendMessageResults(results.getTimestamp(), results.getResults());
-            return results.getTimestamp();
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -420,7 +420,7 @@ public class DbusSignalImpl implements Signal {
         var groups = m.getGroups();
         var ids = new ArrayList<byte[]>(groups.size());
         for (var group : groups) {
-            ids.add(group.getGroupId().serialize());
+            ids.add(group.groupId().serialize());
         }
         return ids;
     }
@@ -444,10 +444,10 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getGroupName(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
-        if (group == null || group.getTitle() == null) {
+        if (group == null || group.title() == null) {
             return "";
         } else {
-            return group.getTitle();
+            return group.title();
         }
     }
 
@@ -457,7 +457,7 @@ public class DbusSignalImpl implements Signal {
         if (group == null) {
             return List.of();
         } else {
-            final var members = group.getMembers();
+            final var members = group.members();
             return getRecipientStrings(members);
         }
     }
@@ -478,7 +478,7 @@ public class DbusSignalImpl implements Signal {
             final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getSelfNumber());
             if (groupId == null) {
                 final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
-                checkSendMessageResults(results.second().getTimestamp(), results.second().getResults());
+                checkSendMessageResults(results.second().timestamp(), results.second().results());
                 return results.first().serialize();
             } else {
                 final var results = m.updateGroup(getGroupId(groupId),
@@ -488,7 +488,7 @@ public class DbusSignalImpl implements Signal {
                                 .withAvatarFile(avatar == null ? null : new File(avatar))
                                 .build());
                 if (results != null) {
-                    checkSendMessageResults(results.getTimestamp(), results.getResults());
+                    checkSendMessageResults(results.timestamp(), results.results());
                 }
                 return groupId;
             }
@@ -600,8 +600,8 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        return Stream.concat(m.getIdentities().stream().map(Identity::getRecipient),
-                m.getContacts().stream().map(Pair::first))
+        return Stream.concat(m.getIdentities().stream().map(Identity::recipient),
+                        m.getContacts().stream().map(Pair::first))
                 .map(a -> a.getNumber().orElse(null))
                 .filter(Objects::nonNull)
                 .distinct()
@@ -620,7 +620,7 @@ public class DbusSignalImpl implements Signal {
         }
         // Try profiles if no contact name was found
         for (var identity : m.getIdentities()) {
-            final var address = identity.getRecipient();
+            final var address = identity.recipient();
             var number = address.getNumber().orElse(null);
             if (number != null) {
                 Profile profile = null;
@@ -835,7 +835,7 @@ public class DbusSignalImpl implements Signal {
             if (d.isThisDevice()) {
                 thisDevice = new DBusPath(deviceObjectPath);
             }
-            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), d.getId(), emptyIfNull(d.getName())));
+            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), d.id(), emptyIfNull(d.name())));
         });
     }
 
@@ -862,15 +862,15 @@ public class DbusSignalImpl implements Signal {
         unExportGroups();
 
         groups.forEach(g -> {
-            final var object = new DbusSignalGroupImpl(g.getGroupId());
+            final var object = new DbusSignalGroupImpl(g.groupId());
             try {
                 connection.exportObject(object);
             } catch (DBusException e) {
                 e.printStackTrace();
             }
             this.groups.add(new StructGroup(new DBusPath(object.getObjectPath()),
-                    g.getGroupId().serialize(),
-                    emptyIfNull(g.getTitle())));
+                    g.groupId().serialize(),
+                    emptyIfNull(g.title())));
         });
     }
 
@@ -885,22 +885,22 @@ public class DbusSignalImpl implements Signal {
 
         public DbusSignalDeviceImpl(final org.asamk.signal.manager.api.Device device) {
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Device",
-                    List.of(new DbusProperty<>("Id", device::getId),
-                            new DbusProperty<>("Name", () -> emptyIfNull(device.getName()), this::setDeviceName),
-                            new DbusProperty<>("Created", device::getCreated),
-                            new DbusProperty<>("LastSeen", device::getLastSeen))));
+                    List.of(new DbusProperty<>("Id", device::id),
+                            new DbusProperty<>("Name", () -> emptyIfNull(device.name()), this::setDeviceName),
+                            new DbusProperty<>("Created", device::created),
+                            new DbusProperty<>("LastSeen", device::lastSeen))));
             this.device = device;
         }
 
         @Override
         public String getObjectPath() {
-            return getDeviceObjectPath(objectPath, device.getId());
+            return getDeviceObjectPath(objectPath, device.id());
         }
 
         @Override
         public void removeDevice() throws Error.Failure {
             try {
-                m.removeLinkedDevices(device.getId());
+                m.removeLinkedDevices(device.id());
                 updateDevices();
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
@@ -929,36 +929,36 @@ public class DbusSignalImpl implements Signal {
             this.groupId = groupId;
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Group",
                     List.of(new DbusProperty<>("Id", groupId::serialize),
-                            new DbusProperty<>("Name", () -> emptyIfNull(getGroup().getTitle()), this::setGroupName),
+                            new DbusProperty<>("Name", () -> emptyIfNull(getGroup().title()), this::setGroupName),
                             new DbusProperty<>("Description",
-                                    () -> emptyIfNull(getGroup().getDescription()),
+                                    () -> emptyIfNull(getGroup().description()),
                                     this::setGroupDescription),
                             new DbusProperty<>("Avatar", this::setGroupAvatar),
                             new DbusProperty<>("IsBlocked", () -> getGroup().isBlocked(), this::setIsBlocked),
                             new DbusProperty<>("IsMember", () -> getGroup().isMember()),
                             new DbusProperty<>("IsAdmin", () -> getGroup().isAdmin()),
                             new DbusProperty<>("MessageExpirationTimer",
-                                    () -> getGroup().getMessageExpirationTimer(),
+                                    () -> getGroup().messageExpirationTimer(),
                                     this::setMessageExpirationTime),
                             new DbusProperty<>("Members",
-                                    () -> new Variant<>(getRecipientStrings(getGroup().getMembers()), "as")),
+                                    () -> new Variant<>(getRecipientStrings(getGroup().members()), "as")),
                             new DbusProperty<>("PendingMembers",
-                                    () -> new Variant<>(getRecipientStrings(getGroup().getPendingMembers()), "as")),
+                                    () -> new Variant<>(getRecipientStrings(getGroup().pendingMembers()), "as")),
                             new DbusProperty<>("RequestingMembers",
-                                    () -> new Variant<>(getRecipientStrings(getGroup().getRequestingMembers()), "as")),
+                                    () -> new Variant<>(getRecipientStrings(getGroup().requestingMembers()), "as")),
                             new DbusProperty<>("Admins",
-                                    () -> new Variant<>(getRecipientStrings(getGroup().getAdminMembers()), "as")),
+                                    () -> new Variant<>(getRecipientStrings(getGroup().adminMembers()), "as")),
                             new DbusProperty<>("PermissionAddMember",
-                                    () -> getGroup().getPermissionAddMember().name(),
+                                    () -> getGroup().permissionAddMember().name(),
                                     this::setGroupPermissionAddMember),
                             new DbusProperty<>("PermissionEditDetails",
-                                    () -> getGroup().getPermissionEditDetails().name(),
+                                    () -> getGroup().permissionEditDetails().name(),
                                     this::setGroupPermissionEditDetails),
                             new DbusProperty<>("PermissionSendMessage",
-                                    () -> getGroup().getPermissionSendMessage().name(),
+                                    () -> getGroup().permissionSendMessage().name(),
                                     this::setGroupPermissionSendMessage),
                             new DbusProperty<>("GroupInviteLink", () -> {
-                                final var groupInviteLinkUrl = getGroup().getGroupInviteLinkUrl();
+                                final var groupInviteLinkUrl = getGroup().groupInviteLinkUrl();
                                 return groupInviteLinkUrl == null ? "" : groupInviteLinkUrl.getUrl();
                             }))));
         }

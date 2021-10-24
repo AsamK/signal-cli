@@ -1,7 +1,6 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
@@ -12,55 +11,41 @@ import java.util.stream.Collectors;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
-public class JsonQuote {
+public record JsonQuote(
+        long id,
+        @Deprecated String author,
+        String authorNumber,
+        String authorUuid,
+        String text,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
+        List<JsonQuotedAttachment> attachments
+) {
 
-    @JsonProperty
-    final long id;
-
-    @JsonProperty
-    @Deprecated
-    final String author;
-
-    @JsonProperty
-    final String authorNumber;
-
-    @JsonProperty
-    final String authorUuid;
-
-    @JsonProperty
-    final String text;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonMention> mentions;
-
-    @JsonProperty
-    final List<JsonQuotedAttachment> attachments;
-
-    JsonQuote(SignalServiceDataMessage.Quote quote, Manager m) {
-        this.id = quote.getId();
+    static JsonQuote from(SignalServiceDataMessage.Quote quote, Manager m) {
+        final var id = quote.getId();
         final var address = m.resolveSignalServiceAddress(quote.getAuthor());
-        this.author = getLegacyIdentifier(address);
-        this.authorNumber = address.getNumber().orNull();
-        this.authorUuid = address.getUuid().toString();
-        this.text = quote.getText();
+        final var author = getLegacyIdentifier(address);
+        final var authorNumber = address.getNumber().orNull();
+        final var authorUuid = address.getUuid().toString();
+        final var text = quote.getText();
 
+        final List<JsonMention> mentions;
         if (quote.getMentions() != null && quote.getMentions().size() > 0) {
-            this.mentions = quote.getMentions()
+            mentions = quote.getMentions()
                     .stream()
-                    .map(quotedMention -> new JsonMention(quotedMention, m))
+                    .map(quotedMention -> JsonMention.from(quotedMention, m))
                     .collect(Collectors.toList());
         } else {
-            this.mentions = null;
+            mentions = null;
         }
 
+        final List<JsonQuotedAttachment> attachments;
         if (quote.getAttachments().size() > 0) {
-            this.attachments = quote.getAttachments()
-                    .stream()
-                    .map(JsonQuotedAttachment::new)
-                    .collect(Collectors.toList());
+            attachments = quote.getAttachments().stream().map(JsonQuotedAttachment::from).collect(Collectors.toList());
         } else {
-            this.attachments = new ArrayList<>();
+            attachments = new ArrayList<>();
         }
+
+        return new JsonQuote(id, author, authorNumber, authorUuid, text, mentions, attachments);
     }
 }

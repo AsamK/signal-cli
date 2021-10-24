@@ -88,8 +88,8 @@ public class SessionStore implements SignalServiceSessionStore {
         synchronized (cachedSessions) {
             return getKeysLocked(recipientId).stream()
                     // get all sessions for recipient except main device session
-                    .filter(key -> key.getDeviceId() != 1 && key.getRecipientId().equals(recipientId))
-                    .map(Key::getDeviceId)
+                    .filter(key -> key.deviceId() != 1 && key.recipientId().equals(recipientId))
+                    .map(Key::deviceId)
                     .collect(Collectors.toList());
         }
     }
@@ -155,7 +155,7 @@ public class SessionStore implements SignalServiceSessionStore {
                     .stream()
                     .flatMap(recipientId -> getKeysLocked(recipientId).stream())
                     .filter(key -> isActive(this.loadSessionLocked(key)))
-                    .map(key -> new SignalProtocolAddress(recipientIdToNameMap.get(key.recipientId), key.getDeviceId()))
+                    .map(key -> new SignalProtocolAddress(recipientIdToNameMap.get(key.recipientId), key.deviceId()))
                     .collect(Collectors.toSet());
         }
     }
@@ -197,7 +197,7 @@ public class SessionStore implements SignalServiceSessionStore {
                     if (session == null) {
                         continue;
                     }
-                    final var newKey = new Key(recipientId, key.getDeviceId());
+                    final var newKey = new Key(recipientId, key.deviceId());
                     storeSessionLocked(newKey, session);
                 }
             }
@@ -217,7 +217,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private List<Key> getKeysLocked(RecipientId recipientId) {
-        final var files = sessionsPath.listFiles((_file, s) -> s.startsWith(recipientId.getId() + "_"));
+        final var files = sessionsPath.listFiles((_file, s) -> s.startsWith(recipientId.id() + "_"));
         if (files == null) {
             return List.of();
         }
@@ -249,7 +249,7 @@ public class SessionStore implements SignalServiceSessionStore {
         } catch (IOException e) {
             throw new AssertionError("Failed to create sessions path", e);
         }
-        return new File(sessionsPath, key.getRecipientId().getId() + "_" + key.getDeviceId());
+        return new File(sessionsPath, key.recipientId().id() + "_" + key.deviceId());
     }
 
     private SessionRecord loadSessionLocked(final Key key) {
@@ -324,40 +324,5 @@ public class SessionStore implements SignalServiceSessionStore {
                 && record.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
     }
 
-    private static final class Key {
-
-        private final RecipientId recipientId;
-        private final int deviceId;
-
-        public Key(final RecipientId recipientId, final int deviceId) {
-            this.recipientId = recipientId;
-            this.deviceId = deviceId;
-        }
-
-        public RecipientId getRecipientId() {
-            return recipientId;
-        }
-
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final var key = (Key) o;
-
-            if (deviceId != key.deviceId) return false;
-            return recipientId.equals(key.recipientId);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = recipientId.hashCode();
-            result = 31 * result + deviceId;
-            return result;
-        }
-    }
+    private record Key(RecipientId recipientId, int deviceId) {}
 }

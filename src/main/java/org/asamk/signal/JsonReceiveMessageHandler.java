@@ -26,11 +26,11 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
         final var object = new HashMap<String, Object>();
         if (exception != null) {
-            object.put("error", new JsonError(exception));
+            object.put("error", JsonError.from(exception));
         }
 
         if (envelope != null) {
-            object.put("envelope", new JsonMessageEnvelope(envelope, content, exception, m));
+            object.put("envelope", JsonMessageEnvelope.from(envelope, content, exception, m));
         }
 
         jsonWriter.write(object);

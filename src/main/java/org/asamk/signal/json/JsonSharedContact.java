@@ -1,62 +1,45 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JsonSharedContact {
+public record JsonSharedContact(
+        JsonContactName name,
+        JsonContactAvatar avatar,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactPhone> phone,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactEmail> email,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactAddress> address,
+        String organization
+) {
 
-    @JsonProperty
-    final JsonContactName name;
+    static JsonSharedContact from(SharedContact contact) {
+        final var name = JsonContactName.from(contact.getName());
+        final var avatar = contact.getAvatar().isPresent() ? JsonContactAvatar.from(contact.getAvatar().get()) : null;
 
-    @JsonProperty
-    final JsonContactAvatar avatar;
+        final var phone = contact.getPhone().isPresent() ? contact.getPhone()
+                .get()
+                .stream()
+                .map(JsonContactPhone::from)
+                .collect(Collectors.toList()) : null;
 
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonContactPhone> phone;
+        final var email = contact.getEmail().isPresent() ? contact.getEmail()
+                .get()
+                .stream()
+                .map(JsonContactEmail::from)
+                .collect(Collectors.toList()) : null;
 
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonContactEmail> email;
+        final var address = contact.getAddress().isPresent() ? contact.getAddress()
+                .get()
+                .stream()
+                .map(JsonContactAddress::from)
+                .collect(Collectors.toList()) : null;
 
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonContactAddress> address;
+        final var organization = contact.getOrganization().orNull();
 
-    @JsonProperty
-    final String organization;
-
-    public JsonSharedContact(SharedContact contact) {
-        name = new JsonContactName(contact.getName());
-        if (contact.getAvatar().isPresent()) {
-            avatar = new JsonContactAvatar(contact.getAvatar().get());
-        } else {
-            avatar = null;
-        }
-
-        if (contact.getPhone().isPresent()) {
-            phone = contact.getPhone().get().stream().map(JsonContactPhone::new).collect(Collectors.toList());
-        } else {
-            phone = null;
-        }
-
-        if (contact.getEmail().isPresent()) {
-            email = contact.getEmail().get().stream().map(JsonContactEmail::new).collect(Collectors.toList());
-        } else {
-            email = null;
-        }
-
-        if (contact.getAddress().isPresent()) {
-            address = contact.getAddress().get().stream().map(JsonContactAddress::new).collect(Collectors.toList());
-        } else {
-            address = null;
-        }
-
-        organization = contact.getOrganization().orNull();
+        return new JsonSharedContact(name, avatar, phone, email, address, organization);
     }
 }

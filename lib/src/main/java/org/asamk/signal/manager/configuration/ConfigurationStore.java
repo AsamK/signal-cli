@@ -62,29 +62,9 @@ public class ConfigurationStore {
         return new Storage(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
     }
 
-    public static final class Storage {
-
-        public Boolean readReceipts;
-        public Boolean unidentifiedDeliveryIndicators;
-        public Boolean typingIndicators;
-        public Boolean linkPreviews;
-
-        // For deserialization
-        private Storage() {
-        }
-
-        public Storage(
-                final Boolean readReceipts,
-                final Boolean unidentifiedDeliveryIndicators,
-                final Boolean typingIndicators,
-                final Boolean linkPreviews
-        ) {
-            this.readReceipts = readReceipts;
-            this.unidentifiedDeliveryIndicators = unidentifiedDeliveryIndicators;
-            this.typingIndicators = typingIndicators;
-            this.linkPreviews = linkPreviews;
-        }
-    }
+    public record Storage(
+            Boolean readReceipts, Boolean unidentifiedDeliveryIndicators, Boolean typingIndicators, Boolean linkPreviews
+    ) {}
 
     public interface Saver {
 

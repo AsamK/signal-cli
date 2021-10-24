@@ -1,31 +1,19 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
-class JsonSyncReadMessage {
+record JsonSyncReadMessage(
+        @Deprecated String sender, String senderNumber, String senderUuid, long timestamp
+) {
 
-    @JsonProperty
-    @Deprecated
-    final String sender;
-
-    @JsonProperty
-    final String senderNumber;
-
-    @JsonProperty
-    final String senderUuid;
-
-    @JsonProperty
-    final long timestamp;
-
-    public JsonSyncReadMessage(final ReadMessage readMessage) {
-        final var sender = readMessage.getSender();
-        this.sender = getLegacyIdentifier(sender);
-        this.senderNumber = sender.getNumber().orNull();
-        this.senderUuid = sender.getUuid().toString();
-        this.timestamp = readMessage.getTimestamp();
+    static JsonSyncReadMessage from(final ReadMessage readMessage) {
+        final var senderAddress = readMessage.getSender();
+        final var sender = getLegacyIdentifier(senderAddress);
+        final var senderNumber = senderAddress.getNumber().orNull();
+        final var senderUuid = senderAddress.getUuid().toString();
+        final var timestamp = readMessage.getTimestamp();
+        return new JsonSyncReadMessage(sender, senderNumber, senderUuid, timestamp);
     }
 }

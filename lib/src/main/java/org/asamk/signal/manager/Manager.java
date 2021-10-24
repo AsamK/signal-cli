@@ -57,11 +57,11 @@ public interface Manager extends Closeable {
     ) throws IOException, NotRegisteredException {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
-        if (!SignalAccount.userExists(pathConfig.getDataPath(), number)) {
+        if (!SignalAccount.userExists(pathConfig.dataPath(), number)) {
             throw new NotRegisteredException();
         }
 
-        var account = SignalAccount.load(pathConfig.getDataPath(), number, true, trustNewIdentity);
+        var account = SignalAccount.load(pathConfig.dataPath(), number, true, trustNewIdentity);
 
         if (!account.isRegistered()) {
             throw new NotRegisteredException();
@@ -74,7 +74,7 @@ public interface Manager extends Closeable {
 
     static List<String> getAllLocalNumbers(File settingsPath) {
         var pathConfig = PathConfig.createDefault(settingsPath);
-        final var dataPath = pathConfig.getDataPath();
+        final var dataPath = pathConfig.dataPath();
         final var files = dataPath.listFiles();
 
         if (files == null) {

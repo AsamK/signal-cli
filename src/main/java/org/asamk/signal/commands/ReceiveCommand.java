@@ -61,19 +61,19 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             if (outputWriter instanceof JsonWriter jsonWriter) {
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
-                    var envelope = new JsonMessageEnvelope(messageReceived);
+                    var envelope = JsonMessageEnvelope.from(messageReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
                 dbusconnection.addSigHandler(Signal.ReceiptReceived.class, signal, receiptReceived -> {
-                    var envelope = new JsonMessageEnvelope(receiptReceived);
+                    var envelope = JsonMessageEnvelope.from(receiptReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
                 dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
-                    var envelope = new JsonMessageEnvelope(syncReceived);
+                    var envelope = JsonMessageEnvelope.from(syncReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
