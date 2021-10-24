@@ -53,8 +53,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Got receipt.");
         } else if (envelope.isSignalMessage() || envelope.isPreKeySignalMessage() || envelope.isUnidentifiedSender()) {
             if (exception != null) {
-                if (exception instanceof UntrustedIdentityException) {
-                    var e = (UntrustedIdentityException) exception;
+                if (exception instanceof UntrustedIdentityException e) {
                     writer.println(
                             "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
                     final var recipientName = getLegacyIdentifier(m.resolveSignalServiceAddress(e.getSender()));

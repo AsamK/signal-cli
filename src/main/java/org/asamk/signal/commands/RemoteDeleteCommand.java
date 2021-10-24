@@ -67,8 +67,7 @@ public class RemoteDeleteCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             writer.println("{}", timestamp);
         } else {
             final var writer = (JsonWriter) outputWriter;

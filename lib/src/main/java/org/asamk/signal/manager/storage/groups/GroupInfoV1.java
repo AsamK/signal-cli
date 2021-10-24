@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GroupInfoV1 extends GroupInfo {
+public final class GroupInfoV1 extends GroupInfo {
 
     private final GroupIdV1 groupId;
 

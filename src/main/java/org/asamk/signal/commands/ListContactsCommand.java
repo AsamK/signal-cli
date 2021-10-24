@@ -27,8 +27,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
     public void handleCommand(final Namespace ns, final Manager m, final OutputWriter outputWriter) {
         var contacts = m.getContacts();
 
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             for (var c : contacts) {
                 final var contact = c.second();
                 writer.println("Number: {} Name: {} Blocked: {} Message expiration: {}",

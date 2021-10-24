@@ -20,22 +20,11 @@ public class LibSignalLogger implements SignalProtocolLogger {
     public void log(final int priority, final String tag, final String message) {
         final var logMessage = String.format("[%s]: %s", tag, message);
         switch (priority) {
-            case SignalProtocolLogger.VERBOSE:
-                logger.trace(logMessage);
-                break;
-            case SignalProtocolLogger.DEBUG:
-                logger.debug(logMessage);
-                break;
-            case SignalProtocolLogger.INFO:
-                logger.info(logMessage);
-                break;
-            case SignalProtocolLogger.WARN:
-                logger.warn(logMessage);
-                break;
-            case SignalProtocolLogger.ERROR:
-            case SignalProtocolLogger.ASSERT:
-                logger.error(logMessage);
-                break;
+            case SignalProtocolLogger.VERBOSE -> logger.trace(logMessage);
+            case SignalProtocolLogger.DEBUG -> logger.debug(logMessage);
+            case SignalProtocolLogger.INFO -> logger.info(logMessage);
+            case SignalProtocolLogger.WARN -> logger.warn(logMessage);
+            case SignalProtocolLogger.ERROR, SignalProtocolLogger.ASSERT -> logger.error(logMessage);
         }
     }
 }

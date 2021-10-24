@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class GroupInfo {
+public sealed abstract class GroupInfo permits GroupInfoV1, GroupInfoV2 {
 
     public abstract GroupId getGroupId();
 

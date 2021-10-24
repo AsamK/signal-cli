@@ -9,9 +9,9 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.UUID;
 
-public abstract class RecipientIdentifier {
+public sealed abstract class RecipientIdentifier {
 
-    public static class NoteToSelf extends RecipientIdentifier {
+    public static final class NoteToSelf extends RecipientIdentifier {
 
         public static NoteToSelf INSTANCE = new NoteToSelf();
 
@@ -19,7 +19,7 @@ public abstract class RecipientIdentifier {
         }
     }
 
-    public abstract static class Single extends RecipientIdentifier {
+    public sealed static abstract class Single extends RecipientIdentifier {
 
         public static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
             return UuidUtil.isUuid(identifier)
@@ -43,7 +43,7 @@ public abstract class RecipientIdentifier {
         public abstract String getIdentifier();
     }
 
-    public static class Uuid extends Single {
+    public static final class Uuid extends Single {
 
         public final UUID uuid;
 
@@ -72,7 +72,7 @@ public abstract class RecipientIdentifier {
         }
     }
 
-    public static class Number extends Single {
+    public static final class Number extends Single {
 
         public final String number;
 
@@ -101,7 +101,7 @@ public abstract class RecipientIdentifier {
         }
     }
 
-    public static class Group extends RecipientIdentifier {
+    public static final class Group extends RecipientIdentifier {
 
         public final GroupId groupId;
 

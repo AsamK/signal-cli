@@ -19,7 +19,7 @@ public class RecipientAddress {
      */
     public RecipientAddress(Optional<UUID> uuid, Optional<String> e164) {
         uuid = uuid.isPresent() && uuid.get().equals(UuidUtil.UNKNOWN_UUID) ? Optional.empty() : uuid;
-        if (!uuid.isPresent() && !e164.isPresent()) {
+        if (uuid.isEmpty() && e164.isEmpty()) {
             throw new AssertionError("Must have either a UUID or E164 number!");
         }
 

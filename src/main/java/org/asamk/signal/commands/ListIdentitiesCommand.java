@@ -59,8 +59,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
             identities = m.getIdentities(CommandUtil.getSingleRecipientIdentifier(number, m.getSelfNumber()));
         }
 
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             for (var id : identities) {
                 printIdentityFingerprint(writer, m, id);
             }

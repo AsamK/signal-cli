@@ -15,7 +15,7 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GroupInfoV2 extends GroupInfo {
+public final class GroupInfoV2 extends GroupInfo {
 
     private final GroupIdV2 groupId;
     private final GroupMasterKey masterKey;
@@ -197,12 +197,9 @@ public class GroupInfoV2 extends GroupInfo {
     }
 
     private static GroupPermission toGroupPermission(final AccessControl.AccessRequired permission) {
-        switch (permission) {
-            case ADMINISTRATOR:
-                return GroupPermission.ONLY_ADMINS;
-            case MEMBER:
-            default:
-                return GroupPermission.EVERY_MEMBER;
-        }
+        return switch (permission) {
+            case ADMINISTRATOR -> GroupPermission.ONLY_ADMINS;
+            default -> GroupPermission.EVERY_MEMBER;
+        };
     }
 }

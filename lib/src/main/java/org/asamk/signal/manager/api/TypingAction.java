@@ -7,13 +7,9 @@ public enum TypingAction {
     STOP;
 
     public SignalServiceTypingMessage.Action toSignalService() {
-        switch (this) {
-            case START:
-                return SignalServiceTypingMessage.Action.STARTED;
-            case STOP:
-                return SignalServiceTypingMessage.Action.STOPPED;
-            default:
-                throw new IllegalStateException("Invalid typing action " + this);
-        }
+        return switch (this) {
+            case START -> SignalServiceTypingMessage.Action.STARTED;
+            case STOP -> SignalServiceTypingMessage.Action.STOPPED;
+        };
     }
 }

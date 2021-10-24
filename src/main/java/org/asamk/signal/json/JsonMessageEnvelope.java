@@ -71,8 +71,7 @@ public class JsonMessageEnvelope {
             this.sourceNumber = source.getNumber().orNull();
             this.sourceUuid = source.getUuid().toString();
             this.sourceDevice = content.getSenderDevice();
-        } else if (exception instanceof UntrustedIdentityException) {
-            var e = (UntrustedIdentityException) exception;
+        } else if (exception instanceof UntrustedIdentityException e) {
             final var source = m.resolveSignalServiceAddress(e.getSender());
             this.source = getLegacyIdentifier(source);
             this.sourceNumber = source.getNumber().orNull();

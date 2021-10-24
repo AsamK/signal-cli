@@ -274,15 +274,9 @@ public class DbusManagerImpl implements Manager {
         }
         if (updateGroup.getGroupLinkState() != null) {
             switch (updateGroup.getGroupLinkState()) {
-                case DISABLED:
-                    group.disableLink();
-                    break;
-                case ENABLED:
-                    group.enableLink(false);
-                    break;
-                case ENABLED_WITH_APPROVAL:
-                    group.enableLink(true);
-                    break;
+                case DISABLED -> group.disableLink();
+                case ENABLED -> group.enableLink(false);
+                case ENABLED_WITH_APPROVAL -> group.enableLink(true);
             }
         }
         return new SendGroupMessageResults(0, List.of());

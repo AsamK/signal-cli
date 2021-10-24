@@ -55,8 +55,7 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
         try {
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();
-            if (outputWriter instanceof JsonWriter) {
-                final var writer = (JsonWriter) outputWriter;
+            if (outputWriter instanceof JsonWriter writer) {
                 if (!m.getGroup(newGroupId).isMember()) {
                     writer.write(Map.of("groupId", newGroupId.toBase64(), "onlyRequested", true));
                 } else {

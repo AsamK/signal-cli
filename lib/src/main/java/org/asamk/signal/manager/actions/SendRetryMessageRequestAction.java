@@ -54,17 +54,12 @@ public class SendRetryMessageRequestAction implements HandleAction {
     }
 
     private static int envelopeTypeToCiphertextMessageType(int envelopeType) {
-        switch (envelopeType) {
-            case SignalServiceProtos.Envelope.Type.PREKEY_BUNDLE_VALUE:
-                return CiphertextMessage.PREKEY_TYPE;
-            case SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE:
-                return CiphertextMessage.SENDERKEY_TYPE;
-            case SignalServiceProtos.Envelope.Type.PLAINTEXT_CONTENT_VALUE:
-                return CiphertextMessage.PLAINTEXT_CONTENT_TYPE;
-            case SignalServiceProtos.Envelope.Type.CIPHERTEXT_VALUE:
-            default:
-                return CiphertextMessage.WHISPER_TYPE;
-        }
+        return switch (envelopeType) {
+            case SignalServiceProtos.Envelope.Type.PREKEY_BUNDLE_VALUE -> CiphertextMessage.PREKEY_TYPE;
+            case SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE -> CiphertextMessage.SENDERKEY_TYPE;
+            case SignalServiceProtos.Envelope.Type.PLAINTEXT_CONTENT_VALUE -> CiphertextMessage.PLAINTEXT_CONTENT_TYPE;
+            default -> CiphertextMessage.WHISPER_TYPE;
+        };
     }
 
     @Override

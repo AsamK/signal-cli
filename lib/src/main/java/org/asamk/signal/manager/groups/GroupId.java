@@ -3,7 +3,7 @@ package org.asamk.signal.manager.groups;
 import java.util.Arrays;
 import java.util.Base64;
 
-public abstract class GroupId {
+public abstract sealed class GroupId permits GroupIdV1, GroupIdV2 {
 
     private final byte[] id;
 

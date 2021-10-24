@@ -9,8 +9,8 @@ plugins {
 version = "0.9.2"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 application {
@@ -22,6 +22,7 @@ graalvmNative {
         this["main"].run {
             configurationFileDirectories.from(file("graalvm-config-dir"))
             buildArgs.add("--allow-incomplete-classpath")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
         }
     }
 }

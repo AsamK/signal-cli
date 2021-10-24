@@ -6,7 +6,7 @@ fi
 
 set -e
 # To update graalvm config, set GRAALVM_HOME, e.g:
-# export GRAALVM_HOME=/usr/lib/jvm/java-11-graalvm
+# export GRAALVM_HOME=/usr/lib/jvm/java-17-graalvm
 if [ ! -z "$GRAALVM_HOME" ]; then
   export JAVA_HOME=$GRAALVM_HOME
   export SIGNAL_CLI_OPTS='-agentlib:native-image-agent=config-merge-dir=graalvm-config-dir/'

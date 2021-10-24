@@ -569,16 +569,15 @@ public class ManagerImpl implements Manager {
         long timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single) {
-                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
+            if (recipient instanceof RecipientIdentifier.Single single) {
+                final var recipientId = resolveRecipient(single);
                 final var result = sendHelper.sendMessage(messageBuilder, recipientId);
                 results.put(recipient, List.of(result));
             } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
                 final var result = sendHelper.sendSelfMessage(messageBuilder);
                 results.put(recipient, List.of(result));
-            } else if (recipient instanceof RecipientIdentifier.Group) {
-                final var groupId = ((RecipientIdentifier.Group) recipient).groupId;
-                final var result = sendHelper.sendAsGroupMessage(messageBuilder, groupId);
+            } else if (recipient instanceof RecipientIdentifier.Group group) {
+                final var result = sendHelper.sendAsGroupMessage(messageBuilder, group.groupId);
                 results.put(recipient, result);
             }
         }

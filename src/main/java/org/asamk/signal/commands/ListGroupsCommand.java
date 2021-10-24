@@ -80,8 +80,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var groups = m.getGroups();
 
-        if (outputWriter instanceof JsonWriter) {
-            final var jsonWriter = (JsonWriter) outputWriter;
+        if (outputWriter instanceof JsonWriter jsonWriter) {
 
             var jsonGroups = groups.stream().map(group -> {
                 final var groupInviteLink = group.getGroupInviteLinkUrl();

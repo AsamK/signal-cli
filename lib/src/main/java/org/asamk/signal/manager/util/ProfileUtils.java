@@ -91,14 +91,11 @@ public class ProfileUtils {
         }
         String[] parts = name.split("\0");
 
-        switch (parts.length) {
-            case 0:
-                return new Pair<>(null, null);
-            case 1:
-                return new Pair<>(parts[0], null);
-            default:
-                return new Pair<>(parts[0], parts[1]);
-        }
+        return switch (parts.length) {
+            case 0 -> new Pair<>(null, null);
+            case 1 -> new Pair<>(parts[0], null);
+            default -> new Pair<>(parts[0], parts[1]);
+        };
     }
 
     static String trimZeros(String str) {

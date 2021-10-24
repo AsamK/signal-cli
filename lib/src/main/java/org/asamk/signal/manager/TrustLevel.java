@@ -18,40 +18,27 @@ public enum TrustLevel {
     }
 
     public static TrustLevel fromIdentityState(ContactRecord.IdentityState identityState) {
-        switch (identityState) {
-            case DEFAULT:
-                return TRUSTED_UNVERIFIED;
-            case UNVERIFIED:
-                return UNTRUSTED;
-            case VERIFIED:
-                return TRUSTED_VERIFIED;
-            case UNRECOGNIZED:
-                return null;
-        }
-        throw new RuntimeException("Unknown identity state: " + identityState);
+        return switch (identityState) {
+            case DEFAULT -> TRUSTED_UNVERIFIED;
+            case UNVERIFIED -> UNTRUSTED;
+            case VERIFIED -> TRUSTED_VERIFIED;
+            case UNRECOGNIZED -> null;
+        };
     }
 
     public static TrustLevel fromVerifiedState(VerifiedMessage.VerifiedState verifiedState) {
-        switch (verifiedState) {
-            case DEFAULT:
-                return TRUSTED_UNVERIFIED;
-            case UNVERIFIED:
-                return UNTRUSTED;
-            case VERIFIED:
-                return TRUSTED_VERIFIED;
-        }
-        throw new RuntimeException("Unknown verified state: " + verifiedState);
+        return switch (verifiedState) {
+            case DEFAULT -> TRUSTED_UNVERIFIED;
+            case UNVERIFIED -> UNTRUSTED;
+            case VERIFIED -> TRUSTED_VERIFIED;
+        };
     }
 
     public VerifiedMessage.VerifiedState toVerifiedState() {
-        switch (this) {
-            case TRUSTED_UNVERIFIED:
-                return VerifiedMessage.VerifiedState.DEFAULT;
-            case UNTRUSTED:
-                return VerifiedMessage.VerifiedState.UNVERIFIED;
-            case TRUSTED_VERIFIED:
-                return VerifiedMessage.VerifiedState.VERIFIED;
-        }
-        throw new RuntimeException("Unknown verified state: " + this);
+        return switch (this) {
+            case TRUSTED_UNVERIFIED -> VerifiedMessage.VerifiedState.DEFAULT;
+            case UNTRUSTED -> VerifiedMessage.VerifiedState.UNVERIFIED;
+            case TRUSTED_VERIFIED -> VerifiedMessage.VerifiedState.VERIFIED;
+        };
     }
 }

@@ -58,8 +58,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             final Namespace ns, final Signal signal, DBusConnection dbusconnection, final OutputWriter outputWriter
     ) throws CommandException {
         try {
-            if (outputWriter instanceof JsonWriter) {
-                final var jsonWriter = (JsonWriter) outputWriter;
+            if (outputWriter instanceof JsonWriter jsonWriter) {
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
                     var envelope = new JsonMessageEnvelope(messageReceived);

@@ -77,33 +77,23 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         if (value == null) {
             return null;
         }
-        switch (value) {
-            case "enabled":
-                return GroupLinkState.ENABLED;
-            case "enabled-with-approval":
-            case "enabledWithApproval":
-                return GroupLinkState.ENABLED_WITH_APPROVAL;
-            case "disabled":
-                return GroupLinkState.DISABLED;
-            default:
-                throw new UserErrorException("Invalid group link state: " + value);
-        }
+        return switch (value) {
+            case "enabled" -> GroupLinkState.ENABLED;
+            case "enabled-with-approval", "enabledWithApproval" -> GroupLinkState.ENABLED_WITH_APPROVAL;
+            case "disabled" -> GroupLinkState.DISABLED;
+            default -> throw new UserErrorException("Invalid group link state: " + value);
+        };
     }
 
     GroupPermission getGroupPermission(String value) throws UserErrorException {
         if (value == null) {
             return null;
         }
-        switch (value) {
-            case "every-member":
-            case "everyMember":
-                return GroupPermission.EVERY_MEMBER;
-            case "only-admins":
-            case "onlyAdmins":
-                return GroupPermission.ONLY_ADMINS;
-            default:
-                throw new UserErrorException("Invalid group permission: " + value);
-        }
+        return switch (value) {
+            case "every-member", "everyMember" -> GroupPermission.EVERY_MEMBER;
+            case "only-admins", "onlyAdmins" -> GroupPermission.ONLY_ADMINS;
+            default -> throw new UserErrorException("Invalid group permission: " + value);
+        };
     }
 
     @Override
@@ -179,8 +169,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final Long timestamp, final GroupId groupId) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             if (groupId != null) {
                 writer.println("Created new group: \"{}\"", groupId.toBase64());
             }

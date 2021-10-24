@@ -75,8 +75,7 @@ public class GroupStore {
             final Saver saver
     ) {
         final var groups = storage.groups.stream().map(g -> {
-            if (g instanceof Storage.GroupV1) {
-                final var g1 = (Storage.GroupV1) g;
+            if (g instanceof Storage.GroupV1 g1) {
                 final var members = g1.members.stream().map(m -> {
                     if (m.recipientId == null) {
                         return recipientResolver.resolveRecipient(new RecipientAddress(UuidUtil.parseOrNull(m.uuid),
@@ -186,8 +185,7 @@ public class GroupStore {
         synchronized (groups) {
             var modified = false;
             for (var group : this.groups.values()) {
-                if (group instanceof GroupInfoV1) {
-                    var groupV1 = (GroupInfoV1) group;
+                if (group instanceof GroupInfoV1 groupV1) {
                     if (groupV1.isMember(toBeMergedRecipientId)) {
                         groupV1.removeMember(toBeMergedRecipientId);
                         groupV1.addMembers(List.of(recipientId));
@@ -220,8 +218,7 @@ public class GroupStore {
 
     private GroupInfoV1 getGroupV1ByV2IdLocked(GroupIdV2 groupIdV2) {
         for (var g : groups.values()) {
-            if (g instanceof GroupInfoV1) {
-                final var gv1 = (GroupInfoV1) g;
+            if (g instanceof GroupInfoV1 gv1) {
                 if (groupIdV2.equals(gv1.getExpectedV2Id())) {
                     return gv1;
                 }
@@ -256,8 +253,7 @@ public class GroupStore {
 
     private Storage toStorageLocked() {
         return new Storage(groups.values().stream().map(g -> {
-            if (g instanceof GroupInfoV1) {
-                final var g1 = (GroupInfoV1) g;
+            if (g instanceof GroupInfoV1 g1) {
                 return new Storage.GroupV1(g1.getGroupId().toBase64(),
                         g1.getExpectedV2Id().toBase64(),
                         g1.name,

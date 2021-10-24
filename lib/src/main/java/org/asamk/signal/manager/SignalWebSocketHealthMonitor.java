@@ -63,15 +63,9 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private synchronized void onStateChange(WebSocketConnectionState connectionState, HealthState healthState) {
         switch (connectionState) {
-            case CONNECTED:
-                logger.debug("WebSocket is now connected");
-                break;
-            case AUTHENTICATION_FAILED:
-                logger.debug("WebSocket authentication failed");
-                break;
-            case FAILED:
-                logger.debug("WebSocket connection failed");
-                break;
+            case CONNECTED -> logger.debug("WebSocket is now connected");
+            case AUTHENTICATION_FAILED -> logger.debug("WebSocket authentication failed");
+            case FAILED -> logger.debug("WebSocket connection failed");
         }
 
         healthState.needsKeepAlive = connectionState == WebSocketConnectionState.CONNECTED;

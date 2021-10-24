@@ -56,7 +56,7 @@ public final class GroupInviteLinkUrl {
             var groupInviteLink = GroupInviteLink.parseFrom(bytes);
 
             switch (groupInviteLink.getContentsCase()) {
-                case V1CONTENTS: {
+                case V1CONTENTS -> {
                     var groupInviteLinkContentsV1 = groupInviteLink.getV1Contents();
                     var groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.getGroupMasterKey()
                             .toByteArray());
@@ -65,8 +65,7 @@ public final class GroupInviteLinkUrl {
 
                     return new GroupInviteLinkUrl(groupMasterKey, password);
                 }
-                default:
-                    throw new UnknownGroupLinkVersionException("Url contains no known group link content");
+                default -> throw new UnknownGroupLinkVersionException("Url contains no known group link content");
             }
         } catch (InvalidInputException | IOException e) {
             throw new InvalidGroupLinkException(e);

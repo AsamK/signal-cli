@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+**Attention**: Now requires Java 17
 
 ## [0.9.2] - 2021-10-24
 ### Fixed

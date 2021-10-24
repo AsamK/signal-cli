@@ -11,7 +11,7 @@ It also has a JSON-RPC based interface, see the [documentation](https://github.c
 You can [build signal-cli](#building) yourself, or use the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well.
 
 System requirements:
-- at least Java Runtime Environment (JRE) 11
+- at least Java Runtime Environment (JRE) 17
 - native libraries: libzkgroup, libsignal-client
 
   Those are bundled for x86_64 Linux (with recent enough glibc, see #643), for other systems/architectures see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)

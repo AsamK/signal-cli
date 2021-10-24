@@ -47,8 +47,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
 
         // Output
-        if (outputWriter instanceof JsonWriter) {
-            final var jsonWriter = (JsonWriter) outputWriter;
+        if (outputWriter instanceof JsonWriter jsonWriter) {
 
             var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
                 final var number = entry.getValue().first();

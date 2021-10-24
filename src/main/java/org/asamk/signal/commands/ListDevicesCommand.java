@@ -43,8 +43,7 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
             throw new IOErrorException("Failed to get linked devices: " + e.getMessage(), e);
         }
 
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             for (var d : devices) {
                 writer.println("- Device {}{}:", d.getId(), (d.isThisDevice() ? " (this device)" : ""));
                 writer.indent(w -> {
