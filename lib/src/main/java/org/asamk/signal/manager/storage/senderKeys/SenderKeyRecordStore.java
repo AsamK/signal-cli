@@ -95,7 +95,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
                 return;
             }
 
-            logger.debug("Only to be merged recipient had sender keys, re-assigning to the new recipient.");
+            logger.debug("To be merged recipient had sender keys, re-assigning to the new recipient.");
             for (var key : keys) {
                 final var toBeMergedSenderKey = loadSenderKeyLocked(key);
                 deleteSenderKeyLocked(key);
@@ -108,7 +108,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
                 if (senderKeyRecord != null) {
                     continue;
                 }
-                storeSenderKeyLocked(newKey, senderKeyRecord);
+                storeSenderKeyLocked(newKey, toBeMergedSenderKey);
             }
         }
     }
