@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.9.2] - 2021-10-24
+### Fixed
+- dbus `listNumbers` method works again
+
+### Changed
+- Improved provisioning error handling if the last steps fail
+- Adapt behavior of receive command as dbus client to match normal mode
+- Update captcha url for proof required handling
+
 ## [0.9.1] - 2021-10-16
 **Attention**: Now requires native libzkgroup version 0.8
 
