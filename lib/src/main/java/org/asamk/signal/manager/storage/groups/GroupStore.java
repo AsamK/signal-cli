@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -122,7 +123,11 @@ public class GroupStore {
                     }
                     final var groupFileLegacy = getGroupV2FileLegacy(group.getGroupId());
                     if (groupFileLegacy.exists()) {
-                        groupFileLegacy.delete();
+                        try {
+                            Files.delete(groupFileLegacy.toPath());
+                        } catch (IOException e) {
+                            logger.error("Failed to delete legacy group file {}: {}", groupFileLegacy, e.getMessage());
+                        }
                     }
                 } catch (IOException e) {
                     logger.warn("Failed to cache group, ignoring: {}", e.getMessage());
