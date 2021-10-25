@@ -27,6 +27,10 @@
   "name":"char[]"}
 ,
 {
+  "name":"com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
@@ -78,7 +82,27 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"com.sun.crypto.provider.ARCFOURCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.sun.crypto.provider.DESCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.sun.crypto.provider.DESedeCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.sun.crypto.provider.DHParameters",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.sun.crypto.provider.GaloisCounterMode$AESGCM",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
@@ -122,6 +146,10 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"java.lang.Class",
+  "methods":[{"name":"getRecordComponents","parameterTypes":[] }]}
+,
+{
   "name":"java.lang.Comparable",
   "allDeclaredMethods":true}
 ,
@@ -155,12 +183,24 @@
   "allDeclaredMethods":true}
 ,
 {
+  "name":"java.lang.Record",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
   "name":"java.lang.String",
   "allPublicMethods":true}
 ,
 {
   "name":"java.lang.reflect.Method",
   "methods":[{"name":"isDefault","parameterTypes":[] }]}
+,
+{
+  "name":"java.lang.reflect.RecordComponent",
+  "methods":[
+    {"name":"getName","parameterTypes":[] }, 
+    {"name":"getType","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"java.nio.Buffer",
@@ -1146,6 +1186,10 @@
 ,
 {
   "name":"org.freedesktop.dbus.errors.ServiceUnknown",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
+{
+  "name":"org.freedesktop.dbus.errors.UnknownObject",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
 ,
 {
