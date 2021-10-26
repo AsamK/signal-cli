@@ -58,7 +58,7 @@ link(newDeviceName<s>) -> deviceLinkUri<s>::
 * newDeviceName : Name to give new device (defaults to "cli" if no name is given)
 * deviceLinkUri : URI of newly linked device
 
-Returns a URI of the form "sgnl://linkdevice/?uuid=...". This can be piped to a QR encoder to create a display that
+Returns a URI of the form "sgnl://linkdevice?uuid=...". This can be piped to a QR encoder to create a display that
 can be captured by a Signal smartphone client. For example:
 
 `dbus-send --session --dest=org.asamk.Signal --type=method_call --print-reply /org/asamk/Signal org.asamk.Signal.link string:"My secondary client"|tr '\n' '\0'|sed 's/.*string //g'|sed 's/\"//g'|qrencode -s10 -tANSI256`
@@ -311,7 +311,7 @@ The following methods listen to the recipient's object path, which is constructe
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 
 addDevice(deviceUri<s>) -> <>::
-* deviceUri : URI in the form of "sgnl://linkdevice/?uuid=..." (formerly "tsdevice:/?uuid=...") Normally displayed by a Signal desktop app, smartphone app, or another signal-cli instance using the `link` control method.
+* deviceUri : URI in the form of "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...") Normally displayed by a Signal desktop app, smartphone app, or another signal-cli instance using the `link` control method.
 
 getDevice(deviceId<x>) -> devicePath<o>::
 * deviceId   : Long representing a deviceId
