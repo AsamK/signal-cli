@@ -63,12 +63,12 @@ public class CommandUtil {
         return groupIds;
     }
 
-    public static GroupId getGroupId(String groupId) throws UserErrorException {
-        if (groupId == null) {
+    public static GroupId getGroupId(String groupIdString) throws UserErrorException {
+        if (groupIdString == null) {
             return null;
         }
         try {
-            return GroupId.fromBase64(groupId);
+            return GroupId.fromBase64(groupIdString);
         } catch (GroupIdFormatException e) {
             throw new UserErrorException("Invalid group id: " + e.getMessage());
         }

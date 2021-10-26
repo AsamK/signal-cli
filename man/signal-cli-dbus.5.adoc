@@ -106,6 +106,7 @@ Exceptions: None
 === Group control methods
 The following methods listen to the recipient's object path, which is constructed as follows:
 "/org/asamk/Signal/" + DBusNumber
+
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 
 createGroup(groupName<s>, members<as>, avatar<s>) -> groupId<ay>::
@@ -114,17 +115,28 @@ createGroup(groupName<s>, members<as>, avatar<s>) -> groupId<ay>::
 * avatar    : Filename of avatar picture to be set for group (empty if none)
 * groupId   : Byte array representing the internal group identifier
 
-Exceptions: AttachmentInvalid, Failure, InvalidNumber;
+Exceptions: AttachmentInvalid, Failure, InvalidNumber
 
-getGroup(groupId<ay>) -> objectPath<o>::
-* groupId    : Byte array representing the internal group identifier
-* objectPath : DBusPath for the group
-
-getGroupMembers(groupId<ay>) -> members<as>::
+getGroup(groupId<ay>) -> groupPath<o>::
 * groupId   : Byte array representing the internal group identifier
-* members   : String array with the phone numbers of all active members of a group
+* groupPath : DBusPath for the group
 
-Exceptions: None, if the group name is not found an empty array is returned
+Exceptions: GroupNotFound
+
+getGroups() -> groupPaths<o>::
+* groupPaths : DBusPaths for the groups
+
+All groups known are returned, regardless of their active or blocked status.
+
+Exceptions: None
+
+getGroupsByName(groupName<s>) -> groupIds<aay>::
+* groupName : String representing the display name of the group
+* groupIds  : Array of Byte arrays representing the internal group identifiers
+
+Returns empty array if no groups match the groupName.
+
+Exceptions: None
 
 joinGroup(inviteURI<s>) -> <>::
 * inviteURI : String starting with https://signal.group/#
@@ -134,8 +146,8 @@ Behavior of this method depends on the `requirePermission` parameter of the `ena
 Exceptions: Failure
 
 listGroups() -> groups<a(oays)>::
-* groups          : Array of Structs(objectPath, groupId, groupName)
-** objectPath      : DBusPath
+* groups          : Array of Structs(groupPath, groupId, groupName)
+** groupPath       : DBusPath for the group
 ** groupId         : Byte array representing the internal group identifier
 ** groupName       : String representing the display name of the group
 
@@ -167,10 +179,12 @@ Exceptions: Failure, GroupNotFound, InvalidGroupId
 === Group methods
 The following methods listen to the group's object path, which can be obtained from the listGroups() method and is constructed as follows:
 "/org/asamk/Signal/" + DBusNumber + "/Groups/" + DBusGroupId
+
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 * DBusGroupId : groupId in base64 format, with underscore (_) replacing plus (+), equals (=), or slash (/)
 
 Groups have the following (case-sensitive) properties:
+
 * Id<ay> (read-only)                : Byte array representing the internal group identifier
 * Name<s>                           : Display name of the group
 * Description<s>                    : Description of the group
@@ -253,18 +267,31 @@ Exceptions: Failure
 === Deprecated group control methods
 The following deprecated methods listen to the recipient's object path, which is constructed as follows:
 "/org/asamk/Signal/" + DBusNumber
+
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 
-getGroupIds() -> groupList<aay>::
-groupList : Array of Byte arrays representing the internal group identifiers
+getGroupIds() -> groupIds<aay>::
+* groupIds : Array of Byte arrays representing the internal group identifiers
 
-All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
+All groups known are returned, regardless of their active or blocked status.
+
+Replacement: Use the `getGroups()` method.
 
 Exceptions: None
+
+getGroupMembers(groupId<ay>) -> members<as>::
+* groupId   : Byte array representing the internal group identifier
+* members   : String array with the phone numbers of all active members of a group
+
+Replacement: Use the `Members` property.
+
+Exceptions: None, if the group name is not found an empty array is returned
 
 getGroupName(groupId<ay>) -> groupName<s>::
 * groupId   : Byte array representing the internal group identifier
 * groupName : The display name of the group
+
+Replacement: Use the `Name` property.
 
 Exceptions: None, if the group name is not found an empty string is returned
 
@@ -274,6 +301,8 @@ isGroupBlocked(groupId<ay>) -> isGroupBlocked<b>::
 
 Dbus will not forward messages from a group when you have blocked it.
 
+Replacement: Use the `IsBlocked` property.
+
 Exceptions: InvalidGroupId, Failure
 
 isMember(groupId<ay>) -> isMember<b>::
@@ -282,10 +311,16 @@ isMember(groupId<ay>) -> isMember<b>::
 
 Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
 
+Replacement: Use the `IsMember` property.
+
+Exceptions: None
+
 quitGroup(groupId<ay>) -> <>::
 * groupId : Byte array representing the internal group identifier
 
 Note that quitting a group will not remove the group from the getGroupIds command, but set it inactive which can be tested with isMember()
+
+Replacement: Use the `quitGroup()` group method.
 
 Exceptions: GroupNotFound, Failure, InvalidGroupId
 
@@ -295,6 +330,8 @@ setGroupBlocked(groupId<ay>, block<b>) -> <>::
 
 Messages from blocked groups will no longer be forwarded via DBus.
 
+Replacement: Use the `IsBlocked` property.
+
 Exceptions: GroupNotFound, InvalidGroupId
 
 updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
@@ -303,11 +340,19 @@ updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
 * members  : String array of new members to be invited to group
 * avatar   : Filename of avatar picture to be set for group (empty if none)
 
+To create a new group, send an empty groupId and the newName. The return value
+will be the groupId randomly assigned to the new group.
+
+Replacement: To create a group, use the `createGroup()` group method. To
+update the name, members, or avatar, use the respective property (`Name`,
+`Members`, `Avatar`).
+
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, GroupNotFound
 
 === Device control methods
 The following methods listen to the recipient's object path, which is constructed as follows:
 "/org/asamk/Signal/" + DBusNumber
+
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 
 addDevice(deviceUri<s>) -> <>::
@@ -315,13 +360,13 @@ addDevice(deviceUri<s>) -> <>::
 
 getDevice(deviceId<x>) -> devicePath<o>::
 * deviceId   : Long representing a deviceId
-* devicePath : DBusPath object for the device
+* devicePath : DBusPath for the device
 
 Exceptions: DeviceNotFound
 
 listDevices() -> devices<a(oxs)>::
-* devices      : Array of structs (objectPath, id, name)
-** objectPath   : DBusPath representing the device's object path
+* devices      : Array of structs (devicePath, id, name)
+** devicePath   : DBusPath representing the device
 ** id           : Long representing the deviceId
 ** name         : String representing the device's name
 
@@ -342,10 +387,12 @@ Exceptions: Failure
 === Device methods and properties
 The following methods listen to the device's object path, which is constructed as follows:
 "/org/asamk/Signal/" + DBusNumber + "/Devices/" + deviceId
+
 * DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
 * deviceId    : Long representing the device identifier (obtained from listDevices() method)
 
 Devices have the following (case-sensitive) properties:
+
 * Id<x> (read-only)       : Long representing the device identifier
 * Created<x> (read-only)  : Long representing the number of milliseconds since the Unix epoch
 * LastSeen<x> (read-only) : Long representing the number of milliseconds since the Unix epoch
@@ -473,11 +520,23 @@ Depending on the type of the recipient(s) field this deletes a message with one 
 
 Exceptions: Failure, InvalidNumber
 
-sendTyping(recipient<s>, stop<b>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : True, if typing state should be stopped
+sendTyping(number<s>, stop<b>) -> <>::
+* number      : Phone number of a single recipient
+* stop        : true = stop typing, false = start typing
 
-Exceptions: Failure, GroupNotFound, UntrustedIdentity
+Stop or start sending typing indicators to a single recipient.
+
+Exceptions: Failure, UntrustedIdentity
+
+sendTyping(stop<b>, groupIdStrings<as>, numbers<as>) -> <>::
+* stop           : true = stop typing, false = start typing
+* groupIdStrings : List of strings representing groupIds in base64-encoded format for the groups
+* numbers        : List of phone numbers for recipients
+
+Stop or start sending typing indicators to a list of recipients and/or a list of groups. The groupIdString is
+derived from the groupId byte array by encoding it in base64 form.
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity;
 
 setContactBlocked(number<s>, block<b>) -> <>::
 * number  : Phone number affected by method
