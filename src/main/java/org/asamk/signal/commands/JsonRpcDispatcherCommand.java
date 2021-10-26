@@ -71,9 +71,9 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         final var jsonRpcSender = new JsonRpcSender((JsonWriter) outputWriter);
 
         final var receiveMessageHandler = new JsonReceiveMessageHandler(m,
-                s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive",
+                s -> jsonRpcSender.sendResponse(JsonRpcResponse.forSuccess(
                         objectMapper.valueToTree(s),
-                        null)));
+                        objectMapper.valueToTree("receive"))));
         m.addReceiveHandler(receiveMessageHandler);
 
         // Maybe this should be handled inside the Manager
