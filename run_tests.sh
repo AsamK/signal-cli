@@ -83,16 +83,13 @@ sleep 5
 
 
 ## DBus
-run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running || true
-run_main daemon &
-DAEMON_PID=$!
-sleep 10
-echo send
-run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m hii
-run_main -u "$NUMBER_2" --dbus receive
-echo kill
-kill "$DAEMON_PID"
-echo killed
+#run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running || true
+#run_main daemon &
+#DAEMON_PID=$!
+#sleep 10
+#run_main -u "$NUMBER_1" --dbus send "$NUMBER_2" -m hii
+#run_main -u "$NUMBER_2" --dbus receive
+#kill "$DAEMON_PID"
 
 
 # JSON-RPC
