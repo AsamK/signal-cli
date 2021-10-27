@@ -81,15 +81,19 @@ dependencies. If you have a recent gradle version installed, you can replace `./
 
         ./gradlew build
 
-    3a. Create shell wrapper in *build/install/signal-cli/bin*:
+    2a. Create shell wrapper in *build/install/signal-cli/bin*:
 
         ./gradlew installDist
 
-    3b. Create tar file in *build/distributions*:
+    2b. Create tar file in *build/distributions*:
 
         ./gradlew distTar
 
-    3c. Compile and run signal-cli:
+    2c. Create a fat tar file in *build/libs/signal-cli-fat*:
+
+        ./gradlew fatJar
+
+    2d. Compile and run signal-cli:
 
         ./gradlew run --args="--help"
 

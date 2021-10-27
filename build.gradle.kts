@@ -65,3 +65,17 @@ tasks.withType<Jar> {
         )
     }
 }
+
+task("fatJar", type = Jar::class) {
+    archiveBaseName.set("${project.name}-fat")
+    exclude(
+        "META-INF/*.SF",
+        "META-INF/*.DSA",
+        "META-INF/*.RSA",
+        "META-INF/NOTICE",
+        "META-INF/LICENSE",
+        "**/module-info.class"
+    )
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
+}
