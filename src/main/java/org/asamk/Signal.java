@@ -388,63 +388,67 @@ public interface Signal extends DBusInterface {
         class AttachmentInvalid extends DBusExecutionException {
 
             public AttachmentInvalid(final String message) {
-                super(message);
+                super("Invalid attachment: " + message);
             }
         }
 
         class InvalidUri extends DBusExecutionException {
 
             public InvalidUri(final String message) {
-                super(message);
+                super("Invalid uri: " + message);
             }
         }
 
         class Failure extends DBusExecutionException {
 
+            public Failure(final Exception e) {
+                super("Failure: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
+            }
+
             public Failure(final String message) {
-                super(message);
+                super("Failure: " + message);
             }
         }
 
         class DeviceNotFound extends DBusExecutionException {
 
             public DeviceNotFound(final String message) {
-                super(message);
+                super("Device not found: " + message);
             }
         }
 
         class GroupNotFound extends DBusExecutionException {
 
             public GroupNotFound(final String message) {
-                super(message);
+                super("Group not found: " + message);
             }
         }
 
         class InvalidGroupId extends DBusExecutionException {
 
             public InvalidGroupId(final String message) {
-                super(message);
+                super("Invalid group id: " + message);
             }
         }
 
         class LastGroupAdmin extends DBusExecutionException {
 
             public LastGroupAdmin(final String message) {
-                super(message);
+                super("Last group admin: " + message);
             }
         }
 
         class InvalidNumber extends DBusExecutionException {
 
             public InvalidNumber(final String message) {
-                super(message);
+                super("Invalid number: " + message);
             }
         }
 
         class UntrustedIdentity extends DBusExecutionException {
 
             public UntrustedIdentity(final String message) {
-                super(message);
+                super("Untrusted identity: " + message);
             }
         }
     }

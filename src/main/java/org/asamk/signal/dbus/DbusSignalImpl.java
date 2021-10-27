@@ -158,7 +158,7 @@ public class DbusSignalImpl implements Signal {
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
         } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
+            throw new Error.Failure(e);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
         }
