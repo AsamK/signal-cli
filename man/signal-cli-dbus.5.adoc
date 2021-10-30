@@ -462,6 +462,12 @@ sendReadReceipt(recipient<s>, targetSentTimestamps<ax>) -> <>::
 
 Exceptions: Failure, UntrustedIdentity
 
+sendViewedReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+
+Exceptions: Failure, UntrustedIdentity
+
 sendRemoteDeleteMessage(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
 sendRemoteDeleteMessage(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
 * targetSentTimestamp : Long representing timestamp of the message to delete

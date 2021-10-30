@@ -37,6 +37,10 @@ public interface Signal extends DBusInterface {
             String recipient, List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity;
 
+    void sendViewedReceipt(
+            String recipient, List<Long> messageIds
+    ) throws Error.Failure, Error.UntrustedIdentity;
+
     long sendRemoteDeleteMessage(
             long targetSentTimestamp, String recipient
     ) throws Error.Failure, Error.InvalidNumber;

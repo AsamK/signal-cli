@@ -279,6 +279,19 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void sendViewedReceipt(
+            final String recipient, final List<Long> messageIds
+    ) throws Error.Failure, Error.UntrustedIdentity {
+        try {
+            m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (UntrustedIdentityException e) {
+            throw new Error.UntrustedIdentity(e.getMessage());
+        }
+    }
+
+    @Override
     public void sendContacts() {
         try {
             m.sendContacts();
