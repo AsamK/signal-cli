@@ -47,8 +47,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
 
         // Output
-        if (outputWriter instanceof JsonWriter) {
-            final var jsonWriter = (JsonWriter) outputWriter;
+        if (outputWriter instanceof JsonWriter jsonWriter) {
 
             var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
                 final var number = entry.getValue().first();
@@ -67,21 +66,5 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private static final class JsonUserStatus {
-
-        public final String recipient;
-
-        public final String number;
-
-        public final String uuid;
-
-        public final boolean isRegistered;
-
-        public JsonUserStatus(String recipient, String number, String uuid, boolean isRegistered) {
-            this.recipient = recipient;
-            this.number = number;
-            this.uuid = uuid;
-            this.isRegistered = isRegistered;
-        }
-    }
+    private record JsonUserStatus(String recipient, String number, String uuid, boolean isRegistered) {}
 }

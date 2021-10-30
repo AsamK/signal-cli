@@ -55,9 +55,9 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
         try {
             try {
                 final var results = m.quitGroup(groupId, groupAdmins);
-                final var timestamp = results.getTimestamp();
+                final var timestamp = results.timestamp();
                 outputResult(outputWriter, timestamp);
-                handleSendMessageResults(results.getResults());
+                handleSendMessageResults(results.results());
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }
@@ -79,8 +79,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             writer.println("{}", timestamp);
         } else {
             final var writer = (JsonWriter) outputWriter;

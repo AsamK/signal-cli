@@ -3,14 +3,14 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.9.5"
+    id("org.graalvm.buildtools.native") version "0.9.6"
 }
 
-version = "0.9.0"
+version = "0.9.2"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 application {
@@ -22,6 +22,7 @@ graalvmNative {
         this["main"].run {
             configurationFileDirectories.from(file("graalvm-config-dir"))
             buildArgs.add("--allow-incomplete-classpath")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
         }
     }
 }
@@ -34,8 +35,8 @@ repositories {
 dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on:1.69")
     implementation("net.sourceforge.argparse4j:argparse4j:0.9.0")
-    implementation("com.github.hypfvieh:dbus-java:3.3.0")
-    implementation("org.slf4j:slf4j-simple:1.7.30")
+    implementation("com.github.hypfvieh:dbus-java:3.3.1")
+    implementation("org.slf4j:slf4j-simple:1.7.32")
     implementation(project(":lib"))
 }
 
@@ -63,4 +64,18 @@ tasks.withType<Jar> {
             "Main-Class" to application.mainClass.get()
         )
     }
+}
+
+task("fatJar", type = Jar::class) {
+    archiveBaseName.set("${project.name}-fat")
+    exclude(
+        "META-INF/*.SF",
+        "META-INF/*.DSA",
+        "META-INF/*.RSA",
+        "META-INF/NOTICE",
+        "META-INF/LICENSE",
+        "**/module-info.class"
+    )
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
 }

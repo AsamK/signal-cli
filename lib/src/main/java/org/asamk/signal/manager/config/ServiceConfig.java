@@ -88,19 +88,15 @@ public class ServiceConfig {
 
         final var interceptors = List.of(userAgentInterceptor);
 
-        switch (serviceEnvironment) {
-            case LIVE:
-                return new ServiceEnvironmentConfig(LiveConfig.createDefaultServiceConfiguration(interceptors),
-                        LiveConfig.getUnidentifiedSenderTrustRoot(),
-                        LiveConfig.createKeyBackupConfig(),
-                        LiveConfig.getCdsMrenclave());
-            case SANDBOX:
-                return new ServiceEnvironmentConfig(SandboxConfig.createDefaultServiceConfiguration(interceptors),
-                        SandboxConfig.getUnidentifiedSenderTrustRoot(),
-                        SandboxConfig.createKeyBackupConfig(),
-                        SandboxConfig.getCdsMrenclave());
-            default:
-                throw new IllegalArgumentException("Unsupported environment");
-        }
+        return switch (serviceEnvironment) {
+            case LIVE -> new ServiceEnvironmentConfig(LiveConfig.createDefaultServiceConfiguration(interceptors),
+                    LiveConfig.getUnidentifiedSenderTrustRoot(),
+                    LiveConfig.createKeyBackupConfig(),
+                    LiveConfig.getCdsMrenclave());
+            case SANDBOX -> new ServiceEnvironmentConfig(SandboxConfig.createDefaultServiceConfiguration(interceptors),
+                    SandboxConfig.getUnidentifiedSenderTrustRoot(),
+                    SandboxConfig.createKeyBackupConfig(),
+                    SandboxConfig.getCdsMrenclave());
+        };
     }
 }

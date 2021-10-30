@@ -16,8 +16,7 @@ import java.util.Map;
 public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>, LocalCommand {
 
     default TypeReference<Map<String, Object>> getRequestType() {
-        return new TypeReference<>() {
-        };
+        return new TypeReference<>() {};
     }
 
     default void handleCommand(
@@ -32,7 +31,7 @@ public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>
     }
 
     /**
-     * Namepace implementation, that defaults booleans to false and converts camel case keys to dashed strings
+     * Namespace implementation, that has plural handling for list arguments and converts camel case keys to dashed strings
      */
     final class JsonRpcNamespace extends Namespace {
 

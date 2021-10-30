@@ -21,6 +21,12 @@ public class DbusProperty<T> {
         this.setter = null;
     }
 
+    public DbusProperty(final String name, final Consumer<T> setter) {
+        this.name = name;
+        this.getter = null;
+        this.setter = setter;
+    }
+
     public String getName() {
         return name;
     }

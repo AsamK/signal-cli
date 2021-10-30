@@ -453,7 +453,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                                     .stream()
                                     .map(Enum::name)
                                     .collect(Collectors.toSet()));
-            return new Storage.Recipient(pair.getKey().getId(),
+            return new Storage.Recipient(pair.getKey().id(),
                     recipient.getAddress().getNumber().orElse(null),
                     recipient.getAddress().getUuid().map(UUID::toString).orElse(null),
                     recipient.getProfileKey() == null
@@ -479,115 +479,32 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         }
     }
 
-    private static class Storage {
+    private record Storage(List<Recipient> recipients, long lastId) {
 
-        public List<Recipient> recipients;
+        private record Recipient(
+                long id,
+                String number,
+                String uuid,
+                String profileKey,
+                String profileKeyCredential,
+                Storage.Recipient.Contact contact,
+                Storage.Recipient.Profile profile
+        ) {
 
-        public long lastId;
+            private record Contact(
+                    String name, String color, int messageExpirationTime, boolean blocked, boolean archived
+            ) {}
 
-        // For deserialization
-        private Storage() {
-        }
-
-        public Storage(final List<Recipient> recipients, final long lastId) {
-            this.recipients = recipients;
-            this.lastId = lastId;
-        }
-
-        private static class Recipient {
-
-            public long id;
-            public String number;
-            public String uuid;
-            public String profileKey;
-            public String profileKeyCredential;
-            public Contact contact;
-            public Profile profile;
-
-            // For deserialization
-            private Recipient() {
-            }
-
-            public Recipient(
-                    final long id,
-                    final String number,
-                    final String uuid,
-                    final String profileKey,
-                    final String profileKeyCredential,
-                    final Contact contact,
-                    final Profile profile
-            ) {
-                this.id = id;
-                this.number = number;
-                this.uuid = uuid;
-                this.profileKey = profileKey;
-                this.profileKeyCredential = profileKeyCredential;
-                this.contact = contact;
-                this.profile = profile;
-            }
-
-            private static class Contact {
-
-                public String name;
-                public String color;
-                public int messageExpirationTime;
-                public boolean blocked;
-                public boolean archived;
-
-                // For deserialization
-                public Contact() {
-                }
-
-                public Contact(
-                        final String name,
-                        final String color,
-                        final int messageExpirationTime,
-                        final boolean blocked,
-                        final boolean archived
-                ) {
-                    this.name = name;
-                    this.color = color;
-                    this.messageExpirationTime = messageExpirationTime;
-                    this.blocked = blocked;
-                    this.archived = archived;
-                }
-            }
-
-            private static class Profile {
-
-                public long lastUpdateTimestamp;
-                public String givenName;
-                public String familyName;
-                public String about;
-                public String aboutEmoji;
-                public String avatarUrlPath;
-                public String unidentifiedAccessMode;
-                public Set<String> capabilities;
-
-                // For deserialization
-                private Profile() {
-                }
-
-                public Profile(
-                        final long lastUpdateTimestamp,
-                        final String givenName,
-                        final String familyName,
-                        final String about,
-                        final String aboutEmoji,
-                        final String avatarUrlPath,
-                        final String unidentifiedAccessMode,
-                        final Set<String> capabilities
-                ) {
-                    this.lastUpdateTimestamp = lastUpdateTimestamp;
-                    this.givenName = givenName;
-                    this.familyName = familyName;
-                    this.about = about;
-                    this.aboutEmoji = aboutEmoji;
-                    this.avatarUrlPath = avatarUrlPath;
-                    this.unidentifiedAccessMode = unidentifiedAccessMode;
-                    this.capabilities = capabilities;
-                }
-            }
+            private record Profile(
+                    long lastUpdateTimestamp,
+                    String givenName,
+                    String familyName,
+                    String about,
+                    String aboutEmoji,
+                    String avatarUrlPath,
+                    String unidentifiedAccessMode,
+                    Set<String> capabilities
+            ) {}
         }
     }
 

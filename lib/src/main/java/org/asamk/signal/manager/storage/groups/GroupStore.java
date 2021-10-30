@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -74,8 +75,7 @@ public class GroupStore {
             final Saver saver
     ) {
         final var groups = storage.groups.stream().map(g -> {
-            if (g instanceof Storage.GroupV1) {
-                final var g1 = (Storage.GroupV1) g;
+            if (g instanceof Storage.GroupV1 g1) {
                 final var members = g1.members.stream().map(m -> {
                     if (m.recipientId == null) {
                         return recipientResolver.resolveRecipient(new RecipientAddress(UuidUtil.parseOrNull(m.uuid),
@@ -122,7 +122,11 @@ public class GroupStore {
                     }
                     final var groupFileLegacy = getGroupV2FileLegacy(group.getGroupId());
                     if (groupFileLegacy.exists()) {
-                        groupFileLegacy.delete();
+                        try {
+                            Files.delete(groupFileLegacy.toPath());
+                        } catch (IOException e) {
+                            logger.error("Failed to delete legacy group file {}: {}", groupFileLegacy, e.getMessage());
+                        }
                     }
                 } catch (IOException e) {
                     logger.warn("Failed to cache group, ignoring: {}", e.getMessage());
@@ -181,8 +185,7 @@ public class GroupStore {
         synchronized (groups) {
             var modified = false;
             for (var group : this.groups.values()) {
-                if (group instanceof GroupInfoV1) {
-                    var groupV1 = (GroupInfoV1) group;
+                if (group instanceof GroupInfoV1 groupV1) {
                     if (groupV1.isMember(toBeMergedRecipientId)) {
                         groupV1.removeMember(toBeMergedRecipientId);
                         groupV1.addMembers(List.of(recipientId));
@@ -215,8 +218,7 @@ public class GroupStore {
 
     private GroupInfoV1 getGroupV1ByV2IdLocked(GroupIdV2 groupIdV2) {
         for (var g : groups.values()) {
-            if (g instanceof GroupInfoV1) {
-                final var gv1 = (GroupInfoV1) g;
+            if (g instanceof GroupInfoV1 gv1) {
                 if (groupIdV2.equals(gv1.getExpectedV2Id())) {
                     return gv1;
                 }
@@ -251,8 +253,7 @@ public class GroupStore {
 
     private Storage toStorageLocked() {
         return new Storage(groups.values().stream().map(g -> {
-            if (g instanceof GroupInfoV1) {
-                final var g1 = (GroupInfoV1) g;
+            if (g instanceof GroupInfoV1 g1) {
                 return new Storage.GroupV1(g1.getGroupId().toBase64(),
                         g1.getExpectedV2Id().toBase64(),
                         g1.name,
@@ -261,7 +262,7 @@ public class GroupStore {
                         g1.blocked,
                         g1.archived,
                         g1.members.stream()
-                                .map(m -> new Storage.GroupV1.Member(m.getId(), null, null))
+                                .map(m -> new Storage.GroupV1.Member(m.id(), null, null))
                                 .collect(Collectors.toList()));
             }
 
@@ -273,91 +274,22 @@ public class GroupStore {
         }).collect(Collectors.toList()));
     }
 
-    public static class Storage {
+    public record Storage(@JsonDeserialize(using = GroupsDeserializer.class) List<Object> groups) {
 
-        @JsonDeserialize(using = GroupsDeserializer.class)
-        public List<Storage.Group> groups;
+        private record GroupV1(
+                String groupId,
+                String expectedV2Id,
+                String name,
+                String color,
+                int messageExpirationTime,
+                boolean blocked,
+                boolean archived,
+                @JsonDeserialize(using = MembersDeserializer.class) @JsonSerialize(using = MembersSerializer.class) List<Member> members
+        ) {
 
-        // For deserialization
-        public Storage() {
-        }
+            private record Member(Long recipientId, String uuid, String number) {}
 
-        public Storage(final List<Storage.Group> groups) {
-            this.groups = groups;
-        }
-
-        private abstract static class Group {
-
-        }
-
-        private static class GroupV1 extends Group {
-
-            public String groupId;
-            public String expectedV2Id;
-            public String name;
-            public String color;
-            public int messageExpirationTime;
-            public boolean blocked;
-            public boolean archived;
-
-            @JsonDeserialize(using = MembersDeserializer.class)
-            @JsonSerialize(using = MembersSerializer.class)
-            public List<Member> members;
-
-            // For deserialization
-            public GroupV1() {
-            }
-
-            public GroupV1(
-                    final String groupId,
-                    final String expectedV2Id,
-                    final String name,
-                    final String color,
-                    final int messageExpirationTime,
-                    final boolean blocked,
-                    final boolean archived,
-                    final List<Member> members
-            ) {
-                this.groupId = groupId;
-                this.expectedV2Id = expectedV2Id;
-                this.name = name;
-                this.color = color;
-                this.messageExpirationTime = messageExpirationTime;
-                this.blocked = blocked;
-                this.archived = archived;
-                this.members = members;
-            }
-
-            private static final class Member {
-
-                public Long recipientId;
-
-                public String uuid;
-
-                public String number;
-
-                Member(Long recipientId, final String uuid, final String number) {
-                    this.recipientId = recipientId;
-                    this.uuid = uuid;
-                    this.number = number;
-                }
-            }
-
-            private static final class JsonRecipientAddress {
-
-                public String uuid;
-
-                public String number;
-
-                // For deserialization
-                public JsonRecipientAddress() {
-                }
-
-                JsonRecipientAddress(final String uuid, final String number) {
-                    this.uuid = uuid;
-                    this.number = number;
-                }
-            }
+            private record JsonRecipientAddress(String uuid, String number) {}
 
             private static class MembersSerializer extends JsonSerializer<List<Member>> {
 
@@ -365,7 +297,7 @@ public class GroupStore {
                 public void serialize(
                         final List<Member> value, final JsonGenerator jgen, final SerializerProvider provider
                 ) throws IOException {
-                    jgen.writeStartArray(value.size());
+                    jgen.writeStartArray(null, value.size());
                     for (var address : value) {
                         if (address.recipientId != null) {
                             jgen.writeNumber(address.recipientId);
@@ -403,39 +335,19 @@ public class GroupStore {
             }
         }
 
-        private static class GroupV2 extends Group {
-
-            public String groupId;
-            public String masterKey;
-            public boolean blocked;
-            public boolean permissionDenied;
-
-            // For deserialization
-            private GroupV2() {
-            }
-
-            public GroupV2(
-                    final String groupId, final String masterKey, final boolean blocked, final boolean permissionDenied
-            ) {
-                this.groupId = groupId;
-                this.masterKey = masterKey;
-                this.blocked = blocked;
-                this.permissionDenied = permissionDenied;
-            }
-        }
-
+        private record GroupV2(String groupId, String masterKey, boolean blocked, boolean permissionDenied) {}
     }
 
-    private static class GroupsDeserializer extends JsonDeserializer<List<Storage.Group>> {
+    private static class GroupsDeserializer extends JsonDeserializer<List<Object>> {
 
         @Override
-        public List<Storage.Group> deserialize(
+        public List<Object> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            var groups = new ArrayList<Storage.Group>();
+            var groups = new ArrayList<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (var n : node) {
-                Storage.Group g;
+                Object g;
                 if (n.hasNonNull("masterKey")) {
                     // a v2 group
                     g = jsonParser.getCodec().treeToValue(n, Storage.GroupV2.class);

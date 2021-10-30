@@ -391,27 +391,18 @@ public class GroupV2Helper {
     }
 
     private AccessControl.AccessRequired toAccessControl(final GroupLinkState state) {
-        switch (state) {
-            case DISABLED:
-                return AccessControl.AccessRequired.UNSATISFIABLE;
-            case ENABLED:
-                return AccessControl.AccessRequired.ANY;
-            case ENABLED_WITH_APPROVAL:
-                return AccessControl.AccessRequired.ADMINISTRATOR;
-            default:
-                throw new AssertionError();
-        }
+        return switch (state) {
+            case DISABLED -> AccessControl.AccessRequired.UNSATISFIABLE;
+            case ENABLED -> AccessControl.AccessRequired.ANY;
+            case ENABLED_WITH_APPROVAL -> AccessControl.AccessRequired.ADMINISTRATOR;
+        };
     }
 
     private AccessControl.AccessRequired toAccessControl(final GroupPermission permission) {
-        switch (permission) {
-            case EVERY_MEMBER:
-                return AccessControl.AccessRequired.MEMBER;
-            case ONLY_ADMINS:
-                return AccessControl.AccessRequired.ADMINISTRATOR;
-            default:
-                throw new AssertionError();
-        }
+        return switch (permission) {
+            case EVERY_MEMBER -> AccessControl.AccessRequired.MEMBER;
+            case ONLY_ADMINS -> AccessControl.AccessRequired.ADMINISTRATOR;
+        };
     }
 
     private GroupsV2Operations.GroupOperations getGroupOperations(final GroupInfoV2 groupInfoV2) {

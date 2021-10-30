@@ -95,7 +95,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
                 return;
             }
 
-            logger.debug("Only to be merged recipient had sender keys, re-assigning to the new recipient.");
+            logger.debug("To be merged recipient had sender keys, re-assigning to the new recipient.");
             for (var key : keys) {
                 final var toBeMergedSenderKey = loadSenderKeyLocked(key);
                 deleteSenderKeyLocked(key);
@@ -103,12 +103,12 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
                     continue;
                 }
 
-                final var newKey = new Key(recipientId, key.getDeviceId(), key.distributionId);
+                final var newKey = new Key(recipientId, key.deviceId(), key.distributionId);
                 final var senderKeyRecord = loadSenderKeyLocked(newKey);
                 if (senderKeyRecord != null) {
                     continue;
                 }
-                storeSenderKeyLocked(newKey, senderKeyRecord);
+                storeSenderKeyLocked(newKey, toBeMergedSenderKey);
             }
         }
     }
@@ -126,7 +126,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
     }
 
     private List<Key> getKeysLocked(RecipientId recipientId) {
-        final var files = senderKeysPath.listFiles((_file, s) -> s.startsWith(recipientId.getId() + "_"));
+        final var files = senderKeysPath.listFiles((_file, s) -> s.startsWith(recipientId.id() + "_"));
         if (files == null) {
             return List.of();
         }
@@ -152,7 +152,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
             throw new AssertionError("Failed to create sender keys path", e);
         }
         return new File(senderKeysPath,
-                key.getRecipientId().getId() + "_" + key.getDeviceId() + "_" + key.distributionId.toString());
+                key.recipientId().id() + "_" + key.deviceId() + "_" + key.distributionId.toString());
     }
 
     private SenderKeyRecord loadSenderKeyLocked(final Key key) {
@@ -212,50 +212,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         }
     }
 
-    private static final class Key {
+    private record Key(RecipientId recipientId, int deviceId, UUID distributionId) {
 
-        private final RecipientId recipientId;
-        private final int deviceId;
-        private final UUID distributionId;
-
-        public Key(
-                final RecipientId recipientId, final int deviceId, final UUID distributionId
-        ) {
-            this.recipientId = recipientId;
-            this.deviceId = deviceId;
-            this.distributionId = distributionId;
-        }
-
-        public RecipientId getRecipientId() {
-            return recipientId;
-        }
-
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        public UUID getDistributionId() {
-            return distributionId;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final Key key = (Key) o;
-
-            if (deviceId != key.deviceId) return false;
-            if (!recipientId.equals(key.recipientId)) return false;
-            return distributionId.equals(key.distributionId);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = recipientId.hashCode();
-            result = 31 * result + deviceId;
-            result = 31 * result + distributionId.hashCode();
-            return result;
-        }
     }
 }

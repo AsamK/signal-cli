@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 
-public class JsonRpcBulkMessage extends JsonRpcMessage {
+public final class JsonRpcBulkMessage extends JsonRpcMessage {
 
     List<JsonNode> messages;
 

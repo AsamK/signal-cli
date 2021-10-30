@@ -59,7 +59,7 @@ public class MessageCacheUtils {
             if (version >= 4) {
                 serverDeliveredTimestamp = in.readLong();
             }
-            Optional<SignalServiceAddress> addressOptional = sourceUuid == null && source.isEmpty()
+            Optional<SignalServiceAddress> addressOptional = sourceUuid == null
                     ? Optional.absent()
                     : Optional.of(new SignalServiceAddress(sourceUuid, source));
             return new SignalServiceEnvelope(type,

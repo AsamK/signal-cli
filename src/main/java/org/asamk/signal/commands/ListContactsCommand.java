@@ -27,8 +27,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
     public void handleCommand(final Namespace ns, final Manager m, final OutputWriter outputWriter) {
         var contacts = m.getContacts();
 
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             for (var c : contacts) {
                 final var contact = c.second();
                 writer.println("Number: {} Name: {} Blocked: {} Message expiration: {}",
@@ -55,26 +54,5 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private static final class JsonContact {
-
-        public final String number;
-        public final String uuid;
-        public final String name;
-        public final boolean isBlocked;
-        public final int messageExpirationTime;
-
-        private JsonContact(
-                final String number,
-                final String uuid,
-                final String name,
-                final boolean isBlocked,
-                final int messageExpirationTime
-        ) {
-            this.number = number;
-            this.uuid = uuid;
-            this.name = name;
-            this.isBlocked = isBlocked;
-            this.messageExpirationTime = messageExpirationTime;
-        }
-    }
+    private record JsonContact(String number, String uuid, String name, boolean isBlocked, int messageExpirationTime) {}
 }

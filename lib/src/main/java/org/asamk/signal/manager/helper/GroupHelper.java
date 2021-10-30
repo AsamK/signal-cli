@@ -351,8 +351,7 @@ public class GroupHelper {
 
     private GroupInfo getGroup(GroupId groupId, boolean forceUpdate) {
         final var group = account.getGroupStore().getGroup(groupId);
-        if (group instanceof GroupInfoV2) {
-            final var groupInfoV2 = (GroupInfoV2) group;
+        if (group instanceof GroupInfoV2 groupInfoV2) {
             if (forceUpdate || (!groupInfoV2.isPermissionDenied() && groupInfoV2.getGroup() == null)) {
                 final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
                 DecryptedGroup decryptedGroup;
@@ -639,7 +638,7 @@ public class GroupHelper {
 
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+                .withExpiration(g.getMessageExpirationTimer());
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
@@ -648,7 +647,7 @@ public class GroupHelper {
                 .withSignedGroupChange(signedGroupChange);
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
-                .withExpiration(g.getMessageExpirationTime());
+                .withExpiration(g.getMessageExpirationTimer());
     }
 
     private SendGroupMessageResults sendUpdateGroupV2Message(

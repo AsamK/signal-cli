@@ -35,60 +35,59 @@ public class StickerUtils {
 
         var pack = parseStickerPack(rootPath, zip);
 
-        if (pack.stickers == null) {
+        if (pack.stickers() == null) {
             throw new StickerPackInvalidException("Must set a 'stickers' field.");
         }
 
-        if (pack.stickers.isEmpty()) {
+        if (pack.stickers().isEmpty()) {
             throw new StickerPackInvalidException("Must include stickers.");
         }
 
-        var stickers = new ArrayList<SignalServiceStickerManifestUpload.StickerInfo>(pack.stickers.size());
-        for (var sticker : pack.stickers) {
-            if (sticker.file == null) {
+        var stickers = new ArrayList<SignalServiceStickerManifestUpload.StickerInfo>(pack.stickers().size());
+        for (var sticker : pack.stickers()) {
+            if (sticker.file() == null) {
                 throw new StickerPackInvalidException("Must set a 'file' field on each sticker.");
             }
 
             Pair<InputStream, Long> data;
             try {
-                data = getInputStreamAndLength(rootPath, zip, sticker.file);
+                data = getInputStreamAndLength(rootPath, zip, sticker.file());
             } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + sticker.file);
+                throw new StickerPackInvalidException("Could not find find " + sticker.file());
             }
 
-            var contentType = sticker.contentType != null && !sticker.contentType.isEmpty()
-                    ? sticker.contentType
-                    : getContentType(rootPath, zip, sticker.file);
+            var contentType = sticker.contentType() != null && !sticker.contentType().isEmpty()
+                    ? sticker.contentType()
+                    : getContentType(rootPath, zip, sticker.file());
             var stickerInfo = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
-                    Optional.fromNullable(sticker.emoji).or(""),
+                    Optional.fromNullable(sticker.emoji()).or(""),
                     contentType);
             stickers.add(stickerInfo);
         }
 
         SignalServiceStickerManifestUpload.StickerInfo cover = null;
-        if (pack.cover != null) {
-            if (pack.cover.file == null) {
+        if (pack.cover() != null) {
+            if (pack.cover().file() == null) {
                 throw new StickerPackInvalidException("Must set a 'file' field on the cover.");
             }
 
             Pair<InputStream, Long> data;
             try {
-                data = getInputStreamAndLength(rootPath, zip, pack.cover.file);
+                data = getInputStreamAndLength(rootPath, zip, pack.cover().file());
             } catch (IOException ignored) {
-                throw new StickerPackInvalidException("Could not find find " + pack.cover.file);
+                throw new StickerPackInvalidException("Could not find find " + pack.cover().file());
             }
 
-            var contentType = pack.cover.contentType != null && !pack.cover.contentType.isEmpty()
-                    ? pack.cover.contentType
-                    : getContentType(rootPath, zip, pack.cover.file);
+            var contentType = pack.cover().contentType() != null && !pack.cover().contentType().isEmpty() ? pack.cover()
+                    .contentType() : getContentType(rootPath, zip, pack.cover().file());
             cover = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
-                    Optional.fromNullable(pack.cover.emoji).or(""),
+                    Optional.fromNullable(pack.cover().emoji()).or(""),
                     contentType);
         }
 
-        return new SignalServiceStickerManifestUpload(pack.title, pack.author, cover, stickers);
+        return new SignalServiceStickerManifestUpload(pack.title(), pack.author(), cover, stickers);
     }
 
     private static JsonStickerPack parseStickerPack(String rootPath, ZipFile zip) throws IOException {

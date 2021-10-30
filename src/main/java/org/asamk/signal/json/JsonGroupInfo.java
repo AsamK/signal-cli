@@ -1,7 +1,6 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.util.Util;
@@ -12,48 +11,32 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class JsonGroupInfo {
+record JsonGroupInfo(
+        String groupId,
+        String type,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String name,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<String> members
+) {
 
-    @JsonProperty
-    final String groupId;
-
-    @JsonProperty
-    final String type;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final String name;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<String> members;
-
-    JsonGroupInfo(SignalServiceGroup groupInfo) {
-        this.groupId = Base64.getEncoder().encodeToString(groupInfo.getGroupId());
-        this.type = groupInfo.getType().toString();
-        this.name = groupInfo.getName().orNull();
-        if (groupInfo.getMembers().isPresent()) {
-            this.members = groupInfo.getMembers()
-                    .get()
-                    .stream()
-                    .map(Util::getLegacyIdentifier)
-                    .collect(Collectors.toList());
-        } else {
-            this.members = null;
-        }
+    static JsonGroupInfo from(SignalServiceGroup groupInfo) {
+        return new JsonGroupInfo(Base64.getEncoder().encodeToString(groupInfo.getGroupId()),
+                groupInfo.getType().toString(),
+                groupInfo.getName().orNull(),
+                groupInfo.getMembers().isPresent() ? groupInfo.getMembers()
+                        .get()
+                        .stream()
+                        .map(Util::getLegacyIdentifier)
+                        .collect(Collectors.toList()) : null);
     }
 
-    JsonGroupInfo(SignalServiceGroupV2 groupInfo) {
-        this.groupId = GroupUtils.getGroupIdV2(groupInfo.getMasterKey()).toBase64();
-        this.type = groupInfo.hasSignedGroupChange() ? "UPDATE" : "DELIVER";
-        this.members = null;
-        this.name = null;
+    static JsonGroupInfo from(SignalServiceGroupV2 groupInfo) {
+        return new JsonGroupInfo(GroupUtils.getGroupIdV2(groupInfo.getMasterKey()).toBase64(),
+                groupInfo.hasSignedGroupChange() ? "UPDATE" : "DELIVER",
+                null,
+                null);
     }
 
-    JsonGroupInfo(byte[] groupId) {
-        this.groupId = Base64.getEncoder().encodeToString(groupId);
-        this.type = "DELIVER";
-        this.members = null;
-        this.name = null;
+    static JsonGroupInfo from(byte[] groupId) {
+        return new JsonGroupInfo(Base64.getEncoder().encodeToString(groupId), "DELIVER", null, null);
     }
 }

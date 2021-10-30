@@ -87,8 +87,8 @@ public class SenderKeySharedStore {
         synchronized (sharedSenderKeys) {
             return sharedSenderKeys.get(distributionId)
                     .stream()
-                    .map(k -> new SignalProtocolAddress(addressResolver.resolveRecipientAddress(k.getRecipientId())
-                            .getIdentifier(), k.getDeviceId()))
+                    .map(k -> new SignalProtocolAddress(addressResolver.resolveRecipientAddress(k.recipientId())
+                            .getIdentifier(), k.deviceId()))
                     .collect(Collectors.toSet());
         }
     }
@@ -146,7 +146,7 @@ public class SenderKeySharedStore {
 
                 sharedSenderKeys.put(distributionId, new HashSet<>(entries) {
                     {
-                        entries.removeIf(e -> e.getRecipientId().equals(recipientId));
+                        removeIf(e -> e.recipientId().equals(recipientId));
                     }
                 });
             }
@@ -163,7 +163,7 @@ public class SenderKeySharedStore {
                         entries.stream()
                                 .map(e -> e.recipientId.equals(toBeMergedRecipientId) ? new SenderKeySharedEntry(
                                         recipientId,
-                                        e.getDeviceId()) : e)
+                                        e.deviceId()) : e)
                                 .collect(Collectors.toSet()));
             }
             saveLocked();
@@ -181,8 +181,8 @@ public class SenderKeySharedStore {
         var storage = new Storage(sharedSenderKeys.entrySet().stream().flatMap(pair -> {
             final var sharedWith = pair.getValue();
             return sharedWith.stream()
-                    .map(entry -> new Storage.SharedSenderKey(entry.getRecipientId().getId(),
-                            entry.getDeviceId(),
+                    .map(entry -> new Storage.SharedSenderKey(entry.recipientId().id(),
+                            entry.deviceId(),
                             pair.getKey().asUuid().toString()));
         }).collect(Collectors.toList()));
 
@@ -199,72 +199,10 @@ public class SenderKeySharedStore {
         }
     }
 
-    private static class Storage {
+    private record Storage(List<SharedSenderKey> sharedSenderKeys) {
 
-        public List<SharedSenderKey> sharedSenderKeys;
-
-        // For deserialization
-        private Storage() {
-        }
-
-        public Storage(final List<SharedSenderKey> sharedSenderKeys) {
-            this.sharedSenderKeys = sharedSenderKeys;
-        }
-
-        private static class SharedSenderKey {
-
-            public long recipientId;
-            public int deviceId;
-            public String distributionId;
-
-            // For deserialization
-            private SharedSenderKey() {
-            }
-
-            public SharedSenderKey(final long recipientId, final int deviceId, final String distributionId) {
-                this.recipientId = recipientId;
-                this.deviceId = deviceId;
-                this.distributionId = distributionId;
-            }
-        }
+        private record SharedSenderKey(long recipientId, int deviceId, String distributionId) {}
     }
 
-    private static final class SenderKeySharedEntry {
-
-        private final RecipientId recipientId;
-        private final int deviceId;
-
-        public SenderKeySharedEntry(
-                final RecipientId recipientId, final int deviceId
-        ) {
-            this.recipientId = recipientId;
-            this.deviceId = deviceId;
-        }
-
-        public RecipientId getRecipientId() {
-            return recipientId;
-        }
-
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final SenderKeySharedEntry that = (SenderKeySharedEntry) o;
-
-            if (deviceId != that.deviceId) return false;
-            return recipientId.equals(that.recipientId);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = recipientId.hashCode();
-            result = 31 * result + deviceId;
-            return result;
-        }
-    }
+    private record SenderKeySharedEntry(RecipientId recipientId, int deviceId) {}
 }

@@ -25,13 +25,12 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -39,6 +38,7 @@ import org.asamk.signal.manager.helper.AttachmentHelper;
 import org.asamk.signal.manager.helper.ContactHelper;
 import org.asamk.signal.manager.helper.GroupHelper;
 import org.asamk.signal.manager.helper.GroupV2Helper;
+import org.asamk.signal.manager.helper.IdentityHelper;
 import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.PreKeyHelper;
@@ -60,15 +60,10 @@ import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
-import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.libsignal.fingerprint.Fingerprint;
-import org.whispersystems.libsignal.fingerprint.FingerprintParsingException;
-import org.whispersystems.libsignal.fingerprint.FingerprintVersionMismatchException;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
@@ -99,9 +94,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -113,7 +106,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
@@ -139,9 +131,15 @@ public class ManagerImpl implements Manager {
     private final ContactHelper contactHelper;
     private final IncomingMessageHandler incomingMessageHandler;
     private final PreKeyHelper preKeyHelper;
+    private final IdentityHelper identityHelper;
 
     private final Context context;
     private boolean hasCaughtUpWithOldMessages = false;
+    private boolean ignoreAttachments = false;
+
+    private Thread receiveThread;
+    private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    private boolean isReceivingSynchronous;
 
     ManagerImpl(
             SignalAccount account,
@@ -171,20 +169,19 @@ public class ManagerImpl implements Manager {
                 account.getSignalProtocolStore(),
                 executor,
                 sessionLock);
-        final var avatarStore = new AvatarStore(pathConfig.getAvatarsPath());
-        final var attachmentStore = new AttachmentStore(pathConfig.getAttachmentsPath());
-        final var stickerPackStore = new StickerPackStore(pathConfig.getStickerPacksPath());
+        final var avatarStore = new AvatarStore(pathConfig.avatarsPath());
+        final var attachmentStore = new AttachmentStore(pathConfig.attachmentsPath());
+        final var stickerPackStore = new StickerPackStore(pathConfig.stickerPacksPath());
 
         this.attachmentHelper = new AttachmentHelper(dependencies, attachmentStore);
         this.pinHelper = new PinHelper(dependencies.getKeyBackupService());
-        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account::getProfileKey,
-                account.getProfileStore()::getProfileKey,
-                this::getRecipientProfile,
-                this::getSenderCertificate);
+        final var unidentifiedAccessHelper = new UnidentifiedAccessHelper(account,
+                dependencies,
+                account::getProfileKey,
+                this::getRecipientProfile);
         this.profileHelper = new ProfileHelper(account,
                 dependencies,
                 avatarStore,
-                account.getProfileStore()::getProfileKey,
                 unidentifiedAccessHelper::getAccessFor,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
@@ -240,6 +237,11 @@ public class ManagerImpl implements Manager {
                 syncHelper,
                 this::getRecipientProfile,
                 jobExecutor);
+        this.identityHelper = new IdentityHelper(account,
+                dependencies,
+                this::resolveSignalServiceAddress,
+                syncHelper,
+                profileHelper);
     }
 
     @Override
@@ -424,7 +426,7 @@ public class ManagerImpl implements Manager {
     public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
         var info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
 
-        addDevice(info.deviceIdentifier, info.deviceKey);
+        addDevice(info.deviceIdentifier(), info.deviceKey());
     }
 
     private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
@@ -505,9 +507,12 @@ public class ManagerImpl implements Manager {
                         .map(account.getRecipientStore()::resolveRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.isBlocked(),
-                groupInfo.getMessageExpirationTime(),
-                groupInfo.isAnnouncementGroup(),
-                groupInfo.isMember(account.getSelfRecipientId()));
+                groupInfo.getMessageExpirationTimer(),
+                groupInfo.getPermissionAddMember(),
+                groupInfo.getPermissionEditDetails(),
+                groupInfo.getPermissionSendMessage(),
+                groupInfo.isMember(account.getSelfRecipientId()),
+                groupInfo.isAdmin(account.getSelfRecipientId()));
     }
 
     @Override
@@ -532,35 +537,22 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            GroupId groupId,
-            String name,
-            String description,
-            Set<RecipientIdentifier.Single> members,
-            Set<RecipientIdentifier.Single> removeMembers,
-            Set<RecipientIdentifier.Single> admins,
-            Set<RecipientIdentifier.Single> removeAdmins,
-            boolean resetGroupLink,
-            GroupLinkState groupLinkState,
-            GroupPermission addMemberPermission,
-            GroupPermission editDetailsPermission,
-            File avatarFile,
-            Integer expirationTimer,
-            Boolean isAnnouncementGroup
+            final GroupId groupId, final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         return groupHelper.updateGroup(groupId,
-                name,
-                description,
-                members == null ? null : resolveRecipients(members),
-                removeMembers == null ? null : resolveRecipients(removeMembers),
-                admins == null ? null : resolveRecipients(admins),
-                removeAdmins == null ? null : resolveRecipients(removeAdmins),
-                resetGroupLink,
-                groupLinkState,
-                addMemberPermission,
-                editDetailsPermission,
-                avatarFile,
-                expirationTimer,
-                isAnnouncementGroup);
+                updateGroup.getName(),
+                updateGroup.getDescription(),
+                updateGroup.getMembers() == null ? null : resolveRecipients(updateGroup.getMembers()),
+                updateGroup.getRemoveMembers() == null ? null : resolveRecipients(updateGroup.getRemoveMembers()),
+                updateGroup.getAdmins() == null ? null : resolveRecipients(updateGroup.getAdmins()),
+                updateGroup.getRemoveAdmins() == null ? null : resolveRecipients(updateGroup.getRemoveAdmins()),
+                updateGroup.isResetGroupLink(),
+                updateGroup.getGroupLinkState(),
+                updateGroup.getAddMemberPermission(),
+                updateGroup.getEditDetailsPermission(),
+                updateGroup.getAvatarFile(),
+                updateGroup.getExpirationTimer(),
+                updateGroup.getIsAnnouncementGroup());
     }
 
     @Override
@@ -577,16 +569,15 @@ public class ManagerImpl implements Manager {
         long timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single) {
-                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
+            if (recipient instanceof RecipientIdentifier.Single single) {
+                final var recipientId = resolveRecipient(single);
                 final var result = sendHelper.sendMessage(messageBuilder, recipientId);
                 results.put(recipient, List.of(result));
             } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
                 final var result = sendHelper.sendSelfMessage(messageBuilder);
                 results.put(recipient, List.of(result));
-            } else if (recipient instanceof RecipientIdentifier.Group) {
-                final var groupId = ((RecipientIdentifier.Group) recipient).groupId;
-                final var result = sendHelper.sendAsGroupMessage(messageBuilder, groupId);
+            } else if (recipient instanceof RecipientIdentifier.Group group) {
+                final var result = sendHelper.sendAsGroupMessage(messageBuilder, group.groupId);
                 results.put(recipient, result);
             }
         }
@@ -651,8 +642,8 @@ public class ManagerImpl implements Manager {
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException {
-        messageBuilder.withBody(message.getMessageText());
-        final var attachments = message.getAttachments();
+        messageBuilder.withBody(message.messageText());
+        final var attachments = message.attachments();
         if (attachments != null) {
             messageBuilder.withAttachments(attachmentHelper.uploadAttachments(attachments));
         }
@@ -726,7 +717,10 @@ public class ManagerImpl implements Manager {
     @Override
     public void setGroupBlocked(
             final GroupId groupId, final boolean blocked
-    ) throws GroupNotFoundException, IOException {
+    ) throws GroupNotFoundException, IOException, NotMasterDeviceException {
+        if (!account.isMasterDevice()) {
+            throw new NotMasterDeviceException();
+        }
         groupHelper.setGroupBlocked(groupId, blocked);
         // TODO cycle our profile key
         syncHelper.sendBlockedList();
@@ -793,22 +787,6 @@ public class ManagerImpl implements Manager {
         }
     }
 
-    private byte[] getSenderCertificate() {
-        byte[] certificate;
-        try {
-            if (account.isPhoneNumberShared()) {
-                certificate = dependencies.getAccountManager().getSenderCertificate();
-            } else {
-                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
-            return null;
-        }
-        // TODO cache for a day
-        return certificate;
-    }
-
     private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
         final var address = resolveSignalServiceAddress(recipientId);
         if (!address.getNumber().isPresent()) {
@@ -850,10 +828,10 @@ public class ManagerImpl implements Manager {
         return registeredUsers;
     }
 
-    private void retryFailedReceivedMessages(ReceiveMessageHandler handler, boolean ignoreAttachments) {
+    private void retryFailedReceivedMessages(ReceiveMessageHandler handler) {
         Set<HandleAction> queuedActions = new HashSet<>();
         for (var cachedMessage : account.getMessageCache().getCachedMessages()) {
-            var actions = retryFailedReceivedMessage(handler, ignoreAttachments, cachedMessage);
+            var actions = retryFailedReceivedMessage(handler, cachedMessage);
             if (actions != null) {
                 queuedActions.addAll(actions);
             }
@@ -862,7 +840,7 @@ public class ManagerImpl implements Manager {
     }
 
     private List<HandleAction> retryFailedReceivedMessage(
-            final ReceiveMessageHandler handler, final boolean ignoreAttachments, final CachedMessage cachedMessage
+            final ReceiveMessageHandler handler, final CachedMessage cachedMessage
     ) {
         var envelope = cachedMessage.loadEnvelope();
         if (envelope == null) {
@@ -898,14 +876,118 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void receiveMessages(
-            long timeout,
-            TimeUnit unit,
-            boolean returnOnTimeout,
-            boolean ignoreAttachments,
-            ReceiveMessageHandler handler
+    public void addReceiveHandler(final ReceiveMessageHandler handler) {
+        if (isReceivingSynchronous) {
+            throw new IllegalStateException("Already receiving message synchronously.");
+        }
+        synchronized (messageHandlers) {
+            messageHandlers.add(handler);
+
+            startReceiveThreadIfRequired();
+        }
+    }
+
+    private void startReceiveThreadIfRequired() {
+        if (receiveThread != null) {
+            return;
+        }
+        receiveThread = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                try {
+                    receiveMessagesInternal(1L, TimeUnit.HOURS, false, (envelope, decryptedContent, e) -> {
+                        synchronized (messageHandlers) {
+                            for (ReceiveMessageHandler h : messageHandlers) {
+                                try {
+                                    h.handleMessage(envelope, decryptedContent, e);
+                                } catch (Exception ex) {
+                                    logger.warn("Message handler failed, ignoring", ex);
+                                }
+                            }
+                        }
+                    });
+                    break;
+                } catch (IOException e) {
+                    logger.warn("Receiving messages failed, retrying", e);
+                }
+            }
+            hasCaughtUpWithOldMessages = false;
+            synchronized (messageHandlers) {
+                receiveThread = null;
+
+                // Check if in the meantime another handler has been registered
+                if (!messageHandlers.isEmpty()) {
+                    startReceiveThreadIfRequired();
+                }
+            }
+        });
+
+        receiveThread.start();
+    }
+
+    @Override
+    public void removeReceiveHandler(final ReceiveMessageHandler handler) {
+        final Thread thread;
+        synchronized (messageHandlers) {
+            thread = receiveThread;
+            receiveThread = null;
+            messageHandlers.remove(handler);
+            if (!messageHandlers.isEmpty() || isReceivingSynchronous) {
+                return;
+            }
+        }
+
+        stopReceiveThread(thread);
+    }
+
+    private void stopReceiveThread(final Thread thread) {
+        thread.interrupt();
+        try {
+            thread.join();
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    @Override
+    public boolean isReceiving() {
+        if (isReceivingSynchronous) {
+            return true;
+        }
+        synchronized (messageHandlers) {
+            return messageHandlers.size() > 0;
+        }
+    }
+
+    @Override
+    public void receiveMessages(long timeout, TimeUnit unit, ReceiveMessageHandler handler) throws IOException {
+        receiveMessages(timeout, unit, true, handler);
+    }
+
+    @Override
+    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
+        receiveMessages(1L, TimeUnit.HOURS, false, handler);
+    }
+
+    private void receiveMessages(
+            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
-        retryFailedReceivedMessages(handler, ignoreAttachments);
+        if (isReceiving()) {
+            throw new IllegalStateException("Already receiving message.");
+        }
+        isReceivingSynchronous = true;
+        receiveThread = Thread.currentThread();
+        try {
+            receiveMessagesInternal(timeout, unit, returnOnTimeout, handler);
+        } finally {
+            receiveThread = null;
+            hasCaughtUpWithOldMessages = false;
+            isReceivingSynchronous = false;
+        }
+    }
+
+    private void receiveMessagesInternal(
+            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
+    ) throws IOException {
+        retryFailedReceivedMessages(handler);
 
         Set<HandleAction> queuedActions = new HashSet<>();
 
@@ -913,6 +995,8 @@ public class ManagerImpl implements Manager {
         signalWebSocket.connect();
 
         hasCaughtUpWithOldMessages = false;
+        var backOffCounter = 0;
+        final var MAX_BACKOFF_COUNTER = 9;
 
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
@@ -927,6 +1011,8 @@ public class ManagerImpl implements Manager {
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
+                backOffCounter = 0;
+
                 if (result.isPresent()) {
                     envelope = result.get();
                     logger.debug("New message received from server");
@@ -950,11 +1036,24 @@ public class ManagerImpl implements Manager {
                 } else {
                     throw e;
                 }
-            } catch (WebSocketUnavailableException e) {
-                logger.debug("Pipe unexpectedly unavailable, connecting");
-                signalWebSocket.connect();
-                continue;
+            } catch (IOException e) {
+                logger.debug("Pipe unexpectedly unavailable: {}", e.getMessage());
+                if (e instanceof WebSocketUnavailableException || "Connection closed!".equals(e.getMessage())) {
+                    final var sleepMilliseconds = 100 * (long) Math.pow(2, backOffCounter);
+                    backOffCounter = Math.min(backOffCounter + 1, MAX_BACKOFF_COUNTER);
+                    logger.warn("Connection closed unexpectedly, reconnecting in {} ms", sleepMilliseconds);
+                    try {
+                        Thread.sleep(sleepMilliseconds);
+                    } catch (InterruptedException interruptedException) {
+                        return;
+                    }
+                    hasCaughtUpWithOldMessages = false;
+                    signalWebSocket.connect();
+                    continue;
+                }
+                throw e;
             } catch (TimeoutException e) {
+                backOffCounter = 0;
                 if (returnOnTimeout) return;
                 continue;
             }
@@ -965,9 +1064,11 @@ public class ManagerImpl implements Manager {
 
             if (hasCaughtUpWithOldMessages) {
                 handleQueuedActions(queuedActions);
+                queuedActions.clear();
             }
             if (cachedMessage[0] != null) {
                 if (exception instanceof UntrustedIdentityException) {
+                    logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
                     final var recipientId = resolveRecipient(address);
                     if (!envelope.hasSourceUuid()) {
@@ -984,6 +1085,12 @@ public class ManagerImpl implements Manager {
             }
         }
         handleQueuedActions(queuedActions);
+        queuedActions.clear();
+    }
+
+    @Override
+    public void setIgnoreAttachments(final boolean ignoreAttachments) {
+        this.ignoreAttachments = ignoreAttachments;
     }
 
     @Override
@@ -992,6 +1099,7 @@ public class ManagerImpl implements Manager {
     }
 
     private void handleQueuedActions(final Collection<HandleAction> queuedActions) {
+        logger.debug("Handling message actions");
         var interrupted = false;
         for (var action : queuedActions) {
             try {
@@ -1067,7 +1175,7 @@ public class ManagerImpl implements Manager {
         return toGroup(groupHelper.getGroup(groupId));
     }
 
-    public GroupInfo getGroupInfo(GroupId groupId) {
+    private GroupInfo getGroupInfo(GroupId groupId) {
         return groupHelper.getGroup(groupId);
     }
 
@@ -1086,10 +1194,12 @@ public class ManagerImpl implements Manager {
         }
 
         final var address = account.getRecipientStore().resolveRecipientAddress(identityInfo.getRecipientId());
+        final var scannableFingerprint = identityHelper.computeSafetyNumberForScanning(identityInfo.getRecipientId(),
+                identityInfo.getIdentityKey());
         return new Identity(address,
                 identityInfo.getIdentityKey(),
-                computeSafetyNumber(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
-                computeSafetyNumberForScanning(address.toSignalServiceAddress(), identityInfo.getIdentityKey()),
+                identityHelper.computeSafetyNumber(identityInfo.getRecipientId(), identityInfo.getIdentityKey()),
+                scannableFingerprint == null ? null : scannableFingerprint.getSerialized(),
                 identityInfo.getTrustLevel(),
                 identityInfo.getDateAdded());
     }
@@ -1119,9 +1229,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        return trustIdentity(recipientId,
-                identityKey -> Arrays.equals(identityKey.serialize(), fingerprint),
-                TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerified(recipientId, fingerprint);
     }
 
     /**
@@ -1138,10 +1246,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        var address = resolveSignalServiceAddress(recipientId);
-        return trustIdentity(recipientId,
-                identityKey -> safetyNumber.equals(computeSafetyNumber(address, identityKey)),
-                TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
     }
 
     /**
@@ -1158,15 +1263,7 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        var address = resolveSignalServiceAddress(recipientId);
-        return trustIdentity(recipientId, identityKey -> {
-            final var fingerprint = computeSafetyNumberFingerprint(address, identityKey);
-            try {
-                return fingerprint != null && fingerprint.getScannableFingerprint().compareTo(safetyNumber);
-            } catch (FingerprintVersionMismatchException | FingerprintParsingException e) {
-                return false;
-            }
-        }, TrustLevel.TRUSTED_VERIFIED);
+        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
     }
 
     /**
@@ -1182,66 +1279,13 @@ public class ManagerImpl implements Manager {
         } catch (UnregisteredUserException e) {
             return false;
         }
-        return trustIdentity(recipientId, identityKey -> true, TrustLevel.TRUSTED_UNVERIFIED);
-    }
-
-    private boolean trustIdentity(
-            RecipientId recipientId, Function<IdentityKey, Boolean> verifier, TrustLevel trustLevel
-    ) {
-        var identity = account.getIdentityKeyStore().getIdentity(recipientId);
-        if (identity == null) {
-            return false;
-        }
-
-        if (!verifier.apply(identity.getIdentityKey())) {
-            return false;
-        }
-
-        account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identity.getIdentityKey(), trustLevel);
-        try {
-            var address = resolveSignalServiceAddress(recipientId);
-            syncHelper.sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
-        } catch (IOException e) {
-            logger.warn("Failed to send verification sync message: {}", e.getMessage());
-        }
-
-        return true;
+        return identityHelper.trustIdentityAllKeys(recipientId);
     }
 
     private void handleIdentityFailure(
             final RecipientId recipientId, final SendMessageResult.IdentityFailure identityFailure
     ) {
-        final var identityKey = identityFailure.getIdentityKey();
-        if (identityKey != null) {
-            final var newIdentity = account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
-            if (newIdentity) {
-                account.getSessionStore().archiveSessions(recipientId);
-            }
-        } else {
-            // Retrieve profile to get the current identity key from the server
-            profileHelper.refreshRecipientProfile(recipientId);
-        }
-    }
-
-    @Override
-    public String computeSafetyNumber(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
-        return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
-    }
-
-    private byte[] computeSafetyNumberForScanning(SignalServiceAddress theirAddress, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(theirAddress, theirIdentityKey);
-        return fingerprint == null ? null : fingerprint.getScannableFingerprint().getSerialized();
-    }
-
-    private Fingerprint computeSafetyNumberFingerprint(
-            final SignalServiceAddress theirAddress, final IdentityKey theirIdentityKey
-    ) {
-        return Utils.computeSafetyNumber(capabilities.isUuid(),
-                account.getSelfAddress(),
-                account.getIdentityKeyPair().getPublicKey(),
-                theirAddress,
-                theirIdentityKey);
+        this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
     }
 
     @Override
@@ -1307,6 +1351,15 @@ public class ManagerImpl implements Manager {
     }
 
     private void close(boolean closeAccount) throws IOException {
+        Thread thread;
+        synchronized (messageHandlers) {
+            messageHandlers.clear();
+            thread = receiveThread;
+            receiveThread = null;
+        }
+        if (thread != null) {
+            stopReceiveThread(thread);
+        }
         executor.shutdown();
 
         dependencies.getSignalWebSocket().disconnect();
@@ -1316,5 +1369,4 @@ public class ManagerImpl implements Manager {
         }
         account = null;
     }
-
 }

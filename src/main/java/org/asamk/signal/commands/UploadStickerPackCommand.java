@@ -42,8 +42,7 @@ public class UploadStickerPackCommand implements JsonRpcLocalCommand {
 
         try {
             var url = m.uploadStickerPack(path);
-            if (outputWriter instanceof PlainTextWriter) {
-                final var writer = (PlainTextWriter) outputWriter;
+            if (outputWriter instanceof PlainTextWriter writer) {
                 writer.println("{}", url);
             } else {
                 final var writer = (JsonWriter) outputWriter;

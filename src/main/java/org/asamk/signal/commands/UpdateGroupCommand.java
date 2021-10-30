@@ -12,6 +12,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -76,33 +77,23 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         if (value == null) {
             return null;
         }
-        switch (value) {
-            case "enabled":
-                return GroupLinkState.ENABLED;
-            case "enabled-with-approval":
-            case "enabledWithApproval":
-                return GroupLinkState.ENABLED_WITH_APPROVAL;
-            case "disabled":
-                return GroupLinkState.DISABLED;
-            default:
-                throw new UserErrorException("Invalid group link state: " + value);
-        }
+        return switch (value) {
+            case "enabled" -> GroupLinkState.ENABLED;
+            case "enabled-with-approval", "enabledWithApproval" -> GroupLinkState.ENABLED_WITH_APPROVAL;
+            case "disabled" -> GroupLinkState.DISABLED;
+            default -> throw new UserErrorException("Invalid group link state: " + value);
+        };
     }
 
     GroupPermission getGroupPermission(String value) throws UserErrorException {
         if (value == null) {
             return null;
         }
-        switch (value) {
-            case "every-member":
-            case "everyMember":
-                return GroupPermission.EVERY_MEMBER;
-            case "only-admins":
-            case "onlyAdmins":
-                return GroupPermission.ONLY_ADMINS;
-            default:
-                throw new UserErrorException("Invalid group permission: " + value);
-        }
+        return switch (value) {
+            case "every-member", "everyMember" -> GroupPermission.EVERY_MEMBER;
+            case "only-admins", "onlyAdmins" -> GroupPermission.ONLY_ADMINS;
+            default -> throw new UserErrorException("Invalid group permission: " + value);
+        };
     }
 
     @Override
@@ -136,8 +127,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                 var results = m.createGroup(groupName,
                         groupMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
-                timestamp = results.second().getTimestamp();
-                ErrorUtils.handleSendMessageResults(results.second().getResults());
+                timestamp = results.second().timestamp();
+                ErrorUtils.handleSendMessageResults(results.second().results());
                 groupId = results.first();
                 groupName = null;
                 groupMembers = null;
@@ -145,24 +136,26 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
             }
 
             var results = m.updateGroup(groupId,
-                    groupName,
-                    groupDescription,
-                    groupMembers,
-                    groupRemoveMembers,
-                    groupAdmins,
-                    groupRemoveAdmins,
-                    groupResetLink,
-                    groupLinkState,
-                    groupAddMemberPermission,
-                    groupEditDetailsPermission,
-                    groupAvatar == null ? null : new File(groupAvatar),
-                    groupExpiration,
-                    groupSendMessagesPermission == null
-                            ? null
-                            : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS);
+                    UpdateGroup.newBuilder()
+                            .withName(groupName)
+                            .withDescription(groupDescription)
+                            .withMembers(groupMembers)
+                            .withRemoveMembers(groupRemoveMembers)
+                            .withAdmins(groupAdmins)
+                            .withRemoveAdmins(groupRemoveAdmins)
+                            .withResetGroupLink(groupResetLink)
+                            .withGroupLinkState(groupLinkState)
+                            .withAddMemberPermission(groupAddMemberPermission)
+                            .withEditDetailsPermission(groupEditDetailsPermission)
+                            .withAvatarFile(groupAvatar == null ? null : new File(groupAvatar))
+                            .withExpirationTimer(groupExpiration)
+                            .withIsAnnouncementGroup(groupSendMessagesPermission == null
+                                    ? null
+                                    : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS)
+                            .build());
             if (results != null) {
-                timestamp = results.getTimestamp();
-                ErrorUtils.handleSendMessageResults(results.getResults());
+                timestamp = results.timestamp();
+                ErrorUtils.handleSendMessageResults(results.results());
             }
             outputResult(outputWriter, timestamp, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {
@@ -176,8 +169,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final Long timestamp, final GroupId groupId) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             if (groupId != null) {
                 writer.println("Created new group: \"{}\"", groupId.toBase64());
             }

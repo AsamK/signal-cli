@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ValueNode;
  * Represents a JSON-RPC response.
  * https://www.jsonrpc.org/specification#response_object
  */
-public class JsonRpcResponse extends JsonRpcMessage {
+public final class JsonRpcResponse extends JsonRpcMessage {
 
     /**
      * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".

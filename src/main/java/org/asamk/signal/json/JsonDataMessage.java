@@ -1,7 +1,6 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
@@ -10,136 +9,124 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class JsonDataMessage {
+record JsonDataMessage(
+        long timestamp,
+        String message,
+        Integer expiresInSeconds,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonAttachment> attachments,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSharedContact> contacts,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo
+) {
 
-    @JsonProperty
-    final long timestamp;
-
-    @JsonProperty
-    final String message;
-
-    @JsonProperty
-    final Integer expiresInSeconds;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final Boolean viewOnce;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonReaction reaction;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonQuote quote;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonMention> mentions;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonAttachment> attachments;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonSticker sticker;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonRemoteDelete remoteDelete;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final List<JsonSharedContact> contacts;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonGroupInfo groupInfo;
-
-    JsonDataMessage(SignalServiceDataMessage dataMessage, Manager m) {
-        this.timestamp = dataMessage.getTimestamp();
+    static JsonDataMessage from(SignalServiceDataMessage dataMessage, Manager m) {
+        final var timestamp = dataMessage.getTimestamp();
+        final JsonGroupInfo groupInfo;
         if (dataMessage.getGroupContext().isPresent()) {
             final var groupContext = dataMessage.getGroupContext().get();
             if (groupContext.getGroupV1().isPresent()) {
-                var groupInfo = groupContext.getGroupV1().get();
-                this.groupInfo = new JsonGroupInfo(groupInfo);
+                var group = groupContext.getGroupV1().get();
+                groupInfo = JsonGroupInfo.from(group);
             } else if (groupContext.getGroupV2().isPresent()) {
-                var groupInfo = groupContext.getGroupV2().get();
-                this.groupInfo = new JsonGroupInfo(groupInfo);
+                var group = groupContext.getGroupV2().get();
+                groupInfo = JsonGroupInfo.from(group);
             } else {
-                this.groupInfo = null;
+                groupInfo = null;
             }
         } else {
-            this.groupInfo = null;
+            groupInfo = null;
         }
-        this.message = dataMessage.getBody().orNull();
-        this.expiresInSeconds = dataMessage.getExpiresInSeconds();
-        this.viewOnce = dataMessage.isViewOnce();
-        this.reaction = dataMessage.getReaction().isPresent()
-                ? new JsonReaction(dataMessage.getReaction().get(), m)
-                : null;
-        this.quote = dataMessage.getQuote().isPresent() ? new JsonQuote(dataMessage.getQuote().get(), m) : null;
+        final var message = dataMessage.getBody().orNull();
+        final var expiresInSeconds = dataMessage.getExpiresInSeconds();
+        final var viewOnce = dataMessage.isViewOnce();
+        final var reaction = dataMessage.getReaction().isPresent() ? JsonReaction.from(dataMessage.getReaction().get(),
+                m) : null;
+        final var quote = dataMessage.getQuote().isPresent() ? JsonQuote.from(dataMessage.getQuote().get(), m) : null;
+        final List<JsonMention> mentions;
         if (dataMessage.getMentions().isPresent()) {
-            this.mentions = dataMessage.getMentions()
+            mentions = dataMessage.getMentions()
                     .get()
                     .stream()
-                    .map(mention -> new JsonMention(mention, m))
+                    .map(mention -> JsonMention.from(mention, m))
                     .collect(Collectors.toList());
         } else {
-            this.mentions = List.of();
+            mentions = List.of();
         }
-        remoteDelete = dataMessage.getRemoteDelete().isPresent() ? new JsonRemoteDelete(dataMessage.getRemoteDelete()
-                .get()) : null;
+        final var remoteDelete = dataMessage.getRemoteDelete().isPresent()
+                ? JsonRemoteDelete.from(dataMessage.getRemoteDelete().get())
+                : null;
+        final List<JsonAttachment> attachments;
         if (dataMessage.getAttachments().isPresent()) {
-            this.attachments = dataMessage.getAttachments()
+            attachments = dataMessage.getAttachments()
                     .get()
                     .stream()
-                    .map(JsonAttachment::new)
+                    .map(JsonAttachment::from)
                     .collect(Collectors.toList());
         } else {
-            this.attachments = List.of();
+            attachments = List.of();
         }
-        this.sticker = dataMessage.getSticker().isPresent() ? new JsonSticker(dataMessage.getSticker().get()) : null;
+        final var sticker = dataMessage.getSticker().isPresent()
+                ? JsonSticker.from(dataMessage.getSticker().get())
+                : null;
 
+        final List<JsonSharedContact> contacts;
         if (dataMessage.getSharedContacts().isPresent()) {
-            this.contacts = dataMessage.getSharedContacts()
+            contacts = dataMessage.getSharedContacts()
                     .get()
                     .stream()
-                    .map(JsonSharedContact::new)
+                    .map(JsonSharedContact::from)
                     .collect(Collectors.toList());
         } else {
-            this.contacts = List.of();
+            contacts = List.of();
         }
+        return new JsonDataMessage(timestamp,
+                message,
+                expiresInSeconds,
+                viewOnce,
+                reaction,
+                quote,
+                mentions,
+                attachments,
+                sticker,
+                remoteDelete,
+                contacts,
+                groupInfo);
     }
 
-    public JsonDataMessage(Signal.MessageReceived messageReceived) {
-        timestamp = messageReceived.getTimestamp();
-        message = messageReceived.getMessage();
-        groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
-        expiresInSeconds = null;
-        viewOnce = null;
-        remoteDelete = null;
-        reaction = null;    // TODO Replace these 5 with the proper commands
-        quote = null;
-        mentions = null;
-        sticker = null;
-        contacts = null;
-        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
+    static JsonDataMessage from(Signal.MessageReceived messageReceived) {
+        return new JsonDataMessage(messageReceived.getTimestamp(),
+                messageReceived.getMessage(),
+                // TODO Replace these with the proper commands
+                null,
+                null,
+                null,
+                null,
+                null,
+                messageReceived.getAttachments().stream().map(JsonAttachment::from).collect(Collectors.toList()),
+                null,
+                null,
+                null,
+                messageReceived.getGroupId().length > 0 ? JsonGroupInfo.from(messageReceived.getGroupId()) : null);
     }
 
-    public JsonDataMessage(Signal.SyncMessageReceived messageReceived) {
-        timestamp = messageReceived.getTimestamp();
-        message = messageReceived.getMessage();
-        groupInfo = messageReceived.getGroupId().length > 0 ? new JsonGroupInfo(messageReceived.getGroupId()) : null;
-        expiresInSeconds = null;
-        viewOnce = null;
-        remoteDelete = null;
-        reaction = null;    // TODO Replace these 5 with the proper commands
-        quote = null;
-        mentions = null;
-        sticker = null;
-        contacts = null;
-        attachments = messageReceived.getAttachments().stream().map(JsonAttachment::new).collect(Collectors.toList());
+    static JsonDataMessage from(Signal.SyncMessageReceived messageReceived) {
+        return new JsonDataMessage(messageReceived.getTimestamp(),
+                messageReceived.getMessage(),
+                // TODO Replace these with the proper commands
+                null,
+                null,
+                null,
+                null,
+                null,
+                messageReceived.getAttachments().stream().map(JsonAttachment::from).collect(Collectors.toList()),
+                null,
+                null,
+                null,
+                messageReceived.getGroupId().length > 0 ? JsonGroupInfo.from(messageReceived.getGroupId()) : null);
     }
 }

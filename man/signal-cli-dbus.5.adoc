@@ -29,14 +29,17 @@ method(arg1<type>, arg2<type>, ...) -> return<type>
 
 Where <type> is according to DBus specification:
 
-* <s>   : String
-* <ay>  : Byte Array
-* <aay> : Array of Byte Arrays
-* <as>  : String Array
-* <ax>  : Array of signed 64 bit integer
-* <b>   : Boolean (0|1)
-* <x>   : Signed 64 bit integer
+* <a>   : Array of ... (comma-separated list) (array:)
+* (...) : Struct (cannot be sent via `dbus-send`)
+* <b>   : Boolean (false|true) (boolean:)
+* <i>   : Signed 32-bit (int) integer (int32:)
+* <o>   : DBusPath object (objpath:)
+* <s>   : String (string:)
+* <x>   : Signed 64-bit (long) integer (int64:)
+* <y>   : Unsigned 8-bit (byte) integer (byte:)
 * <>    : no return value
+
+The final parenthetical value (such as "boolean:") is the type indicator used by `dbus-send`.
 
 Exceptions are the names of the Java Exceptions returned in the body field. They typically contain an additional message with details. All Exceptions begin with "org.asamk.Signal.Error." which is omitted here for better readability.
 
@@ -45,9 +48,9 @@ Phone numbers always have the format +<countrycode><regional number>
 == Methods
 
 === Control methods
-These methods are available if the daemon is started anonymously (without an explicit `-u USERNAME`). 
-Requests are sent to `/org/asamk/Signal`; requests related to individual accounts are sent to 
-`/org/asamk/Signal/_441234567890` where the + dialing code is replaced by an underscore (_). 
+These methods are available if the daemon is started anonymously (without an explicit `-u USERNAME`).
+Requests are sent to `/org/asamk/Signal`; requests related to individual accounts are sent to
+`/org/asamk/Signal/_441234567890` where the + dialing code is replaced by an underscore (_).
 Only `version()` is activated in single-user mode; the rest are disabled.
 
 link() -> deviceLinkUri<s>::
@@ -55,12 +58,12 @@ link(newDeviceName<s>) -> deviceLinkUri<s>::
 * newDeviceName : Name to give new device (defaults to "cli" if no name is given)
 * deviceLinkUri : URI of newly linked device
 
-Returns a URI of the form "tsdevice:/?uuid=...". This can be piped to a QR encoder to create a display that
+Returns a URI of the form "sgnl://linkdevice?uuid=...". This can be piped to a QR encoder to create a display that
 can be captured by a Signal smartphone client. For example:
 
 `dbus-send --session --dest=org.asamk.Signal --type=method_call --print-reply /org/asamk/Signal org.asamk.Signal.link string:"My secondary client"|tr '\n' '\0'|sed 's/.*string //g'|sed 's/\"//g'|qrencode -s10 -tANSI256`
 
-Exception: Failure
+Exceptions: Failure
 
 listAccounts() -> accountList<as>::
 * accountList : Array of all attached accounts in DBus object path form
@@ -86,21 +89,213 @@ verify(number<s>, verificationCode<s>) -> <>::
 
 Command fails if PIN was set after previous registration; use verifyWithPin instead.
 
-Exception: Failure, InvalidNumber
+Exceptions: Failure, InvalidNumber
 
 verifyWithPin(number<s>, verificationCode<s>, pin<s>) -> <>::
 * number            : Phone number
 * verificationCode  : Code received from Signal after successful registration request
 * pin               : PIN you set with setPin command after verifying previous registration
 
-Exception: Failure, InvalidNumber
+Exceptions: Failure, InvalidNumber
 
 version() -> version<s>::
 * version : Version string of signal-cli
 
 Exceptions: None
 
-=== Other methods
+=== Group control methods
+The following methods listen to the recipient's object path, which is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+
+createGroup(groupName<s>, members<as>, avatar<s>) -> groupId<ay>::
+* groupName : String representing the display name of the group
+* members   : String array of new members to be invited to group
+* avatar    : Filename of avatar picture to be set for group (empty if none)
+* groupId   : Byte array representing the internal group identifier
+
+Exceptions: AttachmentInvalid, Failure, InvalidNumber;
+
+getGroup(groupId<ay>) -> objectPath<o>::
+* groupId    : Byte array representing the internal group identifier
+* objectPath : DBusPath for the group
+
+getGroupMembers(groupId<ay>) -> members<as>::
+* groupId   : Byte array representing the internal group identifier
+* members   : String array with the phone numbers of all active members of a group
+
+Exceptions: None, if the group name is not found an empty array is returned
+
+joinGroup(inviteURI<s>) -> <>::
+* inviteURI : String starting with https://signal.group/#
+
+Behavior of this method depends on the `requirePermission` parameter of the `enableLink` method. If permission is required, `joinGroup` adds you to the requesting members list. Permission may be granted based on the group's `PermissionAddMember` property (`ONLY_ADMINS` or `EVERY_MEMBER`). If permission is not required, `joinGroup` admits you immediately to the group.
+
+Exceptions: Failure
+
+listGroups() -> groups<a(oays)>::
+* groups          : Array of Structs(objectPath, groupId, groupName)
+** objectPath      : DBusPath
+** groupId         : Byte array representing the internal group identifier
+** groupName       : String representing the display name of the group
+
+sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
+* message     : Text to send (can be UTF8)
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
+* groupId     : Byte array representing the internal group identifier
+* timestamp   : Long, can be used to identify the corresponding Signal reply
+
+Exceptions: GroupNotFound, Failure, AttachmentInvalid, InvalidGroupId
+
+sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+* emoji               : Unicode grapheme cluster of the emoji
+* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
+* targetAuthor        : String with the phone number of the author of the message to which to react
+* targetSentTimestamp : Long representing timestamp of the message to which to react
+* groupId             : Byte array representing the internal group identifier
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Exceptions: Failure, InvalidNumber, GroupNotFound, InvalidGroupId
+
+sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
+* targetSentTimestamp : Long representing timestamp of the message to delete
+* groupId             : Byte array with base64 encoded group identifier
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Exceptions: Failure, GroupNotFound, InvalidGroupId
+
+=== Group methods
+The following methods listen to the group's object path, which can be obtained from the listGroups() method and is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber + "/Groups/" + DBusGroupId
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+* DBusGroupId : groupId in base64 format, with underscore (_) replacing plus (+), equals (=), or slash (/)
+
+Groups have the following (case-sensitive) properties:
+* Id<ay> (read-only)                : Byte array representing the internal group identifier
+* Name<s>                           : Display name of the group
+* Description<s>                    : Description of the group
+* Avatar<s> (write-only)            : Filename of the avatar
+* IsBlocked<b>                      : true=member will not receive group messages; false=not blocked
+* IsMember<b> (read-only)           : always true (object path exists only for group members)
+* IsAdmin<b> (read-only)            : true=member has admin privileges; false=not admin
+* MessageExpirationTimer<i>         : int32 representing message expiration time for group
+* Members<as> (read-only)           : String array of group members' phone numbers
+* PendingMembers<as> (read-only)    : String array of pending members' phone numbers
+* RequestingMembers<as> (read-only) : String array of requesting members' phone numbers
+* Admins<as> (read-only)            : String array of admins' phone numbers
+* PermissionAddMember<s>            : String representing who has permission to add members
+** ONLY_ADMINS, EVERY_MEMBER
+* PermissionEditDetails<s>          : String representing who may edit group details
+** ONLY_ADMINS, EVERY_MEMBER
+* PermissionSendMessage<s>          : String representing who post messages to group
+** ONLY_ADMINS, EVERY_MEMBER (note that ONLY_ADMINS is equivalent to IsAnnouncementGroup)
+* GroupInviteLink<s> (read-only)    : String of the invitation link (starts with https://signal.group/#)
+
+To get a property, use (replacing `--session` with `--system` if needed):
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Get string:org.asamk.Signal.Group string:$PROPERTY_NAME`
+
+To set a property, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Set string:org.asamk.Signal.Group string:$PROPERTY_NAME variant:$PROPERTY_TYPE:$PROPERTY_VALUE`
+
+To get all properties, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Group`
+
+addAdmins(recipients<as>) -> <>::
+* recipients  : String array of phone numbers
+
+Grant admin privileges to recipients.
+
+Exceptions: Failure
+
+addMembers(recipients<as>) -> <>::
+* recipients  : String array of phone numbers
+
+Add recipients to group if they are pending members; otherwise add recipients to list of requesting members.
+
+Exceptions: Failure
+
+disableLink() -> <>::
+
+Disables the group's invitation link.
+
+Exceptions: Failure
+
+enableLink(requiresApproval<b>) -> <>::
+* requiresApproval : true=add numbers using the link to the requesting members list
+
+Enables the group's invitation link.
+
+Exceptions: Failure
+
+quitGroup() -> <>::
+Exceptions: Failure, LastGroupAdmin
+
+removeAdmins(recipients<as>) -> <>::
+* recipients  : String array of phone numbers
+
+Remove admin privileges from recipients.
+
+Exceptions: Failure
+
+removeMembers(recipients<as>) -> <>::
+* recipients  : String array of phone numbers
+
+Remove recipients from group.
+
+Exceptions: Failure
+
+resetLink() -> <>::
+
+Resets the group's invitation link to a new random URL starting with https://signal.group/#
+
+Exceptions: Failure
+
+=== Deprecated group control methods
+The following deprecated methods listen to the recipient's object path, which is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+
+getGroupIds() -> groupList<aay>::
+groupList : Array of Byte arrays representing the internal group identifiers
+
+All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
+
+Exceptions: None
+
+getGroupName(groupId<ay>) -> groupName<s>::
+* groupId   : Byte array representing the internal group identifier
+* groupName : The display name of the group
+
+Exceptions: None, if the group name is not found an empty string is returned
+
+isGroupBlocked(groupId<ay>) -> isGroupBlocked<b>::
+* groupId        : Byte array representing the internal group identifier
+* isGroupBlocked : true=group is blocked; false=group is not blocked
+
+Dbus will not forward messages from a group when you have blocked it.
+
+Exceptions: InvalidGroupId, Failure
+
+isMember(groupId<ay>) -> isMember<b>::
+* groupId   : Byte array representing the internal group identifier
+* isMember  : true=you are a group member; false=you are not a group member
+
+Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
+
+quitGroup(groupId<ay>) -> <>::
+* groupId : Byte array representing the internal group identifier
+
+Note that quitting a group will not remove the group from the getGroupIds command, but set it inactive which can be tested with isMember()
+
+Exceptions: GroupNotFound, Failure, InvalidGroupId
+
+setGroupBlocked(groupId<ay>, block<b>) -> <>::
+* groupId : Byte array representing the internal group identifier
+* block   : false=remove block , true=blocked
+
+Messages from blocked groups will no longer be forwarded via DBus.
+
+Exceptions: GroupNotFound, InvalidGroupId
 
 updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
 * groupId  : Byte array representing the internal group identifier
@@ -109,6 +304,220 @@ updateGroup(groupId<ay>, newName<s>, members<as>, avatar<s>) -> groupId<ay>::
 * avatar   : Filename of avatar picture to be set for group (empty if none)
 
 Exceptions: AttachmentInvalid, Failure, InvalidNumber, GroupNotFound
+
+=== Device control methods
+The following methods listen to the recipient's object path, which is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+
+addDevice(deviceUri<s>) -> <>::
+* deviceUri : URI in the form of "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...") Normally displayed by a Signal desktop app, smartphone app, or another signal-cli instance using the `link` control method.
+
+getDevice(deviceId<x>) -> devicePath<o>::
+* deviceId   : Long representing a deviceId
+* devicePath : DBusPath object for the device
+
+Exceptions: DeviceNotFound
+
+listDevices() -> devices<a(oxs)>::
+* devices      : Array of structs (objectPath, id, name)
+** objectPath   : DBusPath representing the device's object path
+** id           : Long representing the deviceId
+** name         : String representing the device's name
+
+Exceptions: InvalidUri
+
+sendContacts() -> <>::
+
+Sends a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+
+Exceptions: Failure
+
+sendSyncRequest() -> <>::
+
+Sends a synchronization request to the primary device (for group, contacts, ...). Only works if sent from a secondary device.
+
+Exceptions: Failure
+
+=== Device methods and properties
+The following methods listen to the device's object path, which is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber + "/Devices/" + deviceId
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+* deviceId    : Long representing the device identifier (obtained from listDevices() method)
+
+Devices have the following (case-sensitive) properties:
+* Id<x> (read-only)       : Long representing the device identifier
+* Created<x> (read-only)  : Long representing the number of milliseconds since the Unix epoch
+* LastSeen<x> (read-only) : Long representing the number of milliseconds since the Unix epoch
+* Name<s>                 : String representing the display name of the device
+
+To get a property, use (replacing `--session` with `--system` if needed):
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Get string:org.asamk.Signal.Device string:$PROPERTY_NAME`
+
+To set a property, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Set string:org.asamk.Signal.Device string:$PROPERTY_NAME variant:$PROPERTY_TYPE:$PROPERTY_VALUE`
+
+To get all properties, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Device`
+
+removeDevice() -> <>::
+
+Exceptions: Failure
+
+=== Other methods
+
+getContactName(number<s>) -> name<s>::
+* number  : Phone number
+* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
+
+Exceptions: None
+
+getContactNumber(name<s>) -> numbers<as>::
+* numbers : Array of phone number
+* name    : Contact or profile name ("firstname lastname")
+
+Searches contacts and known profiles for a given name and returns the list of all known numbers. May result in e.g. two entries if a contact and profile name is set.
+
+Exceptions: None
+
+getSelfNumber() -> number<s>::
+* number : Your phone number
+
+Exceptions: None
+
+isContactBlocked(number<s>) -> blocked<b>::
+* number    : Phone number
+* blocked   : true=blocked, false=not blocked
+
+For unknown numbers false is returned but no exception is raised.
+
+Exceptions: InvalidPhoneNumber
+
+isRegistered() -> result<b>::
+isRegistered(number<s>) -> result<b>::
+isRegistered(numbers<as>) -> results<ab>::
+* number  : Phone number
+* numbers : String array of phone numbers
+* result  : true=number is registered, false=number is not registered
+* results : Boolean array of results
+
+For unknown numbers, false is returned, but no exception is raised. If no number is given, returns true (indicating that you are registered).
+
+Exceptions: InvalidNumber
+
+listNumbers() -> numbers<as>::
+* numbers : String array of all known numbers
+
+This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
+
+Exceptions: None
+
+removePin() -> <>::
+
+Removes registration PIN protection.
+
+Exceptions: Failure
+
+sendEndSessionMessage(recipients<as>) -> <>::
+* recipients : Array of phone numbers
+
+Exceptions: Failure, InvalidNumber, UntrustedIdentity
+
+sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
+sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
+* message     : Text to send (can be UTF8)
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
+* recipient   : Phone number of a single recipient
+* recipients  : String array of phone numbers
+* timestamp   : Long, can be used to identify the corresponding Signal reply
+
+Depending on the type of the recipient field this sends a message to one or multiple recipients.
+
+Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
+
+sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
+sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
+* emoji               : Unicode grapheme cluster of the emoji
+* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
+* targetAuthor        : String with the phone number of the author of the message to which to react
+* targetSentTimestamp : Long representing timestamp of the message to which to react
+* recipient           : String with the phone number of a single recipient
+* recipients          : Array of strings with phone numbers, should there be more recipients
+* timestamp           : Long, can be used to identify the corresponding Signal reply
+
+Depending on the type of the recipient(s) field this sends a reaction to one or multiple recipients.
+
+Exceptions: Failure, InvalidNumber
+
+sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
+* message     : Text to send (can be UTF8)
+* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
+* timestamp   : Long, can be used to identify the corresponding Signal reply
+
+Exceptions: Failure, AttachmentInvalid
+
+sendReadReceipt(recipient<s>, targetSentTimestamps<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamps  : Array of Longs to identify the corresponding Signal messages
+
+Exceptions: Failure, UntrustedIdentity
+
+sendViewedReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
+
+Exceptions: Failure, UntrustedIdentity
+
+sendRemoteDeleteMessage(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
+sendRemoteDeleteMessage(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
+* targetSentTimestamp : Long representing timestamp of the message to delete
+* recipient           : String with the phone number of a single recipient
+* recipients          : Array of strings with phone numbers, should there be more recipients
+* timestamp           : Long, can be used to identify the corresponding signal reply
+
+Depending on the type of the recipient(s) field this deletes a message with one or multiple recipients.
+
+Exceptions: Failure, InvalidNumber
+
+sendTyping(recipient<s>, stop<b>) -> <>::
+* recipient             : Phone number of a single recipient
+* targetSentTimestamp   : True, if typing state should be stopped
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity
+
+setContactBlocked(number<s>, block<b>) -> <>::
+* number  : Phone number affected by method
+* block   : false=remove block, true=blocked
+
+Messages from blocked numbers will no longer be forwarded via DBus.
+
+Exceptions: InvalidNumber
+
+setContactName(number<s>,name<>) -> <>::
+* number  : Phone number
+* name    : Name to be set in contacts (in local storage with signal-cli)
+
+Exceptions: InvalidNumber, Failure
+
+setExpirationTimer(number<s>, expiration<i>) -> <>::
+* number     : Phone number of recipient
+* expiration : int32 for the number of seconds before messages to this recipient disappear. Set to 0 to disable expiration.
+
+Exceptions: Failure, InvalidNumber
+
+setPin(pin<s>) -> <>::
+* pin               : PIN you set after registration (resets after 7 days of inactivity)
+
+Sets a registration lock PIN, to prevent others from registering your number.
+
+Exceptions: Failure
+
+submitRateLimitChallenge(challenge<s>, captcha<s>) -> <>::
+* challenge : The challenge token taken from the proof required error.
+* captcha   : The captcha token from the solved captcha on the Signal website..
+Can be used to lift some rate-limits by solving a captcha.
+
+Exception: IOErrorException
 
 updateProfile(name<s>, about<s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>::
 updateProfile(givenName<s>, familyName<s>, about<s>, aboutEmoji <s>, avatar<s>, remove<b>) -> <>::
@@ -122,255 +531,26 @@ updateProfile(givenName<s>, familyName<s>, about<s>, aboutEmoji <s>, avatar<s>, 
 
 Exceptions: Failure
 
-
-setExpirationTimer(number<s>, expiration<i>) -> <>::
-* number     : Phone number of recipient
-* expiration : int32 for the number of seconds before messages to this recipient disappear. Set to 0 to disable expiration.
-
-Exceptions: Failure
-
-setContactBlocked(number<s>, block<b>) -> <>::
-* number  : Phone number affected by method
-* block   : 0=remove block , 1=blocked
-
-Messages from blocked numbers will no longer be forwarded via DBus.
-
-Exceptions: InvalidNumber
-
-setGroupBlocked(groupId<ay>, block<b>) -> <>::
-* groupId : Byte array representing the internal group identifier
-* block   : 0=remove block , 1=blocked
-
-Messages from blocked groups will no longer be forwarded via DBus.
-
-Exceptions: GroupNotFound
-
-joinGroup(inviteURI<s>) -> <>::
-* inviteURI : String starting with https://signal.group which is generated when you share a group link via Signal App
-
-Exceptions: Failure
-
-quitGroup(groupId<ay>) -> <>::
-* groupId : Byte array representing the internal group identifier
-
-Note that quitting a group will not remove the group from the getGroupIds command, but set it inactive which can be tested with isMember()
-
-Exceptions: GroupNotFound, Failure
-
-isMember(groupId<ay>) -> active<b>::
-* groupId : Byte array representing the internal group identifier
-
-Note that this method does not raise an Exception for a non-existing/unknown group but will simply return 0 (false)
-
-sendEndSessionMessage(recipients<as>) -> <>::
-* recipients : Array of phone numbers 
-
-Exceptions: Failure, InvalidNumber, UntrustedIdentity
-
-sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
-* message     : Text to send (can be UTF8)
-* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
-* groupId     : Byte array representing the internal group identifier
-* timestamp   : Can be used to identify the corresponding signal reply
-
-Exceptions: GroupNotFound, Failure, AttachmentInvalid
-
-sendContacts() -> <>::
-
-Sends a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
-
-Exceptions: Failure
-
-sendSyncRequest() -> <>::
-
-Sends a synchronization request to the primary device (for group, contacts, ...). Only works if sent from a secondary device.
-
-Exception: Failure
-
-sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
-* message     : Text to send (can be UTF8)
-* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
-* timestamp   : Can be used to identify the corresponding signal reply
-
-Exceptions: Failure, AttachmentInvalid
-
-sendMessage(message<s>, attachments<as>, recipient<s>) -> timestamp<x>::
-sendMessage(message<s>, attachments<as>, recipients<as>) -> timestamp<x>::
-* message     : Text to send (can be UTF8)
-* attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
-* recipient   : Phone number of a single recipient
-* recipients  : Array of phone numbers 
-* timestamp   : Can be used to identify the corresponding signal reply
-
-Depending on the type of the recipient field this sends a message to one or multiple recipients.
-
-Exceptions: AttachmentInvalid, Failure, InvalidNumber, UntrustedIdentity
-
-sendTyping(recipient<s>, stop<b>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : True, if typing state should be stopped
-
-Exceptions: Failure, GroupNotFound, UntrustedIdentity
-
-sendReadReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
-
-Exceptions: Failure, UntrustedIdentity
-
-sendViewedReceipt(recipient<s>, targetSentTimestamp<ax>) -> <>::
-* recipient             : Phone number of a single recipient
-* targetSentTimestamp   : Array of Longs to identify the corresponding signal messages
-
-Exceptions: Failure, UntrustedIdentity
-
-sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
-* emoji               : Unicode grapheme cluster of the emoji
-* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
-* targetAuthor        : String with the phone number of the author of the message to which to react
-* targetSentTimestamp : Long representing timestamp of the message to which to react
-* groupId             : Byte array with base64 encoded group identifier
-* timestamp           : Long, can be used to identify the corresponding signal reply
-
-Exceptions: Failure, InvalidNumber, GroupNotFound
-
-sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
-sendMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
-* emoji               : Unicode grapheme cluster of the emoji
-* remove              : Boolean, whether a previously sent reaction (emoji) should be removed
-* targetAuthor        : String with the phone number of the author of the message to which to react
-* targetSentTimestamp : Long representing timestamp of the message to which to react
-* recipient           : String with the phone number of a single recipient
-* recipients          : Array of strings with phone numbers, should there be more recipients
-* timestamp           : Long, can be used to identify the corresponding signal reply
-
-Depending on the type of the recipient(s) field this sends a reaction to one or multiple recipients.
-
-Exceptions: Failure, InvalidNumber
-
-sendGroupRemoteDeleteMessage(targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
-* targetSentTimestamp : Long representing timestamp of the message to delete
-* groupId             : Byte array with base64 encoded group identifier
-* timestamp           : Long, can be used to identify the corresponding signal reply
-
-Exceptions: Failure, GroupNotFound
-
-sendRemoteDeleteMessage(targetSentTimestamp<x>, recipient<s>) -> timestamp<x>::
-sendRemoteDeleteMessage(targetSentTimestamp<x>, recipients<as>) -> timestamp<x>::
-* targetSentTimestamp : Long representing timestamp of the message to delete
-* recipient           : String with the phone number of a single recipient
-* recipients          : Array of strings with phone numbers, should there be more recipients
-* timestamp           : Long, can be used to identify the corresponding signal reply
-
-Depending on the type of the recipient(s) field this deletes a message with one or multiple recipients.
-
-Exceptions: Failure, InvalidNumber
-
-getContactName(number<s>) -> name<s>::
-* number  : Phone number
-* name    : Contact's name in local storage (from the master device for a linked account, or the one set with setContactName); if not set, contact's profile name is used
-
-setContactName(number<s>,name<>) -> <>::
-* number  : Phone number
-* name    : Name to be set in contacts (in local storage with signal-cli)
-
-getGroupIds() -> groupList<aay>::
-groupList : Array of Byte arrays representing the internal group identifiers
-
-All groups known are returned, regardless of their active or blocked status. To query that use isMember() and isGroupBlocked()
-
-getGroupName(groupId<ay>) -> groupName<s>::
-groupName : The display name of the group 
-groupId   : Byte array representing the internal group identifier
-
-Exceptions: None, if the group name is not found an empty string is returned
-
-getGroupMembers(groupId<ay>) -> members<as>::
-members   : String array with the phone numbers of all active members of a group
-groupId   : Byte array representing the internal group identifier
-
-Exceptions: None, if the group name is not found an empty array is returned
-
-listNumbers() -> numbers<as>::
-numbers : String array of all known numbers
-
-This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
-
-getContactNumber(name<s>) -> numbers<as>::
-* numbers : Array of phone number
-* name    : Contact or profile name ("firstname lastname")
-
-Searches contacts and known profiles for a given name and returns the list of all known numbers. May result in e.g. two entries if a contact and profile name is set.
-
-isContactBlocked(number<s>) -> state<b>::
-* number  : Phone number
-* state   : 1=blocked, 0=not blocked
-
-Exceptions: None, for unknown numbers 0 (false) is returned
-
-isGroupBlocked(groupId<ay>) -> state<b>::
-* groupId : Byte array representing the internal group identifier
-* state   : 1=blocked, 0=not blocked
-
-Exceptions: None, for unknown groups 0 (false) is returned
-
-removePin() -> <>::
-
-Removes registration PIN protection.
-
-Exception: Failure
-
-setPin(pin<s>) -> <>::
-* pin               : PIN you set after registration (resets after 7 days of inactivity)
-
-Sets a registration lock PIN, to prevent others from registering your number.
-
-Exception: Failure
-
-version() -> version<s>::
-* version : Version string of signal-cli
-
-isRegistered() -> result<b>::
-isRegistered(number<s>) -> result<b>::
-isRegistered(numbers<as>) -> results<ab>::
-* number  : Phone number
-* numbers : String array of phone numbers
-* result  : true=number is registered, false=number is not registered
-* results : Boolean array of results
-
-Exception: InvalidNumber for an incorrectly formatted phone number. For unknown numbers, false is returned, but no exception is raised. If no number is given, returns whether you are registered (presumably true).
-
-addDevice(deviceUri<s>) -> <>::
-* deviceUri : URI in the form of tsdevice:/?uuid=... Normally received from Signal desktop or smartphone app
-
-Exception: InvalidUri
-
-listDevices() -> devices<as>::
-* devices  : String array of linked devices
-
-Exception: Failure
-
-removeDevice(deviceId<i>) -> <>::
-* deviceId : Device ID to remove, obtained from listDevices() command
-
-Exception: Failure
-
-updateDeviceName(deviceName<s>) -> <>::
-* deviceName : New name 
-
-Set a new name for this device (main or linked).
-
-Exception: Failure
-
 uploadStickerPack(stickerPackPath<s>) -> url<s>::
 * stickerPackPath : Path to the manifest.json file or a zip file in the same directory
 * url             : URL of sticker pack after successful upload
 
-Exception: Failure
+Exceptions: Failure
+
+version() -> version<s>::
+* version : Version string of signal-cli
+
+Exceptions: None
 
 == Signals
+SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>, message<s>, attachments<as>)::
+* timestamp   : Integer value that can be used to associate this e.g. with a sendMessage()
+* sender      : Phone number of the sender
+* destination : DBus code for destination
+* groupId     : Byte array representing the internal group identifier (empty when private message)
+* message     : Message text
+* attachments : String array of filenames in the signal-cli storage (~/.local/share/signal-cli/attachments/)
 
-SyncMessageReceived (timestamp<x>, sender<s>, destination<s>, groupId<ay>,message<s>, attachments<as>)::
 The sync message is received when the user sends a message from a linked device.
 
 ReceiptReceived (timestamp<x>, sender<s>)::
@@ -384,7 +564,7 @@ MessageReceived(timestamp<x>, sender<s>, groupId<ay>, message<s>, attachments<as
 * sender      : Phone number of the sender
 * groupId     : Byte array representing the internal group identifier (empty when private message)
 * message     : Message text
-* attachments : String array of filenames for the attachments. These files are located in the signal-cli storage and the current user needs to have read access there
+* attachments : String array of filenames in the signal-cli storage (~/.local/share/signal-cli/attachments/)
 
 This signal is received whenever we get a private message or a message is posted in a group we are an active member
 

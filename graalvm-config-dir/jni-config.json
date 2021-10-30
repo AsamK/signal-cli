@@ -1,29 +1,33 @@
 [
 {
+  "name":"java.lang.Boolean",
+  "methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]}
+,
+{
   "name":"java.lang.ClassLoader",
   "methods":[
     {"name":"getPlatformClassLoader","parameterTypes":[] }, 
     {"name":"loadClass","parameterTypes":["java.lang.String"] }
-  ]
-},
+  ]}
+,
 {
   "name":"java.lang.IllegalStateException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
 {
-  "name":"java.lang.NoSuchMethodError"
-},
+  "name":"java.lang.NoSuchMethodError"}
+,
 {
   "name":"java.lang.UnsatisfiedLinkError",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
 {
   "name":"java.util.UUID",
-  "methods":[{"name":"<init>","parameterTypes":["long","long"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["long","long"] }]}
+,
 {
-  "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"
-},
+  "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"}
+,
 {
   "name":"org.asamk.signal.manager.storage.protocol.SignalProtocolStore",
   "methods":[
@@ -39,106 +43,112 @@
     {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
     {"name":"storeSenderKey","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","java.util.UUID","org.whispersystems.libsignal.groups.state.SenderKeyRecord"] }, 
     {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
-  ]
-},
+  ]}
+,
 {
   "name":"org.graalvm.nativebridge.jni.JNIExceptionWrapperEntryPoints",
-  "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]
-},
+  "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.DuplicateMessageException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.IdentityKey",
   "methods":[
     {"name":"<init>","parameterTypes":["byte[]"] }, 
     {"name":"serialize","parameterTypes":[] }
-  ]
-},
+  ]}
+,
 {
   "name":"org.whispersystems.libsignal.IdentityKeyPair",
-  "methods":[{"name":"serialize","parameterTypes":[] }]
-},
+  "methods":[{"name":"serialize","parameterTypes":[] }]}
+,
 {
   "name":"org.whispersystems.libsignal.InvalidMessageException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.SignalProtocolAddress",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.UntrustedIdentityException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.groups.state.SenderKeyRecord",
   "methods":[
     {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"nativeHandle","parameterTypes":[] }
-  ]
-},
+  ]}
+,
 {
-  "name":"org.whispersystems.libsignal.groups.state.SenderKeyStore"
-},
+  "name":"org.whispersystems.libsignal.groups.state.SenderKeyStore"}
+,
 {
   "name":"org.whispersystems.libsignal.logging.Log",
-  "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]
-},
+  "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]}
+,
 {
   "name":"org.whispersystems.libsignal.protocol.PlaintextContent",
-  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
-},
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]}
+,
 {
   "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
+  "fields":[{"name":"unsafeHandle"}],
   "methods":[
     {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"nativeHandle","parameterTypes":[] }
-  ]
-},
+  ]}
+,
 {
-  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage"
-},
+  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage"}
+,
 {
   "name":"org.whispersystems.libsignal.protocol.SignalMessage",
+  "fields":[{"name":"unsafeHandle"}],
   "methods":[
     {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"nativeHandle","parameterTypes":[] }
-  ]
-},
+  ]}
+,
 {
-  "name":"org.whispersystems.libsignal.state.IdentityKeyStore"
-},
+  "name":"org.whispersystems.libsignal.state.IdentityKeyStore"}
+,
 {
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore$Direction",
   "fields":[
     {"name":"RECEIVING"}, 
     {"name":"SENDING"}
-  ]
-},
+  ]}
+,
 {
   "name":"org.whispersystems.libsignal.state.PreKeyRecord",
-  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
-},
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]}
+,
 {
-  "name":"org.whispersystems.libsignal.state.PreKeyStore"
-},
+  "name":"org.whispersystems.libsignal.state.PreKeyStore"}
+,
 {
   "name":"org.whispersystems.libsignal.state.SessionRecord",
+  "fields":[{"name":"unsafeHandle"}],
   "methods":[
     {"name":"<init>","parameterTypes":["byte[]"] }, 
     {"name":"nativeHandle","parameterTypes":[] }
-  ]
-},
+  ]}
+,
 {
-  "name":"org.whispersystems.libsignal.state.SessionStore"
-},
+  "name":"org.whispersystems.libsignal.state.SessionStore"}
+,
 {
   "name":"org.whispersystems.libsignal.state.SignedPreKeyRecord",
-  "methods":[{"name":"nativeHandle","parameterTypes":[] }]
-},
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"nativeHandle","parameterTypes":[] }]}
+,
 {
-  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore"
-}
+  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore"}
+
 ]

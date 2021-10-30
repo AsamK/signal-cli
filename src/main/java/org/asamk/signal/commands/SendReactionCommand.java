@@ -72,8 +72,8 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
                     CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetTimestamp,
                     recipientIdentifiers);
-            outputResult(outputWriter, results.getTimestamp());
-            ErrorUtils.handleSendMessageResults(results.getResults());
+            outputResult(outputWriter, results.timestamp());
+            ErrorUtils.handleSendMessageResults(results.results());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (IOException e) {
@@ -83,8 +83,7 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             writer.println("{}", timestamp);
         } else {
             final var writer = (JsonWriter) outputWriter;

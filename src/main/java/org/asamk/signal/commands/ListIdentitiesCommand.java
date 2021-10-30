@@ -30,12 +30,12 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
     }
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, Identity theirId) {
-        final SignalServiceAddress address = theirId.getRecipient().toSignalServiceAddress();
-        var digits = Util.formatSafetyNumber(theirId.getSafetyNumber());
+        final SignalServiceAddress address = theirId.recipient().toSignalServiceAddress();
+        var digits = Util.formatSafetyNumber(theirId.safetyNumber());
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
                 address.getNumber().orNull(),
-                theirId.getTrustLevel(),
-                theirId.getDateAdded(),
+                theirId.trustLevel(),
+                theirId.dateAdded(),
                 Hex.toString(theirId.getFingerprint()),
                 digits);
     }
@@ -59,17 +59,16 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
             identities = m.getIdentities(CommandUtil.getSingleRecipientIdentifier(number, m.getSelfNumber()));
         }
 
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             for (var id : identities) {
                 printIdentityFingerprint(writer, m, id);
             }
         } else {
             final var writer = (JsonWriter) outputWriter;
             final var jsonIdentities = identities.stream().map(id -> {
-                final var address = id.getRecipient().toSignalServiceAddress();
-                var safetyNumber = Util.formatSafetyNumber(id.getSafetyNumber());
-                var scannableSafetyNumber = id.getScannableSafetyNumber();
+                final var address = id.recipient().toSignalServiceAddress();
+                var safetyNumber = Util.formatSafetyNumber(id.safetyNumber());
+                var scannableSafetyNumber = id.scannableSafetyNumber();
                 return new JsonIdentity(address.getNumber().orNull(),
                         address.getUuid().toString(),
                         Hex.toString(id.getFingerprint()),
@@ -77,40 +76,21 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                         scannableSafetyNumber == null
                                 ? null
                                 : Base64.getEncoder().encodeToString(scannableSafetyNumber),
-                        id.getTrustLevel().name(),
-                        id.getDateAdded().getTime());
+                        id.trustLevel().name(),
+                        id.dateAdded().getTime());
             }).collect(Collectors.toList());
 
             writer.write(jsonIdentities);
         }
     }
 
-    private static final class JsonIdentity {
-
-        public final String number;
-        public final String uuid;
-        public final String fingerprint;
-        public final String safetyNumber;
-        public final String scannableSafetyNumber;
-        public final String trustLevel;
-        public final long addedTimestamp;
-
-        private JsonIdentity(
-                final String number,
-                final String uuid,
-                final String fingerprint,
-                final String safetyNumber,
-                final String scannableSafetyNumber,
-                final String trustLevel,
-                final long addedTimestamp
-        ) {
-            this.number = number;
-            this.uuid = uuid;
-            this.fingerprint = fingerprint;
-            this.safetyNumber = safetyNumber;
-            this.scannableSafetyNumber = scannableSafetyNumber;
-            this.trustLevel = trustLevel;
-            this.addedTimestamp = addedTimestamp;
-        }
-    }
+    private record JsonIdentity(
+            String number,
+            String uuid,
+            String fingerprint,
+            String safetyNumber,
+            String scannableSafetyNumber,
+            String trustLevel,
+            long addedTimestamp
+    ) {}
 }

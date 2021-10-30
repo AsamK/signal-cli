@@ -95,8 +95,8 @@ public class ProvisioningManager {
 
         logger.info("Received link information from {}, linking in progress ...", number);
 
-        if (SignalAccount.userExists(pathConfig.getDataPath(), number) && !canRelinkExistingAccount(number)) {
-            throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.getDataPath(), number));
+        if (SignalAccount.userExists(pathConfig.dataPath(), number) && !canRelinkExistingAccount(number)) {
+            throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.dataPath(), number));
         }
 
         var encryptedDeviceName = deviceName == null
@@ -115,7 +115,7 @@ public class ProvisioningManager {
 
         SignalAccount account = null;
         try {
-            account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.getDataPath(),
+            account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
                     number,
                     ret.getUuid(),
                     password,
@@ -134,16 +134,15 @@ public class ProvisioningManager {
                 try {
                     m.refreshPreKeys();
                 } catch (Exception e) {
-                    logger.error("Failed to check new account state.");
-                    throw e;
+                    logger.error("Failed to refresh pre keys.");
                 }
 
                 logger.debug("Requesting sync data");
                 try {
                     m.requestAllSyncData();
                 } catch (Exception e) {
-                    logger.error("Failed to request sync messages from linked device.");
-                    throw e;
+                    logger.error(
+                            "Failed to request sync messages from linked device, data can be requested again with `sendSyncRequest`.");
                 }
 
                 final var result = m;
@@ -166,7 +165,7 @@ public class ProvisioningManager {
     private boolean canRelinkExistingAccount(final String number) throws IOException {
         final SignalAccount signalAccount;
         try {
-            signalAccount = SignalAccount.load(pathConfig.getDataPath(), number, false, TrustNewIdentity.ON_FIRST_USE);
+            signalAccount = SignalAccount.load(pathConfig.dataPath(), number, false, TrustNewIdentity.ON_FIRST_USE);
         } catch (IOException e) {
             logger.debug("Account in use or failed to load.", e);
             return false;

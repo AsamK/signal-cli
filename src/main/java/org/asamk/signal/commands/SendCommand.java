@@ -102,8 +102,8 @@ public class SendCommand implements JsonRpcLocalCommand {
 
         try {
             var results = m.sendMessage(new Message(messageText, attachments), recipientIdentifiers);
-            outputResult(outputWriter, results.getTimestamp());
-            ErrorUtils.handleSendMessageResults(results.getResults());
+            outputResult(outputWriter, results.timestamp());
+            ErrorUtils.handleSendMessageResults(results.results());
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
@@ -113,8 +113,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter) {
-            final var writer = (PlainTextWriter) outputWriter;
+        if (outputWriter instanceof PlainTextWriter writer) {
             writer.println("{}", timestamp);
         } else {
             final var writer = (JsonWriter) outputWriter;

@@ -1,40 +1,32 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.asamk.signal.manager.Manager;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.Reaction;
 
 import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
-public class JsonReaction {
+public record JsonReaction(
+        String emoji,
+        @Deprecated String targetAuthor,
+        String targetAuthorNumber,
+        String targetAuthorUuid,
+        long targetSentTimestamp,
+        boolean isRemove
+) {
 
-    @JsonProperty
-    final String emoji;
-
-    @JsonProperty
-    @Deprecated
-    final String targetAuthor;
-
-    @JsonProperty
-    final String targetAuthorNumber;
-
-    @JsonProperty
-    final String targetAuthorUuid;
-
-    @JsonProperty
-    final long targetSentTimestamp;
-
-    @JsonProperty
-    final boolean isRemove;
-
-    JsonReaction(Reaction reaction, Manager m) {
-        this.emoji = reaction.getEmoji();
+    static JsonReaction from(Reaction reaction, Manager m) {
+        final var emoji = reaction.getEmoji();
         final var address = m.resolveSignalServiceAddress(reaction.getTargetAuthor());
-        this.targetAuthor = getLegacyIdentifier(address);
-        this.targetAuthorNumber = address.getNumber().orNull();
-        this.targetAuthorUuid = address.getUuid().toString();
-        this.targetSentTimestamp = reaction.getTargetSentTimestamp();
-        this.isRemove = reaction.isRemove();
+        final var targetAuthor = getLegacyIdentifier(address);
+        final var targetAuthorNumber = address.getNumber().orNull();
+        final var targetAuthorUuid = address.getUuid().toString();
+        final var targetSentTimestamp = reaction.getTargetSentTimestamp();
+        final var isRemove = reaction.isRemove();
+        return new JsonReaction(emoji,
+                targetAuthor,
+                targetAuthorNumber,
+                targetAuthorUuid,
+                targetSentTimestamp,
+                isRemove);
     }
 }

@@ -1,29 +1,22 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
-public class JsonQuotedAttachment {
+public record JsonQuotedAttachment(
+        String contentType, String filename, @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
+) {
 
-    @JsonProperty
-    final String contentType;
-
-    @JsonProperty
-    final String filename;
-
-    @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    final JsonAttachment thumbnail;
-
-    JsonQuotedAttachment(SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment) {
-        contentType = quotedAttachment.getContentType();
-        filename = quotedAttachment.getFileName();
+    static JsonQuotedAttachment from(SignalServiceDataMessage.Quote.QuotedAttachment quotedAttachment) {
+        final var contentType = quotedAttachment.getContentType();
+        final var filename = quotedAttachment.getFileName();
+        final JsonAttachment thumbnail;
         if (quotedAttachment.getThumbnail() != null) {
-            thumbnail = new JsonAttachment(quotedAttachment.getThumbnail());
+            thumbnail = JsonAttachment.from(quotedAttachment.getThumbnail());
         } else {
             thumbnail = null;
         }
+        return new JsonQuotedAttachment(contentType, filename, thumbnail);
     }
 }

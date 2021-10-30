@@ -50,25 +50,25 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             PlainTextWriter writer, Group group, boolean detailed
     ) {
         if (detailed) {
-            final var groupInviteLink = group.getGroupInviteLinkUrl();
+            final var groupInviteLink = group.groupInviteLinkUrl();
 
             writer.println(
                     "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Message expiration: {} Link: {}",
-                    group.getGroupId().toBase64(),
-                    group.getTitle(),
-                    group.getDescription(),
+                    group.groupId().toBase64(),
+                    group.title(),
+                    group.description(),
                     group.isMember(),
                     group.isBlocked(),
-                    resolveMembers(group.getMembers()),
-                    resolveMembers(group.getPendingMembers()),
-                    resolveMembers(group.getRequestingMembers()),
-                    resolveMembers(group.getAdminMembers()),
-                    group.getMessageExpirationTime() == 0 ? "disabled" : group.getMessageExpirationTime() + "s",
+                    resolveMembers(group.members()),
+                    resolveMembers(group.pendingMembers()),
+                    resolveMembers(group.requestingMembers()),
+                    resolveMembers(group.adminMembers()),
+                    group.messageExpirationTimer() == 0 ? "disabled" : group.messageExpirationTimer() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
             writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
-                    group.getGroupId().toBase64(),
-                    group.getTitle(),
+                    group.groupId().toBase64(),
+                    group.title(),
                     group.isMember(),
                     group.isBlocked());
         }
@@ -80,22 +80,24 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var groups = m.getGroups();
 
-        if (outputWriter instanceof JsonWriter) {
-            final var jsonWriter = (JsonWriter) outputWriter;
+        if (outputWriter instanceof JsonWriter jsonWriter) {
 
             var jsonGroups = groups.stream().map(group -> {
-                final var groupInviteLink = group.getGroupInviteLinkUrl();
+                final var groupInviteLink = group.groupInviteLinkUrl();
 
-                return new JsonGroup(group.getGroupId().toBase64(),
-                        group.getTitle(),
-                        group.getDescription(),
+                return new JsonGroup(group.groupId().toBase64(),
+                        group.title(),
+                        group.description(),
                         group.isMember(),
                         group.isBlocked(),
-                        group.getMessageExpirationTime(),
-                        resolveJsonMembers(group.getMembers()),
-                        resolveJsonMembers(group.getPendingMembers()),
-                        resolveJsonMembers(group.getRequestingMembers()),
-                        resolveJsonMembers(group.getAdminMembers()),
+                        group.messageExpirationTimer(),
+                        resolveJsonMembers(group.members()),
+                        resolveJsonMembers(group.pendingMembers()),
+                        resolveJsonMembers(group.requestingMembers()),
+                        resolveJsonMembers(group.adminMembers()),
+                        group.permissionAddMember().name(),
+                        group.permissionEditDetails().name(),
+                        group.permissionSendMessage().name(),
                         groupInviteLink == null ? null : groupInviteLink.getUrl());
             }).collect(Collectors.toList());
 
@@ -109,57 +111,22 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private static final class JsonGroup {
+    private record JsonGroup(
+            String id,
+            String name,
+            String description,
+            boolean isMember,
+            boolean isBlocked,
+            int messageExpirationTime,
+            Set<JsonGroupMember> members,
+            Set<JsonGroupMember> pendingMembers,
+            Set<JsonGroupMember> requestingMembers,
+            Set<JsonGroupMember> admins,
+            String permissionAddMember,
+            String permissionEditDetails,
+            String permissionSendMessage,
+            String groupInviteLink
+    ) {}
 
-        public final String id;
-        public final String name;
-        public final String description;
-        public final boolean isMember;
-        public final boolean isBlocked;
-        public final int messageExpirationTime;
-
-        public final Set<JsonGroupMember> members;
-        public final Set<JsonGroupMember> pendingMembers;
-        public final Set<JsonGroupMember> requestingMembers;
-        public final Set<JsonGroupMember> admins;
-        public final String groupInviteLink;
-
-        public JsonGroup(
-                String id,
-                String name,
-                String description,
-                boolean isMember,
-                boolean isBlocked,
-                final int messageExpirationTime,
-                Set<JsonGroupMember> members,
-                Set<JsonGroupMember> pendingMembers,
-                Set<JsonGroupMember> requestingMembers,
-                Set<JsonGroupMember> admins,
-                String groupInviteLink
-        ) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-            this.isMember = isMember;
-            this.isBlocked = isBlocked;
-            this.messageExpirationTime = messageExpirationTime;
-
-            this.members = members;
-            this.pendingMembers = pendingMembers;
-            this.requestingMembers = requestingMembers;
-            this.admins = admins;
-            this.groupInviteLink = groupInviteLink;
-        }
-    }
-
-    private static final class JsonGroupMember {
-
-        public final String number;
-        public final String uuid;
-
-        private JsonGroupMember(final String number, final String uuid) {
-            this.number = number;
-            this.uuid = uuid;
-        }
-    }
+    private record JsonGroupMember(String number, String uuid) {}
 }

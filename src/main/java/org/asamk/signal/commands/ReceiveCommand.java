@@ -58,23 +58,22 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             final Namespace ns, final Signal signal, DBusConnection dbusconnection, final OutputWriter outputWriter
     ) throws CommandException {
         try {
-            if (outputWriter instanceof JsonWriter) {
-                final var jsonWriter = (JsonWriter) outputWriter;
+            if (outputWriter instanceof JsonWriter jsonWriter) {
 
                 dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
-                    var envelope = new JsonMessageEnvelope(messageReceived);
+                    var envelope = JsonMessageEnvelope.from(messageReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
                 dbusconnection.addSigHandler(Signal.ReceiptReceived.class, signal, receiptReceived -> {
-                    var envelope = new JsonMessageEnvelope(receiptReceived);
+                    var envelope = JsonMessageEnvelope.from(receiptReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
 
                 dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
-                    var envelope = new JsonMessageEnvelope(syncReceived);
+                    var envelope = JsonMessageEnvelope.from(syncReceived);
                     final var object = Map.of("envelope", envelope);
                     jsonWriter.write(object);
                 });
@@ -128,11 +127,18 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             logger.error("Dbus client failed", e);
             throw new UnexpectedErrorException("Dbus client failed", e);
         }
+
+        double timeout = ns.getDouble("timeout");
+        long timeoutMilliseconds = timeout < 0 ? 10000 : (long) (timeout * 1000);
+
         while (true) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(timeoutMilliseconds);
             } catch (InterruptedException ignored) {
-                return;
+                break;
+            }
+            if (timeout >= 0) {
+                break;
             }
         }
     }
@@ -142,20 +148,16 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         double timeout = ns.getDouble("timeout");
-        var returnOnTimeout = true;
-        if (timeout < 0) {
-            returnOnTimeout = false;
-            timeout = 3600;
-        }
         boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        m.setIgnoreAttachments(ignoreAttachments);
         try {
             final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
                     (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
-            m.receiveMessages((long) (timeout * 1000),
-                    TimeUnit.MILLISECONDS,
-                    returnOnTimeout,
-                    ignoreAttachments,
-                    handler);
+            if (timeout < 0) {
+                m.receiveMessages(handler);
+            } else {
+                m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, handler);
+            }
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
         }

@@ -65,33 +65,10 @@ public class StickerStore {
                 .collect(Collectors.toList()));
     }
 
-    public static class Storage {
+    public record Storage(List<Storage.Sticker> stickers) {
 
-        public List<Storage.Sticker> stickers;
+        private record Sticker(String packId, String packKey, boolean installed) {
 
-        // For deserialization
-        private Storage() {
-        }
-
-        public Storage(final List<Sticker> stickers) {
-            this.stickers = stickers;
-        }
-
-        private static class Sticker {
-
-            public String packId;
-            public String packKey;
-            public boolean installed;
-
-            // For deserialization
-            private Sticker() {
-            }
-
-            public Sticker(final String packId, final String packKey, final boolean installed) {
-                this.packId = packId;
-                this.packKey = packKey;
-                this.installed = installed;
-            }
         }
     }
 

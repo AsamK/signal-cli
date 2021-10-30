@@ -83,8 +83,7 @@ public class SyncHelper {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
                 var out = new DeviceGroupsOutputStream(fos);
                 for (var record : account.getGroupStore().getGroups()) {
-                    if (record instanceof GroupInfoV1) {
-                        var groupInfo = (GroupInfoV1) record;
+                    if (record instanceof GroupInfoV1 groupInfo) {
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
                                 Optional.fromNullable(groupInfo.name),
                                 groupInfo.getMembers()

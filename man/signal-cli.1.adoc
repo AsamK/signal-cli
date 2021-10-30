@@ -144,7 +144,7 @@ Remove the registration lock pin.
 === link
 
 Link to an existing device, instead of registering a new number.
-This shows a "tsdevice:/…" URI. If you want to connect to another signal-cli instance, you can just use this URI.
+This shows a "sgnl://linkdevice?uuid=..." URI. If you want to connect to another signal-cli instance, you can just use this URI.
 If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
 
 *-n* NAME, *--name* NAME::
@@ -158,7 +158,8 @@ Only works, if this is the master device.
 
 *--uri* URI::
 Specify the uri contained in the QR code shown by the new device.
-You will need the full uri enclosed in quotation marks, such as "tsdevice:/?uuid=....."
+You will need the full URI such as "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...")
+Make sure to enclose it in quotation marks for shells.
 
 === listDevices
 

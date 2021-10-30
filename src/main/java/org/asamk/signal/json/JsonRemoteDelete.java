@@ -1,15 +1,10 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 
-class JsonRemoteDelete {
+record JsonRemoteDelete(long timestamp) {
 
-    @JsonProperty
-    final long timestamp;
-
-    JsonRemoteDelete(SignalServiceDataMessage.RemoteDelete remoteDelete) {
-        this.timestamp = remoteDelete.getTargetSentTimestamp();
+    static JsonRemoteDelete from(SignalServiceDataMessage.RemoteDelete remoteDelete) {
+        return new JsonRemoteDelete(remoteDelete.getTargetSentTimestamp());
     }
 }

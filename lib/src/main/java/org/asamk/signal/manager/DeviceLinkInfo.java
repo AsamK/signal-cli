@@ -15,10 +15,7 @@ import java.util.Map;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
-public class DeviceLinkInfo {
-
-    final String deviceIdentifier;
-    final ECPublicKey deviceKey;
+public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
 
     public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidKeyException {
         final var rawQuery = linkUri.getRawQuery();
@@ -57,15 +54,10 @@ public class DeviceLinkInfo {
         return map;
     }
 
-    public DeviceLinkInfo(final String deviceIdentifier, final ECPublicKey deviceKey) {
-        this.deviceIdentifier = deviceIdentifier;
-        this.deviceKey = deviceKey;
-    }
-
     public URI createDeviceLinkUri() {
         final var deviceKeyString = Base64.getEncoder().encodeToString(deviceKey.serialize()).replace("=", "");
         try {
-            return new URI("tsdevice:/?uuid="
+            return new URI("sgnl://linkdevice?uuid="
                     + URLEncoder.encode(deviceIdentifier, StandardCharsets.UTF_8)
                     + "&pub_key="
                     + URLEncoder.encode(deviceKeyString, StandardCharsets.UTF_8));

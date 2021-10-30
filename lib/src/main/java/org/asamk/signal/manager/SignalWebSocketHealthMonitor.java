@@ -63,15 +63,9 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private synchronized void onStateChange(WebSocketConnectionState connectionState, HealthState healthState) {
         switch (connectionState) {
-            case CONNECTED:
-                logger.debug("WebSocket is now connected");
-                break;
-            case AUTHENTICATION_FAILED:
-                logger.debug("WebSocket authentication failed");
-                break;
-            case FAILED:
-                logger.debug("WebSocket connection failed");
-                break;
+            case CONNECTED -> logger.debug("WebSocket is now connected");
+            case AUTHENTICATION_FAILED -> logger.debug("WebSocket authentication failed");
+            case FAILED -> logger.debug("WebSocket connection failed");
         }
 
         healthState.needsKeepAlive = connectionState == WebSocketConnectionState.CONNECTED;
@@ -101,6 +95,7 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
             if (healthState.mismatchErrorTracker.addSample(System.currentTimeMillis())) {
                 logger.warn("Received too many mismatch device errors, forcing new websockets.");
                 signalWebSocket.forceNewWebSockets();
+                signalWebSocket.connect();
             }
         }
     }
@@ -146,6 +141,7 @@ public final class SignalWebSocketHealthMonitor implements HealthMonitor {
                                     + " needed by: "
                                     + keepAliveRequiredSinceTime);
                             signalWebSocket.forceNewWebSockets();
+                            signalWebSocket.connect();
                         } else {
                             signalWebSocket.sendKeepAlive();
                         }

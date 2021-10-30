@@ -1,17 +1,8 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public record JsonError(String message, String type) {
 
-public class JsonError {
-
-    @JsonProperty
-    final String message;
-
-    @JsonProperty
-    final String type;
-
-    public JsonError(Throwable exception) {
-        this.message = exception.getMessage();
-        this.type = exception.getClass().getSimpleName();
+    public static JsonError from(Throwable exception) {
+        return new JsonError(exception.getMessage(), exception.getClass().getSimpleName());
     }
 }
