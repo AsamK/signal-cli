@@ -6,11 +6,12 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.DbusReceiveMessageHandler;
-import org.asamk.signal.JsonDbusReceiveMessageHandler;
+import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
+import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.dbus.DbusSignalControlImpl;
@@ -131,11 +132,13 @@ public class DaemonCommand implements MultiLocalCommand {
 
         logger.info("Exported dbus object: " + objectPath);
 
-        final var receiveMessageHandler = outputWriter instanceof JsonWriter ? new JsonDbusReceiveMessageHandler(m,
-                (JsonWriter) outputWriter,
-                conn,
-                objectPath) : new DbusReceiveMessageHandler(m, (PlainTextWriter) outputWriter, conn, objectPath);
-        m.addReceiveHandler(receiveMessageHandler);
+        final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
+                (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
+        m.addReceiveHandler(handler);
+
+        final var dbusMessageHandler = new DbusReceiveMessageHandler(m, conn, objectPath);
+        m.addReceiveHandler(dbusMessageHandler);
+
         return initThread;
     }
 }
