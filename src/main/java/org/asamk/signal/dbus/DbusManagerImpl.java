@@ -37,7 +37,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemo
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -167,7 +166,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void setRegistrationLockPin(final Optional<String> pin) throws IOException, UnauthenticatedResponseException {
+    public void setRegistrationLockPin(final Optional<String> pin) throws IOException {
         if (pin.isPresent()) {
             signal.setPin(pin.get());
         } else {

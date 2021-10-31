@@ -30,7 +30,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.Closeable;
 import java.io.File;
@@ -118,7 +117,7 @@ public interface Manager extends Closeable {
 
     void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException;
 
-    void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException;
+    void setRegistrationLockPin(Optional<String> pin) throws IOException;
 
     Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException;
 

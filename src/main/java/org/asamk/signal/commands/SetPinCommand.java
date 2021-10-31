@@ -6,9 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
-import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -34,9 +32,6 @@ public class SetPinCommand implements JsonRpcLocalCommand {
         try {
             var registrationLockPin = ns.getString("pin");
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
-        } catch (UnauthenticatedResponseException e) {
-            throw new UnexpectedErrorException("Set pin error failed with unauthenticated response: " + e.getMessage(),
-                    e);
         } catch (IOException e) {
             throw new IOErrorException("Set pin error: " + e.getMessage(), e);
         }

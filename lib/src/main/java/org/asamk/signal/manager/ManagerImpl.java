@@ -382,7 +382,7 @@ public class ManagerImpl implements Manager {
     public void deleteAccount() throws IOException {
         try {
             pinHelper.removeRegistrationLockPin();
-        } catch (UnauthenticatedResponseException e) {
+        } catch (IOException e) {
             logger.warn("Failed to remove registration lock pin");
         }
         account.setRegistrationLockPin(null, null);
@@ -453,7 +453,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setRegistrationLockPin(java.util.Optional<String> pin) throws IOException, UnauthenticatedResponseException {
+    public void setRegistrationLockPin(java.util.Optional<String> pin) throws IOException {
         if (!account.isMasterDevice()) {
             throw new RuntimeException("Only master device can set a PIN");
         }

@@ -23,18 +23,26 @@ public class PinHelper {
 
     public void setRegistrationLockPin(
             String pin, MasterKey masterKey
-    ) throws IOException, UnauthenticatedResponseException {
+    ) throws IOException {
         final var pinChangeSession = keyBackupService.newPinChangeSession();
         final var hashedPin = PinHashing.hashPin(pin, pinChangeSession);
 
-        pinChangeSession.setPin(hashedPin, masterKey);
+        try {
+            pinChangeSession.setPin(hashedPin, masterKey);
+        } catch (UnauthenticatedResponseException e) {
+            throw new IOException(e);
+        }
         pinChangeSession.enableRegistrationLock(masterKey);
     }
 
-    public void removeRegistrationLockPin() throws IOException, UnauthenticatedResponseException {
+    public void removeRegistrationLockPin() throws IOException {
         final var pinChangeSession = keyBackupService.newPinChangeSession();
         pinChangeSession.disableRegistrationLock();
-        pinChangeSession.removePin();
+        try {
+            pinChangeSession.removePin();
+        } catch (UnauthenticatedResponseException e) {
+            throw new IOException(e);
+        }
     }
 
     public KbsPinData getRegistrationLockData(
