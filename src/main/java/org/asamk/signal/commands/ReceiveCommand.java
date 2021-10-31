@@ -17,8 +17,10 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.DateUtils;
+import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.types.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +82,7 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
             } else {
                 final var writer = (PlainTextWriter) outputWriter;
 
-                dbusconnection.addSigHandler(Signal.MessageReceived.class, signal, messageReceived -> {
+                dbusconnection.addSigHandler(Signal.MessageReceivedV2.class, signal, messageReceived -> {
                     writer.println("Envelope from: {}", messageReceived.getSender());
                     writer.println("Timestamp: {}", DateUtils.formatTimestamp(messageReceived.getTimestamp()));
                     writer.println("Body: {}", messageReceived.getMessage());
@@ -89,21 +91,18 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                         writer.indentedWriter()
                                 .println("Id: {}", Base64.getEncoder().encodeToString(messageReceived.getGroupId()));
                     }
-                    if (messageReceived.getAttachments().size() > 0) {
-                        writer.println("Attachments:");
-                        for (var attachment : messageReceived.getAttachments()) {
-                            writer.println("- Stored plaintext in: {}", attachment);
-                        }
-                    }
+                    final var extras = messageReceived.getExtras();
+                    printMessageExtras(writer, extras);
                     writer.println();
                 });
 
-                dbusconnection.addSigHandler(Signal.ReceiptReceived.class, signal, receiptReceived -> {
+                dbusconnection.addSigHandler(Signal.ReceiptReceivedV2.class, signal, receiptReceived -> {
                     writer.println("Receipt from: {}", receiptReceived.getSender());
                     writer.println("Timestamp: {}", DateUtils.formatTimestamp(receiptReceived.getTimestamp()));
+                    writer.println("Type: {}", receiptReceived.getReceiptType());
                 });
 
-                dbusconnection.addSigHandler(Signal.SyncMessageReceived.class, signal, syncReceived -> {
+                dbusconnection.addSigHandler(Signal.SyncMessageReceivedV2.class, signal, syncReceived -> {
                     writer.println("Sync Envelope from: {} to: {}",
                             syncReceived.getSource(),
                             syncReceived.getDestination());
@@ -114,12 +113,8 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                         writer.indentedWriter()
                                 .println("Id: {}", Base64.getEncoder().encodeToString(syncReceived.getGroupId()));
                     }
-                    if (syncReceived.getAttachments().size() > 0) {
-                        writer.println("Attachments:");
-                        for (var attachment : syncReceived.getAttachments()) {
-                            writer.println("- Stored plaintext in: {}", attachment);
-                        }
-                    }
+                    final var extras = syncReceived.getExtras();
+                    printMessageExtras(writer, extras);
                     writer.println();
                 });
             }
@@ -141,6 +136,24 @@ public class ReceiveCommand implements ExtendedDbusCommand, LocalCommand {
                 break;
             }
         }
+    }
+
+    private void printMessageExtras(final PlainTextWriter writer, final Map<String, Variant<?>> extras) {
+        if (extras.containsKey("attachments")) {
+            final List<DBusMap<String, Variant<?>>> attachments = getValue(extras, "attachments");
+            if (attachments.size() > 0) {
+                writer.println("Attachments:");
+                for (var attachment : attachments) {
+                    final String value = getValue(attachment, "file");
+                    writer.println("- Stored plaintext in: {}", value);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getValue(final Map<String, Variant<?>> stringVariantMap, final String field) {
+        return (T) stringVariantMap.get(field).getValue();
     }
 
     @Override
