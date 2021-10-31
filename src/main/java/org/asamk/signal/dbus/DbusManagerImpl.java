@@ -32,7 +32,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -48,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -122,7 +122,7 @@ public class DbusManagerImpl implements Manager {
                 emptyIfNull(familyName),
                 emptyIfNull(about),
                 emptyIfNull(aboutEmoji),
-                avatar == null ? "" : avatar.transform(File::getPath).or(""),
+                avatar == null ? "" : avatar.map(File::getPath).orElse(""),
                 avatar != null && !avatar.isPresent());
     }
 

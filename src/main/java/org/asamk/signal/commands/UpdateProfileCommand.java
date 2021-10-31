@@ -8,10 +8,10 @@ import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
-import org.whispersystems.libsignal.util.guava.Optional;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
@@ -45,7 +45,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         boolean removeAvatar = Boolean.TRUE.equals(ns.getBoolean("remove-avatar"));
 
         Optional<File> avatarFile = removeAvatar
-                ? Optional.absent()
+                ? Optional.empty()
                 : avatarPath == null ? null : Optional.of(new File(avatarPath));
 
         try {

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Arrays;
@@ -18,7 +17,7 @@ public class Util {
     private Util() {
     }
 
-    public static String getStringIfNotBlank(Optional<String> value) {
+    public static String getStringIfNotBlank(org.whispersystems.libsignal.util.guava.Optional<String> value) {
         var string = value.orNull();
         if (string == null || string.isBlank()) {
             return null;

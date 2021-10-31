@@ -358,9 +358,13 @@ public class ManagerImpl implements Manager {
      */
     @Override
     public void setProfile(
-            String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
+            String givenName, final String familyName, String about, String aboutEmoji, java.util.Optional<File> avatar
     ) throws IOException {
-        profileHelper.setProfile(givenName, familyName, about, aboutEmoji, avatar);
+        profileHelper.setProfile(givenName,
+                familyName,
+                about,
+                aboutEmoji,
+                avatar == null ? null : Optional.fromNullable(avatar.orElse(null)));
         syncHelper.sendSyncFetchProfileMessage();
     }
 
@@ -443,7 +447,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException {
+    public void setRegistrationLockPin(java.util.Optional<String> pin) throws IOException, UnauthenticatedResponseException {
         if (!account.isMasterDevice()) {
             throw new RuntimeException("Only master device can set a PIN");
         }

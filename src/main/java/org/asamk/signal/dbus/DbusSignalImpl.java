@@ -31,7 +31,6 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.util.Pair;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
@@ -50,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -561,7 +561,7 @@ public class DbusSignalImpl implements Signal {
             aboutEmoji = nullIfEmpty(aboutEmoji);
             avatarPath = nullIfEmpty(avatarPath);
             Optional<File> avatarFile = removeAvatar
-                    ? Optional.absent()
+                    ? Optional.empty()
                     : avatarPath == null ? null : Optional.of(new File(avatarPath));
             m.setProfile(givenName, familyName, about, aboutEmoji, avatarFile);
         } catch (IOException e) {
@@ -583,7 +583,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void removePin() {
         try {
-            m.setRegistrationLockPin(Optional.absent());
+            m.setRegistrationLockPin(Optional.empty());
         } catch (UnauthenticatedResponseException e) {
             throw new Error.Failure("Remove pin failed with unauthenticated response: " + e.getMessage());
         } catch (IOException e) {

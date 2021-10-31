@@ -8,10 +8,10 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.manager.Manager;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class RemovePinCommand implements JsonRpcLocalCommand {
 
@@ -30,7 +30,7 @@ public class RemovePinCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         try {
-            m.setRegistrationLockPin(Optional.absent());
+            m.setRegistrationLockPin(Optional.empty());
         } catch (UnauthenticatedResponseException e) {
             throw new UnexpectedErrorException("Remove pin failed with unauthenticated response: " + e.getMessage(), e);
         } catch (IOException e) {
