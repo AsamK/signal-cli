@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.JsonStickerPack;
 import org.asamk.signal.manager.StickerPackInvalidException;
-import org.whispersystems.libsignal.util.Pair;
+import org.asamk.signal.manager.api.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceStickerManifestUpload;
 

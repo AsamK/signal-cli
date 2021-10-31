@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupPermission;
@@ -25,7 +26,6 @@ import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.groups.UuidCiphertext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;

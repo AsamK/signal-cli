@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.signal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;

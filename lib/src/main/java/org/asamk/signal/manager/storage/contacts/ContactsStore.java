@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.contacts;
 
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.whispersystems.libsignal.util.Pair;
 
 import java.util.List;
 

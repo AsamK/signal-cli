@@ -9,9 +9,9 @@ import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.Pair;
 
 import java.io.IOException;
 import java.util.HashSet;

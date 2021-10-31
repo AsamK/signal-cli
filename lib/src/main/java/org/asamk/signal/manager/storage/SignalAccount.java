@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.configuration.ConfigurationStore;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
@@ -41,7 +42,6 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;

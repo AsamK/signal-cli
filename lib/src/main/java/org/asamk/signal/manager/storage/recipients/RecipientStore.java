@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage.recipients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
@@ -10,7 +11,6 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
