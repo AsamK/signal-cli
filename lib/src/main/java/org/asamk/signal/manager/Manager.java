@@ -29,7 +29,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemo
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
@@ -121,7 +120,7 @@ public interface Manager extends Closeable {
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, UnauthenticatedResponseException;
 
-    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredUserException;
+    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException;
 
     List<Group> getGroups();
 
@@ -175,7 +174,7 @@ public interface Manager extends Closeable {
 
     void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, UnregisteredUserException;
+    ) throws NotMasterDeviceException, IOException;
 
     void setContactBlocked(
             RecipientIdentifier.Single recipient, boolean blocked

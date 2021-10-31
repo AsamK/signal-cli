@@ -76,7 +76,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -479,7 +478,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredUserException {
+    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException {
         return profileHelper.getRecipientProfile(resolveRecipient(recipient));
     }
 
@@ -706,7 +705,7 @@ public class ManagerImpl implements Manager {
     @Override
     public void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, UnregisteredUserException {
+    ) throws NotMasterDeviceException, IOException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
@@ -813,11 +812,11 @@ public class ManagerImpl implements Manager {
         try {
             uuidMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
-            throw new UnregisteredUserException(number, e);
+            throw new IOException(number, e);
         }
         final var uuid = uuidMap.get(number);
         if (uuid == null) {
-            throw new UnregisteredUserException(number, null);
+            throw new IOException(number, null);
         }
         return uuid;
     }
@@ -1134,7 +1133,7 @@ public class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return false;
         }
         return contactHelper.isContactBlocked(recipientId);
@@ -1164,7 +1163,7 @@ public class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return null;
         }
 
@@ -1220,7 +1219,7 @@ public class ManagerImpl implements Manager {
         IdentityInfo identity;
         try {
             identity = account.getIdentityKeyStore().getIdentity(resolveRecipient(recipient));
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             identity = null;
         }
         return identity == null ? List.of() : List.of(toIdentity(identity));
@@ -1237,7 +1236,7 @@ public class ManagerImpl implements Manager {
         RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return false;
         }
         return identityHelper.trustIdentityVerified(recipientId, fingerprint);
@@ -1254,7 +1253,7 @@ public class ManagerImpl implements Manager {
         RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return false;
         }
         return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
@@ -1271,7 +1270,7 @@ public class ManagerImpl implements Manager {
         RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return false;
         }
         return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
@@ -1287,7 +1286,7 @@ public class ManagerImpl implements Manager {
         RecipientId recipientId;
         try {
             recipientId = resolveRecipient(recipient);
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             return false;
         }
         return identityHelper.trustIdentityAllKeys(recipientId);
@@ -1324,7 +1323,7 @@ public class ManagerImpl implements Manager {
         return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(uuid));
     }
 
-    private Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredUserException {
+    private Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException {
         final var recipientIds = new HashSet<RecipientId>(recipients.size());
         for (var number : recipients) {
             final var recipientId = resolveRecipient(number);
@@ -1333,7 +1332,7 @@ public class ManagerImpl implements Manager {
         return recipientIds;
     }
 
-    private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredUserException {
+    private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException {
         if (recipient instanceof RecipientIdentifier.Uuid) {
             return account.getRecipientStore().resolveRecipient(((RecipientIdentifier.Uuid) recipient).uuid);
         } else {

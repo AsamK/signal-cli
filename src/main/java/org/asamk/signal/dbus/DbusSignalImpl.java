@@ -33,7 +33,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
@@ -390,7 +389,7 @@ public class DbusSignalImpl implements Signal {
             m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name);
         } catch (NotMasterDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
-        } catch (UnregisteredUserException e) {
+        } catch (IOException e) {
             throw new Error.Failure("Contact is not registered.");
         }
     }
@@ -639,7 +638,7 @@ public class DbusSignalImpl implements Signal {
                 Profile profile = null;
                 try {
                     profile = m.getRecipientProfile(RecipientIdentifier.Single.fromAddress(address));
-                } catch (UnregisteredUserException ignored) {
+                } catch (IOException ignored) {
                 }
                 if (profile != null && profile.getDisplayName().equals(name)) {
                     numbers.add(number);
