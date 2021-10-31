@@ -587,7 +587,7 @@ public class ManagerImpl implements Manager {
                 final var result = sendHelper.sendSelfMessage(messageBuilder);
                 results.put(recipient, List.of(result));
             } else if (recipient instanceof RecipientIdentifier.Group group) {
-                final var result = sendHelper.sendAsGroupMessage(messageBuilder, group.groupId);
+                final var result = sendHelper.sendAsGroupMessage(messageBuilder, group.groupId());
                 results.put(recipient, result);
             }
         }
@@ -604,7 +604,7 @@ public class ManagerImpl implements Manager {
                 final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
                 sendHelper.sendTypingMessage(message, recipientId);
             } else if (recipient instanceof RecipientIdentifier.Group) {
-                final var groupId = ((RecipientIdentifier.Group) recipient).groupId;
+                final var groupId = ((RecipientIdentifier.Group) recipient).groupId();
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.of(groupId.serialize()));
                 sendHelper.sendGroupTypingMessage(message, groupId);
             }
@@ -1334,9 +1334,9 @@ public class ManagerImpl implements Manager {
 
     private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException {
         if (recipient instanceof RecipientIdentifier.Uuid) {
-            return account.getRecipientStore().resolveRecipient(((RecipientIdentifier.Uuid) recipient).uuid);
+            return account.getRecipientStore().resolveRecipient(((RecipientIdentifier.Uuid) recipient).uuid());
         } else {
-            final var number = ((RecipientIdentifier.Number) recipient).number;
+            final var number = ((RecipientIdentifier.Number) recipient).number();
             return account.getRecipientStore().resolveRecipient(number, () -> {
                 try {
                     return getRegisteredUser(number);

@@ -582,7 +582,7 @@ public class DbusManagerImpl implements Manager {
         final var groupRecipients = recipients.stream()
                 .filter(r -> r instanceof RecipientIdentifier.Group)
                 .map(RecipientIdentifier.Group.class::cast)
-                .map(g -> g.groupId)
+                .map(RecipientIdentifier.Group::groupId)
                 .collect(Collectors.toList());
         for (final var groupId : groupRecipients) {
             timestamp = groupHandler.apply(groupId.serialize());

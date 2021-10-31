@@ -9,29 +9,26 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.UUID;
 
-public sealed abstract class RecipientIdentifier {
+public sealed interface RecipientIdentifier {
 
-    public static final class NoteToSelf extends RecipientIdentifier {
+    record NoteToSelf() implements RecipientIdentifier {
 
         public static NoteToSelf INSTANCE = new NoteToSelf();
-
-        private NoteToSelf() {
-        }
     }
 
-    public sealed static abstract class Single extends RecipientIdentifier {
+    sealed interface Single extends RecipientIdentifier {
 
-        public static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
+        static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
             return UuidUtil.isUuid(identifier)
                     ? new Uuid(UUID.fromString(identifier))
                     : new Number(PhoneNumberFormatter.formatNumber(identifier, localNumber));
         }
 
-        public static Single fromAddress(SignalServiceAddress address) {
+        static Single fromAddress(SignalServiceAddress address) {
             return new Uuid(address.getUuid());
         }
 
-        public static Single fromAddress(RecipientAddress address) {
+        static Single fromAddress(RecipientAddress address) {
             if (address.getNumber().isPresent()) {
                 return new Number(address.getNumber().get());
             } else if (address.getUuid().isPresent()) {
@@ -40,31 +37,10 @@ public sealed abstract class RecipientIdentifier {
             throw new AssertionError("RecipientAddress without identifier");
         }
 
-        public abstract String getIdentifier();
+        String getIdentifier();
     }
 
-    public static final class Uuid extends Single {
-
-        public final UUID uuid;
-
-        public Uuid(final UUID uuid) {
-            this.uuid = uuid;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final Uuid uuid1 = (Uuid) o;
-
-            return uuid.equals(uuid1.uuid);
-        }
-
-        @Override
-        public int hashCode() {
-            return uuid.hashCode();
-        }
+    record Uuid(UUID uuid) implements Single {
 
         @Override
         public String getIdentifier() {
@@ -72,28 +48,7 @@ public sealed abstract class RecipientIdentifier {
         }
     }
 
-    public static final class Number extends Single {
-
-        public final String number;
-
-        public Number(final String number) {
-            this.number = number;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final Number number1 = (Number) o;
-
-            return number.equals(number1.number);
-        }
-
-        @Override
-        public int hashCode() {
-            return number.hashCode();
-        }
+    record Number(String number) implements Single {
 
         @Override
         public String getIdentifier() {
@@ -101,27 +56,5 @@ public sealed abstract class RecipientIdentifier {
         }
     }
 
-    public static final class Group extends RecipientIdentifier {
-
-        public final GroupId groupId;
-
-        public Group(final GroupId groupId) {
-            this.groupId = groupId;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final Group group = (Group) o;
-
-            return groupId.equals(group.groupId);
-        }
-
-        @Override
-        public int hashCode() {
-            return groupId.hashCode();
-        }
-    }
+    record Group(GroupId groupId) implements RecipientIdentifier {}
 }
