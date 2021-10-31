@@ -6,12 +6,11 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
-import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.InvalidKeyException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,16 +37,21 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        final URI linkUri;
         try {
-            m.addDeviceLink(new URI(ns.getString("uri")));
+            linkUri = new URI(ns.getString("uri"));
+        } catch (URISyntaxException e) {
+            throw new UserErrorException("Device link uri has invalid format: " + e.getMessage());
+        }
+
+        try {
+            m.addDeviceLink(linkUri);
         } catch (IOException e) {
             logger.error("Add device link failed", e);
             throw new IOErrorException("Add device link failed", e);
-        } catch (URISyntaxException e) {
-            throw new UserErrorException("Device link uri has invalid format: " + e.getMessage());
-        } catch (InvalidKeyException e) {
+        } catch (InvalidDeviceLinkException e) {
             logger.error("Add device link failed", e);
-            throw new UnexpectedErrorException("Add device link failed.", e);
+            throw new UserErrorException("Add device link failed.", e);
         }
     }
 }

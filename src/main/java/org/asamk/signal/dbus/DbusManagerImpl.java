@@ -10,6 +10,7 @@ import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -31,7 +32,6 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
-import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -162,7 +162,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(final URI linkUri) throws IOException, InvalidKeyException {
+    public void addDeviceLink(final URI linkUri) throws IOException, InvalidDeviceLinkException {
         signal.addDevice(linkUri.toString());
     }
 

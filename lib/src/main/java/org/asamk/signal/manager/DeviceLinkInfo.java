@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
@@ -17,7 +18,7 @@ import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
 
-    public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidKeyException {
+    public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidDeviceLinkException {
         final var rawQuery = linkUri.getRawQuery();
         if (isEmpty(rawQuery)) {
             throw new RuntimeException("Invalid device link uri");
@@ -28,16 +29,21 @@ public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
         var publicKeyEncoded = query.get("pub_key");
 
         if (isEmpty(deviceIdentifier) || isEmpty(publicKeyEncoded)) {
-            throw new RuntimeException("Invalid device link uri");
+            throw new InvalidDeviceLinkException("Invalid device link uri");
         }
 
         final byte[] publicKeyBytes;
         try {
             publicKeyBytes = Base64.getDecoder().decode(publicKeyEncoded);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid device link uri", e);
+            throw new InvalidDeviceLinkException("Invalid device link uri", e);
         }
-        var deviceKey = Curve.decodePoint(publicKeyBytes, 0);
+        ECPublicKey deviceKey;
+        try {
+            deviceKey = Curve.decodePoint(publicKeyBytes, 0);
+        } catch (InvalidKeyException e) {
+            throw new InvalidDeviceLinkException("Invalid device link", e);
+        }
 
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
     }

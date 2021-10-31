@@ -9,6 +9,7 @@ import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -30,7 +31,6 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
-import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
@@ -107,7 +107,7 @@ public class DbusSignalImpl implements Signal {
     public void addDevice(String uri) {
         try {
             m.addDeviceLink(new URI(uri));
-        } catch (IOException | InvalidKeyException e) {
+        } catch (IOException | InvalidDeviceLinkException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
         } catch (URISyntaxException e) {
             throw new Error.InvalidUri(e.getClass().getSimpleName()

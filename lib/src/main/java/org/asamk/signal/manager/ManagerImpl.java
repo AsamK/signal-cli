@@ -20,6 +20,7 @@ import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -427,22 +428,28 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(URI linkUri) throws IOException, InvalidKeyException {
+    public void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException {
         var info = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
 
         addDevice(info.deviceIdentifier(), info.deviceKey());
     }
 
-    private void addDevice(String deviceIdentifier, ECPublicKey deviceKey) throws IOException, InvalidKeyException {
+    private void addDevice(
+            String deviceIdentifier, ECPublicKey deviceKey
+    ) throws IOException, InvalidDeviceLinkException {
         var identityKeyPair = account.getIdentityKeyPair();
         var verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
 
-        dependencies.getAccountManager()
-                .addDevice(deviceIdentifier,
-                        deviceKey,
-                        identityKeyPair,
-                        Optional.of(account.getProfileKey().serialize()),
-                        verificationCode);
+        try {
+            dependencies.getAccountManager()
+                    .addDevice(deviceIdentifier,
+                            deviceKey,
+                            identityKeyPair,
+                            Optional.of(account.getProfileKey().serialize()),
+                            verificationCode);
+        } catch (InvalidKeyException e) {
+            throw new InvalidDeviceLinkException("Invalid device link", e);
+        }
         account.setMultiDevice(true);
     }
 
