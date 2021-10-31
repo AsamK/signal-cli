@@ -11,9 +11,9 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
 import java.io.IOException;
@@ -81,7 +81,7 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
-        } catch (GroupLinkNotActiveException e) {
+        } catch (InactiveGroupLinkException e) {
             throw new UserErrorException("Group link is not valid: " + e.getMessage());
         }
     }

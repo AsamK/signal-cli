@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -27,6 +28,7 @@ import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
@@ -266,9 +268,14 @@ public class GroupHelper {
 
     public Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, GroupLinkNotActiveException {
-        final var groupJoinInfo = groupV2Helper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
-                inviteLinkUrl.getPassword());
+    ) throws IOException, InactiveGroupLinkException {
+        final DecryptedGroupJoinInfo groupJoinInfo;
+        try {
+            groupJoinInfo = groupV2Helper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
+                    inviteLinkUrl.getPassword());
+        } catch (GroupLinkNotActiveException e) {
+            throw new InactiveGroupLinkException("Group link inactive", e);
+        }
         final var groupChange = groupV2Helper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
                 inviteLinkUrl.getPassword(),
                 groupJoinInfo);
