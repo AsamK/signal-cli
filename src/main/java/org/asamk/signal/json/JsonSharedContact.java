@@ -2,43 +2,40 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import org.whispersystems.signalservice.api.messages.shared.SharedContact;
+import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public record JsonSharedContact(
         JsonContactName name,
-        JsonContactAvatar avatar,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonContactAvatar avatar,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactPhone> phone,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactEmail> email,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactAddress> address,
         String organization
 ) {
 
-    static JsonSharedContact from(SharedContact contact) {
-        final var name = JsonContactName.from(contact.getName());
-        final var avatar = contact.getAvatar().isPresent() ? JsonContactAvatar.from(contact.getAvatar().get()) : null;
+    static JsonSharedContact from(MessageEnvelope.Data.SharedContact contact) {
+        final var name = JsonContactName.from(contact.name());
+        final var avatar = contact.avatar().isPresent() ? JsonContactAvatar.from(contact.avatar().get()) : null;
 
-        final var phone = contact.getPhone().isPresent() ? contact.getPhone()
-                .get()
+        final var phone = contact.phone().size() > 0 ? contact.phone()
                 .stream()
                 .map(JsonContactPhone::from)
                 .collect(Collectors.toList()) : null;
 
-        final var email = contact.getEmail().isPresent() ? contact.getEmail()
-                .get()
+        final var email = contact.email().size() > 0 ? contact.email()
                 .stream()
                 .map(JsonContactEmail::from)
                 .collect(Collectors.toList()) : null;
 
-        final var address = contact.getAddress().isPresent() ? contact.getAddress()
-                .get()
+        final var address = contact.address().size() > 0 ? contact.address()
                 .stream()
                 .map(JsonContactAddress::from)
                 .collect(Collectors.toList()) : null;
 
-        final var organization = contact.getOrganization().orNull();
+        final var organization = contact.organization().orElse(null);
 
         return new JsonSharedContact(name, avatar, phone, email, address, organization);
     }

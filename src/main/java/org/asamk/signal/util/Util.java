@@ -10,6 +10,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Util {
@@ -17,8 +18,8 @@ public class Util {
     private Util() {
     }
 
-    public static String getStringIfNotBlank(org.whispersystems.libsignal.util.guava.Optional<String> value) {
-        var string = value.orNull();
+    public static String getStringIfNotBlank(Optional<String> value) {
+        var string = value.orElse(null);
         if (string == null || string.isBlank()) {
             return null;
         }

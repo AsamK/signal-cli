@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -25,10 +26,6 @@ import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
-import org.whispersystems.signalservice.api.messages.SignalServiceContent;
-import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.Closeable;
@@ -221,7 +218,7 @@ public interface Manager extends Closeable {
 
     boolean isContactBlocked(RecipientIdentifier.Single recipient);
 
-    File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId);
+    File getAttachmentFile(String attachmentId);
 
     void sendContacts() throws IOException;
 
@@ -243,13 +240,11 @@ public interface Manager extends Closeable {
 
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient);
 
-    SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address);
-
     @Override
     void close() throws IOException;
 
     interface ReceiveMessageHandler {
 
-        void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent decryptedContent, Throwable e);
+        void handleMessage(MessageEnvelope envelope, Throwable e);
     }
 }

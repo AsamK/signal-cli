@@ -1,11 +1,11 @@
 package org.asamk.signal.json;
 
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
-public record JsonContactPhone(String value, SharedContact.Phone.Type type, String label) {
+public record JsonContactPhone(String value, String type, String label) {
 
-    static JsonContactPhone from(SharedContact.Phone phone) {
-        return new JsonContactPhone(phone.getValue(), phone.getType(), Util.getStringIfNotBlank(phone.getLabel()));
+    static JsonContactPhone from(MessageEnvelope.Data.SharedContact.Phone phone) {
+        return new JsonContactPhone(phone.value(), phone.type().name(), Util.getStringIfNotBlank(phone.label()));
     }
 }

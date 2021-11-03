@@ -1,19 +1,17 @@
 package org.asamk.signal.json;
 
-import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.asamk.signal.manager.api.MessageEnvelope;
 
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
+import java.util.UUID;
 
 public record JsonMention(@Deprecated String name, String number, String uuid, int start, int length) {
 
-    static JsonMention from(SignalServiceDataMessage.Mention mention, Manager m) {
-        final var address = m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid()));
-        return new JsonMention(getLegacyIdentifier(address),
-                address.getNumber().orNull(),
-                address.getUuid().toString(),
-                mention.getStart(),
-                mention.getLength());
+    static JsonMention from(MessageEnvelope.Data.Mention mention) {
+        final var address = mention.recipient();
+        return new JsonMention(address.getLegacyIdentifier(),
+                address.getNumber().orElse(null),
+                address.getUuid().map(UUID::toString).orElse(null),
+                mention.start(),
+                mention.length());
     }
 }

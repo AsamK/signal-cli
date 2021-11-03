@@ -1,10 +1,10 @@
 package org.asamk.signal.json;
 
-import org.whispersystems.signalservice.api.messages.shared.SharedContact;
+import org.asamk.signal.manager.api.MessageEnvelope;
 
 public record JsonContactAvatar(JsonAttachment attachment, boolean isProfile) {
 
-    static JsonContactAvatar from(SharedContact.Avatar avatar) {
-        return new JsonContactAvatar(JsonAttachment.from(avatar.getAttachment()), avatar.isProfile());
+    static JsonContactAvatar from(MessageEnvelope.Data.SharedContact.Avatar avatar) {
+        return new JsonContactAvatar(JsonAttachment.from(avatar.attachment()), avatar.isProfile());
     }
 }

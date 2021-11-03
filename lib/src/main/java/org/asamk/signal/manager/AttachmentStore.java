@@ -25,7 +25,7 @@ public class AttachmentStore {
     public void storeAttachment(
             final SignalServiceAttachmentRemoteId attachmentId, final AttachmentStorer storer
     ) throws IOException {
-        storeAttachment(getAttachmentFile(attachmentId), storer);
+        storeAttachment(getAttachmentFile(attachmentId.toString()), storer);
     }
 
     private void storeAttachment(final File attachmentFile, final AttachmentStorer storer) throws IOException {
@@ -39,8 +39,8 @@ public class AttachmentStore {
         return new File(attachmentsPath, attachmentId.toString() + ".preview");
     }
 
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(attachmentsPath, attachmentId.toString());
+    public File getAttachmentFile(String attachmentId) {
+        return new File(attachmentsPath, attachmentId);
     }
 
     private void createAttachmentsDir() throws IOException {

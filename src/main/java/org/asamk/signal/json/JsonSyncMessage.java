@@ -3,11 +3,10 @@ package org.asamk.signal.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.Manager;
-import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,43 +38,40 @@ record JsonSyncMessage(
         this.type = type;
     }
 
-    static JsonSyncMessage from(SignalServiceSyncMessage syncMessage, Manager m) {
-        final var sentMessage = syncMessage.getSent().isPresent() ? JsonSyncDataMessage.from(syncMessage.getSent()
-                .get(), m) : null;
+    static JsonSyncMessage from(MessageEnvelope.Sync syncMessage) {
+        final var sentMessage = syncMessage.sent().isPresent()
+                ? JsonSyncDataMessage.from(syncMessage.sent().get())
+                : null;
         final List<String> blockedNumbers;
         final List<String> blockedGroupIds;
-        if (syncMessage.getBlockedList().isPresent()) {
-            final var base64 = Base64.getEncoder();
-            blockedNumbers = syncMessage.getBlockedList()
+        if (syncMessage.blocked().isPresent()) {
+            blockedNumbers = syncMessage.blocked()
                     .get()
-                    .getAddresses()
+                    .recipients()
                     .stream()
-                    .map(Util::getLegacyIdentifier)
+                    .map(RecipientAddress::getLegacyIdentifier)
                     .collect(Collectors.toList());
-            blockedGroupIds = syncMessage.getBlockedList()
+            blockedGroupIds = syncMessage.blocked()
                     .get()
-                    .getGroupIds()
+                    .groupIds()
                     .stream()
-                    .map(base64::encodeToString)
+                    .map(GroupId::toBase64)
                     .collect(Collectors.toList());
         } else {
             blockedNumbers = null;
             blockedGroupIds = null;
         }
 
-        final var readMessages = syncMessage.getRead().isPresent() ? syncMessage.getRead()
-                .get()
+        final var readMessages = syncMessage.read().size() > 0 ? syncMessage.read()
                 .stream()
                 .map(JsonSyncReadMessage::from)
                 .collect(Collectors.toList()) : null;
 
         final JsonSyncMessageType type;
-        if (syncMessage.getContacts().isPresent()) {
+        if (syncMessage.contacts().isPresent()) {
             type = JsonSyncMessageType.CONTACTS_SYNC;
-        } else if (syncMessage.getGroups().isPresent()) {
+        } else if (syncMessage.groups().isPresent()) {
             type = JsonSyncMessageType.GROUPS_SYNC;
-        } else if (syncMessage.getRequest().isPresent()) {
-            type = JsonSyncMessageType.REQUEST_SYNC;
         } else {
             type = null;
         }

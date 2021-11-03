@@ -19,6 +19,7 @@ import org.asamk.signal.manager.actions.SendSyncConfigurationAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
 import org.asamk.signal.manager.actions.SendSyncKeysAction;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -109,8 +110,8 @@ public final class IncomingMessageHandler {
                 content = dependencies.getCipher().decrypt(envelope);
             } catch (ProtocolUntrustedIdentityException e) {
                 final var recipientId = account.getRecipientStore().resolveRecipient(e.getSender());
-                final var exception = new UntrustedIdentityException(addressResolver.resolveSignalServiceAddress(
-                        recipientId), e.getSenderDevice());
+                final var exception = new UntrustedIdentityException(account.getRecipientStore()
+                        .resolveRecipientAddress(recipientId), e.getSenderDevice());
                 return new Pair<>(List.of(), exception);
             } catch (Exception e) {
                 return new Pair<>(List.of(), e);
@@ -139,8 +140,8 @@ public final class IncomingMessageHandler {
             } catch (ProtocolUntrustedIdentityException e) {
                 final var recipientId = account.getRecipientStore().resolveRecipient(e.getSender());
                 actions.add(new RetrieveProfileAction(recipientId));
-                exception = new UntrustedIdentityException(addressResolver.resolveSignalServiceAddress(recipientId),
-                        e.getSenderDevice());
+                exception = new UntrustedIdentityException(account.getRecipientStore()
+                        .resolveRecipientAddress(recipientId), e.getSenderDevice());
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
                 final var senderProfile = profileProvider.getProfile(sender);
@@ -196,7 +197,10 @@ public final class IncomingMessageHandler {
             } else {
                 actions = List.of();
             }
-            handler.handleMessage(envelope, content, exception);
+            handler.handleMessage(MessageEnvelope.from(envelope,
+                    content,
+                    recipientResolver,
+                    account.getRecipientStore()::resolveRecipientAddress), exception);
             return actions;
         }
     }
@@ -219,7 +223,15 @@ public final class IncomingMessageHandler {
             final var message = content.getSenderKeyDistributionMessage().get();
             final var protocolAddress = new SignalProtocolAddress(addressResolver.resolveSignalServiceAddress(sender)
                     .getIdentifier(), senderDeviceId);
+            logger.debug("Received a sender key distribution message for distributionId {} from {}",
+                    message.getDistributionId(),
+                    protocolAddress);
             dependencies.getMessageSender().processSenderKeyDistributionMessage(protocolAddress, message);
+        }
+
+        if (content.getDecryptionErrorMessage().isPresent()) {
+            var message = content.getDecryptionErrorMessage().get();
+            logger.debug("Received a decryption error message (resend request for {})", message.getTimestamp());
         }
 
         if (content.getDataMessage().isPresent()) {

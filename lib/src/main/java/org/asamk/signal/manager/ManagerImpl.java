@@ -70,7 +70,6 @@ import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
@@ -904,11 +903,11 @@ public class ManagerImpl implements Manager {
         receiveThread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 try {
-                    receiveMessagesInternal(1L, TimeUnit.HOURS, false, (envelope, decryptedContent, e) -> {
+                    receiveMessagesInternal(1L, TimeUnit.HOURS, false, (envelope, e) -> {
                         synchronized (messageHandlers) {
                             for (ReceiveMessageHandler h : messageHandlers) {
                                 try {
-                                    h.handleMessage(envelope, decryptedContent, e);
+                                    h.handleMessage(envelope, e);
                                 } catch (Exception ex) {
                                     logger.warn("Message handler failed, ignoring", ex);
                                 }
@@ -1140,7 +1139,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
+    public File getAttachmentFile(String attachmentId) {
         return attachmentHelper.getAttachmentFile(attachmentId);
     }
 
@@ -1298,11 +1297,6 @@ public class ManagerImpl implements Manager {
         this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
     }
 
-    @Override
-    public SignalServiceAddress resolveSignalServiceAddress(SignalServiceAddress address) {
-        return resolveSignalServiceAddress(resolveRecipient(address));
-    }
-
     private SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
         final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
         if (address.getUuid().isPresent()) {
@@ -1345,6 +1339,10 @@ public class ManagerImpl implements Manager {
                 }
             });
         }
+    }
+
+    private RecipientId resolveRecipient(RecipientAddress address) {
+        return account.getRecipientStore().resolveRecipient(address);
     }
 
     private RecipientId resolveRecipient(SignalServiceAddress address) {

@@ -5,14 +5,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
-import org.whispersystems.signalservice.api.messages.SignalServiceContent;
-import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
-
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
+import java.util.UUID;
 
 public record JsonMessageEnvelope(
         @Deprecated String source,
@@ -29,29 +27,23 @@ public record JsonMessageEnvelope(
 ) {
 
     public static JsonMessageEnvelope from(
-            SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception, Manager m
+            MessageEnvelope envelope, Throwable exception, Manager m
     ) {
         final String source;
         final String sourceNumber;
         final String sourceUuid;
         final Integer sourceDevice;
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
-            final var sourceAddress = m.resolveSignalServiceAddress(envelope.getSourceAddress());
-            source = getLegacyIdentifier(sourceAddress);
-            sourceNumber = sourceAddress.getNumber().orNull();
-            sourceUuid = sourceAddress.getUuid().toString();
-            sourceDevice = envelope.getSourceDevice();
-        } else if (envelope.isUnidentifiedSender() && content != null) {
-            final var sender = m.resolveSignalServiceAddress(content.getSender());
-            source = getLegacyIdentifier(sender);
-            sourceNumber = sender.getNumber().orNull();
-            sourceUuid = sender.getUuid().toString();
-            sourceDevice = content.getSenderDevice();
+        if (envelope.sourceAddress().isPresent()) {
+            final var sourceAddress = envelope.sourceAddress().get();
+            source = sourceAddress.getLegacyIdentifier();
+            sourceNumber = sourceAddress.getNumber().orElse(null);
+            sourceUuid = sourceAddress.getUuid().map(UUID::toString).orElse(null);
+            sourceDevice = envelope.sourceDevice();
         } else if (exception instanceof UntrustedIdentityException e) {
-            final var sender = m.resolveSignalServiceAddress(e.getSender());
-            source = getLegacyIdentifier(sender);
-            sourceNumber = sender.getNumber().orNull();
-            sourceUuid = sender.getUuid().toString();
+            final var sender = e.getSender();
+            source = sender.getLegacyIdentifier();
+            sourceNumber = sender.getNumber().orElse(null);
+            sourceUuid = sender.getUuid().map(UUID::toString).orElse(null);
             sourceDevice = e.getSenderDevice();
         } else {
             source = null;
@@ -66,27 +58,13 @@ public record JsonMessageEnvelope(
             name = null;
         }
         final var sourceName = name;
-        final var timestamp = envelope.getTimestamp();
-        final JsonReceiptMessage receiptMessage;
-        if (envelope.isReceipt()) {
-            receiptMessage = JsonReceiptMessage.deliveryReceipt(timestamp, List.of(timestamp));
-        } else if (content != null && content.getReceiptMessage().isPresent()) {
-            receiptMessage = JsonReceiptMessage.from(content.getReceiptMessage().get());
-        } else {
-            receiptMessage = null;
-        }
-        final var typingMessage = content != null && content.getTypingMessage().isPresent() ? JsonTypingMessage.from(
-                content.getTypingMessage().get()) : null;
+        final var timestamp = envelope.timestamp();
+        final var receiptMessage = envelope.receipt().map(JsonReceiptMessage::from).orElse(null);
+        final var typingMessage = envelope.typing().map(JsonTypingMessage::from).orElse(null);
 
-        final var dataMessage = content != null && content.getDataMessage().isPresent()
-                ? JsonDataMessage.from(content.getDataMessage().get(), m)
-                : null;
-        final var syncMessage = content != null && content.getSyncMessage().isPresent()
-                ? JsonSyncMessage.from(content.getSyncMessage().get(), m)
-                : null;
-        final var callMessage = content != null && content.getCallMessage().isPresent()
-                ? JsonCallMessage.from(content.getCallMessage().get())
-                : null;
+        final var dataMessage = envelope.data().map(JsonDataMessage::from).orElse(null);
+        final var syncMessage = envelope.sync().map(JsonSyncMessage::from).orElse(null);
+        final var callMessage = envelope.call().map(JsonCallMessage::from).orElse(null);
 
         return new JsonMessageEnvelope(source,
                 sourceNumber,

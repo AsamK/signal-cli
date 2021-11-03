@@ -2,17 +2,12 @@ package org.asamk.signal;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.groups.GroupUtils;
-import org.asamk.signal.util.Util;
+import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.types.Variant;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.api.messages.SignalServiceContent;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,8 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
@@ -36,211 +29,193 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     }
 
     @Override
-    public void handleMessage(SignalServiceEnvelope envelope, SignalServiceContent content, Throwable exception) {
+    public void handleMessage(MessageEnvelope envelope, Throwable exception) {
         try {
-            sendDbusMessages(envelope, content);
+            sendDbusMessages(envelope);
         } catch (DBusException e) {
             e.printStackTrace();
         }
     }
 
-    private void sendDbusMessages(
-            final SignalServiceEnvelope envelope, final SignalServiceContent content
-    ) throws DBusException {
-        if (envelope.isReceipt()) {
-            conn.sendMessage(new Signal.ReceiptReceived(objectPath, envelope.getTimestamp(),
-                    // A receipt envelope always has a source address
-                    getLegacyIdentifier(envelope.getSourceAddress())));
-            conn.sendMessage(new Signal.ReceiptReceivedV2(objectPath, envelope.getTimestamp(),
-                    // A receipt envelope always has a source address
-                    getLegacyIdentifier(envelope.getSourceAddress()), "delivery", Map.of()));
-        } else if (content != null) {
-            final var sender = !envelope.isUnidentifiedSender() && envelope.hasSourceUuid()
-                    ? envelope.getSourceAddress()
-                    : content.getSender();
-            final var senderString = getLegacyIdentifier(sender);
-            if (content.getReceiptMessage().isPresent()) {
-                final var receiptMessage = content.getReceiptMessage().get();
-                final var type = switch (receiptMessage.getType()) {
-                    case READ -> "read";
-                    case VIEWED -> "viewed";
-                    case DELIVERY -> "delivery";
-                    case UNKNOWN -> "unknown";
-                };
-                for (long timestamp : receiptMessage.getTimestamps()) {
-                    conn.sendMessage(new Signal.ReceiptReceived(objectPath, timestamp, senderString));
-                    conn.sendMessage(new Signal.ReceiptReceivedV2(objectPath,
-                            envelope.getTimestamp(),
-                            senderString,
-                            type,
-                            Map.of()));
-                }
+    private void sendDbusMessages(MessageEnvelope envelope) throws DBusException {
+        final var senderString = envelope.sourceAddress().map(RecipientAddress::getLegacyIdentifier).orElse("");
+        if (envelope.receipt().isPresent()) {
+            final var receiptMessage = envelope.receipt().get();
+            final var type = switch (receiptMessage.type()) {
+                case READ -> "read";
+                case VIEWED -> "viewed";
+                case DELIVERY -> "delivery";
+                case UNKNOWN -> "unknown";
+            };
+            for (long timestamp : receiptMessage.timestamps()) {
+                conn.sendMessage(new Signal.ReceiptReceived(objectPath, timestamp, senderString));
+                conn.sendMessage(new Signal.ReceiptReceivedV2(objectPath, timestamp, senderString, type, Map.of()));
+            }
+        }
+        if (envelope.data().isPresent()) {
+            var message = envelope.data().get();
 
-            } else if (content.getDataMessage().isPresent()) {
-                var message = content.getDataMessage().get();
+            var groupId = message.groupContext()
+                    .map(MessageEnvelope.Data.GroupContext::groupId)
+                    .map(GroupId::serialize)
+                    .orElseGet(() -> new byte[0]);
+            var isGroupUpdate = message.groupContext()
+                    .map(MessageEnvelope.Data.GroupContext::isGroupUpdate)
+                    .orElse(false);
+            if (!message.isEndSession() && !isGroupUpdate) {
+                conn.sendMessage(new Signal.MessageReceived(objectPath,
+                        message.timestamp(),
+                        senderString,
+                        groupId,
+                        message.body().orElse(""),
+                        getAttachments(message)));
+                conn.sendMessage(new Signal.MessageReceivedV2(objectPath,
+                        message.timestamp(),
+                        senderString,
+                        groupId,
+                        message.body().orElse(""),
+                        getMessageExtras(message)));
+            }
+        }
+        if (envelope.sync().isPresent()) {
+            var syncMessage = envelope.sync().get();
+            if (syncMessage.sent().isPresent()) {
+                var transcript = syncMessage.sent().get();
 
-                var groupId = getGroupId(message);
-                if (!message.isEndSession() && (
-                        groupId == null
-                                || message.getGroupContext().get().getGroupV1Type() == null
-                                || message.getGroupContext().get().getGroupV1Type() == SignalServiceGroup.Type.DELIVER
-                )) {
-                    conn.sendMessage(new Signal.MessageReceived(objectPath,
-                            message.getTimestamp(),
+                if (transcript.destination().isPresent() || transcript.message().groupContext().isPresent()) {
+                    var message = transcript.message();
+                    var groupId = message.groupContext()
+                            .map(MessageEnvelope.Data.GroupContext::groupId)
+                            .map(GroupId::serialize)
+                            .orElseGet(() -> new byte[0]);
+
+                    conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
+                            transcript.message().timestamp(),
                             senderString,
-                            groupId != null ? groupId : new byte[0],
-                            message.getBody().or(""),
+                            transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
+                            groupId,
+                            message.body().orElse(""),
                             getAttachments(message)));
-                    conn.sendMessage(new Signal.MessageReceivedV2(objectPath,
-                            message.getTimestamp(),
+                    conn.sendMessage(new Signal.SyncMessageReceivedV2(objectPath,
+                            transcript.message().timestamp(),
                             senderString,
-                            groupId != null ? groupId : new byte[0],
-                            message.getBody().or(""),
+                            transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
+                            groupId,
+                            message.body().orElse(""),
                             getMessageExtras(message)));
-                }
-            } else if (content.getSyncMessage().isPresent()) {
-                var sync_message = content.getSyncMessage().get();
-                if (sync_message.getSent().isPresent()) {
-                    var transcript = sync_message.getSent().get();
-
-                    if (transcript.getDestination().isPresent() || transcript.getMessage()
-                            .getGroupContext()
-                            .isPresent()) {
-                        var message = transcript.getMessage();
-                        var groupId = getGroupId(message);
-
-                        conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
-                                transcript.getTimestamp(),
-                                senderString,
-                                transcript.getDestination().transform(Util::getLegacyIdentifier).or(""),
-                                groupId != null ? groupId : new byte[0],
-                                message.getBody().or(""),
-                                getAttachments(message)));
-                        conn.sendMessage(new Signal.SyncMessageReceivedV2(objectPath,
-                                transcript.getTimestamp(),
-                                senderString,
-                                transcript.getDestination().transform(Util::getLegacyIdentifier).or(""),
-                                groupId != null ? groupId : new byte[0],
-                                message.getBody().or(""),
-                                getMessageExtras(message)));
-                    }
                 }
             }
         }
+
     }
 
-    private byte[] getGroupId(final SignalServiceDataMessage message) {
-        return message.getGroupContext().isPresent() ? GroupUtils.getGroupId(message.getGroupContext().get())
-                .serialize() : null;
-    }
-
-    private List<String> getAttachments(SignalServiceDataMessage message) {
+    private List<String> getAttachments(MessageEnvelope.Data message) {
         var attachments = new ArrayList<String>();
-        if (message.getAttachments().isPresent()) {
-            for (var attachment : message.getAttachments().get()) {
-                if (attachment.isPointer()) {
-                    attachments.add(m.getAttachmentFile(attachment.asPointer().getRemoteId()).getAbsolutePath());
+        if (message.attachments().size() > 0) {
+            for (var attachment : message.attachments()) {
+                if (attachment.id().isPresent()) {
+                    attachments.add(m.getAttachmentFile(attachment.id().get()).getAbsolutePath());
                 }
             }
         }
         return attachments;
     }
 
-    private HashMap<String, Variant<?>> getMessageExtras(SignalServiceDataMessage message) {
+    private HashMap<String, Variant<?>> getMessageExtras(MessageEnvelope.Data message) {
         var extras = new HashMap<String, Variant<?>>();
-        if (message.getAttachments().isPresent()) {
-            var attachments = message.getAttachments()
-                    .get()
+        if (message.attachments().size() > 0) {
+            var attachments = message.attachments()
                     .stream()
-                    .filter(SignalServiceAttachment::isPointer)
+                    .filter(a -> a.id().isPresent())
                     .map(a -> getAttachmentMap(m, a))
                     .collect(Collectors.toList());
             extras.put("attachments", new Variant<>(attachments, "aa{sv}"));
         }
-        if (message.getMentions().isPresent()) {
-            var mentions = message.getMentions()
-                    .get()
-                    .stream()
-                    .map(mention -> getMentionMap(m, mention))
-                    .collect(Collectors.toList());
+        if (message.mentions().size() > 0) {
+            var mentions = message.mentions().stream().map(this::getMentionMap).collect(Collectors.toList());
             extras.put("mentions", new Variant<>(mentions, "aa{sv}"));
         }
-        extras.put("expiresInSeconds", new Variant<>(message.getExpiresInSeconds()));
-        if (message.getQuote().isPresent()) {
-            extras.put("quote", new Variant<>(getQuoteMap(message.getQuote().get()), "a{sv}"));
+        extras.put("expiresInSeconds", new Variant<>(message.expiresInSeconds()));
+        if (message.quote().isPresent()) {
+            extras.put("quote", new Variant<>(getQuoteMap(message.quote().get()), "a{sv}"));
         }
-        if (message.getReaction().isPresent()) {
-            final var reaction = message.getReaction().get();
+        if (message.reaction().isPresent()) {
+            final var reaction = message.reaction().get();
             extras.put("reaction", new Variant<>(getReactionMap(reaction), "a{sv}"));
         }
-        if (message.getRemoteDelete().isPresent()) {
+        if (message.remoteDeleteId().isPresent()) {
             extras.put("remoteDelete",
-                    new Variant<>(Map.of("timestamp", new Variant<>(message.getRemoteDelete())), "a{sv}"));
+                    new Variant<>(Map.of("timestamp", new Variant<>(message.remoteDeleteId())), "a{sv}"));
         }
-        if (message.getSticker().isPresent()) {
-            final var sticker = message.getSticker().get();
+        if (message.sticker().isPresent()) {
+            final var sticker = message.sticker().get();
             extras.put("sticker", new Variant<>(getStickerMap(sticker), "a{sv}"));
         }
         extras.put("isViewOnce", new Variant<>(message.isViewOnce()));
         return extras;
     }
 
-    private Map<String, Variant<?>> getQuoteMap(final SignalServiceDataMessage.Quote quote) {
+    private Map<String, Variant<?>> getQuoteMap(final MessageEnvelope.Data.Quote quote) {
         return Map.of("id",
-                new Variant<>(quote.getId()),
+                new Variant<>(quote.id()),
                 "author",
-                new Variant<>(getLegacyIdentifier(m.resolveSignalServiceAddress(quote.getAuthor()))),
+                new Variant<>(quote.author().getLegacyIdentifier()),
                 "text",
-                new Variant<>(quote.getText()));
+                new Variant<>(quote.text()));
     }
 
-    private Map<String, Variant<? extends Serializable>> getStickerMap(final SignalServiceDataMessage.Sticker sticker) {
-        return Map.of("packId", new Variant<>(sticker.getPackId()), "stickerId", new Variant<>(sticker.getStickerId()));
+    private Map<String, Variant<? extends Serializable>> getStickerMap(final MessageEnvelope.Data.Sticker sticker) {
+        return Map.of("packId", new Variant<>(sticker.packId()), "stickerId", new Variant<>(sticker.stickerId()));
     }
 
-    private Map<String, Variant<?>> getReactionMap(final SignalServiceDataMessage.Reaction reaction) {
+    private Map<String, Variant<?>> getReactionMap(final MessageEnvelope.Data.Reaction reaction) {
         return Map.of("emoji",
-                new Variant<>(reaction.getEmoji()),
+                new Variant<>(reaction.emoji()),
                 "targetAuthor",
-                new Variant<>(getLegacyIdentifier(m.resolveSignalServiceAddress(reaction.getTargetAuthor()))),
+                new Variant<>(reaction.targetAuthor().getLegacyIdentifier()),
                 "targetSentTimestamp",
-                new Variant<>(reaction.getTargetSentTimestamp()),
+                new Variant<>(reaction.targetSentTimestamp()),
                 "isRemove",
                 new Variant<>(reaction.isRemove()));
     }
 
-    private Map<String, Variant<?>> getAttachmentMap(final Manager m, final SignalServiceAttachment attachment) {
-        final var a = attachment.asPointer();
+    private Map<String, Variant<?>> getAttachmentMap(
+            final Manager m, final MessageEnvelope.Data.Attachment a
+    ) {
         final var map = new HashMap<String, Variant<?>>();
-        map.put("file", new Variant<>(m.getAttachmentFile(a.getRemoteId()).getAbsolutePath()));
-        map.put("remoteId", new Variant<>(a.getRemoteId().toString()));
-        map.put("isVoiceNote", new Variant<>(a.getVoiceNote()));
+        if (a.id().isPresent()) {
+            map.put("file", new Variant<>(m.getAttachmentFile(a.id().get()).getAbsolutePath()));
+            map.put("remoteId", new Variant<>(a.id().get()));
+        }
+        map.put("isVoiceNote", new Variant<>(a.isVoiceNote()));
         map.put("isBorderless", new Variant<>(a.isBorderless()));
         map.put("isGif", new Variant<>(a.isGif()));
-        if (a.getCaption().isPresent()) {
-            map.put("caption", new Variant<>(a.getCaption().get()));
+        if (a.caption().isPresent()) {
+            map.put("caption", new Variant<>(a.caption().get()));
         }
-        if (a.getFileName().isPresent()) {
-            map.put("fileName", new Variant<>(a.getFileName().get()));
+        if (a.fileName().isPresent()) {
+            map.put("fileName", new Variant<>(a.fileName().get()));
         }
-        if (a.getSize().isPresent()) {
-            map.put("size", new Variant<>(a.getSize().get()));
+        if (a.size().isPresent()) {
+            map.put("size", new Variant<>(a.size().get()));
         }
-        if (a.getWidth() > 0 || a.getHeight() > 0) {
-            map.put("height", new Variant<>(a.getHeight()));
-            map.put("width", new Variant<>(a.getWidth()));
+        if (a.width().isPresent()) {
+            map.put("width", new Variant<>(a.width().get()));
+        }
+        if (a.height().isPresent()) {
+            map.put("height", new Variant<>(a.height().get()));
         }
         return map;
     }
 
     private Map<String, Variant<?>> getMentionMap(
-            final Manager m, final SignalServiceDataMessage.Mention mention
+            final MessageEnvelope.Data.Mention mention
     ) {
         return Map.of("recipient",
-                new Variant<>(getLegacyIdentifier(m.resolveSignalServiceAddress(new SignalServiceAddress(mention.getUuid())))),
+                new Variant<>(mention.recipient().getLegacyIdentifier()),
                 "start",
-                new Variant<>(mention.getStart()),
+                new Variant<>(mention.start()),
                 "length",
-                new Variant<>(mention.getLength()));
+                new Variant<>(mention.length()));
     }
 }

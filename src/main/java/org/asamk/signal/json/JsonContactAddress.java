@@ -1,10 +1,10 @@
 package org.asamk.signal.json;
 
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
-import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 
 public record JsonContactAddress(
-        SharedContact.PostalAddress.Type type,
+        String type,
         String label,
         String street,
         String pobox,
@@ -15,15 +15,15 @@ public record JsonContactAddress(
         String country
 ) {
 
-    static JsonContactAddress from(SharedContact.PostalAddress address) {
-        return new JsonContactAddress(address.getType(),
-                Util.getStringIfNotBlank(address.getLabel()),
-                Util.getStringIfNotBlank(address.getStreet()),
-                Util.getStringIfNotBlank(address.getPobox()),
-                Util.getStringIfNotBlank(address.getNeighborhood()),
-                Util.getStringIfNotBlank(address.getCity()),
-                Util.getStringIfNotBlank(address.getRegion()),
-                Util.getStringIfNotBlank(address.getPostcode()),
-                Util.getStringIfNotBlank(address.getCountry()));
+    static JsonContactAddress from(MessageEnvelope.Data.SharedContact.Address address) {
+        return new JsonContactAddress(address.type().name(),
+                Util.getStringIfNotBlank(address.label()),
+                Util.getStringIfNotBlank(address.street()),
+                Util.getStringIfNotBlank(address.pobox()),
+                Util.getStringIfNotBlank(address.neighborhood()),
+                Util.getStringIfNotBlank(address.city()),
+                Util.getStringIfNotBlank(address.region()),
+                Util.getStringIfNotBlank(address.postcode()),
+                Util.getStringIfNotBlank(address.country()));
     }
 }

@@ -33,8 +33,6 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -459,7 +457,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public File getAttachmentFile(final SignalServiceAttachmentRemoteId attachmentId) {
+    public File getAttachmentFile(final String attachmentId) {
         throw new UnsupportedOperationException();
     }
 
@@ -549,11 +547,6 @@ public class DbusManagerImpl implements Manager {
     @Override
     public boolean trustIdentityAllKeys(final RecipientIdentifier.Single recipient) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SignalServiceAddress resolveSignalServiceAddress(final SignalServiceAddress address) {
-        return address;
     }
 
     @Override

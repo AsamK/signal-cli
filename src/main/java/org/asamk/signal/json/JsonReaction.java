@@ -1,9 +1,8 @@
 package org.asamk.signal.json;
 
-import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.Reaction;
+import org.asamk.signal.manager.api.MessageEnvelope;
 
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
+import java.util.UUID;
 
 public record JsonReaction(
         String emoji,
@@ -14,13 +13,13 @@ public record JsonReaction(
         boolean isRemove
 ) {
 
-    static JsonReaction from(Reaction reaction, Manager m) {
-        final var emoji = reaction.getEmoji();
-        final var address = m.resolveSignalServiceAddress(reaction.getTargetAuthor());
-        final var targetAuthor = getLegacyIdentifier(address);
-        final var targetAuthorNumber = address.getNumber().orNull();
-        final var targetAuthorUuid = address.getUuid().toString();
-        final var targetSentTimestamp = reaction.getTargetSentTimestamp();
+    static JsonReaction from(MessageEnvelope.Data.Reaction reaction) {
+        final var emoji = reaction.emoji();
+        final var address = reaction.targetAuthor();
+        final var targetAuthor = address.getLegacyIdentifier();
+        final var targetAuthorNumber = address.getNumber().orElse(null);
+        final var targetAuthorUuid = address.getUuid().map(UUID::toString).orElse(null);
+        final var targetSentTimestamp = reaction.targetSentTimestamp();
         final var isRemove = reaction.isRemove();
         return new JsonReaction(emoji,
                 targetAuthor,

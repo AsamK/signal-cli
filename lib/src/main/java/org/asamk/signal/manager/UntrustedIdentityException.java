@@ -1,23 +1,23 @@
 package org.asamk.signal.manager;
 
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 public class UntrustedIdentityException extends Exception {
 
-    private final SignalServiceAddress sender;
+    private final RecipientAddress sender;
     private final Integer senderDevice;
 
-    public UntrustedIdentityException(final SignalServiceAddress sender) {
+    public UntrustedIdentityException(final RecipientAddress sender) {
         this(sender, null);
     }
 
-    public UntrustedIdentityException(final SignalServiceAddress sender, final Integer senderDevice) {
+    public UntrustedIdentityException(final RecipientAddress sender, final Integer senderDevice) {
         super("Untrusted identity: " + sender.getIdentifier());
         this.sender = sender;
         this.senderDevice = senderDevice;
     }
 
-    public SignalServiceAddress getSender() {
+    public RecipientAddress getSender() {
         return sender;
     }
 

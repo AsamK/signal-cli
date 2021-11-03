@@ -153,7 +153,7 @@ public class SendHelper {
         try {
             messageSender.sendReceipt(address, unidentifiedAccessHelper.getAccessFor(recipientId), receiptMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(address);
+            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
         }
     }
 
@@ -172,7 +172,7 @@ public class SendHelper {
                     groupId.transform(GroupId::serialize),
                     errorMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(address);
+            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
         }
     }
 
@@ -229,7 +229,7 @@ public class SendHelper {
                 messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
             }
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(address);
+            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
         }
     }
 

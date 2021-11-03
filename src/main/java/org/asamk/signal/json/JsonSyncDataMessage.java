@@ -3,10 +3,9 @@ package org.asamk.signal.json;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import org.asamk.Signal;
-import org.asamk.signal.manager.Manager;
-import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
+import org.asamk.signal.manager.api.MessageEnvelope;
 
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
+import java.util.UUID;
 
 record JsonSyncDataMessage(
         @Deprecated String destination,
@@ -15,16 +14,16 @@ record JsonSyncDataMessage(
         @JsonUnwrapped JsonDataMessage dataMessage
 ) {
 
-    static JsonSyncDataMessage from(SentTranscriptMessage transcriptMessage, Manager m) {
-        if (transcriptMessage.getDestination().isPresent()) {
-            final var address = transcriptMessage.getDestination().get();
-            return new JsonSyncDataMessage(getLegacyIdentifier(address),
-                    address.getNumber().orNull(),
-                    address.getUuid().toString(),
-                    JsonDataMessage.from(transcriptMessage.getMessage(), m));
+    static JsonSyncDataMessage from(MessageEnvelope.Sync.Sent transcriptMessage) {
+        if (transcriptMessage.destination().isPresent()) {
+            final var address = transcriptMessage.destination().get();
+            return new JsonSyncDataMessage(address.getLegacyIdentifier(),
+                    address.getNumber().orElse(null),
+                    address.getUuid().map(UUID::toString).orElse(null),
+                    JsonDataMessage.from(transcriptMessage.message()));
 
         } else {
-            return new JsonSyncDataMessage(null, null, null, JsonDataMessage.from(transcriptMessage.getMessage(), m));
+            return new JsonSyncDataMessage(null, null, null, JsonDataMessage.from(transcriptMessage.message()));
         }
     }
 

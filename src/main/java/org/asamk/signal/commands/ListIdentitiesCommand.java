@@ -14,7 +14,6 @@ import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Base64;
 import java.util.List;
@@ -29,15 +28,13 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         return "listIdentities";
     }
 
-    private static void printIdentityFingerprint(PlainTextWriter writer, Manager m, Identity theirId) {
-        final SignalServiceAddress address = theirId.recipient().toSignalServiceAddress();
-        var digits = Util.formatSafetyNumber(theirId.safetyNumber());
+    private static void printIdentityFingerprint(PlainTextWriter writer, Identity theirId) {
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
-                address.getNumber().orNull(),
+                theirId.recipient().getNumber().orElse(null),
                 theirId.trustLevel(),
                 theirId.dateAdded(),
                 Hex.toString(theirId.getFingerprint()),
-                digits);
+                Util.formatSafetyNumber(theirId.safetyNumber()));
     }
 
     @Override
@@ -61,7 +58,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
 
         if (outputWriter instanceof PlainTextWriter writer) {
             for (var id : identities) {
-                printIdentityFingerprint(writer, m, id);
+                printIdentityFingerprint(writer, id);
             }
         } else {
             final var writer = (JsonWriter) outputWriter;
