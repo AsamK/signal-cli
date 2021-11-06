@@ -468,6 +468,30 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.json.JsonCallMessage$Answer",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.json.JsonCallMessage$Busy",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.json.JsonCallMessage$Hangup",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.json.JsonCallMessage$Offer",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
   "name":"org.asamk.signal.json.JsonContactAddress",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
