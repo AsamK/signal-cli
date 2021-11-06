@@ -5,7 +5,6 @@ import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -51,8 +50,8 @@ public class Utils {
         if (isUuidCapable) {
             // Version 2: UUID user
             version = 2;
-            ownId = UuidUtil.toByteArray(ownAddress.getUuid());
-            theirId = UuidUtil.toByteArray(theirAddress.getUuid());
+            ownId = ownAddress.getAci().toByteArray();
+            theirId = theirAddress.getAci().toByteArray();
         } else {
             // Version 1: E164 user
             version = 1;

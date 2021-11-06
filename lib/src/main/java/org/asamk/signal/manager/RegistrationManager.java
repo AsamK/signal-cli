@@ -37,8 +37,8 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.ServiceResponse;
 import org.whispersystems.signalservice.internal.push.LockedException;
 import org.whispersystems.signalservice.internal.push.RequestVerificationCodeResponse;
@@ -190,7 +190,7 @@ public class RegistrationManager implements Closeable {
         }
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
-        account.finishRegistration(UuidUtil.parseOrNull(response.getUuid()), masterKey, pin);
+        account.finishRegistration(ACI.parseOrNull(response.getUuid()), masterKey, pin);
 
         ManagerImpl m = null;
         try {

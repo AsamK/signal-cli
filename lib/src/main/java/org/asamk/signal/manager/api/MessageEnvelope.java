@@ -236,7 +236,7 @@ public record MessageEnvelope(
                     RecipientResolver recipientResolver,
                     RecipientAddressResolver addressResolver
             ) {
-                return new Mention(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(mention.getUuid())),
+                return new Mention(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(mention.getAci())),
                         mention.getStart(),
                         mention.getLength());
             }

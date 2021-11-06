@@ -1,8 +1,7 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-
-import java.util.UUID;
 
 public interface RecipientResolver {
 
@@ -12,5 +11,5 @@ public interface RecipientResolver {
 
     RecipientId resolveRecipient(SignalServiceAddress address);
 
-    RecipientId resolveRecipient(UUID uuid);
+    RecipientId resolveRecipient(ACI aci);
 }

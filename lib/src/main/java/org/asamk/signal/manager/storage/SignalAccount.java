@@ -44,6 +44,7 @@ import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -77,7 +78,7 @@ public class SignalAccount implements Closeable {
     private final FileLock lock;
 
     private String username;
-    private UUID uuid;
+    private ACI aci;
     private String encryptedDeviceName;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private boolean isMultiDevice = false;
@@ -205,7 +206,7 @@ public class SignalAccount implements Closeable {
     public static SignalAccount createOrUpdateLinkedAccount(
             File dataPath,
             String username,
-            UUID uuid,
+            ACI aci,
             String password,
             String encryptedDeviceName,
             int deviceId,
@@ -219,7 +220,7 @@ public class SignalAccount implements Closeable {
         if (!fileName.exists()) {
             return createLinkedAccount(dataPath,
                     username,
-                    uuid,
+                    aci,
                     password,
                     encryptedDeviceName,
                     deviceId,
@@ -230,7 +231,7 @@ public class SignalAccount implements Closeable {
         }
 
         final var account = load(dataPath, username, true, trustNewIdentity);
-        account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
+        account.setProvisioningData(username, aci, password, encryptedDeviceName, deviceId, profileKey);
         account.recipientStore.resolveRecipientTrusted(account.getSelfAddress());
         account.sessionStore.archiveAllSessions();
         account.senderKeyStore.deleteAll();
@@ -249,7 +250,7 @@ public class SignalAccount implements Closeable {
     private static SignalAccount createLinkedAccount(
             File dataPath,
             String username,
-            UUID uuid,
+            ACI aci,
             String password,
             String encryptedDeviceName,
             int deviceId,
@@ -264,7 +265,7 @@ public class SignalAccount implements Closeable {
         final var pair = openFileChannel(fileName, true);
         var account = new SignalAccount(pair.first(), pair.second());
 
-        account.setProvisioningData(username, uuid, password, encryptedDeviceName, deviceId, profileKey);
+        account.setProvisioningData(username, aci, password, encryptedDeviceName, deviceId, profileKey);
 
         account.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
         account.groupStore = new GroupStore(getGroupCachePath(dataPath, username),
@@ -282,14 +283,14 @@ public class SignalAccount implements Closeable {
 
     private void setProvisioningData(
             final String username,
-            final UUID uuid,
+            final ACI aci,
             final String password,
             final String encryptedDeviceName,
             final int deviceId,
             final ProfileKey profileKey
     ) {
         this.username = username;
-        this.uuid = uuid;
+        this.aci = aci;
         this.password = password;
         this.profileKey = profileKey;
         this.encryptedDeviceName = encryptedDeviceName;
@@ -404,7 +405,7 @@ public class SignalAccount implements Closeable {
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("uuid")) {
             try {
-                uuid = UUID.fromString(rootNode.get("uuid").asText());
+                aci = ACI.from(UUID.fromString(rootNode.get("uuid").asText()));
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid uuid, needs to be a valid UUID", e);
             }
@@ -702,7 +703,7 @@ public class SignalAccount implements Closeable {
             var rootNode = jsonProcessor.createObjectNode();
             rootNode.put("version", CURRENT_STORAGE_VERSION)
                     .put("username", username)
-                    .put("uuid", uuid == null ? null : uuid.toString())
+                    .put("uuid", aci == null ? null : aci.toString())
                     .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
@@ -830,21 +831,21 @@ public class SignalAccount implements Closeable {
         return username;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public ACI getAci() {
+        return aci;
     }
 
-    public void setUuid(final UUID uuid) {
-        this.uuid = uuid;
+    public void setAci(final ACI aci) {
+        this.aci = aci;
         save();
     }
 
     public SignalServiceAddress getSelfAddress() {
-        return new SignalServiceAddress(uuid, username);
+        return new SignalServiceAddress(aci, username);
     }
 
     public RecipientId getSelfRecipientId() {
-        return recipientStore.resolveRecipientTrusted(new RecipientAddress(uuid, username));
+        return recipientStore.resolveRecipientTrusted(new RecipientAddress(aci.uuid(), username));
     }
 
     public String getEncryptedDeviceName() {
@@ -991,7 +992,7 @@ public class SignalAccount implements Closeable {
         return true;
     }
 
-    public void finishRegistration(final UUID uuid, final MasterKey masterKey, final String pin) {
+    public void finishRegistration(final ACI aci, final MasterKey masterKey, final String pin) {
         this.pinMasterKey = masterKey;
         this.storageManifestVersion = -1;
         this.storageKey = null;
@@ -999,7 +1000,7 @@ public class SignalAccount implements Closeable {
         this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
         this.isMultiDevice = false;
         this.registered = true;
-        this.uuid = uuid;
+        this.aci = aci;
         this.registrationLockPin = pin;
         this.lastReceiveTimestamp = 0;
         save();

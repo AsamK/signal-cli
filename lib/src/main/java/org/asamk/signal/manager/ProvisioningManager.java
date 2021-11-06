@@ -117,7 +117,7 @@ public class ProvisioningManager {
         try {
             account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
                     number,
-                    ret.getUuid(),
+                    ret.getAci(),
                     password,
                     encryptedDeviceName,
                     deviceId,

@@ -142,7 +142,7 @@ public final class ProfileHelper {
                     ? avatarStore.retrieveProfileAvatar(account.getSelfAddress())
                     : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
                 final var avatarPath = dependencies.getAccountManager()
-                        .setVersionedProfile(account.getUuid(),
+                        .setVersionedProfile(account.getAci(),
                                 account.getProfileKey(),
                                 newProfile.getInternalServiceName(),
                                 newProfile.getAbout() == null ? "" : newProfile.getAbout(),

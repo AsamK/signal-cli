@@ -74,6 +74,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -149,7 +150,7 @@ public class ManagerImpl implements Manager {
         this.account = account;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
 
-        final var credentialsProvider = new DynamicCredentialsProvider(account.getUuid(),
+        final var credentialsProvider = new DynamicCredentialsProvider(account.getAci(),
                 account.getUsername(),
                 account.getPassword(),
                 account.getDeviceId());
@@ -262,8 +263,8 @@ public class ManagerImpl implements Manager {
             }
         }
         preKeyHelper.refreshPreKeysIfNecessary();
-        if (account.getUuid() == null) {
-            account.setUuid(dependencies.getAccountManager().getOwnUuid());
+        if (account.getAci() == null) {
+            account.setAci(dependencies.getAccountManager().getOwnAci());
         }
         updateAccountAttributes(null);
     }
@@ -293,8 +294,8 @@ public class ManagerImpl implements Manager {
 
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);
-            final var uuid = registeredUsers.get(number);
-            return new Pair<>(number.isEmpty() ? null : number, uuid);
+            final var aci = registeredUsers.get(number);
+            return new Pair<>(number.isEmpty() ? null : number, aci == null ? null : aci.uuid());
         }));
     }
 
@@ -817,22 +818,22 @@ public class ManagerImpl implements Manager {
         return resolveRecipientTrusted(new SignalServiceAddress(uuid, number));
     }
 
-    private UUID getRegisteredUser(final String number) throws IOException {
-        final Map<String, UUID> uuidMap;
+    private ACI getRegisteredUser(final String number) throws IOException {
+        final Map<String, ACI> aciMap;
         try {
-            uuidMap = getRegisteredUsers(Set.of(number));
+            aciMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
             throw new IOException(number, e);
         }
-        final var uuid = uuidMap.get(number);
+        final var uuid = aciMap.get(number);
         if (uuid == null) {
             throw new IOException(number, null);
         }
         return uuid;
     }
 
-    private Map<String, UUID> getRegisteredUsers(final Set<String> numbers) throws IOException {
-        final Map<String, UUID> registeredUsers;
+    private Map<String, ACI> getRegisteredUsers(final Set<String> numbers) throws IOException {
+        final Map<String, ACI> registeredUsers;
         try {
             registeredUsers = dependencies.getAccountManager()
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
@@ -842,8 +843,8 @@ public class ManagerImpl implements Manager {
             throw new IOException(e);
         }
 
-        // Store numbers as recipients so we have the number/uuid association
-        registeredUsers.forEach((number, uuid) -> resolveRecipientTrusted(new SignalServiceAddress(uuid, number)));
+        // Store numbers as recipients, so we have the number/uuid association
+        registeredUsers.forEach((number, aci) -> resolveRecipientTrusted(new SignalServiceAddress(aci, number)));
 
         return registeredUsers;
     }
@@ -1313,15 +1314,15 @@ public class ManagerImpl implements Manager {
         // Address in recipient store doesn't have a uuid, this shouldn't happen
         // Try to retrieve the uuid from the server
         final var number = address.getNumber().get();
-        final UUID uuid;
+        final ACI aci;
         try {
-            uuid = getRegisteredUser(number);
+            aci = getRegisteredUser(number);
         } catch (IOException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number, e);
             // Return SignalServiceAddress with unknown UUID
             return address.toSignalServiceAddress();
         }
-        return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(uuid));
+        return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(aci));
     }
 
     private Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException {
@@ -1334,8 +1335,8 @@ public class ManagerImpl implements Manager {
     }
 
     private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException {
-        if (recipient instanceof RecipientIdentifier.Uuid) {
-            return account.getRecipientStore().resolveRecipient(((RecipientIdentifier.Uuid) recipient).uuid());
+        if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
+            return account.getRecipientStore().resolveRecipient(ACI.from(uuidRecipient.uuid()));
         } else {
             final var number = ((RecipientIdentifier.Number) recipient).number();
             return account.getRecipientStore().resolveRecipient(number, () -> {

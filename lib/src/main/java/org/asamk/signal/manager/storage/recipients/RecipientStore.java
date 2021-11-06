@@ -11,6 +11,7 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -137,8 +138,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public RecipientId resolveRecipient(UUID uuid) {
-        return resolveRecipient(new RecipientAddress(uuid), false);
+    public RecipientId resolveRecipient(ACI aci) {
+        return resolveRecipient(new RecipientAddress(aci.uuid()), false);
     }
 
     @Override
@@ -147,19 +148,19 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     public RecipientId resolveRecipient(
-            final String number, Supplier<UUID> uuidSupplier
+            final String number, Supplier<ACI> aciSupplier
     ) throws UnregisteredUserException {
         final Optional<Recipient> byNumber;
         synchronized (recipients) {
             byNumber = findByNumberLocked(number);
         }
         if (byNumber.isEmpty() || byNumber.get().getAddress().getUuid().isEmpty()) {
-            final var uuid = uuidSupplier.get();
-            if (uuid == null) {
+            final var aci = aciSupplier.get();
+            if (aci == null) {
                 throw new UnregisteredUserException(number, null);
             }
 
-            return resolveRecipient(new RecipientAddress(uuid, number), false);
+            return resolveRecipient(new RecipientAddress(aci.uuid(), number), false);
         }
         return byNumber.get().getRecipientId();
     }

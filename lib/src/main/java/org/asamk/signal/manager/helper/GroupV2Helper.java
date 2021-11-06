@@ -35,9 +35,9 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
 import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2ChangeException;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -158,9 +158,9 @@ public class GroupV2Helper {
 
         if (!areMembersValid(members)) return null;
 
-        var self = new GroupCandidate(getSelfUuid(), Optional.fromNullable(profileKeyCredential));
+        var self = new GroupCandidate(getSelfAci().uuid(), Optional.fromNullable(profileKeyCredential));
         var candidates = members.stream()
-                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getUuid(),
+                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getAci().uuid(),
                         Optional.fromNullable(profileKeyCredentialProvider.getProfileKeyCredential(member))))
                 .collect(Collectors.toSet());
 
@@ -208,8 +208,7 @@ public class GroupV2Helper {
             change.setModifyAvatar(GroupChange.Actions.ModifyAvatarAction.newBuilder().setAvatar(avatarCdnKey));
         }
 
-        final var uuid = getSelfUuid();
-        change.setSourceUuid(UuidUtil.toByteString(uuid));
+        change.setSourceUuid(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -224,14 +223,14 @@ public class GroupV2Helper {
         }
 
         var candidates = newMembers.stream()
-                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getUuid(),
+                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getAci().uuid(),
                         Optional.fromNullable(profileKeyCredentialProvider.getProfileKeyCredential(member))))
                 .collect(Collectors.toSet());
 
-        final var uuid = getSelfUuid();
-        final var change = groupOperations.createModifyGroupMembershipChange(candidates, uuid);
+        final var aci = getSelfAci();
+        final var change = groupOperations.createModifyGroupMembershipChange(candidates, aci.uuid());
 
-        change.setSourceUuid(UuidUtil.toByteString(uuid));
+        change.setSourceUuid(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -240,8 +239,8 @@ public class GroupV2Helper {
             GroupInfoV2 groupInfoV2, Set<RecipientId> membersToMakeAdmin
     ) throws IOException {
         var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
-        final var selfUuid = getSelfUuid();
-        var selfPendingMember = DecryptedGroupUtil.findPendingByUuid(pendingMembersList, selfUuid);
+        final var selfAci = getSelfAci();
+        var selfPendingMember = DecryptedGroupUtil.findPendingByUuid(pendingMembersList, selfAci.uuid());
 
         if (selfPendingMember.isPresent()) {
             return revokeInvites(groupInfoV2, Set.of(selfPendingMember.get()));
@@ -249,10 +248,12 @@ public class GroupV2Helper {
 
         final var adminUuids = membersToMakeAdmin.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getUuid)
+                .map(SignalServiceAddress::getAci)
+                .map(ACI::uuid)
                 .collect(Collectors.toList());
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
-        return commitChange(groupInfoV2, groupOperations.createLeaveAndPromoteMembersToAdmin(selfUuid, adminUuids));
+        return commitChange(groupInfoV2,
+                groupOperations.createLeaveAndPromoteMembersToAdmin(selfAci.uuid(), adminUuids));
     }
 
     public Pair<DecryptedGroup, GroupChange> removeMembers(
@@ -260,7 +261,8 @@ public class GroupV2Helper {
     ) throws IOException {
         final var memberUuids = members.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getUuid)
+                .map(SignalServiceAddress::getAci)
+                .map(ACI::uuid)
                 .collect(Collectors.toSet());
         return ejectMembers(groupInfoV2, memberUuids);
     }
@@ -271,7 +273,8 @@ public class GroupV2Helper {
         var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
         final var memberUuids = members.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getUuid)
+                .map(SignalServiceAddress::getAci)
+                .map(ACI::uuid)
                 .map(uuid -> DecryptedGroupUtil.findPendingByUuid(pendingMembersList, uuid))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -341,8 +344,7 @@ public class GroupV2Helper {
                 ? groupOperations.createGroupJoinRequest(profileKeyCredential)
                 : groupOperations.createGroupJoinDirect(profileKeyCredential);
 
-        change.setSourceUuid(UuidUtil.toByteString(addressResolver.resolveSignalServiceAddress(selfRecipientId)
-                .getUuid()));
+        change.setSourceUuid(addressResolver.resolveSignalServiceAddress(selfRecipientId).getAci().toByteString());
 
         return commitChange(groupSecretParams, decryptedGroupJoinInfo.getRevision(), change, groupLinkPassword);
     }
@@ -358,8 +360,8 @@ public class GroupV2Helper {
 
         final var change = groupOperations.createAcceptInviteChange(profileKeyCredential);
 
-        final var uuid = addressResolver.resolveSignalServiceAddress(selfRecipientId).getUuid();
-        change.setSourceUuid(UuidUtil.toByteString(uuid));
+        final var aci = addressResolver.resolveSignalServiceAddress(selfRecipientId).getAci();
+        change.setSourceUuid(aci.toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -370,7 +372,7 @@ public class GroupV2Helper {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var address = addressResolver.resolveSignalServiceAddress(recipientId);
         final var newRole = admin ? Member.Role.ADMINISTRATOR : Member.Role.DEFAULT;
-        final var change = groupOperations.createChangeMemberRole(address.getUuid(), newRole);
+        final var change = groupOperations.createChangeMemberRole(address.getAci().uuid(), newRole);
         return commitChange(groupInfoV2, change);
     }
 
@@ -443,7 +445,7 @@ public class GroupV2Helper {
         final DecryptedGroup decryptedGroupState;
 
         try {
-            decryptedChange = groupOperations.decryptChange(changeActions, getSelfUuid());
+            decryptedChange = groupOperations.decryptChange(changeActions, getSelfAci().uuid());
             decryptedGroupState = DecryptedGroupUtil.apply(previousGroupState, decryptedChange);
         } catch (VerificationFailedException | InvalidGroupStateException | NotAbleToApplyGroupV2ChangeException e) {
             throw new IOException(e);
@@ -510,15 +512,15 @@ public class GroupV2Helper {
         final var credentials = groupsV2Api.getCredentials(today);
         // TODO cache credentials until they expire
         var authCredentialResponse = credentials.get(today);
-        final var uuid = getSelfUuid();
+        final var aci = getSelfAci();
         try {
-            return groupsV2Api.getGroupsV2AuthorizationString(uuid, today, groupSecretParams, authCredentialResponse);
+            return groupsV2Api.getGroupsV2AuthorizationString(aci, today, groupSecretParams, authCredentialResponse);
         } catch (VerificationFailedException e) {
             throw new IOException(e);
         }
     }
 
-    private UUID getSelfUuid() {
-        return addressResolver.resolveSignalServiceAddress(this.selfRecipientIdProvider.getSelfRecipientId()).getUuid();
+    private ACI getSelfAci() {
+        return addressResolver.resolveSignalServiceAddress(this.selfRecipientIdProvider.getSelfRecipientId()).getAci();
     }
 }

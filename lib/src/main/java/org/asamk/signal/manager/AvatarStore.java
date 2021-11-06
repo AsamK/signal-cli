@@ -82,7 +82,7 @@ public class AvatarStore {
     }
 
     private String getLegacyIdentifier(final SignalServiceAddress address) {
-        return address.getNumber().or(() -> address.getUuid().toString());
+        return address.getNumber().or(() -> address.getAci().toString());
     }
 
     private File getProfileAvatarFile(SignalServiceAddress address) {

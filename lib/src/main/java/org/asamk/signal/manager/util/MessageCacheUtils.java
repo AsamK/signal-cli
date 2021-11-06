@@ -2,8 +2,8 @@ package org.asamk.signal.manager.util;
 
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.UUID;
 
 public class MessageCacheUtils {
 
@@ -24,9 +23,9 @@ public class MessageCacheUtils {
             }
             var type = in.readInt();
             var source = in.readUTF();
-            UUID sourceUuid = null;
+            ACI sourceAci = null;
             if (version >= 3) {
-                sourceUuid = UuidUtil.parseOrNull(in.readUTF());
+                sourceAci = ACI.parseOrNull(in.readUTF());
             }
             var sourceDevice = in.readInt();
             if (version == 1) {
@@ -59,9 +58,9 @@ public class MessageCacheUtils {
             if (version >= 4) {
                 serverDeliveredTimestamp = in.readLong();
             }
-            Optional<SignalServiceAddress> addressOptional = sourceUuid == null
+            Optional<SignalServiceAddress> addressOptional = sourceAci == null
                     ? Optional.absent()
-                    : Optional.of(new SignalServiceAddress(sourceUuid, source));
+                    : Optional.of(new SignalServiceAddress(sourceAci, source));
             return new SignalServiceEnvelope(type,
                     addressOptional,
                     sourceDevice,
