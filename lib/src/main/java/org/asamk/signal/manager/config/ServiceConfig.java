@@ -60,6 +60,10 @@ public class ServiceConfig {
         }
     }
 
+    public static boolean isZkgroupAvailable() {
+        return ServiceConfig.getCapabilities().isGv2();
+    }
+
     public static boolean isSignalClientAvailable() {
         try {
             org.signal.client.internal.Native.DeviceTransfer_GeneratePrivateKey();

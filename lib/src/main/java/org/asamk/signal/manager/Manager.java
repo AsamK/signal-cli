@@ -67,6 +67,14 @@ public interface Manager extends Closeable {
         return new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
     }
 
+    static void initLogger() {
+        LibSignalLogger.initLogger();
+    }
+
+    static boolean isValidNumber(final String e164Number, final String countryCode) {
+        return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);
+    }
+
     static List<String> getAllLocalNumbers(File settingsPath) {
         var pathConfig = PathConfig.createDefault(settingsPath);
         final var dataPath = pathConfig.dataPath();

@@ -8,7 +8,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
-import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
+import org.asamk.signal.manager.api.CaptchaRequiredException;
 
 import java.io.IOException;
 

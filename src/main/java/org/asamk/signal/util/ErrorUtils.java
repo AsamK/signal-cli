@@ -2,19 +2,17 @@ package org.asamk.signal.util;
 
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.manager.api.ProofRequiredException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.asamk.signal.util.Util.getLegacyIdentifier;
 
 public class ErrorUtils {
 
@@ -57,9 +55,9 @@ public class ErrorUtils {
     }
 
     public static String getErrorMessageFromSendMessageResult(SendMessageResult result) {
-        var identifier = getLegacyIdentifier(result.getAddress());
-        if (result.getProofRequiredFailure() != null) {
-            final var failure = result.getProofRequiredFailure();
+        var identifier = result.address().getLegacyIdentifier();
+        if (result.proofRequiredFailure() != null) {
+            final var failure = result.proofRequiredFailure();
             return String.format(
                     "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with challenge token \"%s\", or wait \"%d\" seconds.\n"
                             + (
@@ -83,7 +81,7 @@ public class ErrorUtils {
             return String.format("Network failure for \"%s\"", identifier);
         } else if (result.isUnregisteredFailure()) {
             return String.format("Unregistered user \"%s\"", identifier);
-        } else if (result.getIdentityFailure() != null) {
+        } else if (result.isIdentityFailure()) {
             return String.format("Untrusted Identity for \"%s\"", identifier);
         }
         return null;

@@ -1,12 +1,13 @@
 package org.asamk.signal.manager.storage.recipients;
 
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public class RecipientAddress {
+
+    public static final UUID UNKNOWN_UUID = new UUID(0, 0);
 
     private final Optional<UUID> uuid;
     private final Optional<String> e164;
@@ -18,7 +19,7 @@ public class RecipientAddress {
      * @param e164 The phone number of the user, if available.
      */
     public RecipientAddress(Optional<UUID> uuid, Optional<String> e164) {
-        uuid = uuid.isPresent() && uuid.get().equals(UuidUtil.UNKNOWN_UUID) ? Optional.empty() : uuid;
+        uuid = uuid.isPresent() && uuid.get().equals(UNKNOWN_UUID) ? Optional.empty() : uuid;
         if (uuid.isEmpty() && e164.isEmpty()) {
             throw new AssertionError("Must have either a UUID or E164 number!");
         }
@@ -74,7 +75,7 @@ public class RecipientAddress {
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(uuid.orElse(UuidUtil.UNKNOWN_UUID),
+        return new SignalServiceAddress(uuid.orElse(UNKNOWN_UUID),
                 org.whispersystems.libsignal.util.guava.Optional.fromNullable(e164.orElse(null)));
     }
 

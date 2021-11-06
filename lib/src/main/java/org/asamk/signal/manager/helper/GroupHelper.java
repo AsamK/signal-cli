@@ -6,6 +6,7 @@ import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
+import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
@@ -676,6 +677,11 @@ public class GroupHelper {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         final var results = sendHelper.sendGroupMessage(messageBuilder.build(), members);
-        return new SendGroupMessageResults(timestamp, results);
+        return new SendGroupMessageResults(timestamp,
+                results.stream()
+                        .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
+                                recipientResolver,
+                                account.getRecipientStore()::resolveRecipientAddress))
+                        .collect(Collectors.toList()));
     }
 }

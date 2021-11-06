@@ -63,10 +63,10 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         } else {
             final var writer = (JsonWriter) outputWriter;
             final var jsonIdentities = identities.stream().map(id -> {
-                final var address = id.recipient().toSignalServiceAddress();
+                final var address = id.recipient();
                 var safetyNumber = Util.formatSafetyNumber(id.safetyNumber());
                 var scannableSafetyNumber = id.scannableSafetyNumber();
-                return new JsonIdentity(address.getNumber().orNull(),
+                return new JsonIdentity(address.getNumber().orElse(null),
                         address.getUuid().toString(),
                         Hex.toString(id.getFingerprint()),
                         safetyNumber,

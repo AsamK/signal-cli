@@ -33,8 +33,6 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,7 +82,7 @@ public class DbusManagerImpl implements Manager {
         final var result = new HashMap<String, Pair<String, UUID>>();
         for (var i = 0; i < numbersList.size(); i++) {
             result.put(numbersList.get(i),
-                    new Pair<>(numbersList.get(i), registered.get(i) ? UuidUtil.UNKNOWN_UUID : null));
+                    new Pair<>(numbersList.get(i), registered.get(i) ? RecipientAddress.UNKNOWN_UUID : null));
         }
         return result;
     }
@@ -173,7 +171,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(final RecipientIdentifier.Single recipient) throws UnregisteredUserException {
+    public Profile getRecipientProfile(final RecipientIdentifier.Single recipient) {
         throw new UnsupportedOperationException();
     }
 
@@ -370,7 +368,7 @@ public class DbusManagerImpl implements Manager {
     @Override
     public void setContactName(
             final RecipientIdentifier.Single recipient, final String name
-    ) throws NotMasterDeviceException, UnregisteredUserException {
+    ) throws NotMasterDeviceException {
         signal.setContactName(recipient.getIdentifier(), name);
     }
 

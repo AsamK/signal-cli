@@ -48,7 +48,7 @@ public record MessageEnvelope(
         Optional<Call> call
 ) {
 
-    public static final record Receipt(long when, Type type, List<Long> timestamps) {
+    public record Receipt(long when, Type type, List<Long> timestamps) {
 
         static Receipt from(final SignalServiceReceiptMessage receiptMessage) {
             return new Receipt(receiptMessage.getWhen(),
@@ -73,7 +73,7 @@ public record MessageEnvelope(
         }
     }
 
-    public static final record Typing(long timestamp, Type type, Optional<GroupId> groupId) {
+    public record Typing(long timestamp, Type type, Optional<GroupId> groupId) {
 
         public static Typing from(final SignalServiceTypingMessage typingMessage) {
             return new Typing(typingMessage.getTimestamp(),
@@ -87,7 +87,7 @@ public record MessageEnvelope(
         }
     }
 
-    public static final record Data(
+    public record Data(
             long timestamp,
             Optional<GroupContext> groupContext,
             Optional<GroupCallUpdate> groupCallUpdate,
@@ -204,11 +204,15 @@ public record MessageEnvelope(
                 return new Quote(quote.getId(),
                         addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor())),
                         Optional.ofNullable(quote.getText()),
-                        quote.getMentions()
-                                .stream()
-                                .map(m -> Mention.from(m, recipientResolver, addressResolver))
-                                .collect(Collectors.toList()),
-                        quote.getAttachments().stream().map(Attachment::from).collect(Collectors.toList()));
+                        quote.getMentions() == null
+                                ? List.of()
+                                : quote.getMentions()
+                                        .stream()
+                                        .map(m -> Mention.from(m, recipientResolver, addressResolver))
+                                        .collect(Collectors.toList()),
+                        quote.getAttachments() == null
+                                ? List.of()
+                                : quote.getAttachments().stream().map(Attachment::from).collect(Collectors.toList()));
             }
         }
 
@@ -455,7 +459,7 @@ public record MessageEnvelope(
         }
     }
 
-    public static final record Sync(
+    public record Sync(
             Optional<Sent> sent,
             Optional<Blocked> blocked,
             List<Read> read,
@@ -631,7 +635,7 @@ public record MessageEnvelope(
         }
     }
 
-    public static final record Call(
+    public record Call(
             Optional<Integer> destinationDeviceId,
             Optional<GroupId> groupId,
             Optional<Long> timestamp,

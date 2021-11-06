@@ -32,7 +32,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.File;
 import java.io.IOException;
@@ -133,7 +132,7 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        if (!ServiceConfig.getCapabilities().isGv2()) {
+        if (!ServiceConfig.isZkgroupAvailable()) {
             logger.warn("WARNING: Support for new group V2 is disabled,"
                     + " because the required native library dependency is missing: libzkgroup");
         }
@@ -182,7 +181,7 @@ public class App {
             }
 
             username = usernames.get(0);
-        } else if (!PhoneNumberFormatter.isValidNumber(username, null)) {
+        } else if (!Manager.isValidNumber(username, null)) {
             throw new UserErrorException("Invalid username (phone number), make sure you include the country code.");
         }
 

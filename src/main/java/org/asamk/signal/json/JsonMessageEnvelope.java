@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.util.List;
 import java.util.UUID;

@@ -16,6 +16,9 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.CaptchaRequiredException;
+import org.asamk.signal.manager.api.IncorrectPinException;
+import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -27,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.KeyHelper;
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -116,7 +120,7 @@ public class RegistrationManager implements Closeable {
         return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
     }
 
-    public void register(boolean voiceVerification, String captcha) throws IOException {
+    public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
             response = accountManager.requestVoiceVerificationCode(getDefaultLocale(),
@@ -129,7 +133,11 @@ public class RegistrationManager implements Closeable {
                     Optional.absent(),
                     Optional.absent());
         }
-        handleResponseException(response);
+        try {
+            handleResponseException(response);
+        } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
+            throw new CaptchaRequiredException(e.getMessage(), e);
+        }
     }
 
     private Locale getDefaultLocale() {
@@ -146,7 +154,7 @@ public class RegistrationManager implements Closeable {
 
     public Manager verifyAccount(
             String verificationCode, String pin
-    ) throws IOException, LockedException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
+    ) throws IOException, PinLockedException, IncorrectPinException {
         verificationCode = verificationCode.replace("-", "");
         VerifyAccountResponse response;
         MasterKey masterKey;
@@ -157,10 +165,17 @@ public class RegistrationManager implements Closeable {
             pin = null;
         } catch (LockedException e) {
             if (pin == null) {
-                throw e;
+                throw new PinLockedException(e.getTimeRemaining());
             }
 
-            var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
+            KbsPinData registrationLockData;
+            try {
+                registrationLockData = pinHelper.getRegistrationLockData(pin, e);
+            } catch (KeyBackupSystemNoDataException ex) {
+                throw new IOException(e);
+            } catch (KeyBackupServicePinException ex) {
+                throw new IncorrectPinException(ex.getTriesRemaining());
+            }
             if (registrationLockData == null) {
                 throw e;
             }

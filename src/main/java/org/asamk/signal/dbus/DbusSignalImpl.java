@@ -11,9 +11,11 @@ import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
@@ -32,8 +34,6 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
 import java.io.IOException;
@@ -719,7 +719,7 @@ public class DbusSignalImpl implements Signal {
 
         final var message = timestamp + "\nFailed to send message:\n" + error + '\n';
 
-        if (result.getIdentityFailure() != null) {
+        if (result.isIdentityFailure()) {
             throw new Error.UntrustedIdentity(message);
         } else {
             throw new Error.Failure(message);

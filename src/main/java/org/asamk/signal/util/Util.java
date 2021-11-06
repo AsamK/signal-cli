@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -57,10 +55,6 @@ public class Util {
             }
         }
         return f.toString();
-    }
-
-    public static String getLegacyIdentifier(final SignalServiceAddress address) {
-        return address.getNumber().or(() -> address.getUuid().toString());
     }
 
     public static ObjectMapper createJsonObjectMapper() {

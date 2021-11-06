@@ -26,6 +26,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
+import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -69,7 +70,6 @@ import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
-import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
@@ -581,13 +581,24 @@ public class ManagerImpl implements Manager {
             if (recipient instanceof RecipientIdentifier.Single single) {
                 final var recipientId = resolveRecipient(single);
                 final var result = sendHelper.sendMessage(messageBuilder, recipientId);
-                results.put(recipient, List.of(result));
+                results.put(recipient,
+                        List.of(SendMessageResult.from(result,
+                                account.getRecipientStore(),
+                                account.getRecipientStore()::resolveRecipientAddress)));
             } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
                 final var result = sendHelper.sendSelfMessage(messageBuilder);
-                results.put(recipient, List.of(result));
+                results.put(recipient,
+                        List.of(SendMessageResult.from(result,
+                                account.getRecipientStore(),
+                                account.getRecipientStore()::resolveRecipientAddress)));
             } else if (recipient instanceof RecipientIdentifier.Group group) {
                 final var result = sendHelper.sendAsGroupMessage(messageBuilder, group.groupId());
-                results.put(recipient, result);
+                results.put(recipient,
+                        result.stream()
+                                .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
+                                        account.getRecipientStore(),
+                                        account.getRecipientStore()::resolveRecipientAddress))
+                                .collect(Collectors.toList()));
             }
         }
         return new SendMessageResults(timestamp, results);
@@ -1292,7 +1303,8 @@ public class ManagerImpl implements Manager {
     }
 
     private void handleIdentityFailure(
-            final RecipientId recipientId, final SendMessageResult.IdentityFailure identityFailure
+            final RecipientId recipientId,
+            final org.whispersystems.signalservice.api.messages.SendMessageResult.IdentityFailure identityFailure
     ) {
         this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
     }

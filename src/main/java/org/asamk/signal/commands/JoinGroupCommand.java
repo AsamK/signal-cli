@@ -14,7 +14,6 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.whispersystems.signalservice.internal.push.exceptions.GroupPatchNotAcceptedException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -70,8 +69,6 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                 }
             }
             handleSendMessageResults(results.second().results());
-        } catch (GroupPatchNotAcceptedException e) {
-            throw new UserErrorException("Failed to join group, maybe already a member");
         } catch (IOException e) {
             throw new IOErrorException("Failed to send message: "
                     + e.getMessage()

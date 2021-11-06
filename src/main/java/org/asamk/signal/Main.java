@@ -26,7 +26,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
-import org.asamk.signal.manager.LibSignalLogger;
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -90,7 +90,7 @@ public class Main {
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "false");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
             System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd'T'HH:mm:ss.SSSXX");
-            LibSignalLogger.initLogger();
+            Manager.initLogger();
         } else {
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");

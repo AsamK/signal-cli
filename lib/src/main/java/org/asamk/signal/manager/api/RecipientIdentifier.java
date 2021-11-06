@@ -2,8 +2,6 @@ package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -19,13 +17,13 @@ public sealed interface RecipientIdentifier {
     sealed interface Single extends RecipientIdentifier {
 
         static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
-            return UuidUtil.isUuid(identifier)
-                    ? new Uuid(UUID.fromString(identifier))
-                    : new Number(PhoneNumberFormatter.formatNumber(identifier, localNumber));
-        }
-
-        static Single fromAddress(SignalServiceAddress address) {
-            return new Uuid(address.getUuid());
+            try {
+                return UuidUtil.isUuid(identifier)
+                        ? new Uuid(UUID.fromString(identifier))
+                        : new Number(PhoneNumberFormatter.formatNumber(identifier, localNumber));
+            } catch (org.whispersystems.signalservice.api.util.InvalidNumberException e) {
+                throw new InvalidNumberException(e.getMessage(), e);
+            }
         }
 
         static Single fromAddress(RecipientAddress address) {

@@ -361,7 +361,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     ) {
         writer.println("Id: {}", quote.id());
         writer.println("Author: {}", formatContact(quote.author()));
-        writer.println("Text: {}", quote.text());
+        if (quote.text().isPresent()) {
+            writer.println("Text: {}", quote.text().get());
+        }
         if (quote.mentions() != null && quote.mentions().size() > 0) {
             writer.println("Mentions:");
             for (var mention : quote.mentions()) {
@@ -371,14 +373,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (quote.attachments().size() > 0) {
             writer.println("Attachments:");
             for (var attachment : quote.attachments()) {
-                writer.println("- Filename: {}", attachment.fileName());
-                writer.indent(w -> {
-                    w.println("Type: {}", attachment.contentType());
-                    w.println("Thumbnail:");
-                    if (attachment.thumbnail().isPresent()) {
-                        printAttachment(w, attachment.thumbnail().get());
-                    }
-                });
+                writer.println("- Attachment:");
+                printAttachment(writer.indentedWriter(), attachment);
             }
         }
     }
@@ -526,6 +522,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                     attachment.preview().isPresent() ? " (Preview is available: "
                             + attachment.preview().get().length
                             + " bytes)" : "");
+        }
+        if (attachment.thumbnail().isPresent()) {
+            writer.println("Thumbnail:");
+            printAttachment(writer.indentedWriter(), attachment.thumbnail().get());
         }
         final var flags = new ArrayList<String>();
         if (attachment.isVoiceNote()) {

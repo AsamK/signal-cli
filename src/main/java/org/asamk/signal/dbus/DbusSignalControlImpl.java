@@ -8,12 +8,11 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.api.CaptchaRequiredException;
+import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PinLockedException;
 import org.freedesktop.dbus.DBusPath;
-import org.whispersystems.signalservice.api.KeyBackupServicePinException;
-import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
-import org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -100,7 +99,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     public void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
     ) throws Error.Failure, Error.InvalidNumber {
-        if (!PhoneNumberFormatter.isValidNumber(number, null)) {
+        if (!Manager.isValidNumber(number, null)) {
             throw new SignalControl.Error.InvalidNumber(
                     "Invalid username (phone number), make sure you include the country code.");
         }
@@ -126,7 +125,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             final Manager manager = registrationManager.verifyAccount(verificationCode, pin);
             addManager(manager);
-        } catch (IOException | KeyBackupSystemNoDataException | KeyBackupServicePinException e) {
+        } catch (IOException | PinLockedException | IncorrectPinException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }
