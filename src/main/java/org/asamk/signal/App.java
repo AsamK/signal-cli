@@ -344,11 +344,11 @@ public class App {
             Command command, Signal ts, DBusConnection dBusConn, OutputWriter outputWriter
     ) throws CommandException {
         if (command instanceof LocalCommand localCommand) {
-            try {
-                localCommand.handleCommand(ns, new DbusManagerImpl(ts, dBusConn), outputWriter);
+            try (final var m = new DbusManagerImpl(ts, dBusConn)) {
+                localCommand.handleCommand(ns, m, outputWriter);
             } catch (UnsupportedOperationException e) {
                 throw new UserErrorException("Command is not yet implemented via dbus", e);
-            } catch (DBusExecutionException e) {
+            } catch (IOException | DBusExecutionException e) {
                 throw new UnexpectedErrorException(e.getMessage(), e);
             }
         } else {

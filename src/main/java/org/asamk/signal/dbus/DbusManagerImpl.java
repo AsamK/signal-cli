@@ -437,13 +437,7 @@ public class DbusManagerImpl implements Manager {
         synchronized (messageHandlers) {
             messageHandlers.remove(handler);
             if (messageHandlers.size() == 0) {
-                try {
-                    connection.removeSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
-                    connection.removeSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
-                    connection.removeSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
-                } catch (DBusException e) {
-                    e.printStackTrace();
-                }
+                uninstallMessageHandlers();
             }
         }
     }
@@ -583,6 +577,13 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void close() throws IOException {
+        synchronized (this) {
+            this.notify();
+        }
+        synchronized (messageHandlers) {
+            messageHandlers.clear();
+            uninstallMessageHandlers();
+        }
     }
 
     private SendMessageResults handleMessage(
@@ -752,6 +753,16 @@ public class DbusManagerImpl implements Manager {
                 }
             };
             connection.addSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
+        } catch (DBusException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void uninstallMessageHandlers() {
+        try {
+            connection.removeSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
+            connection.removeSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
+            connection.removeSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
         } catch (DBusException e) {
             e.printStackTrace();
         }
