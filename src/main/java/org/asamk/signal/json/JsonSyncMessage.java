@@ -2,7 +2,6 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import org.asamk.Signal;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -76,9 +75,5 @@ record JsonSyncMessage(
             type = null;
         }
         return new JsonSyncMessage(sentMessage, blockedNumbers, blockedGroupIds, readMessages, type);
-    }
-
-    static JsonSyncMessage from(Signal.SyncMessageReceived messageReceived) {
-        return new JsonSyncMessage(JsonSyncDataMessage.from(messageReceived), null, null, null, null);
     }
 }

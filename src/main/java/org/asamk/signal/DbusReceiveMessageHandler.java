@@ -113,8 +113,8 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         var attachments = new ArrayList<String>();
         if (message.attachments().size() > 0) {
             for (var attachment : message.attachments()) {
-                if (attachment.id().isPresent()) {
-                    attachments.add(m.getAttachmentFile(attachment.id().get()).getAbsolutePath());
+                if (attachment.file().isPresent()) {
+                    attachments.add(attachment.file().get().getAbsolutePath());
                 }
             }
         }
@@ -161,7 +161,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
                 "author",
                 new Variant<>(quote.author().getLegacyIdentifier()),
                 "text",
-                new Variant<>(quote.text()));
+                new Variant<>(quote.text().orElse("")));
     }
 
     private Map<String, Variant<? extends Serializable>> getStickerMap(final MessageEnvelope.Data.Sticker sticker) {
@@ -184,9 +184,12 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     ) {
         final var map = new HashMap<String, Variant<?>>();
         if (a.id().isPresent()) {
-            map.put("file", new Variant<>(m.getAttachmentFile(a.id().get()).getAbsolutePath()));
             map.put("remoteId", new Variant<>(a.id().get()));
         }
+        if (a.file().isPresent()) {
+            map.put("file", new Variant<>(a.file().get().getAbsolutePath()));
+        }
+        map.put("contentType", new Variant<>(a.contentType()));
         map.put("isVoiceNote", new Variant<>(a.isVoiceNote()));
         map.put("isBorderless", new Variant<>(a.isBorderless()));
         map.put("isGif", new Variant<>(a.isGif()));

@@ -1150,11 +1150,6 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public File getAttachmentFile(String attachmentId) {
-        return attachmentHelper.getAttachmentFile(attachmentId);
-    }
-
-    @Override
     public void sendContacts() throws IOException {
         syncHelper.sendContacts();
     }

@@ -543,8 +543,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (attachment.width().isPresent() || attachment.height().isPresent()) {
             writer.println("Dimensions: {}x{}", attachment.width().orElse(0), attachment.height().orElse(0));
         }
-        if (attachment.id().isPresent()) {
-            var file = m.getAttachmentFile(attachment.id().get());
+        if (attachment.file().isPresent()) {
+            var file = attachment.file().get();
             if (file.exists()) {
                 writer.println("Stored plaintext in: {}", file);
             }

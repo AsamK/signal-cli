@@ -6,6 +6,7 @@ import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -29,6 +30,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ViewedMessage;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -110,7 +112,8 @@ public record MessageEnvelope(
         static Data from(
                 final SignalServiceDataMessage dataMessage,
                 RecipientResolver recipientResolver,
-                RecipientAddressResolver addressResolver
+                RecipientAddressResolver addressResolver,
+                final AttachmentFileProvider fileProvider
         ) {
             return new Data(dataMessage.getTimestamp(),
                     Optional.ofNullable(dataMessage.getGroupContext().transform(GroupContext::from).orNull()),
@@ -125,17 +128,21 @@ public record MessageEnvelope(
                             .transform(r -> Reaction.from(r, recipientResolver, addressResolver))
                             .orNull()),
                     Optional.ofNullable(dataMessage.getQuote()
-                            .transform(q -> Quote.from(q, recipientResolver, addressResolver))
+                            .transform(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider))
                             .orNull()),
                     dataMessage.getAttachments()
-                            .transform(a -> a.stream().map(Attachment::from).collect(Collectors.toList()))
+                            .transform(a -> a.stream()
+                                    .map(as -> Attachment.from(as, fileProvider))
+                                    .collect(Collectors.toList()))
                             .or(List.of()),
                     Optional.ofNullable(dataMessage.getRemoteDelete()
                             .transform(SignalServiceDataMessage.RemoteDelete::getTargetSentTimestamp)
                             .orNull()),
                     Optional.ofNullable(dataMessage.getSticker().transform(Sticker::from).orNull()),
                     dataMessage.getSharedContacts()
-                            .transform(a -> a.stream().map(SharedContact::from).collect(Collectors.toList()))
+                            .transform(a -> a.stream()
+                                    .map(sharedContact -> SharedContact.from(sharedContact, fileProvider))
+                                    .collect(Collectors.toList()))
                             .or(List.of()),
                     dataMessage.getMentions()
                             .transform(a -> a.stream()
@@ -143,7 +150,9 @@ public record MessageEnvelope(
                                     .collect(Collectors.toList()))
                             .or(List.of()),
                     dataMessage.getPreviews()
-                            .transform(a -> a.stream().map(Preview::from).collect(Collectors.toList()))
+                            .transform(a -> a.stream()
+                                    .map(preview -> Preview.from(preview, fileProvider))
+                                    .collect(Collectors.toList()))
                             .or(List.of()));
         }
 
@@ -199,7 +208,8 @@ public record MessageEnvelope(
             static Quote from(
                     SignalServiceDataMessage.Quote quote,
                     RecipientResolver recipientResolver,
-                    RecipientAddressResolver addressResolver
+                    RecipientAddressResolver addressResolver,
+                    final AttachmentFileProvider fileProvider
             ) {
                 return new Quote(quote.getId(),
                         addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor())),
@@ -212,7 +222,10 @@ public record MessageEnvelope(
                                         .collect(Collectors.toList()),
                         quote.getAttachments() == null
                                 ? List.of()
-                                : quote.getAttachments().stream().map(Attachment::from).collect(Collectors.toList()));
+                                : quote.getAttachments()
+                                        .stream()
+                                        .map(a -> Attachment.from(a, fileProvider))
+                                        .collect(Collectors.toList()));
             }
         }
 
@@ -231,6 +244,7 @@ public record MessageEnvelope(
 
         public record Attachment(
                 Optional<String> id,
+                Optional<File> file,
                 Optional<String> fileName,
                 String contentType,
                 Optional<Long> uploadTimestamp,
@@ -245,10 +259,11 @@ public record MessageEnvelope(
                 boolean isBorderless
         ) {
 
-            static Attachment from(SignalServiceAttachment attachment) {
+            static Attachment from(SignalServiceAttachment attachment, AttachmentFileProvider fileProvider) {
                 if (attachment.isPointer()) {
                     final var a = attachment.asPointer();
                     return new Attachment(Optional.of(a.getRemoteId().toString()),
+                            Optional.of(fileProvider.getFile(a.getRemoteId())),
                             Optional.ofNullable(a.getFileName().orNull()),
                             a.getContentType(),
                             a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
@@ -264,6 +279,7 @@ public record MessageEnvelope(
                 } else {
                     final var a = attachment.asStream();
                     return new Attachment(Optional.empty(),
+                            Optional.empty(),
                             Optional.ofNullable(a.getFileName().orNull()),
                             a.getContentType(),
                             a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
@@ -279,14 +295,19 @@ public record MessageEnvelope(
                 }
             }
 
-            static Attachment from(SignalServiceDataMessage.Quote.QuotedAttachment a) {
+            static Attachment from(
+                    SignalServiceDataMessage.Quote.QuotedAttachment a, final AttachmentFileProvider fileProvider
+            ) {
                 return new Attachment(Optional.empty(),
+                        Optional.empty(),
                         Optional.ofNullable(a.getFileName()),
                         a.getContentType(),
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
-                        a.getThumbnail() == null ? Optional.empty() : Optional.of(Attachment.from(a.getThumbnail())),
+                        a.getThumbnail() == null
+                                ? Optional.empty()
+                                : Optional.of(Attachment.from(a.getThumbnail(), fileProvider)),
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
@@ -312,9 +333,14 @@ public record MessageEnvelope(
                 Optional<String> organization
         ) {
 
-            static SharedContact from(org.whispersystems.signalservice.api.messages.shared.SharedContact sharedContact) {
+            static SharedContact from(
+                    org.whispersystems.signalservice.api.messages.shared.SharedContact sharedContact,
+                    final AttachmentFileProvider fileProvider
+            ) {
                 return new SharedContact(Name.from(sharedContact.getName()),
-                        Optional.ofNullable(sharedContact.getAvatar().transform(Avatar::from).orNull()),
+                        Optional.ofNullable(sharedContact.getAvatar()
+                                .transform(avatar1 -> Avatar.from(avatar1, fileProvider))
+                                .orNull()),
                         sharedContact.getPhone()
                                 .transform(p -> p.stream().map(Phone::from).collect(Collectors.toList()))
                                 .or(List.of()),
@@ -348,8 +374,11 @@ public record MessageEnvelope(
 
             public record Avatar(Attachment attachment, boolean isProfile) {
 
-                static Avatar from(org.whispersystems.signalservice.api.messages.shared.SharedContact.Avatar avatar) {
-                    return new Avatar(Attachment.from(avatar.getAttachment()), avatar.isProfile());
+                static Avatar from(
+                        org.whispersystems.signalservice.api.messages.shared.SharedContact.Avatar avatar,
+                        final AttachmentFileProvider fileProvider
+                ) {
+                    return new Avatar(Attachment.from(avatar.getAttachment(), fileProvider), avatar.isProfile());
                 }
             }
 
@@ -449,12 +478,16 @@ public record MessageEnvelope(
 
         public record Preview(String title, String description, long date, String url, Optional<Attachment> image) {
 
-            static Preview from(SignalServiceDataMessage.Preview preview) {
+            static Preview from(
+                    SignalServiceDataMessage.Preview preview, final AttachmentFileProvider fileProvider
+            ) {
                 return new Preview(preview.getTitle(),
                         preview.getDescription(),
                         preview.getDate(),
                         preview.getUrl(),
-                        Optional.ofNullable(preview.getImage().transform(Attachment::from).orNull()));
+                        Optional.ofNullable(preview.getImage()
+                                .transform(as -> Attachment.from(as, fileProvider))
+                                .orNull()));
             }
         }
     }
@@ -473,10 +506,11 @@ public record MessageEnvelope(
         public static Sync from(
                 final SignalServiceSyncMessage syncMessage,
                 RecipientResolver recipientResolver,
-                RecipientAddressResolver addressResolver
+                RecipientAddressResolver addressResolver,
+                final AttachmentFileProvider fileProvider
         ) {
             return new Sync(Optional.ofNullable(syncMessage.getSent()
-                    .transform(s -> Sent.from(s, recipientResolver, addressResolver))
+                    .transform(s -> Sent.from(s, recipientResolver, addressResolver, fileProvider))
                     .orNull()),
                     Optional.ofNullable(syncMessage.getBlockedList()
                             .transform(b -> Blocked.from(b, recipientResolver, addressResolver))
@@ -512,7 +546,8 @@ public record MessageEnvelope(
             static Sent from(
                     SentTranscriptMessage sentMessage,
                     RecipientResolver recipientResolver,
-                    RecipientAddressResolver addressResolver
+                    RecipientAddressResolver addressResolver,
+                    final AttachmentFileProvider fileProvider
             ) {
                 return new Sent(sentMessage.getTimestamp(),
                         sentMessage.getExpirationStartTimestamp(),
@@ -524,7 +559,7 @@ public record MessageEnvelope(
                                 .stream()
                                 .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d)))
                                 .collect(Collectors.toSet()),
-                        Data.from(sentMessage.getMessage(), recipientResolver, addressResolver));
+                        Data.from(sentMessage.getMessage(), recipientResolver, addressResolver, fileProvider));
             }
         }
 
@@ -692,13 +727,6 @@ public record MessageEnvelope(
 
         public record Busy(long id) {
 
-            static Offer from(OfferMessage offerMessage) {
-                return new Offer(offerMessage.getId(),
-                        offerMessage.getSdp(),
-                        Offer.Type.from(offerMessage.getType()),
-                        offerMessage.getOpaque());
-            }
-
             static Busy from(BusyMessage busyMessage) {
                 return new Busy(busyMessage.getId());
             }
@@ -763,7 +791,8 @@ public record MessageEnvelope(
             SignalServiceEnvelope envelope,
             SignalServiceContent content,
             RecipientResolver recipientResolver,
-            RecipientAddressResolver addressResolver
+            RecipientAddressResolver addressResolver,
+            final AttachmentFileProvider fileProvider
     ) {
         final var source = !envelope.isUnidentifiedSender() && envelope.hasSourceUuid()
                 ? recipientResolver.resolveRecipient(envelope.getSourceAddress())
@@ -783,10 +812,10 @@ public record MessageEnvelope(
             receipt = Optional.ofNullable(content.getReceiptMessage().transform(Receipt::from).orNull());
             typing = Optional.ofNullable(content.getTypingMessage().transform(Typing::from).orNull());
             data = Optional.ofNullable(content.getDataMessage()
-                    .transform(dataMessage -> Data.from(dataMessage, recipientResolver, addressResolver))
+                    .transform(dataMessage -> Data.from(dataMessage, recipientResolver, addressResolver, fileProvider))
                     .orNull());
             sync = Optional.ofNullable(content.getSyncMessage()
-                    .transform(s -> Sync.from(s, recipientResolver, addressResolver))
+                    .transform(s -> Sync.from(s, recipientResolver, addressResolver, fileProvider))
                     .orNull());
             call = Optional.ofNullable(content.getCallMessage().transform(Call::from).orNull());
         } else {
@@ -810,5 +839,10 @@ public record MessageEnvelope(
                 data,
                 sync,
                 call);
+    }
+
+    public interface AttachmentFileProvider {
+
+        File getFile(SignalServiceAttachmentRemoteId attachmentRemoteId);
     }
 }

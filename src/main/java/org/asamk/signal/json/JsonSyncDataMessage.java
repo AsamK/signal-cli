@@ -2,7 +2,6 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
-import org.asamk.Signal;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
@@ -25,12 +24,5 @@ record JsonSyncDataMessage(
         } else {
             return new JsonSyncDataMessage(null, null, null, JsonDataMessage.from(transcriptMessage.message()));
         }
-    }
-
-    static JsonSyncDataMessage from(Signal.SyncMessageReceived messageReceived) {
-        return new JsonSyncDataMessage(messageReceived.getDestination(),
-                null,
-                null,
-                JsonDataMessage.from(messageReceived));
     }
 }

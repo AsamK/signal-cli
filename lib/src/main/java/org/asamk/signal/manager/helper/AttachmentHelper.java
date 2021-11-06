@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 
 import java.io.File;
@@ -35,7 +36,7 @@ public class AttachmentHelper {
         this.attachmentStore = attachmentStore;
     }
 
-    public File getAttachmentFile(String attachmentId) {
+    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
         return attachmentStore.getAttachmentFile(attachmentId);
     }
 

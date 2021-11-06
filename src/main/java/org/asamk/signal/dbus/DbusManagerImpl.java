@@ -13,6 +13,7 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -29,10 +30,13 @@ import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.interfaces.DBusSigHandler;
+import org.freedesktop.dbus.types.Variant;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +63,11 @@ public class DbusManagerImpl implements Manager {
 
     private final Signal signal;
     private final DBusConnection connection;
+
+    private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    private DBusSigHandler<Signal.MessageReceivedV2> dbusMsgHandler;
+    private DBusSigHandler<Signal.ReceiptReceivedV2> dbusRcptHandler;
+    private DBusSigHandler<Signal.SyncMessageReceivedV2> dbusSyncHandler;
 
     public DbusManagerImpl(final Signal signal, DBusConnection connection) {
         this.signal = signal;
@@ -133,7 +143,7 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void submitRateLimitRecaptchaChallenge(final String challenge, final String captcha) throws IOException {
-        throw new UnsupportedOperationException();
+        signal.submitRateLimitChallenge(challenge, captcha);
     }
 
     @Override
@@ -308,7 +318,7 @@ public class DbusManagerImpl implements Manager {
     public void sendViewedReceipt(
             final RecipientIdentifier.Single sender, final List<Long> messageIds
     ) throws IOException, UntrustedIdentityException {
-        throw new UnsupportedOperationException();
+        signal.sendViewedReceipt(sender.getIdentifier(), messageIds);
     }
 
     @Override
@@ -414,49 +424,73 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void addReceiveHandler(final ReceiveMessageHandler handler) {
-        throw new UnsupportedOperationException();
+        synchronized (messageHandlers) {
+            if (messageHandlers.size() == 0) {
+                installMessageHandlers();
+            }
+            messageHandlers.add(handler);
+        }
     }
 
     @Override
     public void removeReceiveHandler(final ReceiveMessageHandler handler) {
-        throw new UnsupportedOperationException();
+        synchronized (messageHandlers) {
+            messageHandlers.remove(handler);
+            if (messageHandlers.size() == 0) {
+                try {
+                    connection.removeSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
+                    connection.removeSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
+                    connection.removeSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
+                } catch (DBusException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
     public boolean isReceiving() {
-        throw new UnsupportedOperationException();
+        synchronized (messageHandlers) {
+            return messageHandlers.size() > 0;
+        }
     }
 
     @Override
     public void receiveMessages(final ReceiveMessageHandler handler) throws IOException {
-        throw new UnsupportedOperationException();
+        addReceiveHandler(handler);
+        try {
+            synchronized (this) {
+                this.wait();
+            }
+        } catch (InterruptedException ignored) {
+        }
+        removeReceiveHandler(handler);
     }
 
     @Override
     public void receiveMessages(
             final long timeout, final TimeUnit unit, final ReceiveMessageHandler handler
     ) throws IOException {
-        throw new UnsupportedOperationException();
+        addReceiveHandler(handler);
+        try {
+            Thread.sleep(unit.toMillis(timeout));
+        } catch (InterruptedException ignored) {
+        }
+        removeReceiveHandler(handler);
     }
 
     @Override
     public void setIgnoreAttachments(final boolean ignoreAttachments) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean hasCaughtUpWithOldMessages() {
-        throw new UnsupportedOperationException();
+        return true;
     }
 
     @Override
     public boolean isContactBlocked(final RecipientIdentifier.Single recipient) {
         return signal.isContactBlocked(recipient.getIdentifier());
-    }
-
-    @Override
-    public File getAttachmentFile(final String attachmentId) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -591,5 +625,169 @@ public class DbusManagerImpl implements Manager {
         } catch (DBusException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private void installMessageHandlers() {
+        try {
+            this.dbusMsgHandler = messageReceived -> {
+                final var extras = messageReceived.getExtras();
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
+                        messageReceived.getSender())),
+                        0,
+                        messageReceived.getTimestamp(),
+                        0,
+                        0,
+                        false,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new MessageEnvelope.Data(messageReceived.getTimestamp(),
+                                messageReceived.getGroupId().length > 0
+                                        ? Optional.of(new MessageEnvelope.Data.GroupContext(GroupId.unknownVersion(
+                                        messageReceived.getGroupId()), false, 0))
+                                        : Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(messageReceived.getMessage()),
+                                0,
+                                false,
+                                false,
+                                false,
+                                false,
+                                Optional.empty(),
+                                Optional.empty(),
+                                getAttachments(extras),
+                                Optional.empty(),
+                                Optional.empty(),
+                                List.of(),
+                                List.of(),
+                                List.of())),
+                        Optional.empty(),
+                        Optional.empty());
+                synchronized (messageHandlers) {
+                    for (final var messageHandler : messageHandlers) {
+                        messageHandler.handleMessage(envelope, null);
+                    }
+                }
+            };
+            connection.addSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
+
+            this.dbusRcptHandler = receiptReceived -> {
+                final var type = switch (receiptReceived.getReceiptType()) {
+                    case "read" -> MessageEnvelope.Receipt.Type.READ;
+                    case "viewed" -> MessageEnvelope.Receipt.Type.VIEWED;
+                    case "delivery" -> MessageEnvelope.Receipt.Type.DELIVERY;
+                    default -> MessageEnvelope.Receipt.Type.UNKNOWN;
+                };
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
+                        receiptReceived.getSender())),
+                        0,
+                        receiptReceived.getTimestamp(),
+                        0,
+                        0,
+                        false,
+                        Optional.of(new MessageEnvelope.Receipt(receiptReceived.getTimestamp(),
+                                type,
+                                List.of(receiptReceived.getTimestamp()))),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty());
+                synchronized (messageHandlers) {
+                    for (final var messageHandler : messageHandlers) {
+                        messageHandler.handleMessage(envelope, null);
+                    }
+                }
+            };
+            connection.addSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
+
+            this.dbusSyncHandler = syncReceived -> {
+                final var extras = syncReceived.getExtras();
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
+                        syncReceived.getSource())),
+                        0,
+                        syncReceived.getTimestamp(),
+                        0,
+                        0,
+                        false,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new MessageEnvelope.Sync(Optional.of(new MessageEnvelope.Sync.Sent(syncReceived.getTimestamp(),
+                                syncReceived.getTimestamp(),
+                                syncReceived.getDestination().isEmpty()
+                                        ? Optional.empty()
+                                        : Optional.of(new RecipientAddress(null, syncReceived.getDestination())),
+                                Set.of(),
+                                new MessageEnvelope.Data(syncReceived.getTimestamp(),
+                                        syncReceived.getGroupId().length > 0
+                                                ? Optional.of(new MessageEnvelope.Data.GroupContext(GroupId.unknownVersion(
+                                                syncReceived.getGroupId()), false, 0))
+                                                : Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.of(syncReceived.getMessage()),
+                                        0,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        getAttachments(extras),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        List.of(),
+                                        List.of(),
+                                        List.of()))),
+                                Optional.empty(),
+                                List.of(),
+                                List.of(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty())),
+                        Optional.empty());
+                synchronized (messageHandlers) {
+                    for (final var messageHandler : messageHandlers) {
+                        messageHandler.handleMessage(envelope, null);
+                    }
+                }
+            };
+            connection.addSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
+        } catch (DBusException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private List<MessageEnvelope.Data.Attachment> getAttachments(final Map<String, Variant<?>> extras) {
+        if (!extras.containsKey("attachments")) {
+            return List.of();
+        }
+
+        final List<DBusMap<String, Variant<?>>> attachments = getValue(extras, "attachments");
+        return attachments.stream().map(a -> {
+            final String file = a.containsKey("file") ? getValue(a, "file") : null;
+            return new MessageEnvelope.Data.Attachment(a.containsKey("remoteId")
+                    ? Optional.of(getValue(a, "remoteId"))
+                    : Optional.empty(),
+                    file != null ? Optional.of(new File(file)) : Optional.empty(),
+                    Optional.empty(),
+                    getValue(a, "contentType"),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    getValue(a, "isVoiceNote"),
+                    getValue(a, "isGif"),
+                    getValue(a, "isBorderless"));
+        }).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getValue(
+            final Map<String, Variant<?>> stringVariantMap, final String field
+    ) {
+        return (T) stringVariantMap.get(field).getValue();
     }
 }

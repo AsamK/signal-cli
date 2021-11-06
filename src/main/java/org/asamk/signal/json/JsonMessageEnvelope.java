@@ -2,14 +2,12 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 
-import java.util.List;
 import java.util.UUID;
 
 public record JsonMessageEnvelope(
@@ -77,48 +75,5 @@ public record JsonMessageEnvelope(
                 callMessage,
                 receiptMessage,
                 typingMessage);
-    }
-
-    public static JsonMessageEnvelope from(Signal.MessageReceived messageReceived) {
-        return new JsonMessageEnvelope(messageReceived.getSource(),
-                null,
-                null,
-                null,
-                null,
-                messageReceived.getTimestamp(),
-                JsonDataMessage.from(messageReceived),
-                null,
-                null,
-                null,
-                null);
-    }
-
-    public static JsonMessageEnvelope from(Signal.ReceiptReceived receiptReceived) {
-        return new JsonMessageEnvelope(receiptReceived.getSender(),
-                null,
-                null,
-                null,
-                null,
-                receiptReceived.getTimestamp(),
-                null,
-                null,
-                null,
-                JsonReceiptMessage.deliveryReceipt(receiptReceived.getTimestamp(),
-                        List.of(receiptReceived.getTimestamp())),
-                null);
-    }
-
-    public static JsonMessageEnvelope from(Signal.SyncMessageReceived messageReceived) {
-        return new JsonMessageEnvelope(messageReceived.getSource(),
-                null,
-                null,
-                null,
-                null,
-                messageReceived.getTimestamp(),
-                null,
-                JsonSyncMessage.from(messageReceived),
-                null,
-                null,
-                null);
     }
 }

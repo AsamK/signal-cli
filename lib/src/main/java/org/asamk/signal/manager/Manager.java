@@ -226,8 +226,6 @@ public interface Manager extends Closeable {
 
     boolean isContactBlocked(RecipientIdentifier.Single recipient);
 
-    File getAttachmentFile(String attachmentId);
-
     void sendContacts() throws IOException;
 
     List<Pair<RecipientAddress, Contact>> getContacts();

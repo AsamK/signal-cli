@@ -200,7 +200,8 @@ public final class IncomingMessageHandler {
             handler.handleMessage(MessageEnvelope.from(envelope,
                     content,
                     recipientResolver,
-                    account.getRecipientStore()::resolveRecipientAddress), exception);
+                    account.getRecipientStore()::resolveRecipientAddress,
+                    attachmentHelper::getAttachmentFile), exception);
             return actions;
         }
     }

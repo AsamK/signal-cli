@@ -8,7 +8,6 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.asamk.Signal;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
-import org.asamk.signal.commands.ExtendedDbusCommand;
 import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.MultiLocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
@@ -151,20 +150,20 @@ public class App {
                 ? TrustNewIdentity.ON_FIRST_USE
                 : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
-        if (command instanceof ProvisioningCommand) {
+        if (command instanceof ProvisioningCommand provisioningCommand) {
             if (username != null) {
                 throw new UserErrorException("You cannot specify a username (phone number) when linking");
             }
 
-            handleProvisioningCommand((ProvisioningCommand) command, dataPath, serviceEnvironment, outputWriter);
+            handleProvisioningCommand(provisioningCommand, dataPath, serviceEnvironment, outputWriter);
             return;
         }
 
         if (username == null) {
             var usernames = Manager.getAllLocalNumbers(dataPath);
 
-            if (command instanceof MultiLocalCommand) {
-                handleMultiLocalCommand((MultiLocalCommand) command,
+            if (command instanceof MultiLocalCommand multiLocalCommand) {
+                handleMultiLocalCommand(multiLocalCommand,
                         dataPath,
                         serviceEnvironment,
                         usernames,
@@ -185,8 +184,8 @@ public class App {
             throw new UserErrorException("Invalid username (phone number), make sure you include the country code.");
         }
 
-        if (command instanceof RegistrationCommand) {
-            handleRegistrationCommand((RegistrationCommand) command, username, dataPath, serviceEnvironment);
+        if (command instanceof RegistrationCommand registrationCommand) {
+            handleRegistrationCommand(registrationCommand, username, dataPath, serviceEnvironment);
             return;
         }
 
@@ -344,11 +343,9 @@ public class App {
     private void handleCommand(
             Command command, Signal ts, DBusConnection dBusConn, OutputWriter outputWriter
     ) throws CommandException {
-        if (command instanceof ExtendedDbusCommand) {
-            ((ExtendedDbusCommand) command).handleCommand(ns, ts, dBusConn, outputWriter);
-        } else if (command instanceof LocalCommand) {
+        if (command instanceof LocalCommand localCommand) {
             try {
-                ((LocalCommand) command).handleCommand(ns, new DbusManagerImpl(ts, dBusConn), outputWriter);
+                localCommand.handleCommand(ns, new DbusManagerImpl(ts, dBusConn), outputWriter);
             } catch (UnsupportedOperationException e) {
                 throw new UserErrorException("Command is not yet implemented via dbus", e);
             } catch (DBusExecutionException e) {
