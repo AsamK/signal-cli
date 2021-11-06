@@ -2,7 +2,6 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
-import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -90,13 +89,13 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void submitRateLimitChallenge(String challenge, String captchaString) throws IOErrorException {
+    public void submitRateLimitChallenge(String challenge, String captchaString) {
         final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
 
         try {
             m.submitRateLimitRecaptchaChallenge(challenge, captcha);
         } catch (IOException e) {
-            throw new IOErrorException("Submit challenge error: " + e.getMessage(), e);
+            throw new Error.Failure("Submit challenge error: " + e.getMessage());
         }
 
     }
