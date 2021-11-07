@@ -17,6 +17,7 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.actions.HandleAction;
+import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
@@ -323,28 +324,34 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public Configuration getConfiguration() {
+        final var configurationStore = account.getConfigurationStore();
+        return new Configuration(java.util.Optional.ofNullable(configurationStore.getReadReceipts()),
+                java.util.Optional.ofNullable(configurationStore.getUnidentifiedDeliveryIndicators()),
+                java.util.Optional.ofNullable(configurationStore.getTypingIndicators()),
+                java.util.Optional.ofNullable(configurationStore.getLinkPreviews()));
+    }
+
+    @Override
     public void updateConfiguration(
-            final Boolean readReceipts,
-            final Boolean unidentifiedDeliveryIndicators,
-            final Boolean typingIndicators,
-            final Boolean linkPreviews
+            Configuration configuration
     ) throws IOException, NotMasterDeviceException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
 
         final var configurationStore = account.getConfigurationStore();
-        if (readReceipts != null) {
-            configurationStore.setReadReceipts(readReceipts);
+        if (configuration.readReceipts().isPresent()) {
+            configurationStore.setReadReceipts(configuration.readReceipts().get());
         }
-        if (unidentifiedDeliveryIndicators != null) {
-            configurationStore.setUnidentifiedDeliveryIndicators(unidentifiedDeliveryIndicators);
+        if (configuration.unidentifiedDeliveryIndicators().isPresent()) {
+            configurationStore.setUnidentifiedDeliveryIndicators(configuration.unidentifiedDeliveryIndicators().get());
         }
-        if (typingIndicators != null) {
-            configurationStore.setTypingIndicators(typingIndicators);
+        if (configuration.typingIndicators().isPresent()) {
+            configurationStore.setTypingIndicators(configuration.typingIndicators().get());
         }
-        if (linkPreviews != null) {
-            configurationStore.setLinkPreviews(linkPreviews);
+        if (configuration.linkPreviews().isPresent()) {
+            configurationStore.setLinkPreviews(configuration.linkPreviews().get());
         }
         syncHelper.sendConfigurationMessage();
     }

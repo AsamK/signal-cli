@@ -9,8 +9,10 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.api.Configuration;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class UpdateConfigurationCommand implements JsonRpcLocalCommand {
 
@@ -45,7 +47,10 @@ public class UpdateConfigurationCommand implements JsonRpcLocalCommand {
         final var typingIndicators = ns.getBoolean("typing-indicators");
         final var linkPreviews = ns.getBoolean("link-previews");
         try {
-            m.updateConfiguration(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+            m.updateConfiguration(new Configuration(Optional.ofNullable(readReceipts),
+                    Optional.ofNullable(unidentifiedDeliveryIndicators),
+                    Optional.ofNullable(typingIndicators),
+                    Optional.ofNullable(linkPreviews)));
         } catch (IOException e) {
             throw new IOErrorException("UpdateAccount error: " + e.getMessage(), e);
         } catch (NotMasterDeviceException e) {

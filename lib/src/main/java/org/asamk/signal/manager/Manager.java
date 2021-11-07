@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
@@ -99,12 +100,9 @@ public interface Manager extends Closeable {
 
     void updateAccountAttributes(String deviceName) throws IOException;
 
-    void updateConfiguration(
-            final Boolean readReceipts,
-            final Boolean unidentifiedDeliveryIndicators,
-            final Boolean typingIndicators,
-            final Boolean linkPreviews
-    ) throws IOException, NotMasterDeviceException;
+    Configuration getConfiguration();
+
+    void updateConfiguration(Configuration configuration) throws IOException, NotMasterDeviceException;
 
     void setProfile(
             String givenName, String familyName, String about, String aboutEmoji, Optional<File> avatar
