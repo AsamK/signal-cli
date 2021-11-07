@@ -364,6 +364,26 @@ removeDevice() -> <>::
 
 Exceptions: Failure
 
+=== Configuration properties
+The configuration's object path, which exists only for primary devices, is constructed as follows:
+"/org/asamk/Signal/" + DBusNumber + "/Configuration"
+* DBusNumber  : recipient's phone number, with underscore (_) replacing plus (+)
+
+Configurations have the following (case-sensitive) properties:
+* ReadReceipts<b>                   : should send read receipts (true/false)
+* UnidentifiedDeliveryIndicators<b> : should show unidentified delivery indicators (true/false)
+* TypingIndicators<b>               : should send/show typing indicators (true/false)
+* LinkPreviews<b>                   : should generate link previews (true/false)
+
+To get a property, use (replacing `--session` with `--system` if needed):
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Get string:org.asamk.Signal.Configuration string:$PROPERTY_NAME`
+
+To set a property, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Set string:org.asamk.Signal.Configuration string:$PROPERTY_NAME variant:$PROPERTY_TYPE:$PROPERTY_VALUE`
+
+To get all properties, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Configuration`
+
 === Other methods
 
 getContactName(number<s>) -> name<s>::

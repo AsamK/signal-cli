@@ -458,6 +458,12 @@ public interface Signal extends DBusInterface {
         void removeDevice() throws Error.Failure;
     }
 
+    @DBusProperty(name = "ReadReceipts", type = Boolean.class)
+    @DBusProperty(name = "UnidentifiedDeliveryIndicators", type = Boolean.class)
+    @DBusProperty(name = "TypingIndicators", type = Boolean.class)
+    @DBusProperty(name = "LinkPreviews", type = Boolean.class)
+    interface Configuration extends DBusInterface, Properties {}
+
     class StructGroup extends Struct {
 
         @Position(0)

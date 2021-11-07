@@ -33,6 +33,8 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,6 +64,8 @@ public class DbusSignalImpl implements Signal {
     private final List<StructDevice> devices = new ArrayList<>();
     private final List<StructGroup> groups = new ArrayList<>();
 
+    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
+
     public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
         this.m = m;
         this.connection = connection;
@@ -71,11 +75,13 @@ public class DbusSignalImpl implements Signal {
     public void initObjects() {
         updateDevices();
         updateGroups();
+        updateConfiguration();
     }
 
     public void close() {
         unExportDevices();
         unExportGroups();
+        unExportConfiguration();
     }
 
     @Override
@@ -835,6 +841,7 @@ public class DbusSignalImpl implements Signal {
             final var deviceObjectPath = object.getObjectPath();
             try {
                 connection.exportObject(object);
+                logger.debug("Exported dbus object: " + deviceObjectPath);
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -871,6 +878,7 @@ public class DbusSignalImpl implements Signal {
             final var object = new DbusSignalGroupImpl(g.groupId());
             try {
                 connection.exportObject(object);
+                logger.debug("Exported dbus object: " + object.getObjectPath());
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -883,6 +891,26 @@ public class DbusSignalImpl implements Signal {
     private void unExportGroups() {
         this.groups.stream().map(StructGroup::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
         this.groups.clear();
+    }
+
+    private static String getConfigurationObjectPath(String basePath) {
+        return basePath + "/Configuration";
+    }
+
+    private void updateConfiguration() {
+        try {
+            unExportConfiguration();
+            final var object = new DbusSignalConfigurationImpl();
+            connection.exportObject(object);
+            logger.debug("Exported dbus object: " + objectPath + "/Configuration");
+        } catch (DBusException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void unExportConfiguration() {
+        final var objectPath = getConfigurationObjectPath(this.objectPath);
+        connection.unExportObject(objectPath);
     }
 
     public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
@@ -924,6 +952,78 @@ public class DbusSignalImpl implements Signal {
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
             }
+        }
+    }
+
+    public class DbusSignalConfigurationImpl extends DbusProperties implements Signal.Configuration {
+
+        public DbusSignalConfigurationImpl(
+        ) {
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Configuration",
+                    List.of(new DbusProperty<>("ReadReceipts", this::getReadReceipts, this::setReadReceipts),
+                            new DbusProperty<>("UnidentifiedDeliveryIndicators",
+                                    this::getUnidentifiedDeliveryIndicators,
+                                    this::setUnidentifiedDeliveryIndicators),
+                            new DbusProperty<>("TypingIndicators",
+                                    this::getTypingIndicators,
+                                    this::setTypingIndicators),
+                            new DbusProperty<>("LinkPreviews", this::getLinkPreviews, this::setLinkPreviews))));
+
+        }
+
+        @Override
+        public String getObjectPath() {
+            return getConfigurationObjectPath(objectPath);
+        }
+
+        public void setReadReceipts(Boolean readReceipts) {
+            setConfiguration(readReceipts, null, null, null);
+        }
+
+        public void setUnidentifiedDeliveryIndicators(Boolean unidentifiedDeliveryIndicators) {
+            setConfiguration(null, unidentifiedDeliveryIndicators, null, null);
+        }
+
+        public void setTypingIndicators(Boolean typingIndicators) {
+            setConfiguration(null, null, typingIndicators, null);
+        }
+
+        public void setLinkPreviews(Boolean linkPreviews) {
+            setConfiguration(null, null, null, linkPreviews);
+        }
+
+        private void setConfiguration(
+                Boolean readReceipts,
+                Boolean unidentifiedDeliveryIndicators,
+                Boolean typingIndicators,
+                Boolean linkPreviews
+        ) {
+            try {
+                m.updateConfiguration(new org.asamk.signal.manager.api.Configuration(Optional.ofNullable(readReceipts),
+                        Optional.ofNullable(unidentifiedDeliveryIndicators),
+                        Optional.ofNullable(typingIndicators),
+                        Optional.ofNullable(linkPreviews)));
+            } catch (IOException e) {
+                throw new Error.Failure("UpdateAccount error: " + e.getMessage());
+            } catch (NotMasterDeviceException e) {
+                throw new Error.Failure("This command doesn't work on linked devices.");
+            }
+        }
+
+        private boolean getReadReceipts() {
+            return m.getConfiguration().readReceipts().orElse(false);
+        }
+
+        private boolean getUnidentifiedDeliveryIndicators() {
+            return m.getConfiguration().unidentifiedDeliveryIndicators().orElse(false);
+        }
+
+        private boolean getTypingIndicators() {
+            return m.getConfiguration().typingIndicators().orElse(false);
+        }
+
+        private boolean getLinkPreviews() {
+            return m.getConfiguration().linkPreviews().orElse(false);
         }
     }
 

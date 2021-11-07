@@ -69,6 +69,7 @@ public class DaemonCommand implements MultiLocalCommand {
             var t = run(conn, objectPath, m, outputWriter);
 
             conn.requestBusName(DbusConfig.getBusname());
+            logger.info("DBus daemon running in single-user mode for " + m.getSelfNumber());
 
             try {
                 t.join();
@@ -114,6 +115,7 @@ public class DaemonCommand implements MultiLocalCommand {
             }
 
             conn.requestBusName(DbusConfig.getBusname());
+            logger.info("DBus daemon running in mulit-account mode");
 
             signalControl.run();
         } catch (DBusException | IOException e) {
@@ -130,7 +132,7 @@ public class DaemonCommand implements MultiLocalCommand {
         final var initThread = new Thread(signal::initObjects);
         initThread.start();
 
-        logger.info("Exported dbus object: " + objectPath);
+        logger.debug("Exported dbus object: " + objectPath);
 
         final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
                 (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
