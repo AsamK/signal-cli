@@ -97,7 +97,7 @@ public class StorageHelper {
                 (contact == null || !contact.isBlocked()) && contactRecord.isBlocked()
         )) {
             final var newContact = (contact == null ? Contact.newBuilder() : Contact.newBuilder(contact)).withBlocked(
-                    contactRecord.isBlocked())
+                            contactRecord.isBlocked())
                     .withName((contactRecord.getGivenName().or("") + " " + contactRecord.getFamilyName().or("")).trim())
                     .build();
             account.getContactStore().storeContact(recipientId, newContact);

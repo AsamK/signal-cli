@@ -32,6 +32,7 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -839,12 +840,7 @@ public class DbusSignalImpl implements Signal {
         linkedDevices.forEach(d -> {
             final var object = new DbusSignalDeviceImpl(d);
             final var deviceObjectPath = object.getObjectPath();
-            try {
-                connection.exportObject(object);
-                logger.debug("Exported dbus object: " + deviceObjectPath);
-            } catch (DBusException e) {
-                e.printStackTrace();
-            }
+            exportObject(object);
             if (d.isThisDevice()) {
                 thisDevice = new DBusPath(deviceObjectPath);
             }
@@ -876,12 +872,7 @@ public class DbusSignalImpl implements Signal {
 
         groups.forEach(g -> {
             final var object = new DbusSignalGroupImpl(g.groupId());
-            try {
-                connection.exportObject(object);
-                logger.debug("Exported dbus object: " + object.getObjectPath());
-            } catch (DBusException e) {
-                e.printStackTrace();
-            }
+            exportObject(object);
             this.groups.add(new StructGroup(new DBusPath(object.getObjectPath()),
                     g.groupId().serialize(),
                     emptyIfNull(g.title())));
@@ -898,19 +889,23 @@ public class DbusSignalImpl implements Signal {
     }
 
     private void updateConfiguration() {
-        try {
-            unExportConfiguration();
-            final var object = new DbusSignalConfigurationImpl();
-            connection.exportObject(object);
-            logger.debug("Exported dbus object: " + objectPath + "/Configuration");
-        } catch (DBusException e) {
-            e.printStackTrace();
-        }
+        unExportConfiguration();
+        final var object = new DbusSignalConfigurationImpl();
+        exportObject(object);
     }
 
     private void unExportConfiguration() {
         final var objectPath = getConfigurationObjectPath(this.objectPath);
         connection.unExportObject(objectPath);
+    }
+
+    private void exportObject(final DBusInterface object) {
+        try {
+            connection.exportObject(object);
+            logger.debug("Exported dbus object: " + object.getObjectPath());
+        } catch (DBusException e) {
+            e.printStackTrace();
+        }
     }
 
     public class DbusSignalDeviceImpl extends DbusProperties implements Signal.Device {
