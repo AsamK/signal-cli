@@ -32,8 +32,11 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,9 +108,10 @@ public class App {
         var outputType = outputTypeInput == null
                 ? command.getSupportedOutputTypes().stream().findFirst().orElse(null)
                 : outputTypeInput;
+        var writer = new BufferedWriter(new OutputStreamWriter(System.out, Charset.defaultCharset()));
         var outputWriter = outputType == null
                 ? null
-                : outputType == OutputType.JSON ? new JsonWriterImpl(System.out) : new PlainTextWriterImpl(System.out);
+                : outputType == OutputType.JSON ? new JsonWriterImpl(writer) : new PlainTextWriterImpl(writer);
 
         if (outputWriter != null && !command.getSupportedOutputTypes().contains(outputType)) {
             throw new UserErrorException("Command doesn't support output type " + outputType);

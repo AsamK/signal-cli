@@ -2,10 +2,7 @@ package org.asamk.signal;
 
 import org.slf4j.helpers.MessageFormatter;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 public final class PlainTextWriterImpl implements PlainTextWriter {
@@ -14,8 +11,8 @@ public final class PlainTextWriterImpl implements PlainTextWriter {
 
     private PlainTextWriter indentedWriter;
 
-    public PlainTextWriterImpl(final OutputStream outputStream) {
-        this.writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+    public PlainTextWriterImpl(final Writer writer) {
+        this.writer = writer;
     }
 
     @Override

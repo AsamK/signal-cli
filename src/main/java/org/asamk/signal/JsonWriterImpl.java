@@ -5,22 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.util.Util;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 
 public class JsonWriterImpl implements JsonWriter {
 
     private final Writer writer;
     private final ObjectMapper objectMapper;
 
-    public JsonWriterImpl(final OutputStream outputStream) {
-        this.writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
-
-        objectMapper = Util.createJsonObjectMapper();
+    public JsonWriterImpl(final Writer writer) {
+        this.writer = writer;
+        this.objectMapper = Util.createJsonObjectMapper();
     }
 
     public synchronized void write(final Object object) {

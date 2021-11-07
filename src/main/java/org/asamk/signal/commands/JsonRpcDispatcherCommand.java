@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -49,16 +50,20 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         m.setIgnoreAttachments(ignoreAttachments);
 
         final var jsonOutputWriter = (JsonWriter) outputWriter;
-        final var reader = new BufferedReader(new InputStreamReader(System.in));
-        final Supplier<String> lineSupplier = () -> {
-            try {
-                return reader.readLine();
-            } catch (IOException e) {
-                throw new AssertionError(e);
-            }
-        };
+        final Supplier<String> lineSupplier = getLineSupplier(new InputStreamReader(System.in));
 
         final var handler = new SignalJsonRpcDispatcherHandler(m, jsonOutputWriter, lineSupplier);
         handler.handleConnection();
+
+    private Supplier<String> getLineSupplier(final Reader reader) {
+        final var bufferedReader = new BufferedReader(reader);
+        return () -> {
+            try {
+                return bufferedReader.readLine();
+            } catch (IOException e) {
+                logger.error("Error occurred while reading line", e);
+                return null;
+            }
+        };
     }
 }
