@@ -139,7 +139,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     @Override
     public RecipientId resolveRecipient(ACI aci) {
-        return resolveRecipient(new RecipientAddress(aci.uuid()), false);
+        return resolveRecipient(new RecipientAddress(aci == null ? null : aci.uuid()), false);
     }
 
     @Override

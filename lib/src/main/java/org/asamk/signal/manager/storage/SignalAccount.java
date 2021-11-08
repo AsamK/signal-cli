@@ -845,7 +845,7 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientId getSelfRecipientId() {
-        return recipientStore.resolveRecipientTrusted(new RecipientAddress(aci.uuid(), username));
+        return recipientStore.resolveRecipientTrusted(new RecipientAddress(aci == null ? null : aci.uuid(), username));
     }
 
     public String getEncryptedDeviceName() {
