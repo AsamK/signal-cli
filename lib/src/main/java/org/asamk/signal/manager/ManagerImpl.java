@@ -956,12 +956,12 @@ public class ManagerImpl implements Manager {
     public void removeReceiveHandler(final ReceiveMessageHandler handler) {
         final Thread thread;
         synchronized (messageHandlers) {
-            thread = receiveThread;
-            receiveThread = null;
             messageHandlers.remove(handler);
             if (!messageHandlers.isEmpty() || isReceivingSynchronous) {
                 return;
             }
+            thread = receiveThread;
+            receiveThread = null;
         }
 
         stopReceiveThread(thread);
