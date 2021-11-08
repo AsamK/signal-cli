@@ -29,6 +29,7 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.security.Security;
 
@@ -97,6 +98,9 @@ public class Main {
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "false");
         }
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+        // java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
     }
 
     private static int getStatusForError(final CommandException e) {
