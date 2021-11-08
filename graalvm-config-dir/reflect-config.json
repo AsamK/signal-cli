@@ -1356,6 +1356,10 @@
   "fields":[{"name":"attributesAccess_"}]}
 ,
 {
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAvatarAction",
+  "fields":[{"name":"avatar_"}]
+},
+{
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDescriptionAction",
   "fields":[{"name":"description_"}]}
 ,
@@ -1438,6 +1442,13 @@
     {"name":"userId_"}
   ]}
 ,
+{
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedApproveMember",
+  "fields":[
+    {"name":"role_", "allowUnsafeAccess":true},
+    {"name":"uuid_", "allowUnsafeAccess":true}
+  ]
+},
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
   "fields":[
@@ -2200,6 +2211,15 @@
     {"name":"bodyRanges_"}, 
     {"name":"id_"}, 
     {"name":"text_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote$QuotedAttachment",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"contentType_"}, 
+    {"name":"fileName_"}, 
+    {"name":"thumbnail_"}
   ]}
 ,
 {
