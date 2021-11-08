@@ -41,13 +41,14 @@ public class JsonRpcReader {
             JsonRpcMessage message = readMessage();
             if (message == null) break;
 
-            if (message instanceof JsonRpcRequest) {
-                final var response = handleRequest(requestHandler, (JsonRpcRequest) message);
+            if (message instanceof final JsonRpcRequest jsonRpcRequest) {
+                logger.debug("Received json rpc request, method: " + jsonRpcRequest.method);
+                final var response = handleRequest(requestHandler, jsonRpcRequest);
                 if (response != null) {
                     jsonRpcSender.sendResponse(response);
                 }
-            } else if (message instanceof JsonRpcResponse) {
-                responseHandler.accept((JsonRpcResponse) message);
+            } else if (message instanceof JsonRpcResponse jsonRpcResponse) {
+                responseHandler.accept(jsonRpcResponse);
             } else {
                 final var responseList = ((JsonRpcBulkMessage) message).getMessages().stream().map(jsonNode -> {
                     final JsonRpcRequest request;
