@@ -54,6 +54,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
 
         final var handler = new SignalJsonRpcDispatcherHandler(m, jsonOutputWriter, lineSupplier);
         handler.handleConnection();
+    }
 
     private Supplier<String> getLineSupplier(final Reader reader) {
         final var bufferedReader = new BufferedReader(reader);
