@@ -315,6 +315,11 @@ public class App {
         try {
             manager.checkAccountState();
         } catch (IOException e) {
+            try {
+                manager.close();
+            } catch (IOException ie) {
+                logger.warn("Failed to close broken account", ie);
+            }
             throw new IOErrorException("Error while checking account " + username + ": " + e.getMessage(), e);
         }
 
