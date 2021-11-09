@@ -920,6 +920,7 @@ public class ManagerImpl implements Manager {
             return;
         }
         receiveThread = new Thread(() -> {
+            logger.debug("Starting receiving messages");
             while (!Thread.interrupted()) {
                 try {
                     receiveMessagesInternal(1L, TimeUnit.HOURS, false, (envelope, e) -> {
@@ -938,12 +939,14 @@ public class ManagerImpl implements Manager {
                     logger.warn("Receiving messages failed, retrying", e);
                 }
             }
+            logger.debug("Finished receiving messages");
             hasCaughtUpWithOldMessages = false;
             synchronized (messageHandlers) {
                 receiveThread = null;
 
                 // Check if in the meantime another handler has been registered
                 if (!messageHandlers.isEmpty()) {
+                    logger.debug("Another handler has been registered, starting receive thread again");
                     startReceiveThreadIfRequired();
                 }
             }
@@ -1114,6 +1117,7 @@ public class ManagerImpl implements Manager {
         }
         handleQueuedActions(queuedActions);
         queuedActions.clear();
+        dependencies.getSignalWebSocket().disconnect();
     }
 
     @Override
