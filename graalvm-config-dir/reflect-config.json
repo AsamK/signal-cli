@@ -623,7 +623,7 @@
   "allDeclaredConstructors":true}
 ,
 {
-  "name":"org.asamk.signal.jsonrpc.JsonRpcBulkMessage",
+  "name":"org.asamk.signal.jsonrpc.JsonRpcBatchMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}

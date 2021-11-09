@@ -16,7 +16,7 @@ public class JsonRpcSender {
         jsonWriter.write(request);
     }
 
-    public void sendBulkRequests(List<JsonRpcRequest> requests) {
+    public void sendBatchRequests(List<JsonRpcRequest> requests) {
         jsonWriter.write(requests);
     }
 
@@ -24,7 +24,7 @@ public class JsonRpcSender {
         jsonWriter.write(response);
     }
 
-    public void sendBulkResponses(List<JsonRpcResponse> responses) {
+    public void sendBatchResponses(List<JsonRpcResponse> responses) {
         jsonWriter.write(responses);
     }
 }

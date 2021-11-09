@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 
-public final class JsonRpcBulkMessage extends JsonRpcMessage {
+public final class JsonRpcBatchMessage extends JsonRpcMessage {
 
     List<JsonNode> messages;
 
-    public JsonRpcBulkMessage(final List<JsonNode> messages) {
+    public JsonRpcBatchMessage(final List<JsonNode> messages) {
         this.messages = messages;
     }
 

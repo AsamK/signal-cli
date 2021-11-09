@@ -50,7 +50,7 @@ public class JsonRpcReader {
             } else if (message instanceof JsonRpcResponse jsonRpcResponse) {
                 responseHandler.accept(jsonRpcResponse);
             } else {
-                final var responseList = ((JsonRpcBulkMessage) message).getMessages().stream().map(jsonNode -> {
+                final var responseList = ((JsonRpcBatchMessage) message).getMessages().stream().map(jsonNode -> {
                     final JsonRpcRequest request;
                     try {
                         request = parseJsonRpcRequest(jsonNode);
@@ -61,7 +61,7 @@ public class JsonRpcReader {
                     return handleRequest(requestHandler, request);
                 }).filter(Objects::nonNull).collect(Collectors.toList());
 
-                jsonRpcSender.sendBulkResponses(responseList);
+                jsonRpcSender.sendBatchResponses(responseList);
             }
         }
     }
@@ -130,7 +130,7 @@ public class JsonRpcReader {
                         null), null));
                 return null;
             }
-            return new JsonRpcBulkMessage(StreamSupport.stream(jsonNode.spliterator(), false)
+            return new JsonRpcBatchMessage(StreamSupport.stream(jsonNode.spliterator(), false)
                     .collect(Collectors.toList()));
         } else if (jsonNode.isObject()) {
             if (jsonNode.has("result") || jsonNode.has("error")) {
