@@ -198,7 +198,11 @@ public interface Manager extends Closeable {
      * Add a handler to receive new messages.
      * Will start receiving messages from server, if not already started.
      */
-    void addReceiveHandler(ReceiveMessageHandler handler);
+    default void addReceiveHandler(ReceiveMessageHandler handler) {
+        addReceiveHandler(handler, false);
+    }
+
+    void addReceiveHandler(ReceiveMessageHandler handler, final boolean isWeakListener);
 
     /**
      * Remove a handler to receive new messages.
@@ -248,6 +252,9 @@ public interface Manager extends Closeable {
     void close() throws IOException;
 
     interface ReceiveMessageHandler {
+
+        ReceiveMessageHandler EMPTY = (envelope, e) -> {
+        };
 
         void handleMessage(MessageEnvelope envelope, Throwable e);
     }

@@ -22,6 +22,10 @@ public interface Signal extends DBusInterface {
 
     String getSelfNumber();
 
+    void subscribeReceive();
+
+    void unsubscribeReceive();
+
     long sendMessage(
             String message, List<String> attachments, String recipient
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;

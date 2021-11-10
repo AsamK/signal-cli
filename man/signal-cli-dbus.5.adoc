@@ -51,7 +51,7 @@ Phone numbers always have the format +<countrycode><regional number>
 These methods are available if the daemon is started anonymously (without an explicit `-u USERNAME`).
 Requests are sent to `/org/asamk/Signal`; requests related to individual accounts are sent to
 `/org/asamk/Signal/_441234567890` where the + dialing code is replaced by an underscore (_).
-Only `version()` is activated in single-user mode; the rest are disabled.
+Only `version()` is activated in single-account mode; the rest are disabled.
 
 link() -> deviceLinkUri<s>::
 link(newDeviceName<s>) -> deviceLinkUri<s>::

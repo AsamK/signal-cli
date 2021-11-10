@@ -2,6 +2,7 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.DbusReceiveMessageHandler;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
@@ -60,26 +61,40 @@ public class DbusSignalImpl implements Signal {
     private final Manager m;
     private final DBusConnection connection;
     private final String objectPath;
+    private final boolean noReceiveOnStart;
 
     private DBusPath thisDevice;
     private final List<StructDevice> devices = new ArrayList<>();
     private final List<StructGroup> groups = new ArrayList<>();
+    private DbusReceiveMessageHandler dbusMessageHandler;
+    private int subscriberCount;
 
     private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
-    public DbusSignalImpl(final Manager m, DBusConnection connection, final String objectPath) {
+    public DbusSignalImpl(
+            final Manager m, DBusConnection connection, final String objectPath, final boolean noReceiveOnStart
+    ) {
         this.m = m;
         this.connection = connection;
         this.objectPath = objectPath;
+        this.noReceiveOnStart = noReceiveOnStart;
     }
 
     public void initObjects() {
+        if (!noReceiveOnStart) {
+            subscribeReceive();
+        }
+
         updateDevices();
         updateGroups();
         updateConfiguration();
     }
 
     public void close() {
+        if (dbusMessageHandler != null) {
+            m.removeReceiveHandler(dbusMessageHandler);
+            dbusMessageHandler = null;
+        }
         unExportDevices();
         unExportGroups();
         unExportConfiguration();
@@ -93,6 +108,24 @@ public class DbusSignalImpl implements Signal {
     @Override
     public String getSelfNumber() {
         return m.getSelfNumber();
+    }
+
+    @Override
+    public void subscribeReceive() {
+        if (dbusMessageHandler == null) {
+            dbusMessageHandler = new DbusReceiveMessageHandler(m, connection, objectPath);
+            m.addReceiveHandler(dbusMessageHandler);
+        }
+        subscriberCount++;
+    }
+
+    @Override
+    public void unsubscribeReceive() {
+        subscriberCount = Math.max(0, subscriberCount - 1);
+        if (subscriberCount == 0 && dbusMessageHandler != null) {
+            m.removeReceiveHandler(dbusMessageHandler);
+            dbusMessageHandler = null;
+        }
     }
 
     @Override

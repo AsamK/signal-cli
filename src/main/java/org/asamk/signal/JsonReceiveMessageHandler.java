@@ -13,7 +13,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
 
     private final static Logger logger = LoggerFactory.getLogger(JsonReceiveMessageHandler.class);
 
-    protected final Manager m;
+    private final Manager m;
     private final JsonWriter jsonWriter;
 
     public JsonReceiveMessageHandler(Manager m, JsonWriter jsonWriter) {
@@ -24,6 +24,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     @Override
     public void handleMessage(MessageEnvelope envelope, Throwable exception) {
         final var object = new HashMap<String, Object>();
+        object.put("account", m.getSelfNumber());
         if (exception != null) {
             object.put("error", JsonError.from(exception));
         }

@@ -1,0 +1,8 @@
+[Unit]
+Description=Send secure messages to Signal clients
+
+[Socket]
+ListenStream=%t/signal-cli/socket
+
+[Install]
+WantedBy=sockets.target

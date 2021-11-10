@@ -34,9 +34,7 @@ public class JsonRpcReader {
         this.objectMapper = Util.createJsonObjectMapper();
     }
 
-    public void readRequests(
-            final RequestHandler requestHandler, final Consumer<JsonRpcResponse> responseHandler
-    ) {
+    public void readMessages(final RequestHandler requestHandler, final Consumer<JsonRpcResponse> responseHandler) {
         while (!Thread.interrupted()) {
             JsonRpcMessage message = readMessage();
             if (message == null) break;

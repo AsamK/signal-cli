@@ -39,6 +39,8 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
 
@@ -66,8 +68,11 @@ public class App {
         parser.addArgument("-u", "--username").help("Specify your phone number, that will be your identifier.");
 
         var mut = parser.addMutuallyExclusiveGroup();
-        mut.addArgument("--dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
-        mut.addArgument("--dbus-system").help("Make request via system dbus.").action(Arguments.storeTrue());
+        mut.addArgument("--dbus").dest("global-dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
+        mut.addArgument("--dbus-system")
+                .dest("global-dbus-system")
+                .help("Make request via system dbus.")
+                .action(Arguments.storeTrue());
 
         parser.addArgument("-o", "--output")
                 .help("Choose to output in plain text or JSON")
@@ -119,8 +124,8 @@ public class App {
 
         var username = ns.getString("username");
 
-        final var useDbus = Boolean.TRUE.equals(ns.getBoolean("dbus"));
-        final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
+        final var useDbus = Boolean.TRUE.equals(ns.getBoolean("global-dbus"));
+        final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("global-dbus-system"));
         if (useDbus || useDbusSystem) {
             // If username is null, it will connect to the default object path
             initDbusClient(command, username, useDbusSystem, outputWriter);
@@ -262,31 +267,72 @@ public class App {
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
-        for (String u : usernames) {
-            try {
-                managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
-            } catch (CommandException e) {
-                logger.warn("Ignoring {}: {}", u, e.getMessage());
-            }
-        }
-
-        command.handleCommand(ns, managers, new SignalCreator() {
-            @Override
-            public ProvisioningManager getNewProvisioningManager() {
-                return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+        try {
+            for (String u : usernames) {
+                try {
+                    managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
+                } catch (CommandException e) {
+                    logger.warn("Ignoring {}: {}", u, e.getMessage());
+                }
             }
 
-            @Override
-            public RegistrationManager getNewRegistrationManager(String username) throws IOException {
-                return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
-            }
-        }, outputWriter);
+            command.handleCommand(ns, new SignalCreator() {
+                private List<Consumer<Manager>> onManagerAddedHandlers = new ArrayList<>();
 
-        for (var m : managers) {
-            try {
-                m.close();
-            } catch (IOException e) {
-                logger.warn("Cleanup failed", e);
+                @Override
+                public List<String> getAccountNumbers() {
+                    synchronized (managers) {
+                        return managers.stream().map(Manager::getSelfNumber).collect(Collectors.toList());
+                    }
+                }
+
+                @Override
+                public void addManager(final Manager m) {
+                    synchronized (managers) {
+                        if (!managers.contains(m)) {
+                            managers.add(m);
+                            for (final var handler : onManagerAddedHandlers) {
+                                handler.accept(m);
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void addOnManagerAddedHandler(final Consumer<Manager> handler) {
+                    onManagerAddedHandlers.add(handler);
+                }
+
+                @Override
+                public Manager getManager(final String phoneNumber) {
+                    synchronized (managers) {
+                        return managers.stream()
+                                .filter(m -> m.getSelfNumber().equals(phoneNumber))
+                                .findFirst()
+                                .orElse(null);
+                    }
+                }
+
+                @Override
+                public ProvisioningManager getNewProvisioningManager() {
+                    return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+                }
+
+                @Override
+                public RegistrationManager getNewRegistrationManager(String username) throws IOException {
+                    return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+                }
+            }, outputWriter);
+        } finally {
+            synchronized (managers) {
+                for (var m : managers) {
+                    try {
+                        m.close();
+                    } catch (IOException e) {
+                        logger.warn("Cleanup failed", e);
+                    }
+                }
+                managers.clear();
             }
         }
     }

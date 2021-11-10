@@ -1,0 +1,20 @@
+[Unit]
+Description=Send secure messages to Signal clients
+Wants=network-online.target
+After=network-online.target
+Requires=signal-cli-socket.socket
+
+[Service]
+Type=simple
+Environment="SIGNAL_CLI_OPTS=-Xms2m"
+ExecStart=%dir%/bin/signal-cli --config /var/lib/signal-cli daemon
+User=signal-cli
+# JVM always exits with 143 in reaction to SIGTERM signal
+SuccessExitStatus=143
+StandardInput=socket
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+Also=signal-cli-socket.socket
+WantedBy=default.target

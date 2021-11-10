@@ -1,6 +1,7 @@
 package org.asamk.signal.jsonrpc;
 
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,8 +10,10 @@ import com.fasterxml.jackson.databind.node.ContainerNode;
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
+import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.JsonRpcCommand;
+import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
@@ -21,7 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class SignalJsonRpcDispatcherHandler {
@@ -32,49 +37,143 @@ public class SignalJsonRpcDispatcherHandler {
     private static final int IO_ERROR = -3;
     private static final int UNTRUSTED_KEY_ERROR = -4;
 
-    private final Manager m;
-    private final JsonWriter outputWriter;
-    private final Supplier<String> lineSupplier;
+    private final ObjectMapper objectMapper;
+    private final JsonRpcSender jsonRpcSender;
+    private final JsonRpcReader jsonRpcReader;
+    private final boolean noReceiveOnStart;
+
+    private SignalCreator c;
+    private final Map<Manager, Manager.ReceiveMessageHandler> receiveHandlers = new HashMap<>();
+
+    private Manager m;
 
     public SignalJsonRpcDispatcherHandler(
-            final Manager m, final JsonWriter outputWriter, final Supplier<String> lineSupplier
+            final JsonWriter outputWriter, final Supplier<String> lineSupplier, final boolean noReceiveOnStart
     ) {
-        this.m = m;
-        this.outputWriter = outputWriter;
-        this.lineSupplier = lineSupplier;
+        this.noReceiveOnStart = noReceiveOnStart;
+        this.objectMapper = Util.createJsonObjectMapper();
+        this.jsonRpcSender = new JsonRpcSender(outputWriter);
+        this.jsonRpcReader = new JsonRpcReader(jsonRpcSender, lineSupplier);
     }
 
-    public void handleConnection() {
-        final var objectMapper = Util.createJsonObjectMapper();
-        final var jsonRpcSender = new JsonRpcSender(outputWriter);
+    public void handleConnection(final SignalCreator c) {
+        this.c = c;
+
+        if (!noReceiveOnStart) {
+            c.getAccountNumbers().stream().map(c::getManager).filter(Objects::nonNull).forEach(this::subscribeReceive);
+        }
+
+        handleConnection();
+    }
+
+    public void handleConnection(final Manager m) {
+        this.m = m;
+
+        if (!noReceiveOnStart) {
+            subscribeReceive(m);
+        }
+
+        handleConnection();
+    }
+
+    private void subscribeReceive(final Manager m) {
+        if (receiveHandlers.containsKey(m)) {
+            return;
+        }
 
         final var receiveMessageHandler = new JsonReceiveMessageHandler(m,
                 s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive",
                         objectMapper.valueToTree(s),
                         null)));
-        try {
-            m.addReceiveHandler(receiveMessageHandler);
+        m.addReceiveHandler(receiveMessageHandler);
+        receiveHandlers.put(m, receiveMessageHandler);
 
-            // Maybe this should be handled inside the Manager
-            while (!m.hasCaughtUpWithOldMessages()) {
-                try {
-                    synchronized (m) {
-                        m.wait();
-                    }
-                } catch (InterruptedException ignored) {
+        while (!m.hasCaughtUpWithOldMessages()) {
+            try {
+                synchronized (m) {
+                    m.wait();
                 }
+            } catch (InterruptedException ignored) {
             }
+        }
+    }
 
-            final var jsonRpcReader = new JsonRpcReader(jsonRpcSender, lineSupplier);
-            jsonRpcReader.readRequests((method, params) -> handleRequest(m, objectMapper, method, params),
-                    response -> logger.debug("Received unexpected response for id {}", response.getId()));
-        } finally {
+    void unsubscribeReceive(final Manager m) {
+        final var receiveMessageHandler = receiveHandlers.remove(m);
+        if (receiveMessageHandler != null) {
             m.removeReceiveHandler(receiveMessageHandler);
         }
     }
 
+    private void handleConnection() {
+        try {
+            jsonRpcReader.readMessages((method, params) -> handleRequest(objectMapper, method, params),
+                    response -> logger.debug("Received unexpected response for id {}", response.getId()));
+        } finally {
+            receiveHandlers.forEach(Manager::removeReceiveHandler);
+            receiveHandlers.clear();
+        }
+    }
+
     private JsonNode handleRequest(
-            final Manager m, final ObjectMapper objectMapper, final String method, ContainerNode<?> params
+            final ObjectMapper objectMapper, final String method, ContainerNode<?> params
+    ) throws JsonRpcException {
+        var command = getCommand(method);
+        // TODO implement listAccounts, register, verify, link
+        if (command instanceof JsonRpcCommand<?> jsonRpcCommand) {
+            if (m != null) {
+                return runCommand(objectMapper, params, new CommandRunnerImpl<>(m, jsonRpcCommand));
+            }
+
+            if (params.has("account")) {
+                Manager manager = c.getManager(params.get("account").asText());
+                if (manager != null) {
+                    return runCommand(objectMapper, params, new CommandRunnerImpl<>(manager, jsonRpcCommand));
+                }
+            } else {
+                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                        "Method requires valid account parameter",
+                        null));
+            }
+        }
+
+        throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.METHOD_NOT_FOUND,
+                "Method not implemented",
+                null));
+    }
+
+    private Command getCommand(final String method) {
+        if ("subscribeReceive".equals(method)) {
+            return new SubscribeReceiveCommand();
+        }
+        if ("unsubscribeReceive".equals(method)) {
+            return new UnsubscribeReceiveCommand();
+        }
+        return Commands.getCommand(method);
+    }
+
+    private record CommandRunnerImpl<T>(Manager m, JsonRpcCommand<T> command) implements CommandRunner<T> {
+
+        @Override
+        public void handleCommand(final T request, final OutputWriter outputWriter) throws CommandException {
+            command.handleCommand(request, m, outputWriter);
+        }
+
+        @Override
+        public TypeReference<T> getRequestType() {
+            return command.getRequestType();
+        }
+    }
+
+    interface CommandRunner<T> {
+
+        void handleCommand(T request, OutputWriter outputWriter) throws CommandException;
+
+        TypeReference<T> getRequestType();
+    }
+
+    private JsonNode runCommand(
+            final ObjectMapper objectMapper, final ContainerNode<?> params, final CommandRunner<?> command
     ) throws JsonRpcException {
         final Object[] result = {null};
         final JsonWriter commandOutputWriter = s -> {
@@ -85,15 +184,8 @@ public class SignalJsonRpcDispatcherHandler {
             result[0] = s;
         };
 
-        var command = Commands.getCommand(method);
-        if (!(command instanceof JsonRpcCommand)) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.METHOD_NOT_FOUND,
-                    "Method not implemented",
-                    null));
-        }
-
         try {
-            parseParamsAndRunCommand(m, objectMapper, params, commandOutputWriter, (JsonRpcCommand<?>) command);
+            parseParamsAndRunCommand(objectMapper, params, commandOutputWriter, command);
         } catch (JsonMappingException e) {
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
                     e.getMessage(),
@@ -116,11 +208,10 @@ public class SignalJsonRpcDispatcherHandler {
     }
 
     private <T> void parseParamsAndRunCommand(
-            final Manager m,
             final ObjectMapper objectMapper,
             final TreeNode params,
             final OutputWriter outputWriter,
-            final JsonRpcCommand<T> command
+            final CommandRunner<T> command
     ) throws CommandException, JsonMappingException {
         T requestParams = null;
         final var requestType = command.getRequestType();
@@ -133,6 +224,36 @@ public class SignalJsonRpcDispatcherHandler {
                 throw new AssertionError(e);
             }
         }
-        command.handleCommand(requestParams, m, outputWriter);
+        command.handleCommand(requestParams, outputWriter);
+    }
+
+    private class SubscribeReceiveCommand implements JsonRpcCommand<Void> {
+
+        @Override
+        public String getName() {
+            return "subscribeReceive";
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request, final Manager m, final OutputWriter outputWriter
+        ) throws CommandException {
+            subscribeReceive(m);
+        }
+    }
+
+    private class UnsubscribeReceiveCommand implements JsonRpcCommand<Void> {
+
+        @Override
+        public String getName() {
+            return "unsubscribeReceive";
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request, final Manager m, final OutputWriter outputWriter
+        ) throws CommandException {
+            unsubscribeReceive(m);
+        }
     }
 }

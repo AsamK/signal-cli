@@ -10,72 +10,24 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
-import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.freedesktop.dbus.DBusPath;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     private final SignalCreator c;
-    private final Function<Manager, Thread> newManagerRunner;
 
-    private final List<Pair<Manager, Thread>> receiveThreads = new ArrayList<>();
-    private final Object stopTrigger = new Object();
     private final String objectPath;
 
-    public DbusSignalControlImpl(
-            final SignalCreator c, final Function<Manager, Thread> newManagerRunner, final String objectPath
-    ) {
+    public DbusSignalControlImpl(final SignalCreator c, final String objectPath) {
         this.c = c;
-        this.newManagerRunner = newManagerRunner;
         this.objectPath = objectPath;
-    }
-
-    public void addManager(Manager m) {
-        var thread = newManagerRunner.apply(m);
-        if (thread == null) {
-            return;
-        }
-        synchronized (receiveThreads) {
-            receiveThreads.add(new Pair<>(m, thread));
-        }
-    }
-
-    public void run() {
-        synchronized (stopTrigger) {
-            try {
-                stopTrigger.wait();
-            } catch (InterruptedException ignored) {
-            }
-        }
-
-        synchronized (receiveThreads) {
-            for (var t : receiveThreads) {
-                t.second().interrupt();
-            }
-        }
-        while (true) {
-            final Thread thread;
-            synchronized (receiveThreads) {
-                if (receiveThreads.size() == 0) {
-                    break;
-                }
-                var pair = receiveThreads.remove(0);
-                thread = pair.second();
-            }
-            try {
-                thread.join();
-            } catch (InterruptedException ignored) {
-            }
-        }
     }
 
     @Override
@@ -124,7 +76,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     ) throws Error.Failure, Error.InvalidNumber {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             final Manager manager = registrationManager.verifyAccount(verificationCode, pin);
-            addManager(manager);
+            c.addManager(manager);
         } catch (IOException | PinLockedException | IncorrectPinException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
@@ -138,7 +90,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
             new Thread(() -> {
                 try {
                     final Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
-                    addManager(manager);
+                    c.addManager(manager);
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
                     e.printStackTrace();
                 }
@@ -156,12 +108,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public List<DBusPath> listAccounts() {
-        synchronized (receiveThreads) {
-            return receiveThreads.stream()
-                    .map(Pair::first)
-                    .map(Manager::getSelfNumber)
-                    .map(u -> new DBusPath(DbusConfig.getObjectPath(u)))
-                    .collect(Collectors.toList());
-        }
+        return c.getAccountNumbers()
+                .stream()
+                .map(u -> new DBusPath(DbusConfig.getObjectPath(u)))
+                .collect(Collectors.toList());
     }
 }
