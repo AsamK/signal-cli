@@ -25,6 +25,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     @Override
     public void handleMessage(MessageEnvelope envelope, Throwable exception) {
+        synchronized (writer) {
+            handleMessageInternal(envelope, exception);
+        }
+    }
+
+    private void handleMessageInternal(MessageEnvelope envelope, Throwable exception) {
         var source = envelope.sourceAddress();
         writer.println("Envelope from: {} (device: {})",
                 source.map(this::formatContact).orElse("unknown source"),
