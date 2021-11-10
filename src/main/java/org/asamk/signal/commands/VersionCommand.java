@@ -8,7 +8,7 @@ import org.asamk.signal.manager.Manager;
 
 import java.util.Map;
 
-public class VersionCommand implements JsonRpcCommand<Void> {
+public class VersionCommand implements JsonRpcSingleCommand<Void> {
 
     @Override
     public String getName() {

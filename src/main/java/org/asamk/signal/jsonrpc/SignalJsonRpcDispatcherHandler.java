@@ -12,7 +12,7 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
-import org.asamk.signal.commands.JsonRpcCommand;
+import org.asamk.signal.commands.JsonRpcSingleCommand;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -120,7 +120,7 @@ public class SignalJsonRpcDispatcherHandler {
     ) throws JsonRpcException {
         var command = getCommand(method);
         // TODO implement listAccounts, register, verify, link
-        if (command instanceof JsonRpcCommand<?> jsonRpcCommand) {
+        if (command instanceof JsonRpcSingleCommand<?> jsonRpcCommand) {
             if (m != null) {
                 return runCommand(objectMapper, params, new CommandRunnerImpl<>(m, jsonRpcCommand));
             }
@@ -152,7 +152,7 @@ public class SignalJsonRpcDispatcherHandler {
         return Commands.getCommand(method);
     }
 
-    private record CommandRunnerImpl<T>(Manager m, JsonRpcCommand<T> command) implements CommandRunner<T> {
+    private record CommandRunnerImpl<T>(Manager m, JsonRpcSingleCommand<T> command) implements CommandRunner<T> {
 
         @Override
         public void handleCommand(final T request, final OutputWriter outputWriter) throws CommandException {
@@ -227,7 +227,7 @@ public class SignalJsonRpcDispatcherHandler {
         command.handleCommand(requestParams, outputWriter);
     }
 
-    private class SubscribeReceiveCommand implements JsonRpcCommand<Void> {
+    private class SubscribeReceiveCommand implements JsonRpcSingleCommand<Void> {
 
         @Override
         public String getName() {
@@ -242,7 +242,7 @@ public class SignalJsonRpcDispatcherHandler {
         }
     }
 
-    private class UnsubscribeReceiveCommand implements JsonRpcCommand<Void> {
+    private class UnsubscribeReceiveCommand implements JsonRpcSingleCommand<Void> {
 
         @Override
         public String getName() {

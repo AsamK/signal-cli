@@ -12,7 +12,7 @@ import org.asamk.signal.manager.Manager;
 import java.util.List;
 import java.util.Map;
 
-public interface JsonRpcLocalCommand extends JsonRpcCommand<Map<String, Object>>, LocalCommand {
+public interface JsonRpcLocalCommand extends JsonRpcSingleCommand<Map<String, Object>>, LocalCommand {
 
     default TypeReference<Map<String, Object>> getRequestType() {
         return new TypeReference<>() {};
