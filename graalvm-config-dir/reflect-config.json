@@ -659,6 +659,19 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.manager.configuration.ConfigurationStore$Storage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean"] }, 
+    {"name":"linkPreviews","parameterTypes":[] }, 
+    {"name":"readReceipts","parameterTypes":[] }, 
+    {"name":"typingIndicators","parameterTypes":[] }, 
+    {"name":"unidentifiedDeliveryIndicators","parameterTypes":[] }
+  ]}
+,
+{
   "name":"org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -1357,8 +1370,8 @@
 ,
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAvatarAction",
-  "fields":[{"name":"avatar_"}]
-},
+  "fields":[{"name":"avatar_"}]}
+,
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDescriptionAction",
   "fields":[{"name":"description_"}]}
@@ -1445,10 +1458,10 @@
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedApproveMember",
   "fields":[
-    {"name":"role_", "allowUnsafeAccess":true},
-    {"name":"uuid_", "allowUnsafeAccess":true}
-  ]
-},
+    {"name":"role_"}, 
+    {"name":"uuid_"}
+  ]}
+,
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
   "fields":[
@@ -2581,6 +2594,10 @@
 ,
 {
   "name":"sun.security.provider.NativePRNG",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"sun.security.provider.NativePRNG$NonBlocking",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
