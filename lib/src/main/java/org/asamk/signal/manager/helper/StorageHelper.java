@@ -212,6 +212,7 @@ public class StorageHelper {
                         default -> PhoneNumberSharingMode.CONTACTS;
                     });
         }
+        account.getConfigurationStore().setPhoneNumberUnlisted(accountRecord.isPhoneNumberUnlisted());
 
         if (accountRecord.getProfileKey().isPresent()) {
             ProfileKey profileKey;

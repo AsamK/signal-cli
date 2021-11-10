@@ -386,6 +386,11 @@
   "allDeclaredClasses":true}
 ,
 {
+  "name":"org.asamk.Signal$Configuration",
+  "allDeclaredClasses":true,
+  "queryAllDeclaredMethods":true}
+,
+{
   "name":"org.asamk.Signal$Device",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true}
@@ -401,9 +406,17 @@
   "allPublicConstructors":true}
 ,
 {
+  "name":"org.asamk.Signal$MessageReceivedV2",
+  "queryAllPublicConstructors":true}
+,
+{
   "name":"org.asamk.Signal$ReceiptReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true}
+,
+{
+  "name":"org.asamk.Signal$ReceiptReceivedV2",
+  "queryAllPublicConstructors":true}
 ,
 {
   "name":"org.asamk.Signal$StructDevice",
@@ -417,6 +430,10 @@
   "name":"org.asamk.Signal$SyncMessageReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true}
+,
+{
+  "name":"org.asamk.Signal$SyncMessageReceivedV2",
+  "queryAllPublicConstructors":true}
 ,
 {
   "name":"org.asamk.SignalControl",
@@ -673,9 +690,11 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, 
     {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, 
     {"name":"linkPreviews","parameterTypes":[] }, 
     {"name":"phoneNumberSharingMode","parameterTypes":[] }, 
+    {"name":"phoneNumberUnlisted","parameterTypes":[] }, 
     {"name":"readReceipts","parameterTypes":[] }, 
     {"name":"typingIndicators","parameterTypes":[] }, 
     {"name":"unidentifiedDeliveryIndicators","parameterTypes":[] }

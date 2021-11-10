@@ -983,8 +983,7 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isDiscoverableByPhoneNumber() {
-        // TODO make configurable
-        return true;
+        return configurationStore.getPhoneNumberUnlisted() == null || !configurationStore.getPhoneNumberUnlisted();
     }
 
     public void finishRegistration(final ACI aci, final MasterKey masterKey, final String pin) {

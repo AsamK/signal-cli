@@ -10,6 +10,7 @@ public class ConfigurationStore {
     private Boolean unidentifiedDeliveryIndicators;
     private Boolean typingIndicators;
     private Boolean linkPreviews;
+    private Boolean phoneNumberUnlisted;
     private PhoneNumberSharingMode phoneNumberSharingMode;
 
     public ConfigurationStore(final Saver saver) {
@@ -62,6 +63,15 @@ public class ConfigurationStore {
         saver.save(toStorage());
     }
 
+    public Boolean getPhoneNumberUnlisted() {
+        return phoneNumberUnlisted;
+    }
+
+    public void setPhoneNumberUnlisted(final boolean phoneNumberUnlisted) {
+        this.phoneNumberUnlisted = phoneNumberUnlisted;
+        saver.save(toStorage());
+    }
+
     public PhoneNumberSharingMode getPhoneNumberSharingMode() {
         return phoneNumberSharingMode;
     }
@@ -76,6 +86,7 @@ public class ConfigurationStore {
                 unidentifiedDeliveryIndicators,
                 typingIndicators,
                 linkPreviews,
+                phoneNumberUnlisted,
                 phoneNumberSharingMode);
     }
 
@@ -84,6 +95,7 @@ public class ConfigurationStore {
             Boolean unidentifiedDeliveryIndicators,
             Boolean typingIndicators,
             Boolean linkPreviews,
+            Boolean phoneNumberUnlisted,
             PhoneNumberSharingMode phoneNumberSharingMode
     ) {}
 
