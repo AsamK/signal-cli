@@ -5,6 +5,7 @@ import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
+import org.signal.libsignal.metadata.certificate.SenderCertificate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -13,6 +14,7 @@ import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.whispersystems.signalservice.internal.util.Util.getSecretBytes;
@@ -20,11 +22,15 @@ import static org.whispersystems.signalservice.internal.util.Util.getSecretBytes
 public class UnidentifiedAccessHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
+    private final static long CERTIFICATE_EXPIRATION_BUFFER = TimeUnit.DAYS.toMillis(1);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
     private final SelfProfileKeyProvider selfProfileKeyProvider;
     private final ProfileProvider profileProvider;
+
+    private SenderCertificate privacySenderCertificate;
+    private SenderCertificate senderCertificate;
 
     public UnidentifiedAccessHelper(
             final SignalAccount account,
@@ -53,20 +59,32 @@ public class UnidentifiedAccessHelper {
     }
 
     private byte[] getSenderCertificateForPhoneNumberPrivacy() {
-        // TODO cache for a day
+        if (privacySenderCertificate != null && System.currentTimeMillis() < (
+                privacySenderCertificate.getExpiration() - CERTIFICATE_EXPIRATION_BUFFER
+        )) {
+            return privacySenderCertificate.getSerialized();
+        }
         try {
-            return dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
-        } catch (IOException e) {
+            final var certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
+            privacySenderCertificate = new SenderCertificate(certificate);
+            return certificate;
+        } catch (IOException | InvalidCertificateException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;
         }
     }
 
     private byte[] getSenderCertificate() {
-        // TODO cache for a day
+        if (senderCertificate != null && System.currentTimeMillis() < (
+                senderCertificate.getExpiration() - CERTIFICATE_EXPIRATION_BUFFER
+        )) {
+            return senderCertificate.getSerialized();
+        }
         try {
-            return dependencies.getAccountManager().getSenderCertificate();
-        } catch (IOException e) {
+            final var certificate = dependencies.getAccountManager().getSenderCertificate();
+            this.senderCertificate = new SenderCertificate(certificate);
+            return certificate;
+        } catch (IOException | InvalidCertificateException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;
         }
