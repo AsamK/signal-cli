@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.node.ContainerNode;
 
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
-import org.asamk.signal.OutputWriter;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
+import org.asamk.signal.commands.JsonRpcMultiCommand;
 import org.asamk.signal.commands.JsonRpcSingleCommand;
 import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
@@ -48,11 +48,11 @@ public class SignalJsonRpcDispatcherHandler {
     private Manager m;
 
     public SignalJsonRpcDispatcherHandler(
-            final JsonWriter outputWriter, final Supplier<String> lineSupplier, final boolean noReceiveOnStart
+            final JsonWriter jsonWriter, final Supplier<String> lineSupplier, final boolean noReceiveOnStart
     ) {
         this.noReceiveOnStart = noReceiveOnStart;
         this.objectMapper = Util.createJsonObjectMapper();
-        this.jsonRpcSender = new JsonRpcSender(outputWriter);
+        this.jsonRpcSender = new JsonRpcSender(jsonWriter);
         this.jsonRpcReader = new JsonRpcReader(jsonRpcSender, lineSupplier);
     }
 
@@ -120,6 +120,9 @@ public class SignalJsonRpcDispatcherHandler {
     ) throws JsonRpcException {
         var command = getCommand(method);
         // TODO implement listAccounts, register, verify, link
+        if (c != null && command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
+            return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
+        }
         if (command instanceof JsonRpcSingleCommand<?> jsonRpcCommand) {
             if (m != null) {
                 return runCommand(objectMapper, params, new CommandRunnerImpl<>(m, jsonRpcCommand));
@@ -155,8 +158,23 @@ public class SignalJsonRpcDispatcherHandler {
     private record CommandRunnerImpl<T>(Manager m, JsonRpcSingleCommand<T> command) implements CommandRunner<T> {
 
         @Override
-        public void handleCommand(final T request, final OutputWriter outputWriter) throws CommandException {
-            command.handleCommand(request, m, outputWriter);
+        public void handleCommand(final T request, final JsonWriter jsonWriter) throws CommandException {
+            command.handleCommand(request, m, jsonWriter);
+        }
+
+        @Override
+        public TypeReference<T> getRequestType() {
+            return command.getRequestType();
+        }
+    }
+
+    private record MultiCommandRunnerImpl<T>(
+            SignalCreator c, JsonRpcMultiCommand<T> command
+    ) implements CommandRunner<T> {
+
+        @Override
+        public void handleCommand(final T request, final JsonWriter jsonWriter) throws CommandException {
+            command.handleCommand(request, c, jsonWriter);
         }
 
         @Override
@@ -167,7 +185,7 @@ public class SignalJsonRpcDispatcherHandler {
 
     interface CommandRunner<T> {
 
-        void handleCommand(T request, OutputWriter outputWriter) throws CommandException;
+        void handleCommand(T request, JsonWriter jsonWriter) throws CommandException;
 
         TypeReference<T> getRequestType();
     }
@@ -176,7 +194,7 @@ public class SignalJsonRpcDispatcherHandler {
             final ObjectMapper objectMapper, final ContainerNode<?> params, final CommandRunner<?> command
     ) throws JsonRpcException {
         final Object[] result = {null};
-        final JsonWriter commandOutputWriter = s -> {
+        final JsonWriter commandJsonWriter = s -> {
             if (result[0] != null) {
                 throw new AssertionError("Command may only write one json result");
             }
@@ -185,7 +203,7 @@ public class SignalJsonRpcDispatcherHandler {
         };
 
         try {
-            parseParamsAndRunCommand(objectMapper, params, commandOutputWriter, command);
+            parseParamsAndRunCommand(objectMapper, params, commandJsonWriter, command);
         } catch (JsonMappingException e) {
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
                     e.getMessage(),
@@ -210,7 +228,7 @@ public class SignalJsonRpcDispatcherHandler {
     private <T> void parseParamsAndRunCommand(
             final ObjectMapper objectMapper,
             final TreeNode params,
-            final OutputWriter outputWriter,
+            final JsonWriter jsonWriter,
             final CommandRunner<T> command
     ) throws CommandException, JsonMappingException {
         T requestParams = null;
@@ -224,7 +242,7 @@ public class SignalJsonRpcDispatcherHandler {
                 throw new AssertionError(e);
             }
         }
-        command.handleCommand(requestParams, outputWriter);
+        command.handleCommand(requestParams, jsonWriter);
     }
 
     private class SubscribeReceiveCommand implements JsonRpcSingleCommand<Void> {
@@ -236,7 +254,7 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final Void request, final Manager m, final OutputWriter outputWriter
+                final Void request, final Manager m, final JsonWriter jsonWriter
         ) throws CommandException {
             subscribeReceive(m);
         }
@@ -251,7 +269,7 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final Void request, final Manager m, final OutputWriter outputWriter
+                final Void request, final Manager m, final JsonWriter jsonWriter
         ) throws CommandException {
             unsubscribeReceive(m);
         }

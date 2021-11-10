@@ -38,7 +38,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class DaemonCommand implements MultiLocalCommand {
+public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
 
