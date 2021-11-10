@@ -145,7 +145,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         }
         if (message.remoteDeleteId().isPresent()) {
             extras.put("remoteDelete",
-                    new Variant<>(Map.of("timestamp", new Variant<>(message.remoteDeleteId())), "a{sv}"));
+                    new Variant<>(Map.of("timestamp", new Variant<>(message.remoteDeleteId().get())), "a{sv}"));
         }
         if (message.sticker().isPresent()) {
             final var sticker = message.sticker().get();
