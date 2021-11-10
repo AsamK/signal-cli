@@ -450,6 +450,13 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.commands.ListAccountsCommand$JsonAccount",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"number","parameterTypes":[] }]}
+,
+{
   "name":"org.asamk.signal.commands.ListContactsCommand$JsonContact",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,

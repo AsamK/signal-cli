@@ -119,7 +119,7 @@ public class SignalJsonRpcDispatcherHandler {
             final ObjectMapper objectMapper, final String method, ContainerNode<?> params
     ) throws JsonRpcException {
         var command = getCommand(method);
-        // TODO implement listAccounts, register, verify, link
+        // TODO implement register, verify, link
         if (c != null && command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
             return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
         }

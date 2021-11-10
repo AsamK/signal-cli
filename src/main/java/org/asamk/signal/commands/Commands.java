@@ -17,6 +17,7 @@ public class Commands {
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());
         addCommand(new LinkCommand());
+        addCommand(new ListAccountsCommand());
         addCommand(new ListContactsCommand());
         addCommand(new ListDevicesCommand());
         addCommand(new ListGroupsCommand());
