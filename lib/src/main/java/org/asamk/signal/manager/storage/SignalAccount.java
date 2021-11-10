@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.configuration.ConfigurationStore;
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -983,11 +983,6 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isDiscoverableByPhoneNumber() {
-        // TODO make configurable
-        return true;
-    }
-
-    public boolean isPhoneNumberShared() {
         // TODO make configurable
         return true;
     }

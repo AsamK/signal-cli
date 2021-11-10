@@ -40,6 +40,10 @@
   "allDeclaredMethods":true}
 ,
 {
+  "name":"com.google.protobuf.GeneratedMessageLite",
+  "fields":[{"name":"unknownFields"}]}
+,
+{
   "name":"com.google.protobuf.Internal$LongList",
   "allDeclaredMethods":true}
 ,
@@ -659,13 +663,19 @@
   "allDeclaredConstructors":true}
 ,
 {
-  "name":"org.asamk.signal.manager.configuration.ConfigurationStore$Storage",
+  "name":"org.asamk.signal.manager.api.PhoneNumberSharingMode",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"org.asamk.signal.manager.storage.configuration.ConfigurationStore$Storage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean"] }, 
+    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, 
     {"name":"linkPreviews","parameterTypes":[] }, 
+    {"name":"phoneNumberSharingMode","parameterTypes":[] }, 
     {"name":"readReceipts","parameterTypes":[] }, 
     {"name":"typingIndicators","parameterTypes":[] }, 
     {"name":"unidentifiedDeliveryIndicators","parameterTypes":[] }
@@ -2490,6 +2500,79 @@
     {"name":"data_"}, 
     {"name":"localAddress_"}, 
     {"name":"metadata_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
+  "allDeclaredFields":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PinnedConversation",
+  "fields":[
+    {"name":"identifierCase_"}, 
+    {"name":"identifier_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PinnedConversation$Contact",
+  "fields":[
+    {"name":"e164_"}, 
+    {"name":"uuid_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
+  "allDeclaredFields":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
+  "allDeclaredFields":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord",
+  "fields":[
+    {"name":"identifiers_"}, 
+    {"name":"version_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord$Identifier",
+  "fields":[
+    {"name":"raw_"}, 
+    {"name":"type_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.Payments",
+  "allDeclaredFields":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ReadOperation",
+  "fields":[{"name":"readKey_"}]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.StorageItem",
+  "fields":[
+    {"name":"key_"}, 
+    {"name":"value_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.StorageItems",
+  "fields":[{"name":"items_"}]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.StorageManifest",
+  "fields":[
+    {"name":"value_"}, 
+    {"name":"version_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.StorageRecord",
+  "fields":[
+    {"name":"recordCase_"}, 
+    {"name":"record_"}
   ]}
 ,
 {

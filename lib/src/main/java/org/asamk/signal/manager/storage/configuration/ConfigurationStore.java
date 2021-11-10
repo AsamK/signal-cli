@@ -1,4 +1,6 @@
-package org.asamk.signal.manager.configuration;
+package org.asamk.signal.manager.storage.configuration;
+
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 
 public class ConfigurationStore {
 
@@ -8,6 +10,7 @@ public class ConfigurationStore {
     private Boolean unidentifiedDeliveryIndicators;
     private Boolean typingIndicators;
     private Boolean linkPreviews;
+    private PhoneNumberSharingMode phoneNumberSharingMode;
 
     public ConfigurationStore(final Saver saver) {
         this.saver = saver;
@@ -19,6 +22,7 @@ public class ConfigurationStore {
         store.unidentifiedDeliveryIndicators = storage.unidentifiedDeliveryIndicators;
         store.typingIndicators = storage.typingIndicators;
         store.linkPreviews = storage.linkPreviews;
+        store.phoneNumberSharingMode = storage.phoneNumberSharingMode;
         return store;
     }
 
@@ -58,12 +62,29 @@ public class ConfigurationStore {
         saver.save(toStorage());
     }
 
+    public PhoneNumberSharingMode getPhoneNumberSharingMode() {
+        return phoneNumberSharingMode;
+    }
+
+    public void setPhoneNumberSharingMode(final PhoneNumberSharingMode phoneNumberSharingMode) {
+        this.phoneNumberSharingMode = phoneNumberSharingMode;
+        saver.save(toStorage());
+    }
+
     private Storage toStorage() {
-        return new Storage(readReceipts, unidentifiedDeliveryIndicators, typingIndicators, linkPreviews);
+        return new Storage(readReceipts,
+                unidentifiedDeliveryIndicators,
+                typingIndicators,
+                linkPreviews,
+                phoneNumberSharingMode);
     }
 
     public record Storage(
-            Boolean readReceipts, Boolean unidentifiedDeliveryIndicators, Boolean typingIndicators, Boolean linkPreviews
+            Boolean readReceipts,
+            Boolean unidentifiedDeliveryIndicators,
+            Boolean typingIndicators,
+            Boolean linkPreviews,
+            PhoneNumberSharingMode phoneNumberSharingMode
     ) {}
 
     public interface Saver {

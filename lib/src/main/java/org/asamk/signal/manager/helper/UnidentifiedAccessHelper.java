@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
@@ -37,20 +38,38 @@ public class UnidentifiedAccessHelper {
         this.profileProvider = profileProvider;
     }
 
-    private byte[] getSenderCertificate() {
-        byte[] certificate;
+    private byte[] getSenderCertificateFor(final RecipientId recipientId) {
+        final var sharingMode = account.getConfigurationStore().getPhoneNumberSharingMode();
+        if (sharingMode == PhoneNumberSharingMode.EVERYBODY || (
+                sharingMode == PhoneNumberSharingMode.CONTACTS
+                        && account.getContactStore().getContact(recipientId) != null
+        )) {
+            logger.debug("Using normal sender certificate for message to {}", recipientId);
+            return getSenderCertificate();
+        } else {
+            logger.debug("Using phone number privacy sender certificate for message to {}", recipientId);
+            return getSenderCertificateForPhoneNumberPrivacy();
+        }
+    }
+
+    private byte[] getSenderCertificateForPhoneNumberPrivacy() {
+        // TODO cache for a day
         try {
-            if (account.isPhoneNumberShared()) {
-                certificate = dependencies.getAccountManager().getSenderCertificate();
-            } else {
-                certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
-            }
+            return dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
         } catch (IOException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;
         }
+    }
+
+    private byte[] getSenderCertificate() {
         // TODO cache for a day
-        return certificate;
+        try {
+            return dependencies.getAccountManager().getSenderCertificate();
+        } catch (IOException e) {
+            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
+            return null;
+        }
     }
 
     private byte[] getSelfUnidentifiedAccessKey() {
@@ -102,7 +121,7 @@ public class UnidentifiedAccessHelper {
     public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
         var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
-        var selfUnidentifiedAccessCertificate = getSenderCertificate();
+        var selfUnidentifiedAccessCertificate = getSenderCertificateFor(recipient);
 
         if (recipientUnidentifiedAccessKey == null
                 || selfUnidentifiedAccessKey == null

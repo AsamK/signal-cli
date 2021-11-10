@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Contact;
@@ -17,6 +18,7 @@ import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
+import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.storage.protos.ManifestRecord;
 
 import java.io.IOException;
@@ -202,6 +204,14 @@ public class StorageHelper {
         account.getConfigurationStore()
                 .setUnidentifiedDeliveryIndicators(accountRecord.isSealedSenderIndicatorsEnabled());
         account.getConfigurationStore().setLinkPreviews(accountRecord.isLinkPreviewsEnabled());
+        if (accountRecord.getPhoneNumberSharingMode() != AccountRecord.PhoneNumberSharingMode.UNRECOGNIZED) {
+            account.getConfigurationStore()
+                    .setPhoneNumberSharingMode(switch (accountRecord.getPhoneNumberSharingMode()) {
+                        case EVERYBODY -> PhoneNumberSharingMode.EVERYBODY;
+                        case NOBODY -> PhoneNumberSharingMode.NOBODY;
+                        default -> PhoneNumberSharingMode.CONTACTS;
+                    });
+        }
 
         if (accountRecord.getProfileKey().isPresent()) {
             ProfileKey profileKey;
