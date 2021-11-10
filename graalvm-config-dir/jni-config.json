@@ -78,6 +78,7 @@
 ,
 {
   "name":"org.whispersystems.libsignal.groups.state.SenderKeyRecord",
+  "fields":[{"name":"unsafeHandle"}],
   "methods":[
     {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"nativeHandle","parameterTypes":[] }

@@ -407,6 +407,7 @@
 ,
 {
   "name":"org.asamk.Signal$MessageReceivedV2",
+  "queryAllDeclaredConstructors":true,
   "queryAllPublicConstructors":true}
 ,
 {
@@ -416,6 +417,7 @@
 ,
 {
   "name":"org.asamk.Signal$ReceiptReceivedV2",
+  "queryAllDeclaredConstructors":true,
   "queryAllPublicConstructors":true}
 ,
 {
@@ -433,6 +435,7 @@
 ,
 {
   "name":"org.asamk.Signal$SyncMessageReceivedV2",
+  "queryAllDeclaredConstructors":true,
   "queryAllPublicConstructors":true}
 ,
 {
@@ -2408,6 +2411,16 @@
   ]}
 ,
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$MessageRequestResponse",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"groupId_"}, 
+    {"name":"threadE164_"}, 
+    {"name":"threadUuid_"}, 
+    {"name":"type_"}
+  ]}
+,
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
   "fields":[
     {"name":"bitField0_"}, 
@@ -2484,6 +2497,13 @@
   ]}
 ,
 {
+  "name":"org.whispersystems.signalservice.internal.push.StaleDevices",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"org.whispersystems.signalservice.internal.push.VerifyAccountResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2541,6 +2561,10 @@
 ,
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
+  "allDeclaredFields":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record",
   "allDeclaredFields":true}
 ,
 {
