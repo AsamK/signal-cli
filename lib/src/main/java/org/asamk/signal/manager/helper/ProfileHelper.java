@@ -33,7 +33,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -229,7 +228,7 @@ public final class ProfileHelper {
     }
 
     private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
-        final var locale = Locale.getDefault();
+        final var locale = Utils.getDefaultLocale();
         return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent(), locale);
     }
 
@@ -310,7 +309,7 @@ public final class ProfileHelper {
         var profileService = dependencies.getProfileService();
 
         Single<ServiceResponse<ProfileAndCredential>> responseSingle;
-        final var locale = Locale.getDefault();
+        final var locale = Utils.getDefaultLocale();
         try {
             responseSingle = profileService.getProfile(address, profileKey, unidentifiedAccess, requestType, locale);
         } catch (NoClassDefFoundError e) {

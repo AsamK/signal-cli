@@ -26,6 +26,7 @@ import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.KeyHelper;
@@ -48,7 +49,6 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
 public class RegistrationManager implements Closeable {
 
@@ -123,7 +123,7 @@ public class RegistrationManager implements Closeable {
     public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(getDefaultLocale(),
+            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(),
                     Optional.fromNullable(captcha),
                     Optional.absent(),
                     Optional.absent());
@@ -138,18 +138,6 @@ public class RegistrationManager implements Closeable {
         } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
             throw new CaptchaRequiredException(e.getMessage(), e);
         }
-    }
-
-    private Locale getDefaultLocale() {
-        final var locale = Locale.getDefault();
-        try {
-            Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
-        } catch (IllegalArgumentException e) {
-            logger.debug("Invalid locale, ignoring: {}", locale);
-            return null;
-        }
-
-        return locale;
     }
 
     public Manager verifyAccount(

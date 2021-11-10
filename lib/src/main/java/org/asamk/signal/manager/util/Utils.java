@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.fingerprint.Fingerprint;
 import org.whispersystems.libsignal.fingerprint.NumericFingerprintGenerator;
@@ -13,8 +15,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.util.Locale;
 
 public class Utils {
+
+    private final static Logger logger = LoggerFactory.getLogger(Utils.class);
 
     public static String getFileMimeType(File file, String defaultMimeType) throws IOException {
         var mime = Files.probeContentType(file.toPath());
@@ -67,5 +72,17 @@ public class Utils {
                 ownIdentityKey,
                 theirId,
                 theirIdentityKey);
+    }
+
+    public static Locale getDefaultLocale() {
+        final var locale = Locale.getDefault();
+        try {
+            Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
+        } catch (IllegalArgumentException e) {
+            logger.debug("Invalid locale, ignoring: {}", locale);
+            return null;
+        }
+
+        return locale;
     }
 }
