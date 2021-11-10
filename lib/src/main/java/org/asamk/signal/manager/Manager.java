@@ -76,7 +76,7 @@ public interface Manager extends Closeable {
         return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);
     }
 
-    static List<String> getAllLocalNumbers(File settingsPath) {
+    static List<String> getAllLocalAccountNumbers(File settingsPath) {
         var pathConfig = PathConfig.createDefault(settingsPath);
         final var dataPath = pathConfig.dataPath();
         final var files = dataPath.listFiles();

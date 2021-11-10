@@ -65,7 +65,8 @@ public class App {
         parser.addArgument("--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 
-        parser.addArgument("-u", "--username").help("Specify your phone number, that will be your identifier.");
+        parser.addArgument("-a", "--account", "-u", "--username")
+                .help("Specify your phone number, that will be your identifier.");
 
         var mut = parser.addMutuallyExclusiveGroup();
         mut.addArgument("--dbus").dest("global-dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
@@ -122,13 +123,13 @@ public class App {
             throw new UserErrorException("Command doesn't support output type " + outputType);
         }
 
-        var username = ns.getString("username");
+        var account = ns.getString("account");
 
         final var useDbus = Boolean.TRUE.equals(ns.getBoolean("global-dbus"));
         final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("global-dbus-system"));
         if (useDbus || useDbusSystem) {
-            // If username is null, it will connect to the default object path
-            initDbusClient(command, username, useDbusSystem, outputWriter);
+            // If account is null, it will connect to the default object path
+            initDbusClient(command, account, useDbusSystem, outputWriter);
             return;
         }
 
@@ -160,41 +161,41 @@ public class App {
                 : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
         if (command instanceof ProvisioningCommand provisioningCommand) {
-            if (username != null) {
-                throw new UserErrorException("You cannot specify a username (phone number) when linking");
+            if (account != null) {
+                throw new UserErrorException("You cannot specify a account (phone number) when linking");
             }
 
             handleProvisioningCommand(provisioningCommand, dataPath, serviceEnvironment, outputWriter);
             return;
         }
 
-        if (username == null) {
-            var usernames = Manager.getAllLocalNumbers(dataPath);
+        if (account == null) {
+            var accounts = Manager.getAllLocalAccountNumbers(dataPath);
 
             if (command instanceof MultiLocalCommand multiLocalCommand) {
                 handleMultiLocalCommand(multiLocalCommand,
                         dataPath,
                         serviceEnvironment,
-                        usernames,
+                        accounts,
                         outputWriter,
                         trustNewIdentity);
                 return;
             }
 
-            if (usernames.size() == 0) {
+            if (accounts.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
-            } else if (usernames.size() > 1) {
+            } else if (accounts.size() > 1) {
                 throw new UserErrorException(
-                        "Multiple users found, you need to specify a username (phone number) with -u");
+                        "Multiple users found, you need to specify a account (phone number) with -u");
             }
 
-            username = usernames.get(0);
-        } else if (!Manager.isValidNumber(username, null)) {
-            throw new UserErrorException("Invalid username (phone number), make sure you include the country code.");
+            account = accounts.get(0);
+        } else if (!Manager.isValidNumber(account, null)) {
+            throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
-            handleRegistrationCommand(registrationCommand, username, dataPath, serviceEnvironment);
+            handleRegistrationCommand(registrationCommand, account, dataPath, serviceEnvironment);
             return;
         }
 
@@ -203,7 +204,7 @@ public class App {
         }
 
         handleLocalCommand((LocalCommand) command,
-                username,
+                account,
                 dataPath,
                 serviceEnvironment,
                 outputWriter,
@@ -222,13 +223,13 @@ public class App {
 
     private void handleRegistrationCommand(
             final RegistrationCommand command,
-            final String username,
+            final String account,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment
     ) throws CommandException {
         final RegistrationManager manager;
         try {
-            manager = RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            manager = RegistrationManager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading or creating state file: "
                     + e.getMessage()
@@ -245,13 +246,13 @@ public class App {
 
     private void handleLocalCommand(
             final LocalCommand command,
-            final String username,
+            final String account,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        try (var m = loadManager(username, dataPath, serviceEnvironment, trustNewIdentity)) {
+        try (var m = loadManager(account, dataPath, serviceEnvironment, trustNewIdentity)) {
             command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
@@ -262,13 +263,13 @@ public class App {
             final MultiLocalCommand command,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
-            final List<String> usernames,
+            final List<String> accounts,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
         try {
-            for (String u : usernames) {
+            for (String u : accounts) {
                 try {
                     managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
                 } catch (CommandException e) {
@@ -277,7 +278,7 @@ public class App {
             }
 
             command.handleCommand(ns, new SignalCreator() {
-                private List<Consumer<Manager>> onManagerAddedHandlers = new ArrayList<>();
+                private final List<Consumer<Manager>> onManagerAddedHandlers = new ArrayList<>();
 
                 @Override
                 public List<String> getAccountNumbers() {
@@ -319,8 +320,8 @@ public class App {
                 }
 
                 @Override
-                public RegistrationManager getNewRegistrationManager(String username) throws IOException {
-                    return RegistrationManager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+                public RegistrationManager getNewRegistrationManager(String account) throws IOException {
+                    return RegistrationManager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
                 }
             }, outputWriter);
         } finally {
@@ -338,19 +339,19 @@ public class App {
     }
 
     private Manager loadManager(
-            final String username,
+            final String account,
             final File dataPath,
             final ServiceEnvironment serviceEnvironment,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         Manager manager;
         try {
-            manager = Manager.init(username, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
+            manager = Manager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
         } catch (NotRegisteredException e) {
-            throw new UserErrorException("User " + username + " is not registered.");
+            throw new UserErrorException("User " + account + " is not registered.");
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading state file for user "
-                    + username
+                    + account
                     + ": "
                     + e.getMessage()
                     + " ("
@@ -366,14 +367,14 @@ public class App {
             } catch (IOException ie) {
                 logger.warn("Failed to close broken account", ie);
             }
-            throw new IOErrorException("Error while checking account " + username + ": " + e.getMessage(), e);
+            throw new IOErrorException("Error while checking account " + account + ": " + e.getMessage(), e);
         }
 
         return manager;
     }
 
     private void initDbusClient(
-            final Command command, final String username, final boolean systemBus, final OutputWriter outputWriter
+            final Command command, final String account, final boolean systemBus, final OutputWriter outputWriter
     ) throws CommandException {
         try {
             DBusConnection.DBusBusType busType;
@@ -384,7 +385,7 @@ public class App {
             }
             try (var dBusConn = DBusConnection.getConnection(busType)) {
                 var ts = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                        DbusConfig.getObjectPath(username),
+                        DbusConfig.getObjectPath(account),
                         Signal.class);
 
                 handleCommand(command, ts, dBusConn, outputWriter);
