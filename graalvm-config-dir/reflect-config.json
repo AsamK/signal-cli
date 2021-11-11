@@ -487,6 +487,20 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.commands.RegisterCommand$RegistrationParams",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }]}
+,
+{
+  "name":"org.asamk.signal.commands.VerifyCommand$VerifyParams",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]}
+,
+{
   "name":"org.asamk.signal.json.JsonAttachment",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2408,6 +2422,13 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"type_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Groups",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"blob_"}
   ]}
 ,
 {

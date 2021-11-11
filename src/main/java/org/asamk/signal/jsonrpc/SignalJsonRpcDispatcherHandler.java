@@ -13,6 +13,7 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.JsonRpcMultiCommand;
+import org.asamk.signal.commands.JsonRpcRegistrationCommand;
 import org.asamk.signal.commands.JsonRpcSingleCommand;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
@@ -20,6 +21,7 @@ import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
+import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,10 +122,25 @@ public class SignalJsonRpcDispatcherHandler {
             final ObjectMapper objectMapper, final String method, ContainerNode<?> params
     ) throws JsonRpcException {
         var command = getCommand(method);
-        // TODO implement register, verify, link
+        // TODO implement link
         if (c != null) {
             if (command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
                 return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
+            }
+            if (command instanceof JsonRpcRegistrationCommand<?> jsonRpcCommand) {
+                try (var manager = getRegistrationManagerFromParams(params)) {
+                    if (manager != null) {
+                        return runCommand(objectMapper,
+                                params,
+                                new RegistrationCommandRunnerImpl<>(manager, c, jsonRpcCommand));
+                    } else {
+                        throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                                "Method requires valid account parameter",
+                                null));
+                    }
+                } catch (IOException e) {
+                    logger.warn("Failed to close registration manager", e);
+                }
             }
         }
         if (command instanceof JsonRpcSingleCommand<?> jsonRpcCommand) {
@@ -147,10 +164,24 @@ public class SignalJsonRpcDispatcherHandler {
     }
 
     private Manager getManagerFromParams(final ContainerNode<?> params) {
-        if (params.has("account")) {
+        if (params != null && params.has("account")) {
             final var manager = c.getManager(params.get("account").asText());
             ((ObjectNode) params).remove("account");
             return manager;
+        }
+        return null;
+    }
+
+    private RegistrationManager getRegistrationManagerFromParams(final ContainerNode<?> params) {
+        if (params != null && params.has("account")) {
+            try {
+                final var registrationManager = c.getNewRegistrationManager(params.get("account").asText());
+                ((ObjectNode) params).remove("account");
+                return registrationManager;
+            } catch (IOException | IllegalStateException e) {
+                logger.warn("Failed to load registration manager", e);
+                return null;
+            }
         }
         return null;
     }
@@ -166,6 +197,21 @@ public class SignalJsonRpcDispatcherHandler {
     }
 
     private record CommandRunnerImpl<T>(Manager m, JsonRpcSingleCommand<T> command) implements CommandRunner<T> {
+
+        @Override
+        public void handleCommand(final T request, final JsonWriter jsonWriter) throws CommandException {
+            command.handleCommand(request, m, jsonWriter);
+        }
+
+        @Override
+        public TypeReference<T> getRequestType() {
+            return command.getRequestType();
+        }
+    }
+
+    private record RegistrationCommandRunnerImpl<T>(
+            RegistrationManager m, MultiAccountManager c, JsonRpcRegistrationCommand<T> command
+    ) implements CommandRunner<T> {
 
         @Override
         public void handleCommand(final T request, final JsonWriter jsonWriter) throws CommandException {
