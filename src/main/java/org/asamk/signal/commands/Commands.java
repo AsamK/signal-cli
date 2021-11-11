@@ -13,6 +13,7 @@ public class Commands {
         addCommand(new AddDeviceCommand());
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
+        addCommand(new FinishLinkCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());
@@ -36,6 +37,7 @@ public class Commands {
         addCommand(new SendTypingCommand());
         addCommand(new SetPinCommand());
         addCommand(new SubmitRateLimitChallengeCommand());
+        addCommand(new StartLinkCommand());
         addCommand(new TrustCommand());
         addCommand(new UnblockCommand());
         addCommand(new UnregisterCommand());

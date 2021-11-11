@@ -444,6 +444,20 @@
   "allDeclaredClasses":true}
 ,
 {
+  "name":"org.asamk.signal.commands.FinishLinkCommand$FinishLinkParams",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]}
+,
+{
+  "name":"org.asamk.signal.commands.FinishLinkCommand$JsonFinishLink",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"number","parameterTypes":[] }]}
+,
+{
   "name":"org.asamk.signal.commands.GetUserStatusCommand$JsonUserStatus",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -492,6 +506,13 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }]}
+,
+{
+  "name":"org.asamk.signal.commands.StartLinkCommand$JsonLink",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"deviceLinkUri","parameterTypes":[] }]}
 ,
 {
   "name":"org.asamk.signal.commands.VerifyCommand$VerifyParams",
@@ -702,6 +723,29 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.manager.JsonStickerPack",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"author","parameterTypes":[] }, 
+    {"name":"cover","parameterTypes":[] }, 
+    {"name":"stickers","parameterTypes":[] }, 
+    {"name":"title","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"org.asamk.signal.manager.JsonStickerPack$JsonSticker",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"contentType","parameterTypes":[] }, 
+    {"name":"emoji","parameterTypes":[] }, 
+    {"name":"file","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"org.asamk.signal.manager.api.PhoneNumberSharingMode",
@@ -2354,6 +2398,38 @@
   ]}
 ,
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails",
+  "fields":[
+    {"name":"active_"}, 
+    {"name":"archived_"}, 
+    {"name":"avatar_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"blocked_"}, 
+    {"name":"color_"}, 
+    {"name":"expireTimer_"}, 
+    {"name":"id_"}, 
+    {"name":"inboxPosition_"}, 
+    {"name":"membersE164_"}, 
+    {"name":"members_"}, 
+    {"name":"name_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails$Avatar",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"contentType_"}, 
+    {"name":"length_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails$Member",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"e164_"}
+  ]}
+,
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$NullMessage",
   "fields":[
     {"name":"bitField0_"}, 
@@ -2567,6 +2643,25 @@
     {"name":"data_"}, 
     {"name":"localAddress_"}, 
     {"name":"metadata_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.sticker.StickerProtos$Pack",
+  "fields":[
+    {"name":"author_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"cover_"}, 
+    {"name":"stickers_"}, 
+    {"name":"title_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.sticker.StickerProtos$Pack$Sticker",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"contentType_"}, 
+    {"name":"emoji_"}, 
+    {"name":"id_"}
   ]}
 ,
 {

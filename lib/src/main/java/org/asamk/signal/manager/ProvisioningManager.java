@@ -146,6 +146,7 @@ public class ProvisioningManager {
             ManagerImpl m = null;
             try {
                 m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+                account = null;
 
                 logger.debug("Refreshing pre keys");
                 try {

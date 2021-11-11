@@ -6,10 +6,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -20,6 +24,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     private final Set<Consumer<Manager>> onManagerAddedHandlers = new HashSet<>();
     private final Set<Consumer<Manager>> onManagerRemovedHandlers = new HashSet<>();
     private final Set<Manager> managers = new HashSet<>();
+    private final Map<URI, ProvisioningManager> provisioningManagers = new HashMap<>();
     private final File dataPath;
     private final ServiceEnvironment serviceEnvironment;
     private final String userAgent;
@@ -76,6 +81,19 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         synchronized (managers) {
             return managers.stream().filter(m -> m.getSelfNumber().equals(account)).findFirst().orElse(null);
         }
+    }
+
+    @Override
+    public URI getNewProvisioningDeviceLinkUri() throws TimeoutException, IOException {
+        final var provisioningManager = getNewProvisioningManager();
+        final var deviceLinkUri = provisioningManager.getDeviceLinkUri();
+        provisioningManagers.put(deviceLinkUri, provisioningManager);
+        return deviceLinkUri;
+    }
+
+    @Override
+    public ProvisioningManager getProvisioningManagerFor(final URI deviceLinkUri) {
+        return provisioningManagers.remove(deviceLinkUri);
     }
 
     @Override
