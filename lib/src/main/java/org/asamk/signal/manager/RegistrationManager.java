@@ -49,6 +49,7 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 public class RegistrationManager implements Closeable {
 
@@ -58,6 +59,7 @@ public class RegistrationManager implements Closeable {
     private final PathConfig pathConfig;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
+    private final Consumer<Manager> newManagerListener;
 
     private final SignalServiceAccountManager accountManager;
     private final PinHelper pinHelper;
@@ -66,12 +68,14 @@ public class RegistrationManager implements Closeable {
             SignalAccount account,
             PathConfig pathConfig,
             ServiceEnvironmentConfig serviceEnvironmentConfig,
-            String userAgent
+            String userAgent,
+            Consumer<Manager> newManagerListener
     ) {
         this.account = account;
         this.pathConfig = pathConfig;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
+        this.newManagerListener = newManagerListener;
 
         GroupsV2Operations groupsV2Operations;
         try {
@@ -97,6 +101,16 @@ public class RegistrationManager implements Closeable {
     public static RegistrationManager init(
             String number, File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) throws IOException {
+        return init(number, settingsPath, serviceEnvironment, userAgent, null);
+    }
+
+    public static RegistrationManager init(
+            String number,
+            File settingsPath,
+            ServiceEnvironment serviceEnvironment,
+            String userAgent,
+            Consumer<Manager> newManagerListener
+    ) throws IOException {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
         final var serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
@@ -112,15 +126,16 @@ public class RegistrationManager implements Closeable {
                     profileKey,
                     TrustNewIdentity.ON_FIRST_USE);
 
-            return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
+            return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent, newManagerListener);
         }
 
         var account = SignalAccount.load(pathConfig.dataPath(), number, true, TrustNewIdentity.ON_FIRST_USE);
 
-        return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent);
+        return new RegistrationManager(account, pathConfig, serviceConfiguration, userAgent, newManagerListener);
     }
 
     public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
+        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
             response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(),
@@ -140,7 +155,7 @@ public class RegistrationManager implements Closeable {
         }
     }
 
-    public Manager verifyAccount(
+    public void verifyAccount(
             String verificationCode, String pin
     ) throws IOException, PinLockedException, IncorrectPinException {
         verificationCode = verificationCode.replace("-", "");
@@ -196,10 +211,10 @@ public class RegistrationManager implements Closeable {
                 logger.warn("Failed to set default profile: {}", e.getMessage());
             }
 
-            final var result = m;
-            m = null;
-
-            return result;
+            if (newManagerListener != null) {
+                newManagerListener.accept(m);
+                m = null;
+            }
         } finally {
             if (m != null) {
                 m.close();

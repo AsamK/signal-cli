@@ -32,8 +32,7 @@ public class SubmitRateLimitChallengeCommand implements JsonRpcLocalCommand {
     @Override
     public void handleCommand(final Namespace ns, final Manager m, OutputWriter outputWriter) throws CommandException {
         final var challenge = ns.getString("challenge");
-        final var captchaString = ns.getString("captcha");
-        final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
+        final var captcha = ns.getString("captcha");
 
         try {
             m.submitRateLimitRecaptchaChallenge(challenge, captcha);

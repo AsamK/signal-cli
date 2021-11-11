@@ -19,6 +19,7 @@ import org.asamk.signal.dbus.DbusSignalControlImpl;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -141,7 +142,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final SignalCreator c, final OutputWriter outputWriter
+            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
     ) throws CommandException {
         logger.info("Starting daemon in multi-account mode");
         final var noReceiveStdOut = Boolean.TRUE.equals(ns.getBoolean("no-receive-stdout"));
@@ -220,7 +221,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     }
 
     private void runSocketMultiAccount(
-            final SignalCreator c, final ServerSocketChannel serverChannel, final boolean noReceiveOnStart
+            final MultiAccountManager c, final ServerSocketChannel serverChannel, final boolean noReceiveOnStart
     ) {
         runSocket(serverChannel, channel -> {
             final var handler = getSignalJsonRpcDispatcherHandler(channel, noReceiveOnStart);
@@ -276,7 +277,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     }
 
     private void runDbusMultiAccount(
-            final SignalCreator c, final boolean noReceiveOnStart, final boolean isDbusSystem
+            final MultiAccountManager c, final boolean noReceiveOnStart, final boolean isDbusSystem
     ) throws UnexpectedErrorException {
         runDbus(isDbusSystem, (connection, objectPath) -> {
             final var signalControl = new DbusSignalControlImpl(c, objectPath);

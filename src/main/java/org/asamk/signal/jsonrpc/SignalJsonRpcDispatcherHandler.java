@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ContainerNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.asamk.signal.JsonReceiveMessageHandler;
 import org.asamk.signal.JsonWriter;
@@ -13,12 +14,12 @@ import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.JsonRpcMultiCommand;
 import org.asamk.signal.commands.JsonRpcSingleCommand;
-import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ public class SignalJsonRpcDispatcherHandler {
     private final JsonRpcReader jsonRpcReader;
     private final boolean noReceiveOnStart;
 
-    private SignalCreator c;
+    private MultiAccountManager c;
     private final Map<Manager, Manager.ReceiveMessageHandler> receiveHandlers = new HashMap<>();
 
     private Manager m;
@@ -56,7 +57,7 @@ public class SignalJsonRpcDispatcherHandler {
         this.jsonRpcReader = new JsonRpcReader(jsonRpcSender, lineSupplier);
     }
 
-    public void handleConnection(final SignalCreator c) {
+    public void handleConnection(final MultiAccountManager c) {
         this.c = c;
 
         if (!noReceiveOnStart) {
@@ -120,19 +121,19 @@ public class SignalJsonRpcDispatcherHandler {
     ) throws JsonRpcException {
         var command = getCommand(method);
         // TODO implement register, verify, link
-        if (c != null && command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
-            return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
+        if (c != null) {
+            if (command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
+                return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
+            }
         }
         if (command instanceof JsonRpcSingleCommand<?> jsonRpcCommand) {
             if (m != null) {
                 return runCommand(objectMapper, params, new CommandRunnerImpl<>(m, jsonRpcCommand));
             }
 
-            if (params.has("account")) {
-                Manager manager = c.getManager(params.get("account").asText());
-                if (manager != null) {
-                    return runCommand(objectMapper, params, new CommandRunnerImpl<>(manager, jsonRpcCommand));
-                }
+            final var manager = getManagerFromParams(params);
+            if (manager != null) {
+                return runCommand(objectMapper, params, new CommandRunnerImpl<>(manager, jsonRpcCommand));
             } else {
                 throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
                         "Method requires valid account parameter",
@@ -143,6 +144,15 @@ public class SignalJsonRpcDispatcherHandler {
         throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.METHOD_NOT_FOUND,
                 "Method not implemented",
                 null));
+    }
+
+    private Manager getManagerFromParams(final ContainerNode<?> params) {
+        if (params.has("account")) {
+            final var manager = c.getManager(params.get("account").asText());
+            ((ObjectNode) params).remove("account");
+            return manager;
+        }
+        return null;
     }
 
     private Command getCommand(final String method) {
@@ -169,7 +179,7 @@ public class SignalJsonRpcDispatcherHandler {
     }
 
     private record MultiCommandRunnerImpl<T>(
-            SignalCreator c, JsonRpcMultiCommand<T> command
+            MultiAccountManager c, JsonRpcMultiCommand<T> command
     ) implements CommandRunner<T> {
 
         @Override

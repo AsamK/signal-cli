@@ -7,6 +7,7 @@ import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
 import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.manager.MultiAccountManager;
 
 import java.util.stream.Collectors;
 
@@ -24,7 +25,7 @@ public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final SignalCreator c, final OutputWriter outputWriter
+            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
     ) throws CommandException {
         final var accountNumbers = c.getAccountNumbers();
         if (outputWriter instanceof JsonWriter jsonWriter) {

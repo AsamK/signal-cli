@@ -32,8 +32,7 @@ public class VerifyCommand implements RegistrationCommand {
         var pin = ns.getString("pin");
 
         try {
-            final var manager = m.verifyAccount(verificationCode, pin);
-            manager.close();
+            m.verifyAccount(verificationCode, pin);
         } catch (PinLockedException e) {
             throw new UserErrorException(
                     "Verification failed! This number is locked with a pin. Hours remaining until reset: "

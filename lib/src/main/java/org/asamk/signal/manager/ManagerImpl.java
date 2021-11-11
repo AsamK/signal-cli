@@ -403,6 +403,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void submitRateLimitRecaptchaChallenge(String challenge, String captcha) throws IOException {
+        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
+
         dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
     }
 

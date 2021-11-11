@@ -3,8 +3,8 @@ package org.asamk.signal.dbus;
 import org.asamk.SignalControl;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.DbusConfig;
-import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.UserAlreadyExists;
@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
-    private final SignalCreator c;
+    private final MultiAccountManager c;
 
     private final String objectPath;
 
-    public DbusSignalControlImpl(final SignalCreator c, final String objectPath) {
+    public DbusSignalControlImpl(final MultiAccountManager c, final String objectPath) {
         this.c = c;
         this.objectPath = objectPath;
     }
@@ -75,8 +75,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
             final String number, final String verificationCode, final String pin
     ) throws Error.Failure, Error.InvalidNumber {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
-            final Manager manager = registrationManager.verifyAccount(verificationCode, pin);
-            c.addManager(manager);
+            registrationManager.verifyAccount(verificationCode, pin);
         } catch (IOException | PinLockedException | IncorrectPinException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
@@ -89,8 +88,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
             final URI deviceLinkUri = provisioningManager.getDeviceLinkUri();
             new Thread(() -> {
                 try {
-                    final Manager manager = provisioningManager.finishDeviceLink(newDeviceName);
-                    c.addManager(manager);
+                    provisioningManager.finishDeviceLink(newDeviceName);
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
                     e.printStackTrace();
                 }

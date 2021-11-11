@@ -12,13 +12,13 @@ import org.asamk.signal.commands.LocalCommand;
 import org.asamk.signal.commands.MultiLocalCommand;
 import org.asamk.signal.commands.ProvisioningCommand;
 import org.asamk.signal.commands.RegistrationCommand;
-import org.asamk.signal.commands.SignalCreator;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusManagerImpl;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManagerImpl;
 import org.asamk.signal.manager.NotRegisteredException;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
@@ -39,8 +39,6 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
 
@@ -186,7 +184,7 @@ public class App {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
                 throw new UserErrorException(
-                        "Multiple users found, you need to specify a account (phone number) with -u");
+                        "Multiple users found, you need to specify an account (phone number) with -a");
             }
 
             account = accounts.get(0);
@@ -237,8 +235,8 @@ public class App {
                     + e.getClass().getSimpleName()
                     + ")", e);
         }
-        try (var m = manager) {
-            command.handleCommand(ns, m);
+        try (manager) {
+            command.handleCommand(ns, manager);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
         }
@@ -268,73 +266,19 @@ public class App {
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         final var managers = new ArrayList<Manager>();
-        try {
-            for (String u : accounts) {
-                try {
-                    managers.add(loadManager(u, dataPath, serviceEnvironment, trustNewIdentity));
-                } catch (CommandException e) {
-                    logger.warn("Ignoring {}: {}", u, e.getMessage());
-                }
+        for (String a : accounts) {
+            try {
+                managers.add(loadManager(a, dataPath, serviceEnvironment, trustNewIdentity));
+            } catch (CommandException e) {
+                logger.warn("Ignoring {}: {}", a, e.getMessage());
             }
+        }
 
-            command.handleCommand(ns, new SignalCreator() {
-                private final List<Consumer<Manager>> onManagerAddedHandlers = new ArrayList<>();
-
-                @Override
-                public List<String> getAccountNumbers() {
-                    synchronized (managers) {
-                        return managers.stream().map(Manager::getSelfNumber).collect(Collectors.toList());
-                    }
-                }
-
-                @Override
-                public void addManager(final Manager m) {
-                    synchronized (managers) {
-                        if (!managers.contains(m)) {
-                            managers.add(m);
-                            for (final var handler : onManagerAddedHandlers) {
-                                handler.accept(m);
-                            }
-                        }
-                    }
-                }
-
-                @Override
-                public void addOnManagerAddedHandler(final Consumer<Manager> handler) {
-                    onManagerAddedHandlers.add(handler);
-                }
-
-                @Override
-                public Manager getManager(final String phoneNumber) {
-                    synchronized (managers) {
-                        return managers.stream()
-                                .filter(m -> m.getSelfNumber().equals(phoneNumber))
-                                .findFirst()
-                                .orElse(null);
-                    }
-                }
-
-                @Override
-                public ProvisioningManager getNewProvisioningManager() {
-                    return ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
-                }
-
-                @Override
-                public RegistrationManager getNewRegistrationManager(String account) throws IOException {
-                    return RegistrationManager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
-                }
-            }, outputWriter);
-        } finally {
-            synchronized (managers) {
-                for (var m : managers) {
-                    try {
-                        m.close();
-                    } catch (IOException e) {
-                        logger.warn("Cleanup failed", e);
-                    }
-                }
-                managers.clear();
-            }
+        try (var multiAccountManager = new MultiAccountManagerImpl(managers,
+                dataPath,
+                serviceEnvironment,
+                BaseConfig.USER_AGENT)) {
+            command.handleCommand(ns, multiAccountManager, outputWriter);
         }
     }
 

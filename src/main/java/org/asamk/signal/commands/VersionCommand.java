@@ -4,6 +4,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.JsonWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
 
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class VersionCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiC
 
     @Override
     public void handleCommand(
-            final Void request, final SignalCreator c, final JsonWriter jsonWriter
+            final Void request, final MultiAccountManager c, final JsonWriter jsonWriter
     ) throws CommandException {
         outputVersion(jsonWriter);
     }

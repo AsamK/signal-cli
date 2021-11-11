@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 public class ProvisioningManager {
 
@@ -46,16 +47,23 @@ public class ProvisioningManager {
     private final PathConfig pathConfig;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
+    private final Consumer<Manager> newManagerListener;
 
     private final SignalServiceAccountManager accountManager;
     private final IdentityKeyPair tempIdentityKey;
     private final int registrationId;
     private final String password;
 
-    ProvisioningManager(PathConfig pathConfig, ServiceEnvironmentConfig serviceEnvironmentConfig, String userAgent) {
+    ProvisioningManager(
+            PathConfig pathConfig,
+            ServiceEnvironmentConfig serviceEnvironmentConfig,
+            String userAgent,
+            final Consumer<Manager> newManagerListener
+    ) {
         this.pathConfig = pathConfig;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
+        this.newManagerListener = newManagerListener;
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
@@ -76,11 +84,20 @@ public class ProvisioningManager {
     public static ProvisioningManager init(
             File settingsPath, ServiceEnvironment serviceEnvironment, String userAgent
     ) {
+        return init(settingsPath, serviceEnvironment, userAgent, null);
+    }
+
+    public static ProvisioningManager init(
+            File settingsPath,
+            ServiceEnvironment serviceEnvironment,
+            String userAgent,
+            Consumer<Manager> newManagerListener
+    ) {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
         final var serviceConfiguration = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
 
-        return new ProvisioningManager(pathConfig, serviceConfiguration, userAgent);
+        return new ProvisioningManager(pathConfig, serviceConfiguration, userAgent, newManagerListener);
     }
 
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
@@ -89,7 +106,7 @@ public class ProvisioningManager {
         return new DeviceLinkInfo(deviceUuid, tempIdentityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
-    public Manager finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
+    public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
         var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
 
@@ -145,11 +162,11 @@ public class ProvisioningManager {
                             "Failed to request sync messages from linked device, data can be requested again with `sendSyncRequest`.");
                 }
 
-                final var result = m;
-                account = null;
-                m = null;
-
-                return result;
+                if (newManagerListener != null) {
+                    newManagerListener.accept(m);
+                    m = null;
+                }
+                return number;
             } finally {
                 if (m != null) {
                     m.close();

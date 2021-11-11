@@ -129,9 +129,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public void submitRateLimitChallenge(String challenge, String captchaString) {
-        final var captcha = captchaString == null ? null : captchaString.replace("signalcaptcha://", "");
-
+    public void submitRateLimitChallenge(String challenge, String captcha) {
         try {
             m.submitRateLimitRecaptchaChallenge(challenge, captcha);
         } catch (IOException e) {
