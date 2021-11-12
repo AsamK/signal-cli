@@ -3,34 +3,44 @@ package org.asamk.signal.manager.actions;
 import org.asamk.signal.manager.jobs.Context;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class SendReceiptAction implements HandleAction {
 
     private final RecipientId recipientId;
-    private final long timestamp;
+    private final List<Long> timestamps = new ArrayList<>();
 
     public SendReceiptAction(final RecipientId recipientId, final long timestamp) {
         this.recipientId = recipientId;
-        this.timestamp = timestamp;
+        this.timestamps.add(timestamp);
     }
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getSendHelper().sendDeliveryReceipt(recipientId, List.of(timestamp));
+        context.getSendHelper().sendDeliveryReceipt(recipientId, timestamps);
+    }
+
+    @Override
+    public void mergeOther(final HandleAction action) {
+        if (action instanceof SendReceiptAction sendReceiptAction) {
+            this.timestamps.addAll(sendReceiptAction.timestamps);
+        }
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final var that = (SendReceiptAction) o;
-        return timestamp == that.timestamp && recipientId.equals(that.recipientId);
+        final SendReceiptAction that = (SendReceiptAction) o;
+        // Using only recipientId here on purpose
+        return recipientId.equals(that.recipientId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recipientId, timestamp);
+        // Using only recipientId here on purpose
+        return Objects.hash(recipientId);
     }
 }

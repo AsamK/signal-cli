@@ -1028,7 +1028,8 @@ public class ManagerImpl implements Manager {
     ) throws IOException {
         retryFailedReceivedMessages(handler);
 
-        Set<HandleAction> queuedActions = new HashSet<>();
+        // Use a Map here because java Set doesn't have a get method ...
+        Map<HandleAction, HandleAction> queuedActions = new HashMap<>();
 
         final var signalWebSocket = dependencies.getSignalWebSocket();
         signalWebSocket.connect();
@@ -1057,7 +1058,7 @@ public class ManagerImpl implements Manager {
                     logger.debug("New message received from server");
                 } else {
                     logger.debug("Received indicator that server queue is empty");
-                    handleQueuedActions(queuedActions);
+                    handleQueuedActions(queuedActions.keySet());
                     queuedActions.clear();
 
                     hasCaughtUpWithOldMessages = true;
@@ -1098,11 +1099,18 @@ public class ManagerImpl implements Manager {
             }
 
             final var result = incomingMessageHandler.handleEnvelope(envelope, ignoreAttachments, handler);
-            queuedActions.addAll(result.first());
+            for (final var h : result.first()) {
+                final var existingAction = queuedActions.get(h);
+                if (existingAction == null) {
+                    queuedActions.put(h, h);
+                } else {
+                    existingAction.mergeOther(h);
+                }
+            }
             final var exception = result.second();
 
             if (hasCaughtUpWithOldMessages) {
-                handleQueuedActions(queuedActions);
+                handleQueuedActions(queuedActions.keySet());
                 queuedActions.clear();
             }
             if (cachedMessage[0] != null) {
@@ -1123,7 +1131,7 @@ public class ManagerImpl implements Manager {
                 }
             }
         }
-        handleQueuedActions(queuedActions);
+        handleQueuedActions(queuedActions.keySet());
         queuedActions.clear();
         dependencies.getSignalWebSocket().disconnect();
     }

@@ -5,4 +5,7 @@ import org.asamk.signal.manager.jobs.Context;
 public interface HandleAction {
 
     void execute(Context context) throws Throwable;
+
+    default void mergeOther(HandleAction action) {
+    }
 }
