@@ -51,6 +51,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
+
 public class RegistrationManager implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistrationManager.class);
@@ -136,6 +138,38 @@ public class RegistrationManager implements Closeable {
 
     public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
+        if (account.getAci() != null) {
+            try {
+                final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                        new DynamicCredentialsProvider(account.getAci(),
+                                account.getUsername(),
+                                account.getPassword(),
+                                account.getDeviceId()),
+                        userAgent,
+                        null,
+                        ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+                accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
+                        null,
+                        account.getLocalRegistrationId(),
+                        true,
+                        null,
+                        account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
+                        account.getSelfUnidentifiedAccessKey(),
+                        account.isUnrestrictedUnidentifiedAccess(),
+                        capabilities,
+                        account.isDiscoverableByPhoneNumber());
+                account.setRegistered(true);
+                logger.info("Reactivated existing account, verify is not necessary.");
+                if (newManagerListener != null) {
+                    final var m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+                    account = null;
+                    newManagerListener.accept(m);
+                }
+                return;
+            } catch (IOException e) {
+                logger.debug("Failed to reactivate account");
+            }
+        }
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
             response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(),
