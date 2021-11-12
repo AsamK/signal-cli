@@ -53,7 +53,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     ) throws Error.Failure, Error.InvalidNumber {
         if (!Manager.isValidNumber(number, null)) {
             throw new SignalControl.Error.InvalidNumber(
-                    "Invalid username (phone number), make sure you include the country code.");
+                    "Invalid account (phone number), make sure you include the country code.");
         }
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.register(voiceVerification, captcha);

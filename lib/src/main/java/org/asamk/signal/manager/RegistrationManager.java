@@ -88,7 +88,7 @@ public class RegistrationManager implements Closeable {
         this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
-                        null, account.getUsername(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
+                        null, account.getAccount(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
@@ -142,7 +142,7 @@ public class RegistrationManager implements Closeable {
             try {
                 final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                         new DynamicCredentialsProvider(account.getAci(),
-                                account.getUsername(),
+                                account.getAccount(),
                                 account.getPassword(),
                                 account.getDeviceId()),
                         userAgent,

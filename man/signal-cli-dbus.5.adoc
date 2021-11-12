@@ -11,11 +11,11 @@ DBus API for signal-cli - A commandline and dbus interface for the Signal messen
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-u USERNAME] [-o {plain-text,json}] daemon [--system]
+*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] [-o {plain-text,json}] daemon [--system]
 
 *dbus-send* [--system | --session] [--print-reply] --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal[/_<phonenum>] org.asamk.Signal.<method> [string:<string argument>] [array:<type>:<array argument>]
 
-Note: when daemon was started without explicit `-u USERNAME`, the `dbus-send` command requires adding the phone number in `/org/asamk/Signal/_<phonenum>`.
+Note: when daemon was started without explicit `-a ACCOUNT`, the `dbus-send` command requires adding the phone number in `/org/asamk/Signal/_<phonenum>`.
 
 == Description
 
@@ -48,7 +48,7 @@ Phone numbers always have the format +<countrycode><regional number>
 == Methods
 
 === Control methods
-These methods are available if the daemon is started anonymously (without an explicit `-u USERNAME`).
+These methods are available if the daemon is started anonymously (without an explicit `-a ACCOUNT`).
 Requests are sent to `/org/asamk/Signal`; requests related to individual accounts are sent to
 `/org/asamk/Signal/_441234567890` where the + dialing code is replaced by an underscore (_).
 Only `version()` is activated in single-account mode; the rest are disabled.
@@ -596,7 +596,7 @@ dbus-send --print-reply --type=method_call --dest="org.asamk.Signal" /org/asamk/
 Send a group message::
 dbus-send --session --print-reply --type=method_call --dest=org.asamk.Signal /org/asamk/Signal org.asamk.Signal.sendGroupMessage  string:'The message goes here'  array:string:'/path/to/attachmnt1','/path/to/attachmnt2'  array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
 
-Print the group name corresponding to a groupId; the daemon runs on system bus, and was started without an explicit `-u USERNAME`::
+Print the group name corresponding to a groupId; the daemon runs on system bus, and was started without an explicit `-a ACCOUNT`::
 dbus-send --system --print-reply --type=method_call --dest='org.asamk.Signal' /org/asamk/Signal/_1234567890 org.asamk.Signal.getGroupName array:byte:139,22,72,247,116,32,170,104,205,164,207,21,248,77,185
 
 == Authors

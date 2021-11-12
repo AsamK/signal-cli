@@ -11,7 +11,7 @@ signal-cli - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--config CONFIG] [-h | -v | -u USERNAME | --dbus | --dbus-system] command [command-options]
+*signal-cli* [--config CONFIG] [-h | -v | -a ACCOUNT | --dbus | --dbus-system] command [command-options]
 
 == Description
 
@@ -40,7 +40,7 @@ Set the path, where to store the config.
 Make sure you have full read/write access to the given directory.
 (Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
 
-*-u* USERNAME, *--username* USERNAME::
+*-a* ACCOUNT, *--account* ACCOUNT::
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
 
@@ -495,7 +495,7 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus interface.
-If no `-u` username is given, all local users will be exported as separate dbus
+If no `-a` account is given, all local accounts will be exported as separate dbus
 objects under the same bus name.
 
 *--system*::
@@ -506,37 +506,37 @@ Don’t download attachments of received messages.
 == Examples
 
 Register a number (with SMS verification)::
-signal-cli -u USERNAME register
+signal-cli -a ACCOUNT register
 
 Verify the number using the code received via SMS or voice::
-signal-cli -u USERNAME verify CODE
+signal-cli -a ACCOUNT verify CODE
 
 Send a message to one or more recipients::
-signal-cli -u USERNAME send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+signal-cli -a ACCOUNT send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 Pipe the message content from another process::
-uname -a | signal-cli -u USERNAME send [RECIPIENT [RECIPIENT ...]]
+uname -a | signal-cli -a ACCOUNT send [RECIPIENT [RECIPIENT ...]]
 
 Create a group::
-signal-cli -u USERNAME updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+signal-cli -a ACCOUNT updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
 
 Add member to a group::
-signal-cli -u USERNAME updateGroup -g GROUP_ID -m "NEW_MEMBER"
+signal-cli -a ACCOUNT updateGroup -g GROUP_ID -m "NEW_MEMBER"
 
 Accept a group invitation::
-signal-cli -u USERNAME updateGroup -g GROUP_ID
+signal-cli -a ACCOUNT updateGroup -g GROUP_ID
 
 Leave a group::
-signal-cli -u USERNAME quitGroup -g GROUP_ID
+signal-cli -a ACCOUNT quitGroup -g GROUP_ID
 
 Send a message to a group::
-signal-cli -u USERNAME send -m "This is a message" -g GROUP_ID
+signal-cli -a ACCOUNT send -m "This is a message" -g GROUP_ID
 
 Trust new key, after having verified it::
-signal-cli -u USERNAME trust -v SAFETY_NUMBER NUMBER
+signal-cli -a ACCOUNT trust -v SAFETY_NUMBER NUMBER
 
 Trust new key, without having verified it. Only use this if you don't care about security::
-signal-cli -u USERNAME trust -a NUMBER
+signal-cli -a ACCOUNT trust -a NUMBER
 
 == Exit codes
 * *1*: Error is probably caused and fixable by the user

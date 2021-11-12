@@ -49,13 +49,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         "The user’s key is untrusted, either the user has reinstalled Signal or a third party sent this message.");
                 final var recipientName = e.getSender().getLegacyIdentifier();
                 writer.println(
-                        "Use 'signal-cli -u {} listIdentities -n {}', verify the key and run 'signal-cli -u {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
+                        "Use 'signal-cli -a {} listIdentities -n {}', verify the key and run 'signal-cli -a {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
                         m.getSelfNumber(),
                         recipientName,
                         m.getSelfNumber(),
                         recipientName);
                 writer.println(
-                        "If you don't care about security, use 'signal-cli -u {} trust -a {}' to trust it without verification",
+                        "If you don't care about security, use 'signal-cli -a {} trust -a {}' to trust it without verification",
                         m.getSelfNumber(),
                         recipientName);
             } else {

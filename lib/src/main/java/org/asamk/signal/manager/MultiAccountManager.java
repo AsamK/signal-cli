@@ -22,7 +22,7 @@ public interface MultiAccountManager extends AutoCloseable {
 
     ProvisioningManager getNewProvisioningManager();
 
-    RegistrationManager getNewRegistrationManager(String username) throws IOException;
+    RegistrationManager getNewRegistrationManager(String account) throws IOException;
 
     @Override
     void close();

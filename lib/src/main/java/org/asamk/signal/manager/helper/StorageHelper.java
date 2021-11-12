@@ -195,7 +195,7 @@ public class StorageHelper {
             return;
         }
 
-        if (!accountRecord.getE164().equals(account.getUsername())) {
+        if (!accountRecord.getE164().equals(account.getAccount())) {
             // TODO implement changed number handling
         }
 

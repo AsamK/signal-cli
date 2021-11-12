@@ -13,11 +13,11 @@ public class DbusConfig {
         return getObjectPath(null);
     }
 
-    public static String getObjectPath(String username) {
-        if (username == null) {
+    public static String getObjectPath(String account) {
+        if (account == null) {
             return SIGNAL_OBJECT_BASE_PATH;
         }
 
-        return SIGNAL_OBJECT_BASE_PATH + "/" + username.replace('+', '_');
+        return SIGNAL_OBJECT_BASE_PATH + "/" + account.replace('+', '_');
     }
 }

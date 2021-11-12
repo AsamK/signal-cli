@@ -156,7 +156,7 @@ public class ManagerImpl implements Manager {
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
 
         final var credentialsProvider = new DynamicCredentialsProvider(account.getAci(),
-                account.getUsername(),
+                account.getAccount(),
                 account.getPassword(),
                 account.getDeviceId());
         final var sessionLock = new SignalSessionLock() {
@@ -251,7 +251,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public String getSelfNumber() {
-        return account.getUsername();
+        return account.getAccount();
     }
 
     @Override
@@ -285,7 +285,7 @@ public class ManagerImpl implements Manager {
     public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
         Map<String, String> canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
-                return PhoneNumberFormatter.formatNumber(n, account.getUsername());
+                return PhoneNumberFormatter.formatNumber(n, account.getAccount());
             } catch (InvalidNumberException e) {
                 return "";
             }
@@ -1265,7 +1265,7 @@ public class ManagerImpl implements Manager {
     /**
      * Trust this the identity with this fingerprint
      *
-     * @param recipient   username of the identity
+     * @param recipient   account of the identity
      * @param fingerprint Fingerprint
      */
     @Override
@@ -1282,7 +1282,7 @@ public class ManagerImpl implements Manager {
     /**
      * Trust this the identity with this safety number
      *
-     * @param recipient    username of the identity
+     * @param recipient    account of the identity
      * @param safetyNumber Safety number
      */
     @Override
@@ -1299,7 +1299,7 @@ public class ManagerImpl implements Manager {
     /**
      * Trust this the identity with this scannable safety number
      *
-     * @param recipient    username of the identity
+     * @param recipient    account of the identity
      * @param safetyNumber Scannable safety number
      */
     @Override
@@ -1316,7 +1316,7 @@ public class ManagerImpl implements Manager {
     /**
      * Trust all keys of this identity without verification
      *
-     * @param recipient username of the identity
+     * @param recipient account of the identity
      */
     @Override
     public boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) {
