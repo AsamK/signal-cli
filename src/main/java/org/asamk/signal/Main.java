@@ -100,7 +100,7 @@ public class Main {
         }
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
-        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
+        // java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
     }
 
     private static int getStatusForError(final CommandException e) {

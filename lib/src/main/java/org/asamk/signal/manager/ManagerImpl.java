@@ -95,6 +95,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -142,6 +143,7 @@ public class ManagerImpl implements Manager {
     private Thread receiveThread;
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    private final List<Runnable> closedListeners = new ArrayList<>();
     private boolean isReceivingSynchronous;
 
     ManagerImpl(
@@ -385,6 +387,7 @@ public class ManagerImpl implements Manager {
         dependencies.getAccountManager().setGcmId(Optional.absent());
 
         account.setRegistered(false);
+        close();
     }
 
     @Override
@@ -399,6 +402,7 @@ public class ManagerImpl implements Manager {
         dependencies.getAccountManager().deleteAccount();
 
         account.setRegistered(false);
+        close();
     }
 
     @Override
@@ -1325,6 +1329,13 @@ public class ManagerImpl implements Manager {
         return identityHelper.trustIdentityAllKeys(recipientId);
     }
 
+    @Override
+    public void addClosedListener(final Runnable listener) {
+        synchronized (closedListeners) {
+            closedListeners.add(listener);
+        }
+    }
+
     private void handleIdentityFailure(
             final RecipientId recipientId,
             final org.whispersystems.signalservice.api.messages.SendMessageResult.IdentityFailure identityFailure
@@ -1390,10 +1401,6 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void close() throws IOException {
-        close(true);
-    }
-
-    private void close(boolean closeAccount) throws IOException {
         Thread thread;
         synchronized (messageHandlers) {
             weakHandlers.clear();
@@ -1408,7 +1415,12 @@ public class ManagerImpl implements Manager {
 
         dependencies.getSignalWebSocket().disconnect();
 
-        if (closeAccount && account != null) {
+        synchronized (closedListeners) {
+            closedListeners.forEach(Runnable::run);
+            closedListeners.clear();
+        }
+
+        if (account != null) {
             account.close();
         }
         account = null;

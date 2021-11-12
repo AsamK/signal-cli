@@ -171,6 +171,10 @@ public interface Signal extends DBusInterface {
 
     void submitRateLimitChallenge(String challenge, String captchaString) throws Error.Failure;
 
+    void unregister() throws Error.Failure;
+
+    void deleteAccount() throws Error.Failure;
+
     class MessageReceivedV2 extends DBusSignal {
 
         private final long timestamp;

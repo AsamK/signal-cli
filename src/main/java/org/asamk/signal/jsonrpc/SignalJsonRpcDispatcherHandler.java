@@ -64,6 +64,8 @@ public class SignalJsonRpcDispatcherHandler {
 
         if (!noReceiveOnStart) {
             c.getAccountNumbers().stream().map(c::getManager).filter(Objects::nonNull).forEach(this::subscribeReceive);
+            c.addOnManagerAddedHandler(this::subscribeReceive);
+            c.addOnManagerRemovedHandler(this::unsubscribeReceive);
         }
 
         handleConnection();
@@ -75,6 +77,9 @@ public class SignalJsonRpcDispatcherHandler {
         if (!noReceiveOnStart) {
             subscribeReceive(m);
         }
+
+        final var currentThread = Thread.currentThread();
+        m.addClosedListener(currentThread::interrupt);
 
         handleConnection();
     }

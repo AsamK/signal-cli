@@ -248,6 +248,8 @@ public interface Manager extends Closeable {
 
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient);
 
+    void addClosedListener(Runnable listener);
+
     @Override
     void close() throws IOException;
 

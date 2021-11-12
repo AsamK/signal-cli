@@ -132,6 +132,12 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             runDbusSingleAccount(m, false, receiveMode != ReceiveMode.ON_START);
         }
 
+        m.addClosedListener(() -> {
+            synchronized (this) {
+                notifyAll();
+            }
+        });
+
         synchronized (this) {
             try {
                 wait();
@@ -230,7 +236,6 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     }
 
     private void runSocket(final ServerSocketChannel serverChannel, Consumer<SocketChannel> socketHandler) {
-        final var mainThread = Thread.currentThread();
         new Thread(() -> {
             while (true) {
                 final SocketChannel channel;
@@ -241,7 +246,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     logger.info("Accepted new client: " + clientString);
                 } catch (IOException e) {
                     logger.error("Failed to accept new socket connection", e);
-                    mainThread.notifyAll();
+                    synchronized (this) {
+                        notifyAll();
+                    }
                     break;
                 }
                 new Thread(() -> {
@@ -291,6 +298,17 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     } catch (InterruptedException ignored) {
                     }
                 }
+            });
+            c.addOnManagerRemovedHandler(m -> {
+                final var path = DbusConfig.getObjectPath(m.getSelfNumber());
+                try {
+                    final var object = connection.getExportedObject(null, path);
+                    if (object instanceof DbusSignalImpl dbusSignal) {
+                        dbusSignal.close();
+                    }
+                } catch (DBusException ignored) {
+                }
+                connection.unExportObject(path);
             });
 
             final var initThreads = c.getAccountNumbers()

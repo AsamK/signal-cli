@@ -36,6 +36,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
             final String userAgent
     ) {
         this.managers.addAll(managers);
+        managers.forEach(m -> m.addClosedListener(() -> this.removeManager(m)));
         this.dataPath = dataPath;
         this.serviceEnvironment = serviceEnvironment;
         this.userAgent = userAgent;
@@ -54,6 +55,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
                 return;
             }
             managers.add(m);
+            m.addClosedListener(() -> this.removeManager(m));
         }
         synchronized (onManagerAddedHandlers) {
             for (final var handler : onManagerAddedHandlers) {
@@ -66,6 +68,19 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     public void addOnManagerAddedHandler(final Consumer<Manager> handler) {
         synchronized (onManagerAddedHandlers) {
             onManagerAddedHandlers.add(handler);
+        }
+    }
+
+    void removeManager(final Manager m) {
+        synchronized (managers) {
+            if (!managers.remove(m)) {
+                return;
+            }
+        }
+        synchronized (onManagerRemovedHandlers) {
+            for (final var handler : onManagerRemovedHandlers) {
+                handler.accept(m);
+            }
         }
     }
 

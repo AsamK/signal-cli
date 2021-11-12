@@ -139,6 +139,24 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void unregister() throws Error.Failure {
+        try {
+            m.unregister();
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to unregister: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteAccount() throws Error.Failure {
+        try {
+            m.deleteAccount();
+        } catch (IOException e) {
+            throw new Error.Failure("Failed to delete account: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void addDevice(String uri) {
         try {
             m.addDeviceLink(new URI(uri));

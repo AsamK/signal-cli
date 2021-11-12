@@ -68,6 +68,7 @@ public class DbusManagerImpl implements Manager {
 
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    private final List<Runnable> closedListeners = new ArrayList<>();
     private DBusSigHandler<Signal.MessageReceivedV2> dbusMsgHandler;
     private DBusSigHandler<Signal.ReceiptReceivedV2> dbusRcptHandler;
     private DBusSigHandler<Signal.SyncMessageReceivedV2> dbusSyncHandler;
@@ -584,6 +585,13 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void addClosedListener(final Runnable listener) {
+        synchronized (closedListeners) {
+            closedListeners.add(listener);
+        }
+    }
+
+    @Override
     public void close() throws IOException {
         synchronized (this) {
             this.notify();
@@ -594,6 +602,10 @@ public class DbusManagerImpl implements Manager {
             }
             weakHandlers.clear();
             messageHandlers.clear();
+        }
+        synchronized (closedListeners) {
+            closedListeners.forEach(Runnable::run);
+            closedListeners.clear();
         }
     }
 

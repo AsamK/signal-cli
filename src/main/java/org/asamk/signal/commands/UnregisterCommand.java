@@ -11,7 +11,7 @@ import org.asamk.signal.manager.Manager;
 
 import java.io.IOException;
 
-public class UnregisterCommand implements LocalCommand {
+public class UnregisterCommand implements JsonRpcLocalCommand {
 
     @Override
     public String getName() {
