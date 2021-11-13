@@ -1045,7 +1045,10 @@ public class ManagerImpl implements Manager {
         while (!Thread.interrupted()) {
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
-            account.setLastReceiveTimestamp(System.currentTimeMillis());
+            final var nowMillis = System.currentTimeMillis();
+            if (nowMillis - account.getLastReceiveTimestamp() > 60000) {
+                account.setLastReceiveTimestamp(nowMillis);
+            }
             logger.debug("Checking for new message from server");
             try {
                 var result = signalWebSocket.readOrEmpty(unit.toMillis(timeout), envelope1 -> {
