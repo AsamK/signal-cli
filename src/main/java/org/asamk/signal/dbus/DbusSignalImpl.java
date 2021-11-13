@@ -201,7 +201,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            final var results = m.sendMessage(new Message(message, attachments),
+            final var results = m.sendMessage(new Message(message, attachments, List.of()),
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
@@ -367,7 +367,7 @@ public class DbusSignalImpl implements Signal {
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final var results = m.sendMessage(new Message(message, attachments),
+            final var results = m.sendMessage(new Message(message, attachments, List.of()),
                     Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
             checkSendMessageResults(results.timestamp(), results.results());
             return results.timestamp();
@@ -393,7 +393,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            var results = m.sendMessage(new Message(message, attachments),
+            var results = m.sendMessage(new Message(message, attachments, List.of()),
                     Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
             checkSendMessageResults(results.timestamp(), results.results());
             return results.timestamp();

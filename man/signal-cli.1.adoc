@@ -205,6 +205,11 @@ Send the message to self without notification.
 *-e*, *--end-session*::
 Clear session state and send end session message.
 
+*--mention*::
+Mention another group member (syntax: start:length:recipientNumber)
+In the apps the mention replaces part of the message text, which is specified by the start and length values.
+e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
+
 === sendReaction
 
 Send reaction to a previously received or sent message.

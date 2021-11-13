@@ -683,6 +683,16 @@ public class ManagerImpl implements Manager {
         if (attachments != null) {
             messageBuilder.withAttachments(attachmentHelper.uploadAttachments(attachments));
         }
+        if (message.mentions().size() > 0) {
+            final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
+            for (final var m : message.mentions()) {
+                final var recipientId = resolveRecipient(m.recipient());
+                mentions.add(new SignalServiceDataMessage.Mention(resolveSignalServiceAddress(recipientId).getAci(),
+                        m.start(),
+                        m.length()));
+            }
+            messageBuilder.withMentions(mentions);
+        }
     }
 
     @Override

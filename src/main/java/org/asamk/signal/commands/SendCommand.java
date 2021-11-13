@@ -25,8 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SendCommand implements JsonRpcLocalCommand {
@@ -52,6 +54,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--mention")
+                .nargs("*")
+                .help("Mention another group member (syntax: start:length:recipientNumber)");
     }
 
     @Override
@@ -100,8 +105,27 @@ public class SendCommand implements JsonRpcLocalCommand {
             attachments = List.of();
         }
 
+        List<String> mentionStrings = ns.getList("mention");
+        List<Message.Mention> mentions;
+        if (mentionStrings == null) {
+            mentions = List.of();
+        } else {
+            final Pattern mentionPattern = Pattern.compile("([0-9]+):([0-9]+):(.+)");
+            mentions = new ArrayList<>();
+            for (final var mention : mentionStrings) {
+                final var matcher = mentionPattern.matcher(mention);
+                if (!matcher.matches()) {
+                    throw new UserErrorException("Invalid mention syntax ("
+                            + mention
+                            + ") expected 'start:end:recipientNumber'");
+                }
+                mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3),
+                        m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
+            }
+        }
+
         try {
-            var results = m.sendMessage(new Message(messageText, attachments), recipientIdentifiers);
+            var results = m.sendMessage(new Message(messageText, attachments, mentions), recipientIdentifiers);
             outputResult(outputWriter, results.timestamp());
             ErrorUtils.handleSendMessageResults(results.results());
         } catch (AttachmentInvalidException | IOException e) {
