@@ -6,7 +6,6 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
-import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
@@ -298,31 +297,34 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void sendTypingMessage(
+    public SendMessageResults sendTypingMessage(
             final TypingAction action, final Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single) {
-                signal.sendTyping(((RecipientIdentifier.Single) recipient).getIdentifier(),
-                        action == TypingAction.STOP);
-            } else if (recipient instanceof RecipientIdentifier.Group) {
-                throw new UnsupportedOperationException();
-            }
-        }
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        return handleMessage(recipients, numbers -> {
+            numbers.forEach(n -> signal.sendTyping(n, action == TypingAction.STOP));
+            return 0L;
+        }, () -> {
+            signal.sendTyping(signal.getSelfNumber(), action == TypingAction.STOP);
+            return 0L;
+        }, groupId -> {
+            throw new UnsupportedOperationException();
+        });
     }
 
     @Override
-    public void sendReadReceipt(
+    public SendMessageResults sendReadReceipt(
             final RecipientIdentifier.Single sender, final List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException {
+    ) {
         signal.sendReadReceipt(sender.getIdentifier(), messageIds);
+        return new SendMessageResults(0, Map.of());
     }
 
     @Override
-    public void sendViewedReceipt(
+    public SendMessageResults sendViewedReceipt(
             final RecipientIdentifier.Single sender, final List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException {
+    ) {
         signal.sendViewedReceipt(sender.getIdentifier(), messageIds);
+        return new SendMessageResults(0, Map.of());
     }
 
     @Override

@@ -4,20 +4,23 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.ErrorUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 
 public class SendTypingCommand implements JsonRpcLocalCommand {
 
@@ -57,12 +60,23 @@ public class SendTypingCommand implements JsonRpcLocalCommand {
         }
 
         try {
-            m.sendTypingMessage(action, recipientIdentifiers);
-        } catch (IOException | UntrustedIdentityException e) {
+            final var results = m.sendTypingMessage(action, recipientIdentifiers);
+            outputResult(outputWriter, results.timestamp());
+            ErrorUtils.handleSendMessageResults(results.results());
+        } catch (IOException e) {
             throw new UserErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")");
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
+        }
+    }
+
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter writer) {
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }

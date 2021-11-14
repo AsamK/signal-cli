@@ -620,50 +620,74 @@ public class ManagerImpl implements Manager {
         return new SendMessageResults(timestamp, results);
     }
 
-    private void sendTypingMessage(
+    private SendMessageResults sendTypingMessage(
             SignalServiceTypingMessage.Action action, Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         final var timestamp = System.currentTimeMillis();
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single) {
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.absent());
                 final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
-                sendHelper.sendTypingMessage(message, recipientId);
+                final var result = sendHelper.sendTypingMessage(message, recipientId);
+                results.put(recipient,
+                        List.of(SendMessageResult.from(result,
+                                account.getRecipientStore(),
+                                account.getRecipientStore()::resolveRecipientAddress)));
             } else if (recipient instanceof RecipientIdentifier.Group) {
                 final var groupId = ((RecipientIdentifier.Group) recipient).groupId();
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.of(groupId.serialize()));
-                sendHelper.sendGroupTypingMessage(message, groupId);
+                final var result = sendHelper.sendGroupTypingMessage(message, groupId);
+                results.put(recipient,
+                        result.stream()
+                                .map(r -> SendMessageResult.from(r,
+                                        account.getRecipientStore(),
+                                        account.getRecipientStore()::resolveRecipientAddress))
+                                .collect(Collectors.toList()));
             }
         }
+        return new SendMessageResults(timestamp, results);
     }
 
     @Override
-    public void sendTypingMessage(
+    public SendMessageResults sendTypingMessage(
             TypingAction action, Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        sendTypingMessage(action.toSignalService(), recipients);
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        return sendTypingMessage(action.toSignalService(), recipients);
     }
 
     @Override
-    public void sendReadReceipt(
+    public SendMessageResults sendReadReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException {
+    ) throws IOException {
+        final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
                 messageIds,
-                System.currentTimeMillis());
+                timestamp);
 
-        sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        final var result = sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        return new SendMessageResults(timestamp,
+                Map.of(sender,
+                        List.of(SendMessageResult.from(result,
+                                account.getRecipientStore(),
+                                account.getRecipientStore()::resolveRecipientAddress))));
     }
 
     @Override
-    public void sendViewedReceipt(
+    public SendMessageResults sendViewedReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException {
+    ) throws IOException {
+        final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
                 messageIds,
-                System.currentTimeMillis());
+                timestamp);
 
-        sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        final var result = sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        return new SendMessageResults(timestamp,
+                Map.of(sender,
+                        List.of(SendMessageResult.from(result,
+                                account.getRecipientStore(),
+                                account.getRecipientStore()::resolveRecipientAddress))));
     }
 
     @Override

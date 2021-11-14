@@ -1,7 +1,6 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
@@ -17,12 +16,14 @@ import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
+import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
 import org.whispersystems.signalservice.api.push.exceptions.RateLimitException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
@@ -68,8 +69,8 @@ public class SendHelper {
     }
 
     /**
-     * Send a single message to one or multiple recipients.
-     * The message is extended with the current expiration timer for each recipient.
+     * Send a single message to one recipient.
+     * The message is extended with the current expiration timer.
      */
     public SendMessageResult sendMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final RecipientId recipientId
@@ -135,67 +136,46 @@ public class SendHelper {
         return result;
     }
 
-    public void sendDeliveryReceipt(
+    public SendMessageResult sendDeliveryReceipt(
             RecipientId recipientId, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException {
+    ) {
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
                 messageIds,
                 System.currentTimeMillis());
 
-        sendReceiptMessage(receiptMessage, recipientId);
+        return sendReceiptMessage(receiptMessage, recipientId);
     }
 
-    public void sendReceiptMessage(
+    public SendMessageResult sendReceiptMessage(
             final SignalServiceReceiptMessage receiptMessage, final RecipientId recipientId
-    ) throws IOException, UntrustedIdentityException {
-        final var messageSender = dependencies.getMessageSender();
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
-        try {
-            messageSender.sendReceipt(address, unidentifiedAccessHelper.getAccessFor(recipientId), receiptMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
-        }
+    ) {
+        return handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendReceipt(address,
+                        unidentifiedAccess,
+                        receiptMessage));
     }
 
-    public void sendRetryReceipt(
+    public SendMessageResult sendRetryReceipt(
             DecryptionErrorMessage errorMessage, RecipientId recipientId, Optional<GroupId> groupId
-    ) throws IOException, UntrustedIdentityException {
-        var messageSender = dependencies.getMessageSender();
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+    ) {
         logger.debug("Sending retry receipt for {} to {}, device: {}",
                 errorMessage.getTimestamp(),
                 recipientId,
                 errorMessage.getDeviceId());
-        try {
-            messageSender.sendRetryReceipt(address,
-                    unidentifiedAccessHelper.getAccessFor(recipientId),
-                    groupId.transform(GroupId::serialize),
-                    errorMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
-        }
+        return handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendRetryReceipt(address,
+                        unidentifiedAccess,
+                        groupId.transform(GroupId::serialize),
+                        errorMessage));
     }
 
-    public SendMessageResult sendNullMessage(RecipientId recipientId) throws IOException {
-        var messageSender = dependencies.getMessageSender();
-
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
-        try {
-            try {
-                return messageSender.sendNullMessage(address, unidentifiedAccessHelper.getAccessFor(recipientId));
-            } catch (UnregisteredUserException e) {
-                final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
-                final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
-                return messageSender.sendNullMessage(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId));
-            }
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            return SendMessageResult.identityFailure(address, e.getIdentityKey());
-        }
+    public SendMessageResult sendNullMessage(RecipientId recipientId) {
+        return handleSendMessage(recipientId, SignalServiceMessageSender::sendNullMessage);
     }
 
     public SendMessageResult sendSelfMessage(
             SignalServiceDataMessage.Builder messageBuilder
-    ) throws IOException {
+    ) {
         final var recipientId = account.getSelfRecipientId();
         final var contact = account.getContactStore().getContact(recipientId);
         final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
@@ -205,35 +185,40 @@ public class SendHelper {
         return sendSelfMessage(message);
     }
 
-    public SendMessageResult sendSyncMessage(SignalServiceSyncMessage message) throws IOException {
+    public SendMessageResult sendSyncMessage(SignalServiceSyncMessage message) {
         var messageSender = dependencies.getMessageSender();
         try {
             return messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
+        } catch (UnregisteredUserException e) {
+            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            return SendMessageResult.unregisteredFailure(address);
+        } catch (ProofRequiredException e) {
+            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            return SendMessageResult.proofRequiredFailure(address, e);
+        } catch (RateLimitException e) {
+            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
+            return SendMessageResult.networkFailure(address);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
+        } catch (IOException e) {
+            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
+            return SendMessageResult.networkFailure(address);
         }
     }
 
-    public void sendTypingMessage(
+    public SendMessageResult sendTypingMessage(
             SignalServiceTypingMessage message, RecipientId recipientId
-    ) throws IOException, UntrustedIdentityException {
-        var messageSender = dependencies.getMessageSender();
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
-        try {
-            try {
-                messageSender.sendTyping(address, unidentifiedAccessHelper.getAccessFor(recipientId), message);
-            } catch (UnregisteredUserException e) {
-                final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
-                final var newAddress = addressResolver.resolveSignalServiceAddress(newRecipientId);
-                messageSender.sendTyping(newAddress, unidentifiedAccessHelper.getAccessFor(newRecipientId), message);
-            }
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            throw new UntrustedIdentityException(account.getRecipientStore().resolveRecipientAddress(recipientId));
-        }
+    ) {
+        return handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(address,
+                        unidentifiedAccess,
+                        message));
     }
 
-    public void sendGroupTypingMessage(
+    public List<SendMessageResult> sendGroupTypingMessage(
             SignalServiceTypingMessage message, GroupId groupId
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var g = getGroupForSending(groupId);
@@ -245,7 +230,10 @@ public class SendHelper {
         final var addresses = recipientIdList.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
                 .collect(Collectors.toList());
-        messageSender.sendTyping(addresses, unidentifiedAccessHelper.getAccessFor(recipientIdList), message, null);
+        return messageSender.sendTyping(addresses,
+                unidentifiedAccessHelper.getAccessFor(recipientIdList),
+                message,
+                null);
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
@@ -285,25 +273,29 @@ public class SendHelper {
 
     private SendMessageResult sendMessage(
             SignalServiceDataMessage message, RecipientId recipientId
-    ) throws IOException {
+    ) {
+        return handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
+                        unidentifiedAccess,
+                        ContentHint.DEFAULT,
+                        message,
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY));
+    }
+
+    private SendMessageResult handleSendMessage(RecipientId recipientId, SenderHandler s) {
         var messageSender = dependencies.getMessageSender();
 
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        var address = addressResolver.resolveSignalServiceAddress(recipientId);
         try {
             try {
-                return messageSender.sendDataMessage(address,
-                        unidentifiedAccessHelper.getAccessFor(recipientId),
-                        ContentHint.DEFAULT,
-                        message,
-                        SignalServiceMessageSender.IndividualSendEvents.EMPTY);
+                return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(recipientId));
             } catch (UnregisteredUserException e) {
                 final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
-                return messageSender.sendDataMessage(addressResolver.resolveSignalServiceAddress(newRecipientId),
-                        unidentifiedAccessHelper.getAccessFor(newRecipientId),
-                        ContentHint.DEFAULT,
-                        message,
-                        SignalServiceMessageSender.IndividualSendEvents.EMPTY);
+                address = addressResolver.resolveSignalServiceAddress(newRecipientId);
+                return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(newRecipientId));
             }
+        } catch (UnregisteredUserException e) {
+            return SendMessageResult.unregisteredFailure(address);
         } catch (ProofRequiredException e) {
             return SendMessageResult.proofRequiredFailure(address, e);
         } catch (RateLimitException e) {
@@ -311,10 +303,13 @@ public class SendHelper {
             return SendMessageResult.networkFailure(address);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
+        } catch (IOException e) {
+            logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
+            return SendMessageResult.networkFailure(address);
         }
     }
 
-    private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) throws IOException {
+    private SendMessageResult sendSelfMessage(SignalServiceDataMessage message) {
         var address = account.getSelfAddress();
         var transcript = new SentTranscriptMessage(Optional.of(address),
                 message.getTimestamp(),
@@ -332,5 +327,14 @@ public class SendHelper {
             final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
             identityFailureHandler.handleIdentityFailure(recipientId, r.getIdentityFailure());
         }
+    }
+
+    interface SenderHandler {
+
+        SendMessageResult send(
+                SignalServiceMessageSender messageSender,
+                SignalServiceAddress address,
+                Optional<UnidentifiedAccessPair> unidentifiedAccess
+        ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
     }
 }

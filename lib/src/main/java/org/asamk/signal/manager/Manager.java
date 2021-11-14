@@ -144,17 +144,17 @@ public interface Manager extends Closeable {
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, InactiveGroupLinkException;
 
-    void sendTypingMessage(
+    SendMessageResults sendTypingMessage(
             TypingAction action, Set<RecipientIdentifier> recipients
-    ) throws IOException, UntrustedIdentityException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
 
-    void sendReadReceipt(
+    SendMessageResults sendReadReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException;
+    ) throws IOException;
 
-    void sendViewedReceipt(
+    SendMessageResults sendViewedReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException, UntrustedIdentityException;
+    ) throws IOException;
 
     SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients

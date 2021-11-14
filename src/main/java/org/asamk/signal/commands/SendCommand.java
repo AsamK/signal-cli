@@ -83,7 +83,9 @@ public class SendCommand implements JsonRpcLocalCommand {
             }
 
             try {
-                m.sendEndSessionMessage(singleRecipients);
+                final var results = m.sendEndSessionMessage(singleRecipients);
+                outputResult(outputWriter, results.timestamp());
+                ErrorUtils.handleSendMessageResults(results.results());
                 return;
             } catch (IOException e) {
                 throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

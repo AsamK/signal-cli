@@ -3,14 +3,18 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputWriter;
+import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.ErrorUtils;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class SendReceiptCommand implements JsonRpcLocalCommand {
 
@@ -43,16 +47,28 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
         final var type = ns.getString("type");
 
         try {
+            final SendMessageResults results;
             if (type == null || "read".equals(type)) {
-                m.sendReadReceipt(recipient, targetTimestamps);
+                results = m.sendReadReceipt(recipient, targetTimestamps);
             } else if ("viewed".equals(type)) {
-                m.sendViewedReceipt(recipient, targetTimestamps);
+                results = m.sendViewedReceipt(recipient, targetTimestamps);
             } else {
                 throw new UserErrorException("Unknown receipt type: " + type);
             }
-        } catch (IOException | UntrustedIdentityException e) {
+            outputResult(outputWriter, results.timestamp());
+            ErrorUtils.handleSendMessageResults(results.results());
+        } catch (IOException e) {
             throw new UserErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")");
+        }
+    }
+
+    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
+        if (outputWriter instanceof PlainTextWriter writer) {
+            writer.println("{}", timestamp);
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }

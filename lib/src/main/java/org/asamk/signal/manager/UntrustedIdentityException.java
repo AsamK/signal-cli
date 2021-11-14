@@ -5,13 +5,9 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 public class UntrustedIdentityException extends Exception {
 
     private final RecipientAddress sender;
-    private final Integer senderDevice;
+    private final int senderDevice;
 
-    public UntrustedIdentityException(final RecipientAddress sender) {
-        this(sender, null);
-    }
-
-    public UntrustedIdentityException(final RecipientAddress sender, final Integer senderDevice) {
+    public UntrustedIdentityException(final RecipientAddress sender, final int senderDevice) {
         super("Untrusted identity: " + sender.getIdentifier());
         this.sender = sender;
         this.senderDevice = senderDevice;
@@ -21,7 +17,7 @@ public class UntrustedIdentityException extends Exception {
         return sender;
     }
 
-    public Integer getSenderDevice() {
+    public int getSenderDevice() {
         return senderDevice;
     }
 }

@@ -7,7 +7,6 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
 import org.asamk.signal.manager.StickerPackInvalidException;
-import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
@@ -305,16 +304,15 @@ public class DbusSignalImpl implements Signal {
         try {
             var recipients = new ArrayList<String>(1);
             recipients.add(recipient);
-            m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
+            final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
+            checkSendMessageResults(results.timestamp(), results.results());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
-        } catch (UntrustedIdentityException e) {
-            throw new Error.UntrustedIdentity(e.getMessage());
         }
     }
 
@@ -323,11 +321,11 @@ public class DbusSignalImpl implements Signal {
             final String recipient, final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
         try {
-            m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
+            final var results = m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
+                    messageIds);
+            checkSendMessageResults(results.timestamp(), results.results());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (UntrustedIdentityException e) {
-            throw new Error.UntrustedIdentity(e.getMessage());
         }
     }
 
@@ -336,11 +334,11 @@ public class DbusSignalImpl implements Signal {
             final String recipient, final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
         try {
-            m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
+            final var results = m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
+                    messageIds);
+            checkSendMessageResults(results.timestamp(), results.results());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
-        } catch (UntrustedIdentityException e) {
-            throw new Error.UntrustedIdentity(e.getMessage());
         }
     }
 
