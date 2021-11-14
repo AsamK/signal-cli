@@ -269,20 +269,33 @@ public class SignalJsonRpcDispatcherHandler {
                     e.getMessage(),
                     null));
         } catch (UserErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(USER_ERROR, e.getMessage(), null));
+            throw new JsonRpcException(new JsonRpcResponse.Error(USER_ERROR,
+                    e.getMessage(),
+                    getErrorDataNode(objectMapper, result)));
         } catch (IOErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(IO_ERROR, e.getMessage(), null));
+            throw new JsonRpcException(new JsonRpcResponse.Error(IO_ERROR,
+                    e.getMessage(),
+                    getErrorDataNode(objectMapper, result)));
         } catch (UntrustedKeyErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(UNTRUSTED_KEY_ERROR, e.getMessage(), null));
+            throw new JsonRpcException(new JsonRpcResponse.Error(UNTRUSTED_KEY_ERROR,
+                    e.getMessage(),
+                    getErrorDataNode(objectMapper, result)));
         } catch (Throwable e) {
             logger.error("Command execution failed", e);
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
                     e.getMessage(),
-                    null));
+                    getErrorDataNode(objectMapper, result)));
         }
 
         Object output = result[0] == null ? Map.of() : result[0];
         return objectMapper.valueToTree(output);
+    }
+
+    private JsonNode getErrorDataNode(final ObjectMapper objectMapper, final Object[] result) {
+        if (result[0] == null) {
+            return null;
+        }
+        return objectMapper.valueToTree(Map.of("response", result[0]));
     }
 
     private <T> void parseParamsAndRunCommand(
