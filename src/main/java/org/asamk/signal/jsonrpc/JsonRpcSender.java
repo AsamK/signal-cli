@@ -1,6 +1,6 @@
 package org.asamk.signal.jsonrpc;
 
-import org.asamk.signal.JsonWriter;
+import org.asamk.signal.output.JsonWriter;
 
 import java.util.List;
 

@@ -1,9 +1,8 @@
-package org.asamk.signal;
+package org.asamk.signal.json;
 
-import org.asamk.signal.json.JsonError;
-import org.asamk.signal.json.JsonMessageEnvelope;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.output.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

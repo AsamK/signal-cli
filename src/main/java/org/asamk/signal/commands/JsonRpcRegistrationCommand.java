@@ -1,8 +1,8 @@
 package org.asamk.signal.commands;
 
-import org.asamk.signal.JsonWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.output.JsonWriter;
 
 public interface JsonRpcRegistrationCommand<T> extends JsonRpcCommand<T> {
 

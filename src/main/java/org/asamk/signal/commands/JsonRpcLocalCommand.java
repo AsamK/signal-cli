@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import net.sourceforge.argparse4j.inf.Namespace;
 
-import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.output.JsonWriter;
 
 import java.util.List;
 import java.util.Map;

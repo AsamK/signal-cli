@@ -8,7 +8,7 @@ public class RandomUtils {
     private static final ThreadLocal<SecureRandom> LOCAL_RANDOM = ThreadLocal.withInitial(() -> {
         var rand = getSecureRandomUnseeded();
 
-        // Let the SecureRandom seed it self initially
+        // Let the SecureRandom seed itself initially
         rand.nextBoolean();
 
         return rand;

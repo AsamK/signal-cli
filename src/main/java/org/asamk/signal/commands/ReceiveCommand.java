@@ -4,15 +4,15 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.JsonReceiveMessageHandler;
-import org.asamk.signal.JsonWriter;
 import org.asamk.signal.OutputType;
-import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.output.PlainTextWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

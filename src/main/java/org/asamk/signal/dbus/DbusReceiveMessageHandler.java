@@ -1,4 +1,4 @@
-package org.asamk.signal;
+package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;

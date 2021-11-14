@@ -1,10 +1,10 @@
 package org.asamk.signal.commands;
 
 import org.asamk.signal.BaseConfig;
-import org.asamk.signal.JsonWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
+import org.asamk.signal.output.JsonWriter;
 
 import java.util.Map;
 

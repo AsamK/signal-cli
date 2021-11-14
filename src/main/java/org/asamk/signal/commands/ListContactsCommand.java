@@ -3,10 +3,10 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.JsonWriter;
-import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.output.PlainTextWriter;
 
 import java.util.UUID;
 import java.util.stream.Collectors;

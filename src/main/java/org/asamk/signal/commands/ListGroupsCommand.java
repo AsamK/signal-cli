@@ -4,13 +4,13 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
-import org.asamk.signal.JsonWriter;
-import org.asamk.signal.OutputWriter;
-import org.asamk.signal.PlainTextWriter;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.output.PlainTextWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
