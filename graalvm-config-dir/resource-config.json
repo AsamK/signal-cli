@@ -2,6 +2,9 @@
   "resources":{
   "includes":[
     {
+      "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AG\\E"
     }, 
     {
@@ -96,24 +99,6 @@
     }, 
     {
       "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/ConstantSet.class\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/platform/linux/ProtocolFamily.class\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/platform/linux/Shutdown.class\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/platform/linux/Sock.class\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/platform/linux/SocketLevel.class\\E"
-    }, 
-    {
-      "pattern":"\\Qjnr/constants/platform/linux/SocketOption.class\\E"
     }, 
     {
       "pattern":"\\Qlibsignal_jni.so\\E"

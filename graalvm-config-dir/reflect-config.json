@@ -62,26 +62,6 @@
   "allDeclaredMethods":true}
 ,
 {
-  "name":"com.kenai.jffi.Invoker",
-  "methods":[
-    {"name":"invokeI6","parameterTypes":["com.kenai.jffi.CallContext","long","int","int","int","int","int","int"] }, 
-    {"name":"invokeL6","parameterTypes":["com.kenai.jffi.CallContext","long","long","long","long","long","long","long"] }, 
-    {"name":"invokeN6","parameterTypes":["com.kenai.jffi.CallContext","long","long","long","long","long","long","long"] }
-  ]}
-,
-{
-  "name":"com.kenai.jffi.Version",
-  "fields":[
-    {"name":"MAJOR"}, 
-    {"name":"MICRO"}, 
-    {"name":"MINOR"}
-  ]}
-,
-{
-  "name":"com.kenai.jffi.internal.StubLoader",
-  "methods":[{"name":"isLoaded","parameterTypes":[] }]}
-,
-{
   "name":"com.sun.crypto.provider.AESCipher$General",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
@@ -289,90 +269,6 @@
   "methods":[{"name":"<init>","parameterTypes":["sun.security.x509.X500Name"] }]}
 ,
 {
-  "name":"jnr.constants.platform.linux.ProtocolFamily"}
-,
-{
-  "name":"jnr.constants.platform.linux.Shutdown"}
-,
-{
-  "name":"jnr.constants.platform.linux.Sock"}
-,
-{
-  "name":"jnr.constants.platform.linux.SocketLevel"}
-,
-{
-  "name":"jnr.constants.platform.linux.SocketOption"}
-,
-{
-  "name":"jnr.enxio.channels.Native$LibC",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.enxio.channels.Native$LibC$jnr$ffi$1",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]}
-,
-{
-  "name":"jnr.ffi.Pointer",
-  "allDeclaredMethods":true,
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.ffi.StructLayout$gid_t",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.StructLayout"] }]}
-,
-{
-  "name":"jnr.ffi.byref.IntByReference",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.ffi.provider.converters.ByReferenceParameterConverter",
-  "methods":[{"name":"nativeType","parameterTypes":[] }]}
-,
-{
-  "name":"jnr.ffi.provider.converters.ByReferenceParameterConverter$Out",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.ffi.provider.converters.StringResultConverter",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.ffi.provider.converters.StructByReferenceToNativeConverter",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.ffi.provider.jffi.BufferParameterStrategy",
-  "methods":[{"name":"address","parameterTypes":["java.nio.Buffer"] }]}
-,
-{
-  "name":"jnr.ffi.provider.jffi.PointerParameterStrategy",
-  "methods":[{"name":"address","parameterTypes":["jnr.ffi.Pointer"] }]}
-,
-{
-  "name":"jnr.ffi.provider.jffi.Provider",
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
-,
-{
-  "name":"jnr.ffi.provider.jffi.platform.x86_64.linux.TypeAliases",
-  "fields":[{"name":"ALIASES"}]}
-,
-{
-  "name":"jnr.posix.Timeval",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.unixsocket.Native$LibC",
-  "allPublicMethods":true}
-,
-{
-  "name":"jnr.unixsocket.Native$LibC$jnr$ffi$0",
-  "methods":[{"name":"<init>","parameterTypes":["jnr.ffi.Runtime","jnr.ffi.provider.jffi.NativeLibrary","java.lang.Object[]"] }]}
-,
-{
-  "name":"jnr.unixsocket.SockAddrUnix",
-  "allPublicMethods":true}
-,
-{
   "name":"long",
   "allDeclaredMethods":true,
   "allPublicMethods":true}
@@ -408,7 +304,8 @@
 {
   "name":"org.asamk.Signal$MessageReceivedV2",
   "queryAllDeclaredConstructors":true,
-  "queryAllPublicConstructors":true}
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","long","java.lang.String","byte[]","java.lang.String","java.util.Map"] }]}
 ,
 {
   "name":"org.asamk.Signal$ReceiptReceived",
@@ -418,7 +315,8 @@
 {
   "name":"org.asamk.Signal$ReceiptReceivedV2",
   "queryAllDeclaredConstructors":true,
-  "queryAllPublicConstructors":true}
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","long","java.lang.String","java.lang.String","java.util.Map"] }]}
 ,
 {
   "name":"org.asamk.Signal$StructDevice",
@@ -759,7 +657,6 @@
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, 
-    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, 
     {"name":"linkPreviews","parameterTypes":[] }, 
     {"name":"phoneNumberSharingMode","parameterTypes":[] }, 
     {"name":"phoneNumberUnlisted","parameterTypes":[] }, 
@@ -795,11 +692,6 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}
-,
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$Group",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true}
 ,
 {
   "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1",
@@ -1323,6 +1215,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
 ,
 {
+  "name":"org.freedesktop.dbus.errors.UnknownMethod",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
+{
   "name":"org.freedesktop.dbus.errors.UnknownObject",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
 ,
@@ -1348,9 +1244,6 @@
 {
   "name":"org.freedesktop.dbus.interfaces.Properties$PropertiesChanged",
   "allPublicConstructors":true}
-,
-{
-  "name":"org.objectweb.asm.util.TraceMethodVisitor"}
 ,
 {
   "name":"org.signal.storageservice.protos.groups.AccessControl",

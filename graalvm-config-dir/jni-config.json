@@ -1,5 +1,14 @@
 [
 {
+  "name":"com.sun.security.auth.module.UnixSystem",
+  "fields":[
+    {"name":"gid"}, 
+    {"name":"groups"}, 
+    {"name":"uid"}, 
+    {"name":"username"}
+  ]}
+,
+{
   "name":"java.lang.Boolean",
   "methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]}
 ,

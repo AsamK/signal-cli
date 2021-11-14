@@ -3,6 +3,9 @@
     "interfaces":["org.asamk.Signal"]}
   ,
   {
+    "interfaces":["org.asamk.Signal$Group"]}
+  ,
+  {
     "interfaces":["org.freedesktop.dbus.interfaces.DBus"]}
   
 ]
