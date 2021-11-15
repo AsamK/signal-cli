@@ -447,13 +447,36 @@
   "name":"org.asamk.signal.json.JsonCallMessage$Hangup",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true}
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"deviceId","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"isLegacy","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"org.asamk.signal.json.JsonCallMessage$IceUpdate",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"opaque","parameterTypes":[] }, 
+    {"name":"sdp","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"org.asamk.signal.json.JsonCallMessage$Offer",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true}
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"opaque","parameterTypes":[] }, 
+    {"name":"sdp","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"org.asamk.signal.json.JsonContactAddress",
