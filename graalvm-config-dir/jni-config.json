@@ -32,7 +32,11 @@
 ,
 {
   "name":"java.util.UUID",
-  "methods":[{"name":"<init>","parameterTypes":["long","long"] }]}
+  "methods":[
+    {"name":"<init>","parameterTypes":["long","long"] }, 
+    {"name":"getLeastSignificantBits","parameterTypes":[] }, 
+    {"name":"getMostSignificantBits","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"}

@@ -142,11 +142,6 @@ public class App {
             dataPath = getDefaultDataPath();
         }
 
-        if (!ServiceConfig.isZkgroupAvailable()) {
-            logger.warn("WARNING: Support for new group V2 is disabled,"
-                    + " because the required native library dependency is missing: libzkgroup");
-        }
-
         if (!ServiceConfig.isSignalClientAvailable()) {
             throw new UserErrorException("Missing required native library dependency: libsignal-client");
         }

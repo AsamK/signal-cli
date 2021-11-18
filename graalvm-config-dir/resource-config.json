@@ -32,6 +32,9 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BD\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BE\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BM\\E"
     }, 
     {
@@ -77,6 +80,9 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IT\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_JP\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MO\\E"
     }, 
     {
@@ -104,13 +110,13 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_US\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_XK\\E"
+    }, 
+    {
       "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
     }, 
     {
       "pattern":"\\Qlibsignal_jni.so\\E"
-    }, 
-    {
-      "pattern":"\\Qlibzkgroup.so\\E"
     }, 
     {
       "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"

@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.config;
 
-import org.signal.zkgroup.internal.Native;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
@@ -31,21 +30,7 @@ public class ServiceConfig {
     public static final AccountAttributes.Capabilities capabilities;
 
     static {
-        boolean zkGroupAvailable;
-        try {
-            Native.serverPublicParamsCheckValidContentsJNI(new byte[]{});
-            zkGroupAvailable = true;
-        } catch (Throwable e) {
-            logger.warn("Failed to call libzkgroup: {}", e.getMessage());
-            zkGroupAvailable = false;
-        }
-        capabilities = new AccountAttributes.Capabilities(false,
-                zkGroupAvailable,
-                false,
-                zkGroupAvailable,
-                true,
-                true,
-                false);
+        capabilities = new AccountAttributes.Capabilities(false, true, false, true, true, true, false);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();
@@ -58,10 +43,6 @@ public class ServiceConfig {
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
-    }
-
-    public static boolean isZkgroupAvailable() {
-        return ServiceConfig.getCapabilities().isGv2();
     }
 
     public static boolean isSignalClientAvailable() {

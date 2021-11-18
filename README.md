@@ -22,9 +22,9 @@ a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well
 System requirements:
 
 - at least Java Runtime Environment (JRE) 17
-- native libraries: libzkgroup, libsignal-client
+- native library: libsignal-client
 
-  Those are bundled for x86_64 Linux (with recent enough glibc, see #643), for other systems/architectures
+  The native lib is bundled for x86_64 Linux (with recent enough glibc, see #643), for other systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
 ### Install system-wide on Linux

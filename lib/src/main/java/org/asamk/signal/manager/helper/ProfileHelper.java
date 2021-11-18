@@ -23,7 +23,6 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException;
 import org.whispersystems.signalservice.api.services.ProfileService;
-import org.whispersystems.signalservice.internal.ServiceResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -306,22 +305,10 @@ public final class ProfileHelper {
             Optional<UnidentifiedAccess> unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
     ) {
-        var profileService = dependencies.getProfileService();
-
-        Single<ServiceResponse<ProfileAndCredential>> responseSingle;
+        final var profileService = dependencies.getProfileService();
         final var locale = Utils.getDefaultLocale();
-        try {
-            responseSingle = profileService.getProfile(address, profileKey, unidentifiedAccess, requestType, locale);
-        } catch (NoClassDefFoundError e) {
-            // Native zkgroup lib not available for ProfileKey
-            responseSingle = profileService.getProfile(address,
-                    Optional.absent(),
-                    unidentifiedAccess,
-                    requestType,
-                    locale);
-        }
 
-        return responseSingle.map(pair -> {
+        return profileService.getProfile(address, profileKey, unidentifiedAccess, requestType, locale).map(pair -> {
             var processor = new ProfileService.ProfileResponseProcessor(pair);
             if (processor.hasResult()) {
                 return processor.getResult();
