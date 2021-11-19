@@ -3,6 +3,8 @@ package org.asamk.signal.manager.storage.recipients;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCredential;
 
+import java.util.Objects;
+
 public class Recipient {
 
     private final RecipientId recipientId;
@@ -79,6 +81,24 @@ public class Recipient {
 
     public Profile getProfile() {
         return profile;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Recipient recipient = (Recipient) o;
+        return Objects.equals(recipientId, recipient.recipientId)
+                && Objects.equals(address, recipient.address)
+                && Objects.equals(contact, recipient.contact)
+                && Objects.equals(profileKey, recipient.profileKey)
+                && Objects.equals(profileKeyCredential, recipient.profileKeyCredential)
+                && Objects.equals(profile, recipient.profile);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(recipientId, address, contact, profileKey, profileKeyCredential, profile);
     }
 
     public static final class Builder {

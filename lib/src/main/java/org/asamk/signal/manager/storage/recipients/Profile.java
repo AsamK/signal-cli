@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.recipients;
 import org.whispersystems.signalservice.internal.util.Util;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 public class Profile {
@@ -154,6 +155,33 @@ public class Profile {
                 return null;
             }
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Profile profile = (Profile) o;
+        return lastUpdateTimestamp == profile.lastUpdateTimestamp
+                && Objects.equals(givenName, profile.givenName)
+                && Objects.equals(familyName, profile.familyName)
+                && Objects.equals(about, profile.about)
+                && Objects.equals(aboutEmoji, profile.aboutEmoji)
+                && Objects.equals(avatarUrlPath, profile.avatarUrlPath)
+                && unidentifiedAccessMode == profile.unidentifiedAccessMode
+                && Objects.equals(capabilities, profile.capabilities);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lastUpdateTimestamp,
+                givenName,
+                familyName,
+                about,
+                aboutEmoji,
+                avatarUrlPath,
+                unidentifiedAccessMode,
+                capabilities);
     }
 
     public static final class Builder {

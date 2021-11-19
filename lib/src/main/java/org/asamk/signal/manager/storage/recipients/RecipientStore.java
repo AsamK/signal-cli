@@ -130,10 +130,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     public Recipient getRecipient(RecipientId recipientId) {
         synchronized (recipients) {
-            while (recipientsMerged.containsKey(recipientId)) {
-                recipientId = recipientsMerged.get(recipientId);
-            }
-            return recipients.get(recipientId);
+            return getRecipientLocked(recipientId);
         }
     }
 
@@ -378,11 +375,21 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withAddress(address).build());
     }
 
+    private Recipient getRecipientLocked(RecipientId recipientId) {
+        while (recipientsMerged.containsKey(recipientId)) {
+            recipientId = recipientsMerged.get(recipientId);
+        }
+        return recipients.get(recipientId);
+    }
+
     private void storeRecipientLocked(
             final RecipientId recipientId, final Recipient recipient
     ) {
-        recipients.put(recipientId, recipient);
-        saveLocked();
+        final var existingRecipient = getRecipientLocked(recipientId);
+        if (existingRecipient == null || !existingRecipient.equals(recipient)) {
+            recipients.put(recipientId, recipient);
+            saveLocked();
+        }
     }
 
     private void mergeRecipientsLocked(RecipientId recipientId, RecipientId toBeMergedRecipientId) {

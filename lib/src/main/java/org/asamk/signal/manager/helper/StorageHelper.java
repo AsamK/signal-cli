@@ -83,6 +83,7 @@ public class StorageHelper {
                 readContactRecord(record);
             }
         }
+        logger.debug("Done reading data from remote storage");
     }
 
     private void readContactRecord(final SignalStorageRecord record) {

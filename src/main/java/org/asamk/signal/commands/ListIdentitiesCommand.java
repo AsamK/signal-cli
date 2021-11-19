@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ListIdentitiesCommand implements JsonRpcLocalCommand {
@@ -67,7 +68,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                 var safetyNumber = Util.formatSafetyNumber(id.safetyNumber());
                 var scannableSafetyNumber = id.scannableSafetyNumber();
                 return new JsonIdentity(address.getNumber().orElse(null),
-                        address.getUuid().toString(),
+                        address.getUuid().map(UUID::toString).orElse(null),
                         Hex.toString(id.getFingerprint()),
                         safetyNumber,
                         scannableSafetyNumber == null

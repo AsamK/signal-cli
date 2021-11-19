@@ -94,8 +94,10 @@ public class AttachmentHelper {
             return;
         }
 
+        final var pointer = attachment.asPointer();
+        logger.debug("Retrieving attachment {} with size {}", pointer.getRemoteId(), pointer.getSize());
         var tmpFile = IOUtils.createTempFile();
-        try (var input = retrieveAttachmentAsStream(attachment.asPointer(), tmpFile)) {
+        try (var input = retrieveAttachmentAsStream(pointer, tmpFile)) {
             consumer.handle(input);
         } finally {
             try {
