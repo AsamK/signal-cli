@@ -708,15 +708,27 @@ public class ManagerImpl implements Manager {
             messageBuilder.withAttachments(attachmentHelper.uploadAttachments(attachments));
         }
         if (message.mentions().size() > 0) {
-            final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
-            for (final var m : message.mentions()) {
-                final var recipientId = resolveRecipient(m.recipient());
-                mentions.add(new SignalServiceDataMessage.Mention(resolveSignalServiceAddress(recipientId).getAci(),
-                        m.start(),
-                        m.length()));
-            }
-            messageBuilder.withMentions(mentions);
+            messageBuilder.withMentions(resolveMentions(message.mentions()));
         }
+        if (message.quote().isPresent()) {
+            final var quote = message.quote().get();
+            messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
+                    resolveSignalServiceAddress(resolveRecipient(quote.author())),
+                    quote.message(),
+                    List.of(),
+                    resolveMentions(quote.mentions())));
+        }
+    }
+
+    private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws IOException {
+        final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
+        for (final var m : mentionList) {
+            final var recipientId = resolveRecipient(m.recipient());
+            mentions.add(new SignalServiceDataMessage.Mention(resolveSignalServiceAddress(recipientId).getAci(),
+                    m.start(),
+                    m.length()));
+        }
+        return mentions;
     }
 
     @Override

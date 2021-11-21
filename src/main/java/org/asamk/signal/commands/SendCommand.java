@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,14 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--mention")
                 .nargs("*")
                 .help("Mention another group member (syntax: start:length:recipientNumber)");
+        subparser.addArgument("--quote-timestamp")
+                .type(long.class)
+                .help("Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.");
+        subparser.addArgument("--quote-author").help("Specify the number of the author of the original message.");
+        subparser.addArgument("--quote-message").help("Specify the message of the original message.");
+        subparser.addArgument("--quote-mention")
+                .nargs("*")
+                .help("Quote with mention of another group member (syntax: start:length:recipientNumber)");
     }
 
     @Override
@@ -108,26 +117,28 @@ public class SendCommand implements JsonRpcLocalCommand {
         }
 
         List<String> mentionStrings = ns.getList("mention");
-        List<Message.Mention> mentions;
-        if (mentionStrings == null) {
-            mentions = List.of();
+        final var mentions = mentionStrings == null ? List.<Message.Mention>of() : parseMentions(m, mentionStrings);
+
+        final Message.Quote quote;
+        final var quoteTimestamp = ns.getLong("quote-timestamp");
+        if (quoteTimestamp != null) {
+            final var quoteAuthor = ns.getString("quote-author");
+            final var quoteMessage = ns.getString("quote-message");
+            List<String> quoteMentionStrings = ns.getList("quote-mention");
+            final var quoteMentions = quoteMentionStrings == null
+                    ? List.<Message.Mention>of()
+                    : parseMentions(m, quoteMentionStrings);
+            quote = new Message.Quote(quoteTimestamp,
+                    CommandUtil.getSingleRecipientIdentifier(quoteAuthor, m.getSelfNumber()),
+                    quoteMessage,
+                    quoteMentions);
         } else {
-            final Pattern mentionPattern = Pattern.compile("([0-9]+):([0-9]+):(.+)");
-            mentions = new ArrayList<>();
-            for (final var mention : mentionStrings) {
-                final var matcher = mentionPattern.matcher(mention);
-                if (!matcher.matches()) {
-                    throw new UserErrorException("Invalid mention syntax ("
-                            + mention
-                            + ") expected 'start:end:recipientNumber'");
-                }
-                mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3),
-                        m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
-            }
+            quote = null;
         }
 
         try {
-            var results = m.sendMessage(new Message(messageText, attachments, mentions), recipientIdentifiers);
+            var results = m.sendMessage(new Message(messageText, attachments, mentions, Optional.ofNullable(quote)),
+                    recipientIdentifiers);
             outputResult(outputWriter, results.timestamp());
             ErrorUtils.handleSendMessageResults(results.results());
         } catch (AttachmentInvalidException | IOException e) {
@@ -136,6 +147,25 @@ public class SendCommand implements JsonRpcLocalCommand {
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         }
+    }
+
+    private List<Message.Mention> parseMentions(
+            final Manager m, final List<String> mentionStrings
+    ) throws UserErrorException {
+        List<Message.Mention> mentions;
+        final Pattern mentionPattern = Pattern.compile("([0-9]+):([0-9]+):(.+)");
+        mentions = new ArrayList<>();
+        for (final var mention : mentionStrings) {
+            final var matcher = mentionPattern.matcher(mention);
+            if (!matcher.matches()) {
+                throw new UserErrorException("Invalid mention syntax ("
+                        + mention
+                        + ") expected 'start:end:recipientNumber'");
+            }
+            mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3),
+                    m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
+        }
+        return mentions;
     }
 
     private void outputResult(final OutputWriter outputWriter, final long timestamp) {

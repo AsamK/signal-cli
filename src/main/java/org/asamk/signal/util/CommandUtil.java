@@ -93,7 +93,7 @@ public class CommandUtil {
         try {
             return RecipientIdentifier.Single.fromString(recipientString, localNumber);
         } catch (InvalidNumberException e) {
-            throw new UserErrorException("Invalid phone number '" + recipientString + "': " + e.getMessage());
+            throw new UserErrorException("Invalid phone number '" + recipientString + "': " + e.getMessage(), e);
         }
     }
 }

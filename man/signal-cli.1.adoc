@@ -210,6 +210,19 @@ Mention another group member (syntax: start:length:recipientNumber)
 In the apps the mention replaces part of the message text, which is specified by the start and length values.
 e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 
+*--quote-timestamp*::
+Specify the timestamp of a previous message with the recipient or group to add a
+quote to the new message.
+
+*--quote-author*::
+Specify the number of the author of the original message.
+
+*--quote-message*::
+Specify the message of the original message.
+
+*--quote-mention*::
+Specify the mentions of the original message (same format as `--mention`).
+
 === sendReaction
 
 Send reaction to a previously received or sent message.
