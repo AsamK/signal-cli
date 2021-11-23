@@ -15,6 +15,7 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPayment payment,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonAttachment> attachments,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
@@ -32,6 +33,7 @@ record JsonDataMessage(
         final var viewOnce = dataMessage.isViewOnce();
         final var reaction = dataMessage.reaction().map(JsonReaction::from).orElse(null);
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
+        final var payment = dataMessage.payment().isPresent() ? JsonPayment.from(dataMessage.payment().get()) : null;
         final var mentions = dataMessage.mentions().size() > 0 ? dataMessage.mentions()
                 .stream()
                 .map(JsonMention::from)
@@ -55,6 +57,7 @@ record JsonDataMessage(
                 viewOnce,
                 reaction,
                 quote,
+                payment,
                 mentions,
                 attachments,
                 sticker,
@@ -72,6 +75,7 @@ record JsonDataMessage(
                 null,
                 null,
                 null,
+                null,
                 messageReceived.getAttachments().stream().map(JsonAttachment::from).collect(Collectors.toList()),
                 null,
                 null,
@@ -83,6 +87,7 @@ record JsonDataMessage(
         return new JsonDataMessage(messageReceived.getTimestamp(),
                 messageReceived.getMessage(),
                 // TODO Replace these with the proper commands
+                null,
                 null,
                 null,
                 null,

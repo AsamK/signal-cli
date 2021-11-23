@@ -101,6 +101,7 @@ public record MessageEnvelope(
             boolean hasProfileKey,
             Optional<Reaction> reaction,
             Optional<Quote> quote,
+            Optional<Payment> payment,
             List<Attachment> attachments,
             Optional<Long> remoteDeleteId,
             Optional<Sticker> sticker,
@@ -129,6 +130,9 @@ public record MessageEnvelope(
                             .orNull()),
                     Optional.ofNullable(dataMessage.getQuote()
                             .transform(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider))
+                            .orNull()),
+                    Optional.ofNullable(dataMessage.getPayment()
+                            .transform(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null)
                             .orNull()),
                     dataMessage.getAttachments()
                             .transform(a -> a.stream()
@@ -226,6 +230,12 @@ public record MessageEnvelope(
                                         .stream()
                                         .map(a -> Attachment.from(a, fileProvider))
                                         .collect(Collectors.toList()));
+            }
+        }
+
+        public record Payment(String note, byte[] receipt) {
+            static Payment from(SignalServiceDataMessage.Payment payment) {
+                return new Payment(payment.getPaymentNotification().get().getNote(), payment.getPaymentNotification().get().getReceipt());
             }
         }
 
