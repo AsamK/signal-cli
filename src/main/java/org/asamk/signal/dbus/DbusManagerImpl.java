@@ -382,6 +382,16 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setContactName(
             final RecipientIdentifier.Single recipient, final String name
     ) throws NotMasterDeviceException {

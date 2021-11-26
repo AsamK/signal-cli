@@ -172,6 +172,12 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         }
     }
 
+    public void deleteIdentity(final RecipientId recipientId) {
+        synchronized (cachedIdentities) {
+            deleteIdentityLocked(recipientId);
+        }
+    }
+
     /**
      * @param identifier can be either a serialized uuid or a e164 phone number
      */

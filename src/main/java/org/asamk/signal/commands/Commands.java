@@ -26,6 +26,7 @@ public class Commands {
         addCommand(new QuitGroupCommand());
         addCommand(new ReceiveCommand());
         addCommand(new RegisterCommand());
+        addCommand(new RemoveContactCommand());
         addCommand(new RemoveDeviceCommand());
         addCommand(new RemoteDeleteCommand());
         addCommand(new RemovePinCommand());

@@ -13,4 +13,6 @@ public interface ContactsStore {
     Contact getContact(RecipientId recipientId);
 
     List<Pair<RecipientId, Contact>> getContacts();
+
+    void deleteContact(RecipientId recipientId);
 }

@@ -174,6 +174,10 @@ public interface Manager extends Closeable {
 
     SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException;
 
+    void deleteRecipient(RecipientIdentifier.Single recipient) throws IOException;
+
+    void deleteContact(RecipientIdentifier.Single recipient) throws IOException;
+
     void setContactName(
             RecipientIdentifier.Single recipient, String name
     ) throws NotMasterDeviceException, IOException;

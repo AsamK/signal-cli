@@ -2070,7 +2070,8 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$Opaque",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"data_"}
+    {"name":"data_"}, 
+    {"name":"urgency_"}
   ]}
 ,
 {
@@ -2518,6 +2519,15 @@
     {"name":"packId_"}, 
     {"name":"packKey_"}, 
     {"name":"type_"}
+  ]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$ViewOnceOpen",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"senderE164_"}, 
+    {"name":"senderUuid_"}, 
+    {"name":"timestamp_"}
   ]}
 ,
 {

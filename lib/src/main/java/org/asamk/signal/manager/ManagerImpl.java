@@ -279,13 +279,17 @@ public class ManagerImpl implements Manager {
      *
      * @param numbers The set of phone number in question
      * @return A map of numbers to canonicalized number and uuid. If a number is not registered the uuid is null.
-     * @throws IOException if its unable to get the contacts to check if they're registered
+     * @throws IOException if it's unable to get the contacts to check if they're registered
      */
     @Override
     public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
         Map<String, String> canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
-                return PhoneNumberFormatter.formatNumber(n, account.getAccount());
+                final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getAccount());
+                if (!canonicalizedNumber.equals(n)) {
+                    logger.debug("Normalized number {} to {}.", n, canonicalizedNumber);
+                }
+                return canonicalizedNumber;
             } catch (InvalidNumberException e) {
                 return "";
             }
@@ -772,6 +776,16 @@ public class ManagerImpl implements Manager {
                 account.getSessionStore().deleteAllSessions(recipientId);
             }
         }
+    }
+
+    @Override
+    public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
+        account.removeRecipient(resolveRecipient(recipient));
+    }
+
+    @Override
+    public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
+        account.getContactStore().deleteContact(resolveRecipient(recipient));
     }
 
     @Override

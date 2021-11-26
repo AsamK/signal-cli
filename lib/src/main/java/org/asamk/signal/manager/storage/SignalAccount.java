@@ -324,6 +324,14 @@ public class SignalAccount implements Closeable {
         senderKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
+    public void removeRecipient(final RecipientId recipientId) {
+        sessionStore.deleteAllSessions(recipientId);
+        identityKeyStore.deleteIdentity(recipientId);
+        messageCache.deleteMessages(recipientId);
+        senderKeyStore.deleteAll(recipientId);
+        recipientStore.deleteRecipientData(recipientId);
+    }
+
     public static File getFileName(File dataPath, String account) {
         return new File(dataPath, account);
     }

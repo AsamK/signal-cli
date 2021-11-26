@@ -221,6 +221,25 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
+    public void deleteContact(final RecipientId recipientId) {
+        synchronized (recipients) {
+            final var recipient = recipients.get(recipientId);
+            storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withContact(null).build());
+        }
+    }
+
+    public void deleteRecipientData(final RecipientId recipientId) {
+        synchronized (recipients) {
+            final var recipient = recipients.get(recipientId);
+            storeRecipientLocked(recipientId,
+                    Recipient.newBuilder()
+                            .withRecipientId(recipientId)
+                            .withAddress(new RecipientAddress(recipient.getAddress().getUuid().orElse(null)))
+                            .build());
+        }
+    }
+
+    @Override
     public Profile getProfile(final RecipientId recipientId) {
         final var recipient = getRecipient(recipientId);
         return recipient == null ? null : recipient.getProfile();

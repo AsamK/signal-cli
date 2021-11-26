@@ -442,6 +442,15 @@ Specify the new name for this contact.
 Set expiration time of messages (seconds).
 To disable expiration set expiration time to 0.
 
+=== removeContact
+Remove the info of a given contact
+
+NUMBER::
+Specify the contact phone number.
+
+*--forget*::
+Delete all data associated with this contact, including identity keys and sessions.
+
 === block
 
 Block the given contacts or groups (no messages will be received).

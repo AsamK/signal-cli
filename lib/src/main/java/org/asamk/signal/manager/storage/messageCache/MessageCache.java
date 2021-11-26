@@ -71,6 +71,25 @@ public class MessageCache {
         return new CachedMessage(cacheFile);
     }
 
+    public void deleteMessages(final RecipientId recipientId) {
+        final var recipientMessageCachePath = getMessageCachePath(recipientId);
+        if (!recipientMessageCachePath.exists()) {
+            return;
+        }
+
+        for (var file : Objects.requireNonNull(recipientMessageCachePath.listFiles())) {
+            if (!file.isFile()) {
+                continue;
+            }
+
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                logger.warn("Failed to delete cache file “{}”, ignoring: {}", file, e.getMessage());
+            }
+        }
+    }
+
     private File getMessageCachePath(RecipientId recipientId) {
         if (recipientId == null) {
             return messageCachePath;

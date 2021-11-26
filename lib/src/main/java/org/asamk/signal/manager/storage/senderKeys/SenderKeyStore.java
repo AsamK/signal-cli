@@ -63,7 +63,7 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
         senderKeyRecordStore.deleteAll();
     }
 
-    public void rotateSenderKeys(RecipientId recipientId) {
+    public void deleteAll(RecipientId recipientId) {
         senderKeySharedStore.deleteAllFor(recipientId);
         senderKeyRecordStore.deleteAllFor(recipientId);
     }
