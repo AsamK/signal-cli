@@ -35,3 +35,9 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
+
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "org.asamk.signal.manager")
+    }
+}

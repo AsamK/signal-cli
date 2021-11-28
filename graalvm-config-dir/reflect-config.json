@@ -1244,6 +1244,34 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"org.bouncycastle.pqc.jcajce.provider.LMS$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.McEliece$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.NH$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.QTESLA$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.Rainbow$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.SPHINCS$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.bouncycastle.pqc.jcajce.provider.XMSS$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"org.freedesktop.dbus.errors.ServiceUnknown",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
 ,
