@@ -519,6 +519,16 @@ setContactName(number<s>,name<>) -> <>::
 
 Exceptions: InvalidNumber, Failure
 
+deleteContact(number<s>) -> <>::
+* number : Phone number
+
+Exceptions: Failure
+
+deleteRecipient(number<s>) -> <>::
+* number : Phone number
+
+Exceptions: Failure
+
 setExpirationTimer(number<s>, expiration<i>) -> <>::
 * number     : Phone number of recipient
 * expiration : int32 for the number of seconds before messages to this recipient disappear. Set to 0 to disable expiration.

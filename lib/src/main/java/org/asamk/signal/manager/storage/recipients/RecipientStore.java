@@ -261,7 +261,12 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     public void storeProfile(final RecipientId recipientId, final Profile profile) {
         synchronized (recipients) {
             final var recipient = recipients.get(recipientId);
-            storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withProfile(profile).build());
+            if (recipient != null) {
+                storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withProfile(profile).build());
+            } else {
+                storeRecipientLocked(recipientId,
+                        Recipient.newBuilder().withRecipientId(recipientId).withProfile(profile).build());
+            }
         }
     }
 
@@ -459,6 +464,10 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         final var base64 = Base64.getEncoder();
         var storage = new Storage(recipients.entrySet().stream().map(pair -> {
             final var recipient = pair.getValue();
+            final var number = recipient.getAddress() == null ? null : recipient.getAddress().getNumber().orElse(null);
+            final var uuid = recipient.getAddress() == null
+                    ? null
+                    : recipient.getAddress().getUuid().map(UUID::toString).orElse(null);
             final var contact = recipient.getContact() == null
                     ? null
                     : new Storage.Recipient.Contact(recipient.getContact().getName(),
@@ -481,8 +490,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                                     .map(Enum::name)
                                     .collect(Collectors.toSet()));
             return new Storage.Recipient(pair.getKey().id(),
-                    recipient.getAddress().getNumber().orElse(null),
-                    recipient.getAddress().getUuid().map(UUID::toString).orElse(null),
+                    number,
+                    uuid,
                     recipient.getProfileKey() == null
                             ? null
                             : base64.encodeToString(recipient.getProfileKey().serialize()),

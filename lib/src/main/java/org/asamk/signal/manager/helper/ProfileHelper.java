@@ -194,6 +194,9 @@ public final class ProfileHelper {
         }
 
         profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
+        if (profile.getGivenName() == null && profile.getFamilyName() == null) {
+            return profile;
+        }
         account.getProfileStore().storeProfile(recipientId, profile);
 
         return profile;
