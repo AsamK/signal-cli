@@ -76,6 +76,10 @@ public interface Signal extends DBusInterface {
 
     void sendEndSessionMessage(List<String> recipients) throws Error.Failure, Error.InvalidNumber, Error.UntrustedIdentity;
 
+    void deleteRecipient(final String recipient) throws Error.Failure;
+
+    void deleteContact(final String recipient) throws Error.Failure;
+
     long sendGroupMessage(
             String message, List<String> attachments, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.InvalidGroupId;

@@ -383,12 +383,12 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
-        throw new UnsupportedOperationException();
+        signal.deleteRecipient(recipient.getIdentifier());
     }
 
     @Override
     public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
-        throw new UnsupportedOperationException();
+        signal.deleteContact(recipient.getIdentifier());
     }
 
     @Override

@@ -388,6 +388,24 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public void deleteRecipient(final String recipient) throws Error.Failure {
+        try {
+            m.deleteRecipient(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
+        } catch (IOException e) {
+            throw new Error.Failure("Recipient not found");
+        }
+    }
+
+    @Override
+    public void deleteContact(final String recipient) throws Error.Failure {
+        try {
+            m.deleteContact(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
+        } catch (IOException e) {
+            throw new Error.Failure("Contact not found");
+        }
+    }
+
+    @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
             var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
