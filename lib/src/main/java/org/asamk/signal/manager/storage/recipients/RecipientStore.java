@@ -309,9 +309,6 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         final Pair<RecipientId, Optional<RecipientId>> pair;
         synchronized (recipients) {
             pair = resolveRecipientLocked(address, isHighTrust);
-            if (pair.second().isPresent()) {
-                recipientsMerged.put(pair.second().get(), pair.first());
-            }
         }
 
         if (pair.second().isPresent()) {
@@ -378,6 +375,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         logger.debug("Got separate recipients for high trust number and uuid, need to merge them");
         updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
         mergeRecipientsLocked(byUuid.get().getRecipientId(), byNumber.get().getRecipientId());
+        recipientsMerged.put(byNumber.get().getRecipientId(), byUuid.get().getRecipientId());
         return new Pair<>(byUuid.get().getRecipientId(), byNumber.map(Recipient::getRecipientId));
     }
 
