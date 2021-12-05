@@ -21,6 +21,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
+import org.signal.zkgroup.auth.AuthCredentialResponse;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.groups.UuidCiphertext;
@@ -43,6 +44,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -53,16 +55,13 @@ public class GroupV2Helper {
     private final static Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
 
     private final ProfileKeyCredentialProvider profileKeyCredentialProvider;
-
     private final ProfileProvider profileProvider;
-
     private final SelfRecipientIdProvider selfRecipientIdProvider;
-
     private final GroupsV2Operations groupsV2Operations;
-
     private final GroupsV2Api groupsV2Api;
-
     private final SignalServiceAddressResolver addressResolver;
+
+    private HashMap<Integer, AuthCredentialResponse> groupApiCredentials;
 
     public GroupV2Helper(
             final ProfileKeyCredentialProvider profileKeyCredentialProvider,
@@ -508,10 +507,12 @@ public class GroupV2Helper {
             final GroupSecretParams groupSecretParams
     ) throws IOException {
         final var today = currentTimeDays();
-        // Returns credentials for the next 7 days
-        final var credentials = groupsV2Api.getCredentials(today);
-        // TODO cache credentials until they expire
-        var authCredentialResponse = credentials.get(today);
+        if (groupApiCredentials == null || !groupApiCredentials.containsKey(today)) {
+            // Returns credentials for the next 7 days
+            groupApiCredentials = groupsV2Api.getCredentials(today);
+            // TODO cache credentials on disk until they expire
+        }
+        var authCredentialResponse = groupApiCredentials.get(today);
         final var aci = getSelfAci();
         try {
             return groupsV2Api.getGroupsV2AuthorizationString(aci, today, groupSecretParams, authCredentialResponse);
