@@ -60,6 +60,7 @@ public interface Manager extends Closeable {
         var account = SignalAccount.load(pathConfig.dataPath(), number, true, trustNewIdentity);
 
         if (!account.isRegistered()) {
+            account.close();
             throw new NotRegisteredException();
         }
 
