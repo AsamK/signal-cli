@@ -41,8 +41,4 @@ public class IdentityInfo {
     public Date getDateAdded() {
         return this.added;
     }
-
-    public byte[] getFingerprint() {
-        return identityKey.getPublicKey().serialize();
-    }
 }

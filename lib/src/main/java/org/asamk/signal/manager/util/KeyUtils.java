@@ -68,10 +68,6 @@ public class KeyUtils {
         return new SignedPreKeyRecord(signedPreKeyId, System.currentTimeMillis(), keyPair, signature);
     }
 
-    public static String createSignalingKey() {
-        return getSecret(52);
-    }
-
     public static ProfileKey createProfileKey() {
         try {
             return new ProfileKey(getSecretBytes(32));

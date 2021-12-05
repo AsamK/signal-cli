@@ -10,8 +10,4 @@ record JsonAttachment(String contentType, String filename, String id, Long size)
         final var size = attachment.size().orElse(null);
         return new JsonAttachment(attachment.contentType(), filename, id, size);
     }
-
-    static JsonAttachment from(String filename) {
-        return new JsonAttachment(filename, null, null, null);
-    }
 }

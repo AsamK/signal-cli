@@ -26,10 +26,6 @@ public final class GroupInviteLinkUrl {
                 GroupLinkPassword.fromBytes(group.getInviteLinkPassword().toByteArray()));
     }
 
-    public static boolean isGroupLink(String urlString) {
-        return getGroupUrl(urlString) != null;
-    }
-
     /**
      * @return null iff not a group url.
      * @throws InvalidGroupLinkException If group url, but cannot be parsed.
@@ -95,7 +91,7 @@ public final class GroupInviteLinkUrl {
         this.url = createUrl(groupMasterKey, password);
     }
 
-    protected static String createUrl(GroupMasterKey groupMasterKey, GroupLinkPassword password) {
+    private static String createUrl(GroupMasterKey groupMasterKey, GroupLinkPassword password) {
         var groupInviteLink = GroupInviteLink.newBuilder()
                 .setV1Contents(GroupInviteLink.GroupInviteLinkContentsV1.newBuilder()
                         .setGroupMasterKey(ByteString.copyFrom(groupMasterKey.serialize()))

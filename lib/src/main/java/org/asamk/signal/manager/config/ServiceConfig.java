@@ -55,10 +55,6 @@ public class ServiceConfig {
         }
     }
 
-    public static AccountAttributes.Capabilities getCapabilities() {
-        return capabilities;
-    }
-
     public static KeyStore getIasKeyStore() {
         return iasKeyStore;
     }

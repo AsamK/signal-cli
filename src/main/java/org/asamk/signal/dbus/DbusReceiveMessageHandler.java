@@ -18,12 +18,10 @@ import java.util.stream.Collectors;
 
 public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
-    private final Manager m;
     private final DBusConnection conn;
     private final String objectPath;
 
-    public DbusReceiveMessageHandler(Manager m, DBusConnection conn, final String objectPath) {
-        this.m = m;
+    public DbusReceiveMessageHandler(DBusConnection conn, final String objectPath) {
         this.conn = conn;
         this.objectPath = objectPath;
     }
@@ -127,7 +125,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
             var attachments = message.attachments()
                     .stream()
                     .filter(a -> a.id().isPresent())
-                    .map(a -> getAttachmentMap(m, a))
+                    .map(this::getAttachmentMap)
                     .collect(Collectors.toList());
             extras.put("attachments", new Variant<>(attachments, "aa{sv}"));
         }
@@ -180,7 +178,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     }
 
     private Map<String, Variant<?>> getAttachmentMap(
-            final Manager m, final MessageEnvelope.Data.Attachment a
+            final MessageEnvelope.Data.Attachment a
     ) {
         final var map = new HashMap<String, Variant<?>>();
         if (a.id().isPresent()) {

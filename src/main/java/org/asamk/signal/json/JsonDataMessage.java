@@ -2,7 +2,6 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import org.asamk.Signal;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
@@ -64,39 +63,5 @@ record JsonDataMessage(
                 remoteDelete,
                 contacts,
                 groupInfo);
-    }
-
-    static JsonDataMessage from(Signal.MessageReceived messageReceived) {
-        return new JsonDataMessage(messageReceived.getTimestamp(),
-                messageReceived.getMessage(),
-                // TODO Replace these with the proper commands
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                messageReceived.getAttachments().stream().map(JsonAttachment::from).collect(Collectors.toList()),
-                null,
-                null,
-                null,
-                messageReceived.getGroupId().length > 0 ? JsonGroupInfo.from(messageReceived.getGroupId()) : null);
-    }
-
-    static JsonDataMessage from(Signal.SyncMessageReceived messageReceived) {
-        return new JsonDataMessage(messageReceived.getTimestamp(),
-                messageReceived.getMessage(),
-                // TODO Replace these with the proper commands
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                messageReceived.getAttachments().stream().map(JsonAttachment::from).collect(Collectors.toList()),
-                null,
-                null,
-                null,
-                messageReceived.getGroupId().length > 0 ? JsonGroupInfo.from(messageReceived.getGroupId()) : null);
     }
 }

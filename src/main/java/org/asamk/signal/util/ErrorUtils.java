@@ -5,8 +5,6 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.api.ProofRequiredException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,8 +13,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ErrorUtils {
-
-    private final static Logger logger = LoggerFactory.getLogger(ErrorUtils.class);
 
     private ErrorUtils() {
     }

@@ -111,7 +111,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void subscribeReceive() {
         if (dbusMessageHandler == null) {
-            dbusMessageHandler = new DbusReceiveMessageHandler(m, connection, objectPath);
+            dbusMessageHandler = new DbusReceiveMessageHandler(connection, objectPath);
             m.addReceiveHandler(dbusMessageHandler);
         }
         subscriberCount++;

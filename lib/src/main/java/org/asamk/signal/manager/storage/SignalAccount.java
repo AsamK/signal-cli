@@ -890,10 +890,6 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public String getRegistrationLockPin() {
-        return registrationLockPin;
-    }
-
     public void setRegistrationLockPin(final String registrationLockPin, final MasterKey pinMasterKey) {
         this.registrationLockPin = registrationLockPin;
         this.pinMasterKey = pinMasterKey;

@@ -131,7 +131,7 @@ public class DbusManagerImpl implements Manager {
                 emptyIfNull(about),
                 emptyIfNull(aboutEmoji),
                 avatar == null ? "" : avatar.map(File::getPath).orElse(""),
-                avatar != null && !avatar.isPresent());
+                avatar != null && avatar.isEmpty());
     }
 
     @Override
@@ -786,9 +786,8 @@ public class DbusManagerImpl implements Manager {
 
     private void notifyMessageHandlers(final MessageEnvelope envelope) {
         synchronized (messageHandlers) {
-            Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
-                h.handleMessage(envelope, null);
-            });
+            Stream.concat(messageHandlers.stream(), weakHandlers.stream())
+                    .forEach(h -> h.handleMessage(envelope, null));
         }
     }
 

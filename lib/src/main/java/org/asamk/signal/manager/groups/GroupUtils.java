@@ -6,7 +6,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.signal.zkgroup.groups.GroupSecretParams;
-import org.whispersystems.libsignal.kdf.HKDFv3;
+import org.whispersystems.libsignal.kdf.HKDF;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
@@ -57,7 +57,7 @@ public class GroupUtils {
 
     private static GroupMasterKey deriveV2MigrationMasterKey(GroupIdV1 groupIdV1) {
         try {
-            return new GroupMasterKey(new HKDFv3().deriveSecrets(groupIdV1.serialize(),
+            return new GroupMasterKey(HKDF.deriveSecrets(groupIdV1.serialize(),
                     "GV2 Migration".getBytes(),
                     GroupMasterKey.SIZE));
         } catch (InvalidInputException e) {
