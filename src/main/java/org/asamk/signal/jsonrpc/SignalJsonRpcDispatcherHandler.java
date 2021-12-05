@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -182,6 +183,9 @@ public class SignalJsonRpcDispatcherHandler {
                 final var registrationManager = c.getNewRegistrationManager(params.get("account").asText());
                 ((ObjectNode) params).remove("account");
                 return registrationManager;
+            } catch (OverlappingFileLockException e) {
+                logger.warn("Account is already in use");
+                return null;
             } catch (IOException | IllegalStateException e) {
                 logger.warn("Failed to load registration manager", e);
                 return null;

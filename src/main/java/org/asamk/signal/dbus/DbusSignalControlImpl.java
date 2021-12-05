@@ -15,6 +15,7 @@ import org.freedesktop.dbus.DBusPath;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -60,6 +61,8 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         } catch (CaptchaRequiredException e) {
             String message = captcha == null ? "Captcha required for verification." : "Invalid captcha given.";
             throw new SignalControl.Error.RequiresCaptcha(message);
+        } catch (OverlappingFileLockException e) {
+            throw new SignalControl.Error.Failure("Account is already in use");
         } catch (IOException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
@@ -76,6 +79,8 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     ) throws Error.Failure, Error.InvalidNumber {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.verifyAccount(verificationCode, pin);
+        } catch (OverlappingFileLockException e) {
+            throw new SignalControl.Error.Failure("Account is already in use");
         } catch (IOException | PinLockedException | IncorrectPinException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
