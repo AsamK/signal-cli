@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,7 +125,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     @Override
     public void close() {
         synchronized (managers) {
-            for (var m : managers) {
+            for (var m : new ArrayList<>(managers)) {
                 try {
                     m.close();
                 } catch (IOException e) {
