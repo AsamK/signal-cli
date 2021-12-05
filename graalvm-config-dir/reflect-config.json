@@ -255,6 +255,12 @@
   "methods":[{"name":"getUnicodeLocaleType","parameterTypes":["java.lang.String"] }]}
 ,
 {
+  "name":"java.util.Optional",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
   "name":"java.util.RandomAccess",
   "allDeclaredMethods":true}
 ,
@@ -699,6 +705,12 @@
   ]}
 ,
 {
+  "name":"org.asamk.signal.manager.storage.contacts.LegacyContactInfo",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
   "name":"org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -731,6 +743,17 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1$JsonRecipientAddress",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1$MembersDeserializer",
@@ -819,6 +842,12 @@
 {
   "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore$RecipientStoreDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.asamk.signal.manager.storage.recipients.RecipientAddress",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
 ,
 {
   "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage",
@@ -1603,6 +1632,23 @@
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedTimer",
   "fields":[{"name":"duration_"}]}
+,
+{
+  "name":"org.signal.zkgroup.internal.ByteArray",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"org.signal.zkgroup.profiles.ProfileKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
+,
+{
+  "name":"org.signal.zkgroup.profiles.ProfileKeyCredential",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true}
 ,
 {
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore",
