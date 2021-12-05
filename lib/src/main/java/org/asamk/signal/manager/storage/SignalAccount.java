@@ -532,7 +532,7 @@ public class SignalAccount implements Closeable {
             if (legacyRecipientStore != null) {
                 recipientStore.resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
-            recipientStore.resolveRecipientTrusted(getSelfAddress());
+            getSelfRecipientId();
             migrated = true;
         }
 
