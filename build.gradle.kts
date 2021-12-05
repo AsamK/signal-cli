@@ -36,10 +36,11 @@ repositories {
 }
 
 dependencies {
-    implementation("org.bouncycastle:bcprov-jdk15on:1.69")
-    implementation("net.sourceforge.argparse4j:argparse4j:0.9.0")
-    implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.0.0-beta")
-    implementation("org.slf4j:slf4j-simple:1.7.32")
+    implementation("org.bouncycastle", "bcprov-jdk15on", "1.69")
+    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.0")
+    implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
+    implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.0.0-beta")
+    implementation("org.slf4j", "slf4j-simple", "1.7.32")
     implementation("org.slf4j", "jul-to-slf4j", "1.7.32")
     implementation(project(":lib"))
 }
