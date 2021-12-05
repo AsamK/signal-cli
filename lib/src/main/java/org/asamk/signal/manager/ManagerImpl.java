@@ -77,9 +77,11 @@ import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
@@ -110,6 +112,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
 
@@ -267,11 +272,16 @@ public class ManagerImpl implements Manager {
                         days);
             }
         }
-        preKeyHelper.refreshPreKeysIfNecessary();
-        if (account.getAci() == null) {
-            account.setAci(dependencies.getAccountManager().getOwnAci());
+        try {
+            preKeyHelper.refreshPreKeysIfNecessary();
+            if (account.getAci() == null) {
+                account.setAci(dependencies.getAccountManager().getOwnAci());
+            }
+            updateAccountAttributes(null);
+        } catch (AuthorizationFailedException e) {
+            account.setRegistered(false);
+            throw e;
         }
-        updateAccountAttributes(null);
     }
 
     /**
@@ -1096,6 +1106,12 @@ public class ManagerImpl implements Manager {
         Map<HandleAction, HandleAction> queuedActions = new HashMap<>();
 
         final var signalWebSocket = dependencies.getSignalWebSocket();
+        final var webSocketStateDisposable = Observable.merge(signalWebSocket.getUnidentifiedWebSocketState(),
+                        signalWebSocket.getWebSocketState())
+                .subscribeOn(Schedulers.computation())
+                .observeOn(Schedulers.computation())
+                .distinctUntilChanged()
+                .subscribe(this::onWebSocketStateChange);
         signalWebSocket.connect();
 
         hasCaughtUpWithOldMessages = false;
@@ -1201,6 +1217,18 @@ public class ManagerImpl implements Manager {
         handleQueuedActions(queuedActions.keySet());
         queuedActions.clear();
         dependencies.getSignalWebSocket().disconnect();
+        webSocketStateDisposable.dispose();
+    }
+
+    private void onWebSocketStateChange(final WebSocketConnectionState s) {
+        if (s.equals(WebSocketConnectionState.AUTHENTICATION_FAILED)) {
+            account.setRegistered(false);
+            try {
+                close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
