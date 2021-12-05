@@ -104,6 +104,7 @@ public class SendCommand implements JsonRpcLocalCommand {
 
         var messageText = ns.getString("message");
         if (messageText == null) {
+            logger.debug("Reading message from stdin...");
             try {
                 messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
             } catch (IOException e) {
