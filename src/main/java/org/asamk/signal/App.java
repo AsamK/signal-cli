@@ -196,7 +196,7 @@ public class App {
         }
 
         if (!(command instanceof LocalCommand)) {
-            throw new UserErrorException("Command only works via dbus");
+            throw new UserErrorException("Command only works in multi-account mode");
         }
 
         handleLocalCommand((LocalCommand) command,
