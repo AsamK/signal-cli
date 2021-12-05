@@ -63,7 +63,7 @@ public class App {
         parser.addArgument("--verbose")
                 .help("Raise log level and include lib signal logs.")
                 .action(Arguments.storeTrue());
-        parser.addArgument("--config")
+        parser.addArgument("-c", "--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 
         parser.addArgument("-a", "--account", "-u", "--username")
