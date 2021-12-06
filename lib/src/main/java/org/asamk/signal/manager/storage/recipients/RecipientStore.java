@@ -130,7 +130,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     public Recipient getRecipient(RecipientId recipientId) {
         synchronized (recipients) {
-            return getRecipientLocked(recipientId);
+            recipientId = getActualRecipientId(recipientId);
+            return recipients.get(recipientId);
         }
     }
 
@@ -198,15 +199,16 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public void storeContact(final RecipientId recipientId, final Contact contact) {
+    public void storeContact(RecipientId recipientId, final Contact contact) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withContact(contact).build());
         }
     }
 
     @Override
-    public Contact getContact(final RecipientId recipientId) {
+    public Contact getContact(RecipientId recipientId) {
         final var recipient = getRecipient(recipientId);
         return recipient == null ? null : recipient.getContact();
     }
@@ -221,15 +223,17 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public void deleteContact(final RecipientId recipientId) {
+    public void deleteContact(RecipientId recipientId) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withContact(null).build());
         }
     }
 
-    public void deleteRecipientData(final RecipientId recipientId) {
+    public void deleteRecipientData(RecipientId recipientId) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             logger.debug("Deleting recipient data for {}", recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId,
@@ -259,16 +263,18 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public void storeProfile(final RecipientId recipientId, final Profile profile) {
+    public void storeProfile(RecipientId recipientId, final Profile profile) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withProfile(profile).build());
         }
     }
 
     @Override
-    public void storeProfileKey(final RecipientId recipientId, final ProfileKey profileKey) {
+    public void storeProfileKey(RecipientId recipientId, final ProfileKey profileKey) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             final var recipient = recipients.get(recipientId);
             if (profileKey != null && profileKey.equals(recipient.getProfileKey())) {
                 return;
@@ -286,10 +292,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public void storeProfileKeyCredential(
-            final RecipientId recipientId, final ProfileKeyCredential profileKeyCredential
-    ) {
+    public void storeProfileKeyCredential(RecipientId recipientId, final ProfileKeyCredential profileKeyCredential) {
         synchronized (recipients) {
+            recipientId = getActualRecipientId(recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId,
                     Recipient.newBuilder(recipient).withProfileKeyCredential(profileKeyCredential).build());
@@ -387,7 +392,6 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 byUuidRecipient.getRecipientId());
         updateRecipientAddressLocked(byUuidRecipient.getRecipientId(), address);
         mergeRecipientsLocked(byUuidRecipient.getRecipientId(), byNumberRecipient.getRecipientId());
-        recipientsMerged.put(byNumberRecipient.getRecipientId(), byUuidRecipient.getRecipientId());
         return new Pair<>(byUuidRecipient.getRecipientId(), byNumber.map(Recipient::getRecipientId));
     }
 
@@ -398,26 +402,23 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         return nextRecipientId;
     }
 
-    private void updateRecipientAddressLocked(
-            final RecipientId recipientId, final RecipientAddress address
-    ) {
+    private void updateRecipientAddressLocked(RecipientId recipientId, final RecipientAddress address) {
+        recipientId = getActualRecipientId(recipientId);
         final var recipient = recipients.get(recipientId);
         storeRecipientLocked(recipientId, Recipient.newBuilder(recipient).withAddress(address).build());
     }
 
-    private Recipient getRecipientLocked(RecipientId recipientId) {
+    private RecipientId getActualRecipientId(RecipientId recipientId) {
         while (recipientsMerged.containsKey(recipientId)) {
             final var newRecipientId = recipientsMerged.get(recipientId);
             logger.debug("Using {} instead of {}, because recipients have been merged", newRecipientId, recipientId);
             recipientId = newRecipientId;
         }
-        return recipients.get(recipientId);
+        return recipientId;
     }
 
-    private void storeRecipientLocked(
-            final RecipientId recipientId, final Recipient recipient
-    ) {
-        final var existingRecipient = getRecipientLocked(recipientId);
+    private void storeRecipientLocked(final RecipientId recipientId, final Recipient recipient) {
+        final var existingRecipient = recipients.get(recipientId);
         if (existingRecipient == null || !existingRecipient.equals(recipient)) {
             recipients.put(recipientId, recipient);
             saveLocked();
@@ -439,6 +440,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                                 : toBeMergedRecipient.getProfileKeyCredential(),
                         recipient.getProfile() != null ? recipient.getProfile() : toBeMergedRecipient.getProfile()));
         recipients.remove(toBeMergedRecipientId);
+        recipientsMerged.put(toBeMergedRecipientId, recipientId);
         saveLocked();
     }
 
