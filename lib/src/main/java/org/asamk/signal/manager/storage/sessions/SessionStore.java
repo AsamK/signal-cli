@@ -238,8 +238,14 @@ public class SessionStore implements SignalServiceSessionStore {
         return Arrays.stream(files)
                 .map(f -> sessionFileNamePattern.matcher(f.getName()))
                 .filter(Matcher::matches)
-                .map(matcher -> new Key(RecipientId.of(Long.parseLong(matcher.group(1))),
-                        Integer.parseInt(matcher.group(2))))
+                .map(matcher -> {
+                    final var recipientId = resolver.resolveRecipient(Long.parseLong(matcher.group(1)));
+                    if (recipientId == null) {
+                        return null;
+                    }
+                    return new Key(recipientId, Integer.parseInt(matcher.group(2)));
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,9 +140,14 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         return Arrays.stream(files)
                 .map(f -> senderKeyFileNamePattern.matcher(f.getName()))
                 .filter(Matcher::matches)
-                .map(matcher -> new Key(RecipientId.of(Long.parseLong(matcher.group(1))),
-                        Integer.parseInt(matcher.group(2)),
-                        UUID.fromString(matcher.group(3))))
+                .map(matcher -> {
+                    final var recipientId = resolver.resolveRecipient(Long.parseLong(matcher.group(1)));
+                    if (recipientId == null) {
+                        return null;
+                    }
+                    return new Key(recipientId, Integer.parseInt(matcher.group(2)), UUID.fromString(matcher.group(3)));
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

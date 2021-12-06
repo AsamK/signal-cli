@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -161,7 +162,8 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         }
         return Arrays.stream(files)
                 .filter(f -> identityFileNamePattern.matcher(f.getName()).matches())
-                .map(f -> RecipientId.of(Integer.parseInt(f.getName())))
+                .map(f -> resolver.resolveRecipient(Long.parseLong(f.getName())))
+                .filter(Objects::nonNull)
                 .map(this::loadIdentityLocked)
                 .collect(Collectors.toList());
     }

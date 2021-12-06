@@ -12,4 +12,6 @@ public interface RecipientResolver {
     RecipientId resolveRecipient(SignalServiceAddress address);
 
     RecipientId resolveRecipient(ACI aci);
+
+    RecipientId resolveRecipient(long recipientId);
 }

@@ -47,7 +47,11 @@ public class SenderKeySharedStore {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
             final var sharedSenderKeys = new HashMap<DistributionId, Set<SenderKeySharedEntry>>();
             for (final var senderKey : storage.sharedSenderKeys) {
-                final var entry = new SenderKeySharedEntry(RecipientId.of(senderKey.recipientId), senderKey.deviceId);
+                final var recipientId = resolver.resolveRecipient(senderKey.recipientId);
+                if (recipientId == null) {
+                    continue;
+                }
+                final var entry = new SenderKeySharedEntry(recipientId, senderKey.deviceId);
                 final var uuid = UuidUtil.parseOrNull(senderKey.distributionId);
                 if (uuid == null) {
                     logger.warn("Read invalid distribution id from storage {}, ignoring", senderKey.distributionId);

@@ -36,6 +36,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class GroupStore {
@@ -82,8 +83,8 @@ public class GroupStore {
                                 m.number));
                     }
 
-                    return RecipientId.of(m.recipientId);
-                }).collect(Collectors.toSet());
+                    return recipientResolver.resolveRecipient(m.recipientId);
+                }).filter(Objects::nonNull).collect(Collectors.toSet());
 
                 return new GroupInfoV1(GroupIdV1.fromBase64(g1.groupId),
                         g1.expectedV2Id == null ? null : GroupIdV2.fromBase64(g1.expectedV2Id),
