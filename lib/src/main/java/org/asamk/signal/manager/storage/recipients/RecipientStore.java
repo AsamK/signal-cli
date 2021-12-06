@@ -230,6 +230,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     public void deleteRecipientData(final RecipientId recipientId) {
         synchronized (recipients) {
+            logger.debug("Deleting recipient data for {}", recipientId);
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId,
                     Recipient.newBuilder()
@@ -342,45 +343,57 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         }
 
         if (byNumber.isEmpty()) {
-            logger.debug("Got recipient existing with uuid, updating with high trust number");
+            logger.debug("Got recipient {} existing with uuid, updating with high trust number",
+                    byUuid.get().getRecipientId());
             updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
             return new Pair<>(byUuid.get().getRecipientId(), Optional.empty());
         }
 
-        if (byUuid.isEmpty()) {
-            if (byNumber.get().getAddress().uuid().isPresent()) {
-                logger.debug(
-                        "Got recipient existing with number, but different uuid, so stripping its number and adding new recipient");
+        final var byNumberRecipient = byNumber.get();
 
-                updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                        new RecipientAddress(byNumber.get().getAddress().uuid().get()));
+        if (byUuid.isEmpty()) {
+            if (byNumberRecipient.getAddress().uuid().isPresent()) {
+                logger.debug(
+                        "Got recipient {} existing with number, but different uuid, so stripping its number and adding new recipient",
+                        byNumberRecipient.getRecipientId());
+
+                updateRecipientAddressLocked(byNumberRecipient.getRecipientId(),
+                        new RecipientAddress(byNumberRecipient.getAddress().uuid().get()));
                 return new Pair<>(addNewRecipientLocked(address), Optional.empty());
             }
 
-            logger.debug("Got recipient existing with number and no uuid, updating with high trust uuid");
-            updateRecipientAddressLocked(byNumber.get().getRecipientId(), address);
-            return new Pair<>(byNumber.get().getRecipientId(), Optional.empty());
+            logger.debug("Got recipient {} existing with number and no uuid, updating with high trust uuid",
+                    byNumberRecipient.getRecipientId());
+            updateRecipientAddressLocked(byNumberRecipient.getRecipientId(), address);
+            return new Pair<>(byNumberRecipient.getRecipientId(), Optional.empty());
         }
 
-        if (byNumber.get().getAddress().uuid().isPresent()) {
+        final var byUuidRecipient = byUuid.get();
+
+        if (byNumberRecipient.getAddress().uuid().isPresent()) {
             logger.debug(
-                    "Got separate recipients for high trust number and uuid, recipient for number has different uuid, so stripping its number");
+                    "Got separate recipients for high trust number {} and uuid {}, recipient for number has different uuid, so stripping its number",
+                    byNumberRecipient.getRecipientId(),
+                    byUuidRecipient.getRecipientId());
 
-            updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                    new RecipientAddress(byNumber.get().getAddress().uuid().get()));
-            updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
-            return new Pair<>(byUuid.get().getRecipientId(), Optional.empty());
+            updateRecipientAddressLocked(byNumberRecipient.getRecipientId(),
+                    new RecipientAddress(byNumberRecipient.getAddress().uuid().get()));
+            updateRecipientAddressLocked(byUuidRecipient.getRecipientId(), address);
+            return new Pair<>(byUuidRecipient.getRecipientId(), Optional.empty());
         }
 
-        logger.debug("Got separate recipients for high trust number and uuid, need to merge them");
-        updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
-        mergeRecipientsLocked(byUuid.get().getRecipientId(), byNumber.get().getRecipientId());
-        recipientsMerged.put(byNumber.get().getRecipientId(), byUuid.get().getRecipientId());
-        return new Pair<>(byUuid.get().getRecipientId(), byNumber.map(Recipient::getRecipientId));
+        logger.debug("Got separate recipients for high trust number {} and uuid {}, need to merge them",
+                byNumberRecipient.getRecipientId(),
+                byUuidRecipient.getRecipientId());
+        updateRecipientAddressLocked(byUuidRecipient.getRecipientId(), address);
+        mergeRecipientsLocked(byUuidRecipient.getRecipientId(), byNumberRecipient.getRecipientId());
+        recipientsMerged.put(byNumberRecipient.getRecipientId(), byUuidRecipient.getRecipientId());
+        return new Pair<>(byUuidRecipient.getRecipientId(), byNumber.map(Recipient::getRecipientId));
     }
 
     private RecipientId addNewRecipientLocked(final RecipientAddress address) {
         final var nextRecipientId = nextIdLocked();
+        logger.debug("Adding new recipient {} with address {}", nextRecipientId, address);
         storeRecipientLocked(nextRecipientId, new Recipient(nextRecipientId, address, null, null, null, null));
         return nextRecipientId;
     }
@@ -394,7 +407,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     private Recipient getRecipientLocked(RecipientId recipientId) {
         while (recipientsMerged.containsKey(recipientId)) {
-            recipientId = recipientsMerged.get(recipientId);
+            final var newRecipientId = recipientsMerged.get(recipientId);
+            logger.debug("Using {} instead of {}, because recipients have been merged", newRecipientId, recipientId);
+            recipientId = newRecipientId;
         }
         return recipients.get(recipientId);
     }
