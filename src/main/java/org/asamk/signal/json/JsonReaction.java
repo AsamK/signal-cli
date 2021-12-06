@@ -17,8 +17,8 @@ public record JsonReaction(
         final var emoji = reaction.emoji();
         final var address = reaction.targetAuthor();
         final var targetAuthor = address.getLegacyIdentifier();
-        final var targetAuthorNumber = address.getNumber().orElse(null);
-        final var targetAuthorUuid = address.getUuid().map(UUID::toString).orElse(null);
+        final var targetAuthorNumber = address.number().orElse(null);
+        final var targetAuthorUuid = address.uuid().map(UUID::toString).orElse(null);
         final var targetSentTimestamp = reaction.targetSentTimestamp();
         final var isRemove = reaction.isRemove();
         return new JsonReaction(emoji,

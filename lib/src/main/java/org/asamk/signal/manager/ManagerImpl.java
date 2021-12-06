@@ -1436,13 +1436,13 @@ public class ManagerImpl implements Manager {
 
     private SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
         final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
-        if (address.getUuid().isPresent()) {
+        if (address.uuid().isPresent()) {
             return address.toSignalServiceAddress();
         }
 
         // Address in recipient store doesn't have a uuid, this shouldn't happen
         // Try to retrieve the uuid from the server
-        final var number = address.getNumber().get();
+        final var number = address.number().get();
         final ACI aci;
         try {
             aci = getRegisteredUser(number);

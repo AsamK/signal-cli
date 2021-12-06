@@ -679,7 +679,7 @@ public class DbusSignalImpl implements Signal {
     public List<String> listNumbers() {
         return Stream.concat(m.getIdentities().stream().map(Identity::recipient),
                         m.getContacts().stream().map(Pair::first))
-                .map(a -> a.getNumber().orElse(null))
+                .map(a -> a.number().orElse(null))
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -698,7 +698,7 @@ public class DbusSignalImpl implements Signal {
         // Try profiles if no contact name was found
         for (var identity : m.getIdentities()) {
             final var address = identity.recipient();
-            var number = address.getNumber().orElse(null);
+            var number = address.number().orElse(null);
             if (number != null) {
                 Profile profile = null;
                 try {

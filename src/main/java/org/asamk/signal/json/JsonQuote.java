@@ -23,8 +23,8 @@ public record JsonQuote(
         final var id = quote.id();
         final var address = quote.author();
         final var author = address.getLegacyIdentifier();
-        final var authorNumber = address.getNumber().orElse(null);
-        final var authorUuid = address.getUuid().map(UUID::toString).orElse(null);
+        final var authorNumber = address.number().orElse(null);
+        final var authorUuid = address.uuid().map(UUID::toString).orElse(null);
         final var text = quote.text().orElse(null);
 
         final var mentions = quote.mentions().size() > 0 ? quote.mentions()

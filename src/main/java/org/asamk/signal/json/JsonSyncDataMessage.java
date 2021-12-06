@@ -17,8 +17,8 @@ record JsonSyncDataMessage(
         if (transcriptMessage.destination().isPresent()) {
             final var address = transcriptMessage.destination().get();
             return new JsonSyncDataMessage(address.getLegacyIdentifier(),
-                    address.getNumber().orElse(null),
-                    address.getUuid().map(UUID::toString).orElse(null),
+                    address.number().orElse(null),
+                    address.uuid().map(UUID::toString).orElse(null),
                     JsonDataMessage.from(transcriptMessage.message()));
 
         } else {

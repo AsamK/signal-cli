@@ -34,14 +34,14 @@ public record JsonMessageEnvelope(
         if (envelope.sourceAddress().isPresent()) {
             final var sourceAddress = envelope.sourceAddress().get();
             source = sourceAddress.getLegacyIdentifier();
-            sourceNumber = sourceAddress.getNumber().orElse(null);
-            sourceUuid = sourceAddress.getUuid().map(UUID::toString).orElse(null);
+            sourceNumber = sourceAddress.number().orElse(null);
+            sourceUuid = sourceAddress.uuid().map(UUID::toString).orElse(null);
             sourceDevice = envelope.sourceDevice();
         } else if (exception instanceof UntrustedIdentityException e) {
             final var sender = e.getSender();
             source = sender.getLegacyIdentifier();
-            sourceNumber = sender.getNumber().orElse(null);
-            sourceUuid = sender.getUuid().map(UUID::toString).orElse(null);
+            sourceNumber = sender.number().orElse(null);
+            sourceUuid = sender.uuid().map(UUID::toString).orElse(null);
             sourceDevice = e.getSenderDevice();
         } else {
             source = null;

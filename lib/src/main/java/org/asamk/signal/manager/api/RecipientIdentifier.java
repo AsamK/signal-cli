@@ -36,10 +36,10 @@ public sealed interface RecipientIdentifier {
         }
 
         static Single fromAddress(RecipientAddress address) {
-            if (address.getNumber().isPresent()) {
-                return new Number(address.getNumber().get());
-            } else if (address.getUuid().isPresent()) {
-                return new Uuid(address.getUuid().get());
+            if (address.number().isPresent()) {
+                return new Number(address.number().get());
+            } else if (address.uuid().isPresent()) {
+                return new Uuid(address.uuid().get());
             }
             throw new AssertionError("RecipientAddress without identifier");
         }

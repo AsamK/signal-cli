@@ -151,7 +151,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         synchronized (recipients) {
             byNumber = findByNumberLocked(number);
         }
-        if (byNumber.isEmpty() || byNumber.get().getAddress().getUuid().isEmpty()) {
+        if (byNumber.isEmpty() || byNumber.get().getAddress().uuid().isEmpty()) {
             final var aci = aciSupplier.get();
             if (aci == null) {
                 throw new UnregisteredUserException(number, null);
@@ -234,7 +234,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
             storeRecipientLocked(recipientId,
                     Recipient.newBuilder()
                             .withRecipientId(recipientId)
-                            .withAddress(new RecipientAddress(recipient.getAddress().getUuid().orElse(null)))
+                            .withAddress(new RecipientAddress(recipient.getAddress().uuid().orElse(null)))
                             .build());
         }
     }
@@ -320,24 +320,24 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private Pair<RecipientId, Optional<RecipientId>> resolveRecipientLocked(
             RecipientAddress address, boolean isHighTrust
     ) {
-        final var byNumber = address.getNumber().isEmpty()
+        final var byNumber = address.number().isEmpty()
                 ? Optional.<Recipient>empty()
-                : findByNumberLocked(address.getNumber().get());
-        final var byUuid = address.getUuid().isEmpty()
+                : findByNumberLocked(address.number().get());
+        final var byUuid = address.uuid().isEmpty()
                 ? Optional.<Recipient>empty()
-                : findByUuidLocked(address.getUuid().get());
+                : findByUuidLocked(address.uuid().get());
 
         if (byNumber.isEmpty() && byUuid.isEmpty()) {
             logger.debug("Got new recipient, both uuid and number are unknown");
 
-            if (isHighTrust || address.getUuid().isEmpty() || address.getNumber().isEmpty()) {
+            if (isHighTrust || address.uuid().isEmpty() || address.number().isEmpty()) {
                 return new Pair<>(addNewRecipientLocked(address), Optional.empty());
             }
 
-            return new Pair<>(addNewRecipientLocked(new RecipientAddress(address.getUuid().get())), Optional.empty());
+            return new Pair<>(addNewRecipientLocked(new RecipientAddress(address.uuid().get())), Optional.empty());
         }
 
-        if (!isHighTrust || address.getUuid().isEmpty() || address.getNumber().isEmpty() || byNumber.equals(byUuid)) {
+        if (!isHighTrust || address.uuid().isEmpty() || address.number().isEmpty() || byNumber.equals(byUuid)) {
             return new Pair<>(byUuid.or(() -> byNumber).map(Recipient::getRecipientId).get(), Optional.empty());
         }
 
@@ -348,12 +348,12 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         }
 
         if (byUuid.isEmpty()) {
-            if (byNumber.get().getAddress().getUuid().isPresent()) {
+            if (byNumber.get().getAddress().uuid().isPresent()) {
                 logger.debug(
                         "Got recipient existing with number, but different uuid, so stripping its number and adding new recipient");
 
                 updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                        new RecipientAddress(byNumber.get().getAddress().getUuid().get()));
+                        new RecipientAddress(byNumber.get().getAddress().uuid().get()));
                 return new Pair<>(addNewRecipientLocked(address), Optional.empty());
             }
 
@@ -362,12 +362,12 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
             return new Pair<>(byNumber.get().getRecipientId(), Optional.empty());
         }
 
-        if (byNumber.get().getAddress().getUuid().isPresent()) {
+        if (byNumber.get().getAddress().uuid().isPresent()) {
             logger.debug(
                     "Got separate recipients for high trust number and uuid, recipient for number has different uuid, so stripping its number");
 
             updateRecipientAddressLocked(byNumber.get().getRecipientId(),
-                    new RecipientAddress(byNumber.get().getAddress().getUuid().get()));
+                    new RecipientAddress(byNumber.get().getAddress().uuid().get()));
             updateRecipientAddressLocked(byUuid.get().getRecipientId(), address);
             return new Pair<>(byUuid.get().getRecipientId(), Optional.empty());
         }
@@ -430,9 +430,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private Optional<Recipient> findByNumberLocked(final String number) {
         return recipients.entrySet()
                 .stream()
-                .filter(entry -> entry.getValue().getAddress().getNumber().isPresent() && number.equals(entry.getValue()
+                .filter(entry -> entry.getValue().getAddress().number().isPresent() && number.equals(entry.getValue()
                         .getAddress()
-                        .getNumber()
+                        .number()
                         .get()))
                 .findFirst()
                 .map(Map.Entry::getValue);
@@ -441,9 +441,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private Optional<Recipient> findByUuidLocked(final UUID uuid) {
         return recipients.entrySet()
                 .stream()
-                .filter(entry -> entry.getValue().getAddress().getUuid().isPresent() && uuid.equals(entry.getValue()
+                .filter(entry -> entry.getValue().getAddress().uuid().isPresent() && uuid.equals(entry.getValue()
                         .getAddress()
-                        .getUuid()
+                        .uuid()
                         .get()))
                 .findFirst()
                 .map(Map.Entry::getValue);
@@ -479,8 +479,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                                     .map(Enum::name)
                                     .collect(Collectors.toSet()));
             return new Storage.Recipient(pair.getKey().id(),
-                    recipient.getAddress().getNumber().orElse(null),
-                    recipient.getAddress().getUuid().map(UUID::toString).orElse(null),
+                    recipient.getAddress().number().orElse(null),
+                    recipient.getAddress().uuid().map(UUID::toString).orElse(null),
                     recipient.getProfileKey() == null
                             ? null
                             : base64.encodeToString(recipient.getProfileKey().serialize()),

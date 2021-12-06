@@ -41,8 +41,8 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
 
     private static Set<JsonGroupMember> resolveJsonMembers(Set<RecipientAddress> addresses) {
         return addresses.stream()
-                .map(address -> new JsonGroupMember(address.getNumber().orElse(null),
-                        address.getUuid().map(UUID::toString).orElse(null)))
+                .map(address -> new JsonGroupMember(address.number().orElse(null),
+                        address.uuid().map(UUID::toString).orElse(null)))
                 .collect(Collectors.toSet());
     }
 

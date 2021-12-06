@@ -9,8 +9,8 @@ public record JsonMention(@Deprecated String name, String number, String uuid, i
     static JsonMention from(MessageEnvelope.Data.Mention mention) {
         final var address = mention.recipient();
         return new JsonMention(address.getLegacyIdentifier(),
-                address.getNumber().orElse(null),
-                address.getUuid().map(UUID::toString).orElse(null),
+                address.number().orElse(null),
+                address.uuid().map(UUID::toString).orElse(null),
                 mention.start(),
                 mention.length());
     }

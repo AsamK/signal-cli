@@ -11,8 +11,8 @@ record JsonSyncReadMessage(
     static JsonSyncReadMessage from(MessageEnvelope.Sync.Read readMessage) {
         final var senderAddress = readMessage.sender();
         final var sender = senderAddress.getLegacyIdentifier();
-        final var senderNumber = senderAddress.getNumber().orElse(null);
-        final var senderUuid = senderAddress.getUuid().map(UUID::toString).orElse(null);
+        final var senderNumber = senderAddress.number().orElse(null);
+        final var senderUuid = senderAddress.uuid().map(UUID::toString).orElse(null);
         final var timestamp = readMessage.timestamp();
         return new JsonSyncReadMessage(sender, senderNumber, senderUuid, timestamp);
     }

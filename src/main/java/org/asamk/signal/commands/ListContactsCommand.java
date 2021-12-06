@@ -43,8 +43,8 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
             final var jsonContacts = contacts.stream().map(contactPair -> {
                 final var address = contactPair.first();
                 final var contact = contactPair.second();
-                return new JsonContact(address.getNumber().orElse(null),
-                        address.getUuid().map(UUID::toString).orElse(null),
+                return new JsonContact(address.number().orElse(null),
+                        address.uuid().map(UUID::toString).orElse(null),
                         contact.getName(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime());

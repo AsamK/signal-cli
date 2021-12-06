@@ -31,7 +31,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Identity theirId) {
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
-                theirId.recipient().getNumber().orElse(null),
+                theirId.recipient().number().orElse(null),
                 theirId.trustLevel(),
                 theirId.dateAdded(),
                 Hex.toString(theirId.getFingerprint()),
@@ -67,8 +67,8 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                 final var address = id.recipient();
                 var safetyNumber = Util.formatSafetyNumber(id.safetyNumber());
                 var scannableSafetyNumber = id.scannableSafetyNumber();
-                return new JsonIdentity(address.getNumber().orElse(null),
-                        address.getUuid().map(UUID::toString).orElse(null),
+                return new JsonIdentity(address.number().orElse(null),
+                        address.uuid().map(UUID::toString).orElse(null),
                         Hex.toString(id.getFingerprint()),
                         safetyNumber,
                         scannableSafetyNumber == null
