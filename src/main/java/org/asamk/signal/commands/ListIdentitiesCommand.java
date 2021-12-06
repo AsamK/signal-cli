@@ -31,7 +31,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
 
     private static void printIdentityFingerprint(PlainTextWriter writer, Identity theirId) {
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
-                theirId.recipient().number().orElse(null),
+                theirId.recipient().getLegacyIdentifier(),
                 theirId.trustLevel(),
                 theirId.dateAdded(),
                 Hex.toString(theirId.getFingerprint()),
