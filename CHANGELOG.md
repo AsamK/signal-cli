@@ -1,7 +1,7 @@
 # Changelog
 
 ## [Unreleased]
-**Attention**: Now requires Java 17 and libsignal-client version 0.10
+**Attention**: Now requires Java 17 and libsignal-client version 0.11
 
 ### Added
 - The daemon command now provides a JSON-RPC based socket interface (`--socket` and `--tcp`)

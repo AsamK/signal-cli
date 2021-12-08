@@ -275,7 +275,7 @@ public class ManagerImpl implements Manager {
         try {
             preKeyHelper.refreshPreKeysIfNecessary();
             if (account.getAci() == null) {
-                account.setAci(dependencies.getAccountManager().getOwnAci());
+                account.setAci(ACI.parseOrNull(dependencies.getAccountManager().getWhoAmI().getAci()));
             }
             updateAccountAttributes(null);
         } catch (AuthorizationFailedException e) {

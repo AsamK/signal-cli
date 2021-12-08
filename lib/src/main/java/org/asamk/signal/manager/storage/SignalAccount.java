@@ -63,7 +63,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
 
 public class SignalAccount implements Closeable {
 
@@ -413,7 +412,7 @@ public class SignalAccount implements Closeable {
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("uuid")) {
             try {
-                aci = ACI.from(UUID.fromString(rootNode.get("uuid").asText()));
+                aci = ACI.parseOrThrow(rootNode.get("uuid").asText());
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid uuid, needs to be a valid UUID", e);
             }
