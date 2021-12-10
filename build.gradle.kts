@@ -36,7 +36,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.bouncycastle", "bcprov-jdk15on", "1.69")
+    implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.0")
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.0.0-beta")
