@@ -107,6 +107,9 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NL\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NZ\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PA\\E"
     }, 
     {
@@ -120,6 +123,9 @@
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RU\\E"
+    }, 
+    {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TH\\E"
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_UA\\E"
