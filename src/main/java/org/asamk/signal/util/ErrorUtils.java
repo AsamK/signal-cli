@@ -6,10 +6,10 @@ import org.asamk.signal.manager.api.ProofRequiredException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ErrorUtils {
@@ -20,7 +20,7 @@ public class ErrorUtils {
     public static void handleSendMessageResults(
             Map<RecipientIdentifier, List<SendMessageResult>> mapResults
     ) throws CommandException {
-        List<String> errors = getErrorMessagesFromSendMessageResults(mapResults);
+        var errors = getErrorMessagesFromSendMessageResults(mapResults);
         handleSendMessageResultErrors(errors);
     }
 
@@ -32,22 +32,21 @@ public class ErrorUtils {
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
-        return mapResults.values()
+        return mapResults.entrySet()
                 .stream()
-                .flatMap(results -> getErrorMessagesFromSendMessageResults(results).stream())
+                .flatMap(entry -> entry.getValue()
+                        .stream()
+                        .map(ErrorUtils::getErrorMessageFromSendMessageResult)
+                        .filter(Objects::nonNull)
+                        .map(error -> entry.getKey().getIdentifier() + ": " + error))
                 .collect(Collectors.toList());
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(Collection<SendMessageResult> results) {
-        var errors = new ArrayList<String>();
-        for (var result : results) {
-            var error = getErrorMessageFromSendMessageResult(result);
-            if (error != null) {
-                errors.add(error);
-            }
-        }
-
-        return errors;
+        return results.stream()
+                .map(ErrorUtils::getErrorMessageFromSendMessageResult)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public static String getErrorMessageFromSendMessageResult(SendMessageResult result) {

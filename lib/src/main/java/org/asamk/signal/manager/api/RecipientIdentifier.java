@@ -11,9 +11,16 @@ import java.util.UUID;
 
 public sealed interface RecipientIdentifier {
 
+    String getIdentifier();
+
     record NoteToSelf() implements RecipientIdentifier {
 
         public static NoteToSelf INSTANCE = new NoteToSelf();
+
+        @Override
+        public String getIdentifier() {
+            return "Note-To-Self";
+        }
     }
 
     sealed interface Single extends RecipientIdentifier {
@@ -43,8 +50,6 @@ public sealed interface RecipientIdentifier {
             }
             throw new AssertionError("RecipientAddress without identifier");
         }
-
-        String getIdentifier();
     }
 
     record Uuid(UUID uuid) implements Single {
@@ -63,5 +68,11 @@ public sealed interface RecipientIdentifier {
         }
     }
 
-    record Group(GroupId groupId) implements RecipientIdentifier {}
+    record Group(GroupId groupId) implements RecipientIdentifier {
+
+        @Override
+        public String getIdentifier() {
+            return groupId.toBase64();
+        }
+    }
 }
