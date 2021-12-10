@@ -1,6 +1,7 @@
 /////
 vim:set ts=4 sw=4 tw=82 noet:
 /////
+
 :quotes.~:
 
 = signal-cli (1)
@@ -22,7 +23,8 @@ signal-cli was primarily developed to be used on servers to notify admins of imp
 For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
 
 For some functionality the Signal protocol requires that all messages have been received from the server.
-The `receive` command should be regularly executed. In daemon mode messages are continuously received.
+The `receive` command should be regularly executed.
+In daemon mode messages are continuously received.
 
 == Options
 
@@ -46,8 +48,7 @@ The phone number must include the country calling code, i.e. the number must sta
 
 This flag must not be given for the `link` command.
 It is optional for the `daemon` command.
-For all other commands it is only optional if there is exactly one local user in the
-config directory.
+For all other commands it is only optional if there is exactly one local user in the config directory.
 
 *--dbus*::
 Make request via user dbus.
@@ -56,12 +57,12 @@ Make request via user dbus.
 Make request via system dbus.
 
 *-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
-Specify if you want commands to output in either "plain-text" mode or in "json". Defaults to "plain-text"
+Specify if you want commands to output in either "plain-text" mode or in "json".
+Defaults to "plain-text"
 
 *--trust-new-identities* TRUST-MODE::
 Choose when to trust new identities:
-- `on-first-use` (default): Trust the first seen identity key from new users,
-  changed keys must be verified manually
+- `on-first-use` (default): Trust the first seen identity key from new users, changed keys must be verified manually
 - `always`: Trust any new identity key without verification
 - `never`: Don't trust any unknown identity key, every key must be verified manually
 
@@ -78,8 +79,7 @@ The verification should be done over voice, not SMS.
 *--captcha*::
 The captcha token, required if registration failed with a captcha required error.
 To get the token, go to https://signalcaptchas.org/registration/generate.html
-Check the developer tools for a redirect starting with signalcaptcha://
-Everything after signalcaptcha:// is the captcha token.
+Check the developer tools for a redirect starting with signalcaptcha:// Everything after signalcaptcha:// is the captcha token.
 
 === verify
 
@@ -100,8 +100,9 @@ Use "updateAccount" to undo this.
 To remove a linked device, use "removeDevice" from the master device.
 
 *--delete-account*::
-Delete account completely from server. Cannot be undone without loss. You will
-have to be readded to each group.
+Delete account completely from server.
+Cannot be undone without loss.
+You will have to be readded to each group.
 
 CAUTION: Only delete your account if you won't use this number again!
 
@@ -144,7 +145,8 @@ Remove the registration lock pin.
 === link
 
 Link to an existing device, instead of registering a new number.
-This shows a "sgnl://linkdevice?uuid=..." URI. If you want to connect to another signal-cli instance, you can just use this URI.
+This shows a "sgnl://linkdevice?uuid=..." URI.
+If you want to connect to another signal-cli instance, you can just use this URI.
 If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
 
 *-n* NAME, *--name* NAME::
@@ -158,8 +160,7 @@ Only works, if this is the master device.
 
 *--uri* URI::
 Specify the uri contained in the QR code shown by the new device.
-You will need the full URI such as "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...")
-Make sure to enclose it in quotation marks for shells.
+You will need the full URI such as "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...") Make sure to enclose it in quotation marks for shells.
 
 === listDevices
 
@@ -206,13 +207,11 @@ Send the message to self without notification.
 Clear session state and send end session message.
 
 *--mention*::
-Mention another group member (syntax: start:length:recipientNumber)
-In the apps the mention replaces part of the message text, which is specified by the start and length values.
+Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
 e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 
 *--quote-timestamp*::
-Specify the timestamp of a previous message with the recipient or group to add a
-quote to the new message.
+Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.
 
 *--quote-author*::
 Specify the number of the author of the original message.
@@ -398,15 +397,13 @@ Trust all known keys of this user, only use this for testing.
 
 *-v* VERIFIED_SAFETY_NUMBER, *--verified-safety-number* VERIFIED_SAFETY_NUMBER::
 Specify the safety number of the key, only use this option if you have verified the safety number.
-Can be either the plain text numbers shown in the app or the bytes from the QR-code,
-encoded as base64.
+Can be either the plain text numbers shown in the app or the bytes from the QR-code, encoded as base64.
 
 === updateProfile
 
 Update the profile information shown to message recipients.
 The profile is stored encrypted on the Signal servers.
-The decryption key is sent with every outgoing messages to contacts and included
-in every group.
+The decryption key is sent with every outgoing messages to contacts and included in every group.
 
 *--given-name* NAME, *--name* NAME::
 New (given) name.
@@ -443,6 +440,7 @@ Set expiration time of messages (seconds).
 To disable expiration set expiration time to 0.
 
 === removeContact
+
 Remove the info of a given contact
 
 NUMBER::
@@ -481,13 +479,13 @@ This command should only be used if this is the master device.
 === sendSyncRequest
 
 Send a synchronization request message to the master device (for group, contacts, ...).
-The master device will respond with synchronization messages with full contact and
-group lists.
+The master device will respond with synchronization messages with full contact and group lists.
 
 === uploadStickerPack
 
 Upload a new sticker pack, consisting of a manifest file and the sticker images.
 Images must conform to the following specification: (see https://support.signal.org/hc/en-us/articles/360031836512-Stickers#sticker_reqs )
+
 - Static stickers in PNG or WebP format
 - Animated stickers in APNG format,
 - Maximum file size for a sticker file is 300KiB
@@ -521,14 +519,33 @@ The path of the manifest.json or a zip file containing the sticker pack you wish
 
 === daemon
 
-signal-cli can run in daemon mode and provides an experimental dbus interface.
-If no `-a` account is given, all local accounts will be exported as separate dbus
-objects under the same bus name.
+signal-cli can run in daemon mode and provides an experimental dbus or JSON-RPC interface.
+If no `-a` account is given, all local accounts will be exported as separate dbus objects under the same bus name.
 
-*--system*::
-Use DBus system bus instead of user bus.
+*--dbus*::
+Export DBus interface on user bus.
+See signal-cli-dbus (5) for info on the dbus interface.
+
+*--dbus-system*::
+Export DBus interface on system bus.
+See signal-cli-dbus (5) for info on the dbus interface.
+
+*--socket [SOCKET]*::
+Export a JSON-RPC interface on a UNIX socket (default $XDG_RUNTIME_DIR/signal-cli/socket).
+See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
+
+*--tcp [HOST:PORT]*::
+Export a JSON-RPC interface on a TCP socket (default localhost:7583).
+See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
+
 *--ignore-attachments*::
 Don’t download attachments of received messages.
+
+*--no-receive-stdout*::
+Don’t print received messages to stdout.
+
+*--receive-mode*::
+Specify when to start receiving messages (on-start, on-connection, manual)
 
 == Examples
 
@@ -566,6 +583,7 @@ Trust new key, without having verified it. Only use this if you don't care about
 signal-cli -a ACCOUNT trust -a NUMBER
 
 == Exit codes
+
 * *1*: Error is probably caused and fixable by the user
 * *2*: Some unexpected error
 * *3*: Server or IO error

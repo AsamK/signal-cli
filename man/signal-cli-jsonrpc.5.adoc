@@ -1,0 +1,95 @@
+/////
+vim:set ts=4 sw=4 tw=82 noet:
+/////
+
+:quotes.~:
+
+= signal-cli-jsonrpc (5)
+
+== Name
+
+JSON-RPC API for signal-cli - A commandline and dbus interface for the Signal messenger
+
+== Synopsis
+
+*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket] [--tcp]
+
+*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] jsonRpc
+
+== Description
+
+See signal-cli (1) for details on the application.
+
+signal-cli provides a JSON-RPC based API with the `jsonRpc` and `daemon` commands.
+
+- `jsonRpc` command accepts input on STDIN and responds on STDOUT.
+This is intended to make it easier to embed signal-cli in other applications.
+
+  `signal-cli -a _ACCOUNT_ jsonRpc`
+
+- `daemon` command provides a UNIX or TCP socket and can handle requests from multiple clients.
+
+  `signal-cli -a _ACCOUNT_ daemon --socket` or for multi-account mode `signal-cli daemon --socket`
+
+== Basic usage
+
+In JSON-RPC mode, signal-cli will read requests from stdin.
+Every requests must be a JSON object in a single line.
+Requests must have a unique "id" value to be able to match the response to the corresponding request.
+
+Example:
+
+REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"my special mark"}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":[{"id":"Pmpi+EfPWmsxiomLe9Nx2XF9HOE483p6iKiFj65iMwI=","name":"My Group","description":"It's special because it is mine.","isMember":true,"isBlocked":false,"members":["+33123456789","+440123456789"],"pendingMembers":[],"requestingMembers":[],"admins":["+33123456789","+440123456789"],"groupInviteLink":"https://signal.group/#CjQKIAtcbUw482i7bqvmJCwdgvg0FMif52N5v9lGg_bE4U3zEhCjHKSaPzWImMpnCbU8A1r0"}],"id":"my special mark"}`
+
+From the command line:
+
+`echo '{"jsonrpc":"2.0","method":"listGroups","id":"my special mark"}' | signal-cli -u +33123456789 jsonRpc`
+
+Like in dbus daemon mode, messages are automatically received in jsonRpc mode.
+Incoming messages are sent as JSON-RPC notifications.
+
+Example:
+
+`{"jsonrpc":"2.0","method":"receive","params":{"envelope":{"source":"+33123456789","sourceNumber":"+33123456789","sourceUuid":"uuid","sourceName":"name","sourceDevice":1,"timestamp":1631458508784,"dataMessage":{"timestamp":1631458508784,"message":"foobar","expiresInSeconds":0,"viewOnce":false,"mentions":[],"attachments":[],"contacts":[]}}}}`
+
+=== Multi-account daemon mode
+When the daemon command is started without an account parameter (-a), signal-cli will provide all local accounts and additional commands to register and link new accounts.
+
+In multi-account mode, requests for a single account require an additional `account` param.
+
+REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"my special mark","params":{"account":"+33123456789"}}`
+
+== Commands
+
+The commands available for the JSON-RPC mode are the same as the cli commands (except `register`, `verify` and `link`).
+The `method` field is the command name and the parameters can be sent as the `params` object.
+
+- Parameter names are provided in camelCase format instead of the hyphen format on the cli.
+
+  e.g.: `--group-id=ID` on the cli becomes `"groupId":"ID"`
+
+- Parameters that can take multiple values on the command line can be provided as single json value or as json array
+
+  e.g. `--attachment ATTACH1 ATTACH2` becomes `"attachments":["ATTACH1", "ATTACH2"]`
+
+  `--attachment ATTACH` becomes `"attachment":"ATTACH"`
+
+== Examples
+
+REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"5"}` RESPONSE: `{"jsonrpc":"2.0","result":[...],"id":"5"}`
+
+REQUEST: `{"jsonrpc":"2.0","method":"send","params":{"recipient":["+YYY"],"message":"MESSAGE"},"id":4}` RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":999},"id":4}`
+
+REQUEST: `{"jsonrpc":"2.0","method":"updateGroup","params":{"groupId":"GROUP_ID=","name":"new group name","members":["+ZZZ"],"link":"enabledWithApproval","setPermissionEditDetails":"only-admins"},"id":"someId"}` RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":9999},"id":"someId"}`
+
+REQUEST: `{"jsonrpc":"2.0","method":"sendSyncRequest","id":9}` RESPONSE: `{"jsonrpc":"2.0","result":{},"id":9}`
+
+REQUEST: `{"jsonrpc":"2.0"}` RESPONSE: `{"jsonrpc":"2.0","error":{"code":-32600,"message":"method field must be set","data":null},"id":null}`
+
+== Authors
+
+Maintained by AsamK <asamk@gmx.de>, who is assisted by other open source contributors.
+For more information about signal-cli development, see
+<https://github.com/AsamK/signal-cli>.
