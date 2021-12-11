@@ -239,22 +239,6 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
-    public long sendGroupRemoteDeleteMessage(
-            final long targetSentTimestamp, final byte[] groupId
-    ) {
-        try {
-            final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
-                    Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
-            checkSendMessageResults(results.timestamp(), results.results());
-            return results.timestamp();
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
-            throw new Error.GroupNotFound(e.getMessage());
-        }
-    }
-
-    @Override
     public long sendMessageReaction(
             final String emoji,
             final boolean remove,
@@ -401,7 +385,7 @@ public class DbusSignalImpl implements Signal {
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
             var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
-                    Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
+                    Set.of(getGroupRecipientIdentifier(groupId)));
             checkSendMessageResults(results.timestamp(), results.results());
             return results.timestamp();
         } catch (IOException e) {
@@ -410,6 +394,37 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendGroupTyping(
+            final byte[] groupId, final boolean stop
+    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
+        try {
+            final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
+                    Set.of(getGroupRecipientIdentifier(groupId)));
+            checkSendMessageResults(results.timestamp(), results.results());
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        }
+    }
+
+    @Override
+    public long sendGroupRemoteDeleteMessage(
+            final long targetSentTimestamp, final byte[] groupId
+    ) {
+        try {
+            final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
+                    Set.of(getGroupRecipientIdentifier(groupId)));
+            checkSendMessageResults(results.timestamp(), results.results());
+            return results.timestamp();
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.GroupNotFound(e.getMessage());
         }
     }
 
@@ -426,7 +441,7 @@ public class DbusSignalImpl implements Signal {
                     remove,
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
-                    Set.of(new RecipientIdentifier.Group(getGroupId(groupId))));
+                    Set.of(getGroupRecipientIdentifier(groupId)));
             checkSendMessageResults(results.timestamp(), results.results());
             return results.timestamp();
         } catch (IOException e) {
@@ -852,6 +867,10 @@ public class DbusSignalImpl implements Signal {
         } catch (InvalidNumberException e) {
             throw new Error.InvalidNumber(e.getMessage());
         }
+    }
+
+    private RecipientIdentifier.Group getGroupRecipientIdentifier(final byte[] groupId) {
+        return new RecipientIdentifier.Group(getGroupId(groupId));
     }
 
     private static GroupId getGroupId(byte[] groupId) throws DBusExecutionException {

@@ -301,7 +301,8 @@ public class DbusManagerImpl implements Manager {
             signal.sendTyping(signal.getSelfNumber(), action == TypingAction.STOP);
             return 0L;
         }, groupId -> {
-            throw new UnsupportedOperationException();
+            signal.sendGroupTyping(groupId, action == TypingAction.STOP);
+            return 0L;
         });
     }
 

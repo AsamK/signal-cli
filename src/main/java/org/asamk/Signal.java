@@ -36,7 +36,7 @@ public interface Signal extends DBusInterface {
 
     void sendTyping(
             String recipient, boolean stop
-    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+    ) throws Error.Failure, Error.UntrustedIdentity;
 
     void sendReadReceipt(
             String recipient, List<Long> messageIds
@@ -53,10 +53,6 @@ public interface Signal extends DBusInterface {
     long sendRemoteDeleteMessage(
             long targetSentTimestamp, List<String> recipients
     ) throws Error.Failure, Error.InvalidNumber;
-
-    long sendGroupRemoteDeleteMessage(
-            long targetSentTimestamp, byte[] groupId
-    ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
 
     long sendMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, String recipient
@@ -83,6 +79,14 @@ public interface Signal extends DBusInterface {
     long sendGroupMessage(
             String message, List<String> attachments, byte[] groupId
     ) throws Error.GroupNotFound, Error.Failure, Error.AttachmentInvalid, Error.InvalidGroupId;
+
+    void sendGroupTyping(
+            final byte[] groupId, final boolean stop
+    ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity;
+
+    long sendGroupRemoteDeleteMessage(
+            long targetSentTimestamp, byte[] groupId
+    ) throws Error.Failure, Error.GroupNotFound, Error.InvalidGroupId;
 
     long sendGroupMessageReaction(
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, byte[] groupId

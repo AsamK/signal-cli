@@ -237,9 +237,9 @@ Exceptions: Failure, InvalidNumber
 
 sendTyping(recipient<s>, stop<b>) -> <>::
 * recipient : Phone number of a single recipient
-* targetSentTimestamp : True, if typing state should be stopped
+* stop : True, if typing state should be stopped
 
-Exceptions: Failure, GroupNotFound, UntrustedIdentity
+Exceptions: Failure, UntrustedIdentity
 
 setContactBlocked(number<s>, block<b>) -> <>::
 * number : Phone number affected by method
@@ -352,6 +352,12 @@ sendGroupMessage(message<s>, attachments<as>, groupId<ay>) -> timestamp<x>::
 * timestamp : Long, can be used to identify the corresponding Signal reply
 
 Exceptions: GroupNotFound, Failure, AttachmentInvalid, InvalidGroupId
+
+sendGroupTyping(groupId<ay>, stop<b>) -> <>::
+* groupId : Byte array representing the internal group identifier
+* stop : True, if typing state should be stopped
+
+Exceptions: Failure, GroupNotFound, UntrustedIdentity
 
 sendGroupMessageReaction(emoji<s>, remove<b>, targetAuthor<s>, targetSentTimestamp<x>, groupId<ay>) -> timestamp<x>::
 * emoji : Unicode grapheme cluster of the emoji
