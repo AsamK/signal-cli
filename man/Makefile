@@ -1,6 +1,6 @@
 A2X = a2x
 
-MANPAGESRC = signal-cli.1
+MANPAGESRC = signal-cli.1 signal-cli-dbus.5 signal-cli-jsonrpc.5
 
 .PHONY: all
 all: $(MANPAGESRC)

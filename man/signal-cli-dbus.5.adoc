@@ -8,7 +8,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 
 == Name
 
-DBus API for signal-cli - A commandline and dbus interface for the Signal messenger
+signal-cli-dbus - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
@@ -64,15 +64,12 @@ link(newDeviceName<s>) -> deviceLinkUri<s>::
 
 Returns a URI of the form "sgnl://linkdevice?uuid=...".
 This can be piped to a QR encoder to create a display that can be captured by a Signal smartphone client.
+
 For example:
 
-[source]
-
-----
+```
 dbus-send --session --dest=org.asamk.Signal --type=method_call --print-reply /org/asamk/Signal org.asamk.Signal.link string:"My secondary client" | tr '\n' '\0' | sed 's/.*string //g' | sed 's/\"//g' | qrencode -s10 -tANSI256
-----
-
-Exceptions: Failure
+```
 
 listAccounts() -> accountList<as>::
 * accountList : Array of all attached accounts in DBus object path form

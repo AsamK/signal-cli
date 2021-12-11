@@ -8,7 +8,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 
 == Name
 
-JSON-RPC API for signal-cli - A commandline and dbus interface for the Signal messenger
+signal-cli-jsonrpc - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
