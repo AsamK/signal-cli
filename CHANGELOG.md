@@ -10,9 +10,9 @@
 - New command `listAccounts` that lists all registered local accounts
 - New command `removeContact`
 - Extend `send` command to allow sending mentions (`--mention`) and quotes (`--quote-timestamp`, `--quote-author`, `--quote-message`, `--quote-mention`)
-- New dbus method sendViewedReceipt (Thanks @John Freed)
-- New dbus methods unregister, deleteAccount
+- New dbus methods sendGroupTying, unregister, deleteAccount
 - New dbus events MessageReceivedV2, ReceiptReceivedV2, SyncMessageReceivedV2 that provide an extras parameter with additional message info as a key/value map
+- New dbus method sendViewedReceipt (Thanks @John Freed)
 - New dbus object Configuration to read and update configuration values (Thanks @John Freed)
 - Payment info in json receive output (Thanks @technillogue)
 - `-c` alias for `--config` (Thanks @technillogue)
@@ -22,8 +22,6 @@
 - Renamed `-u` and `--username` flags to `-a` and `--account` to prevent confusion with upcoming Signal usernames. The old flags are also still supported for now.
 - Respect phone number sharing mode and unlisted state set by main device
 - Adapt register command to reactivate account if possible.
-  By default the unregister command just deactivates the account, in which case it can be reactivated without sms verification if the local data is still available.
-  If the account was deleted (with --delete-account) it cannot be reactivated.
 - dbus-java now uses Java 16 native unix sockets, which should provide better cross-platform compatibility
 
 ### Fixed

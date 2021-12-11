@@ -73,6 +73,12 @@ Choose when to trust new identities:
 Register a phone number with SMS or voice verification.
 Use the verify command to complete the verification.
 
+If the account is just deactivated, the register command will just reactivate
+account, without requiring an SMS verification.  By default the unregister command
+just deactivates the account, in which case it can be reactivated without sms
+verification if the local data is still available.  If the account was deleted
+(with --delete-account) it cannot be reactivated.
+
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
 
