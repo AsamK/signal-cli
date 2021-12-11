@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.10.0] - 2021-12-11
 **Attention**: Now requires Java 17 and libsignal-client version 0.11
 
 ### Added
@@ -23,6 +25,7 @@
 - Respect phone number sharing mode and unlisted state set by main device
 - Adapt register command to reactivate account if possible.
 - dbus-java now uses Java 16 native unix sockets, which should provide better cross-platform compatibility
+- If sending to a recipient fails (e.g. unregistered) signal-cli now exits with a success exit code and prints additional information about the failure.
 
 ### Fixed
 - Registering an existing unregistered account now works reliably in daemon mode
