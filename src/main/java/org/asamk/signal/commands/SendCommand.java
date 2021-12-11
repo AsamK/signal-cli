@@ -14,11 +14,8 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
-import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.CommandUtil;
-import org.asamk.signal.util.ErrorUtils;
 import org.asamk.signal.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,10 +24,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
 public class SendCommand implements JsonRpcLocalCommand {
 
@@ -93,8 +91,7 @@ public class SendCommand implements JsonRpcLocalCommand {
 
             try {
                 final var results = m.sendEndSessionMessage(singleRecipients);
-                outputResult(outputWriter, results.timestamp());
-                ErrorUtils.handleSendMessageResults(results.results());
+                outputResult(outputWriter, results);
                 return;
             } catch (IOException e) {
                 throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
@@ -140,8 +137,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         try {
             var results = m.sendMessage(new Message(messageText, attachments, mentions, Optional.ofNullable(quote)),
                     recipientIdentifiers);
-            outputResult(outputWriter, results.timestamp());
-            ErrorUtils.handleSendMessageResults(results.results());
+            outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
@@ -167,14 +163,5 @@ public class SendCommand implements JsonRpcLocalCommand {
                     m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
         }
         return mentions;
-    }
-
-    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter writer) {
-            writer.println("{}", timestamp);
-        } else {
-            final var writer = (JsonWriter) outputWriter;
-            writer.write(Map.of("timestamp", timestamp));
-        }
     }
 }

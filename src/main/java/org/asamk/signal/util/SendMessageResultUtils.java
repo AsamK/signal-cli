@@ -1,10 +1,14 @@
 package org.asamk.signal.util;
 
-import org.asamk.signal.commands.exceptions.CommandException;
-import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.json.JsonSendMessageResult;
 import org.asamk.signal.manager.api.ProofRequiredException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
+import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.output.PlainTextWriter;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,23 +16,33 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ErrorUtils {
+public class SendMessageResultUtils {
 
-    private ErrorUtils() {
+    private SendMessageResultUtils() {
     }
 
-    public static void handleSendMessageResults(
-            Map<RecipientIdentifier, List<SendMessageResult>> mapResults
-    ) throws CommandException {
-        var errors = getErrorMessagesFromSendMessageResults(mapResults);
-        handleSendMessageResultErrors(errors);
+    public static void outputResult(final OutputWriter outputWriter, final SendGroupMessageResults sendMessageResults) {
+        if (outputWriter instanceof PlainTextWriter writer) {
+            var errors = getErrorMessagesFromSendMessageResults(sendMessageResults.results());
+            printSendMessageResultErrors(writer, errors);
+            writer.println("{}", sendMessageResults.timestamp());
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            var results = getJsonSendMessageResults(sendMessageResults.results());
+            writer.write(Map.of("timestamp", sendMessageResults.timestamp(), "results", results));
+        }
     }
 
-    public static void handleSendMessageResults(
-            Collection<SendMessageResult> results
-    ) throws CommandException {
-        var errors = getErrorMessagesFromSendMessageResults(results);
-        handleSendMessageResultErrors(errors);
+    public static void outputResult(final OutputWriter outputWriter, final SendMessageResults sendMessageResults) {
+        if (outputWriter instanceof PlainTextWriter writer) {
+            var errors = getErrorMessagesFromSendMessageResults(sendMessageResults.results());
+            printSendMessageResultErrors(writer, errors);
+            writer.println("{}", sendMessageResults.timestamp());
+        } else {
+            final var writer = (JsonWriter) outputWriter;
+            var results = getJsonSendMessageResults(sendMessageResults.results());
+            writer.write(Map.of("timestamp", sendMessageResults.timestamp(), "results", results));
+        }
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
@@ -36,7 +50,7 @@ public class ErrorUtils {
                 .stream()
                 .flatMap(entry -> entry.getValue()
                         .stream()
-                        .map(ErrorUtils::getErrorMessageFromSendMessageResult)
+                        .map(SendMessageResultUtils::getErrorMessageFromSendMessageResult)
                         .filter(Objects::nonNull)
                         .map(error -> entry.getKey().getIdentifier() + ": " + error))
                 .collect(Collectors.toList());
@@ -44,7 +58,7 @@ public class ErrorUtils {
 
     public static List<String> getErrorMessagesFromSendMessageResults(Collection<SendMessageResult> results) {
         return results.stream()
-                .map(ErrorUtils::getErrorMessageFromSendMessageResult)
+                .map(SendMessageResultUtils::getErrorMessageFromSendMessageResult)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -82,15 +96,24 @@ public class ErrorUtils {
         return null;
     }
 
-    private static void handleSendMessageResultErrors(List<String> errors) throws CommandException {
+    public static void printSendMessageResultErrors(PlainTextWriter writer, List<String> errors) {
         if (errors.size() == 0) {
             return;
         }
-        var message = new StringBuilder();
-        message.append("Failed to send (some) messages:\n");
+        writer.println("Failed to send (some) messages:");
         for (var error : errors) {
-            message.append(error).append("\n");
+            writer.println(error);
         }
-        throw new IOErrorException(message.toString(), null);
+    }
+
+    public static List<JsonSendMessageResult> getJsonSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
+        return mapResults.entrySet().stream().flatMap(entry -> {
+            final var groupId = entry.getKey() instanceof RecipientIdentifier.Group g ? g.groupId() : null;
+            return entry.getValue().stream().map(r -> JsonSendMessageResult.from(r, groupId));
+        }).collect(Collectors.toList());
+    }
+
+    public static List<JsonSendMessageResult> getJsonSendMessageResults(Collection<SendMessageResult> results) {
+        return results.stream().map(JsonSendMessageResult::from).collect(Collectors.toList());
     }
 }

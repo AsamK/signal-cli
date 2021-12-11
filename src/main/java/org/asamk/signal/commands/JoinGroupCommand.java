@@ -13,12 +13,11 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
+import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
 
 public class JoinGroupCommand implements JsonRpcLocalCommand {
 
@@ -55,10 +54,23 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
             final var results = m.joinGroup(linkUrl);
             var newGroupId = results.first();
             if (outputWriter instanceof JsonWriter writer) {
+                var jsonResults = SendMessageResultUtils.getJsonSendMessageResults(results.second().results());
                 if (!m.getGroup(newGroupId).isMember()) {
-                    writer.write(Map.of("groupId", newGroupId.toBase64(), "onlyRequested", true));
+                    writer.write(Map.of("timestamp",
+                            results.second().timestamp(),
+                            "results",
+                            jsonResults,
+                            "groupId",
+                            newGroupId.toBase64(),
+                            "onlyRequested",
+                            true));
                 } else {
-                    writer.write(Map.of("groupId", newGroupId.toBase64()));
+                    writer.write(Map.of("timestamp",
+                            results.second().timestamp(),
+                            "results",
+                            jsonResults,
+                            "groupId",
+                            newGroupId.toBase64()));
                 }
             } else {
                 final var writer = (PlainTextWriter) outputWriter;
@@ -67,8 +79,10 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                 } else {
                     writer.println("Joined group \"{}\"", newGroupId.toBase64());
                 }
+                var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results.second().results());
+                SendMessageResultUtils.printSendMessageResultErrors(writer, errors);
+                writer.println("{}", results.second().timestamp());
             }
-            handleSendMessageResults(results.second().results());
         } catch (IOException e) {
             throw new IOErrorException("Failed to send message: "
                     + e.getMessage()

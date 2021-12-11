@@ -11,17 +11,14 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
-import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
-import static org.asamk.signal.util.ErrorUtils.handleSendMessageResults;
+import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
 public class QuitGroupCommand implements JsonRpcLocalCommand {
 
@@ -55,9 +52,7 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
         try {
             try {
                 final var results = m.quitGroup(groupId, groupAdmins);
-                final var timestamp = results.timestamp();
-                outputResult(outputWriter, timestamp);
-                handleSendMessageResults(results.results());
+                outputResult(outputWriter, results);
             } catch (NotAGroupMemberException e) {
                 logger.info("User is not a group member");
             }
@@ -75,15 +70,6 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (LastGroupAdminException e) {
             throw new UserErrorException("You need to specify a new admin with --admin: " + e.getMessage());
-        }
-    }
-
-    private void outputResult(final OutputWriter outputWriter, final long timestamp) {
-        if (outputWriter instanceof PlainTextWriter writer) {
-            writer.println("{}", timestamp);
-        } else {
-            final var writer = (JsonWriter) outputWriter;
-            writer.write(Map.of("timestamp", timestamp));
         }
     }
 }

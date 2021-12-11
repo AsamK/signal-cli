@@ -9,6 +9,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupLinkState;
@@ -20,13 +21,15 @@ import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.CommandUtil;
-import org.asamk.signal.util.ErrorUtils;
+import org.asamk.signal.util.SendMessageResultUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UpdateGroupCommand implements JsonRpcLocalCommand {
 
@@ -121,14 +124,13 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
 
         try {
             boolean isNewGroup = false;
-            Long timestamp = null;
+            SendGroupMessageResults groupMessageResults = null;
             if (groupId == null) {
                 isNewGroup = true;
                 var results = m.createGroup(groupName,
                         groupMembers,
                         groupAvatar == null ? null : new File(groupAvatar));
-                timestamp = results.second().timestamp();
-                ErrorUtils.handleSendMessageResults(results.second().results());
+                groupMessageResults = results.second();
                 groupId = results.first();
                 groupName = null;
                 groupMembers = null;
@@ -154,10 +156,15 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                                     : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS)
                             .build());
             if (results != null) {
-                timestamp = results.timestamp();
-                ErrorUtils.handleSendMessageResults(results.results());
+                if (groupMessageResults == null) {
+                    groupMessageResults = results;
+                } else {
+                    groupMessageResults = new SendGroupMessageResults(results.timestamp(),
+                            Stream.concat(groupMessageResults.results().stream(), results.results().stream())
+                                    .collect(Collectors.toList()));
+                }
             }
-            outputResult(outputWriter, timestamp, isNewGroup ? groupId : null);
+            outputResult(outputWriter, groupMessageResults, isNewGroup ? groupId : null);
         } catch (AttachmentInvalidException e) {
             throw new UserErrorException("Failed to add avatar attachment for group\": " + e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -168,24 +175,30 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         }
     }
 
-    private void outputResult(final OutputWriter outputWriter, final Long timestamp, final GroupId groupId) {
+    private void outputResult(
+            final OutputWriter outputWriter, final SendGroupMessageResults results, final GroupId groupId
+    ) {
         if (outputWriter instanceof PlainTextWriter writer) {
             if (groupId != null) {
                 writer.println("Created new group: \"{}\"", groupId.toBase64());
             }
-            if (timestamp != null) {
-                writer.println("{}", timestamp);
+            if (results != null) {
+                var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results.results());
+                SendMessageResultUtils.printSendMessageResultErrors(writer, errors);
+                writer.println("{}", results.timestamp());
             }
         } else {
             final var writer = (JsonWriter) outputWriter;
-            final var result = new HashMap<>();
-            if (timestamp != null) {
-                result.put("timestamp", timestamp);
+            final var response = new HashMap<>();
+            if (results != null) {
+                response.put("timestamp", results.timestamp());
+                var jsonResults = SendMessageResultUtils.getJsonSendMessageResults(results.results());
+                response.put("results", jsonResults);
             }
             if (groupId != null) {
-                result.put("groupId", groupId.toBase64());
+                response.put("groupId", groupId.toBase64());
             }
-            writer.write(result);
+            writer.write(response);
         }
     }
 }

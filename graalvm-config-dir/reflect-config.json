@@ -579,10 +579,38 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.json.JsonRecipientAddress",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]}
+,
+{
   "name":"org.asamk.signal.json.JsonRemoteDelete",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}
+,
+{
+  "name":"org.asamk.signal.json.JsonSendMessageResult",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"recipientAddress","parameterTypes":[] }, 
+    {"name":"retryAfterSeconds","parameterTypes":[] }, 
+    {"name":"token","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"org.asamk.signal.json.JsonSendMessageResult$Type",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
 ,
 {
   "name":"org.asamk.signal.json.JsonSharedContact",

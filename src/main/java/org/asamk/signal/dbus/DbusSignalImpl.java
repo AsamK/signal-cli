@@ -26,7 +26,7 @@ import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.asamk.signal.util.ErrorUtils;
+import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -781,7 +781,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     private static void checkSendMessageResult(long timestamp, SendMessageResult result) throws DBusExecutionException {
-        var error = ErrorUtils.getErrorMessageFromSendMessageResult(result);
+        var error = SendMessageResultUtils.getErrorMessageFromSendMessageResult(result);
 
         if (error == null) {
             return;
@@ -805,7 +805,7 @@ public class DbusSignalImpl implements Signal {
             return;
         }
 
-        var errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
+        var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {
             return;
         }
@@ -828,7 +828,7 @@ public class DbusSignalImpl implements Signal {
             return;
         }
 
-        var errors = ErrorUtils.getErrorMessagesFromSendMessageResults(results);
+        var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
         if (errors.size() == 0) {
             return;
         }
