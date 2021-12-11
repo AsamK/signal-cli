@@ -530,6 +530,8 @@ public interface Signal extends DBusInterface {
 
         void quitGroup() throws Error.Failure, Error.LastGroupAdmin;
 
+        void deleteGroup() throws Error.Failure;
+
         void addMembers(List<String> recipients) throws Error.Failure;
 
         void removeMembers(List<String> recipients) throws Error.Failure;

@@ -110,12 +110,28 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public Configuration getConfiguration() {
-        throw new UnsupportedOperationException();
+        final var configuration = getRemoteObject(new DBusPath(signal.getObjectPath() + "/Configuration"),
+                Signal.Configuration.class).GetAll("org.asamk.Signal.Configuration");
+        return new Configuration(Optional.of((Boolean) configuration.get("ReadReceipts").getValue()),
+                Optional.of((Boolean) configuration.get("UnidentifiedDeliveryIndicators").getValue()),
+                Optional.of((Boolean) configuration.get("TypingIndicators").getValue()),
+                Optional.of((Boolean) configuration.get("LinkPreviews").getValue()));
     }
 
     @Override
-    public void updateConfiguration(Configuration configuration) throws IOException {
-        throw new UnsupportedOperationException();
+    public void updateConfiguration(Configuration newConfiguration) throws IOException {
+        final var configuration = getRemoteObject(new DBusPath(signal.getObjectPath() + "/Configuration"),
+                Signal.Configuration.class);
+        newConfiguration.readReceipts()
+                .ifPresent(v -> configuration.Set("org.asamk.Signal.Configuration", "ReadReceipts", v));
+        newConfiguration.unidentifiedDeliveryIndicators()
+                .ifPresent(v -> configuration.Set("org.asamk.Signal.Configuration",
+                        "UnidentifiedDeliveryIndicators",
+                        v));
+        newConfiguration.typingIndicators()
+                .ifPresent(v -> configuration.Set("org.asamk.Signal.Configuration", "TypingIndicators", v));
+        newConfiguration.linkPreviews()
+                .ifPresent(v -> configuration.Set("org.asamk.Signal.Configuration", "LinkPreviews", v));
     }
 
     @Override
@@ -136,12 +152,12 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void unregister() throws IOException {
-        throw new UnsupportedOperationException();
+        signal.unregister();
     }
 
     @Override
     public void deleteAccount() throws IOException {
-        throw new UnsupportedOperationException();
+        signal.deleteAccount();
     }
 
     @Override
@@ -208,7 +224,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void deleteGroup(final GroupId groupId) throws IOException {
-        throw new UnsupportedOperationException();
+        final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
+        group.deleteGroup();
     }
 
     @Override

@@ -562,6 +562,7 @@ public class DbusSignalImpl implements Signal {
             final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getSelfNumber());
             if (groupId == null) {
                 final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
+                updateGroups();
                 checkSendMessageResults(results.second().timestamp(), results.second().results());
                 return results.first().serialize();
             } else {
@@ -1150,6 +1151,16 @@ public class DbusSignalImpl implements Signal {
             } catch (LastGroupAdminException e) {
                 throw new Error.LastGroupAdmin(e.getMessage());
             }
+        }
+
+        @Override
+        public void deleteGroup() throws Error.Failure, Error.LastGroupAdmin {
+            try {
+                m.deleteGroup(groupId);
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            }
+            updateGroups();
         }
 
         @Override

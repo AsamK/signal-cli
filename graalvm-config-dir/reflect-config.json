@@ -326,7 +326,9 @@
 ,
 {
   "name":"org.asamk.Signal$StructDevice",
-  "allDeclaredFields":true}
+  "allDeclaredFields":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["org.freedesktop.dbus.DBusPath","java.lang.Long","java.lang.String"] }]}
 ,
 {
   "name":"org.asamk.Signal$StructGroup",
@@ -1471,6 +1473,10 @@
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAddFromInviteLinkAccessControlAction",
   "fields":[{"name":"addFromInviteLinkAccess_"}]}
+,
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAnnouncementsOnlyAction",
+  "fields":[{"name":"announcementsOnly_"}]}
 ,
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAttributesAccessControlAction",
