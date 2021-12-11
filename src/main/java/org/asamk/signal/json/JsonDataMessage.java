@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 record JsonDataMessage(
         long timestamp,
@@ -36,20 +35,20 @@ record JsonDataMessage(
         final var mentions = dataMessage.mentions().size() > 0 ? dataMessage.mentions()
                 .stream()
                 .map(JsonMention::from)
-                .collect(Collectors.toList()) : null;
+                .toList() : null;
         final var remoteDelete = dataMessage.remoteDeleteId().isPresent()
                 ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get())
                 : null;
         final var attachments = dataMessage.attachments().size() > 0 ? dataMessage.attachments()
                 .stream()
                 .map(JsonAttachment::from)
-                .collect(Collectors.toList()) : null;
+                .toList() : null;
         final var sticker = dataMessage.sticker().isPresent() ? JsonSticker.from(dataMessage.sticker().get()) : null;
 
         final var contacts = dataMessage.sharedContacts().size() > 0 ? dataMessage.sharedContacts()
                 .stream()
                 .map(JsonSharedContact::from)
-                .collect(Collectors.toList()) : null;
+                .toList() : null;
         return new JsonDataMessage(timestamp,
                 message,
                 expiresInSeconds,

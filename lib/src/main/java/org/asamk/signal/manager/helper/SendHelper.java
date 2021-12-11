@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SendHelper {
 
@@ -227,9 +226,7 @@ public class SendHelper {
         }
         final var messageSender = dependencies.getMessageSender();
         final var recipientIdList = new ArrayList<>(g.getMembersWithout(account.getSelfRecipientId()));
-        final var addresses = recipientIdList.stream()
-                .map(addressResolver::resolveSignalServiceAddress)
-                .collect(Collectors.toList());
+        final var addresses = recipientIdList.stream().map(addressResolver::resolveSignalServiceAddress).toList();
         return messageSender.sendTyping(addresses,
                 unidentifiedAccessHelper.getAccessFor(recipientIdList),
                 message,
@@ -255,9 +252,7 @@ public class SendHelper {
             // isRecipientUpdate is true if we've already sent this message to some recipients in the past, otherwise false.
             final var isRecipientUpdate = false;
             final var recipientIdList = new ArrayList<>(recipientIds);
-            final var addresses = recipientIdList.stream()
-                    .map(addressResolver::resolveSignalServiceAddress)
-                    .collect(Collectors.toList());
+            final var addresses = recipientIdList.stream().map(addressResolver::resolveSignalServiceAddress).toList();
             return messageSender.sendDataMessage(addresses,
                     unidentifiedAccessHelper.getAccessFor(recipientIdList),
                     isRecipientUpdate,

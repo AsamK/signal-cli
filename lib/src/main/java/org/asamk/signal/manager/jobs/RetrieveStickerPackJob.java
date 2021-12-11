@@ -10,7 +10,6 @@ import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.stream.Collectors;
 
 public class RetrieveStickerPackJob implements Job {
 
@@ -63,7 +62,7 @@ public class RetrieveStickerPackJob implements Job {
                             .map(c -> new JsonStickerPack.JsonSticker(c.getEmoji(),
                                     String.valueOf(c.getId()),
                                     c.getContentType()))
-                            .collect(Collectors.toList()));
+                            .toList());
             context.getStickerPackStore().storeManifest(packId, jsonManifest);
         } catch (IOException e) {
             logger.warn("Failed to retrieve sticker pack {}: {}",

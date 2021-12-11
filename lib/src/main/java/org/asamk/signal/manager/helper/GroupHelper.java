@@ -55,7 +55,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class GroupHelper {
 
@@ -630,10 +629,7 @@ public class GroupHelper {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.getGroupId().serialize())
                 .withName(g.name)
-                .withMembers(g.getMembers()
-                        .stream()
-                        .map(addressResolver::resolveSignalServiceAddress)
-                        .collect(Collectors.toList()));
+                .withMembers(g.getMembers().stream().map(addressResolver::resolveSignalServiceAddress).toList());
 
         try {
             final var attachment = createGroupAvatarAttachment(g.getGroupId());
@@ -682,6 +678,6 @@ public class GroupHelper {
                         .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
                                 recipientResolver,
                                 account.getRecipientStore()::resolveRecipientAddress))
-                        .collect(Collectors.toList()));
+                        .toList());
     }
 }

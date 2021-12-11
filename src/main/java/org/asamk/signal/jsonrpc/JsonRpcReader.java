@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class JsonRpcReader {
@@ -57,7 +56,7 @@ public class JsonRpcReader {
                     }
 
                     return handleRequest(requestHandler, request);
-                }).filter(Objects::nonNull).collect(Collectors.toList());
+                }).filter(Objects::nonNull).toList();
 
                 jsonRpcSender.sendBatchResponses(responseList);
             }
@@ -128,8 +127,7 @@ public class JsonRpcReader {
                         null), null));
                 return null;
             }
-            return new JsonRpcBatchMessage(StreamSupport.stream(jsonNode.spliterator(), false)
-                    .collect(Collectors.toList()));
+            return new JsonRpcBatchMessage(StreamSupport.stream(jsonNode.spliterator(), false).toList());
         } else if (jsonNode.isObject()) {
             if (jsonNode.has("result") || jsonNode.has("error")) {
                 return parseJsonRpcResponse(jsonNode);

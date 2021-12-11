@@ -445,7 +445,7 @@ public class ManagerImpl implements Manager {
                     d.getCreated(),
                     d.getLastSeen(),
                     d.getId() == account.getDeviceId());
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -517,7 +517,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public List<Group> getGroups() {
-        return account.getGroupStore().getGroups().stream().map(this::toGroup).collect(Collectors.toList());
+        return account.getGroupStore().getGroups().stream().map(this::toGroup).toList();
     }
 
     private Group toGroup(final GroupInfo groupInfo) {
@@ -628,7 +628,7 @@ public class ManagerImpl implements Manager {
                                 .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
                                         account.getRecipientStore(),
                                         account.getRecipientStore()::resolveRecipientAddress))
-                                .collect(Collectors.toList()));
+                                .toList());
             }
         }
         return new SendMessageResults(timestamp, results);
@@ -657,7 +657,7 @@ public class ManagerImpl implements Manager {
                                 .map(r -> SendMessageResult.from(r,
                                         account.getRecipientStore(),
                                         account.getRecipientStore()::resolveRecipientAddress))
-                                .collect(Collectors.toList()));
+                                .toList());
             }
         }
         return new SendMessageResults(timestamp, results);
@@ -1283,7 +1283,7 @@ public class ManagerImpl implements Manager {
                 .getContacts()
                 .stream()
                 .map(p -> new Pair<>(account.getRecipientStore().resolveRecipientAddress(p.first()), p.second()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -1319,11 +1319,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public List<Identity> getIdentities() {
-        return account.getIdentityKeyStore()
-                .getIdentities()
-                .stream()
-                .map(this::toIdentity)
-                .collect(Collectors.toList());
+        return account.getIdentityKeyStore().getIdentities().stream().map(this::toIdentity).toList();
     }
 
     private Identity toIdentity(final IdentityInfo identityInfo) {

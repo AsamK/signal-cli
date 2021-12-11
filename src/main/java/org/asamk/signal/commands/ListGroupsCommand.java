@@ -99,7 +99,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                         group.permissionEditDetails().name(),
                         group.permissionSendMessage().name(),
                         groupInviteLink == null ? null : groupInviteLink.getUrl());
-            }).collect(Collectors.toList());
+            }).toList();
 
             jsonWriter.write(jsonGroups);
         } else {

@@ -191,9 +191,7 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public long sendMessage(final String message, final List<String> attachments, final String recipient) {
-        var recipients = new ArrayList<String>(1);
-        recipients.add(recipient);
-        return sendMessage(message, attachments, recipients);
+        return sendMessage(message, attachments, List.of(recipient));
     }
 
     @Override
@@ -219,9 +217,7 @@ public class DbusSignalImpl implements Signal {
     public long sendRemoteDeleteMessage(
             final long targetSentTimestamp, final String recipient
     ) {
-        var recipients = new ArrayList<String>(1);
-        recipients.add(recipient);
-        return sendRemoteDeleteMessage(targetSentTimestamp, recipients);
+        return sendRemoteDeleteMessage(targetSentTimestamp, List.of(recipient));
     }
 
     @Override
@@ -266,9 +262,7 @@ public class DbusSignalImpl implements Signal {
             final long targetSentTimestamp,
             final String recipient
     ) {
-        var recipients = new ArrayList<String>(1);
-        recipients.add(recipient);
-        return sendMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, recipients);
+        return sendMessageReaction(emoji, remove, targetAuthor, targetSentTimestamp, List.of(recipient));
     }
 
     @Override
@@ -301,10 +295,8 @@ public class DbusSignalImpl implements Signal {
             final String recipient, final boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
         try {
-            var recipients = new ArrayList<String>(1);
-            recipients.add(recipient);
             final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
-                    getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
+                    getSingleRecipientIdentifiers(List.of(recipient), m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
             checkSendMessageResults(results.timestamp(), results.results());
@@ -499,11 +491,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public List<byte[]> getGroupIds() {
         var groups = m.getGroups();
-        var ids = new ArrayList<byte[]>(groups.size());
-        for (var group : groups) {
-            ids.add(group.groupId().serialize());
-        }
-        return ids;
+        return groups.stream().map(g -> g.groupId().serialize()).toList();
     }
 
     @Override
@@ -595,9 +583,8 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<Boolean> isRegistered(List<String> numbers) {
-        var results = new ArrayList<Boolean>();
         if (numbers.isEmpty()) {
-            return results;
+            return List.of();
         }
 
         Map<String, Pair<String, UUID>> registered;
@@ -610,7 +597,7 @@ public class DbusSignalImpl implements Signal {
         return numbers.stream().map(number -> {
             var uuid = registered.get(number).second();
             return uuid != null;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -682,7 +669,7 @@ public class DbusSignalImpl implements Signal {
                 .map(a -> a.number().orElse(null))
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -844,7 +831,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     private static List<String> getRecipientStrings(final Set<RecipientAddress> members) {
-        return members.stream().map(RecipientAddress::getLegacyIdentifier).collect(Collectors.toList());
+        return members.stream().map(RecipientAddress::getLegacyIdentifier).toList();
     }
 
     private static Set<RecipientIdentifier.Single> getSingleRecipientIdentifiers(

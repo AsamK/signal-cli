@@ -37,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
@@ -317,7 +316,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     .filter(Objects::nonNull)
                     .map(m -> exportMultiAccountManager(connection, m, noReceiveOnStart))
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                    .toList();
 
             for (var t : initThreads) {
                 try {

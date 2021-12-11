@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public record JsonSharedContact(
         JsonContactName name,
@@ -20,20 +19,18 @@ public record JsonSharedContact(
         final var name = JsonContactName.from(contact.name());
         final var avatar = contact.avatar().isPresent() ? JsonContactAvatar.from(contact.avatar().get()) : null;
 
-        final var phone = contact.phone().size() > 0 ? contact.phone()
-                .stream()
-                .map(JsonContactPhone::from)
-                .collect(Collectors.toList()) : null;
+        final var phone = contact.phone().size() > 0
+                ? contact.phone().stream().map(JsonContactPhone::from).toList()
+                : null;
 
-        final var email = contact.email().size() > 0 ? contact.email()
-                .stream()
-                .map(JsonContactEmail::from)
-                .collect(Collectors.toList()) : null;
+        final var email = contact.email().size() > 0
+                ? contact.email().stream().map(JsonContactEmail::from).toList()
+                : null;
 
         final var address = contact.address().size() > 0 ? contact.address()
                 .stream()
                 .map(JsonContactAddress::from)
-                .collect(Collectors.toList()) : null;
+                .toList() : null;
 
         final var organization = contact.organization().orElse(null);
 

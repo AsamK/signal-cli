@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class MultiAccountManagerImpl implements MultiAccountManager {
 
@@ -46,7 +45,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     @Override
     public List<String> getAccountNumbers() {
         synchronized (managers) {
-            return managers.stream().map(Manager::getSelfNumber).collect(Collectors.toList());
+            return managers.stream().map(Manager::getSelfNumber).toList();
         }
     }
 

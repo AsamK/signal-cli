@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
@@ -126,11 +125,11 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
                     .stream()
                     .filter(a -> a.id().isPresent())
                     .map(this::getAttachmentMap)
-                    .collect(Collectors.toList());
+                    .toList();
             extras.put("attachments", new Variant<>(attachments, "aa{sv}"));
         }
         if (message.mentions().size() > 0) {
-            var mentions = message.mentions().stream().map(this::getMentionMap).collect(Collectors.toList());
+            var mentions = message.mentions().stream().map(this::getMentionMap).toList();
             extras.put("mentions", new Variant<>(mentions, "aa{sv}"));
         }
         extras.put("expiresInSeconds", new Variant<>(message.expiresInSeconds()));

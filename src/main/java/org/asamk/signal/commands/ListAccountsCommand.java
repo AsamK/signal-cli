@@ -9,8 +9,6 @@ import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 
-import java.util.stream.Collectors;
-
 public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
 
     @Override
@@ -29,7 +27,7 @@ public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
     ) throws CommandException {
         final var accountNumbers = c.getAccountNumbers();
         if (outputWriter instanceof JsonWriter jsonWriter) {
-            final var jsonAccounts = accountNumbers.stream().map(JsonAccount::new).collect(Collectors.toList());
+            final var jsonAccounts = accountNumbers.stream().map(JsonAccount::new).toList();
             jsonWriter.write(jsonAccounts);
         } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
             for (final var number : accountNumbers) {

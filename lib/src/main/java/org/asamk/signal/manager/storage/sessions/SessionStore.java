@@ -59,13 +59,10 @@ public class SessionStore implements SignalServiceSessionStore {
 
     @Override
     public List<SessionRecord> loadExistingSessions(final List<SignalProtocolAddress> addresses) throws NoSessionException {
-        final var keys = addresses.stream().map(this::getKey).collect(Collectors.toList());
+        final var keys = addresses.stream().map(this::getKey).toList();
 
         synchronized (cachedSessions) {
-            final var sessions = keys.stream()
-                    .map(this::loadSessionLocked)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            final var sessions = keys.stream().map(this::loadSessionLocked).filter(Objects::nonNull).toList();
 
             if (sessions.size() != addresses.size()) {
                 String message = "Mismatch! Asked for "
@@ -90,7 +87,7 @@ public class SessionStore implements SignalServiceSessionStore {
                     // get all sessions for recipient except main device session
                     .filter(key -> key.deviceId() != 1 && key.recipientId().equals(recipientId))
                     .map(Key::deviceId)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
@@ -246,7 +243,7 @@ public class SessionStore implements SignalServiceSessionStore {
                     return new Key(recipientId, Integer.parseInt(matcher.group(2)));
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private File getSessionFile(Key key) {

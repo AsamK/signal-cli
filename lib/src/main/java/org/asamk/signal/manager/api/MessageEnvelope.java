@@ -135,9 +135,7 @@ public record MessageEnvelope(
                             .transform(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null)
                             .orNull()),
                     dataMessage.getAttachments()
-                            .transform(a -> a.stream()
-                                    .map(as -> Attachment.from(as, fileProvider))
-                                    .collect(Collectors.toList()))
+                            .transform(a -> a.stream().map(as -> Attachment.from(as, fileProvider)).toList())
                             .or(List.of()),
                     Optional.ofNullable(dataMessage.getRemoteDelete()
                             .transform(SignalServiceDataMessage.RemoteDelete::getTargetSentTimestamp)
@@ -146,17 +144,15 @@ public record MessageEnvelope(
                     dataMessage.getSharedContacts()
                             .transform(a -> a.stream()
                                     .map(sharedContact -> SharedContact.from(sharedContact, fileProvider))
-                                    .collect(Collectors.toList()))
+                                    .toList())
                             .or(List.of()),
                     dataMessage.getMentions()
                             .transform(a -> a.stream()
                                     .map(m -> Mention.from(m, recipientResolver, addressResolver))
-                                    .collect(Collectors.toList()))
+                                    .toList())
                             .or(List.of()),
                     dataMessage.getPreviews()
-                            .transform(a -> a.stream()
-                                    .map(preview -> Preview.from(preview, fileProvider))
-                                    .collect(Collectors.toList()))
+                            .transform(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
                             .or(List.of()));
         }
 
@@ -223,19 +219,18 @@ public record MessageEnvelope(
                                 : quote.getMentions()
                                         .stream()
                                         .map(m -> Mention.from(m, recipientResolver, addressResolver))
-                                        .collect(Collectors.toList()),
+                                        .toList(),
                         quote.getAttachments() == null
                                 ? List.of()
-                                : quote.getAttachments()
-                                        .stream()
-                                        .map(a -> Attachment.from(a, fileProvider))
-                                        .collect(Collectors.toList()));
+                                : quote.getAttachments().stream().map(a -> Attachment.from(a, fileProvider)).toList());
             }
         }
 
         public record Payment(String note, byte[] receipt) {
+
             static Payment from(SignalServiceDataMessage.Payment payment) {
-                return new Payment(payment.getPaymentNotification().get().getNote(), payment.getPaymentNotification().get().getReceipt());
+                return new Payment(payment.getPaymentNotification().get().getNote(),
+                        payment.getPaymentNotification().get().getReceipt());
             }
         }
 
@@ -351,15 +346,9 @@ public record MessageEnvelope(
                         Optional.ofNullable(sharedContact.getAvatar()
                                 .transform(avatar1 -> Avatar.from(avatar1, fileProvider))
                                 .orNull()),
-                        sharedContact.getPhone()
-                                .transform(p -> p.stream().map(Phone::from).collect(Collectors.toList()))
-                                .or(List.of()),
-                        sharedContact.getEmail()
-                                .transform(p -> p.stream().map(Email::from).collect(Collectors.toList()))
-                                .or(List.of()),
-                        sharedContact.getAddress()
-                                .transform(p -> p.stream().map(Address::from).collect(Collectors.toList()))
-                                .or(List.of()),
+                        sharedContact.getPhone().transform(p -> p.stream().map(Phone::from).toList()).or(List.of()),
+                        sharedContact.getEmail().transform(p -> p.stream().map(Email::from).toList()).or(List.of()),
+                        sharedContact.getAddress().transform(p -> p.stream().map(Address::from).toList()).or(List.of()),
                         Optional.ofNullable(sharedContact.getOrganization().orNull()));
             }
 
@@ -528,12 +517,12 @@ public record MessageEnvelope(
                     syncMessage.getRead()
                             .transform(r -> r.stream()
                                     .map(rm -> Read.from(rm, recipientResolver, addressResolver))
-                                    .collect(Collectors.toList()))
+                                    .toList())
                             .or(List.of()),
                     syncMessage.getViewed()
                             .transform(r -> r.stream()
                                     .map(rm -> Viewed.from(rm, recipientResolver, addressResolver))
-                                    .collect(Collectors.toList()))
+                                    .toList())
                             .or(List.of()),
                     Optional.ofNullable(syncMessage.getViewOnceOpen()
                             .transform(rm -> ViewOnceOpen.from(rm, recipientResolver, addressResolver))
@@ -583,11 +572,7 @@ public record MessageEnvelope(
                 return new Blocked(blockedListMessage.getAddresses()
                         .stream()
                         .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d)))
-                        .collect(Collectors.toList()),
-                        blockedListMessage.getGroupIds()
-                                .stream()
-                                .map(GroupId::unknownVersion)
-                                .collect(Collectors.toList()));
+                        .toList(), blockedListMessage.getGroupIds().stream().map(GroupId::unknownVersion).toList());
             }
         }
 
@@ -701,7 +686,7 @@ public record MessageEnvelope(
                     Optional.ofNullable(callMessage.getHangupMessage().transform(Hangup::from).orNull()),
                     Optional.ofNullable(callMessage.getBusyMessage().transform(Busy::from).orNull()),
                     callMessage.getIceUpdateMessages()
-                            .transform(m -> m.stream().map(IceUpdate::from).collect(Collectors.toList()))
+                            .transform(m -> m.stream().map(IceUpdate::from).toList())
                             .or(List.of()),
                     Optional.ofNullable(callMessage.getOpaqueMessage().transform(Opaque::from).orNull()));
         }

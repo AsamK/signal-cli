@@ -62,7 +62,7 @@ public class StickerStore {
                 .map(s -> new Storage.Sticker(Base64.getEncoder().encodeToString(s.getPackId().serialize()),
                         Base64.getEncoder().encodeToString(s.getPackKey()),
                         s.isInstalled()))
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     public record Storage(List<Storage.Sticker> stickers) {

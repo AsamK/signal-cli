@@ -160,7 +160,7 @@ public class DbusManagerImpl implements Manager {
                     (long) device.get("Created").getValue(),
                     (long) device.get("LastSeen").getValue(),
                     thisDevice.equals(d.getObjectPath()));
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Override
@@ -191,7 +191,7 @@ public class DbusManagerImpl implements Manager {
     @Override
     public List<Group> getGroups() {
         final var groups = signal.listGroups();
-        return groups.stream().map(Signal.StructGroup::getObjectPath).map(this::getGroup).collect(Collectors.toList());
+        return groups.stream().map(Signal.StructGroup::getObjectPath).map(this::getGroup).toList();
     }
 
     @Override
@@ -216,7 +216,7 @@ public class DbusManagerImpl implements Manager {
             final String name, final Set<RecipientIdentifier.Single> members, final File avatarFile
     ) throws IOException, AttachmentInvalidException {
         final var newGroupId = signal.createGroup(emptyIfNull(name),
-                members.stream().map(RecipientIdentifier.Single::getIdentifier).collect(Collectors.toList()),
+                members.stream().map(RecipientIdentifier.Single::getIdentifier).toList(),
                 avatarFile == null ? "" : avatarFile.getPath());
         return new Pair<>(GroupId.unknownVersion(newGroupId), new SendGroupMessageResults(0, List.of()));
     }
@@ -254,28 +254,22 @@ public class DbusManagerImpl implements Manager {
                             : GroupPermission.EVERY_MEMBER.name());
         }
         if (updateGroup.getMembers() != null) {
-            group.addMembers(updateGroup.getMembers()
-                    .stream()
-                    .map(RecipientIdentifier.Single::getIdentifier)
-                    .collect(Collectors.toList()));
+            group.addMembers(updateGroup.getMembers().stream().map(RecipientIdentifier.Single::getIdentifier).toList());
         }
         if (updateGroup.getRemoveMembers() != null) {
             group.removeMembers(updateGroup.getRemoveMembers()
                     .stream()
                     .map(RecipientIdentifier.Single::getIdentifier)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         if (updateGroup.getAdmins() != null) {
-            group.addAdmins(updateGroup.getAdmins()
-                    .stream()
-                    .map(RecipientIdentifier.Single::getIdentifier)
-                    .collect(Collectors.toList()));
+            group.addAdmins(updateGroup.getAdmins().stream().map(RecipientIdentifier.Single::getIdentifier).toList());
         }
         if (updateGroup.getRemoveAdmins() != null) {
             group.removeAdmins(updateGroup.getRemoveAdmins()
                     .stream()
                     .map(RecipientIdentifier.Single::getIdentifier)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         if (updateGroup.isResetGroupLink()) {
             group.resetLink();
@@ -375,9 +369,7 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendEndSessionMessage(final Set<RecipientIdentifier.Single> recipients) throws IOException {
-        signal.sendEndSessionMessage(recipients.stream()
-                .map(RecipientIdentifier.Single::getIdentifier)
-                .collect(Collectors.toList()));
+        signal.sendEndSessionMessage(recipients.stream().map(RecipientIdentifier.Single::getIdentifier).toList());
         return new SendMessageResults(0, Map.of());
     }
 
@@ -632,7 +624,7 @@ public class DbusManagerImpl implements Manager {
                 .filter(r -> r instanceof RecipientIdentifier.Single)
                 .map(RecipientIdentifier.Single.class::cast)
                 .map(RecipientIdentifier.Single::getIdentifier)
-                .collect(Collectors.toList());
+                .toList();
         if (singleRecipients.size() > 0) {
             timestamp = recipientsHandler.apply(singleRecipients);
         }
@@ -644,7 +636,7 @@ public class DbusManagerImpl implements Manager {
                 .filter(r -> r instanceof RecipientIdentifier.Group)
                 .map(RecipientIdentifier.Group.class::cast)
                 .map(RecipientIdentifier.Group::groupId)
-                .collect(Collectors.toList());
+                .toList();
         for (final var groupId : groupRecipients) {
             timestamp = groupHandler.apply(groupId.serialize());
         }
@@ -826,7 +818,7 @@ public class DbusManagerImpl implements Manager {
                     getValue(a, "isVoiceNote"),
                     getValue(a, "isGif"),
                     getValue(a, "isBorderless"));
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @SuppressWarnings("unchecked")

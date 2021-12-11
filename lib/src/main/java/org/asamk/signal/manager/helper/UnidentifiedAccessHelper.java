@@ -15,7 +15,6 @@ import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.whispersystems.signalservice.internal.util.Util.getSecretBytes;
 
@@ -133,7 +132,7 @@ public class UnidentifiedAccessHelper {
     }
 
     public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
-        return recipients.stream().map(this::getAccessFor).collect(Collectors.toList());
+        return recipients.stream().map(this::getAccessFor).toList();
     }
 
     public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {

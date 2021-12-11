@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SignedPreKeyStore implements org.whispersystems.libsignal.state.SignedPreKeyStore {
 
@@ -47,7 +46,7 @@ public class SignedPreKeyStore implements org.whispersystems.libsignal.state.Sig
         return Arrays.stream(files)
                 .filter(f -> signedPreKeyFileNamePattern.matcher(f.getName()).matches())
                 .map(this::loadSignedPreKeyRecord)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

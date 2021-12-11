@@ -6,7 +6,6 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
 
 record JsonCallMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) Offer offerMessage,
@@ -21,7 +20,7 @@ record JsonCallMessage(
                 callMessage.answer().map(Answer::from).orElse(null),
                 callMessage.busy().map(Busy::from).orElse(null),
                 callMessage.hangup().map(Hangup::from).orElse(null),
-                callMessage.iceUpdate().stream().map(IceUpdate::from).collect(Collectors.toList()));
+                callMessage.iceUpdate().stream().map(IceUpdate::from).toList());
     }
 
     record Offer(long id, String sdp, String type, String opaque) {

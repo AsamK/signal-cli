@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MessageCache {
@@ -46,7 +45,7 @@ public class MessageCache {
                 return Stream.empty();
             }
             return Arrays.stream(files).filter(File::isFile);
-        }).map(CachedMessage::new).collect(Collectors.toList());
+        }).map(CachedMessage::new).toList();
     }
 
     public CachedMessage cacheMessage(SignalServiceEnvelope envelope, RecipientId recipientId) {

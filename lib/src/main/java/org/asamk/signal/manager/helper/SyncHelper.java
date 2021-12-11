@@ -35,7 +35,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 public class SyncHelper {
 
@@ -89,7 +88,7 @@ public class SyncHelper {
                                 groupInfo.getMembers()
                                         .stream()
                                         .map(addressResolver::resolveSignalServiceAddress)
-                                        .collect(Collectors.toList()),
+                                        .toList(),
                                 groupHelper.createGroupAvatarAttachment(groupInfo.getGroupId()),
                                 groupInfo.isMember(account.getSelfRecipientId()),
                                 Optional.of(groupInfo.messageExpirationTime),

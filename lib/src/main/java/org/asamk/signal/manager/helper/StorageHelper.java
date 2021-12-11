@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class StorageHelper {
 
@@ -72,7 +71,7 @@ public class StorageHelper {
                 .getStorageIds()
                 .stream()
                 .filter(id -> !id.isUnknown() && id.getType() != ManifestRecord.Identifier.Type.ACCOUNT_VALUE)
-                .collect(Collectors.toList());
+                .toList();
 
         for (final var record : getSignalStorageRecords(storageIds)) {
             if (record.getType() == ManifestRecord.Identifier.Type.GROUPV2_VALUE) {

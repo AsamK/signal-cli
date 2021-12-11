@@ -7,7 +7,6 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
@@ -49,13 +48,8 @@ record JsonSyncMessage(
                     .recipients()
                     .stream()
                     .map(RecipientAddress::getLegacyIdentifier)
-                    .collect(Collectors.toList());
-            blockedGroupIds = syncMessage.blocked()
-                    .get()
-                    .groupIds()
-                    .stream()
-                    .map(GroupId::toBase64)
-                    .collect(Collectors.toList());
+                    .toList();
+            blockedGroupIds = syncMessage.blocked().get().groupIds().stream().map(GroupId::toBase64).toList();
         } else {
             blockedNumbers = null;
             blockedGroupIds = null;
@@ -64,7 +58,7 @@ record JsonSyncMessage(
         final var readMessages = syncMessage.read().size() > 0 ? syncMessage.read()
                 .stream()
                 .map(JsonSyncReadMessage::from)
-                .collect(Collectors.toList()) : null;
+                .toList() : null;
 
         final JsonSyncMessageType type;
         if (syncMessage.contacts().isPresent()) {

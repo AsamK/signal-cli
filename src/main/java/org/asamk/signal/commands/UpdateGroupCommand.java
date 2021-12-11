@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class UpdateGroupCommand implements JsonRpcLocalCommand {
@@ -160,8 +159,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                     groupMessageResults = results;
                 } else {
                     groupMessageResults = new SendGroupMessageResults(results.timestamp(),
-                            Stream.concat(groupMessageResults.results().stream(), results.results().stream())
-                                    .collect(Collectors.toList()));
+                            Stream.concat(groupMessageResults.results().stream(), results.results().stream()).toList());
                 }
             }
             outputResult(outputWriter, groupMessageResults, isNewGroup ? groupId : null);

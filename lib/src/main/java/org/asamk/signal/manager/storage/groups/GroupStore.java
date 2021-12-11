@@ -262,9 +262,7 @@ public class GroupStore {
                         g1.messageExpirationTime,
                         g1.blocked,
                         g1.archived,
-                        g1.members.stream()
-                                .map(m -> new Storage.GroupV1.Member(m.id(), null, null))
-                                .collect(Collectors.toList()));
+                        g1.members.stream().map(m -> new Storage.GroupV1.Member(m.id(), null, null)).toList());
             }
 
             final var g2 = (GroupInfoV2) g;
@@ -272,10 +270,10 @@ public class GroupStore {
                     Base64.getEncoder().encodeToString(g2.getMasterKey().serialize()),
                     g2.isBlocked(),
                     g2.isPermissionDenied());
-        }).collect(Collectors.toList()));
+        }).toList());
     }
 
-    public record Storage(@JsonDeserialize(using = GroupsDeserializer.class) List<Object> groups) {
+    public record Storage(@JsonDeserialize(using = GroupsDeserializer.class) List<Record> groups) {
 
         private record GroupV1(
                 String groupId,

@@ -53,14 +53,14 @@ public class SendMessageResultUtils {
                         .map(SendMessageResultUtils::getErrorMessageFromSendMessageResult)
                         .filter(Objects::nonNull)
                         .map(error -> entry.getKey().getIdentifier() + ": " + error))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static List<String> getErrorMessagesFromSendMessageResults(Collection<SendMessageResult> results) {
         return results.stream()
                 .map(SendMessageResultUtils::getErrorMessageFromSendMessageResult)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static String getErrorMessageFromSendMessageResult(SendMessageResult result) {
@@ -110,10 +110,10 @@ public class SendMessageResultUtils {
         return mapResults.entrySet().stream().flatMap(entry -> {
             final var groupId = entry.getKey() instanceof RecipientIdentifier.Group g ? g.groupId() : null;
             return entry.getValue().stream().map(r -> JsonSendMessageResult.from(r, groupId));
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     public static List<JsonSendMessageResult> getJsonSendMessageResults(Collection<SendMessageResult> results) {
-        return results.stream().map(JsonSendMessageResult::from).collect(Collectors.toList());
+        return results.stream().map(JsonSendMessageResult::from).toList();
     }
 }

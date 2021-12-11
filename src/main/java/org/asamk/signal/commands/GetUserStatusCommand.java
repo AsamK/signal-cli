@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
@@ -53,7 +52,7 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
                 final var number = entry.getValue().first();
                 final var uuid = entry.getValue().second();
                 return new JsonUserStatus(entry.getKey(), number, uuid == null ? null : uuid.toString(), uuid != null);
-            }).collect(Collectors.toList());
+            }).toList();
 
             jsonWriter.write(jsonUserStatuses);
         } else {

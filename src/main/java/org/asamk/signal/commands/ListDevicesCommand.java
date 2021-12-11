@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ListDevicesCommand implements JsonRpcLocalCommand {
 
@@ -56,7 +55,7 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
             final var writer = (JsonWriter) outputWriter;
             final var jsonDevices = devices.stream()
                     .map(d -> new JsonDevice(d.id(), d.name(), d.created(), d.lastSeen()))
-                    .collect(Collectors.toList());
+                    .toList();
             writer.write(jsonDevices);
         }
     }

@@ -40,7 +40,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public interface Manager extends Closeable {
 
@@ -90,7 +89,7 @@ public interface Manager extends Closeable {
                 .filter(File::isFile)
                 .map(File::getName)
                 .filter(file -> PhoneNumberFormatter.isValidNumber(file, null))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     String getSelfNumber();

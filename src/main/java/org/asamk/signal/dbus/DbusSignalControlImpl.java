@@ -18,7 +18,6 @@ import java.net.URI;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
@@ -111,9 +110,6 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public List<DBusPath> listAccounts() {
-        return c.getAccountNumbers()
-                .stream()
-                .map(u -> new DBusPath(DbusConfig.getObjectPath(u)))
-                .collect(Collectors.toList());
+        return c.getAccountNumbers().stream().map(u -> new DBusPath(DbusConfig.getObjectPath(u))).toList();
     }
 }

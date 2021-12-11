@@ -4,10 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public record JsonQuote(
         long id,
@@ -27,15 +25,14 @@ public record JsonQuote(
         final var authorUuid = address.uuid().map(UUID::toString).orElse(null);
         final var text = quote.text().orElse(null);
 
-        final var mentions = quote.mentions().size() > 0 ? quote.mentions()
-                .stream()
-                .map(JsonMention::from)
-                .collect(Collectors.toList()) : null;
+        final var mentions = quote.mentions().size() > 0
+                ? quote.mentions().stream().map(JsonMention::from).toList()
+                : null;
 
         final var attachments = quote.attachments().size() > 0 ? quote.attachments()
                 .stream()
                 .map(JsonQuotedAttachment::from)
-                .collect(Collectors.toList()) : new ArrayList<JsonQuotedAttachment>();
+                .toList() : List.<JsonQuotedAttachment>of();
 
         return new JsonQuote(id, author, authorNumber, authorUuid, text, mentions, attachments);
     }

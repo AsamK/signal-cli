@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ListIdentitiesCommand implements JsonRpcLocalCommand {
 
@@ -76,7 +75,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                                 : Base64.getEncoder().encodeToString(scannableSafetyNumber),
                         id.trustLevel().name(),
                         id.dateAdded().getTime());
-            }).collect(Collectors.toList());
+            }).toList();
 
             writer.write(jsonIdentities);
         }

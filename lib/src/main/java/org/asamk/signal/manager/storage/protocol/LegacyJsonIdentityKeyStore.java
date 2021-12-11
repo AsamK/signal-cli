@@ -44,7 +44,7 @@ public class LegacyJsonIdentityKeyStore {
                 .collect(Collectors.toSet())
                 .stream()
                 .map(this::getIdentity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public IdentityKeyPair getIdentityKeyPair() {

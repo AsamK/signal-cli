@@ -188,7 +188,7 @@ public class SenderKeySharedStore {
                     .map(entry -> new Storage.SharedSenderKey(entry.recipientId().id(),
                             entry.deviceId(),
                             pair.getKey().asUuid().toString()));
-        }).collect(Collectors.toList()));
+        }).toList());
 
         // Write to memory first to prevent corrupting the file in case of serialization errors
         try (var inMemoryOutput = new ByteArrayOutputStream()) {

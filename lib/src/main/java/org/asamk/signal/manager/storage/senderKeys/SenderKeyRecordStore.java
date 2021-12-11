@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups.state.SenderKeyStore {
 
@@ -148,7 +147,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
                     return new Key(recipientId, Integer.parseInt(matcher.group(2)), UUID.fromString(matcher.group(3)));
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private File getSenderKeyFile(Key key) {

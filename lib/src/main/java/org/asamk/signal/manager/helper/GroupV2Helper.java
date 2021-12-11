@@ -249,7 +249,7 @@ public class GroupV2Helper {
                 .map(addressResolver::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getAci)
                 .map(ACI::uuid)
-                .collect(Collectors.toList());
+                .toList();
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2,
                 groupOperations.createLeaveAndPromoteMembersToAdmin(selfAci.uuid(), adminUuids));

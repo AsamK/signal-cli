@@ -203,7 +203,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                     toBeMerged.add(new Pair<>(pair.first(), pair.second().get()));
                 }
                 return pair.first();
-            }).collect(Collectors.toList());
+            }).toList();
         }
         for (var pair : toBeMerged) {
             recipientMergeHandler.mergeRecipients(pair.first(), pair.second());
@@ -231,7 +231,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 .stream()
                 .filter(e -> e.getValue().getContact() != null)
                 .map(e -> new Pair<>(e.getKey(), e.getValue().getContact()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -518,7 +518,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             : base64.encodeToString(recipient.getProfileKeyCredential().serialize()),
                     contact,
                     profile);
-        }).collect(Collectors.toList()), lastId);
+        }).toList(), lastId);
 
         // Write to memory first to prevent corrupting the file in case of serialization errors
         try (var inMemoryOutput = new ByteArrayOutputStream()) {

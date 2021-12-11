@@ -9,7 +9,6 @@ import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ListContactsCommand implements JsonRpcLocalCommand {
 
@@ -48,7 +47,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                         contact.getName(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime());
-            }).collect(Collectors.toList());
+            }).toList();
 
             writer.write(jsonContacts);
         }
