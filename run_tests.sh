@@ -81,6 +81,8 @@ register "$NUMBER_2"
 
 sleep 5
 
+run_main listAccounts
+run_main --output=json listAccounts
 
 ## DBus
 #run_main -a "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running || true
@@ -143,7 +145,10 @@ run_main -a "$NUMBER_2" receive
 ## Groups
 GROUP_ID=$(run_main -a "$NUMBER_1" updateGroup -n GRUPPE -a LICENSE -m "$NUMBER_1" | grep -oP '(?<=").+(?=")')
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m first
-run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -n GRUPPE_UMB -m "$NUMBER_2" --admin "$NUMBER_2" --remove-admin "$NUMBER_2" --description DESCRIPTION --link=enabled-with-approval --set-permission-add-member=only-admins --set-permission-edit-details=only-admins -e 42
+run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -n GRUPPE_UMB -m "$NUMBER_2" --admin "$NUMBER_2" --description DESCRIPTION --link=enabled-with-approval --set-permission-add-member=only-admins --set-permission-edit-details=only-admins --set-permission-send-messages=only-admins -e 42
+run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" --remove-admin "$NUMBER_2" --reset-link --set-permission-send-messages=every-member
+run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -r "$NUMBER_2"
+run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" listGroups -d
 run_main -a "$NUMBER_1" --output=json listGroups -d
 run_main -a "$NUMBER_2" --verbose receive
@@ -155,6 +160,9 @@ run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" --verbose block -g "$GROUP_ID"
 run_main -a "$NUMBER_1" --verbose unblock -g "$GROUP_ID"
 
+## Configuration
+run_main -a "$NUMBER_1" updateConfiguration --read-receipts=true
+
 ## Identities
 run_main -a "$NUMBER_1" listIdentities
 run_main -a "$NUMBER_2" listIdentities
@@ -165,7 +173,7 @@ for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_1" --output="$OUTPUT" getUserStatus "$NUMBER_1" "$NUMBER_2" "+111111111"
   run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
   run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
-  run_main -a "$NUMBER_1" send -g "$GROUP_ID" -m hi -a LICENSE
+  run_main -a "$NUMBER_1" send -g "$GROUP_ID" -m hi -a LICENSE --mention "1:1:$NUMBER_2"
   TIMESTAMP=$(uname -a | run_main -a "$NUMBER_1" send "$NUMBER_2")
   run_main -a "$NUMBER_2" sendReaction "$NUMBER_1" -e 🍀 -a "$NUMBER_1" -t "$TIMESTAMP"
   run_main -a "$NUMBER_1" remoteDelete "$NUMBER_2" -t "$TIMESTAMP"
