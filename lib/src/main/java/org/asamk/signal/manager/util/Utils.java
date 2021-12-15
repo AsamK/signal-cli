@@ -76,6 +76,9 @@ public class Utils {
 
     public static Locale getDefaultLocale() {
         final var locale = Locale.getDefault();
+        if (locale == null) {
+            return null;
+        }
         try {
             Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
         } catch (IllegalArgumentException e) {
