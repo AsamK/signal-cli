@@ -98,16 +98,22 @@ public class IOUtils {
     public static InetSocketAddress parseInetSocketAddress(final String tcpAddress) throws UserErrorException {
         final var colonIndex = tcpAddress.lastIndexOf(':');
         if (colonIndex < 0) {
-            throw new UserErrorException("Invalid tcp bind address: " + tcpAddress);
+            throw new UserErrorException("Invalid tcp bind address (expected host:port): " + tcpAddress);
         }
-        final String host = tcpAddress.substring(0, colonIndex);
+        final var host = tcpAddress.substring(0, colonIndex);
+        final var portString = tcpAddress.substring(colonIndex + 1);
+
         final int port;
         try {
-            port = Integer.parseInt(tcpAddress.substring(colonIndex + 1));
+            port = Integer.parseInt(portString);
         } catch (NumberFormatException e) {
-            throw new UserErrorException("Invalid tcp bind address: " + tcpAddress, e);
+            throw new UserErrorException("Invalid tcp port: " + portString, e);
         }
-        return new InetSocketAddress(host, port);
+        final var socketAddress = new InetSocketAddress(host, port);
+        if (socketAddress.isUnresolved()) {
+            throw new UserErrorException("Invalid tcp bind address, invalid host: " + host);
+        }
+        return socketAddress;
     }
 
     public static UnixDomainPrincipal getUnixDomainPrincipal(final SocketChannel channel) throws IOException {
