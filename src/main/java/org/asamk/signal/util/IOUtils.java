@@ -107,7 +107,9 @@ public class IOUtils {
         } catch (NumberFormatException e) {
             throw new UserErrorException("Invalid tcp bind address: " + tcpAddress, e);
         }
-        return new InetSocketAddress(host, port);
+        return "*".equals(host) 
+          ? new InetSocketAddress(port)
+          : new InetSocketAddress(host, port);
     }
 
     public static UnixDomainPrincipal getUnixDomainPrincipal(final SocketChannel channel) throws IOException {
