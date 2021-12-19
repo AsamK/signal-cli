@@ -59,6 +59,9 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DE\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EC\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EE\\E"
     }, 
     {
@@ -78,6 +81,9 @@
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HK\\E"
+    }, 
+    {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HR\\E"
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HU\\E"
@@ -123,6 +129,9 @@
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RU\\E"
+    }, 
+    {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SK\\E"
     }, 
     {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TH\\E"
