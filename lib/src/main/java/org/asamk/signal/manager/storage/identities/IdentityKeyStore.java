@@ -43,6 +43,8 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
     private final int localRegistrationId;
     private final TrustNewIdentity trustNewIdentity;
 
+    private boolean isRetryingDecryption = false;
+
     public IdentityKeyStore(
             final File identitiesPath,
             final RecipientResolver resolver,
@@ -75,6 +77,9 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
     }
 
     public boolean saveIdentity(final RecipientId recipientId, final IdentityKey identityKey, Date added) {
+        if (isRetryingDecryption) {
+            return false;
+        }
         synchronized (cachedIdentities) {
             final var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
@@ -92,13 +97,19 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         }
     }
 
+    public void setRetryingDecryption(final boolean retryingDecryption) {
+        isRetryingDecryption = retryingDecryption;
+    }
+
     public boolean setIdentityTrustLevel(
             RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel
     ) {
         synchronized (cachedIdentities) {
             final var identityInfo = loadIdentityLocked(recipientId);
-            if (identityInfo == null || !identityInfo.getIdentityKey().equals(identityKey)) {
-                // Identity not found, not updating the trust level
+            if (identityInfo == null
+                    || !identityInfo.getIdentityKey().equals(identityKey)
+                    || identityInfo.getTrustLevel() == trustLevel) {
+                // Identity not found or trust not changed, not updating the trust level
                 return false;
             }
 

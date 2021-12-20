@@ -106,6 +106,7 @@ public final class IncomingMessageHandler {
 
         SignalServiceContent content = null;
         if (!envelope.isReceipt()) {
+            account.getIdentityKeyStore().setRetryingDecryption(true);
             try {
                 content = dependencies.getCipher().decrypt(envelope);
             } catch (ProtocolUntrustedIdentityException e) {
@@ -115,6 +116,8 @@ public final class IncomingMessageHandler {
                 return new Pair<>(List.of(), exception);
             } catch (Exception e) {
                 return new Pair<>(List.of(), e);
+            } finally {
+                account.getIdentityKeyStore().setRetryingDecryption(false);
             }
         }
         actions.addAll(checkAndHandleMessage(envelope, content, ignoreAttachments, handler, null));

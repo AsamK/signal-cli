@@ -151,6 +151,7 @@ public class ManagerImpl implements Manager {
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
     private boolean isReceivingSynchronous;
+    private boolean needsToRetryFailedMessages = false;
 
     ManagerImpl(
             SignalAccount account,
@@ -1102,7 +1103,7 @@ public class ManagerImpl implements Manager {
     private void receiveMessagesInternal(
             Duration timeout, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
-        retryFailedReceivedMessages(handler);
+        needsToRetryFailedMessages = true;
 
         // Use a Map here because java Set doesn't have a get method ...
         Map<HandleAction, HandleAction> queuedActions = new HashMap<>();
@@ -1121,6 +1122,10 @@ public class ManagerImpl implements Manager {
         final var MAX_BACKOFF_COUNTER = 9;
 
         while (!Thread.interrupted()) {
+            if (needsToRetryFailedMessages) {
+                retryFailedReceivedMessages(handler);
+                needsToRetryFailedMessages = false;
+            }
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
             final var nowMillis = System.currentTimeMillis();
@@ -1365,7 +1370,11 @@ public class ManagerImpl implements Manager {
         } catch (IOException e) {
             return false;
         }
-        return identityHelper.trustIdentityVerified(recipientId, fingerprint);
+        final var updated = identityHelper.trustIdentityVerified(recipientId, fingerprint);
+        if (updated && this.isReceiving()) {
+            needsToRetryFailedMessages = true;
+        }
+        return updated;
     }
 
     /**
@@ -1382,7 +1391,11 @@ public class ManagerImpl implements Manager {
         } catch (IOException e) {
             return false;
         }
-        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
+        final var updated = identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
+        if (updated && this.isReceiving()) {
+            needsToRetryFailedMessages = true;
+        }
+        return updated;
     }
 
     /**
@@ -1399,7 +1412,11 @@ public class ManagerImpl implements Manager {
         } catch (IOException e) {
             return false;
         }
-        return identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
+        final var updated = identityHelper.trustIdentityVerifiedSafetyNumber(recipientId, safetyNumber);
+        if (updated && this.isReceiving()) {
+            needsToRetryFailedMessages = true;
+        }
+        return updated;
     }
 
     /**
@@ -1415,7 +1432,11 @@ public class ManagerImpl implements Manager {
         } catch (IOException e) {
             return false;
         }
-        return identityHelper.trustIdentityAllKeys(recipientId);
+        final var updated = identityHelper.trustIdentityAllKeys(recipientId);
+        if (updated && this.isReceiving()) {
+            needsToRetryFailedMessages = true;
+        }
+        return updated;
     }
 
     @Override
