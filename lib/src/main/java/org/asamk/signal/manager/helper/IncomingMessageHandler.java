@@ -233,6 +233,16 @@ public final class IncomingMessageHandler {
         if (content.getDecryptionErrorMessage().isPresent()) {
             var message = content.getDecryptionErrorMessage().get();
             logger.debug("Received a decryption error message (resend request for {})", message.getTimestamp());
+            if (message.getRatchetKey().isPresent()) {
+                if (message.getDeviceId() == account.getDeviceId() && account.getSessionStore()
+                        .isCurrentRatchetKey(sender, senderDeviceId, message.getRatchetKey().get())) {
+                    logger.debug("Renewing the session with sender");
+                    actions.add(new RenewSessionAction(sender));
+                }
+            } else {
+                logger.debug("Reset shared sender keys with this recipient");
+                account.getSenderKeyStore().deleteSharedWith(sender);
+            }
         }
 
         if (content.getDataMessage().isPresent()) {

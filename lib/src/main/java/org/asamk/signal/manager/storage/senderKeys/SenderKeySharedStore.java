@@ -163,8 +163,9 @@ public class SenderKeySharedStore {
 
     public void deleteAllFor(final DistributionId distributionId) {
         synchronized (sharedSenderKeys) {
-            sharedSenderKeys.remove(distributionId.asUuid());
-            saveLocked();
+            if (sharedSenderKeys.remove(distributionId.asUuid()) != null) {
+                saveLocked();
+            }
         }
     }
 

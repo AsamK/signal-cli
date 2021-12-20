@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
@@ -88,6 +89,18 @@ public class SessionStore implements SignalServiceSessionStore {
                     .filter(key -> key.deviceId() != 1 && key.recipientId().equals(recipientId))
                     .map(Key::deviceId)
                     .toList();
+        }
+    }
+
+    public boolean isCurrentRatchetKey(RecipientId recipientId, int deviceId, ECPublicKey ratchetKey) {
+        final var key = new Key(recipientId, deviceId);
+
+        synchronized (cachedSessions) {
+            final var session = loadSessionLocked(key);
+            if (session == null) {
+                return false;
+            }
+            return session.currentRatchetKeyMatches(ratchetKey);
         }
     }
 

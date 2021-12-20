@@ -75,7 +75,9 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
             cachedSenderKeys.clear();
             final var keys = getKeysLocked(recipientId);
             for (var key : keys) {
-                if (key.distributionId.equals(distributionId)) deleteSenderKeyLocked(key);
+                if (key.distributionId.equals(distributionId)) {
+                    deleteSenderKeyLocked(key);
+                }
             }
         }
     }
