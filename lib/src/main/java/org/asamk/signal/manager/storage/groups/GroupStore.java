@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.storage.groups;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -341,7 +342,11 @@ public class GroupStore {
         }
 
         private record GroupV2(
-                String groupId, String masterKey, String distributionId, boolean blocked, boolean permissionDenied
+                String groupId,
+                String masterKey,
+                String distributionId,
+                @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean blocked,
+                @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean permissionDenied
         ) {}
     }
 
