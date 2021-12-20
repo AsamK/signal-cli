@@ -171,7 +171,7 @@ public final class ProfileHelper {
 
         var now = System.currentTimeMillis();
         // Profiles are cached for 24h before retrieving them again, unless forced
-        if (!force && profile != null && now - profile.getLastUpdateTimestamp() < 24 * 60 * 60 * 1000) {
+        if (!force && profile != null && now - profile.getLastUpdateTimestamp() < 6 * 60 * 60 * 1000) {
             return profile;
         }
 
@@ -189,11 +189,13 @@ public final class ProfileHelper {
                 pendingProfileRequest.remove(recipientId);
             }
         }
+
         if (encryptedProfile == null) {
-            return null;
+            profile = Profile.newBuilder().withLastUpdateTimestamp(now).build();
+        } else {
+            profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
         }
 
-        profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
         account.getProfileStore().storeProfile(recipientId, profile);
 
         return profile;
