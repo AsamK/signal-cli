@@ -118,7 +118,9 @@
   ]}
 ,
 {
-  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage"}
+  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]}
 ,
 {
   "name":"org.whispersystems.libsignal.protocol.SignalMessage",
