@@ -97,6 +97,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1005,7 +1006,7 @@ public class ManagerImpl implements Manager {
             logger.debug("Starting receiving messages");
             while (!Thread.interrupted()) {
                 try {
-                    receiveMessagesInternal(1L, TimeUnit.HOURS, false, (envelope, e) -> {
+                    receiveMessagesInternal(Duration.ofMinutes(1), false, (envelope, e) -> {
                         synchronized (messageHandlers) {
                             Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
                                 try {
@@ -1072,17 +1073,17 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void receiveMessages(long timeout, TimeUnit unit, ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(timeout, unit, true, handler);
+    public void receiveMessages(Duration timeout, ReceiveMessageHandler handler) throws IOException {
+        receiveMessages(timeout, true, handler);
     }
 
     @Override
     public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(1L, TimeUnit.HOURS, false, handler);
+        receiveMessages(Duration.ofMinutes(1), false, handler);
     }
 
     private void receiveMessages(
-            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
+            Duration timeout, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
         if (isReceiving()) {
             throw new IllegalStateException("Already receiving message.");
@@ -1090,7 +1091,7 @@ public class ManagerImpl implements Manager {
         isReceivingSynchronous = true;
         receiveThread = Thread.currentThread();
         try {
-            receiveMessagesInternal(timeout, unit, returnOnTimeout, handler);
+            receiveMessagesInternal(timeout, returnOnTimeout, handler);
         } finally {
             receiveThread = null;
             hasCaughtUpWithOldMessages = false;
@@ -1099,7 +1100,7 @@ public class ManagerImpl implements Manager {
     }
 
     private void receiveMessagesInternal(
-            long timeout, TimeUnit unit, boolean returnOnTimeout, ReceiveMessageHandler handler
+            Duration timeout, boolean returnOnTimeout, ReceiveMessageHandler handler
     ) throws IOException {
         retryFailedReceivedMessages(handler);
 
@@ -1128,7 +1129,7 @@ public class ManagerImpl implements Manager {
             }
             logger.debug("Checking for new message from server");
             try {
-                var result = signalWebSocket.readOrEmpty(unit.toMillis(timeout), envelope1 -> {
+                var result = signalWebSocket.readOrEmpty(timeout.toMillis(), envelope1 -> {
                     final var recipientId = envelope1.hasSourceUuid()
                             ? resolveRecipient(envelope1.getSourceAddress())
                             : null;

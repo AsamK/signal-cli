@@ -33,6 +33,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -219,7 +220,7 @@ public interface Manager extends Closeable {
     /**
      * Receive new messages from server, returns if no new message arrive in a timespan of timeout.
      */
-    void receiveMessages(long timeout, TimeUnit unit, ReceiveMessageHandler handler) throws IOException;
+    void receiveMessages(Duration timeout, ReceiveMessageHandler handler) throws IOException;
 
     /**
      * Receive new messages from server, returns only if the thread is interrupted.

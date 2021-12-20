@@ -17,8 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ReceiveCommand implements LocalCommand {
 
@@ -59,7 +59,7 @@ public class ReceiveCommand implements LocalCommand {
             if (timeout < 0) {
                 m.receiveMessages(handler);
             } else {
-                m.receiveMessages((long) (timeout * 1000), TimeUnit.MILLISECONDS, handler);
+                m.receiveMessages(Duration.ofMillis((long) (timeout * 1000)), handler);
             }
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);

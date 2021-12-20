@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +51,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -494,11 +494,11 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void receiveMessages(
-            final long timeout, final TimeUnit unit, final ReceiveMessageHandler handler
+            final Duration timeout, final ReceiveMessageHandler handler
     ) throws IOException {
         addReceiveHandler(handler);
         try {
-            Thread.sleep(unit.toMillis(timeout));
+            Thread.sleep(timeout.toMillis());
         } catch (InterruptedException ignored) {
         }
         removeReceiveHandler(handler);
