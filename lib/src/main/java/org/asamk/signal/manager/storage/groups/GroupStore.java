@@ -23,6 +23,7 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.util.Hex;
 
@@ -105,7 +106,11 @@ public class GroupStore {
                 throw new AssertionError("Invalid master key for group " + groupId.toBase64());
             }
 
-            return new GroupInfoV2(groupId, masterKey, g2.blocked, g2.permissionDenied);
+            return new GroupInfoV2(groupId,
+                    masterKey,
+                    g2.distributionId == null ? null : DistributionId.from(g2.distributionId),
+                    g2.blocked,
+                    g2.permissionDenied);
         }).collect(Collectors.toMap(GroupInfo::getGroupId, g -> g));
 
         return new GroupStore(groupCachePath, groups, recipientResolver, saver);
@@ -268,6 +273,7 @@ public class GroupStore {
             final var g2 = (GroupInfoV2) g;
             return new Storage.GroupV2(g2.getGroupId().toBase64(),
                     Base64.getEncoder().encodeToString(g2.getMasterKey().serialize()),
+                    g2.getDistributionId() == null ? null : g2.getDistributionId().toString(),
                     g2.isBlocked(),
                     g2.isPermissionDenied());
         }).toList());
@@ -334,7 +340,9 @@ public class GroupStore {
             }
         }
 
-        private record GroupV2(String groupId, String masterKey, boolean blocked, boolean permissionDenied) {}
+        private record GroupV2(
+                String groupId, String masterKey, String distributionId, boolean blocked, boolean permissionDenied
+        ) {}
     }
 
     private static class GroupsDeserializer extends JsonDeserializer<List<Object>> {

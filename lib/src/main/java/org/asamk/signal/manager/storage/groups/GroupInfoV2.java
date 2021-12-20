@@ -11,6 +11,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.EnabledState;
 import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.DistributionId;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,25 +20,29 @@ public final class GroupInfoV2 extends GroupInfo {
 
     private final GroupIdV2 groupId;
     private final GroupMasterKey masterKey;
-
+    private DistributionId distributionId;
     private boolean blocked;
-    private DecryptedGroup group; // stored as a file with hexadecimal groupId as name
-    private RecipientResolver recipientResolver;
+    private DecryptedGroup group; // stored as a file with base64 groupId as name
     private boolean permissionDenied;
+
+    private RecipientResolver recipientResolver;
 
     public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey) {
         this.groupId = groupId;
         this.masterKey = masterKey;
+        this.distributionId = DistributionId.create();
     }
 
     public GroupInfoV2(
             final GroupIdV2 groupId,
             final GroupMasterKey masterKey,
+            final DistributionId distributionId,
             final boolean blocked,
             final boolean permissionDenied
     ) {
         this.groupId = groupId;
         this.masterKey = masterKey;
+        this.distributionId = distributionId;
         this.blocked = blocked;
         this.permissionDenied = permissionDenied;
     }
@@ -49,6 +54,14 @@ public final class GroupInfoV2 extends GroupInfo {
 
     public GroupMasterKey getMasterKey() {
         return masterKey;
+    }
+
+    public DistributionId getDistributionId() {
+        return distributionId;
+    }
+
+    public void setDistributionId(final DistributionId distributionId) {
+        this.distributionId = distributionId;
     }
 
     public void setGroup(final DecryptedGroup group, final RecipientResolver recipientResolver) {

@@ -120,16 +120,20 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         var recipientId = resolveRecipient(address.getName());
 
         synchronized (cachedIdentities) {
-            final var identityInfo = loadIdentityLocked(recipientId);
+            // TODO implement possibility for different handling of incoming/outgoing trust decisions
+            var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo == null) {
                 // Identity not found
+                saveIdentity(address, identityKey);
                 return trustNewIdentity == TrustNewIdentity.ON_FIRST_USE;
             }
 
-            // TODO implement possibility for different handling of incoming/outgoing trust decisions
             if (!identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity found, but different
-                return false;
+                if (direction == Direction.SENDING) {
+                    saveIdentity(address, identityKey);
+                    identityInfo = loadIdentityLocked(recipientId);
+                }
             }
 
             return identityInfo.isTrusted();

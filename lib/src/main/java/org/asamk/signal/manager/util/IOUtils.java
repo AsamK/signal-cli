@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
@@ -70,6 +72,16 @@ public class IOUtils {
 
         while ((read = input.read(buffer)) != -1) {
             output.write(buffer, 0, read);
+        }
+    }
+
+    public static long getFileCreateTime(final File file) {
+        try {
+            BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            FileTime fileTime = attr.creationTime();
+            return fileTime.toMillis();
+        } catch (IOException ex) {
+            return -1;
         }
     }
 }

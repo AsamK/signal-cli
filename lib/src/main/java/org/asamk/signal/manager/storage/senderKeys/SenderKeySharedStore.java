@@ -25,13 +25,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SenderKeySharedStore {
 
     private final static Logger logger = LoggerFactory.getLogger(SenderKeySharedStore.class);
 
-    private final Map<DistributionId, Set<SenderKeySharedEntry>> sharedSenderKeys;
+    private final Map<UUID, Set<SenderKeySharedEntry>> sharedSenderKeys;
 
     private final ObjectMapper objectMapper;
     private final File file;
@@ -45,19 +46,18 @@ public class SenderKeySharedStore {
         final var objectMapper = Utils.createStorageObjectMapper();
         try (var inputStream = new FileInputStream(file)) {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
-            final var sharedSenderKeys = new HashMap<DistributionId, Set<SenderKeySharedEntry>>();
+            final var sharedSenderKeys = new HashMap<UUID, Set<SenderKeySharedEntry>>();
             for (final var senderKey : storage.sharedSenderKeys) {
                 final var recipientId = resolver.resolveRecipient(senderKey.recipientId);
                 if (recipientId == null) {
                     continue;
                 }
                 final var entry = new SenderKeySharedEntry(recipientId, senderKey.deviceId);
-                final var uuid = UuidUtil.parseOrNull(senderKey.distributionId);
-                if (uuid == null) {
+                final var distributionId = UuidUtil.parseOrNull(senderKey.distributionId);
+                if (distributionId == null) {
                     logger.warn("Read invalid distribution id from storage {}, ignoring", senderKey.distributionId);
                     continue;
                 }
-                final var distributionId = DistributionId.from(uuid);
                 var entries = sharedSenderKeys.get(distributionId);
                 if (entries == null) {
                     entries = new HashSet<>();
@@ -74,7 +74,7 @@ public class SenderKeySharedStore {
     }
 
     private SenderKeySharedStore(
-            final Map<DistributionId, Set<SenderKeySharedEntry>> sharedSenderKeys,
+            final Map<UUID, Set<SenderKeySharedEntry>> sharedSenderKeys,
             final ObjectMapper objectMapper,
             final File file,
             final RecipientAddressResolver addressResolver,
@@ -89,8 +89,11 @@ public class SenderKeySharedStore {
 
     public Set<SignalProtocolAddress> getSenderKeySharedWith(final DistributionId distributionId) {
         synchronized (sharedSenderKeys) {
-            return sharedSenderKeys.get(distributionId)
-                    .stream()
+            final var addresses = sharedSenderKeys.get(distributionId.asUuid());
+            if (addresses == null) {
+                return Set.of();
+            }
+            return addresses.stream()
                     .map(k -> new SignalProtocolAddress(addressResolver.resolveRecipientAddress(k.recipientId())
                             .getIdentifier(), k.deviceId()))
                     .collect(Collectors.toSet());
@@ -105,9 +108,9 @@ public class SenderKeySharedStore {
                 .collect(Collectors.toSet());
 
         synchronized (sharedSenderKeys) {
-            final var previousEntries = sharedSenderKeys.getOrDefault(distributionId, Set.of());
+            final var previousEntries = sharedSenderKeys.getOrDefault(distributionId.asUuid(), Set.of());
 
-            sharedSenderKeys.put(distributionId, new HashSet<>() {
+            sharedSenderKeys.put(distributionId.asUuid(), new HashSet<>() {
                 {
                     addAll(previousEntries);
                     addAll(newEntries);
@@ -158,6 +161,13 @@ public class SenderKeySharedStore {
         }
     }
 
+    public void deleteAllFor(final DistributionId distributionId) {
+        synchronized (sharedSenderKeys) {
+            sharedSenderKeys.remove(distributionId.asUuid());
+            saveLocked();
+        }
+    }
+
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         synchronized (sharedSenderKeys) {
             for (final var distributionId : sharedSenderKeys.keySet()) {
@@ -187,7 +197,7 @@ public class SenderKeySharedStore {
             return sharedWith.stream()
                     .map(entry -> new Storage.SharedSenderKey(entry.recipientId().id(),
                             entry.deviceId(),
-                            pair.getKey().asUuid().toString()));
+                            pair.getKey().toString()));
         }).toList());
 
         // Write to memory first to prevent corrupting the file in case of serialization errors

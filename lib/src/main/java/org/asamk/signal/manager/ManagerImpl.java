@@ -195,7 +195,7 @@ public class ManagerImpl implements Manager {
                 unidentifiedAccessHelper::getAccessFor,
                 this::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper::getRecipientProfileKeyCredential,
-                this::getRecipientProfile,
+                profileHelper::getRecipientProfile,
                 account::getSelfRecipientId,
                 dependencies.getGroupsV2Operations(),
                 dependencies.getGroupsV2Api(),
@@ -207,6 +207,7 @@ public class ManagerImpl implements Manager {
                 account.getRecipientStore(),
                 this::handleIdentityFailure,
                 this::getGroupInfo,
+                profileHelper::getRecipientProfile,
                 this::refreshRegisteredUser);
         this.groupHelper = new GroupHelper(account,
                 dependencies,
@@ -245,7 +246,7 @@ public class ManagerImpl implements Manager {
                 contactHelper,
                 attachmentHelper,
                 syncHelper,
-                this::getRecipientProfile,
+                profileHelper::getRecipientProfile,
                 jobExecutor);
         this.identityHelper = new IdentityHelper(account,
                 dependencies,

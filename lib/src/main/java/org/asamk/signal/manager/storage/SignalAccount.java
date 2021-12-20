@@ -10,6 +10,7 @@ import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
@@ -45,6 +46,7 @@ import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -69,7 +71,9 @@ public class SignalAccount implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 2;
+    private static final int CURRENT_STORAGE_VERSION = 3;
+
+    private int previousStorageVersion;
 
     private final ObjectMapper jsonProcessor = Utils.createStorageObjectMapper();
 
@@ -166,6 +170,7 @@ public class SignalAccount implements Closeable {
 
         signalAccount.registered = false;
 
+        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
         signalAccount.save();
 
@@ -274,6 +279,7 @@ public class SignalAccount implements Closeable {
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.recipientStore.resolveRecipientTrusted(signalAccount.getSelfAddress());
+        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
         signalAccount.save();
 
@@ -307,12 +313,20 @@ public class SignalAccount implements Closeable {
             setPassword(KeyUtils.createPassword());
         }
 
-        if (getProfileKey() == null && isRegistered()) {
+        if (getProfileKey() == null) {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
         }
         // Ensure our profile key is stored in profile store
         getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
+        if (previousStorageVersion < 3) {
+            for (final var group : groupStore.getGroups()) {
+                if (group instanceof GroupInfoV2 && group.getDistributionId() == null) {
+                    ((GroupInfoV2) group).setDistributionId(DistributionId.create());
+                    groupStore.updateGroup(group);
+                }
+            }
+        }
     }
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
@@ -405,10 +419,13 @@ public class SignalAccount implements Closeable {
             } else if (accountVersion < MINIMUM_STORAGE_VERSION) {
                 throw new IOException("Config file was created by a no longer supported older version!");
             }
+            previousStorageVersion = accountVersion;
         }
 
         account = Utils.getNotNullNode(rootNode, "username").asText();
-        password = Utils.getNotNullNode(rootNode, "password").asText();
+        if (rootNode.hasNonNull("password")) {
+            password = rootNode.get("password").asText();
+        }
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("uuid")) {
             try {

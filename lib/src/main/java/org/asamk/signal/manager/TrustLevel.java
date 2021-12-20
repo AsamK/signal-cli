@@ -41,4 +41,11 @@ public enum TrustLevel {
             case TRUSTED_VERIFIED -> VerifiedMessage.VerifiedState.VERIFIED;
         };
     }
+
+    public boolean isTrusted() {
+        return switch (this) {
+            case TRUSTED_UNVERIFIED, TRUSTED_VERIFIED -> true;
+            case UNTRUSTED -> false;
+        };
+    }
 }

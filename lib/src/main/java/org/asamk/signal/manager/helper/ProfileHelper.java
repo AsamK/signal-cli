@@ -247,6 +247,7 @@ public final class ProfileHelper {
 
             if (newIdentity) {
                 account.getSessionStore().archiveSessions(recipientId);
+                account.getSenderKeyStore().deleteSharedWith(recipientId);
             }
         } catch (InvalidKeyException ignored) {
             logger.warn("Got invalid identity key in profile for {}",

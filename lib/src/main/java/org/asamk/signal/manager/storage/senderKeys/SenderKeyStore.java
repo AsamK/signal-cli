@@ -68,6 +68,19 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
         senderKeyRecordStore.deleteAllFor(recipientId);
     }
 
+    public void deleteSharedWith(RecipientId recipientId) {
+        senderKeySharedStore.deleteAllFor(recipientId);
+    }
+
+    public void deleteOurKey(RecipientId selfRecipientId, DistributionId distributionId) {
+        senderKeySharedStore.deleteAllFor(distributionId);
+        senderKeyRecordStore.deleteSenderKey(selfRecipientId, distributionId.asUuid());
+    }
+
+    public long getCreateTimeForOurKey(RecipientId selfRecipientId, int deviceId, DistributionId distributionId) {
+        return senderKeyRecordStore.getCreateTimeForKey(selfRecipientId, deviceId, distributionId.asUuid());
+    }
+
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         senderKeySharedStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         senderKeyRecordStore.mergeRecipients(recipientId, toBeMergedRecipientId);

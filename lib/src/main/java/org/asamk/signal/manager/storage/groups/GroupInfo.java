@@ -4,6 +4,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.whispersystems.signalservice.api.push.DistributionId;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,6 +13,8 @@ import java.util.stream.Stream;
 public sealed abstract class GroupInfo permits GroupInfoV1, GroupInfoV2 {
 
     public abstract GroupId getGroupId();
+
+    public abstract DistributionId getDistributionId();
 
     public abstract String getTitle();
 

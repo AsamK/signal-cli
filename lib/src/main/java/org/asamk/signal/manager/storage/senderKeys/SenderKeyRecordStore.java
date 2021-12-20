@@ -59,7 +59,28 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         }
     }
 
-    public void deleteAll() {
+    long getCreateTimeForKey(final RecipientId selfRecipientId, final int selfDeviceId, final UUID distributionId) {
+        final var key = getKey(selfRecipientId, selfDeviceId, distributionId);
+        final var senderKeyFile = getSenderKeyFile(key);
+
+        if (!senderKeyFile.exists()) {
+            return -1;
+        }
+
+        return IOUtils.getFileCreateTime(senderKeyFile);
+    }
+
+    void deleteSenderKey(final RecipientId recipientId, final UUID distributionId) {
+        synchronized (cachedSenderKeys) {
+            cachedSenderKeys.clear();
+            final var keys = getKeysLocked(recipientId);
+            for (var key : keys) {
+                if (key.distributionId.equals(distributionId)) deleteSenderKeyLocked(key);
+            }
+        }
+    }
+
+    void deleteAll() {
         synchronized (cachedSenderKeys) {
             cachedSenderKeys.clear();
             final var files = senderKeysPath.listFiles((_file, s) -> senderKeyFileNamePattern.matcher(s).matches());
@@ -77,7 +98,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         }
     }
 
-    public void deleteAllFor(final RecipientId recipientId) {
+    void deleteAllFor(final RecipientId recipientId) {
         synchronized (cachedSenderKeys) {
             cachedSenderKeys.clear();
             final var keys = getKeysLocked(recipientId);
@@ -87,7 +108,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         }
     }
 
-    public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
+    void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         synchronized (cachedSenderKeys) {
             final var keys = getKeysLocked(toBeMergedRecipientId);
             final var otherHasSenderKeys = keys.size() > 0;
@@ -118,6 +139,10 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
      */
     private RecipientId resolveRecipient(String identifier) {
         return resolver.resolveRecipient(identifier);
+    }
+
+    private Key getKey(final RecipientId recipientId, int deviceId, final UUID distributionId) {
+        return new Key(recipientId, deviceId, distributionId);
     }
 
     private Key getKey(final SignalProtocolAddress address, final UUID distributionId) {
@@ -217,7 +242,5 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         }
     }
 
-    private record Key(RecipientId recipientId, int deviceId, UUID distributionId) {
-
-    }
+    private record Key(RecipientId recipientId, int deviceId, UUID distributionId) {}
 }

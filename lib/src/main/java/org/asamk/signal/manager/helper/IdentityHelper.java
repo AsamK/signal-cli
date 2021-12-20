@@ -126,6 +126,7 @@ public class IdentityHelper {
             final var newIdentity = account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
             if (newIdentity) {
                 account.getSessionStore().archiveSessions(recipientId);
+                account.getSenderKeyStore().deleteSharedWith(recipientId);
             }
         } else {
             // Retrieve profile to get the current identity key from the server

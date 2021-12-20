@@ -6,6 +6,7 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.whispersystems.signalservice.api.push.DistributionId;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,6 +53,11 @@ public final class GroupInfoV1 extends GroupInfo {
     @Override
     public GroupIdV1 getGroupId() {
         return groupId;
+    }
+
+    @Override
+    public DistributionId getDistributionId() {
+        return null;
     }
 
     public GroupIdV2 getExpectedV2Id() {

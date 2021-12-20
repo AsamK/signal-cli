@@ -44,6 +44,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 
 import java.io.File;
@@ -200,7 +201,9 @@ public class GroupHelper {
 
         final var messageBuilder = getGroupUpdateMessageBuilder(gv2, null);
 
-        final var result = sendGroupMessage(messageBuilder, gv2.getMembersIncludingPendingWithout(selfRecipientId));
+        final var result = sendGroupMessage(messageBuilder,
+                gv2.getMembersIncludingPendingWithout(selfRecipientId),
+                gv2.getDistributionId());
         return new Pair<>(gv2.getGroupId(), result);
     }
 
@@ -333,7 +336,7 @@ public class GroupHelper {
         var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendGroupMessage(messageBuilder, Set.of(recipientId));
+        return sendGroupMessage(messageBuilder, Set.of(recipientId), null);
     }
 
     public SendGroupMessageResults sendGroupInfoMessage(
@@ -353,7 +356,7 @@ public class GroupHelper {
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendGroupMessage(messageBuilder, Set.of(recipientId));
+        return sendGroupMessage(messageBuilder, Set.of(recipientId), null);
     }
 
     private GroupInfo getGroup(GroupId groupId, boolean forceUpdate) {
@@ -438,7 +441,9 @@ public class GroupHelper {
         account.getGroupStore().updateGroup(gv1);
 
         var messageBuilder = getGroupUpdateMessageBuilder(gv1);
-        return sendGroupMessage(messageBuilder, gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+        return sendGroupMessage(messageBuilder,
+                gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
+                gv1.getDistributionId());
     }
 
     private void updateGroupV1Details(
@@ -600,7 +605,8 @@ public class GroupHelper {
         groupInfoV1.removeMember(account.getSelfRecipientId());
         account.getGroupStore().updateGroup(groupInfoV1);
         return sendGroupMessage(messageBuilder,
-                groupInfoV1.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+                groupInfoV1.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
+                groupInfoV1.getDistributionId());
     }
 
     private SendGroupMessageResults quitGroupV2(
@@ -622,7 +628,8 @@ public class GroupHelper {
 
         var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
         return sendGroupMessage(messageBuilder,
-                groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()));
+                groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
+                groupInfoV2.getDistributionId());
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -664,15 +671,17 @@ public class GroupHelper {
         account.getGroupStore().updateGroup(group);
 
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
-        return sendGroupMessage(messageBuilder, members);
+        return sendGroupMessage(messageBuilder, members, group.getDistributionId());
     }
 
     private SendGroupMessageResults sendGroupMessage(
-            final SignalServiceDataMessage.Builder messageBuilder, final Set<RecipientId> members
+            final SignalServiceDataMessage.Builder messageBuilder,
+            final Set<RecipientId> members,
+            final DistributionId distributionId
     ) throws IOException {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
-        final var results = sendHelper.sendGroupMessage(messageBuilder.build(), members);
+        final var results = sendHelper.sendGroupMessage(messageBuilder.build(), members, distributionId);
         return new SendGroupMessageResults(timestamp,
                 results.stream()
                         .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
