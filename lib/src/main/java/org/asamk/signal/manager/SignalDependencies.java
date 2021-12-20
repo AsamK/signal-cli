@@ -171,7 +171,8 @@ public class SignalDependencies {
         return getOrCreate(() -> cipher, () -> {
             final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
             final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
-            cipher = new SignalServiceCipher(address, dataStore, sessionLock, certificateValidator);
+            final var deviceId = credentialsProvider.getDeviceId();
+            cipher = new SignalServiceCipher(address, deviceId, dataStore, sessionLock, certificateValidator);
         });
     }
 
