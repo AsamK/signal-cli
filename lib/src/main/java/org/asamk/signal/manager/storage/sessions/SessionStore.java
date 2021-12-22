@@ -284,7 +284,7 @@ public class SessionStore implements SignalServiceSessionStore {
             final var session = new SessionRecord(inputStream.readAllBytes());
             cachedSessions.put(key, session);
             return session;
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.warn("Failed to load session, resetting session: {}", e.getMessage());
             return null;
         }

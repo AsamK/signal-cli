@@ -582,7 +582,7 @@ public class SignalAccount implements Closeable {
                 try {
                     sessionStore.storeSession(new SignalProtocolAddress(session.address.getIdentifier(),
                             session.deviceId), new SessionRecord(session.sessionRecord));
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.warn("Failed to migrate session, ignoring", e);
                 }
             }
