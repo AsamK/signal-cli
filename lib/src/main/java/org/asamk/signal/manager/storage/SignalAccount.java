@@ -326,6 +326,7 @@ public class SignalAccount implements Closeable {
                     groupStore.updateGroup(group);
                 }
             }
+            save();
         }
     }
 
