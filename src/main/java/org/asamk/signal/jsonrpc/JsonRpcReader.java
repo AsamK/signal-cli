@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ContainerNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 
 import org.asamk.signal.util.Util;
@@ -39,7 +40,7 @@ public class JsonRpcReader {
             if (message == null) break;
 
             if (message instanceof final JsonRpcRequest jsonRpcRequest) {
-                logger.debug("Received json rpc request, method: " + jsonRpcRequest.method);
+                logger.debug("Received json rpc request, method: " + jsonRpcRequest.getMethod());
                 final var response = handleRequest(requestHandler, jsonRpcRequest);
                 if (response != null) {
                     jsonRpcSender.sendResponse(response);
@@ -153,6 +154,10 @@ public class JsonRpcReader {
     }
 
     private JsonRpcRequest parseJsonRpcRequest(final JsonNode input) throws JsonRpcException {
+        if (input instanceof ObjectNode i && input.has("params") && input.get("params").isNull()) {
+            // Workaround for clients that send a null params field instead of omitting it
+            i.remove("params");
+        }
         JsonRpcRequest request;
         try {
             request = objectMapper.treeToValue(input, JsonRpcRequest.class);
