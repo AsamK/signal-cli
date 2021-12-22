@@ -14,6 +14,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
+import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
@@ -202,7 +203,7 @@ public class DbusSignalImpl implements Signal {
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
 
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
@@ -229,7 +230,7 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -265,7 +266,7 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -283,7 +284,7 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifiers(List.of(recipient), m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -298,7 +299,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
                     messageIds);
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
@@ -311,7 +312,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
                     messageIds);
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
@@ -342,7 +343,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
                     Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
@@ -357,7 +358,7 @@ public class DbusSignalImpl implements Signal {
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
             final var results = m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getSelfNumber()));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
@@ -386,7 +387,7 @@ public class DbusSignalImpl implements Signal {
         try {
             var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
                     Set.of(getGroupRecipientIdentifier(groupId)));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -404,7 +405,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
                     Set.of(getGroupRecipientIdentifier(groupId)));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
@@ -419,7 +420,7 @@ public class DbusSignalImpl implements Signal {
         try {
             final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
                     Set.of(getGroupRecipientIdentifier(groupId)));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -442,7 +443,7 @@ public class DbusSignalImpl implements Signal {
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
                     Set.of(getGroupRecipientIdentifier(groupId)));
-            checkSendMessageResults(results.timestamp(), results.results());
+            checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -563,7 +564,7 @@ public class DbusSignalImpl implements Signal {
             if (groupId == null) {
                 final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
                 updateGroups();
-                checkSendMessageResults(results.second().timestamp(), results.second().results());
+                checkGroupSendMessageResults(results.second().timestamp(), results.second().results());
                 return results.first().serialize();
             } else {
                 final var results = m.updateGroup(getGroupId(groupId),
@@ -573,7 +574,7 @@ public class DbusSignalImpl implements Signal {
                                 .withAvatarFile(avatar == null ? null : new File(avatar))
                                 .build());
                 if (results != null) {
-                    checkSendMessageResults(results.timestamp(), results.results());
+                    checkGroupSendMessageResults(results.timestamp(), results.results());
                 }
                 return groupId;
             }
@@ -790,7 +791,7 @@ public class DbusSignalImpl implements Signal {
             return;
         }
 
-        final var message = timestamp + "\nFailed to send message:\n" + error + '\n';
+        final var message = "\nFailed to send message:\n" + error + '\n' + timestamp;
 
         if (result.isIdentityFailure()) {
             throw new Error.UntrustedIdentity(message);
@@ -799,31 +800,29 @@ public class DbusSignalImpl implements Signal {
         }
     }
 
-    private static void checkSendMessageResults(
-            long timestamp, Map<RecipientIdentifier, List<SendMessageResult>> results
-    ) throws DBusExecutionException {
-        final var sendMessageResults = results.values().stream().findFirst();
-        if (results.size() == 1 && sendMessageResults.get().size() == 1) {
-            checkSendMessageResult(timestamp, sendMessageResults.get().stream().findFirst().get());
+    private void checkSendMessageResults(final SendMessageResults results) {
+        final var sendMessageResults = results.results().values().stream().findFirst();
+        if (results.results().size() == 1 && sendMessageResults.get().size() == 1) {
+            checkSendMessageResult(results.timestamp(), sendMessageResults.get().stream().findFirst().get());
             return;
         }
 
-        var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
-        if (errors.size() == 0) {
+        if (results.hasSuccess()) {
             return;
         }
 
         var message = new StringBuilder();
-        message.append(timestamp).append('\n');
-        message.append("Failed to send (some) messages:\n");
+        message.append("Failed to send messages:\n");
+        var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results.results());
         for (var error : errors) {
             message.append(error).append('\n');
         }
+        message.append(results.timestamp());
 
         throw new Error.Failure(message.toString());
     }
 
-    private static void checkSendMessageResults(
+    private static void checkGroupSendMessageResults(
             long timestamp, Collection<SendMessageResult> results
     ) throws DBusExecutionException {
         if (results.size() == 1) {
@@ -832,16 +831,16 @@ public class DbusSignalImpl implements Signal {
         }
 
         var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
-        if (errors.size() == 0) {
+        if (errors.size() < results.size()) {
             return;
         }
 
         var message = new StringBuilder();
-        message.append(timestamp).append('\n');
-        message.append("Failed to send (some) messages:\n");
+        message.append("Failed to send message:\n");
         for (var error : errors) {
             message.append(error).append('\n');
         }
+        message.append(timestamp);
 
         throw new Error.Failure(message.toString());
     }

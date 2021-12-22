@@ -1,5 +1,8 @@
 package org.asamk.signal.util;
 
+import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.json.JsonSendMessageResult;
 import org.asamk.signal.manager.api.ProofRequiredException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -33,7 +36,9 @@ public class SendMessageResultUtils {
         }
     }
 
-    public static void outputResult(final OutputWriter outputWriter, final SendMessageResults sendMessageResults) {
+    public static void outputResult(
+            final OutputWriter outputWriter, final SendMessageResults sendMessageResults
+    ) throws CommandException {
         if (outputWriter instanceof PlainTextWriter writer) {
             var errors = getErrorMessagesFromSendMessageResults(sendMessageResults.results());
             printSendMessageResultErrors(writer, errors);
@@ -42,6 +47,13 @@ public class SendMessageResultUtils {
             final var writer = (JsonWriter) outputWriter;
             var results = getJsonSendMessageResults(sendMessageResults.results());
             writer.write(Map.of("timestamp", sendMessageResults.timestamp(), "results", results));
+        }
+        if (!sendMessageResults.hasSuccess()) {
+            if (sendMessageResults.hasOnlyUntrustedIdentity()) {
+                throw new UntrustedKeyErrorException("Failed to send message due to untrusted identities");
+            } else {
+                throw new UserErrorException("Failed to send message");
+            }
         }
     }
 
@@ -106,7 +118,7 @@ public class SendMessageResultUtils {
         }
     }
 
-    public static List<JsonSendMessageResult> getJsonSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
+    private static List<JsonSendMessageResult> getJsonSendMessageResults(final Map<RecipientIdentifier, List<SendMessageResult>> mapResults) {
         return mapResults.entrySet().stream().flatMap(entry -> {
             final var groupId = entry.getKey() instanceof RecipientIdentifier.Group g ? g.groupId() : null;
             return entry.getValue().stream().map(r -> JsonSendMessageResult.from(r, groupId));
