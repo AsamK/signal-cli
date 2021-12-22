@@ -30,6 +30,7 @@ public class VersionCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiC
     }
 
     private void outputVersion(final JsonWriter jsonWriter) {
-        jsonWriter.write(Map.of("version", BaseConfig.PROJECT_VERSION));
+        jsonWriter.write(Map.of("version",
+                BaseConfig.PROJECT_VERSION == null ? "unknown" : BaseConfig.PROJECT_VERSION));
     }
 }
