@@ -181,7 +181,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
         try {
             IOUtils.createPrivateDirectories(senderKeysPath);
         } catch (IOException e) {
-            throw new AssertionError("Failed to create sender keys path", e);
+            throw new AssertionError("Failed to create sender keys path: " + e.getMessage(), e);
         }
         return new File(senderKeysPath,
                 key.recipientId().id() + "_" + key.deviceId() + "_" + key.distributionId.toString());
