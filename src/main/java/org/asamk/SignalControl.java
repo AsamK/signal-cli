@@ -16,6 +16,8 @@ public interface SignalControl extends DBusInterface {
             String number, boolean voiceVerification
     ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;
 
+    boolean isRegistered();
+
     void registerWithCaptcha(
             String number, boolean voiceVerification, String captcha
     ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;

@@ -48,6 +48,11 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public boolean isRegistered() {
+        return false;
+    }
+
+    @Override
     public void registerWithCaptcha(
             final String number, final boolean voiceVerification, final String captcha
     ) throws Error.Failure, Error.InvalidNumber {
