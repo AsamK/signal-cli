@@ -1252,6 +1252,7 @@ public class ManagerImpl implements Manager {
         logger.debug("Handling message actions");
         var interrupted = false;
         for (var action : queuedActions) {
+            logger.debug("Executing action {}", action.getClass().getSimpleName());
             try {
                 action.execute(context);
             } catch (Throwable e) {
