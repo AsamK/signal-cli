@@ -61,6 +61,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
@@ -244,8 +245,8 @@ public class SignalAccount implements Closeable {
     }
 
     private void clearAllPreKeys() {
-        this.preKeyIdOffset = 0;
-        this.nextSignedPreKeyId = 0;
+        this.preKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
+        this.nextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
         this.preKeyStore.removeAllPreKeys();
         this.signedPreKeyStore.removeAllSignedPreKeys();
         save();
@@ -1020,6 +1021,7 @@ public class SignalAccount implements Closeable {
         this.lastReceiveTimestamp = 0;
         save();
 
+        clearAllPreKeys();
         getSessionStore().archiveAllSessions();
         senderKeyStore.deleteAll();
         final var recipientId = getRecipientStore().resolveRecipientTrusted(getSelfAddress());
