@@ -190,33 +190,38 @@ public final class ProfileHelper {
             }
         }
 
-        if (encryptedProfile == null) {
-            profile = Profile.newBuilder().withLastUpdateTimestamp(now).build();
-        } else {
-            profile = decryptProfileIfKeyKnown(recipientId, encryptedProfile);
+        Profile newProfile = null;
+        if (encryptedProfile != null) {
+            var profileKey = account.getProfileStore().getProfileKey(recipientId);
+            if (profileKey != null) {
+                newProfile = decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
+                if (newProfile == null) {
+                    account.getProfileStore().storeProfileKey(recipientId, null);
+                }
+            }
+
+            if (newProfile == null) {
+                newProfile = (
+                        profile == null ? Profile.newBuilder() : Profile.newBuilder(profile)
+                ).withLastUpdateTimestamp(System.currentTimeMillis())
+                        .withUnidentifiedAccessMode(ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null))
+                        .withCapabilities(ProfileUtils.getCapabilities(encryptedProfile))
+                        .build();
+            }
         }
 
-        account.getProfileStore().storeProfile(recipientId, profile);
-
-        return profile;
-    }
-
-    private Profile decryptProfileIfKeyKnown(
-            final RecipientId recipientId, final SignalServiceProfile encryptedProfile
-    ) {
-        var profileKey = account.getProfileStore().getProfileKey(recipientId);
-        if (profileKey == null) {
-            return new Profile(System.currentTimeMillis(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null),
-                    ProfileUtils.getCapabilities(encryptedProfile));
+        if (newProfile == null) {
+            newProfile = (
+                    profile == null ? Profile.newBuilder() : Profile.newBuilder(profile)
+            ).withLastUpdateTimestamp(now)
+                    .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
+                    .withCapabilities(Set.of())
+                    .build();
         }
 
-        return decryptProfileAndDownloadAvatar(recipientId, profileKey, encryptedProfile);
+        account.getProfileStore().storeProfile(recipientId, newProfile);
+
+        return newProfile;
     }
 
     private SignalServiceProfile retrieveEncryptedProfile(RecipientId recipientId) {
