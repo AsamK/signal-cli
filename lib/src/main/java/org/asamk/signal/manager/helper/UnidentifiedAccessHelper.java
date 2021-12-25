@@ -142,12 +142,13 @@ public class UnidentifiedAccessHelper {
 
     public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
         var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
+        if (recipientUnidentifiedAccessKey == null) {
+            return Optional.absent();
+        }
+
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
         var selfUnidentifiedAccessCertificate = getSenderCertificateFor(recipient);
-
-        if (recipientUnidentifiedAccessKey == null
-                || selfUnidentifiedAccessKey == null
-                || selfUnidentifiedAccessCertificate == null) {
+        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
             return Optional.absent();
         }
 
