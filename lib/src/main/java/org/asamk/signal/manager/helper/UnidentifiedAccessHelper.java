@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.libsignal.metadata.certificate.SenderCertificate;
@@ -16,12 +17,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.whispersystems.signalservice.internal.util.Util.getSecretBytes;
-
 public class UnidentifiedAccessHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
     private final static long CERTIFICATE_EXPIRATION_BUFFER = TimeUnit.DAYS.toMillis(1);
+    private static final byte[] UNRESTRICTED_KEY = new byte[16];
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
@@ -90,6 +90,11 @@ public class UnidentifiedAccessHelper {
     }
 
     private byte[] getSelfUnidentifiedAccessKey() {
+        var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
+        if (selfProfile != null
+                && selfProfile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED) {
+            return createUnrestrictedUnidentifiedAccess();
+        }
         return UnidentifiedAccess.deriveAccessKeyFrom(selfProfileKeyProvider.getProfileKey());
     }
 
@@ -156,6 +161,6 @@ public class UnidentifiedAccessHelper {
     }
 
     private static byte[] createUnrestrictedUnidentifiedAccess() {
-        return getSecretBytes(16);
+        return UNRESTRICTED_KEY;
     }
 }
