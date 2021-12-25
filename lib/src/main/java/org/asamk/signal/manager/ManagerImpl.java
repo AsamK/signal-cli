@@ -78,6 +78,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -911,11 +912,11 @@ public class ManagerImpl implements Manager {
         try {
             aciMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
-            throw new IOException(number, e);
+            throw new UnregisteredUserException(number, e);
         }
         final var uuid = aciMap.get(number);
         if (uuid == null) {
-            throw new IOException(number, null);
+            throw new UnregisteredUserException(number, null);
         }
         return uuid;
     }
