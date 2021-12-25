@@ -3,6 +3,8 @@ package org.asamk.signal.manager.util;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.signal.zkgroup.profiles.ProfileKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
@@ -11,6 +13,8 @@ import java.util.Base64;
 import java.util.HashSet;
 
 public class ProfileUtils {
+
+    private final static Logger logger = LoggerFactory.getLogger(ProfileUtils.class);
 
     public static Profile decryptProfile(
             final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
@@ -31,6 +35,7 @@ public class ProfileUtils {
                     getUnidentifiedAccessMode(encryptedProfile, profileCipher),
                     getCapabilities(encryptedProfile));
         } catch (InvalidCiphertextException e) {
+            logger.debug("Failed to decrypt profile for {}", encryptedProfile.getAci(), e);
             return null;
         }
     }
