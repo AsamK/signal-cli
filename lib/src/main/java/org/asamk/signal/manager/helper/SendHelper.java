@@ -526,6 +526,34 @@ public class SendHelper {
     }
 
     private void handleSendMessageResult(final SendMessageResult r) {
+        if (r.isSuccess() && !r.getSuccess().isUnidentified()) {
+            final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
+            final var profile = account.getRecipientStore().getProfile(recipientId);
+            if (profile != null && (
+                    profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
+                            || profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED
+            )) {
+                account.getRecipientStore()
+                        .storeProfile(recipientId,
+                                Profile.newBuilder(profile)
+                                        .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
+                                        .build());
+            }
+        }
+        if (r.isUnregisteredFailure()) {
+            final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
+            final var profile = account.getRecipientStore().getProfile(recipientId);
+            if (profile != null && (
+                    profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
+                            || profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED
+            )) {
+                account.getRecipientStore()
+                        .storeProfile(recipientId,
+                                Profile.newBuilder(profile)
+                                        .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
+                                        .build());
+            }
+        }
         if (r.getIdentityFailure() != null) {
             final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
             identityFailureHandler.handleIdentityFailure(recipientId, r.getIdentityFailure());
