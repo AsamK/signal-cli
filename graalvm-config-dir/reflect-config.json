@@ -22,6 +22,12 @@
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"}
 ,
 {
+  "name":"[Lorg.whispersystems.signalservice.internal.push.GroupMismatchedDevices;"}
+,
+{
+  "name":"[Lorg.whispersystems.signalservice.internal.push.GroupStaleDevices;"}
+,
+{
   "name":"byte[]",
   "allDeclaredMethods":true,
   "allPublicMethods":true}
@@ -2005,6 +2011,20 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.GroupMismatchedDevices",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"org.whispersystems.signalservice.internal.push.GroupStaleDevices",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
   "name":"org.whispersystems.signalservice.internal.push.MismatchedDevices",
