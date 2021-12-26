@@ -12,6 +12,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
@@ -54,8 +56,7 @@ public class GroupV2Helper {
 
     private final static Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
 
-    private final ProfileKeyCredentialProvider profileKeyCredentialProvider;
-    private final ProfileProvider profileProvider;
+    private final ProfileHelper profileHelper;
     private final SelfRecipientIdProvider selfRecipientIdProvider;
     private final GroupsV2Operations groupsV2Operations;
     private final GroupsV2Api groupsV2Api;
@@ -64,15 +65,13 @@ public class GroupV2Helper {
     private HashMap<Integer, AuthCredentialResponse> groupApiCredentials;
 
     public GroupV2Helper(
-            final ProfileKeyCredentialProvider profileKeyCredentialProvider,
-            final ProfileProvider profileProvider,
+            final ProfileHelper profileHelper,
             final SelfRecipientIdProvider selfRecipientIdProvider,
             final GroupsV2Operations groupsV2Operations,
             final GroupsV2Api groupsV2Api,
             final SignalServiceAddressResolver addressResolver
     ) {
-        this.profileKeyCredentialProvider = profileKeyCredentialProvider;
-        this.profileProvider = profileProvider;
+        this.profileHelper = profileHelper;
         this.selfRecipientIdProvider = selfRecipientIdProvider;
         this.groupsV2Operations = groupsV2Operations;
         this.groupsV2Api = groupsV2Api;
@@ -149,7 +148,7 @@ public class GroupV2Helper {
     private GroupsV2Operations.NewGroup buildNewGroup(
             String name, Set<RecipientId> members, byte[] avatar
     ) {
-        final var profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(selfRecipientIdProvider.getSelfRecipientId());
+        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientIdProvider.getSelfRecipientId());
         if (profileKeyCredential == null) {
             logger.warn("Cannot create a V2 group as self does not have a versioned profile");
             return null;
@@ -157,10 +156,14 @@ public class GroupV2Helper {
 
         if (!areMembersValid(members)) return null;
 
-        var self = new GroupCandidate(getSelfAci().uuid(), Optional.fromNullable(profileKeyCredential));
-        var candidates = members.stream()
-                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getAci().uuid(),
-                        Optional.fromNullable(profileKeyCredentialProvider.getProfileKeyCredential(member))))
+        final var self = new GroupCandidate(getSelfAci().uuid(), Optional.fromNullable(profileKeyCredential));
+        final var memberList = new ArrayList<>(members);
+        final var credentials = profileHelper.getRecipientProfileKeyCredential(memberList).stream();
+        final var uuids = memberList.stream()
+                .map(member -> addressResolver.resolveSignalServiceAddress(member).getAci().uuid());
+        var candidates = Utils.zip(uuids,
+                        credentials,
+                        (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
                 .collect(Collectors.toSet());
 
         final var groupSecretParams = GroupSecretParams.generate();
@@ -174,8 +177,8 @@ public class GroupV2Helper {
     }
 
     private boolean areMembersValid(final Set<RecipientId> members) {
-        final var noGv2Capability = members.stream()
-                .map(profileProvider::getProfile)
+        final var noGv2Capability = profileHelper.getRecipientProfile(new ArrayList<>(members))
+                .stream()
                 .filter(profile -> profile != null && !profile.getCapabilities().contains(Profile.Capability.gv2))
                 .collect(Collectors.toSet());
         if (noGv2Capability.size() > 0) {
@@ -221,9 +224,13 @@ public class GroupV2Helper {
             throw new IOException("Failed to update group");
         }
 
-        var candidates = newMembers.stream()
-                .map(member -> new GroupCandidate(addressResolver.resolveSignalServiceAddress(member).getAci().uuid(),
-                        Optional.fromNullable(profileKeyCredentialProvider.getProfileKeyCredential(member))))
+        final var memberList = new ArrayList<>(newMembers);
+        final var credentials = profileHelper.getRecipientProfileKeyCredential(memberList).stream();
+        final var uuids = memberList.stream()
+                .map(member -> addressResolver.resolveSignalServiceAddress(member).getAci().uuid());
+        var candidates = Utils.zip(uuids,
+                        credentials,
+                        (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
                 .collect(Collectors.toSet());
 
         final var aci = getSelfAci();
@@ -333,7 +340,7 @@ public class GroupV2Helper {
         final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
 
         final var selfRecipientId = this.selfRecipientIdProvider.getSelfRecipientId();
-        final var profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(selfRecipientId);
+        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }
@@ -352,7 +359,7 @@ public class GroupV2Helper {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         final var selfRecipientId = this.selfRecipientIdProvider.getSelfRecipientId();
-        final var profileKeyCredential = profileKeyCredentialProvider.getProfileKeyCredential(selfRecipientId);
+        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }

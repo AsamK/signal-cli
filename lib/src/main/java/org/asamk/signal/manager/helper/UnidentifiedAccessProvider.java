@@ -6,5 +6,5 @@ import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
 public interface UnidentifiedAccessProvider {
 
-    Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipientId);
+    Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipientId, boolean noRefresh);
 }

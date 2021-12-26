@@ -57,7 +57,7 @@ public class SendHelper {
     private final RecipientResolver recipientResolver;
     private final IdentityFailureHandler identityFailureHandler;
     private final GroupProvider groupProvider;
-    private final ProfileProvider profileProvider;
+    private final ProfileHelper profileHelper;
     private final RecipientRegistrationRefresher recipientRegistrationRefresher;
 
     public SendHelper(
@@ -68,7 +68,7 @@ public class SendHelper {
             final RecipientResolver recipientResolver,
             final IdentityFailureHandler identityFailureHandler,
             final GroupProvider groupProvider,
-            final ProfileProvider profileProvider,
+            final ProfileHelper profileHelper,
             final RecipientRegistrationRefresher recipientRegistrationRefresher
     ) {
         this.account = account;
@@ -78,7 +78,7 @@ public class SendHelper {
         this.recipientResolver = recipientResolver;
         this.identityFailureHandler = identityFailureHandler;
         this.groupProvider = groupProvider;
-        this.profileProvider = profileProvider;
+        this.profileHelper = profileHelper;
         this.recipientRegistrationRefresher = recipientRegistrationRefresher;
     }
 
@@ -356,16 +356,17 @@ public class SendHelper {
     }
 
     private Set<RecipientId> getSenderKeyCapableRecipientIds(final Set<RecipientId> recipientIds) {
-        final var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
+        final var selfProfile = profileHelper.getRecipientProfile(account.getSelfRecipientId());
         if (selfProfile == null || !selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
             logger.debug("Not all of our devices support sender key. Using legacy.");
             return Set.of();
         }
 
         final var senderKeyTargets = new HashSet<RecipientId>();
-        for (final var recipientId : recipientIds) {
-            // TODO filter out unregistered
-            final var profile = profileProvider.getProfile(recipientId);
+        final var recipientList = new ArrayList<>(recipientIds);
+        final var profiles = profileHelper.getRecipientProfile(recipientList).iterator();
+        for (final var recipientId : recipientList) {
+            final var profile = profiles.next();
             if (profile == null || !profile.getCapabilities().contains(Profile.Capability.senderKey)) {
                 continue;
             }
@@ -433,8 +434,8 @@ public class SendHelper {
         List<SignalServiceAddress> addresses = recipientIdList.stream()
                 .map(addressResolver::resolveSignalServiceAddress)
                 .collect(Collectors.toList());
-        List<UnidentifiedAccess> unidentifiedAccesses = recipientIdList.stream()
-                .map(unidentifiedAccessHelper::getAccessFor)
+        List<UnidentifiedAccess> unidentifiedAccesses = unidentifiedAccessHelper.getAccessFor(recipientIdList)
+                .stream()
                 .map(Optional::get)
                 .map(UnidentifiedAccessPair::getTargetUnidentifiedAccess)
                 .map(Optional::get)

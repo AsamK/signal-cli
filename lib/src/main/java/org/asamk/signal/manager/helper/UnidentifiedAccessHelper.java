@@ -7,6 +7,7 @@ import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.libsignal.metadata.certificate.SenderCertificate;
+import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -89,8 +90,10 @@ public class UnidentifiedAccessHelper {
         }
     }
 
-    private byte[] getSelfUnidentifiedAccessKey() {
-        var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
+    private byte[] getSelfUnidentifiedAccessKey(boolean noRefresh) {
+        var selfProfile = noRefresh
+                ? account.getProfileStore().getProfile(account.getSelfRecipientId())
+                : profileProvider.getProfile(account.getSelfRecipientId());
         if (selfProfile != null
                 && selfProfile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED) {
             return createUnrestrictedUnidentifiedAccess();
@@ -98,15 +101,23 @@ public class UnidentifiedAccessHelper {
         return UnidentifiedAccess.deriveAccessKeyFrom(selfProfileKeyProvider.getProfileKey());
     }
 
-    public byte[] getTargetUnidentifiedAccessKey(RecipientId recipient) {
-        var targetProfile = profileProvider.getProfile(recipient);
+    private byte[] getTargetUnidentifiedAccessKey(RecipientId recipientId, boolean noRefresh) {
+        var targetProfile = noRefresh
+                ? account.getProfileStore().getProfile(recipientId)
+                : profileProvider.getProfile(recipientId);
         if (targetProfile == null) {
             return null;
         }
 
+        var theirProfileKey = account.getProfileStore().getProfileKey(recipientId);
+        return getTargetUnidentifiedAccessKey(targetProfile, theirProfileKey);
+    }
+
+    private static byte[] getTargetUnidentifiedAccessKey(
+            final Profile targetProfile, final ProfileKey theirProfileKey
+    ) {
         switch (targetProfile.getUnidentifiedAccessMode()) {
             case ENABLED:
-                var theirProfileKey = account.getProfileStore().getProfileKey(recipient);
                 if (theirProfileKey == null) {
                     return null;
                 }
@@ -120,7 +131,7 @@ public class UnidentifiedAccessHelper {
     }
 
     public Optional<UnidentifiedAccessPair> getAccessForSync() {
-        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(false);
         var selfUnidentifiedAccessCertificate = getSenderCertificate();
 
         if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
@@ -141,12 +152,16 @@ public class UnidentifiedAccessHelper {
     }
 
     public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
-        var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient);
+        return getAccessFor(recipient, false);
+    }
+
+    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient, boolean noRefresh) {
+        var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient, noRefresh);
         if (recipientUnidentifiedAccessKey == null) {
             return Optional.absent();
         }
 
-        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey();
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(noRefresh);
         var selfUnidentifiedAccessCertificate = getSenderCertificateFor(recipient);
         if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
             return Optional.absent();
