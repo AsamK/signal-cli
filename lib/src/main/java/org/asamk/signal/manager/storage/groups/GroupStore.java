@@ -189,6 +189,7 @@ public class GroupStore {
     }
 
     public void mergeRecipients(final RecipientId recipientId, final RecipientId toBeMergedRecipientId) {
+        Storage storage = null;
         synchronized (groups) {
             var modified = false;
             for (var group : this.groups.values()) {
@@ -201,8 +202,11 @@ public class GroupStore {
                 }
             }
             if (modified) {
-                saver.save(toStorageLocked());
+                storage = toStorageLocked();
             }
+        }
+        if (storage != null) {
+            saver.save(storage);
         }
     }
 
