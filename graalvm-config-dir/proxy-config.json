@@ -12,6 +12,9 @@
     "interfaces":["org.asamk.Signal$Group"]}
   ,
   {
+    "interfaces":["org.asamk.SignalControl"]}
+  ,
+  {
     "interfaces":["org.freedesktop.dbus.interfaces.DBus"]}
   
 ]

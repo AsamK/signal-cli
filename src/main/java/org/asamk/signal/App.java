@@ -6,6 +6,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.asamk.Signal;
+import org.asamk.SignalControl;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.LocalCommand;
@@ -30,6 +31,8 @@ import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriterImpl;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.errors.ServiceUnknown;
+import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
@@ -326,15 +329,41 @@ public class App {
                 busType = DBusConnection.DBusBusType.SESSION;
             }
             try (var dBusConn = DBusConnection.getConnection(busType)) {
-                var ts = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                        DbusConfig.getObjectPath(account),
-                        Signal.class);
+                var accountObjectPath = account == null ? tryGetSingleAccountObjectPath(dBusConn) : null;
+                if (accountObjectPath == null) {
+                    accountObjectPath = DbusConfig.getObjectPath(account);
+                }
+                var ts = dBusConn.getRemoteObject(DbusConfig.getBusname(), accountObjectPath, Signal.class);
 
                 handleCommand(command, ts, dBusConn, outputWriter);
             }
-        } catch (DBusException | IOException e) {
-            logger.error("Dbus client failed", e);
-            throw new UnexpectedErrorException("Dbus client failed", e);
+        } catch (ServiceUnknown e) {
+            throw new UserErrorException("signal-cli DBus daemon not running on "
+                    + (systemBus ? "system" : "session")
+                    + " bus: "
+                    + e.getMessage(), e);
+        } catch (DBusExecutionException | DBusException | IOException e) {
+            throw new UnexpectedErrorException("Dbus client failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String tryGetSingleAccountObjectPath(final DBusConnection dBusConn) throws DBusException, CommandException {
+        var control = dBusConn.getRemoteObject(DbusConfig.getBusname(),
+                DbusConfig.getObjectPath(),
+                SignalControl.class);
+        try {
+            final var accounts = control.listAccounts();
+            if (accounts.size() == 0) {
+                throw new UserErrorException("No local users found, you first need to register or link an account");
+            } else if (accounts.size() > 1) {
+                throw new UserErrorException(
+                        "Multiple users found, you need to specify an account (phone number) with -a");
+            }
+
+            return accounts.get(0).getPath();
+        } catch (UnknownMethod e) {
+            // dbus daemon not running in multi-account mode
+            return null;
         }
     }
 

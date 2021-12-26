@@ -104,6 +104,12 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_JP\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_LV\\E"
+    }, 
+    {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MM\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MO\\E"
     }, 
     {
