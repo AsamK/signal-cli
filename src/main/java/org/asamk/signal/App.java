@@ -290,6 +290,7 @@ public class App {
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
         Manager manager;
+        logger.trace("Loading account file for {}", account);
         try {
             manager = Manager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
         } catch (NotRegisteredException e) {
@@ -304,6 +305,7 @@ public class App {
                     + ")", e);
         }
 
+        logger.trace("Checking account state");
         try {
             manager.checkAccountState();
         } catch (IOException e) {

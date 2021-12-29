@@ -122,11 +122,14 @@ public class SignalAccount implements Closeable {
     public static SignalAccount load(
             File dataPath, String account, boolean waitForLock, final TrustNewIdentity trustNewIdentity
     ) throws IOException {
+        logger.trace("Opening account file");
         final var fileName = getFileName(dataPath, account);
         final var pair = openFileChannel(fileName, waitForLock);
         try {
             var signalAccount = new SignalAccount(pair.first(), pair.second());
+            logger.trace("Loading account file");
             signalAccount.load(dataPath, trustNewIdentity);
+            logger.trace("Migrating legacy parts of account file");
             signalAccount.migrateLegacyConfigs();
 
             if (!account.equals(signalAccount.getAccount())) {

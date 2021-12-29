@@ -84,6 +84,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
             final var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity already exists, not updating the trust level
+                logger.trace("Not storing new identity for recipient {}, identity already stored", recipientId);
                 return false;
             }
 
@@ -101,18 +102,23 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         isRetryingDecryption = retryingDecryption;
     }
 
-    public boolean setIdentityTrustLevel(
-            RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel
-    ) {
+    public boolean setIdentityTrustLevel(RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel) {
         synchronized (cachedIdentities) {
             final var identityInfo = loadIdentityLocked(recipientId);
-            if (identityInfo == null
-                    || !identityInfo.getIdentityKey().equals(identityKey)
-                    || identityInfo.getTrustLevel() == trustLevel) {
-                // Identity not found or trust not changed, not updating the trust level
+            if (identityInfo == null) {
+                logger.debug("Not updating trust level for recipient {}, identity not found", recipientId);
+                return false;
+            }
+            if (!identityInfo.getIdentityKey().equals(identityKey)) {
+                logger.debug("Not updating trust level for recipient {}, different identity found", recipientId);
+                return false;
+            }
+            if (identityInfo.getTrustLevel() == trustLevel) {
+                logger.debug("Not updating trust level for recipient {}, trust level already matches", recipientId);
                 return false;
             }
 
+            logger.debug("Updating trust level for recipient {} with trust {}", recipientId, trustLevel);
             final var newIdentityInfo = new IdentityInfo(recipientId,
                     identityKey,
                     trustLevel,
@@ -134,20 +140,24 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
             // TODO implement possibility for different handling of incoming/outgoing trust decisions
             var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo == null) {
-                // Identity not found
+                logger.debug("Initial identity found for {}, saving.", recipientId);
                 saveIdentity(address, identityKey);
-                return trustNewIdentity == TrustNewIdentity.ON_FIRST_USE;
-            }
-
-            if (!identityInfo.getIdentityKey().equals(identityKey)) {
+                identityInfo = loadIdentityLocked(recipientId);
+            } else if (!identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity found, but different
                 if (direction == Direction.SENDING) {
+                    logger.debug("Changed identity found for {}, saving.", recipientId);
                     saveIdentity(address, identityKey);
                     identityInfo = loadIdentityLocked(recipientId);
+                } else {
+                    logger.trace("Trusting identity for {} for {}: {}", recipientId, direction, false);
+                    return false;
                 }
             }
 
-            return identityInfo.isTrusted();
+            final var isTrusted = identityInfo != null && identityInfo.isTrusted();
+            logger.trace("Trusting identity for {} for {}: {}", recipientId, direction, isTrusted);
+            return isTrusted;
         }
     }
 
@@ -239,6 +249,10 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
     }
 
     private void storeIdentityLocked(final RecipientId recipientId, final IdentityInfo identityInfo) {
+        logger.trace("Storing identity info for {}, trust: {}, added: {}",
+                recipientId,
+                identityInfo.getTrustLevel(),
+                identityInfo.getDateAdded());
         cachedIdentities.put(recipientId, identityInfo);
 
         var storage = new IdentityStorage(Base64.getEncoder().encodeToString(identityInfo.getIdentityKey().serialize()),

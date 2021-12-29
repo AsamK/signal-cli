@@ -185,6 +185,11 @@
   "allPublicMethods":true}
 ,
 {
+  "name":"java.lang.Throwable",
+  "queryAllPublicMethods":true,
+  "methods":[{"name":"addSuppressed","parameterTypes":["java.lang.Throwable"] }]}
+,
+{
   "name":"java.lang.reflect.Method",
   "methods":[{"name":"isDefault","parameterTypes":[] }]}
 ,
