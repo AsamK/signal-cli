@@ -31,7 +31,6 @@ import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
-import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -48,6 +47,7 @@ import org.asamk.signal.manager.helper.IncomingMessageHandler;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.helper.PreKeyHelper;
 import org.asamk.signal.manager.helper.ProfileHelper;
+import org.asamk.signal.manager.helper.RecipientHelper;
 import org.asamk.signal.manager.helper.SendHelper;
 import org.asamk.signal.manager.helper.StorageHelper;
 import org.asamk.signal.manager.helper.SyncHelper;
@@ -78,15 +78,11 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
-import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
@@ -97,7 +93,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.SignatureException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,7 +119,6 @@ public class ManagerImpl implements Manager {
 
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
-    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final SignalDependencies dependencies;
 
     private SignalAccount account;
@@ -142,6 +136,7 @@ public class ManagerImpl implements Manager {
     private final IncomingMessageHandler incomingMessageHandler;
     private final PreKeyHelper preKeyHelper;
     private final IdentityHelper identityHelper;
+    private final RecipientHelper recipientHelper;
 
     private final Context context;
     private boolean hasCaughtUpWithOldMessages = false;
@@ -161,7 +156,6 @@ public class ManagerImpl implements Manager {
             String userAgent
     ) {
         this.account = account;
-        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
 
         final var credentialsProvider = new DynamicCredentialsProvider(account.getAci(),
                 account.getAccount(),
@@ -192,32 +186,33 @@ public class ManagerImpl implements Manager {
                 dependencies,
                 account::getProfileKey,
                 this::getRecipientProfile);
+        this.recipientHelper = new RecipientHelper(account, dependencies, serviceEnvironmentConfig);
         this.profileHelper = new ProfileHelper(account,
                 dependencies,
                 avatarStore,
                 unidentifiedAccessHelper::getAccessFor,
-                this::resolveSignalServiceAddress);
+                recipientHelper::resolveSignalServiceAddress);
         final GroupV2Helper groupV2Helper = new GroupV2Helper(profileHelper,
                 account::getSelfRecipientId,
                 dependencies.getGroupsV2Operations(),
                 dependencies.getGroupsV2Api(),
-                this::resolveSignalServiceAddress);
+                recipientHelper::resolveSignalServiceAddress);
         this.sendHelper = new SendHelper(account,
                 dependencies,
                 unidentifiedAccessHelper,
-                this::resolveSignalServiceAddress,
+                recipientHelper::resolveSignalServiceAddress,
                 account.getRecipientStore(),
                 this::handleIdentityFailure,
                 this::getGroupInfo,
                 profileHelper,
-                this::refreshRegisteredUser);
+                recipientHelper::refreshRegisteredUser);
         this.groupHelper = new GroupHelper(account,
                 dependencies,
                 attachmentHelper,
                 sendHelper,
                 groupV2Helper,
                 avatarStore,
-                this::resolveSignalServiceAddress,
+                recipientHelper::resolveSignalServiceAddress,
                 account.getRecipientStore());
         this.storageHelper = new StorageHelper(account, dependencies, groupHelper, profileHelper);
         this.contactHelper = new ContactHelper(account);
@@ -226,7 +221,7 @@ public class ManagerImpl implements Manager {
                 sendHelper,
                 groupHelper,
                 avatarStore,
-                this::resolveSignalServiceAddress);
+                recipientHelper::resolveSignalServiceAddress);
         preKeyHelper = new PreKeyHelper(account, dependencies);
 
         this.context = new Context(account,
@@ -243,7 +238,7 @@ public class ManagerImpl implements Manager {
         this.incomingMessageHandler = new IncomingMessageHandler(account,
                 dependencies,
                 account.getRecipientStore(),
-                this::resolveSignalServiceAddress,
+                recipientHelper::resolveSignalServiceAddress,
                 groupHelper,
                 contactHelper,
                 attachmentHelper,
@@ -252,7 +247,7 @@ public class ManagerImpl implements Manager {
                 jobExecutor);
         this.identityHelper = new IdentityHelper(account,
                 dependencies,
-                this::resolveSignalServiceAddress,
+                recipientHelper::resolveSignalServiceAddress,
                 syncHelper,
                 profileHelper);
     }
@@ -296,7 +291,7 @@ public class ManagerImpl implements Manager {
      */
     @Override
     public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
-        Map<String, String> canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
+        final var canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
                 final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getAccount());
                 if (!canonicalizedNumber.equals(n)) {
@@ -309,10 +304,11 @@ public class ManagerImpl implements Manager {
         }));
 
         // Note "registeredUsers" has no optionals. It only gives us info on users who are registered
-        var registeredUsers = getRegisteredUsers(canonicalizedNumbers.values()
+        final var canonicalizedNumbersSet = canonicalizedNumbers.values()
                 .stream()
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
+        final var registeredUsers = recipientHelper.getRegisteredUsers(canonicalizedNumbersSet);
 
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);
@@ -511,7 +507,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException {
-        return profileHelper.getRecipientProfile(resolveRecipient(recipient));
+        return profileHelper.getRecipientProfile(recipientHelper.resolveRecipient(recipient));
     }
 
     private Profile getRecipientProfile(RecipientId recipientId) {
@@ -561,7 +557,7 @@ public class ManagerImpl implements Manager {
     public SendGroupMessageResults quitGroup(
             GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
-        final var newAdmins = resolveRecipients(groupAdmins);
+        final var newAdmins = recipientHelper.resolveRecipients(groupAdmins);
         return groupHelper.quitGroup(groupId, newAdmins);
     }
 
@@ -574,7 +570,9 @@ public class ManagerImpl implements Manager {
     public Pair<GroupId, SendGroupMessageResults> createGroup(
             String name, Set<RecipientIdentifier.Single> members, File avatarFile
     ) throws IOException, AttachmentInvalidException {
-        return groupHelper.createGroup(name, members == null ? null : resolveRecipients(members), avatarFile);
+        return groupHelper.createGroup(name,
+                members == null ? null : recipientHelper.resolveRecipients(members),
+                avatarFile);
     }
 
     @Override
@@ -584,10 +582,14 @@ public class ManagerImpl implements Manager {
         return groupHelper.updateGroup(groupId,
                 updateGroup.getName(),
                 updateGroup.getDescription(),
-                updateGroup.getMembers() == null ? null : resolveRecipients(updateGroup.getMembers()),
-                updateGroup.getRemoveMembers() == null ? null : resolveRecipients(updateGroup.getRemoveMembers()),
-                updateGroup.getAdmins() == null ? null : resolveRecipients(updateGroup.getAdmins()),
-                updateGroup.getRemoveAdmins() == null ? null : resolveRecipients(updateGroup.getRemoveAdmins()),
+                updateGroup.getMembers() == null ? null : recipientHelper.resolveRecipients(updateGroup.getMembers()),
+                updateGroup.getRemoveMembers() == null
+                        ? null
+                        : recipientHelper.resolveRecipients(updateGroup.getRemoveMembers()),
+                updateGroup.getAdmins() == null ? null : recipientHelper.resolveRecipients(updateGroup.getAdmins()),
+                updateGroup.getRemoveAdmins() == null
+                        ? null
+                        : recipientHelper.resolveRecipients(updateGroup.getRemoveAdmins()),
                 updateGroup.isResetGroupLink(),
                 updateGroup.getGroupLinkState(),
                 updateGroup.getAddMemberPermission(),
@@ -612,7 +614,7 @@ public class ManagerImpl implements Manager {
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single single) {
-                final var recipientId = resolveRecipient(single);
+                final var recipientId = recipientHelper.resolveRecipient(single);
                 final var result = sendHelper.sendMessage(messageBuilder, recipientId);
                 results.put(recipient,
                         List.of(SendMessageResult.from(result,
@@ -645,7 +647,7 @@ public class ManagerImpl implements Manager {
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single) {
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.absent());
-                final var recipientId = resolveRecipient((RecipientIdentifier.Single) recipient);
+                final var recipientId = recipientHelper.resolveRecipient((RecipientIdentifier.Single) recipient);
                 final var result = sendHelper.sendTypingMessage(message, recipientId);
                 results.put(recipient,
                         List.of(SendMessageResult.from(result,
@@ -682,7 +684,7 @@ public class ManagerImpl implements Manager {
                 messageIds,
                 timestamp);
 
-        final var result = sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        final var result = sendHelper.sendReceiptMessage(receiptMessage, recipientHelper.resolveRecipient(sender));
         return new SendMessageResults(timestamp,
                 Map.of(sender,
                         List.of(SendMessageResult.from(result,
@@ -699,7 +701,7 @@ public class ManagerImpl implements Manager {
                 messageIds,
                 timestamp);
 
-        final var result = sendHelper.sendReceiptMessage(receiptMessage, resolveRecipient(sender));
+        final var result = sendHelper.sendReceiptMessage(receiptMessage, recipientHelper.resolveRecipient(sender));
         return new SendMessageResults(timestamp,
                 Map.of(sender,
                         List.of(SendMessageResult.from(result,
@@ -730,7 +732,7 @@ public class ManagerImpl implements Manager {
         if (message.quote().isPresent()) {
             final var quote = message.quote().get();
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
-                    resolveSignalServiceAddress(resolveRecipient(quote.author())),
+                    recipientHelper.resolveSignalServiceAddress(recipientHelper.resolveRecipient(quote.author())),
                     quote.message(),
                     List.of(),
                     resolveMentions(quote.mentions())));
@@ -740,10 +742,9 @@ public class ManagerImpl implements Manager {
     private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws IOException {
         final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
         for (final var m : mentionList) {
-            final var recipientId = resolveRecipient(m.recipient());
-            mentions.add(new SignalServiceDataMessage.Mention(resolveSignalServiceAddress(recipientId).getAci(),
-                    m.start(),
-                    m.length()));
+            final var recipientId = recipientHelper.resolveRecipient(m.recipient());
+            mentions.add(new SignalServiceDataMessage.Mention(recipientHelper.resolveSignalServiceAddress(recipientId)
+                    .getAci(), m.start(), m.length()));
         }
         return mentions;
     }
@@ -765,10 +766,10 @@ public class ManagerImpl implements Manager {
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        var targetAuthorRecipientId = resolveRecipient(targetAuthor);
+        var targetAuthorRecipientId = recipientHelper.resolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
-                resolveSignalServiceAddress(targetAuthorRecipientId),
+                recipientHelper.resolveSignalServiceAddress(targetAuthorRecipientId),
                 targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
         return sendMessage(messageBuilder, recipients);
@@ -785,7 +786,7 @@ public class ManagerImpl implements Manager {
             throw new AssertionError(e);
         } finally {
             for (var recipient : recipients) {
-                final var recipientId = resolveRecipient(recipient);
+                final var recipientId = recipientHelper.resolveRecipient(recipient);
                 account.getSessionStore().deleteAllSessions(recipientId);
             }
         }
@@ -793,12 +794,12 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
-        account.removeRecipient(resolveRecipient(recipient));
+        account.removeRecipient(recipientHelper.resolveRecipient(recipient));
     }
 
     @Override
     public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
-        account.getContactStore().deleteContact(resolveRecipient(recipient));
+        account.getContactStore().deleteContact(recipientHelper.resolveRecipient(recipient));
     }
 
     @Override
@@ -808,7 +809,7 @@ public class ManagerImpl implements Manager {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        contactHelper.setContactName(resolveRecipient(recipient), name);
+        contactHelper.setContactName(recipientHelper.resolveRecipient(recipient), name);
     }
 
     @Override
@@ -818,7 +819,7 @@ public class ManagerImpl implements Manager {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        contactHelper.setContactBlocked(resolveRecipient(recipient), blocked);
+        contactHelper.setContactBlocked(recipientHelper.resolveRecipient(recipient), blocked);
         // TODO cycle our profile key
         syncHelper.sendBlockedList();
     }
@@ -842,7 +843,7 @@ public class ManagerImpl implements Manager {
     public void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer
     ) throws IOException {
-        var recipientId = resolveRecipient(recipient);
+        var recipientId = recipientHelper.resolveRecipient(recipient);
         contactHelper.setExpirationTimer(recipientId, messageExpirationTimer);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         try {
@@ -894,47 +895,6 @@ public class ManagerImpl implements Manager {
         if (account.getStorageKey() != null) {
             storageHelper.readDataFromStorage();
         }
-    }
-
-    private RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
-        final var address = resolveSignalServiceAddress(recipientId);
-        if (!address.getNumber().isPresent()) {
-            return recipientId;
-        }
-        final var number = address.getNumber().get();
-        final var uuid = getRegisteredUser(number);
-        return resolveRecipientTrusted(new SignalServiceAddress(uuid, number));
-    }
-
-    private ACI getRegisteredUser(final String number) throws IOException {
-        final Map<String, ACI> aciMap;
-        try {
-            aciMap = getRegisteredUsers(Set.of(number));
-        } catch (NumberFormatException e) {
-            throw new UnregisteredUserException(number, e);
-        }
-        final var uuid = aciMap.get(number);
-        if (uuid == null) {
-            throw new UnregisteredUserException(number, null);
-        }
-        return uuid;
-    }
-
-    private Map<String, ACI> getRegisteredUsers(final Set<String> numbers) throws IOException {
-        final Map<String, ACI> registeredUsers;
-        try {
-            registeredUsers = dependencies.getAccountManager()
-                    .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
-                            numbers,
-                            serviceEnvironmentConfig.getCdsMrenclave());
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
-            throw new IOException(e);
-        }
-
-        // Store numbers as recipients, so we have the number/uuid association
-        registeredUsers.forEach((number, aci) -> resolveRecipientTrusted(new SignalServiceAddress(aci, number)));
-
-        return registeredUsers;
     }
 
     private void retryFailedReceivedMessages(ReceiveMessageHandler handler) {
@@ -1207,7 +1167,7 @@ public class ManagerImpl implements Manager {
                 if (exception instanceof UntrustedIdentityException) {
                     logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
-                    final var recipientId = resolveRecipient(address);
+                    final var recipientId = account.getRecipientStore().resolveRecipient(address);
                     if (!envelope.hasSourceUuid()) {
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
@@ -1273,7 +1233,7 @@ public class ManagerImpl implements Manager {
     public boolean isContactBlocked(final RecipientIdentifier.Single recipient) {
         final RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return false;
         }
@@ -1298,7 +1258,7 @@ public class ManagerImpl implements Manager {
     public String getContactOrProfileName(RecipientIdentifier.Single recipient) {
         final RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return null;
         }
@@ -1350,7 +1310,7 @@ public class ManagerImpl implements Manager {
     public List<Identity> getIdentities(RecipientIdentifier.Single recipient) {
         IdentityInfo identity;
         try {
-            identity = account.getIdentityKeyStore().getIdentity(resolveRecipient(recipient));
+            identity = account.getIdentityKeyStore().getIdentity(recipientHelper.resolveRecipient(recipient));
         } catch (IOException e) {
             identity = null;
         }
@@ -1367,7 +1327,7 @@ public class ManagerImpl implements Manager {
     public boolean trustIdentityVerified(RecipientIdentifier.Single recipient, byte[] fingerprint) {
         RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return false;
         }
@@ -1388,7 +1348,7 @@ public class ManagerImpl implements Manager {
     public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, String safetyNumber) {
         RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return false;
         }
@@ -1409,7 +1369,7 @@ public class ManagerImpl implements Manager {
     public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber) {
         RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return false;
         }
@@ -1429,7 +1389,7 @@ public class ManagerImpl implements Manager {
     public boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) {
         RecipientId recipientId;
         try {
-            recipientId = resolveRecipient(recipient);
+            recipientId = recipientHelper.resolveRecipient(recipient);
         } catch (IOException e) {
             return false;
         }
@@ -1454,60 +1414,8 @@ public class ManagerImpl implements Manager {
         this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
     }
 
-    private SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
-        final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
-        if (address.uuid().isPresent()) {
-            return address.toSignalServiceAddress();
-        }
-
-        // Address in recipient store doesn't have a uuid, this shouldn't happen
-        // Try to retrieve the uuid from the server
-        final var number = address.number().get();
-        final ACI aci;
-        try {
-            aci = getRegisteredUser(number);
-        } catch (IOException e) {
-            logger.warn("Failed to get uuid for e164 number: {}", number, e);
-            // Return SignalServiceAddress with unknown UUID
-            return address.toSignalServiceAddress();
-        }
-        return resolveSignalServiceAddress(account.getRecipientStore().resolveRecipient(aci));
-    }
-
-    private Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException {
-        final var recipientIds = new HashSet<RecipientId>(recipients.size());
-        for (var number : recipients) {
-            final var recipientId = resolveRecipient(number);
-            recipientIds.add(recipientId);
-        }
-        return recipientIds;
-    }
-
-    private RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException {
-        if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
-            return account.getRecipientStore().resolveRecipient(ACI.from(uuidRecipient.uuid()));
-        } else {
-            final var number = ((RecipientIdentifier.Number) recipient).number();
-            return account.getRecipientStore().resolveRecipient(number, () -> {
-                try {
-                    return getRegisteredUser(number);
-                } catch (IOException e) {
-                    return null;
-                }
-            });
-        }
-    }
-
-    private RecipientId resolveRecipient(RecipientAddress address) {
-        return account.getRecipientStore().resolveRecipient(address);
-    }
-
     private RecipientId resolveRecipient(SignalServiceAddress address) {
         return account.getRecipientStore().resolveRecipient(address);
-    }
-
-    private RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
-        return account.getRecipientStore().resolveRecipientTrusted(address);
     }
 
     @Override
