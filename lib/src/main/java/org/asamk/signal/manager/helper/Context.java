@@ -29,6 +29,7 @@ public class Context {
     private PinHelper pinHelper;
     private PreKeyHelper preKeyHelper;
     private ProfileHelper profileHelper;
+    private ReceiveHelper receiveHelper;
     private RecipientHelper recipientHelper;
     private SendHelper sendHelper;
     private StorageHelper storageHelper;
@@ -109,6 +110,10 @@ public class Context {
 
     public ProfileHelper getProfileHelper() {
         return getOrCreate(() -> profileHelper, () -> profileHelper = new ProfileHelper(this));
+    }
+
+    public ReceiveHelper getReceiveHelper() {
+        return getOrCreate(() -> receiveHelper, () -> receiveHelper = new ReceiveHelper(this));
     }
 
     public RecipientHelper getRecipientHelper() {
