@@ -114,7 +114,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
                 return false;
             }
             if (identityInfo.getTrustLevel() == trustLevel) {
-                logger.debug("Not updating trust level for recipient {}, trust level already matches", recipientId);
+                logger.trace("Not updating trust level for recipient {}, trust level already matches", recipientId);
                 return false;
             }
 

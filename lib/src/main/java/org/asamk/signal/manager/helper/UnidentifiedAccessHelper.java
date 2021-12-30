@@ -44,16 +44,68 @@ public class UnidentifiedAccessHelper {
         this.profileProvider = profileProvider;
     }
 
+    public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
+        return recipients.stream().map(this::getAccessFor).toList();
+    }
+
+    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
+        return getAccessFor(recipient, false);
+    }
+
+    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipientId, boolean noRefresh) {
+        var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipientId, noRefresh);
+        if (recipientUnidentifiedAccessKey == null) {
+            logger.trace("Unidentified access not available for {}", recipientId);
+            return Optional.absent();
+        }
+
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(noRefresh);
+        if (selfUnidentifiedAccessKey == null) {
+            logger.trace("Unidentified access not available for self");
+            return Optional.absent();
+        }
+
+        var senderCertificate = getSenderCertificateFor(recipientId);
+        if (senderCertificate == null) {
+            logger.trace("Unidentified access not available due to missing sender certificate");
+            return Optional.absent();
+        }
+
+        try {
+            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
+                    senderCertificate), new UnidentifiedAccess(selfUnidentifiedAccessKey, senderCertificate)));
+        } catch (InvalidCertificateException e) {
+            return Optional.absent();
+        }
+    }
+
+    public Optional<UnidentifiedAccessPair> getAccessForSync() {
+        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(false);
+        var selfUnidentifiedAccessCertificate = getSenderCertificate();
+
+        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
+            return Optional.absent();
+        }
+
+        try {
+            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(selfUnidentifiedAccessKey,
+                    selfUnidentifiedAccessCertificate),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
+        } catch (InvalidCertificateException e) {
+            return Optional.absent();
+        }
+    }
+
     private byte[] getSenderCertificateFor(final RecipientId recipientId) {
         final var sharingMode = account.getConfigurationStore().getPhoneNumberSharingMode();
         if (sharingMode == PhoneNumberSharingMode.EVERYBODY || (
                 sharingMode == PhoneNumberSharingMode.CONTACTS
                         && account.getContactStore().getContact(recipientId) != null
         )) {
-            logger.debug("Using normal sender certificate for message to {}", recipientId);
+            logger.trace("Using normal sender certificate for message to {}", recipientId);
             return getSenderCertificate();
         } else {
-            logger.debug("Using phone number privacy sender certificate for message to {}", recipientId);
+            logger.trace("Using phone number privacy sender certificate for message to {}", recipientId);
             return getSenderCertificateForPhoneNumberPrivacy();
         }
     }
@@ -127,52 +179,6 @@ public class UnidentifiedAccessHelper {
                 return createUnrestrictedUnidentifiedAccess();
             default:
                 return null;
-        }
-    }
-
-    public Optional<UnidentifiedAccessPair> getAccessForSync() {
-        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(false);
-        var selfUnidentifiedAccessCertificate = getSenderCertificate();
-
-        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
-            return Optional.absent();
-        }
-
-        try {
-            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(selfUnidentifiedAccessKey,
-                    selfUnidentifiedAccessCertificate),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
-        } catch (InvalidCertificateException e) {
-            return Optional.absent();
-        }
-    }
-
-    public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
-        return recipients.stream().map(this::getAccessFor).toList();
-    }
-
-    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
-        return getAccessFor(recipient, false);
-    }
-
-    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient, boolean noRefresh) {
-        var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipient, noRefresh);
-        if (recipientUnidentifiedAccessKey == null) {
-            return Optional.absent();
-        }
-
-        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(noRefresh);
-        var selfUnidentifiedAccessCertificate = getSenderCertificateFor(recipient);
-        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
-            return Optional.absent();
-        }
-
-        try {
-            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
-                    selfUnidentifiedAccessCertificate),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
-        } catch (InvalidCertificateException e) {
-            return Optional.absent();
         }
     }
 
