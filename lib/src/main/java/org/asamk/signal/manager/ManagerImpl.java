@@ -30,6 +30,7 @@ import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
@@ -76,7 +77,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
@@ -506,7 +506,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException {
+    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
         return profileHelper.getRecipientProfile(recipientHelper.resolveRecipient(recipient));
     }
 
@@ -556,7 +556,7 @@ public class ManagerImpl implements Manager {
     @Override
     public SendGroupMessageResults quitGroup(
             GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
-    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
+    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException, UnregisteredRecipientException {
         final var newAdmins = recipientHelper.resolveRecipients(groupAdmins);
         return groupHelper.quitGroup(groupId, newAdmins);
     }
@@ -569,7 +569,7 @@ public class ManagerImpl implements Manager {
     @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
             String name, Set<RecipientIdentifier.Single> members, File avatarFile
-    ) throws IOException, AttachmentInvalidException {
+    ) throws IOException, AttachmentInvalidException, UnregisteredRecipientException {
         return groupHelper.createGroup(name,
                 members == null ? null : recipientHelper.resolveRecipients(members),
                 avatarFile);
@@ -578,7 +578,7 @@ public class ManagerImpl implements Manager {
     @Override
     public SendGroupMessageResults updateGroup(
             final GroupId groupId, final UpdateGroup updateGroup
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         return groupHelper.updateGroup(groupId,
                 updateGroup.getName(),
                 updateGroup.getDescription(),
@@ -614,12 +614,17 @@ public class ManagerImpl implements Manager {
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single single) {
-                final var recipientId = recipientHelper.resolveRecipient(single);
-                final var result = sendHelper.sendMessage(messageBuilder, recipientId);
-                results.put(recipient,
-                        List.of(SendMessageResult.from(result,
-                                account.getRecipientStore(),
-                                account.getRecipientStore()::resolveRecipientAddress)));
+                try {
+                    final var recipientId = recipientHelper.resolveRecipient(single);
+                    final var result = sendHelper.sendMessage(messageBuilder, recipientId);
+                    results.put(recipient,
+                            List.of(SendMessageResult.from(result,
+                                    account.getRecipientStore(),
+                                    account.getRecipientStore()::resolveRecipientAddress)));
+                } catch (UnregisteredRecipientException e) {
+                    results.put(recipient,
+                            List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
+                }
             } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
                 final var result = sendHelper.sendSelfMessage(messageBuilder);
                 results.put(recipient,
@@ -645,14 +650,19 @@ public class ManagerImpl implements Manager {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         final var timestamp = System.currentTimeMillis();
         for (var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single) {
+            if (recipient instanceof RecipientIdentifier.Single single) {
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.absent());
-                final var recipientId = recipientHelper.resolveRecipient((RecipientIdentifier.Single) recipient);
-                final var result = sendHelper.sendTypingMessage(message, recipientId);
-                results.put(recipient,
-                        List.of(SendMessageResult.from(result,
-                                account.getRecipientStore(),
-                                account.getRecipientStore()::resolveRecipientAddress)));
+                try {
+                    final var recipientId = recipientHelper.resolveRecipient(single);
+                    final var result = sendHelper.sendTypingMessage(message, recipientId);
+                    results.put(recipient,
+                            List.of(SendMessageResult.from(result,
+                                    account.getRecipientStore(),
+                                    account.getRecipientStore()::resolveRecipientAddress)));
+                } catch (UnregisteredRecipientException e) {
+                    results.put(recipient,
+                            List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
+                }
             } else if (recipient instanceof RecipientIdentifier.Group) {
                 final var groupId = ((RecipientIdentifier.Group) recipient).groupId();
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.of(groupId.serialize()));
@@ -684,12 +694,7 @@ public class ManagerImpl implements Manager {
                 messageIds,
                 timestamp);
 
-        final var result = sendHelper.sendReceiptMessage(receiptMessage, recipientHelper.resolveRecipient(sender));
-        return new SendMessageResults(timestamp,
-                Map.of(sender,
-                        List.of(SendMessageResult.from(result,
-                                account.getRecipientStore(),
-                                account.getRecipientStore()::resolveRecipientAddress))));
+        return sendReceiptMessage(sender, timestamp, receiptMessage);
     }
 
     @Override
@@ -701,18 +706,31 @@ public class ManagerImpl implements Manager {
                 messageIds,
                 timestamp);
 
-        final var result = sendHelper.sendReceiptMessage(receiptMessage, recipientHelper.resolveRecipient(sender));
-        return new SendMessageResults(timestamp,
-                Map.of(sender,
-                        List.of(SendMessageResult.from(result,
-                                account.getRecipientStore(),
-                                account.getRecipientStore()::resolveRecipientAddress))));
+        return sendReceiptMessage(sender, timestamp, receiptMessage);
+    }
+
+    private SendMessageResults sendReceiptMessage(
+            final RecipientIdentifier.Single sender,
+            final long timestamp,
+            final SignalServiceReceiptMessage receiptMessage
+    ) throws IOException {
+        try {
+            final var result = sendHelper.sendReceiptMessage(receiptMessage, recipientHelper.resolveRecipient(sender));
+            return new SendMessageResults(timestamp,
+                    Map.of(sender,
+                            List.of(SendMessageResult.from(result,
+                                    account.getRecipientStore(),
+                                    account.getRecipientStore()::resolveRecipientAddress))));
+        } catch (UnregisteredRecipientException e) {
+            return new SendMessageResults(timestamp,
+                    Map.of(sender, List.of(SendMessageResult.unregisteredFailure(sender.toPartialRecipientAddress()))));
+        }
     }
 
     @Override
     public SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients);
@@ -720,7 +738,7 @@ public class ManagerImpl implements Manager {
 
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
-    ) throws AttachmentInvalidException, IOException {
+    ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException {
         messageBuilder.withBody(message.messageText());
         final var attachments = message.attachments();
         if (attachments != null) {
@@ -739,7 +757,7 @@ public class ManagerImpl implements Manager {
         }
     }
 
-    private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws IOException {
+    private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws IOException, UnregisteredRecipientException {
         final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
         for (final var m : mentionList) {
             final var recipientId = recipientHelper.resolveRecipient(m.recipient());
@@ -765,7 +783,7 @@ public class ManagerImpl implements Manager {
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         var targetAuthorRecipientId = recipientHelper.resolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
@@ -786,26 +804,32 @@ public class ManagerImpl implements Manager {
             throw new AssertionError(e);
         } finally {
             for (var recipient : recipients) {
-                final var recipientId = recipientHelper.resolveRecipient(recipient);
+                final RecipientId recipientId;
+                try {
+                    recipientId = recipientHelper.resolveRecipient(recipient);
+                } catch (UnregisteredRecipientException e) {
+                    continue;
+                }
                 account.getSessionStore().deleteAllSessions(recipientId);
             }
         }
     }
 
     @Override
-    public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
-        account.removeRecipient(recipientHelper.resolveRecipient(recipient));
+    public void deleteRecipient(final RecipientIdentifier.Single recipient) {
+        account.removeRecipient(account.getRecipientStore().resolveRecipient(recipient.toPartialRecipientAddress()));
     }
 
     @Override
-    public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
-        account.getContactStore().deleteContact(recipientHelper.resolveRecipient(recipient));
+    public void deleteContact(final RecipientIdentifier.Single recipient) {
+        account.getContactStore()
+                .deleteContact(account.getRecipientStore().resolveRecipient(recipient.toPartialRecipientAddress()));
     }
 
     @Override
     public void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, IOException {
+    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
@@ -815,12 +839,12 @@ public class ManagerImpl implements Manager {
     @Override
     public void setContactBlocked(
             RecipientIdentifier.Single recipient, boolean blocked
-    ) throws NotMasterDeviceException, IOException {
+    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
         contactHelper.setContactBlocked(recipientHelper.resolveRecipient(recipient), blocked);
-        // TODO cycle our profile key
+        // TODO cycle our profile key, if we're not together in a group with recipient
         syncHelper.sendBlockedList();
     }
 
@@ -842,7 +866,7 @@ public class ManagerImpl implements Manager {
     @Override
     public void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer
-    ) throws IOException {
+    ) throws IOException, UnregisteredRecipientException {
         var recipientId = recipientHelper.resolveRecipient(recipient);
         contactHelper.setExpirationTimer(recipientId, messageExpirationTimer);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
@@ -1095,9 +1119,8 @@ public class ManagerImpl implements Manager {
             logger.debug("Checking for new message from server");
             try {
                 var result = signalWebSocket.readOrEmpty(timeout.toMillis(), envelope1 -> {
-                    final var recipientId = envelope1.hasSourceUuid()
-                            ? resolveRecipient(envelope1.getSourceAddress())
-                            : null;
+                    final var recipientId = envelope1.hasSourceUuid() ? account.getRecipientStore()
+                            .resolveRecipient(envelope1.getSourceAddress()) : null;
                     // store message on disk, before acknowledging receipt to the server
                     cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
                 });
@@ -1234,7 +1257,7 @@ public class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
-        } catch (IOException e) {
+        } catch (IOException | UnregisteredRecipientException e) {
             return false;
         }
         return contactHelper.isContactBlocked(recipientId);
@@ -1259,7 +1282,7 @@ public class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
-        } catch (IOException e) {
+        } catch (IOException | UnregisteredRecipientException e) {
             return null;
         }
 
@@ -1268,7 +1291,7 @@ public class ManagerImpl implements Manager {
             return contact.getName();
         }
 
-        final var profile = getRecipientProfile(recipientId);
+        final var profile = profileHelper.getRecipientProfile(recipientId);
         if (profile != null) {
             return profile.getDisplayName();
         }
@@ -1311,7 +1334,7 @@ public class ManagerImpl implements Manager {
         IdentityInfo identity;
         try {
             identity = account.getIdentityKeyStore().getIdentity(recipientHelper.resolveRecipient(recipient));
-        } catch (IOException e) {
+        } catch (IOException | UnregisteredRecipientException e) {
             identity = null;
         }
         return identity == null ? List.of() : List.of(toIdentity(identity));
@@ -1324,7 +1347,9 @@ public class ManagerImpl implements Manager {
      * @param fingerprint Fingerprint
      */
     @Override
-    public boolean trustIdentityVerified(RecipientIdentifier.Single recipient, byte[] fingerprint) {
+    public boolean trustIdentityVerified(
+            RecipientIdentifier.Single recipient, byte[] fingerprint
+    ) throws UnregisteredRecipientException {
         RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
@@ -1345,7 +1370,9 @@ public class ManagerImpl implements Manager {
      * @param safetyNumber Safety number
      */
     @Override
-    public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, String safetyNumber) {
+    public boolean trustIdentityVerifiedSafetyNumber(
+            RecipientIdentifier.Single recipient, String safetyNumber
+    ) throws UnregisteredRecipientException {
         RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
@@ -1366,7 +1393,9 @@ public class ManagerImpl implements Manager {
      * @param safetyNumber Scannable safety number
      */
     @Override
-    public boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber) {
+    public boolean trustIdentityVerifiedSafetyNumber(
+            RecipientIdentifier.Single recipient, byte[] safetyNumber
+    ) throws UnregisteredRecipientException {
         RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
@@ -1386,7 +1415,7 @@ public class ManagerImpl implements Manager {
      * @param recipient account of the identity
      */
     @Override
-    public boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) {
+    public boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         RecipientId recipientId;
         try {
             recipientId = recipientHelper.resolveRecipient(recipient);
@@ -1412,10 +1441,6 @@ public class ManagerImpl implements Manager {
             final org.whispersystems.signalservice.api.messages.SendMessageResult.IdentityFailure identityFailure
     ) {
         this.identityHelper.handleIdentityFailure(recipientId, identityFailure);
-    }
-
-    private RecipientId resolveRecipient(SignalServiceAddress address) {
-        return account.getRecipientStore().resolveRecipient(address);
     }
 
     @Override

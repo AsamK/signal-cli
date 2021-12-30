@@ -8,6 +8,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.NotMasterDeviceException;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
@@ -44,6 +45,8 @@ public class UnblockCommand implements JsonRpcLocalCommand {
                 throw new UserErrorException("This command doesn't work on linked devices.");
             } catch (IOException e) {
                 throw new UnexpectedErrorException("Failed to sync unblock to linked devices: " + e.getMessage(), e);
+            } catch (UnregisteredRecipientException e) {
+                throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
             }
         }
 

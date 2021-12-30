@@ -392,12 +392,12 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void deleteRecipient(final RecipientIdentifier.Single recipient) throws IOException {
+    public void deleteRecipient(final RecipientIdentifier.Single recipient) {
         signal.deleteRecipient(recipient.getIdentifier());
     }
 
     @Override
-    public void deleteContact(final RecipientIdentifier.Single recipient) throws IOException {
+    public void deleteContact(final RecipientIdentifier.Single recipient) {
         signal.deleteContact(recipient.getIdentifier());
     }
 

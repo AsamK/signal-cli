@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
@@ -494,7 +495,12 @@ public class SendHelper {
             try {
                 return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(recipientId));
             } catch (UnregisteredUserException e) {
-                final var newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
+                final RecipientId newRecipientId;
+                try {
+                    newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
+                } catch (UnregisteredRecipientException ex) {
+                    return SendMessageResult.unregisteredFailure(address);
+                }
                 address = addressResolver.resolveSignalServiceAddress(newRecipientId);
                 return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(newRecipientId));
             }

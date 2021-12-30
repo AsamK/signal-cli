@@ -8,6 +8,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -76,6 +77,8 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         } catch (IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
+        } catch (UnregisteredRecipientException e) {
+            throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
         }
     }
 }

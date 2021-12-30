@@ -8,6 +8,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -70,6 +71,8 @@ public class QuitGroupCommand implements JsonRpcLocalCommand {
             throw new UserErrorException("Failed to send to group: " + e.getMessage());
         } catch (LastGroupAdminException e) {
             throw new UserErrorException("You need to specify a new admin with --admin: " + e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
         }
     }
 }

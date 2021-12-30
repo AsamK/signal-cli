@@ -50,6 +50,8 @@ public sealed interface RecipientIdentifier {
             }
             throw new AssertionError("RecipientAddress without identifier");
         }
+
+        RecipientAddress toPartialRecipientAddress();
     }
 
     record Uuid(UUID uuid) implements Single {
@@ -58,6 +60,11 @@ public sealed interface RecipientIdentifier {
         public String getIdentifier() {
             return uuid.toString();
         }
+
+        @Override
+        public RecipientAddress toPartialRecipientAddress() {
+            return new RecipientAddress(uuid);
+        }
     }
 
     record Number(String number) implements Single {
@@ -65,6 +72,11 @@ public sealed interface RecipientIdentifier {
         @Override
         public String getIdentifier() {
             return number;
+        }
+
+        @Override
+        public RecipientAddress toPartialRecipientAddress() {
+            return new RecipientAddress(null, number);
         }
     }
 

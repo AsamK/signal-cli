@@ -5,12 +5,9 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.commands.exceptions.CommandException;
-import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
-
-import java.io.IOException;
 
 public class RemoveContactCommand implements JsonRpcLocalCommand {
 
@@ -36,14 +33,10 @@ public class RemoveContactCommand implements JsonRpcLocalCommand {
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
 
         var forget = Boolean.TRUE == ns.getBoolean("forget");
-        try {
-            if (forget) {
-                m.deleteRecipient(recipient);
-            } else {
-                m.deleteContact(recipient);
-            }
-        } catch (IOException e) {
-            throw new IOErrorException("Remove contact error: " + e.getMessage(), e);
+        if (forget) {
+            m.deleteRecipient(recipient);
+        } else {
+            m.deleteContact(recipient);
         }
     }
 }

@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.recipients;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
@@ -13,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.ByteArrayInputStream;
@@ -144,7 +144,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     @Override
     public RecipientId resolveRecipient(ACI aci) {
-        return resolveRecipient(new RecipientAddress(aci == null ? null : aci.uuid()), false);
+        return resolveRecipient(new RecipientAddress(aci.uuid()), false);
     }
 
     @Override
@@ -160,7 +160,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     public RecipientId resolveRecipient(
             final String number, Supplier<ACI> aciSupplier
-    ) throws UnregisteredUserException {
+    ) throws UnregisteredRecipientException {
         final Optional<Recipient> byNumber;
         synchronized (recipients) {
             byNumber = findByNumberLocked(number);
@@ -168,7 +168,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         if (byNumber.isEmpty() || byNumber.get().getAddress().uuid().isEmpty()) {
             final var aci = aciSupplier.get();
             if (aci == null) {
-                throw new UnregisteredUserException(number, null);
+                throw new UnregisteredRecipientException(new RecipientAddress(null, number));
             }
 
             return resolveRecipient(new RecipientAddress(aci.uuid(), number), false);

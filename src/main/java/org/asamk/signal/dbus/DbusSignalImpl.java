@@ -16,6 +16,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -211,6 +212,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -272,6 +275,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -351,6 +356,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -366,20 +373,12 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public void deleteRecipient(final String recipient) throws Error.Failure {
-        try {
-            m.deleteRecipient(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
-        } catch (IOException e) {
-            throw new Error.Failure("Recipient not found");
-        }
+        m.deleteRecipient(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
     }
 
     @Override
     public void deleteContact(final String recipient) throws Error.Failure {
-        try {
-            m.deleteContact(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
-        } catch (IOException e) {
-            throw new Error.Failure("Contact not found");
-        }
+        m.deleteContact(getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
     }
 
     @Override
@@ -395,6 +394,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -449,6 +450,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -468,6 +471,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {
             throw new Error.Failure("Contact is not registered.");
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -477,6 +482,8 @@ public class DbusSignalImpl implements Signal {
             m.setExpirationTimer(getSingleRecipientIdentifier(number, m.getSelfNumber()), expiration);
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -488,6 +495,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -584,6 +593,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -707,7 +718,7 @@ public class DbusSignalImpl implements Signal {
                 Profile profile = null;
                 try {
                     profile = m.getRecipientProfile(RecipientIdentifier.Single.fromAddress(address));
-                } catch (IOException ignored) {
+                } catch (IOException | UnregisteredRecipientException ignored) {
                 }
                 if (profile != null && profile.getDisplayName().equals(name)) {
                     numbers.add(number);
@@ -726,6 +737,8 @@ public class DbusSignalImpl implements Signal {
             throw new Error.GroupNotFound(e.getMessage());
         } catch (IOException | LastGroupAdminException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
     }
 
@@ -1149,6 +1162,8 @@ public class DbusSignalImpl implements Signal {
                 throw new Error.Failure(e.getMessage());
             } catch (LastGroupAdminException e) {
                 throw new Error.LastGroupAdmin(e.getMessage());
+            } catch (UnregisteredRecipientException e) {
+                throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
             }
         }
 
@@ -1262,6 +1277,8 @@ public class DbusSignalImpl implements Signal {
                 throw new Error.GroupNotFound(e.getMessage());
             } catch (AttachmentInvalidException e) {
                 throw new Error.AttachmentInvalid(e.getMessage());
+            } catch (UnregisteredRecipientException e) {
+                throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
             }
         }
     }

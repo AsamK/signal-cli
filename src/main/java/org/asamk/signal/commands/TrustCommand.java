@@ -7,6 +7,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
 import org.asamk.signal.util.Hex;
@@ -40,7 +41,12 @@ public class TrustCommand implements JsonRpcLocalCommand {
         var recipentString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getSelfNumber());
         if (Boolean.TRUE.equals(ns.getBoolean("trust-all-known-keys"))) {
-            boolean res = m.trustIdentityAllKeys(recipient);
+            boolean res;
+            try {
+                res = m.trustIdentityAllKeys(recipient);
+            } catch (UnregisteredRecipientException e) {
+                throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
+            }
             if (!res) {
                 throw new UserErrorException("Failed to set the trust for this number, make sure the number is correct.");
             }
@@ -60,13 +66,23 @@ public class TrustCommand implements JsonRpcLocalCommand {
                     throw new UserErrorException(
                             "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
                 }
-                boolean res = m.trustIdentityVerified(recipient, fingerprintBytes);
+                boolean res;
+                try {
+                    res = m.trustIdentityVerified(recipient, fingerprintBytes);
+                } catch (UnregisteredRecipientException e) {
+                    throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
+                }
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
                 }
             } else if (safetyNumber.length() == 60) {
-                boolean res = m.trustIdentityVerifiedSafetyNumber(recipient, safetyNumber);
+                boolean res;
+                try {
+                    res = m.trustIdentityVerifiedSafetyNumber(recipient, safetyNumber);
+                } catch (UnregisteredRecipientException e) {
+                    throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
+                }
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
@@ -79,7 +95,12 @@ public class TrustCommand implements JsonRpcLocalCommand {
                     throw new UserErrorException(
                             "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
                 }
-                boolean res = m.trustIdentityVerifiedSafetyNumber(recipient, scannableSafetyNumber);
+                boolean res;
+                try {
+                    res = m.trustIdentityVerifiedSafetyNumber(recipient, scannableSafetyNumber);
+                } catch (UnregisteredRecipientException e) {
+                    throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
+                }
                 if (!res) {
                     throw new UserErrorException(
                             "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");

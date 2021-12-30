@@ -11,6 +11,7 @@ import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
@@ -143,6 +144,8 @@ public class SendCommand implements JsonRpcLocalCommand {
                     .getSimpleName() + ")", e);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
         }
     }
 

@@ -13,6 +13,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
@@ -40,7 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 public interface Manager extends Closeable {
 
@@ -123,23 +123,23 @@ public interface Manager extends Closeable {
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException;
 
-    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException;
+    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
 
     List<Group> getGroups();
 
     SendGroupMessageResults quitGroup(
             GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
-    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException;
+    ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException, UnregisteredRecipientException;
 
     void deleteGroup(GroupId groupId) throws IOException;
 
     Pair<GroupId, SendGroupMessageResults> createGroup(
             String name, Set<RecipientIdentifier.Single> members, File avatarFile
-    ) throws IOException, AttachmentInvalidException;
+    ) throws IOException, AttachmentInvalidException, UnregisteredRecipientException;
 
     SendGroupMessageResults updateGroup(
             final GroupId groupId, final UpdateGroup updateGroup
-    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException;
+    ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
@@ -159,7 +159,7 @@ public interface Manager extends Closeable {
 
     SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     SendMessageResults sendRemoteDeleteMessage(
             long targetSentTimestamp, Set<RecipientIdentifier> recipients
@@ -171,21 +171,21 @@ public interface Manager extends Closeable {
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException;
 
-    void deleteRecipient(RecipientIdentifier.Single recipient) throws IOException;
+    void deleteRecipient(RecipientIdentifier.Single recipient);
 
-    void deleteContact(RecipientIdentifier.Single recipient) throws IOException;
+    void deleteContact(RecipientIdentifier.Single recipient);
 
     void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, IOException;
+    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
 
     void setContactBlocked(
             RecipientIdentifier.Single recipient, boolean blocked
-    ) throws NotMasterDeviceException, IOException;
+    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
 
     void setGroupBlocked(
             GroupId groupId, boolean blocked
@@ -193,7 +193,7 @@ public interface Manager extends Closeable {
 
     void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer
-    ) throws IOException;
+    ) throws IOException, UnregisteredRecipientException;
 
     URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
 
@@ -245,13 +245,19 @@ public interface Manager extends Closeable {
 
     List<Identity> getIdentities(RecipientIdentifier.Single recipient);
 
-    boolean trustIdentityVerified(RecipientIdentifier.Single recipient, byte[] fingerprint);
+    boolean trustIdentityVerified(
+            RecipientIdentifier.Single recipient, byte[] fingerprint
+    ) throws UnregisteredRecipientException;
 
-    boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, String safetyNumber);
+    boolean trustIdentityVerifiedSafetyNumber(
+            RecipientIdentifier.Single recipient, String safetyNumber
+    ) throws UnregisteredRecipientException;
 
-    boolean trustIdentityVerifiedSafetyNumber(RecipientIdentifier.Single recipient, byte[] safetyNumber);
+    boolean trustIdentityVerifiedSafetyNumber(
+            RecipientIdentifier.Single recipient, byte[] safetyNumber
+    ) throws UnregisteredRecipientException;
 
-    boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient);
+    boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException;
 
     void addClosedListener(Runnable listener);
 

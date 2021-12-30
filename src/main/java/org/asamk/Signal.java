@@ -615,5 +615,12 @@ public interface Signal extends DBusInterface {
                 super("Untrusted identity: " + message);
             }
         }
+
+        class UnregisteredRecipient extends DBusExecutionException {
+
+            public UnregisteredRecipient(final String message) {
+                super("Unregistered recipient: " + message);
+            }
+        }
     }
 }

@@ -2,16 +2,17 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -53,7 +54,7 @@ public class RecipientHelper {
         final ACI aci;
         try {
             aci = getRegisteredUser(number);
-        } catch (IOException e) {
+        } catch (UnregisteredRecipientException | IOException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number, e);
             // Return SignalServiceAddress with unknown UUID
             return address.toSignalServiceAddress();
@@ -63,7 +64,7 @@ public class RecipientHelper {
                 .toSignalServiceAddress();
     }
 
-    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException {
+    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException, UnregisteredRecipientException {
         final var recipientIds = new HashSet<RecipientId>(recipients.size());
         for (var number : recipients) {
             final var recipientId = resolveRecipient(number);
@@ -72,7 +73,7 @@ public class RecipientHelper {
         return recipientIds;
     }
 
-    public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException {
+    public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
             return account.getRecipientStore().resolveRecipient(ACI.from(uuidRecipient.uuid()));
         } else {
@@ -80,14 +81,14 @@ public class RecipientHelper {
             return account.getRecipientStore().resolveRecipient(number, () -> {
                 try {
                     return getRegisteredUser(number);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     return null;
                 }
             });
         }
     }
 
-    public RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException {
+    public RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException, UnregisteredRecipientException {
         final var address = resolveSignalServiceAddress(recipientId);
         if (!address.getNumber().isPresent()) {
             return recipientId;
@@ -115,16 +116,16 @@ public class RecipientHelper {
         return registeredUsers;
     }
 
-    private ACI getRegisteredUser(final String number) throws IOException {
+    private ACI getRegisteredUser(final String number) throws IOException, UnregisteredRecipientException {
         final Map<String, ACI> aciMap;
         try {
             aciMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
-            throw new UnregisteredUserException(number, e);
+            throw new UnregisteredRecipientException(new RecipientAddress(null, number));
         }
         final var uuid = aciMap.get(number);
         if (uuid == null) {
-            throw new UnregisteredUserException(number, null);
+            throw new UnregisteredRecipientException(new RecipientAddress(null, number));
         }
         return uuid;
     }
