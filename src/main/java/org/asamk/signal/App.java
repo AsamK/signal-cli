@@ -64,8 +64,8 @@ public class App {
 
         parser.addArgument("-v", "--version").help("Show package version.").action(Arguments.version());
         parser.addArgument("--verbose")
-                .help("Raise log level and include lib signal logs.")
-                .action(Arguments.storeTrue());
+                .help("Raise log level and include lib signal logs. Specify multiple times for even more logs.")
+                .action(Arguments.count());
         parser.addArgument("-c", "--config")
                 .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
 

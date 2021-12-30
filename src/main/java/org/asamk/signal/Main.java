@@ -41,8 +41,8 @@ public class Main {
         installSecurityProviderWorkaround();
 
         // Configuring the logger needs to happen before any logger is initialized
-        final var isVerbose = isVerbose(args);
-        configureLogging(isVerbose);
+        final var verboseLevel = getVerboseLevel(args);
+        configureLogging(verboseLevel);
 
         var parser = App.buildArgumentParser();
 
@@ -53,7 +53,7 @@ public class Main {
             new App(ns).init();
         } catch (CommandException e) {
             System.err.println(e.getMessage());
-            if (isVerbose && e.getCause() != null) {
+            if (verboseLevel > 0 && e.getCause() != null) {
                 e.getCause().printStackTrace();
             }
             status = getStatusForError(e);
@@ -70,37 +70,38 @@ public class Main {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static boolean isVerbose(String[] args) {
+    private static int getVerboseLevel(String[] args) {
         var parser = ArgumentParsers.newFor("signal-cli").build().defaultHelp(false);
-        parser.addArgument("--verbose").action(Arguments.storeTrue());
+        parser.addArgument("--verbose").action(Arguments.count());
 
         Namespace ns;
         try {
             ns = parser.parseKnownArgs(args, null);
         } catch (ArgumentParserException e) {
-            return false;
+            return 0;
         }
 
-        return Boolean.TRUE.equals(ns.getBoolean("verbose"));
+        return ns.getInt("verbose");
     }
 
-    private static void configureLogging(final boolean verbose) {
-        if (verbose) {
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+    private static void configureLogging(final int verboseLevel) {
+        final var defaultLogLevel = verboseLevel > 1 ? "trace" : verboseLevel > 0 ? "debug" : "info";
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", defaultLogLevel);
+        if (verboseLevel > 0) {
             System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "false");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
             System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd'T'HH:mm:ss.SSSXX");
+            java.util.logging.Logger.getLogger("")
+                    .setLevel(verboseLevel > 2 ? java.util.logging.Level.FINEST : java.util.logging.Level.INFO);
             Manager.initLogger();
         } else {
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
             System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
             System.setProperty("org.slf4j.simpleLogger.showDateTime", "false");
         }
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
-        // java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.FINEST);
     }
 
     private static int getStatusForError(final CommandException e) {
