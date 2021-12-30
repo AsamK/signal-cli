@@ -1,6 +1,18 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Send group messages with sender keys (more efficient for larger groups)
+
+### Changed
+- Improve exit code for message sending.
+  Exit with 0 status code if the message was sent successfully to at least
+  one recipient, otherwise exit with status code 2 or 4 (for untrusted).
+- Download profiles in parallel for improved perfomance
+- `--verbose` flag can be specified multiple times for additional log output
+
+### Fixed
+- The first incoming message after registration can now always be decrypted successfully
 
 ## [0.10.0] - 2021-12-11
 **Attention**: Now requires Java 17 and libsignal-client version 0.11
