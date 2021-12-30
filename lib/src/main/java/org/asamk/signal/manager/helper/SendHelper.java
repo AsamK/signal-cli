@@ -11,7 +11,6 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -53,34 +52,12 @@ public class SendHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final UnidentifiedAccessHelper unidentifiedAccessHelper;
-    private final SignalServiceAddressResolver addressResolver;
-    private final RecipientResolver recipientResolver;
-    private final IdentityFailureHandler identityFailureHandler;
-    private final GroupProvider groupProvider;
-    private final ProfileHelper profileHelper;
-    private final RecipientRegistrationRefresher recipientRegistrationRefresher;
+    private final Context context;
 
-    public SendHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final UnidentifiedAccessHelper unidentifiedAccessHelper,
-            final SignalServiceAddressResolver addressResolver,
-            final RecipientResolver recipientResolver,
-            final IdentityFailureHandler identityFailureHandler,
-            final GroupProvider groupProvider,
-            final ProfileHelper profileHelper,
-            final RecipientRegistrationRefresher recipientRegistrationRefresher
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.unidentifiedAccessHelper = unidentifiedAccessHelper;
-        this.addressResolver = addressResolver;
-        this.recipientResolver = recipientResolver;
-        this.identityFailureHandler = identityFailureHandler;
-        this.groupProvider = groupProvider;
-        this.profileHelper = profileHelper;
-        this.recipientRegistrationRefresher = recipientRegistrationRefresher;
+    public SendHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     /**
@@ -223,22 +200,22 @@ public class SendHelper {
     public SendMessageResult sendSyncMessage(SignalServiceSyncMessage message) {
         var messageSender = dependencies.getMessageSender();
         try {
-            return messageSender.sendSyncMessage(message, unidentifiedAccessHelper.getAccessForSync());
+            return messageSender.sendSyncMessage(message, context.getUnidentifiedAccessHelper().getAccessForSync());
         } catch (UnregisteredUserException e) {
-            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.unregisteredFailure(address);
         } catch (ProofRequiredException e) {
-            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.proofRequiredFailure(address, e);
         } catch (RateLimitException e) {
-            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
             return SendMessageResult.networkFailure(address);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         } catch (IOException e) {
-            var address = addressResolver.resolveSignalServiceAddress(account.getSelfRecipientId());
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
             return SendMessageResult.networkFailure(address);
         }
@@ -292,7 +269,7 @@ public class SendHelper {
     }
 
     private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
-        var g = groupProvider.getGroup(groupId);
+        var g = context.getGroupHelper().getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
@@ -327,7 +304,7 @@ public class SendHelper {
                 results.stream().filter(SendMessageResult::isSuccess).forEach(allResults::add);
                 final var failedTargets = results.stream()
                         .filter(r -> !r.isSuccess())
-                        .map(r -> recipientResolver.resolveRecipient(r.getAddress()))
+                        .map(r -> context.getRecipientHelper().resolveRecipient(r.getAddress()))
                         .toList();
                 if (failedTargets.size() > 0) {
                     senderKeyTargets = new HashSet<>(senderKeyTargets);
@@ -357,7 +334,7 @@ public class SendHelper {
     }
 
     private Set<RecipientId> getSenderKeyCapableRecipientIds(final Set<RecipientId> recipientIds) {
-        final var selfProfile = profileHelper.getRecipientProfile(account.getSelfRecipientId());
+        final var selfProfile = context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
         if (selfProfile == null || !selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
             logger.debug("Not all of our devices support sender key. Using legacy.");
             return Set.of();
@@ -365,14 +342,14 @@ public class SendHelper {
 
         final var senderKeyTargets = new HashSet<RecipientId>();
         final var recipientList = new ArrayList<>(recipientIds);
-        final var profiles = profileHelper.getRecipientProfile(recipientList).iterator();
+        final var profiles = context.getProfileHelper().getRecipientProfile(recipientList).iterator();
         for (final var recipientId : recipientList) {
             final var profile = profiles.next();
             if (profile == null || !profile.getCapabilities().contains(Profile.Capability.senderKey)) {
                 continue;
             }
 
-            final var access = unidentifiedAccessHelper.getAccessFor(recipientId);
+            final var access = context.getUnidentifiedAccessHelper().getAccessFor(recipientId);
             if (!access.isPresent() || !access.get().getTargetUnidentifiedAccess().isPresent()) {
                 continue;
             }
@@ -398,8 +375,10 @@ public class SendHelper {
             final LegacySenderHandler sender, final Set<RecipientId> recipientIds, final boolean isRecipientUpdate
     ) throws IOException {
         final var recipientIdList = new ArrayList<>(recipientIds);
-        final var addresses = recipientIdList.stream().map(addressResolver::resolveSignalServiceAddress).toList();
-        final var unidentifiedAccesses = unidentifiedAccessHelper.getAccessFor(recipientIdList);
+        final var addresses = recipientIdList.stream()
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
+                .toList();
+        final var unidentifiedAccesses = context.getUnidentifiedAccessHelper().getAccessFor(recipientIdList);
         try {
             final var results = sender.send(addresses, unidentifiedAccesses, isRecipientUpdate);
 
@@ -433,9 +412,10 @@ public class SendHelper {
         }
 
         List<SignalServiceAddress> addresses = recipientIdList.stream()
-                .map(addressResolver::resolveSignalServiceAddress)
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .collect(Collectors.toList());
-        List<UnidentifiedAccess> unidentifiedAccesses = unidentifiedAccessHelper.getAccessFor(recipientIdList)
+        List<UnidentifiedAccess> unidentifiedAccesses = context.getUnidentifiedAccessHelper()
+                .getAccessFor(recipientIdList)
                 .stream()
                 .map(Optional::get)
                 .map(UnidentifiedAccessPair::getTargetUnidentifiedAccess)
@@ -490,19 +470,21 @@ public class SendHelper {
     private SendMessageResult handleSendMessage(RecipientId recipientId, SenderHandler s) {
         var messageSender = dependencies.getMessageSender();
 
-        var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         try {
             try {
-                return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(recipientId));
+                return s.send(messageSender, address, context.getUnidentifiedAccessHelper().getAccessFor(recipientId));
             } catch (UnregisteredUserException e) {
                 final RecipientId newRecipientId;
                 try {
-                    newRecipientId = recipientRegistrationRefresher.refreshRecipientRegistration(recipientId);
+                    newRecipientId = context.getRecipientHelper().refreshRegisteredUser(recipientId);
                 } catch (UnregisteredRecipientException ex) {
                     return SendMessageResult.unregisteredFailure(address);
                 }
-                address = addressResolver.resolveSignalServiceAddress(newRecipientId);
-                return s.send(messageSender, address, unidentifiedAccessHelper.getAccessFor(newRecipientId));
+                address = context.getRecipientHelper().resolveSignalServiceAddress(newRecipientId);
+                return s.send(messageSender,
+                        address,
+                        context.getUnidentifiedAccessHelper().getAccessFor(newRecipientId));
             }
         } catch (UnregisteredUserException e) {
             return SendMessageResult.unregisteredFailure(address);
@@ -534,7 +516,7 @@ public class SendHelper {
 
     private void handleSendMessageResult(final SendMessageResult r) {
         if (r.isSuccess() && !r.getSuccess().isUnidentified()) {
-            final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
+            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
             final var profile = account.getRecipientStore().getProfile(recipientId);
             if (profile != null && (
                     profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
@@ -548,7 +530,7 @@ public class SendHelper {
             }
         }
         if (r.isUnregisteredFailure()) {
-            final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
+            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
             final var profile = account.getRecipientStore().getProfile(recipientId);
             if (profile != null && (
                     profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
@@ -562,8 +544,8 @@ public class SendHelper {
             }
         }
         if (r.getIdentityFailure() != null) {
-            final var recipientId = recipientResolver.resolveRecipient(r.getAddress());
-            identityFailureHandler.handleIdentityFailure(recipientId, r.getIdentityFailure());
+            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
+            context.getIdentityHelper().handleIdentityFailure(recipientId, r.getIdentityFailure());
         }
     }
 

@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -40,30 +39,15 @@ public class SyncHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(SyncHelper.class);
 
+    private final Context context;
     private final SignalAccount account;
-    private final AttachmentHelper attachmentHelper;
-    private final SendHelper sendHelper;
-    private final GroupHelper groupHelper;
-    private final AvatarStore avatarStore;
-    private final SignalServiceAddressResolver addressResolver;
 
-    public SyncHelper(
-            final SignalAccount account,
-            final AttachmentHelper attachmentHelper,
-            final SendHelper sendHelper,
-            final GroupHelper groupHelper,
-            final AvatarStore avatarStore,
-            final SignalServiceAddressResolver addressResolver
-    ) {
-        this.account = account;
-        this.attachmentHelper = attachmentHelper;
-        this.sendHelper = sendHelper;
-        this.groupHelper = groupHelper;
-        this.avatarStore = avatarStore;
-        this.addressResolver = addressResolver;
+    public SyncHelper(final Context context) {
+        this.context = context;
+        this.account = context.getAccount();
     }
 
-    public void requestAllSyncData() throws IOException {
+    public void requestAllSyncData() {
         requestSyncGroups();
         requestSyncContacts();
         requestSyncBlocked();
@@ -71,8 +55,9 @@ public class SyncHelper {
         requestSyncKeys();
     }
 
-    public void sendSyncFetchProfileMessage() throws IOException {
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
+    public void sendSyncFetchProfileMessage() {
+        context.getSendHelper()
+                .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
     }
 
     public void sendGroups() throws IOException {
@@ -87,9 +72,9 @@ public class SyncHelper {
                                 Optional.fromNullable(groupInfo.name),
                                 groupInfo.getMembers()
                                         .stream()
-                                        .map(addressResolver::resolveSignalServiceAddress)
+                                        .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                                         .toList(),
-                                groupHelper.createGroupAvatarAttachment(groupInfo.getGroupId()),
+                                context.getGroupHelper().createGroupAvatarAttachment(groupInfo.getGroupId()),
                                 groupInfo.isMember(account.getSelfRecipientId()),
                                 Optional.of(groupInfo.messageExpirationTime),
                                 Optional.fromNullable(groupInfo.color),
@@ -108,7 +93,7 @@ public class SyncHelper {
                             .withLength(groupsFile.length())
                             .build();
 
-                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
+                    context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forGroups(attachmentStream));
                 }
             }
         } finally {
@@ -129,7 +114,7 @@ public class SyncHelper {
                 for (var contactPair : account.getContactStore().getContacts()) {
                     final var recipientId = contactPair.first();
                     final var contact = contactPair.second();
-                    final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+                    final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
 
                     var currentIdentity = account.getIdentityKeyStore().getIdentity(recipientId);
                     VerifiedMessage verifiedMessage = null;
@@ -176,8 +161,9 @@ public class SyncHelper {
                             .withLength(contactsFile.length())
                             .build();
 
-                    sendHelper.sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream,
-                            true)));
+                    context.getSendHelper()
+                            .sendSyncMessage(SignalServiceSyncMessage.forContacts(new ContactsMessage(attachmentStream,
+                                    true)));
                 }
             }
         } finally {
@@ -189,11 +175,11 @@ public class SyncHelper {
         }
     }
 
-    public void sendBlockedList() throws IOException {
+    public void sendBlockedList() {
         var addresses = new ArrayList<SignalServiceAddress>();
         for (var record : account.getContactStore().getContacts()) {
             if (record.second().isBlocked()) {
-                addresses.add(addressResolver.resolveSignalServiceAddress(record.first()));
+                addresses.add(context.getRecipientHelper().resolveSignalServiceAddress(record.first()));
             }
         }
         var groupIds = new ArrayList<byte[]>();
@@ -202,7 +188,8 @@ public class SyncHelper {
                 groupIds.add(record.getGroupId().serialize());
             }
         }
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
+        context.getSendHelper()
+                .sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
     }
 
     public void sendVerifiedMessage(
@@ -212,21 +199,21 @@ public class SyncHelper {
                 identityKey,
                 trustLevel.toVerifiedState(),
                 System.currentTimeMillis());
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 
-    public void sendKeysMessage() throws IOException {
+    public void sendKeysMessage() {
         var keysMessage = new KeysMessage(Optional.fromNullable(account.getStorageKey()));
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
+        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 
-    public void sendConfigurationMessage() throws IOException {
+    public void sendConfigurationMessage() {
         final var config = account.getConfigurationStore();
         var configurationMessage = new ConfigurationMessage(Optional.fromNullable(config.getReadReceipts()),
                 Optional.fromNullable(config.getUnidentifiedDeliveryIndicators()),
                 Optional.fromNullable(config.getTypingIndicators()),
                 Optional.fromNullable(config.getLinkPreviews()));
-        sendHelper.sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
+        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
     public void handleSyncDeviceContacts(final InputStream input) throws IOException {
@@ -282,48 +269,48 @@ public class SyncHelper {
         }
     }
 
-    private void requestSyncGroups() throws IOException {
+    private void requestSyncGroups() {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        context.getSendHelper().sendSyncMessage(message);
     }
 
-    private void requestSyncContacts() throws IOException {
+    private void requestSyncContacts() {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        context.getSendHelper().sendSyncMessage(message);
     }
 
-    private void requestSyncBlocked() throws IOException {
+    private void requestSyncBlocked() {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        context.getSendHelper().sendSyncMessage(message);
     }
 
-    private void requestSyncConfiguration() throws IOException {
+    private void requestSyncConfiguration() {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        context.getSendHelper().sendSyncMessage(message);
     }
 
-    private void requestSyncKeys() throws IOException {
+    private void requestSyncKeys() {
         var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
                 .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
                 .build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        sendHelper.sendSyncMessage(message);
+        context.getSendHelper().sendSyncMessage(message);
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
-        final var streamDetails = avatarStore.retrieveContactAvatar(address);
+        final var streamDetails = context.getAvatarStore().retrieveContactAvatar(address);
         if (streamDetails == null) {
             return Optional.absent();
         }
@@ -333,8 +320,9 @@ public class SyncHelper {
 
     private void downloadContactAvatar(SignalServiceAttachment avatar, SignalServiceAddress address) {
         try {
-            avatarStore.storeContactAvatar(address,
-                    outputStream -> attachmentHelper.retrieveAttachment(avatar, outputStream));
+            context.getAvatarStore()
+                    .storeContactAvatar(address,
+                            outputStream -> context.getAttachmentHelper().retrieveAttachment(avatar, outputStream));
         } catch (IOException e) {
             logger.warn("Failed to download avatar for contact {}, ignoring: {}", address, e.getMessage());
         }

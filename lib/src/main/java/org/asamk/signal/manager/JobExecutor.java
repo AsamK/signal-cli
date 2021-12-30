@@ -1,6 +1,6 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.manager.jobs.Context;
+import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.jobs.Job;
 
 public class JobExecutor {

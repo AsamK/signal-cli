@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -27,23 +26,11 @@ public class IdentityHelper {
     private final static Logger logger = LoggerFactory.getLogger(IdentityHelper.class);
 
     private final SignalAccount account;
-    private final SignalDependencies dependencies;
-    private final SignalServiceAddressResolver addressResolver;
-    private final SyncHelper syncHelper;
-    private final ProfileHelper profileHelper;
+    private final Context context;
 
-    public IdentityHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final SignalServiceAddressResolver addressResolver,
-            final SyncHelper syncHelper,
-            final ProfileHelper profileHelper
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.addressResolver = addressResolver;
-        this.syncHelper = syncHelper;
-        this.profileHelper = profileHelper;
+    public IdentityHelper(final Context context) {
+        this.account = context.getAccount();
+        this.context = context;
     }
 
     public boolean trustIdentityVerified(RecipientId recipientId, byte[] fingerprint) {
@@ -74,13 +61,13 @@ public class IdentityHelper {
     }
 
     public String computeSafetyNumber(RecipientId recipientId, IdentityKey theirIdentityKey) {
-        var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         final Fingerprint fingerprint = computeSafetyNumberFingerprint(address, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
     public ScannableFingerprint computeSafetyNumberForScanning(RecipientId recipientId, IdentityKey theirIdentityKey) {
-        var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         final Fingerprint fingerprint = computeSafetyNumberFingerprint(address, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getScannableFingerprint();
     }
@@ -109,8 +96,8 @@ public class IdentityHelper {
 
         account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identity.getIdentityKey(), trustLevel);
         try {
-            var address = addressResolver.resolveSignalServiceAddress(recipientId);
-            syncHelper.sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
+            var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+            context.getSyncHelper().sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
         } catch (IOException e) {
             logger.warn("Failed to send verification sync message: {}", e.getMessage());
         }
@@ -130,7 +117,7 @@ public class IdentityHelper {
             }
         } else {
             // Retrieve profile to get the current identity key from the server
-            profileHelper.refreshRecipientProfile(recipientId);
+            context.getProfileHelper().refreshRecipientProfile(recipientId);
         }
     }
 }

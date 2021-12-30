@@ -32,19 +32,12 @@ public class StorageHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final GroupHelper groupHelper;
-    private final ProfileHelper profileHelper;
+    private final Context context;
 
-    public StorageHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final GroupHelper groupHelper,
-            final ProfileHelper profileHelper
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.groupHelper = groupHelper;
-        this.profileHelper = profileHelper;
+    public StorageHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public void readDataFromStorage() throws IOException {
@@ -139,7 +132,7 @@ public class StorageHelper {
         final var group = account.getGroupStore().getGroup(groupIdV1);
         if (group == null) {
             try {
-                groupHelper.sendGroupInfoRequest(groupIdV1, account.getSelfRecipientId());
+                context.getGroupHelper().sendGroupInfoRequest(groupIdV1, account.getSelfRecipientId());
             } catch (Throwable e) {
                 logger.warn("Failed to send group request", e);
             }
@@ -169,7 +162,7 @@ public class StorageHelper {
             return;
         }
 
-        final var group = groupHelper.getOrMigrateGroup(groupMasterKey, 0, null);
+        final var group = context.getGroupHelper().getOrMigrateGroup(groupMasterKey, 0, null);
         if (group.isBlocked() != groupV2Record.isBlocked()) {
             group.setBlocked(groupV2Record.isBlocked());
             account.getGroupStore().updateGroup(group);
@@ -225,16 +218,17 @@ public class StorageHelper {
             if (profileKey != null) {
                 account.setProfileKey(profileKey);
                 final var avatarPath = accountRecord.getAvatarUrlPath().orNull();
-                profileHelper.downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, profileKey);
+                context.getProfileHelper().downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, profileKey);
             }
         }
 
-        profileHelper.setProfile(false,
-                accountRecord.getGivenName().orNull(),
-                accountRecord.getFamilyName().orNull(),
-                null,
-                null,
-                null);
+        context.getProfileHelper()
+                .setProfile(false,
+                        accountRecord.getGivenName().orNull(),
+                        accountRecord.getFamilyName().orNull(),
+                        null,
+                        null,
+                        null);
     }
 
     private SignalStorageRecord getSignalStorageRecord(final StorageId accountId) throws IOException {

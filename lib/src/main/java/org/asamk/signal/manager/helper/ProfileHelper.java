@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -43,22 +42,12 @@ public final class ProfileHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final AvatarStore avatarStore;
-    private final UnidentifiedAccessProvider unidentifiedAccessProvider;
-    private final SignalServiceAddressResolver addressResolver;
+    private final Context context;
 
-    public ProfileHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final AvatarStore avatarStore,
-            final UnidentifiedAccessProvider unidentifiedAccessProvider,
-            final SignalServiceAddressResolver addressResolver
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.avatarStore = avatarStore;
-        this.unidentifiedAccessProvider = unidentifiedAccessProvider;
-        this.addressResolver = addressResolver;
+    public ProfileHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public Profile getRecipientProfile(RecipientId recipientId) {
@@ -139,7 +128,8 @@ public final class ProfileHelper {
 
         if (uploadProfile) {
             try (final var streamDetails = avatar == null
-                    ? avatarStore.retrieveProfileAvatar(account.getSelfAddress())
+                    ? context.getAvatarStore()
+                    .retrieveProfileAvatar(account.getSelfAddress())
                     : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
@@ -157,10 +147,11 @@ public final class ProfileHelper {
 
         if (avatar != null) {
             if (avatar.isPresent()) {
-                avatarStore.storeProfileAvatar(account.getSelfAddress(),
-                        outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
+                context.getAvatarStore()
+                        .storeProfileAvatar(account.getSelfAddress(),
+                                outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
             } else {
-                avatarStore.deleteProfileAvatar(account.getSelfAddress());
+                context.getAvatarStore().deleteProfileAvatar(account.getSelfAddress());
             }
         }
         account.getProfileStore().storeProfile(account.getSelfRecipientId(), newProfile);
@@ -224,7 +215,9 @@ public final class ProfileHelper {
     ) {
         var profile = account.getProfileStore().getProfile(recipientId);
         if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
-            downloadProfileAvatar(addressResolver.resolveSignalServiceAddress(recipientId), avatarPath, profileKey);
+            downloadProfileAvatar(context.getRecipientHelper().resolveSignalServiceAddress(recipientId),
+                    avatarPath,
+                    profileKey);
             var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
             account.getProfileStore().storeProfile(recipientId, builder.withAvatarUrlPath(avatarPath).build());
         }
@@ -250,7 +243,7 @@ public final class ProfileHelper {
         var unidentifiedAccess = getUnidentifiedAccess(recipientId);
         var profileKey = Optional.fromNullable(account.getProfileStore().getProfileKey(recipientId));
 
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         return retrieveProfile(address, profileKey, unidentifiedAccess, requestType).doOnSuccess(p -> {
             final var encryptedProfile = p.getProfile();
 
@@ -289,7 +282,7 @@ public final class ProfileHelper {
                 }
             } catch (InvalidKeyException ignored) {
                 logger.warn("Got invalid identity key in profile for {}",
-                        addressResolver.resolveSignalServiceAddress(recipientId).getIdentifier());
+                        context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier());
             }
         }).doOnError(e -> {
             logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
@@ -333,7 +326,7 @@ public final class ProfileHelper {
     ) {
         if (avatarPath == null) {
             try {
-                avatarStore.deleteProfileAvatar(address);
+                context.getAvatarStore().deleteProfileAvatar(address);
             } catch (IOException e) {
                 logger.warn("Failed to delete local profile avatar, ignoring: {}", e.getMessage());
             }
@@ -341,8 +334,9 @@ public final class ProfileHelper {
         }
 
         try {
-            avatarStore.storeProfileAvatar(address,
-                    outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
+            context.getAvatarStore()
+                    .storeProfileAvatar(address,
+                            outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
         } catch (Throwable e) {
             if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -374,7 +368,7 @@ public final class ProfileHelper {
     }
 
     private Optional<UnidentifiedAccess> getUnidentifiedAccess(RecipientId recipientId) {
-        var unidentifiedAccess = unidentifiedAccessProvider.getAccessFor(recipientId, true);
+        var unidentifiedAccess = context.getUnidentifiedAccessHelper().getAccessFor(recipientId, true);
 
         if (unidentifiedAccess.isPresent()) {
             return unidentifiedAccess.get().getTargetUnidentifiedAccess();

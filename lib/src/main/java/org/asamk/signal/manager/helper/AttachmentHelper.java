@@ -29,11 +29,9 @@ public class AttachmentHelper {
     private final SignalDependencies dependencies;
     private final AttachmentStore attachmentStore;
 
-    public AttachmentHelper(
-            final SignalDependencies dependencies, final AttachmentStore attachmentStore
-    ) {
-        this.dependencies = dependencies;
-        this.attachmentStore = attachmentStore;
+    public AttachmentHelper(final Context context) {
+        this.dependencies = context.getDependencies();
+        this.attachmentStore = context.getAttachmentStore();
     }
 
     public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {

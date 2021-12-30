@@ -68,6 +68,10 @@ public class SignalDependencies {
         this.sessionLock = sessionLock;
     }
 
+    public ServiceEnvironmentConfig getServiceEnvironmentConfig() {
+        return serviceEnvironmentConfig;
+    }
+
     public SignalServiceAccountManager getAccountManager() {
         return getOrCreate(() -> accountManager,
                 () -> accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),

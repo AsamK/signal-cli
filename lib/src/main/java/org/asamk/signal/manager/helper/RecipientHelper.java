@@ -32,14 +32,10 @@ public class RecipientHelper {
     private final SignalDependencies dependencies;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
 
-    public RecipientHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final ServiceEnvironmentConfig serviceEnvironmentConfig
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.serviceEnvironmentConfig = serviceEnvironmentConfig;
+    public RecipientHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.serviceEnvironmentConfig = dependencies.getServiceEnvironmentConfig();
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
@@ -62,6 +58,10 @@ public class RecipientHelper {
         return account.getRecipientStore()
                 .resolveRecipientAddress(account.getRecipientStore().resolveRecipient(aci))
                 .toSignalServiceAddress();
+    }
+
+    public RecipientId resolveRecipient(final SignalServiceAddress address) {
+        return account.getRecipientStore().resolveRecipient(address);
     }
 
     public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException, UnregisteredRecipientException {

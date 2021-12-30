@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.asamk.signal.manager.groups.GroupLinkState;
@@ -32,7 +33,6 @@ import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
-import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
@@ -56,32 +56,20 @@ public class GroupV2Helper {
 
     private final static Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
 
-    private final ProfileHelper profileHelper;
-    private final SelfRecipientIdProvider selfRecipientIdProvider;
-    private final GroupsV2Operations groupsV2Operations;
-    private final GroupsV2Api groupsV2Api;
-    private final SignalServiceAddressResolver addressResolver;
+    private final SignalDependencies dependencies;
+    private final Context context;
 
     private HashMap<Integer, AuthCredentialResponse> groupApiCredentials;
 
-    public GroupV2Helper(
-            final ProfileHelper profileHelper,
-            final SelfRecipientIdProvider selfRecipientIdProvider,
-            final GroupsV2Operations groupsV2Operations,
-            final GroupsV2Api groupsV2Api,
-            final SignalServiceAddressResolver addressResolver
-    ) {
-        this.profileHelper = profileHelper;
-        this.selfRecipientIdProvider = selfRecipientIdProvider;
-        this.groupsV2Operations = groupsV2Operations;
-        this.groupsV2Api = groupsV2Api;
-        this.addressResolver = addressResolver;
+    public GroupV2Helper(final Context context) {
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) throws NotAGroupMemberException {
         try {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
-            return groupsV2Api.getGroup(groupSecretParams, groupsV2AuthorizationString);
+            return dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupsV2AuthorizationString);
         } catch (NonSuccessfulResponseCodeException e) {
             if (e.getCode() == 403) {
                 throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
@@ -99,9 +87,10 @@ public class GroupV2Helper {
     ) throws IOException, GroupLinkNotActiveException {
         var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
-        return groupsV2Api.getGroupJoinInfo(groupSecretParams,
-                Optional.fromNullable(password).transform(GroupLinkPassword::serialize),
-                getGroupAuthForToday(groupSecretParams));
+        return dependencies.getGroupsV2Api()
+                .getGroupJoinInfo(groupSecretParams,
+                        Optional.fromNullable(password).transform(GroupLinkPassword::serialize),
+                        getGroupAuthForToday(groupSecretParams));
     }
 
     public Pair<GroupInfoV2, DecryptedGroup> createGroup(
@@ -119,8 +108,8 @@ public class GroupV2Helper {
         final DecryptedGroup decryptedGroup;
         try {
             groupAuthForToday = getGroupAuthForToday(groupSecretParams);
-            groupsV2Api.putNewGroup(newGroup, groupAuthForToday);
-            decryptedGroup = groupsV2Api.getGroup(groupSecretParams, groupAuthForToday);
+            dependencies.getGroupsV2Api().putNewGroup(newGroup, groupAuthForToday);
+            decryptedGroup = dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupAuthForToday);
         } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
             logger.warn("Failed to create V2 group: {}", e.getMessage());
             return null;
@@ -148,7 +137,8 @@ public class GroupV2Helper {
     private GroupsV2Operations.NewGroup buildNewGroup(
             String name, Set<RecipientId> members, byte[] avatar
     ) {
-        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientIdProvider.getSelfRecipientId());
+        final var profileKeyCredential = context.getProfileHelper()
+                .getRecipientProfileKeyCredential(context.getAccount().getSelfRecipientId());
         if (profileKeyCredential == null) {
             logger.warn("Cannot create a V2 group as self does not have a versioned profile");
             return null;
@@ -158,26 +148,28 @@ public class GroupV2Helper {
 
         final var self = new GroupCandidate(getSelfAci().uuid(), Optional.fromNullable(profileKeyCredential));
         final var memberList = new ArrayList<>(members);
-        final var credentials = profileHelper.getRecipientProfileKeyCredential(memberList).stream();
+        final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
-                .map(member -> addressResolver.resolveSignalServiceAddress(member).getAci().uuid());
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getAci().uuid());
         var candidates = Utils.zip(uuids,
                         credentials,
                         (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
                 .collect(Collectors.toSet());
 
         final var groupSecretParams = GroupSecretParams.generate();
-        return groupsV2Operations.createNewGroup(groupSecretParams,
-                name,
-                Optional.fromNullable(avatar),
-                self,
-                candidates,
-                Member.Role.DEFAULT,
-                0);
+        return dependencies.getGroupsV2Operations()
+                .createNewGroup(groupSecretParams,
+                        name,
+                        Optional.fromNullable(avatar),
+                        self,
+                        candidates,
+                        Member.Role.DEFAULT,
+                        0);
     }
 
     private boolean areMembersValid(final Set<RecipientId> members) {
-        final var noGv2Capability = profileHelper.getRecipientProfile(new ArrayList<>(members))
+        final var noGv2Capability = context.getProfileHelper()
+                .getRecipientProfile(new ArrayList<>(members))
                 .stream()
                 .filter(profile -> profile != null && !profile.getCapabilities().contains(Profile.Capability.gv2))
                 .collect(Collectors.toSet());
@@ -194,7 +186,7 @@ public class GroupV2Helper {
             GroupInfoV2 groupInfoV2, String name, String description, File avatarFile
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
 
         var change = name != null ? groupOperations.createModifyGroupTitle(name) : GroupChange.Actions.newBuilder();
 
@@ -204,9 +196,8 @@ public class GroupV2Helper {
 
         if (avatarFile != null) {
             final var avatarBytes = readAvatarBytes(avatarFile);
-            var avatarCdnKey = groupsV2Api.uploadAvatar(avatarBytes,
-                    groupSecretParams,
-                    getGroupAuthForToday(groupSecretParams));
+            var avatarCdnKey = dependencies.getGroupsV2Api()
+                    .uploadAvatar(avatarBytes, groupSecretParams, getGroupAuthForToday(groupSecretParams));
             change.setModifyAvatar(GroupChange.Actions.ModifyAvatarAction.newBuilder().setAvatar(avatarCdnKey));
         }
 
@@ -225,9 +216,9 @@ public class GroupV2Helper {
         }
 
         final var memberList = new ArrayList<>(newMembers);
-        final var credentials = profileHelper.getRecipientProfileKeyCredential(memberList).stream();
+        final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
-                .map(member -> addressResolver.resolveSignalServiceAddress(member).getAci().uuid());
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getAci().uuid());
         var candidates = Utils.zip(uuids,
                         credentials,
                         (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
@@ -253,7 +244,7 @@ public class GroupV2Helper {
         }
 
         final var adminUuids = membersToMakeAdmin.stream()
-                .map(addressResolver::resolveSignalServiceAddress)
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getAci)
                 .map(ACI::uuid)
                 .toList();
@@ -266,7 +257,7 @@ public class GroupV2Helper {
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
         final var memberUuids = members.stream()
-                .map(addressResolver::resolveSignalServiceAddress)
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getAci)
                 .map(ACI::uuid)
                 .collect(Collectors.toSet());
@@ -278,7 +269,7 @@ public class GroupV2Helper {
     ) throws IOException {
         var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
         final var memberUuids = members.stream()
-                .map(addressResolver::resolveSignalServiceAddress)
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getAci)
                 .map(ACI::uuid)
                 .map(uuid -> DecryptedGroupUtil.findPendingByUuid(pendingMembersList, uuid))
@@ -337,10 +328,10 @@ public class GroupV2Helper {
             DecryptedGroupJoinInfo decryptedGroupJoinInfo
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
-        final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
 
-        final var selfRecipientId = this.selfRecipientIdProvider.getSelfRecipientId();
-        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientId);
+        final var selfRecipientId = context.getAccount().getSelfRecipientId();
+        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }
@@ -350,7 +341,10 @@ public class GroupV2Helper {
                 ? groupOperations.createGroupJoinRequest(profileKeyCredential)
                 : groupOperations.createGroupJoinDirect(profileKeyCredential);
 
-        change.setSourceUuid(addressResolver.resolveSignalServiceAddress(selfRecipientId).getAci().toByteString());
+        change.setSourceUuid(context.getRecipientHelper()
+                .resolveSignalServiceAddress(selfRecipientId)
+                .getAci()
+                .toByteString());
 
         return commitChange(groupSecretParams, decryptedGroupJoinInfo.getRevision(), change, groupLinkPassword);
     }
@@ -358,15 +352,15 @@ public class GroupV2Helper {
     public Pair<DecryptedGroup, GroupChange> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
-        final var selfRecipientId = this.selfRecipientIdProvider.getSelfRecipientId();
-        final var profileKeyCredential = profileHelper.getRecipientProfileKeyCredential(selfRecipientId);
+        final var selfRecipientId = context.getAccount().getSelfRecipientId();
+        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }
 
         final var change = groupOperations.createAcceptInviteChange(profileKeyCredential);
 
-        final var aci = addressResolver.resolveSignalServiceAddress(selfRecipientId).getAci();
+        final var aci = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId).getAci();
         change.setSourceUuid(aci.toByteString());
 
         return commitChange(groupInfoV2, change);
@@ -376,7 +370,7 @@ public class GroupV2Helper {
             GroupInfoV2 groupInfoV2, RecipientId recipientId, boolean admin
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
-        final var address = addressResolver.resolveSignalServiceAddress(recipientId);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         final var newRole = admin ? Member.Role.ADMINISTRATOR : Member.Role.DEFAULT;
         final var change = groupOperations.createChangeMemberRole(address.getAci().uuid(), newRole);
         return commitChange(groupInfoV2, change);
@@ -415,7 +409,7 @@ public class GroupV2Helper {
 
     private GroupsV2Operations.GroupOperations getGroupOperations(final GroupInfoV2 groupInfoV2) {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        return groupsV2Operations.forGroup(groupSecretParams);
+        return dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
     }
 
     private Pair<DecryptedGroup, GroupChange> revokeInvites(
@@ -443,7 +437,7 @@ public class GroupV2Helper {
             GroupInfoV2 groupInfoV2, GroupChange.Actions.Builder change
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-        final var groupOperations = groupsV2Operations.forGroup(groupSecretParams);
+        final var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
         final var previousGroupState = groupInfoV2.getGroup();
         final var nextRevision = previousGroupState.getRevision() + 1;
         final var changeActions = change.setRevision(nextRevision).build();
@@ -457,9 +451,8 @@ public class GroupV2Helper {
             throw new IOException(e);
         }
 
-        var signedGroupChange = groupsV2Api.patchGroup(changeActions,
-                getGroupAuthForToday(groupSecretParams),
-                Optional.absent());
+        var signedGroupChange = dependencies.getGroupsV2Api()
+                .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.absent());
 
         return new Pair<>(decryptedGroupState, signedGroupChange);
     }
@@ -473,9 +466,10 @@ public class GroupV2Helper {
         final var nextRevision = currentRevision + 1;
         final var changeActions = change.setRevision(nextRevision).build();
 
-        return groupsV2Api.patchGroup(changeActions,
-                getGroupAuthForToday(groupSecretParams),
-                Optional.fromNullable(password).transform(GroupLinkPassword::serialize));
+        return dependencies.getGroupsV2Api()
+                .patchGroup(changeActions,
+                        getGroupAuthForToday(groupSecretParams),
+                        Optional.fromNullable(password).transform(GroupLinkPassword::serialize));
     }
 
     public DecryptedGroup getUpdatedDecryptedGroup(
@@ -494,7 +488,8 @@ public class GroupV2Helper {
 
     private DecryptedGroupChange getDecryptedGroupChange(byte[] signedGroupChange, GroupMasterKey groupMasterKey) {
         if (signedGroupChange != null) {
-            var groupOperations = groupsV2Operations.forGroup(GroupSecretParams.deriveFromMasterKey(groupMasterKey));
+            var groupOperations = dependencies.getGroupsV2Operations()
+                    .forGroup(GroupSecretParams.deriveFromMasterKey(groupMasterKey));
 
             try {
                 return groupOperations.decryptChange(GroupChange.parseFrom(signedGroupChange), true).orNull();
@@ -516,19 +511,20 @@ public class GroupV2Helper {
         final var today = currentTimeDays();
         if (groupApiCredentials == null || !groupApiCredentials.containsKey(today)) {
             // Returns credentials for the next 7 days
-            groupApiCredentials = groupsV2Api.getCredentials(today);
+            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(today);
             // TODO cache credentials on disk until they expire
         }
         var authCredentialResponse = groupApiCredentials.get(today);
         final var aci = getSelfAci();
         try {
-            return groupsV2Api.getGroupsV2AuthorizationString(aci, today, groupSecretParams, authCredentialResponse);
+            return dependencies.getGroupsV2Api()
+                    .getGroupsV2AuthorizationString(aci, today, groupSecretParams, authCredentialResponse);
         } catch (VerificationFailedException e) {
             throw new IOException(e);
         }
     }
 
     private ACI getSelfAci() {
-        return addressResolver.resolveSignalServiceAddress(this.selfRecipientIdProvider.getSelfRecipientId()).getAci();
+        return context.getAccount().getAci();
     }
 }

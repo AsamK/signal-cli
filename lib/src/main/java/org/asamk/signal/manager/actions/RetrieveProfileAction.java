@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.actions;
 
-import org.asamk.signal.manager.jobs.Context;
+import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 public class RetrieveProfileAction implements HandleAction {

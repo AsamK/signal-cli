@@ -26,22 +26,15 @@ public class UnidentifiedAccessHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final SelfProfileKeyProvider selfProfileKeyProvider;
-    private final ProfileProvider profileProvider;
+    private final Context context;
 
     private SenderCertificate privacySenderCertificate;
     private SenderCertificate senderCertificate;
 
-    public UnidentifiedAccessHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final SelfProfileKeyProvider selfProfileKeyProvider,
-            final ProfileProvider profileProvider
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.selfProfileKeyProvider = selfProfileKeyProvider;
-        this.profileProvider = profileProvider;
+    public UnidentifiedAccessHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
@@ -145,18 +138,18 @@ public class UnidentifiedAccessHelper {
     private byte[] getSelfUnidentifiedAccessKey(boolean noRefresh) {
         var selfProfile = noRefresh
                 ? account.getProfileStore().getProfile(account.getSelfRecipientId())
-                : profileProvider.getProfile(account.getSelfRecipientId());
+                : context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
         if (selfProfile != null
                 && selfProfile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED) {
             return createUnrestrictedUnidentifiedAccess();
         }
-        return UnidentifiedAccess.deriveAccessKeyFrom(selfProfileKeyProvider.getProfileKey());
+        return UnidentifiedAccess.deriveAccessKeyFrom(account.getProfileKey());
     }
 
     private byte[] getTargetUnidentifiedAccessKey(RecipientId recipientId, boolean noRefresh) {
         var targetProfile = noRefresh
                 ? account.getProfileStore().getProfile(recipientId)
-                : profileProvider.getProfile(recipientId);
+                : context.getProfileHelper().getRecipientProfile(recipientId);
         if (targetProfile == null) {
             return null;
         }

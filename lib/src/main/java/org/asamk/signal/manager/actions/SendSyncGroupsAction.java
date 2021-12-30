@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.actions;
 
-import org.asamk.signal.manager.jobs.Context;
+import org.asamk.signal.manager.helper.Context;
 
 public class SendSyncGroupsAction implements HandleAction {
 

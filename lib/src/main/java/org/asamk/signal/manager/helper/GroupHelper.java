@@ -1,7 +1,6 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.AttachmentInvalidException;
-import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.Pair;
@@ -24,7 +23,6 @@ import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.signal.storageservice.protos.groups.GroupChange;
@@ -63,31 +61,12 @@ public class GroupHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final AttachmentHelper attachmentHelper;
-    private final SendHelper sendHelper;
-    private final GroupV2Helper groupV2Helper;
-    private final AvatarStore avatarStore;
-    private final SignalServiceAddressResolver addressResolver;
-    private final RecipientResolver recipientResolver;
+    private final Context context;
 
-    public GroupHelper(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final AttachmentHelper attachmentHelper,
-            final SendHelper sendHelper,
-            final GroupV2Helper groupV2Helper,
-            final AvatarStore avatarStore,
-            final SignalServiceAddressResolver addressResolver,
-            final RecipientResolver recipientResolver
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.attachmentHelper = attachmentHelper;
-        this.sendHelper = sendHelper;
-        this.groupV2Helper = groupV2Helper;
-        this.avatarStore = avatarStore;
-        this.addressResolver = addressResolver;
-        this.recipientResolver = recipientResolver;
+    public GroupHelper(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public GroupInfo getGroup(GroupId groupId) {
@@ -101,15 +80,16 @@ public class GroupHelper {
 
     public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
         try {
-            avatarStore.storeGroupAvatar(groupId,
-                    outputStream -> attachmentHelper.retrieveAttachment(avatar, outputStream));
+            context.getAvatarStore()
+                    .storeGroupAvatar(groupId,
+                            outputStream -> context.getAttachmentHelper().retrieveAttachment(avatar, outputStream));
         } catch (IOException e) {
             logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
         }
     }
 
     public Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupIdV1 groupId) throws IOException {
-        final var streamDetails = avatarStore.retrieveGroupAvatar(groupId);
+        final var streamDetails = context.getAvatarStore().retrieveGroupAvatar(groupId);
         if (streamDetails == null) {
             return Optional.absent();
         }
@@ -143,13 +123,12 @@ public class GroupHelper {
             if (signedGroupChange != null
                     && groupInfoV2.getGroup() != null
                     && groupInfoV2.getGroup().getRevision() + 1 == revision) {
-                group = groupV2Helper.getUpdatedDecryptedGroup(groupInfoV2.getGroup(),
-                        signedGroupChange,
-                        groupMasterKey);
+                group = context.getGroupV2Helper()
+                        .getUpdatedDecryptedGroup(groupInfoV2.getGroup(), signedGroupChange, groupMasterKey);
             }
             if (group == null) {
                 try {
-                    group = groupV2Helper.getDecryptedGroup(groupSecretParams);
+                    group = context.getGroupV2Helper().getDecryptedGroup(groupSecretParams);
                 } catch (NotAGroupMemberException ignored) {
                 }
             }
@@ -160,7 +139,7 @@ public class GroupHelper {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
-            groupInfoV2.setGroup(group, recipientResolver);
+            groupInfoV2.setGroup(group, account.getRecipientStore());
             account.getGroupStore().updateGroup(groupInfoV2);
         }
 
@@ -176,9 +155,8 @@ public class GroupHelper {
             members.remove(selfRecipientId);
         }
 
-        var gv2Pair = groupV2Helper.createGroup(name == null ? "" : name,
-                members == null ? Set.of() : members,
-                avatarFile);
+        var gv2Pair = context.getGroupV2Helper()
+                .createGroup(name == null ? "" : name, members == null ? Set.of() : members, avatarFile);
 
         if (gv2Pair == null) {
             // Failed to create v2 group, creating v1 group instead
@@ -191,10 +169,11 @@ public class GroupHelper {
         final var gv2 = gv2Pair.first();
         final var decryptedGroup = gv2Pair.second();
 
-        gv2.setGroup(decryptedGroup, recipientResolver);
+        gv2.setGroup(decryptedGroup, account.getRecipientStore());
         if (avatarFile != null) {
-            avatarStore.storeGroupAvatar(gv2.getGroupId(),
-                    outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+            context.getAvatarStore()
+                    .storeGroupAvatar(gv2.getGroupId(),
+                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
         }
 
         account.getGroupStore().updateGroup(gv2);
@@ -274,14 +253,13 @@ public class GroupHelper {
     ) throws IOException, InactiveGroupLinkException {
         final DecryptedGroupJoinInfo groupJoinInfo;
         try {
-            groupJoinInfo = groupV2Helper.getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(),
-                    inviteLinkUrl.getPassword());
+            groupJoinInfo = context.getGroupV2Helper()
+                    .getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword());
         } catch (GroupLinkNotActiveException e) {
             throw new InactiveGroupLinkException("Group link inactive", e);
         }
-        final var groupChange = groupV2Helper.joinGroup(inviteLinkUrl.getGroupMasterKey(),
-                inviteLinkUrl.getPassword(),
-                groupJoinInfo);
+        final var groupChange = context.getGroupV2Helper()
+                .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);
         final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
                 groupJoinInfo.getRevision() + 1,
                 groupChange.toByteArray());
@@ -315,7 +293,7 @@ public class GroupHelper {
 
     public void deleteGroup(GroupId groupId) throws IOException {
         account.getGroupStore().deleteGroup(groupId);
-        avatarStore.deleteGroupAvatar(groupId);
+        context.getAvatarStore().deleteGroupAvatar(groupId);
     }
 
     public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
@@ -366,12 +344,12 @@ public class GroupHelper {
                 final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
                 DecryptedGroup decryptedGroup;
                 try {
-                    decryptedGroup = groupV2Helper.getDecryptedGroup(groupSecretParams);
+                    decryptedGroup = context.getGroupV2Helper().getDecryptedGroup(groupSecretParams);
                 } catch (NotAGroupMemberException e) {
                     groupInfoV2.setPermissionDenied(true);
                     decryptedGroup = null;
                 }
-                groupInfoV2.setGroup(decryptedGroup, recipientResolver);
+                groupInfoV2.setGroup(decryptedGroup, account.getRecipientStore());
                 account.getGroupStore().updateGroup(group);
             }
         }
@@ -380,8 +358,9 @@ public class GroupHelper {
 
     private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey) {
         try {
-            avatarStore.storeGroupAvatar(groupId,
-                    outputStream -> retrieveGroupV2Avatar(groupSecretParams, cdnKey, outputStream));
+            context.getAvatarStore()
+                    .storeGroupAvatar(groupId,
+                            outputStream -> retrieveGroupV2Avatar(groupSecretParams, cdnKey, outputStream));
         } catch (IOException e) {
             logger.warn("Failed to download avatar for group {}, ignoring: {}", groupId.toBase64(), e.getMessage());
         }
@@ -458,8 +437,9 @@ public class GroupHelper {
         }
 
         if (avatarFile != null) {
-            avatarStore.storeGroupAvatar(g.getGroupId(),
-                    outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+            context.getAvatarStore()
+                    .storeGroupAvatar(g.getGroupId(),
+                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
         }
     }
 
@@ -476,7 +456,7 @@ public class GroupHelper {
 
     private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
-        sendHelper.sendAsGroupMessage(messageBuilder, groupId);
+        context.getSendHelper().sendAsGroupMessage(messageBuilder, groupId);
     }
 
     private SendGroupMessageResults updateGroupV2(
@@ -496,6 +476,7 @@ public class GroupHelper {
             final Boolean isAnnouncementGroup
     ) throws IOException {
         SendGroupMessageResults result = null;
+        final var groupV2Helper = context.getGroupV2Helper();
         if (group.isPendingMember(account.getSelfRecipientId())) {
             var groupGroupChangePair = groupV2Helper.acceptInvite(group);
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
@@ -587,8 +568,9 @@ public class GroupHelper {
         if (name != null || description != null || avatarFile != null) {
             var groupGroupChangePair = groupV2Helper.updateGroup(group, name, description, avatarFile);
             if (avatarFile != null) {
-                avatarStore.storeGroupAvatar(group.getGroupId(),
-                        outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                context.getAvatarStore()
+                        .storeGroupAvatar(group.getGroupId(),
+                                outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
             }
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
@@ -622,8 +604,8 @@ public class GroupHelper {
             // Last admin can't leave the group, unless she's also the last member
             throw new LastGroupAdminException(groupInfoV2.getGroupId(), groupInfoV2.getTitle());
         }
-        final var groupGroupChangePair = groupV2Helper.leaveGroup(groupInfoV2, newAdmins);
-        groupInfoV2.setGroup(groupGroupChangePair.first(), recipientResolver);
+        final var groupGroupChangePair = context.getGroupV2Helper().leaveGroup(groupInfoV2, newAdmins);
+        groupInfoV2.setGroup(groupGroupChangePair.first(), account.getRecipientStore());
         account.getGroupStore().updateGroup(groupInfoV2);
 
         var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
@@ -636,7 +618,10 @@ public class GroupHelper {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.getGroupId().serialize())
                 .withName(g.name)
-                .withMembers(g.getMembers().stream().map(addressResolver::resolveSignalServiceAddress).toList());
+                .withMembers(g.getMembers()
+                        .stream()
+                        .map(context.getRecipientHelper()::resolveSignalServiceAddress)
+                        .toList());
 
         try {
             final var attachment = createGroupAvatarAttachment(g.getGroupId());
@@ -666,7 +651,7 @@ public class GroupHelper {
     ) throws IOException {
         final var selfRecipientId = account.getSelfRecipientId();
         final var members = group.getMembersIncludingPendingWithout(selfRecipientId);
-        group.setGroup(newDecryptedGroup, recipientResolver);
+        group.setGroup(newDecryptedGroup, account.getRecipientStore());
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
         account.getGroupStore().updateGroup(group);
 
@@ -681,11 +666,11 @@ public class GroupHelper {
     ) throws IOException {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
-        final var results = sendHelper.sendGroupMessage(messageBuilder.build(), members, distributionId);
+        final var results = context.getSendHelper().sendGroupMessage(messageBuilder.build(), members, distributionId);
         return new SendGroupMessageResults(timestamp,
                 results.stream()
                         .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
-                                recipientResolver,
+                                account.getRecipientStore(),
                                 account.getRecipientStore()::resolveRecipientAddress))
                         .toList());
     }

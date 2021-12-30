@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.JobExecutor;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.TrustLevel;
@@ -29,7 +28,6 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyException;
@@ -61,37 +59,12 @@ public final class IncomingMessageHandler {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final RecipientResolver recipientResolver;
-    private final SignalServiceAddressResolver addressResolver;
-    private final GroupHelper groupHelper;
-    private final ContactHelper contactHelper;
-    private final AttachmentHelper attachmentHelper;
-    private final SyncHelper syncHelper;
-    private final ProfileProvider profileProvider;
-    private final JobExecutor jobExecutor;
+    private final Context context;
 
-    public IncomingMessageHandler(
-            final SignalAccount account,
-            final SignalDependencies dependencies,
-            final RecipientResolver recipientResolver,
-            final SignalServiceAddressResolver addressResolver,
-            final GroupHelper groupHelper,
-            final ContactHelper contactHelper,
-            final AttachmentHelper attachmentHelper,
-            final SyncHelper syncHelper,
-            final ProfileProvider profileProvider,
-            final JobExecutor jobExecutor
-    ) {
-        this.account = account;
-        this.dependencies = dependencies;
-        this.recipientResolver = recipientResolver;
-        this.addressResolver = addressResolver;
-        this.groupHelper = groupHelper;
-        this.contactHelper = contactHelper;
-        this.attachmentHelper = attachmentHelper;
-        this.syncHelper = syncHelper;
-        this.profileProvider = profileProvider;
-        this.jobExecutor = jobExecutor;
+    public IncomingMessageHandler(final Context context) {
+        this.account = context.getAccount();
+        this.dependencies = context.getDependencies();
+        this.context = context;
     }
 
     public Pair<List<HandleAction>, Exception> handleRetryEnvelope(
@@ -147,8 +120,8 @@ public final class IncomingMessageHandler {
                         .resolveRecipientAddress(recipientId), e.getSenderDevice());
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
-                final var senderProfile = profileProvider.getProfile(sender);
-                final var selfProfile = profileProvider.getProfile(account.getSelfRecipientId());
+                final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
+                final var selfProfile = context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
                 if (e.getSenderDevice() != account.getDeviceId()
                         && senderProfile != null
                         && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
@@ -202,9 +175,9 @@ public final class IncomingMessageHandler {
             }
             handler.handleMessage(MessageEnvelope.from(envelope,
                     content,
-                    recipientResolver,
+                    account.getRecipientStore(),
                     account.getRecipientStore()::resolveRecipientAddress,
-                    attachmentHelper::getAttachmentFile), exception);
+                    context.getAttachmentHelper()::getAttachmentFile), exception);
             return actions;
         }
     }
@@ -216,16 +189,17 @@ public final class IncomingMessageHandler {
         final RecipientId sender;
         final int senderDeviceId;
         if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
-            sender = recipientResolver.resolveRecipient(envelope.getSourceAddress());
+            sender = context.getRecipientHelper().resolveRecipient(envelope.getSourceAddress());
             senderDeviceId = envelope.getSourceDevice();
         } else {
-            sender = recipientResolver.resolveRecipient(content.getSender());
+            sender = context.getRecipientHelper().resolveRecipient(content.getSender());
             senderDeviceId = content.getSenderDevice();
         }
 
         if (content.getSenderKeyDistributionMessage().isPresent()) {
             final var message = content.getSenderKeyDistributionMessage().get();
-            final var protocolAddress = new SignalProtocolAddress(addressResolver.resolveSignalServiceAddress(sender)
+            final var protocolAddress = new SignalProtocolAddress(context.getRecipientHelper()
+                    .resolveSignalServiceAddress(sender)
                     .getIdentifier(), senderDeviceId);
             logger.debug("Received a sender key distribution message for distributionId {} from {}",
                     message.getDistributionId(),
@@ -281,7 +255,7 @@ public final class IncomingMessageHandler {
             actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
                     true,
                     sender,
-                    destination == null ? null : recipientResolver.resolveRecipient(destination),
+                    destination == null ? null : context.getRecipientHelper().resolveRecipient(destination),
                     ignoreAttachments));
         }
         if (syncMessage.getRequest().isPresent() && account.isMasterDevice()) {
@@ -308,14 +282,15 @@ public final class IncomingMessageHandler {
         if (syncMessage.getBlockedList().isPresent()) {
             final var blockedListMessage = syncMessage.getBlockedList().get();
             for (var address : blockedListMessage.getAddresses()) {
-                contactHelper.setContactBlocked(recipientResolver.resolveRecipient(address), true);
+                context.getContactHelper()
+                        .setContactBlocked(context.getRecipientHelper().resolveRecipient(address), true);
             }
             for (var groupId : blockedListMessage.getGroupIds()
                     .stream()
                     .map(GroupId::unknownVersion)
                     .collect(Collectors.toSet())) {
                 try {
-                    groupHelper.setGroupBlocked(groupId, true);
+                    context.getGroupHelper().setGroupBlocked(groupId, true);
                 } catch (GroupNotFoundException e) {
                     logger.warn("BlockedListMessage contained groupID that was not found in GroupStore: {}",
                             groupId.toBase64());
@@ -325,8 +300,9 @@ public final class IncomingMessageHandler {
         if (syncMessage.getContacts().isPresent()) {
             try {
                 final var contactsMessage = syncMessage.getContacts().get();
-                attachmentHelper.retrieveAttachment(contactsMessage.getContactsStream(),
-                        syncHelper::handleSyncDeviceContacts);
+                context.getAttachmentHelper()
+                        .retrieveAttachment(contactsMessage.getContactsStream(),
+                                context.getSyncHelper()::handleSyncDeviceContacts);
             } catch (Exception e) {
                 logger.warn("Failed to handle received sync contacts, ignoring: {}", e.getMessage());
             }
@@ -355,7 +331,8 @@ public final class IncomingMessageHandler {
                         sticker = new Sticker(stickerPackId, m.getPackKey().get());
                     }
                     if (installed) {
-                        jobExecutor.enqueueJob(new RetrieveStickerPackJob(stickerPackId, m.getPackKey().get()));
+                        context.getJobExecutor()
+                                .enqueueJob(new RetrieveStickerPackJob(stickerPackId, m.getPackKey().get()));
                     }
                 }
 
@@ -410,8 +387,8 @@ public final class IncomingMessageHandler {
         } else {
             return false;
         }
-        final var recipientId = recipientResolver.resolveRecipient(source);
-        if (contactHelper.isContactBlocked(recipientId)) {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(source);
+        if (context.getContactHelper().isContactBlocked(recipientId)) {
             return true;
         }
 
@@ -419,7 +396,7 @@ public final class IncomingMessageHandler {
             var message = content.getDataMessage().get();
             if (message.getGroupContext().isPresent()) {
                 var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                return groupHelper.isGroupBlocked(groupId);
+                return context.getGroupHelper().isGroupBlocked(groupId);
             }
         }
 
@@ -453,12 +430,12 @@ public final class IncomingMessageHandler {
         }
 
         var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-        var group = groupHelper.getGroup(groupId);
+        var group = context.getGroupHelper().getGroup(groupId);
         if (group == null) {
             return false;
         }
 
-        final var recipientId = recipientResolver.resolveRecipient(source);
+        final var recipientId = context.getRecipientHelper().resolveRecipient(source);
         if (!group.isMember(recipientId) && !(group.isPendingMember(recipientId) && message.isGroupV2Update())) {
             return true;
         }
@@ -487,7 +464,7 @@ public final class IncomingMessageHandler {
             if (message.getGroupContext().get().getGroupV1().isPresent()) {
                 var groupInfo = message.getGroupContext().get().getGroupV1().get();
                 var groupId = GroupId.v1(groupInfo.getGroupId());
-                var group = groupHelper.getGroup(groupId);
+                var group = context.getGroupHelper().getGroup(groupId);
                 if (group == null || group instanceof GroupInfoV1) {
                     var groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
@@ -498,7 +475,7 @@ public final class IncomingMessageHandler {
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 var avatar = groupInfo.getAvatar().get();
-                                groupHelper.downloadGroupAvatar(groupV1.getGroupId(), avatar);
+                                context.getGroupHelper().downloadGroupAvatar(groupV1.getGroupId(), avatar);
                             }
 
                             if (groupInfo.getName().isPresent()) {
@@ -509,7 +486,7 @@ public final class IncomingMessageHandler {
                                 groupV1.addMembers(groupInfo.getMembers()
                                         .get()
                                         .stream()
-                                        .map(recipientResolver::resolveRecipient)
+                                        .map(context.getRecipientHelper()::resolveRecipient)
                                         .collect(Collectors.toSet()));
                             }
 
@@ -542,9 +519,10 @@ public final class IncomingMessageHandler {
                 final var groupContext = message.getGroupContext().get().getGroupV2().get();
                 final var groupMasterKey = groupContext.getMasterKey();
 
-                groupHelper.getOrMigrateGroup(groupMasterKey,
-                        groupContext.getRevision(),
-                        groupContext.hasSignedGroupChange() ? groupContext.getSignedGroupChange() : null);
+                context.getGroupHelper()
+                        .getOrMigrateGroup(groupMasterKey,
+                                groupContext.getRevision(),
+                                groupContext.hasSignedGroupChange() ? groupContext.getSignedGroupChange() : null);
             }
         }
 
@@ -567,19 +545,20 @@ public final class IncomingMessageHandler {
                     // disappearing message timer already stored in the DecryptedGroup
                 }
             } else if (conversationPartnerAddress != null) {
-                contactHelper.setExpirationTimer(conversationPartnerAddress, message.getExpiresInSeconds());
+                context.getContactHelper()
+                        .setExpirationTimer(conversationPartnerAddress, message.getExpiresInSeconds());
             }
         }
         if (!ignoreAttachments) {
             if (message.getAttachments().isPresent()) {
                 for (var attachment : message.getAttachments().get()) {
-                    attachmentHelper.downloadAttachment(attachment);
+                    context.getAttachmentHelper().downloadAttachment(attachment);
                 }
             }
             if (message.getSharedContacts().isPresent()) {
                 for (var contact : message.getSharedContacts().get()) {
                     if (contact.getAvatar().isPresent()) {
-                        attachmentHelper.downloadAttachment(contact.getAvatar().get().getAttachment());
+                        context.getAttachmentHelper().downloadAttachment(contact.getAvatar().get().getAttachment());
                     }
                 }
             }
@@ -587,7 +566,7 @@ public final class IncomingMessageHandler {
                 final var previews = message.getPreviews().get();
                 for (var preview : previews) {
                     if (preview.getImage().isPresent()) {
-                        attachmentHelper.downloadAttachment(preview.getImage().get());
+                        context.getAttachmentHelper().downloadAttachment(preview.getImage().get());
                     }
                 }
             }
@@ -597,7 +576,7 @@ public final class IncomingMessageHandler {
                 for (var quotedAttachment : quote.getAttachments()) {
                     final var thumbnail = quotedAttachment.getThumbnail();
                     if (thumbnail != null) {
-                        attachmentHelper.downloadAttachment(thumbnail);
+                        context.getAttachmentHelper().downloadAttachment(thumbnail);
                     }
                 }
             }
@@ -622,7 +601,7 @@ public final class IncomingMessageHandler {
                 sticker = new Sticker(stickerPackId, messageSticker.getPackKey());
                 account.getStickerStore().updateSticker(sticker);
             }
-            jobExecutor.enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
+            context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }
         return actions;
     }
