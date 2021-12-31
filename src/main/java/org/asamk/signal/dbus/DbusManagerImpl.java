@@ -614,7 +614,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         synchronized (this) {
             this.notify();
         }
@@ -665,9 +665,9 @@ public class DbusManagerImpl implements Manager {
         return string == null ? "" : string;
     }
 
-    private <T extends DBusInterface> T getRemoteObject(final DBusPath devicePath, final Class<T> type) {
+    private <T extends DBusInterface> T getRemoteObject(final DBusPath path, final Class<T> type) {
         try {
-            return connection.getRemoteObject(DbusConfig.getBusname(), devicePath.getPath(), type);
+            return connection.getRemoteObject(DbusConfig.getBusname(), path.getPath(), type);
         } catch (DBusException e) {
             throw new AssertionError(e);
         }

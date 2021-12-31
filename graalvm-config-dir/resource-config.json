@@ -119,6 +119,9 @@
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MY\\E"
     }, 
     {
+      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NG\\E"
+    }, 
+    {
       "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NL\\E"
     }, 
     {

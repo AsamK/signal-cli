@@ -372,6 +372,10 @@
   "allDeclaredClasses":true}
 ,
 {
+  "name":"org.asamk.SignalControl$Error$Failure",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]}
+,
+{
   "name":"org.asamk.signal.commands.FinishLinkCommand$FinishLinkParams",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,

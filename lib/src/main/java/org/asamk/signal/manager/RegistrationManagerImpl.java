@@ -243,7 +243,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (account != null) {
             account.close();
             account = null;

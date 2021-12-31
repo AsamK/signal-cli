@@ -20,8 +20,6 @@ public interface MultiAccountManager extends AutoCloseable {
 
     ProvisioningManager getProvisioningManagerFor(URI deviceLinkUri);
 
-    ProvisioningManager getNewProvisioningManager();
-
     RegistrationManager getNewRegistrationManager(String account) throws IOException;
 
     @Override

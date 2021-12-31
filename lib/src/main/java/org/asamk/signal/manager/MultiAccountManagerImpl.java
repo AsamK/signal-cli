@@ -111,8 +111,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         return provisioningManagers.remove(deviceLinkUri);
     }
 
-    @Override
-    public ProvisioningManager getNewProvisioningManager() {
+    private ProvisioningManager getNewProvisioningManager() {
         return ProvisioningManager.init(dataPath, serviceEnvironment, userAgent, this::addManager);
     }
 

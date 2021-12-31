@@ -15,6 +15,7 @@ import org.freedesktop.dbus.DBusPath;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -88,9 +89,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     @Override
     public String link(final String newDeviceName) throws Error.Failure {
         try {
-            final ProvisioningManager provisioningManager = c.getNewProvisioningManager();
-            final URI deviceLinkUri = provisioningManager.getDeviceLinkUri();
+            final URI deviceLinkUri = c.getNewProvisioningDeviceLinkUri();
             new Thread(() -> {
+                final ProvisioningManager provisioningManager = c.getProvisioningManagerFor(deviceLinkUri);
                 try {
                     provisioningManager.finishDeviceLink(newDeviceName);
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
@@ -104,6 +105,26 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     }
 
     @Override
+    public String startLink() throws Error.Failure {
+        try {
+            final URI deviceLinkUri = c.getNewProvisioningDeviceLinkUri();
+            return deviceLinkUri.toString();
+        } catch (TimeoutException | IOException e) {
+            throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String finishLink(String deviceLinkUri, final String newDeviceName) throws Error.Failure {
+        try {
+            final var provisioningManager = c.getProvisioningManagerFor(new URI(deviceLinkUri));
+            return provisioningManager.finishDeviceLink(newDeviceName);
+        } catch (TimeoutException | IOException | UserAlreadyExists | URISyntaxException e) {
+            throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
+        }
+    }
+
+    @Override
     public String version() {
         return BaseConfig.PROJECT_VERSION;
     }
@@ -111,5 +132,10 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     @Override
     public List<DBusPath> listAccounts() {
         return c.getAccountNumbers().stream().map(u -> new DBusPath(DbusConfig.getObjectPath(u))).toList();
+    }
+
+    @Override
+    public DBusPath getAccount(final String number) {
+        return new DBusPath(DbusConfig.getObjectPath(number));
     }
 }

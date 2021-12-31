@@ -18,6 +18,9 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusManagerImpl;
+import org.asamk.signal.dbus.DbusMultiAccountManagerImpl;
+import org.asamk.signal.dbus.DbusProvisioningManagerImpl;
+import org.asamk.signal.dbus.DbusRegistrationManagerImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManagerImpl;
 import org.asamk.signal.manager.NotRegisteredException;
@@ -220,6 +223,22 @@ public class App {
         command.handleCommand(ns, pm, outputWriter);
     }
 
+    private void handleProvisioningCommand(
+            final ProvisioningCommand c, final DBusConnection dBusConn, final OutputWriter outputWriter
+    ) throws CommandException, DBusException {
+        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
+                DbusConfig.getObjectPath(),
+                SignalControl.class);
+        final var provisioningManager = new DbusProvisioningManagerImpl(signalControl, dBusConn);
+        try {
+            c.handleCommand(ns, provisioningManager, outputWriter);
+        } catch (UnsupportedOperationException e) {
+            throw new UserErrorException("Command is not yet implemented via dbus", e);
+        } catch (DBusExecutionException e) {
+            throw new UnexpectedErrorException(e.getMessage(), e);
+        }
+    }
+
     private void handleRegistrationCommand(
             final RegistrationCommand command,
             final String account,
@@ -243,6 +262,21 @@ public class App {
         }
     }
 
+    private void handleRegistrationCommand(
+            final RegistrationCommand c, String account, final DBusConnection dBusConn, final OutputWriter outputWriter
+    ) throws CommandException, DBusException {
+        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
+                DbusConfig.getObjectPath(),
+                SignalControl.class);
+        try (final var registrationManager = new DbusRegistrationManagerImpl(account, signalControl, dBusConn)) {
+            c.handleCommand(ns, registrationManager);
+        } catch (UnsupportedOperationException e) {
+            throw new UserErrorException("Command is not yet implemented via dbus", e);
+        } catch (DBusExecutionException e) {
+            throw new UnexpectedErrorException(e.getMessage(), e);
+        }
+    }
+
     private void handleLocalCommand(
             final LocalCommand command,
             final String account,
@@ -255,6 +289,22 @@ public class App {
             command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
+        }
+    }
+
+    private void handleLocalCommand(
+            final LocalCommand c,
+            String accountObjectPath,
+            final DBusConnection dBusConn,
+            final OutputWriter outputWriter
+    ) throws CommandException, DBusException {
+        var signal = dBusConn.getRemoteObject(DbusConfig.getBusname(), accountObjectPath, Signal.class);
+        try (final var m = new DbusManagerImpl(signal, dBusConn)) {
+            c.handleCommand(ns, m, outputWriter);
+        } catch (UnsupportedOperationException e) {
+            throw new UserErrorException("Command is not yet implemented via dbus", e);
+        } catch (DBusExecutionException e) {
+            throw new UnexpectedErrorException(e.getMessage(), e);
         }
     }
 
@@ -280,6 +330,19 @@ public class App {
                 serviceEnvironment,
                 BaseConfig.USER_AGENT)) {
             command.handleCommand(ns, multiAccountManager, outputWriter);
+        }
+    }
+
+    private void handleMultiLocalCommand(
+            final MultiLocalCommand c, final DBusConnection dBusConn, final OutputWriter outputWriter
+    ) throws CommandException, DBusException {
+        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
+                DbusConfig.getObjectPath(),
+                SignalControl.class);
+        try (final var multiAccountManager = new DbusMultiAccountManagerImpl(signalControl, dBusConn)) {
+            c.handleCommand(ns, multiAccountManager, outputWriter);
+        } catch (UnsupportedOperationException e) {
+            throw new UserErrorException("Command is not yet implemented via dbus", e);
         }
     }
 
@@ -331,13 +394,32 @@ public class App {
                 busType = DBusConnection.DBusBusType.SESSION;
             }
             try (var dBusConn = DBusConnection.getConnection(busType)) {
+                if (command instanceof ProvisioningCommand c) {
+                    if (account != null) {
+                        throw new UserErrorException("You cannot specify a account (phone number) when linking");
+                    }
+
+                    handleProvisioningCommand(c, dBusConn, outputWriter);
+                    return;
+                }
+
+                if (account == null && command instanceof MultiLocalCommand c) {
+                    handleMultiLocalCommand(c, dBusConn, outputWriter);
+                    return;
+                }
+                if (account != null && command instanceof RegistrationCommand c) {
+                    handleRegistrationCommand(c, account, dBusConn, outputWriter);
+                    return;
+                }
+                if (!(command instanceof LocalCommand localCommand)) {
+                    throw new UserErrorException("Command only works in multi-account mode");
+                }
+
                 var accountObjectPath = account == null ? tryGetSingleAccountObjectPath(dBusConn) : null;
                 if (accountObjectPath == null) {
                     accountObjectPath = DbusConfig.getObjectPath(account);
                 }
-                var ts = dBusConn.getRemoteObject(DbusConfig.getBusname(), accountObjectPath, Signal.class);
-
-                handleCommand(command, ts, dBusConn, outputWriter);
+                handleLocalCommand(localCommand, accountObjectPath, dBusConn, outputWriter);
             }
         } catch (ServiceUnknown e) {
             throw new UserErrorException("signal-cli DBus daemon not running on "
@@ -366,22 +448,6 @@ public class App {
         } catch (UnknownMethod e) {
             // dbus daemon not running in multi-account mode
             return null;
-        }
-    }
-
-    private void handleCommand(
-            Command command, Signal ts, DBusConnection dBusConn, OutputWriter outputWriter
-    ) throws CommandException {
-        if (command instanceof LocalCommand localCommand) {
-            try (final var m = new DbusManagerImpl(ts, dBusConn)) {
-                localCommand.handleCommand(ns, m, outputWriter);
-            } catch (UnsupportedOperationException e) {
-                throw new UserErrorException("Command is not yet implemented via dbus", e);
-            } catch (IOException | DBusExecutionException e) {
-                throw new UnexpectedErrorException(e.getMessage(), e);
-            }
-        } else {
-            throw new UserErrorException("Command is not yet implemented via dbus");
         }
     }
 
