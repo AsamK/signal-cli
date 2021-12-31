@@ -20,6 +20,7 @@ public class Context {
     private final AttachmentStore attachmentStore;
     private final JobExecutor jobExecutor;
 
+    private AccountHelper accountHelper;
     private AttachmentHelper attachmentHelper;
     private ContactHelper contactHelper;
     private GroupHelper groupHelper;
@@ -75,6 +76,10 @@ public class Context {
         return jobExecutor;
     }
 
+    public AccountHelper getAccountHelper() {
+        return getOrCreate(() -> accountHelper, () -> accountHelper = new AccountHelper(this));
+    }
+
     public AttachmentHelper getAttachmentHelper() {
         return getOrCreate(() -> attachmentHelper, () -> attachmentHelper = new AttachmentHelper(this));
     }
@@ -100,7 +105,7 @@ public class Context {
                 () -> this.incomingMessageHandler = new IncomingMessageHandler(this));
     }
 
-    public PinHelper getPinHelper() {
+    PinHelper getPinHelper() {
         return getOrCreate(() -> pinHelper, () -> pinHelper = new PinHelper(dependencies.getKeyBackupService()));
     }
 

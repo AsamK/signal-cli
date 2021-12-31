@@ -97,6 +97,13 @@ public interface Manager extends Closeable {
 
     void checkAccountState() throws IOException;
 
+    /**
+     * This is used for checking a set of phone numbers for registration on Signal
+     *
+     * @param numbers The set of phone number in question
+     * @return A map of numbers to canonicalized number and uuid. If a number is not registered the uuid is null.
+     * @throws IOException if it's unable to get the contacts to check if they're registered
+     */
     Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException;
 
     void updateAccountAttributes(String deviceName) throws IOException;
@@ -105,6 +112,13 @@ public interface Manager extends Closeable {
 
     void updateConfiguration(Configuration configuration) throws IOException, NotMasterDeviceException;
 
+    /**
+     * @param givenName  if null, the previous givenName will be kept
+     * @param familyName if null, the previous familyName will be kept
+     * @param about      if null, the previous about text will be kept
+     * @param aboutEmoji if null, the previous about emoji will be kept
+     * @param avatar     if avatar is null the image from the local avatar store is used (if present),
+     */
     void setProfile(
             String givenName, String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException;
@@ -121,7 +135,7 @@ public interface Manager extends Closeable {
 
     void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException;
 
-    void setRegistrationLockPin(Optional<String> pin) throws IOException;
+    void setRegistrationLockPin(Optional<String> pin) throws IOException, NotMasterDeviceException;
 
     Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
 
@@ -191,10 +205,19 @@ public interface Manager extends Closeable {
             GroupId groupId, boolean blocked
     ) throws GroupNotFoundException, IOException, NotMasterDeviceException;
 
+    /**
+     * Change the expiration timer for a contact
+     */
     void setExpirationTimer(
             RecipientIdentifier.Single recipient, int messageExpirationTimer
     ) throws IOException, UnregisteredRecipientException;
 
+    /**
+     * Upload the sticker pack from path.
+     *
+     * @param path Path can be a path to a manifest.json file or to a zip file that contains a manifest.json file
+     * @return if successful, returns the URL to install the sticker pack in the signal app
+     */
     URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
 
     void requestAllSyncData() throws IOException;
@@ -245,18 +268,41 @@ public interface Manager extends Closeable {
 
     List<Identity> getIdentities(RecipientIdentifier.Single recipient);
 
+    /**
+     * Trust this the identity with this fingerprint
+     *
+     * @param recipient   account of the identity
+     * @param fingerprint Fingerprint
+     */
     boolean trustIdentityVerified(
             RecipientIdentifier.Single recipient, byte[] fingerprint
     ) throws UnregisteredRecipientException;
 
+    /**
+     * Trust this the identity with this safety number
+     *
+     * @param recipient    account of the identity
+     * @param safetyNumber Safety number
+     */
     boolean trustIdentityVerifiedSafetyNumber(
             RecipientIdentifier.Single recipient, String safetyNumber
     ) throws UnregisteredRecipientException;
 
+    /**
+     * Trust this the identity with this scannable safety number
+     *
+     * @param recipient    account of the identity
+     * @param safetyNumber Scannable safety number
+     */
     boolean trustIdentityVerifiedSafetyNumber(
             RecipientIdentifier.Single recipient, byte[] safetyNumber
     ) throws UnregisteredRecipientException;
 
+    /**
+     * Trust all keys of this identity without verification
+     *
+     * @param recipient account of the identity
+     */
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException;
 
     void addClosedListener(Runnable listener);

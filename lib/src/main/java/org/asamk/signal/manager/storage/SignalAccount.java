@@ -1034,13 +1034,17 @@ public class SignalAccount implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         synchronized (fileChannel) {
             try {
-                lock.close();
-            } catch (ClosedChannelException ignored) {
+                try {
+                    lock.close();
+                } catch (ClosedChannelException ignored) {
+                }
+                fileChannel.close();
+            } catch (IOException e) {
+                logger.warn("Failed to close account: {}", e.getMessage(), e);
             }
-            fileChannel.close();
         }
     }
 }

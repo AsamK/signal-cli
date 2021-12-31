@@ -669,6 +669,8 @@ public class DbusSignalImpl implements Signal {
             m.setRegistrationLockPin(Optional.empty());
         } catch (IOException e) {
             throw new Error.Failure("Remove pin error: " + e.getMessage());
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
 
@@ -678,6 +680,8 @@ public class DbusSignalImpl implements Signal {
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
         } catch (IOException e) {
             throw new Error.Failure("Set pin error: " + e.getMessage());
+        } catch (NotMasterDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
 
