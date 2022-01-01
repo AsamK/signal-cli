@@ -127,7 +127,8 @@ work in all situations.
 
 1. [Install GraalVM and setup the enviroment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
 2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
-3. Execute Gradle:
+3. Copy the libsignal_jni.so to the `lib/src/main/resources/` directory 
+4. Execute Gradle:
 
         ./gradlew nativeCompile
 
