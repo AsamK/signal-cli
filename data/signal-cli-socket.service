@@ -8,7 +8,7 @@ Requires=signal-cli-socket.socket
 CapabilityBoundingSet=
 Environment="SIGNAL_CLI_OPTS=-Xms2m"
 # Update 'ReadWritePaths' if you change the config path here
-ExecStart=/usr/local/bin/signal-cli --config /var/lib/signal-cli daemon
+ExecStart=%dir%/bin/signal-cli --config /var/lib/signal-cli daemon
 LockPersonality=true
 NoNewPrivileges=true
 PrivateDevices=true
