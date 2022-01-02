@@ -81,8 +81,14 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
             registrationManager.verifyAccount(verificationCode, pin);
         } catch (OverlappingFileLockException e) {
             throw new SignalControl.Error.Failure("Account is already in use");
-        } catch (IOException | PinLockedException | IncorrectPinException e) {
+        } catch (IOException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
+        } catch (PinLockedException e) {
+            throw new Error.Failure(
+                    "Verification failed! This number is locked with a pin. Hours remaining until reset: "
+                            + (e.getTimeRemaining() / 1000 / 60 / 60));
+        } catch (IncorrectPinException e) {
+            throw new Error.Failure("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
         }
     }
 
