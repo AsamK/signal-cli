@@ -27,6 +27,7 @@ ProtectProc=invisible
 ProtectSystem=strict
 # Profile pictures and attachments to upload must be located here for the service to access them
 ReadWritePaths=/var/lib/signal-cli
+RemoveIPC=true
 RestrictAddressFamilies=AF_INET AF_INET6
 RestrictNamespaces=true
 RestrictRealtime=true
