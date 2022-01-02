@@ -5,6 +5,7 @@ If you have a question you can ask it in the [GitHub discussions page](https://g
 - Search [existing issues](https://github.com/AsamK/signal-cli/issues?q=is%3Aissue) if it has been reported already
 - If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/AsamK/signal-cli/issues/new).
   - Be sure to include a **title and clear description**, as much relevant information as possible.
+  - Specify the signal-cli, JDK and OS version you're using. (and libsignal-client version, if self-compiled)
   - Run the failing command with `--verbose` flag to get a more detailed log output and include that in the bug report
 
 # Pull request
