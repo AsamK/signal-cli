@@ -68,7 +68,7 @@ public class SenderKeySharedStore {
 
             return new SenderKeySharedStore(sharedSenderKeys, objectMapper, file, addressResolver, resolver);
         } catch (FileNotFoundException e) {
-            logger.debug("Creating new shared sender key store.");
+            logger.trace("Creating new shared sender key store.");
             return new SenderKeySharedStore(new HashMap<>(), objectMapper, file, addressResolver, resolver);
         }
     }

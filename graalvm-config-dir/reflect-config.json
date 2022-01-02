@@ -364,7 +364,8 @@
 {
   "name":"org.asamk.Signal$SyncMessageReceivedV2",
   "queryAllDeclaredConstructors":true,
-  "queryAllPublicConstructors":true}
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","long","java.lang.String","java.lang.String","byte[]","java.lang.String","java.util.Map"] }]}
 ,
 {
   "name":"org.asamk.SignalControl",

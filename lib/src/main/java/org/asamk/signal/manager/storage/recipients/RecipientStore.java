@@ -111,7 +111,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
             return recipientStore;
         } catch (FileNotFoundException e) {
-            logger.debug("Creating new recipient store.");
+            logger.trace("Creating new recipient store.");
             return new RecipientStore(objectMapper, file, recipientMergeHandler, new HashMap<>(), 0);
         }
     }
