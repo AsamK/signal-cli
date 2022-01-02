@@ -5,15 +5,43 @@ After=network-online.target
 Requires=signal-cli-socket.socket
 
 [Service]
-Type=simple
+CapabilityBoundingSet=
 Environment="SIGNAL_CLI_OPTS=-Xms2m"
+# Update 'ReadWritePaths' if you change the config path here
 ExecStart=%dir%/bin/signal-cli --config /var/lib/signal-cli daemon
-User=signal-cli
+LockPersonality=true
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateIPC=true
+PrivateTmp=true
+PrivateUsers=true
+ProcSubset=pid
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectProc=invisible
+ProtectSystem=strict
+# Profile pictures and attachments to upload must be located here for the service to access them
+ReadWritePaths=/var/lib/signal-cli
+RemoveIPC=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
 # JVM always exits with 143 in reaction to SIGTERM signal
 SuccessExitStatus=143
 StandardInput=socket
 StandardOutput=journal
 StandardError=journal
+SystemCallArchitectures=native
+SystemCallFilter=~@debug @mount @obsolete @privileged @resources
+UMask=0077
+# Create the user and home directory with 'useradd -r -U -s /usr/sbin/nologin -m -b /var/lib signal-cli'
+User=signal-cli
 
 [Install]
 Also=signal-cli-socket.socket
