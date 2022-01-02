@@ -119,6 +119,7 @@ public final class IncomingMessageHandler {
                 exception = new UntrustedIdentityException(account.getRecipientStore()
                         .resolveRecipientAddress(recipientId), e.getSenderDevice());
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
+                logger.debug("Failed to decrypt incoming message", e);
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
                 final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
                 final var selfProfile = context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
@@ -138,6 +139,7 @@ public final class IncomingMessageHandler {
                 logger.debug("Dropping unidentified message from self.");
                 return new Pair<>(List.of(), null);
             } catch (Exception e) {
+                logger.debug("Failed to handle incoming message", e);
                 exception = e;
             }
         }
