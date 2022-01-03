@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidNumberException;
+import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -199,7 +200,11 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendMessage(final String message, final List<String> attachments, final List<String> recipients) {
         try {
-            final var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
+            final var results = m.sendMessage(new Message(message,
+                            attachments,
+                            List.of(),
+                            Optional.empty(),
+                            Optional.empty()),
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
@@ -208,7 +213,7 @@ public class DbusSignalImpl implements Signal {
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | InvalidStickerException e) {
             throw new Error.Failure(e);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
@@ -346,13 +351,16 @@ public class DbusSignalImpl implements Signal {
             final String message, final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
-            final var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
-                    Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
+            final var results = m.sendMessage(new Message(message,
+                    attachments,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.empty()), Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
             throw new Error.AttachmentInvalid(e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | InvalidStickerException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());
@@ -384,11 +392,14 @@ public class DbusSignalImpl implements Signal {
     @Override
     public long sendGroupMessage(final String message, final List<String> attachments, final byte[] groupId) {
         try {
-            var results = m.sendMessage(new Message(message, attachments, List.of(), Optional.empty()),
-                    Set.of(getGroupRecipientIdentifier(groupId)));
+            var results = m.sendMessage(new Message(message,
+                    attachments,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.empty()), Set.of(getGroupRecipientIdentifier(groupId)));
             checkSendMessageResults(results);
             return results.timestamp();
-        } catch (IOException e) {
+        } catch (IOException | InvalidStickerException e) {
             throw new Error.Failure(e.getMessage());
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new Error.GroupNotFound(e.getMessage());

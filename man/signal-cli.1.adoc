@@ -73,11 +73,9 @@ Choose when to trust new identities:
 Register a phone number with SMS or voice verification.
 Use the verify command to complete the verification.
 
-If the account is just deactivated, the register command will just reactivate
-account, without requiring an SMS verification.  By default the unregister command
-just deactivates the account, in which case it can be reactivated without sms
-verification if the local data is still available.  If the account was deleted
-(with --delete-account) it cannot be reactivated.
+If the account is just deactivated, the register command will just reactivate account, without requiring an SMS verification.
+By default the unregister command just deactivates the account, in which case it can be reactivated without sms verification if the local data is still available.
+If the account was deleted (with --delete-account) it cannot be reactivated.
 
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
@@ -197,6 +195,9 @@ Send a message to another user or group.
 RECIPIENT::
 Specify the recipients’ phone number.
 
+*--note-to-self*::
+Send the message to self without notification.
+
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
@@ -206,11 +207,10 @@ Specify the message, if missing, standard input is used.
 *-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
 Add one or more files as attachment.
 
-*--note-to-self*::
-Send the message to self without notification.
-
-*-e*, *--end-session*::
-Clear session state and send end session message.
+*--sticker* STICKER::
+Send a sticker of a locally known sticker pack (syntax: stickerPackId:stickerId).
+Shouldn't be used together with `-m` as the official clients don't support this.
+e.g.: `--sticker 00abac3bc18d7f599bff2325dc306d43:2`
 
 *--mention*::
 Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
@@ -227,6 +227,9 @@ Specify the message of the original message.
 
 *--quote-mention*::
 Specify the mentions of the original message (same format as `--mention`).
+
+*-e*, *--end-session*::
+Clear session state and send end session message.
 
 === sendReaction
 

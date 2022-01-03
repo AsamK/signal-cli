@@ -22,6 +22,7 @@ import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -48,6 +49,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.storage.stickers.StickerPackId;
+import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.slf4j.Logger;
@@ -484,7 +486,7 @@ public class ManagerImpl implements Manager {
     @Override
     public SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients);
@@ -492,7 +494,7 @@ public class ManagerImpl implements Manager {
 
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
-    ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException {
+    ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
         messageBuilder.withBody(message.messageText());
         final var attachments = message.attachments();
         if (attachments != null) {
@@ -509,6 +511,30 @@ public class ManagerImpl implements Manager {
                     quote.message(),
                     List.of(),
                     resolveMentions(quote.mentions())));
+        }
+        if (message.sticker().isPresent()) {
+            final var sticker = message.sticker().get();
+            final var packId = StickerPackId.deserialize(sticker.packId());
+            final var stickerId = sticker.stickerId();
+
+            final var stickerPack = context.getAccount().getStickerStore().getStickerPack(packId);
+            if (stickerPack == null || !context.getStickerPackStore().existsStickerPack(packId)) {
+                throw new InvalidStickerException("Sticker pack not found");
+            }
+            final var manifest = context.getStickerPackStore().retrieveManifest(packId);
+            if (manifest.stickers().size() <= stickerId) {
+                throw new InvalidStickerException("Sticker id not part of this pack");
+            }
+            final var manifestSticker = manifest.stickers().get(stickerId);
+            final var streamDetails = context.getStickerPackStore().retrieveSticker(packId, stickerId);
+            if (streamDetails == null) {
+                throw new InvalidStickerException("Missing local sticker file");
+            }
+            messageBuilder.withSticker(new SignalServiceDataMessage.Sticker(packId.serialize(),
+                    stickerPack.getPackKey(),
+                    stickerId,
+                    manifestSticker.emoji(),
+                    AttachmentUtils.createAttachment(streamDetails, Optional.absent())));
         }
     }
 

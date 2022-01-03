@@ -327,7 +327,7 @@ public final class IncomingMessageHandler {
                 final var installed = !m.getType().isPresent()
                         || m.getType().get() == StickerPackOperationMessage.Type.INSTALL;
 
-                var sticker = account.getStickerStore().getSticker(stickerPackId);
+                var sticker = account.getStickerStore().getStickerPack(stickerPackId);
                 if (m.getPackKey().isPresent()) {
                     if (sticker == null) {
                         sticker = new Sticker(stickerPackId, m.getPackKey().get());
@@ -598,7 +598,7 @@ public final class IncomingMessageHandler {
         if (message.getSticker().isPresent()) {
             final var messageSticker = message.getSticker().get();
             final var stickerPackId = StickerPackId.deserialize(messageSticker.getPackId());
-            var sticker = account.getStickerStore().getSticker(stickerPackId);
+            var sticker = account.getStickerStore().getStickerPack(stickerPackId);
             if (sticker == null) {
                 sticker = new Sticker(stickerPackId, messageSticker.getPackKey());
                 account.getStickerStore().updateSticker(sticker);

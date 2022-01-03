@@ -41,7 +41,7 @@ public class StickerStore {
         return new StickerStore(stickers, saver);
     }
 
-    public Sticker getSticker(StickerPackId packId) {
+    public Sticker getStickerPack(StickerPackId packId) {
         synchronized (stickers) {
             return stickers.get(packId);
         }

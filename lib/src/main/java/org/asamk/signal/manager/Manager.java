@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
@@ -173,7 +174,7 @@ public interface Manager extends Closeable {
 
     SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
     SendMessageResults sendRemoteDeleteMessage(
             long targetSentTimestamp, Set<RecipientIdentifier> recipients

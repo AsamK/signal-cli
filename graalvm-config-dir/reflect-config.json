@@ -730,6 +730,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","org.asamk.signal.manager.JsonStickerPack$JsonSticker","java.util.List"] }, 
     {"name":"author","parameterTypes":[] }, 
     {"name":"cover","parameterTypes":[] }, 
     {"name":"stickers","parameterTypes":[] }, 
@@ -742,6 +743,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
     {"name":"contentType","parameterTypes":[] }, 
     {"name":"emoji","parameterTypes":[] }, 
     {"name":"file","parameterTypes":[] }

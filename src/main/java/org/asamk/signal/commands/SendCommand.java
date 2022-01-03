@@ -9,6 +9,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
@@ -17,6 +18,7 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +67,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--quote-mention")
                 .nargs("*")
                 .help("Quote with mention of another group member (syntax: start:length:recipientNumber)");
+        subparser.addArgument("--sticker").help("Send a sticker (syntax: stickerPackId:stickerId)");
     }
 
     @Override
@@ -100,13 +103,20 @@ public class SendCommand implements JsonRpcLocalCommand {
             }
         }
 
+        final var stickerString = ns.getString("sticker");
+        final var sticker = stickerString == null ? null : parseSticker(stickerString);
+
         var messageText = ns.getString("message");
         if (messageText == null) {
-            logger.debug("Reading message from stdin...");
-            try {
-                messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
-            } catch (IOException e) {
-                throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
+            if (sticker != null) {
+                messageText = "";
+            } else {
+                logger.debug("Reading message from stdin...");
+                try {
+                    messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
+                } catch (IOException e) {
+                    throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
+                }
             }
         }
 
@@ -129,15 +139,18 @@ public class SendCommand implements JsonRpcLocalCommand {
                     : parseMentions(m, quoteMentionStrings);
             quote = new Message.Quote(quoteTimestamp,
                     CommandUtil.getSingleRecipientIdentifier(quoteAuthor, m.getSelfNumber()),
-                    quoteMessage,
+                    quoteMessage == null ? "" : quoteMessage,
                     quoteMentions);
         } else {
             quote = null;
         }
 
         try {
-            var results = m.sendMessage(new Message(messageText, attachments, mentions, Optional.ofNullable(quote)),
-                    recipientIdentifiers);
+            var results = m.sendMessage(new Message(messageText,
+                    attachments,
+                    mentions,
+                    Optional.ofNullable(quote),
+                    Optional.ofNullable(sticker)), recipientIdentifiers);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
@@ -146,6 +159,8 @@ public class SendCommand implements JsonRpcLocalCommand {
             throw new UserErrorException(e.getMessage());
         } catch (UnregisteredRecipientException e) {
             throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
+        } catch (InvalidStickerException e) {
+            throw new UserErrorException("Failed to send sticker: " + e.getMessage(), e);
         }
     }
 
@@ -166,5 +181,16 @@ public class SendCommand implements JsonRpcLocalCommand {
                     m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
         }
         return mentions;
+    }
+
+    private Message.Sticker parseSticker(final String stickerString) throws UserErrorException {
+        final Pattern stickerPattern = Pattern.compile("([0-9a-f]+):([0-9]+)");
+        final var matcher = stickerPattern.matcher(stickerString);
+        if (!matcher.matches() || matcher.group(1).length() % 2 != 0) {
+            throw new UserErrorException("Invalid sticker syntax ("
+                    + stickerString
+                    + ") expected 'stickerPackId:stickerId'");
+        }
+        return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
     }
 }
