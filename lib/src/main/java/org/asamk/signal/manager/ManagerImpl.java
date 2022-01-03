@@ -519,10 +519,10 @@ public class ManagerImpl implements Manager {
             final var stickerId = sticker.stickerId();
 
             final var stickerPack = context.getAccount().getStickerStore().getStickerPack(packId);
-            if (stickerPack == null || !context.getStickerPackStore().existsStickerPack(packId)) {
+            if (stickerPack == null) {
                 throw new InvalidStickerException("Sticker pack not found");
             }
-            final var manifest = context.getStickerPackStore().retrieveManifest(packId);
+            final var manifest = context.getStickerHelper().getOrRetrieveStickerPack(packId, stickerPack.getPackKey());
             if (manifest.stickers().size() <= stickerId) {
                 throw new InvalidStickerException("Sticker id not part of this pack");
             }

@@ -772,7 +772,8 @@
     {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
     {"name":"contentType","parameterTypes":[] }, 
     {"name":"emoji","parameterTypes":[] }, 
-    {"name":"file","parameterTypes":[] }
+    {"name":"file","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }
   ]}
 ,
 {

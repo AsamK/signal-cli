@@ -33,6 +33,7 @@ public class Context {
     private ReceiveHelper receiveHelper;
     private RecipientHelper recipientHelper;
     private SendHelper sendHelper;
+    private StickerHelper stickerHelper;
     private StorageHelper storageHelper;
     private SyncHelper syncHelper;
     private UnidentifiedAccessHelper unidentifiedAccessHelper;
@@ -127,6 +128,10 @@ public class Context {
 
     public SendHelper getSendHelper() {
         return getOrCreate(() -> sendHelper, () -> sendHelper = new SendHelper(this));
+    }
+
+    public StickerHelper getStickerHelper() {
+        return getOrCreate(() -> stickerHelper, () -> stickerHelper = new StickerHelper(this));
     }
 
     public StorageHelper getStorageHelper() {

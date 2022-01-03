@@ -1,16 +1,13 @@
 package org.asamk.signal.manager.jobs;
 
-import org.asamk.signal.manager.JsonStickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.helper.Context;
-import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.IOException;
-import java.util.HashSet;
 
 public class RetrieveStickerPackJob implements Job {
 
@@ -30,43 +27,8 @@ public class RetrieveStickerPackJob implements Job {
             logger.debug("Sticker pack {} already downloaded.", Hex.toStringCondensed(packId.serialize()));
             return;
         }
-        logger.debug("Retrieving sticker pack {}.", Hex.toStringCondensed(packId.serialize()));
         try {
-            final var manifest = context.getDependencies()
-                    .getMessageReceiver()
-                    .retrieveStickerManifest(packId.serialize(), packKey);
-
-            final var stickerIds = new HashSet<Integer>();
-            if (manifest.getCover().isPresent()) {
-                stickerIds.add(manifest.getCover().get().getId());
-            }
-            for (var sticker : manifest.getStickers()) {
-                stickerIds.add(sticker.getId());
-            }
-
-            for (var id : stickerIds) {
-                final var inputStream = context.getDependencies()
-                        .getMessageReceiver()
-                        .retrieveSticker(packId.serialize(), packKey, id);
-                context.getStickerPackStore().storeSticker(packId, id, o -> IOUtils.copyStream(inputStream, o));
-            }
-
-            final var jsonManifest = new JsonStickerPack(manifest.getTitle().orNull(),
-                    manifest.getAuthor().orNull(),
-                    manifest.getCover()
-                            .transform(c -> new JsonStickerPack.JsonSticker(c.getId(),
-                                    c.getEmoji(),
-                                    String.valueOf(c.getId()),
-                                    c.getContentType()))
-                            .orNull(),
-                    manifest.getStickers()
-                            .stream()
-                            .map(c -> new JsonStickerPack.JsonSticker(c.getId(),
-                                    c.getEmoji(),
-                                    String.valueOf(c.getId()),
-                                    c.getContentType()))
-                            .toList());
-            context.getStickerPackStore().storeManifest(packId, jsonManifest);
+            context.getStickerHelper().retrieveStickerPack(packId, packKey);
         } catch (IOException e) {
             logger.warn("Failed to retrieve sticker pack {}: {}",
                     Hex.toStringCondensed(packId.serialize()),
