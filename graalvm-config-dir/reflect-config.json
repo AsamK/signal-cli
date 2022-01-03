@@ -434,6 +434,31 @@
   "allDeclaredConstructors":true}
 ,
 {
+  "name":"org.asamk.signal.commands.ListStickerPacksCommand$JsonStickerPack",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"author","parameterTypes":[] }, 
+    {"name":"cover","parameterTypes":[] }, 
+    {"name":"installed","parameterTypes":[] }, 
+    {"name":"packId","parameterTypes":[] }, 
+    {"name":"stickers","parameterTypes":[] }, 
+    {"name":"title","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"org.asamk.signal.commands.ListStickerPacksCommand$JsonStickerPack$JsonSticker",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"contentType","parameterTypes":[] }, 
+    {"name":"emoji","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }
+  ]}
+,
+{
   "name":"org.asamk.signal.commands.RegisterCommand$RegistrationParams",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -743,6 +768,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.Integer","java.lang.String","java.lang.String","java.lang.String"] }, 
     {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
     {"name":"contentType","parameterTypes":[] }, 
     {"name":"emoji","parameterTypes":[] }, 

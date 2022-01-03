@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.storage.stickers;
 
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,10 @@ public class StickerStore {
         }).filter(Objects::nonNull).collect(Collectors.toMap(Sticker::getPackId, s -> s));
 
         return new StickerStore(stickers, saver);
+    }
+
+    public Collection<Sticker> getStickerPacks() {
+        return stickers.values();
     }
 
     public Sticker getStickerPack(StickerPackId packId) {

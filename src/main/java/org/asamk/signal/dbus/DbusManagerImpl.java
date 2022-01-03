@@ -18,6 +18,7 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
@@ -441,6 +442,11 @@ public class DbusManagerImpl implements Manager {
         } catch (URISyntaxException e) {
             throw new AssertionError(e);
         }
+    }
+
+    @Override
+    public List<StickerPack> getStickerPacks() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

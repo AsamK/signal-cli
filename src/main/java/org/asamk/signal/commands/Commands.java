@@ -23,6 +23,7 @@ public class Commands {
         addCommand(new ListDevicesCommand());
         addCommand(new ListGroupsCommand());
         addCommand(new ListIdentitiesCommand());
+        addCommand(new ListStickerPacksCommand());
         addCommand(new QuitGroupCommand());
         addCommand(new ReceiveCommand());
         addCommand(new RegisterCommand());

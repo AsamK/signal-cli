@@ -54,13 +54,15 @@ public class RetrieveStickerPackJob implements Job {
             final var jsonManifest = new JsonStickerPack(manifest.getTitle().orNull(),
                     manifest.getAuthor().orNull(),
                     manifest.getCover()
-                            .transform(c -> new JsonStickerPack.JsonSticker(c.getEmoji(),
+                            .transform(c -> new JsonStickerPack.JsonSticker(c.getId(),
+                                    c.getEmoji(),
                                     String.valueOf(c.getId()),
                                     c.getContentType()))
                             .orNull(),
                     manifest.getStickers()
                             .stream()
-                            .map(c -> new JsonStickerPack.JsonSticker(c.getEmoji(),
+                            .map(c -> new JsonStickerPack.JsonSticker(c.getId(),
+                                    c.getEmoji(),
                                     String.valueOf(c.getId()),
                                     c.getContentType()))
                             .toList());

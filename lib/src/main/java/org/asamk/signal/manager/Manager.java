@@ -13,6 +13,7 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -220,6 +221,8 @@ public interface Manager extends Closeable {
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
     URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
+
+    List<StickerPack> getStickerPacks();
 
     void requestAllSyncData() throws IOException;
 

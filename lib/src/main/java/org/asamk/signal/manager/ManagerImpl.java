@@ -29,6 +29,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -680,6 +681,29 @@ public class ManagerImpl implements Manager {
         } catch (URISyntaxException e) {
             throw new AssertionError(e);
         }
+    }
+
+    @Override
+    public List<StickerPack> getStickerPacks() {
+        final var stickerPackStore = context.getStickerPackStore();
+        return account.getStickerStore().getStickerPacks().stream().map(pack -> {
+            if (stickerPackStore.existsStickerPack(pack.getPackId())) {
+                try {
+                    final var manifest = stickerPackStore.retrieveManifest(pack.getPackId());
+                    return new StickerPack(pack.getPackId(),
+                            pack.getPackKey(),
+                            pack.isInstalled(),
+                            manifest.title(),
+                            manifest.author(),
+                            java.util.Optional.ofNullable(manifest.cover() == null ? null : manifest.cover().toApi()),
+                            manifest.stickers().stream().map(JsonStickerPack.JsonSticker::toApi).toList());
+                } catch (Exception e) {
+                    logger.warn("Failed to read local sticker pack manifest: {}", e.getMessage(), e);
+                }
+            }
+
+            return new StickerPack(pack.getPackId(), pack.getPackKey(), pack.isInstalled());
+        }).toList();
     }
 
     @Override
