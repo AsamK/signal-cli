@@ -322,10 +322,12 @@ public record MessageEnvelope(
             }
         }
 
-        public record Sticker(byte[] packId, byte[] packKey, int stickerId) {
+        public record Sticker(StickerPackId packId, byte[] packKey, int stickerId) {
 
             static Sticker from(SignalServiceDataMessage.Sticker sticker) {
-                return new Sticker(sticker.getPackId(), sticker.getPackKey(), sticker.getStickerId());
+                return new Sticker(StickerPackId.deserialize(sticker.getPackId()),
+                        sticker.getPackKey(),
+                        sticker.getStickerId());
             }
         }
 

@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.storage.stickers.StickerPackId;
-
 import java.util.List;
 import java.util.Optional;
 

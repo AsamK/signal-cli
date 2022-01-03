@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.storage.stickers;
 
+import org.asamk.signal.manager.api.StickerPackId;
+
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;

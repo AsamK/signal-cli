@@ -162,7 +162,10 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     }
 
     private Map<String, Variant<? extends Serializable>> getStickerMap(final MessageEnvelope.Data.Sticker sticker) {
-        return Map.of("packId", new Variant<>(sticker.packId()), "stickerId", new Variant<>(sticker.stickerId()));
+        return Map.of("packId",
+                new Variant<>(sticker.packId().serialize()),
+                "stickerId",
+                new Variant<>(sticker.stickerId()));
     }
 
     private Map<String, Variant<?>> getReactionMap(final MessageEnvelope.Data.Reaction reaction) {

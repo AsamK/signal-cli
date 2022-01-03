@@ -8,10 +8,10 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.DateUtils;
+import org.asamk.signal.util.Hex;
 import org.slf4j.helpers.MessageFormatter;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.stream.Collectors;
 
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
@@ -349,8 +349,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     private void printSticker(
             final PlainTextWriter writer, final MessageEnvelope.Data.Sticker sticker
     ) {
-        writer.println("Pack id: {}", Base64.getEncoder().encodeToString(sticker.packId()));
-        writer.println("Pack key: {}", Base64.getEncoder().encodeToString(sticker.packKey()));
+        writer.println("Pack id: {}", Hex.toStringCondensed(sticker.packId().serialize()));
         writer.println("Sticker id: {}", sticker.stickerId());
     }
 

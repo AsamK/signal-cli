@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.jobs;
 
 import org.asamk.signal.manager.JsonStickerPack;
+import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.helper.Context;
-import org.asamk.signal.manager.storage.stickers.StickerPackId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.storage.stickers;
 
+import org.asamk.signal.manager.api.StickerPackId;
+
 public class Sticker {
 
     private final StickerPackId packId;

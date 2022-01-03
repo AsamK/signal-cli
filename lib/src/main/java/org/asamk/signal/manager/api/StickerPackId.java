@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.storage.stickers;
+package org.asamk.signal.manager.api;
 
 import java.util.Arrays;
 

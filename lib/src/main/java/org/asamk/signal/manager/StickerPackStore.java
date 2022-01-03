@@ -2,7 +2,7 @@ package org.asamk.signal.manager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.asamk.signal.manager.storage.stickers.StickerPackId;
+import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.whispersystems.signalservice.api.util.StreamDetails;
