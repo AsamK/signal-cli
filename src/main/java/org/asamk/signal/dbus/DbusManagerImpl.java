@@ -19,6 +19,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.groups.GroupId;
@@ -436,10 +437,10 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public URI uploadStickerPack(final File path) throws IOException, StickerPackInvalidException {
+    public StickerPackUrl uploadStickerPack(final File path) throws IOException, StickerPackInvalidException {
         try {
-            return new URI(signal.uploadStickerPack(path.getPath()));
-        } catch (URISyntaxException e) {
+            return StickerPackUrl.fromUri(new URI(signal.uploadStickerPack(path.getPath())));
+        } catch (URISyntaxException | StickerPackUrl.InvalidStickerPackLinkException e) {
             throw new AssertionError(e);
         }
     }

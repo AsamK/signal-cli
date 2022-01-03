@@ -1,18 +1,16 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.util.Utils;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
@@ -24,7 +22,7 @@ public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
             throw new RuntimeException("Invalid device link uri");
         }
 
-        var query = getQueryMap(rawQuery);
+        var query = Utils.getQueryMap(rawQuery);
         var deviceIdentifier = query.get("uuid");
         var publicKeyEncoded = query.get("pub_key");
 
@@ -46,18 +44,6 @@ public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
         }
 
         return new DeviceLinkInfo(deviceIdentifier, deviceKey);
-    }
-
-    private static Map<String, String> getQueryMap(String query) {
-        var params = query.split("&");
-        var map = new HashMap<String, String>();
-        for (var param : params) {
-            final var paramParts = param.split("=");
-            var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
-            var value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
-            map.put(name, value);
-        }
-        return map;
     }
 
     public URI createDeviceLinkUri() {

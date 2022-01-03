@@ -35,21 +35,29 @@ public class ListStickerPacksCommand implements JsonRpcLocalCommand {
             jsonWriter.write(jsonStickerPacks);
         } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
             for (final var sticker : stickerPacks) {
-                plainTextWriter.println("Pack {}: “{}” by “{}” has {} stickers",
+                plainTextWriter.println("Pack {}: “{}” by “{}” has {} stickers. {}",
                         Hex.toStringCondensed(sticker.packId().serialize()),
                         sticker.title(),
                         sticker.author(),
-                        sticker.stickers().size());
+                        sticker.stickers().size(),
+                        sticker.url().getUrl());
             }
         }
     }
 
     private record JsonStickerPack(
-            String packId, boolean installed, String title, String author, JsonSticker cover, List<JsonSticker> stickers
+            String packId,
+            String url,
+            boolean installed,
+            String title,
+            String author,
+            JsonSticker cover,
+            List<JsonSticker> stickers
     ) {
 
         JsonStickerPack(StickerPack stickerPack) {
             this(Hex.toStringCondensed(stickerPack.packId().serialize()),
+                    stickerPack.url().getUrl().toString(),
                     stickerPack.installed(),
                     stickerPack.title(),
                     stickerPack.author(),

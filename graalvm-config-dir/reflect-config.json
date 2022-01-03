@@ -444,7 +444,8 @@
     {"name":"installed","parameterTypes":[] }, 
     {"name":"packId","parameterTypes":[] }, 
     {"name":"stickers","parameterTypes":[] }, 
-    {"name":"title","parameterTypes":[] }
+    {"name":"title","parameterTypes":[] }, 
+    {"name":"url","parameterTypes":[] }
   ]}
 ,
 {

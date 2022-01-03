@@ -31,6 +31,7 @@ import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
+import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -70,9 +71,6 @@ import org.whispersystems.signalservice.internal.util.Util;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -658,7 +656,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
+    public StickerPackUrl uploadStickerPack(File path) throws IOException, StickerPackInvalidException {
         var manifest = StickerUtils.getSignalServiceStickerManifestUpload(path);
 
         var messageSender = dependencies.getMessageSender();
@@ -670,17 +668,7 @@ public class ManagerImpl implements Manager {
         var sticker = new Sticker(packId, packKey);
         account.getStickerStore().updateSticker(sticker);
 
-        try {
-            return new URI("https",
-                    "signal.art",
-                    "/addstickers/",
-                    "pack_id="
-                            + URLEncoder.encode(Hex.toStringCondensed(packId.serialize()), StandardCharsets.UTF_8)
-                            + "&pack_key="
-                            + URLEncoder.encode(Hex.toStringCondensed(packKey), StandardCharsets.UTF_8));
-        } catch (URISyntaxException e) {
-            throw new AssertionError(e);
-        }
+        return new StickerPackUrl(packId, packKey);
     }
 
     @Override
@@ -691,7 +679,7 @@ public class ManagerImpl implements Manager {
                 try {
                     final var manifest = stickerPackStore.retrieveManifest(pack.getPackId());
                     return new StickerPack(pack.getPackId(),
-                            pack.getPackKey(),
+                            new StickerPackUrl(pack.getPackId(), pack.getPackKey()),
                             pack.isInstalled(),
                             manifest.title(),
                             manifest.author(),

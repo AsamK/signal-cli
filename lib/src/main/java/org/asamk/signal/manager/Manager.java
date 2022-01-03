@@ -14,6 +14,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -220,7 +221,7 @@ public interface Manager extends Closeable {
      * @param path Path can be a path to a manifest.json file or to a zip file that contains a manifest.json file
      * @return if successful, returns the URL to install the sticker pack in the signal app
      */
-    URI uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
+    StickerPackUrl uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
 
     List<StickerPack> getStickerPacks();
 

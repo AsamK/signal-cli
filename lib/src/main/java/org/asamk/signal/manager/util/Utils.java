@@ -14,8 +14,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
@@ -105,5 +109,17 @@ public class Utils {
                 return lefts.tryAdvance(left -> rights.tryAdvance(right -> action.accept(combiner.apply(left, right))));
             }
         }, leftStream.isParallel() || rightStream.isParallel());
+    }
+
+    public static Map<String, String> getQueryMap(String query) {
+        var params = query.split("&");
+        var map = new HashMap<String, String>();
+        for (var param : params) {
+            final var paramParts = param.split("=");
+            var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
+            var value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
+            map.put(name, value);
+        }
+        return map;
     }
 }
