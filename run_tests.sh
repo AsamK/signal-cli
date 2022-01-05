@@ -30,7 +30,7 @@ fi
 
 run() {
   set -x
-  "$SIGNAL_CLI" --service-environment="sandbox" $@
+  "$SIGNAL_CLI" --service-environment="staging" $@
   set +x
 }
 

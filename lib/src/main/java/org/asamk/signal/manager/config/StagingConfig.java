@@ -22,7 +22,7 @@ import java.util.Map;
 import okhttp3.Dns;
 import okhttp3.Interceptor;
 
-class SandboxConfig {
+class StagingConfig {
 
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BbqY1DzohE4NUZoVF+L18oUPrK3kILllLEJh2UnPSsEx");
@@ -83,6 +83,6 @@ class SandboxConfig {
         return CDS_MRENCLAVE;
     }
 
-    private SandboxConfig() {
+    private StagingConfig() {
     }
 }

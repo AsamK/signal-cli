@@ -50,6 +50,11 @@ This flag must not be given for the `link` command.
 It is optional for the `daemon` command.
 For all other commands it is only optional if there is exactly one local user in the config directory.
 
+*--service-environment* ENVIRONMENT
+Choose the server environment to use:
+- `live` (default)
+- `staging`
+
 *--dbus*::
 Make request via user dbus.
 

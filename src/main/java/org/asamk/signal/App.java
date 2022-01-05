@@ -155,7 +155,7 @@ public class App {
         final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
         final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
                 ? ServiceEnvironment.LIVE
-                : ServiceEnvironment.SANDBOX;
+                : ServiceEnvironment.STAGING;
 
         final var trustNewIdentityCli = ns.<TrustNewIdentityCli>get("trust-new-identities");
         final var trustNewIdentity = trustNewIdentityCli == TrustNewIdentityCli.ON_FIRST_USE

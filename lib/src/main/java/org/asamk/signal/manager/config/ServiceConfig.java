@@ -74,10 +74,10 @@ public class ServiceConfig {
                     LiveConfig.getUnidentifiedSenderTrustRoot(),
                     LiveConfig.createKeyBackupConfig(),
                     LiveConfig.getCdsMrenclave());
-            case SANDBOX -> new ServiceEnvironmentConfig(SandboxConfig.createDefaultServiceConfiguration(interceptors),
-                    SandboxConfig.getUnidentifiedSenderTrustRoot(),
-                    SandboxConfig.createKeyBackupConfig(),
-                    SandboxConfig.getCdsMrenclave());
+            case STAGING -> new ServiceEnvironmentConfig(StagingConfig.createDefaultServiceConfiguration(interceptors),
+                    StagingConfig.getUnidentifiedSenderTrustRoot(),
+                    StagingConfig.createKeyBackupConfig(),
+                    StagingConfig.getCdsMrenclave());
         };
     }
 }
