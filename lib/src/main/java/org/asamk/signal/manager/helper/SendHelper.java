@@ -38,6 +38,7 @@ import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserExce
 import org.whispersystems.signalservice.internal.push.exceptions.InvalidUnidentifiedAccessHeaderException;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -285,6 +286,7 @@ public class SendHelper {
             final Set<RecipientId> recipientIds,
             final DistributionId distributionId
     ) throws IOException {
+        long startTime = System.currentTimeMillis();
         // isRecipientUpdate is true if we've already sent this message to some recipients in the past, otherwise false.
         final var isRecipientUpdate = false;
         Set<RecipientId> senderKeyTargets = distributionId == null
@@ -329,7 +331,8 @@ public class SendHelper {
                     isRecipientUpdate || allResults.size() > 0);
             allResults.addAll(results);
         }
-
+        final var duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
+        logger.debug("Sending took {} seconds", duration.toString());
         return allResults;
     }
 
