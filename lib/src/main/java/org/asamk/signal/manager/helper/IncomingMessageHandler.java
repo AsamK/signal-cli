@@ -121,18 +121,23 @@ public final class IncomingMessageHandler {
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
-                final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
-                final var selfProfile = context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
-                if (e.getSenderDevice() != account.getDeviceId()
-                        && senderProfile != null
-                        && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
-                        && selfProfile != null
-                        && selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
-                    logger.debug("Received invalid message, requesting message resend.");
-                    actions.add(new SendRetryMessageRequestAction(sender, e, envelope));
+                if (context.getContactHelper().isContactBlocked(sender)) {
+                    logger.debug("Received invalid message from blocked contact, ignoring.");
                 } else {
-                    logger.debug("Received invalid message, queuing renew session action.");
-                    actions.add(new RenewSessionAction(sender));
+                    final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
+                    final var selfProfile = context.getProfileHelper()
+                            .getRecipientProfile(account.getSelfRecipientId());
+                    if (e.getSenderDevice() != account.getDeviceId()
+                            && senderProfile != null
+                            && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
+                            && selfProfile != null
+                            && selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
+                        logger.debug("Received invalid message, requesting message resend.");
+                        actions.add(new SendRetryMessageRequestAction(sender, e, envelope));
+                    } else {
+                        logger.debug("Received invalid message, queuing renew session action.");
+                        actions.add(new RenewSessionAction(sender));
+                    }
                 }
                 exception = e;
             } catch (SelfSendException e) {
@@ -188,15 +193,9 @@ public final class IncomingMessageHandler {
             SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments
     ) {
         var actions = new ArrayList<HandleAction>();
-        final RecipientId sender;
-        final int senderDeviceId;
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
-            sender = context.getRecipientHelper().resolveRecipient(envelope.getSourceAddress());
-            senderDeviceId = envelope.getSourceDevice();
-        } else {
-            sender = context.getRecipientHelper().resolveRecipient(content.getSender());
-            senderDeviceId = content.getSenderDevice();
-        }
+        final var senderPair = getSender(envelope, content);
+        final var sender = senderPair.first();
+        final var senderDeviceId = senderPair.second();
 
         if (content.getSenderKeyDistributionMessage().isPresent()) {
             final var message = content.getSenderKeyDistributionMessage().get();
@@ -606,5 +605,15 @@ public final class IncomingMessageHandler {
             context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }
         return actions;
+    }
+
+    private Pair<RecipientId, Integer> getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
+            return new Pair<>(context.getRecipientHelper().resolveRecipient(envelope.getSourceAddress()),
+                    envelope.getSourceDevice());
+        } else {
+            return new Pair<>(context.getRecipientHelper().resolveRecipient(content.getSender()),
+                    content.getSenderDevice());
+        }
     }
 }
