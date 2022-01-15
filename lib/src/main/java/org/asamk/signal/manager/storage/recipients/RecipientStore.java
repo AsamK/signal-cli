@@ -47,6 +47,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private final Map<Long, Long> recipientsMerged = new HashMap<>();
 
     private long lastId;
+    private boolean isBulkUpdating;
 
     public static RecipientStore load(File file, RecipientMergeHandler recipientMergeHandler) throws IOException {
         final var objectMapper = Utils.createStorageObjectMapper();
@@ -128,6 +129,19 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         this.recipientMergeHandler = recipientMergeHandler;
         this.recipients = recipients;
         this.lastId = lastId;
+    }
+
+    public boolean isBulkUpdating() {
+        return isBulkUpdating;
+    }
+
+    public void setBulkUpdating(final boolean bulkUpdating) {
+        isBulkUpdating = bulkUpdating;
+        if (!bulkUpdating) {
+            synchronized (recipients) {
+                saveLocked();
+            }
+        }
     }
 
     public RecipientAddress resolveRecipientAddress(RecipientId recipientId) {
@@ -483,6 +497,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     private void saveLocked() {
+        if (isBulkUpdating) {
+            return;
+        }
         final var base64 = Base64.getEncoder();
         var storage = new Storage(recipients.entrySet().stream().map(pair -> {
             final var recipient = pair.getValue();
