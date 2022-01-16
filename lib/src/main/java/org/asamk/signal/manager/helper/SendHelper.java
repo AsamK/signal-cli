@@ -332,7 +332,7 @@ public class SendHelper {
             allResults.addAll(results);
         }
         final var duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
-        logger.debug("Sending took {} seconds", duration.toString());
+        logger.debug("Sending took {}", duration.toString());
         return allResults;
     }
 
