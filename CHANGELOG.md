@@ -1,8 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.10.1] - 2021-01-16
 ### Added
 - Send group messages with sender keys (more efficient for larger groups)
+- New command `listStickerPacks` to display all known sticker packs
+- New flag `--sticker` for `send` command to send stickers
 
 ### Changed
 - Improve exit code for message sending.
@@ -10,9 +14,12 @@
   one recipient, otherwise exit with status code 2 or 4 (for untrusted).
 - Download profiles in parallel for improved perfomance
 - `--verbose` flag can be specified multiple times for additional log output
+- Enable more security options for systemd service file
+- Rename sandbox to staging environment, to match the upstream name.
 
 ### Fixed
 - The first incoming message after registration can now always be decrypted successfully
+- Ignore decryption failures from blocked contacts and don't send a resend request.
 
 ## [0.10.0] - 2021-12-11
 **Attention**: Now requires Java 17 and libsignal-client version 0.11
