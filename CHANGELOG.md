@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.10.1] - 2021-01-16
+## [0.10.1] - 2022-01-16
 ### Added
 - Send group messages with sender keys (more efficient for larger groups)
 - New command `listStickerPacks` to display all known sticker packs
