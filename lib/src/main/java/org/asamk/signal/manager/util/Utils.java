@@ -84,16 +84,16 @@ public class Utils {
                 theirIdentityKey);
     }
 
-    public static Locale getDefaultLocale() {
+    public static Locale getDefaultLocale(Locale fallback) {
         final var locale = Locale.getDefault();
         if (locale == null) {
-            return null;
+            return fallback;
         }
         try {
             Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
         } catch (IllegalArgumentException e) {
             logger.debug("Invalid locale, ignoring: {}", locale);
-            return null;
+            return fallback;
         }
 
         return locale;

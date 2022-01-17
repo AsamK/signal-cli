@@ -131,7 +131,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
         }
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(),
+            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(null),
                     Optional.fromNullable(captcha),
                     Optional.absent(),
                     Optional.absent());

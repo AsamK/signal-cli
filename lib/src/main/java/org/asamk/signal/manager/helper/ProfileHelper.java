@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -199,7 +200,7 @@ public final class ProfileHelper {
     }
 
     private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
-        final var locale = Utils.getDefaultLocale();
+        final var locale = Utils.getDefaultLocale(Locale.US);
         return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent(), locale);
     }
 
@@ -319,7 +320,7 @@ public final class ProfileHelper {
             SignalServiceProfile.RequestType requestType
     ) {
         final var profileService = dependencies.getProfileService();
-        final var locale = Utils.getDefaultLocale();
+        final var locale = Utils.getDefaultLocale(Locale.US);
 
         return profileService.getProfile(address, profileKey, unidentifiedAccess, requestType, locale).map(pair -> {
             var processor = new ProfileService.ProfileResponseProcessor(pair);
