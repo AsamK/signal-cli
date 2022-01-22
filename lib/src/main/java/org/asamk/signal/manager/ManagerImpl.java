@@ -86,6 +86,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 public class ManagerImpl implements Manager {
 
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
@@ -101,6 +103,7 @@ public class ManagerImpl implements Manager {
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
+    private final CompositeDisposable disposable = new CompositeDisposable();
 
     ManagerImpl(
             SignalAccount account,
@@ -141,6 +144,20 @@ public class ManagerImpl implements Manager {
                 this.notifyAll();
             }
         });
+        disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(recipientId -> {
+            logger.trace("Archiving old sessions");
+            account.getSessionStore().archiveSessions(recipientId);
+            account.getSenderKeyStore().deleteSharedWith(recipientId);
+            final var profile = account.getRecipientStore().getProfile(recipientId);
+            if (profile != null) {
+                account.getRecipientStore()
+                        .storeProfile(recipientId,
+                                Profile.newBuilder(profile)
+                                        .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
+                                        .withLastUpdateTimestamp(0)
+                                        .build());
+            }
+        }));
     }
 
     @Override
@@ -982,6 +999,7 @@ public class ManagerImpl implements Manager {
         executor.shutdown();
 
         dependencies.getSignalWebSocket().disconnect();
+        disposable.dispose();
 
         synchronized (closedListeners) {
             closedListeners.forEach(Runnable::run);

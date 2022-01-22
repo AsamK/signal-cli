@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
+
 public class IdentityKeyStore implements org.whispersystems.libsignal.state.IdentityKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(IdentityKeyStore.class);
@@ -42,6 +45,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
     private final IdentityKeyPair identityKeyPair;
     private final int localRegistrationId;
     private final TrustNewIdentity trustNewIdentity;
+    private final PublishSubject<RecipientId> identityChanges = PublishSubject.create();
 
     private boolean isRetryingDecryption = false;
 
@@ -57,6 +61,10 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
         this.identityKeyPair = identityKeyPair;
         this.localRegistrationId = localRegistrationId;
         this.trustNewIdentity = trustNewIdentity;
+    }
+
+    public Subject<RecipientId> getIdentityChanges() {
+        return identityChanges;
     }
 
     @Override
@@ -94,6 +102,7 @@ public class IdentityKeyStore implements org.whispersystems.libsignal.state.Iden
             logger.debug("Storing new identity for recipient {} with trust {}", recipientId, trustLevel);
             final var newIdentityInfo = new IdentityInfo(recipientId, identityKey, trustLevel, added);
             storeIdentityLocked(recipientId, newIdentityInfo);
+            identityChanges.onNext(recipientId);
             return true;
         }
     }

@@ -279,25 +279,18 @@ public final class ProfileHelper {
                         .build();
             }
 
-            logger.trace("Storing profile");
-            account.getProfileStore().storeProfile(recipientId, newProfile);
-
             try {
                 logger.trace("Storing identity");
-                var newIdentity = account.getIdentityKeyStore()
-                        .saveIdentity(recipientId,
-                                new IdentityKey(Base64.getDecoder().decode(encryptedProfile.getIdentityKey())),
-                                new Date());
-
-                if (newIdentity) {
-                    logger.trace("Archiving old sessions");
-                    account.getSessionStore().archiveSessions(recipientId);
-                    account.getSenderKeyStore().deleteSharedWith(recipientId);
-                }
+                final var identityKey = new IdentityKey(Base64.getDecoder().decode(encryptedProfile.getIdentityKey()));
+                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
             } catch (InvalidKeyException ignored) {
                 logger.warn("Got invalid identity key in profile for {}",
                         context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier());
             }
+
+            logger.trace("Storing profile");
+            account.getProfileStore().storeProfile(recipientId, newProfile);
+
             logger.trace("Done handling retrieved profile");
         }).doOnError(e -> {
             logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());

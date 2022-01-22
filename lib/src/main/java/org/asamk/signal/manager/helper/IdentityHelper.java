@@ -110,11 +110,7 @@ public class IdentityHelper {
     ) {
         final var identityKey = identityFailure.getIdentityKey();
         if (identityKey != null) {
-            final var newIdentity = account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
-            if (newIdentity) {
-                account.getSessionStore().archiveSessions(recipientId);
-                account.getSenderKeyStore().deleteSharedWith(recipientId);
-            }
+            account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
         } else {
             // Retrieve profile to get the current identity key from the server
             context.getProfileHelper().refreshRecipientProfile(recipientId);
