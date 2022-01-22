@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.2] - 2022-01-22
+### Fixed
+- Archive old sessions/sender keys when a recipient's identity key has changed
+- Fix profile fetch with an invalid LANG variable
+
 ## [0.10.1] - 2022-01-16
 ### Added
 - Send group messages with sender keys (more efficient for larger groups)
