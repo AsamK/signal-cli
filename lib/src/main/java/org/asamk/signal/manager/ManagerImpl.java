@@ -145,7 +145,7 @@ public class ManagerImpl implements Manager {
             }
         });
         disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(recipientId -> {
-            logger.trace("Archiving old sessions");
+            logger.trace("Archiving old sessions for {}", recipientId);
             account.getSessionStore().archiveSessions(recipientId);
             account.getSenderKeyStore().deleteSharedWith(recipientId);
             final var profile = account.getRecipientStore().getProfile(recipientId);
