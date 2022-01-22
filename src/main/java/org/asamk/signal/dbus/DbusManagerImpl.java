@@ -173,7 +173,7 @@ public class DbusManagerImpl implements Manager {
         return signal.listDevices().stream().map(d -> {
             final var device = getRemoteObject(d.getObjectPath(),
                     Signal.Device.class).GetAll("org.asamk.Signal.Device");
-            return new Device((long) device.get("Id").getValue(),
+            return new Device(((Long) device.get("Id").getValue()).intValue(),
                     (String) device.get("Name").getValue(),
                     (long) device.get("Created").getValue(),
                     (long) device.get("LastSeen").getValue(),
@@ -182,7 +182,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void removeLinkedDevices(final long deviceId) throws IOException {
+    public void removeLinkedDevices(final int deviceId) throws IOException {
         final var devicePath = signal.getDevice(deviceId);
         getRemoteObject(devicePath, Signal.Device.class).removeDevice();
     }

@@ -21,7 +21,7 @@ public class RemoveDeviceCommand implements JsonRpcLocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Remove a linked device.");
         subparser.addArgument("-d", "--device-id", "--deviceId")
-                .type(long.class)
+                .type(int.class)
                 .required(true)
                 .help("Specify the device you want to remove. Use listDevices to see the deviceIds.");
     }
@@ -31,7 +31,7 @@ public class RemoveDeviceCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         try {
-            final var deviceId = ns.getLong("device-id");
+            final var deviceId = ns.getInt("device-id");
             m.removeLinkedDevices(deviceId);
         } catch (IOException e) {
             throw new IOErrorException("Error while removing device: " + e.getMessage(), e);

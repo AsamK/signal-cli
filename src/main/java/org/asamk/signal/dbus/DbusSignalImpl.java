@@ -942,7 +942,7 @@ public class DbusSignalImpl implements Signal {
             if (d.isThisDevice()) {
                 thisDevice = new DBusPath(deviceObjectPath);
             }
-            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), d.id(), emptyIfNull(d.name())));
+            this.devices.add(new StructDevice(new DBusPath(deviceObjectPath), (long) d.id(), emptyIfNull(d.name())));
         });
     }
 

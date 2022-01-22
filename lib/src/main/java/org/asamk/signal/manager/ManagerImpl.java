@@ -289,7 +289,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void removeLinkedDevices(long deviceId) throws IOException {
+    public void removeLinkedDevices(int deviceId) throws IOException {
         context.getAccountHelper().removeLinkedDevices(deviceId);
     }
 

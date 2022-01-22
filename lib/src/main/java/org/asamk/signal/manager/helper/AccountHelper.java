@@ -98,7 +98,7 @@ public class AccountHelper {
         account.setMultiDevice(true);
     }
 
-    public void removeLinkedDevices(long deviceId) throws IOException {
+    public void removeLinkedDevices(int deviceId) throws IOException {
         dependencies.getAccountManager().removeDevice(deviceId);
         var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
