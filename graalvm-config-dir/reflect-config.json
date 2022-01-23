@@ -2347,6 +2347,7 @@
     {"name":"reaction_"}, 
     {"name":"requiredProtocolVersion_"}, 
     {"name":"sticker_"}, 
+    {"name":"storyContext_"}, 
     {"name":"timestamp_"}
   ]}
 ,
