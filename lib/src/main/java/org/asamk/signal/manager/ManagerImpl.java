@@ -571,6 +571,17 @@ public class ManagerImpl implements Manager {
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
+        for (final var recipient : recipients) {
+            if (recipient instanceof RecipientIdentifier.Single r) {
+                try {
+                    final var recipientId = context.getRecipientHelper().resolveRecipient(r);
+                    account.getMessageSendLogStore().deleteEntryForRecipientNonGroup(targetSentTimestamp, recipientId);
+                } catch (UnregisteredRecipientException ignored) {
+                }
+            } else if (recipient instanceof RecipientIdentifier.Group r) {
+                account.getMessageSendLogStore().deleteEntryForGroup(targetSentTimestamp, r.groupId());
+            }
+        }
         return sendMessage(messageBuilder, recipients);
     }
 

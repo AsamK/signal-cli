@@ -19,6 +19,8 @@ dependencies {
     implementation("com.google.protobuf", "protobuf-javalite", "3.11.4")
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
     implementation("org.slf4j", "slf4j-api", "1.7.32")
+    implementation("org.xerial", "sqlite-jdbc", "3.36.0.3")
+    implementation("com.zaxxer", "HikariCP", "5.0.1")
 }
 
 configurations {

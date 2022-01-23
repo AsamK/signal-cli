@@ -1,5 +1,8 @@
 [
   {
+    "interfaces":["java.sql.Connection"]}
+  ,
+  {
     "interfaces":["org.asamk.Signal"]}
   ,
   {

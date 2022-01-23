@@ -164,6 +164,21 @@ public class SenderKeySharedStore {
         }
     }
 
+    public void deleteSharedWith(
+            final RecipientId recipientId, final int deviceId, final DistributionId distributionId
+    ) {
+        synchronized (sharedSenderKeys) {
+            final var entries = sharedSenderKeys.getOrDefault(distributionId.asUuid(), Set.of());
+
+            sharedSenderKeys.put(distributionId.asUuid(), new HashSet<>(entries) {
+                {
+                    remove(new SenderKeySharedEntry(recipientId, deviceId));
+                }
+            });
+            saveLocked();
+        }
+    }
+
     public void deleteAllFor(final DistributionId distributionId) {
         synchronized (sharedSenderKeys) {
             if (sharedSenderKeys.remove(distributionId.asUuid()) != null) {

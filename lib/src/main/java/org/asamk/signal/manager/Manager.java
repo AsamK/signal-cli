@@ -67,6 +67,7 @@ public interface Manager extends Closeable {
             throw new NotRegisteredException();
         }
 
+        account.initDatabase();
         final var serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
 
         return new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);

@@ -63,6 +63,36 @@
   "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]
 },
 {
+  "name":"org.sqlite.Collation"
+},
+{
+  "name":"org.sqlite.Function"
+},
+{
+  "name":"org.sqlite.Function$Aggregate"
+},
+{
+  "name":"org.sqlite.Function$Window"
+},
+{
+  "name":"org.sqlite.ProgressHandler"
+},
+{
+  "name":"org.sqlite.core.DB",
+  "methods":[{"name":"throwex","parameterTypes":["int"] }]
+},
+{
+  "name":"org.sqlite.core.DB$ProgressObserver"
+},
+{
+  "name":"org.sqlite.core.NativeDB",
+  "fields":[
+    {"name":"colldatalist"}, 
+    {"name":"pointer"}, 
+    {"name":"udfdatalist"}
+  ]
+},
+{
   "name":"org.whispersystems.libsignal.DuplicateMessageException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -76,6 +106,10 @@
 {
   "name":"org.whispersystems.libsignal.IdentityKeyPair",
   "methods":[{"name":"serialize","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.libsignal.InvalidKeyException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.whispersystems.libsignal.InvalidMessageException",

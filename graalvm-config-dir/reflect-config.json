@@ -16,7 +16,13 @@
   "name":"[J"
 },
 {
+  "name":"[Lcom.zaxxer.hikari.util.ConcurrentBag$IConcurrentBagEntry;"
+},
+{
   "name":"[Ljava.lang.String;"
+},
+{
+  "name":"[Ljava.sql.Statement;"
 },
 {
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"
@@ -117,6 +123,48 @@
 {
   "name":"com.sun.crypto.provider.TlsPrfGenerator$V12",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.zaxxer.hikari.HikariConfig",
+  "allDeclaredFields":true,
+  "queryAllPublicMethods":true,
+  "methods":[
+    {"name":"getCatalog","parameterTypes":[] }, 
+    {"name":"getConnectionInitSql","parameterTypes":[] }, 
+    {"name":"getConnectionTestQuery","parameterTypes":[] }, 
+    {"name":"getConnectionTimeout","parameterTypes":[] }, 
+    {"name":"getDataSource","parameterTypes":[] }, 
+    {"name":"getDataSourceClassName","parameterTypes":[] }, 
+    {"name":"getDataSourceJNDI","parameterTypes":[] }, 
+    {"name":"getDataSourceProperties","parameterTypes":[] }, 
+    {"name":"getDriverClassName","parameterTypes":[] }, 
+    {"name":"getExceptionOverrideClassName","parameterTypes":[] }, 
+    {"name":"getHealthCheckProperties","parameterTypes":[] }, 
+    {"name":"getHealthCheckRegistry","parameterTypes":[] }, 
+    {"name":"getIdleTimeout","parameterTypes":[] }, 
+    {"name":"getInitializationFailTimeout","parameterTypes":[] }, 
+    {"name":"getJdbcUrl","parameterTypes":[] }, 
+    {"name":"getKeepaliveTime","parameterTypes":[] }, 
+    {"name":"getLeakDetectionThreshold","parameterTypes":[] }, 
+    {"name":"getMaxLifetime","parameterTypes":[] }, 
+    {"name":"getMaximumPoolSize","parameterTypes":[] }, 
+    {"name":"getMetricRegistry","parameterTypes":[] }, 
+    {"name":"getMetricsTrackerFactory","parameterTypes":[] }, 
+    {"name":"getMinimumIdle","parameterTypes":[] }, 
+    {"name":"getPassword","parameterTypes":[] }, 
+    {"name":"getPoolName","parameterTypes":[] }, 
+    {"name":"getScheduledExecutor","parameterTypes":[] }, 
+    {"name":"getSchema","parameterTypes":[] }, 
+    {"name":"getThreadFactory","parameterTypes":[] }, 
+    {"name":"getTransactionIsolation","parameterTypes":[] }, 
+    {"name":"getUsername","parameterTypes":[] }, 
+    {"name":"getValidationTimeout","parameterTypes":[] }, 
+    {"name":"isAllowPoolSuspension","parameterTypes":[] }, 
+    {"name":"isAutoCommit","parameterTypes":[] }, 
+    {"name":"isIsolateInternalQueries","parameterTypes":[] }, 
+    {"name":"isReadOnly","parameterTypes":[] }, 
+    {"name":"isRegisterMbeans","parameterTypes":[] }
+  ]
 },
 {
   "name":"int",
@@ -1607,13 +1655,13 @@
 {
   "name":"org.signal.storageservice.protos.groups.GroupJoinInfo",
   "fields":[
-    {"name":"addFromInviteLink_"},
-    {"name":"avatar_"},
-    {"name":"description_"},
-    {"name":"memberCount_"},
-    {"name":"pendingAdminApproval_"},
-    {"name":"publicKey_"},
-    {"name":"revision_"},
+    {"name":"addFromInviteLink_"}, 
+    {"name":"avatar_"}, 
+    {"name":"description_"}, 
+    {"name":"memberCount_"}, 
+    {"name":"pendingAdminApproval_"}, 
+    {"name":"publicKey_"}, 
+    {"name":"revision_"}, 
     {"name":"title_"}
   ]
 },
@@ -1696,14 +1744,14 @@
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo",
   "fields":[
-    {"name":"addFromInviteLink_"},
-    {"name":"avatar_"},
-    {"name":"description_"},
-    {"name":"isAnnouncementGroup_"},
-    {"name":"memberCount_"},
-    {"name":"pendingAdminApproval_"},
-    {"name":"publicKey_"},
-    {"name":"revision_"},
+    {"name":"addFromInviteLink_"}, 
+    {"name":"avatar_"}, 
+    {"name":"description_"}, 
+    {"name":"isAnnouncementGroup_"}, 
+    {"name":"memberCount_"}, 
+    {"name":"pendingAdminApproval_"}, 
+    {"name":"publicKey_"}, 
+    {"name":"revision_"}, 
     {"name":"title_"}
   ]
 },
@@ -1772,6 +1820,9 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.sqlite.JDBC"
 },
 {
   "name":"org.whispersystems.libsignal.state.IdentityKeyStore",

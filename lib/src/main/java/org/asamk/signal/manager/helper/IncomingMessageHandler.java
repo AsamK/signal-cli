@@ -7,6 +7,7 @@ import org.asamk.signal.manager.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
+import org.asamk.signal.manager.actions.ResendMessageAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
 import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
@@ -41,6 +42,7 @@ import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.SignalProtocolAddress;
+import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -165,6 +167,13 @@ public final class IncomingMessageHandler {
             // address/uuid is validated by unidentified sender certificate
             account.getRecipientStore().resolveRecipientTrusted(content.getSender());
         }
+        if (envelope.isReceipt()) {
+            final var senderPair = getSender(envelope, content);
+            final var sender = senderPair.first();
+            final var senderDeviceId = senderPair.second();
+            account.getMessageSendLogStore().deleteEntryForRecipient(envelope.getTimestamp(), sender, senderDeviceId);
+        }
+
         if (isMessageBlocked(envelope, content)) {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             return List.of();
@@ -198,6 +207,14 @@ public final class IncomingMessageHandler {
         final var sender = senderPair.first();
         final var senderDeviceId = senderPair.second();
 
+        if (content.getReceiptMessage().isPresent()) {
+            final var message = content.getReceiptMessage().get();
+            if (message.isDeliveryReceipt()) {
+                account.getMessageSendLogStore()
+                        .deleteEntriesForRecipient(message.getTimestamps(), sender, senderDeviceId);
+            }
+        }
+
         if (content.getSenderKeyDistributionMessage().isPresent()) {
             final var message = content.getSenderKeyDistributionMessage().get();
             final var protocolAddress = new SignalProtocolAddress(context.getRecipientHelper()
@@ -212,15 +229,10 @@ public final class IncomingMessageHandler {
         if (content.getDecryptionErrorMessage().isPresent()) {
             var message = content.getDecryptionErrorMessage().get();
             logger.debug("Received a decryption error message (resend request for {})", message.getTimestamp());
-            if (message.getRatchetKey().isPresent()) {
-                if (message.getDeviceId() == account.getDeviceId() && account.getSessionStore()
-                        .isCurrentRatchetKey(sender, senderDeviceId, message.getRatchetKey().get())) {
-                    logger.debug("Renewing the session with sender");
-                    actions.add(new RenewSessionAction(sender));
-                }
+            if (message.getDeviceId() == account.getDeviceId()) {
+                handleDecryptionErrorMessage(actions, sender, senderDeviceId, message);
             } else {
-                logger.debug("Reset shared sender keys with this recipient");
-                account.getSenderKeyStore().deleteSharedWith(sender);
+                logger.debug("Request is for another one of our devices");
             }
         }
 
@@ -244,6 +256,54 @@ public final class IncomingMessageHandler {
         }
 
         return actions;
+    }
+
+    private void handleDecryptionErrorMessage(
+            final List<HandleAction> actions,
+            final RecipientId sender,
+            final int senderDeviceId,
+            final DecryptionErrorMessage message
+    ) {
+        final var logEntries = account.getMessageSendLogStore()
+                .findMessages(sender, senderDeviceId, message.getTimestamp(), !message.getRatchetKey().isPresent());
+
+        for (final var logEntry : logEntries) {
+            actions.add(new ResendMessageAction(sender, message.getTimestamp(), logEntry));
+        }
+
+        if (message.getRatchetKey().isPresent()) {
+            if (account.getSessionStore().isCurrentRatchetKey(sender, senderDeviceId, message.getRatchetKey().get())) {
+                if (logEntries.isEmpty()) {
+                    logger.debug("Renewing the session with sender");
+                    actions.add(new RenewSessionAction(sender));
+                } else {
+                    logger.trace("Archiving the session with sender, a resend message has already been queued");
+                    context.getAccount().getSessionStore().archiveSessions(sender);
+                }
+            }
+            return;
+        }
+
+        var found = false;
+        for (final var logEntry : logEntries) {
+            if (logEntry.groupId().isEmpty()) {
+                continue;
+            }
+            final var group = account.getGroupStore().getGroup(logEntry.groupId().get());
+            if (group == null) {
+                continue;
+            }
+            found = true;
+            logger.trace("Deleting shared sender key with {} ({}): {}",
+                    sender,
+                    senderDeviceId,
+                    group.getDistributionId());
+            account.getSenderKeyStore().deleteSharedWith(sender, senderDeviceId, group.getDistributionId());
+        }
+        if (!found) {
+            logger.debug("Reset all shared sender keys with this recipient, no related message found in send log");
+            account.getSenderKeyStore().deleteSharedWith(sender);
+        }
     }
 
     private List<HandleAction> handleSyncMessage(

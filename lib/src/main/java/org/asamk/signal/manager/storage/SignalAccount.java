@@ -27,6 +27,7 @@ import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
+import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
@@ -62,6 +63,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
@@ -120,6 +122,9 @@ public class SignalAccount implements Closeable {
     private ConfigurationStore.Storage configurationStoreStorage;
 
     private MessageCache messageCache;
+    private MessageSendLogStore messageSendLogStore;
+
+    private Database database;
 
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
@@ -225,6 +230,10 @@ public class SignalAccount implements Closeable {
         signalAccount.getSenderKeyStore().deleteAll();
         signalAccount.clearAllPreKeys();
         return signalAccount;
+    }
+
+    public void initDatabase() {
+        getDatabase();
     }
 
     private void clearAllPreKeys() {
@@ -381,6 +390,10 @@ public class SignalAccount implements Closeable {
 
     private static File getRecipientsStoreFile(File dataPath, String account) {
         return new File(getUserPath(dataPath, account), "recipients-store");
+    }
+
+    private static File getDatabaseFile(File dataPath, String account) {
+        return new File(getUserPath(dataPath, account), "account.db");
     }
 
     public static boolean userExists(File dataPath, String account) {
@@ -869,6 +882,21 @@ public class SignalAccount implements Closeable {
                 () -> messageCache = new MessageCache(getMessageCachePath(dataPath, account)));
     }
 
+    public Database getDatabase() {
+        return getOrCreate(() -> database, () -> {
+            try {
+                database = Database.init(getDatabaseFile(dataPath, account));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public MessageSendLogStore getMessageSendLogStore() {
+        return getOrCreate(() -> messageSendLogStore,
+                () -> messageSendLogStore = new MessageSendLogStore(getRecipientStore(), getDatabase()));
+    }
+
     public String getAccount() {
         return account;
     }
@@ -1050,6 +1078,16 @@ public class SignalAccount implements Closeable {
     @Override
     public void close() {
         synchronized (fileChannel) {
+            if (database != null) {
+                try {
+                    database.close();
+                } catch (SQLException e) {
+                    logger.warn("Failed to close account database: {}", e.getMessage(), e);
+                }
+            }
+            if (messageSendLogStore != null) {
+                messageSendLogStore.close();
+            }
             try {
                 try {
                     lock.close();

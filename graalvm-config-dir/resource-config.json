@@ -2,6 +2,12 @@
   "resources":{
   "includes":[
     {
+      "pattern":"\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
+    }, 
+    {
+      "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
+    }, 
+    {
       "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
     }, 
     {
@@ -186,6 +192,12 @@
     }, 
     {
       "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+    }, 
+    {
+      "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
+    }, 
+    {
+      "pattern":"\\Qsqlite-jdbc.properties\\E"
     }, 
     {
       "pattern":"com/google/i18n/phonenumbers/data/.*"

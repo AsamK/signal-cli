@@ -71,6 +71,10 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
         senderKeySharedStore.deleteAllFor(recipientId);
     }
 
+    public void deleteSharedWith(RecipientId recipientId, int deviceId, DistributionId distributionId) {
+        senderKeySharedStore.deleteSharedWith(recipientId, deviceId, distributionId);
+    }
+
     public void deleteOurKey(RecipientId selfRecipientId, DistributionId distributionId) {
         senderKeySharedStore.deleteAllFor(distributionId);
         senderKeyRecordStore.deleteSenderKey(selfRecipientId, distributionId.asUuid());

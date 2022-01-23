@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.helper;
 
+import com.google.protobuf.ByteString;
+
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupId;
@@ -11,11 +13,13 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.sendLog.MessageSendLogEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.InvalidRegistrationIdException;
 import org.whispersystems.libsignal.NoSessionException;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
@@ -45,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class SendHelper {
@@ -74,9 +79,7 @@ public class SendHelper {
         messageBuilder.withProfileKey(account.getProfileKey().serialize());
 
         final var message = messageBuilder.build();
-        final var result = sendMessage(message, recipientId);
-        handleSendMessageResult(result);
-        return result;
+        return sendMessage(message, recipientId);
     }
 
     /**
@@ -90,29 +93,6 @@ public class SendHelper {
         return sendAsGroupMessage(messageBuilder, g);
     }
 
-    private List<SendMessageResult> sendAsGroupMessage(
-            final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo g
-    ) throws IOException, GroupSendingNotAllowedException {
-        GroupUtils.setGroupContext(messageBuilder, g);
-        messageBuilder.withExpiration(g.getMessageExpirationTimer());
-
-        final var message = messageBuilder.build();
-        final var recipients = g.getMembersWithout(account.getSelfRecipientId());
-
-        if (g.isAnnouncementGroup() && !g.isAdmin(account.getSelfRecipientId())) {
-            if (message.getBody().isPresent()
-                    || message.getAttachments().isPresent()
-                    || message.getQuote().isPresent()
-                    || message.getPreviews().isPresent()
-                    || message.getMentions().isPresent()
-                    || message.getSticker().isPresent()) {
-                throw new GroupSendingNotAllowedException(g.getGroupId(), g.getTitle());
-            }
-        }
-
-        return sendGroupMessage(message, recipients, g.getDistributionId());
-    }
-
     /**
      * Send a complete group message to the given recipients (should be current/old/new members)
      * This method should only be used for create/update/quit group messages.
@@ -122,31 +102,7 @@ public class SendHelper {
             final Set<RecipientId> recipientIds,
             final DistributionId distributionId
     ) throws IOException {
-        final var messageSender = dependencies.getMessageSender();
-        final var results = sendGroupMessageInternal((recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendDataMessage(
-                        recipients,
-                        unidentifiedAccess,
-                        isRecipientUpdate,
-                        ContentHint.DEFAULT,
-                        message,
-                        SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
-                        sendResult -> logger.trace("Partial message send result: {}", sendResult.isSuccess()),
-                        () -> false),
-                (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendGroupDataMessage(distId,
-                        recipients,
-                        unidentifiedAccess,
-                        isRecipientUpdate,
-                        ContentHint.DEFAULT,
-                        message,
-                        SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY),
-                recipientIds,
-                distributionId);
-
-        for (var r : results) {
-            handleSendMessageResult(r);
-        }
-
-        return results;
+        return sendGroupMessage(message, recipientIds, distributionId, ContentHint.IMPLICIT);
     }
 
     public SendMessageResult sendDeliveryReceipt(
@@ -162,10 +118,14 @@ public class SendHelper {
     public SendMessageResult sendReceiptMessage(
             final SignalServiceReceiptMessage receiptMessage, final RecipientId recipientId
     ) {
-        return handleSendMessage(recipientId,
+        final var messageSendLogStore = account.getMessageSendLogStore();
+        final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendReceipt(address,
                         unidentifiedAccess,
                         receiptMessage));
+        messageSendLogStore.insertIfPossible(receiptMessage.getWhen(), result, ContentHint.IMPLICIT);
+        handleSendMessageResult(result);
+        return result;
     }
 
     public SendMessageResult sendRetryReceipt(
@@ -175,15 +135,19 @@ public class SendHelper {
                 errorMessage.getTimestamp(),
                 recipientId,
                 errorMessage.getDeviceId());
-        return handleSendMessage(recipientId,
+        final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendRetryReceipt(address,
                         unidentifiedAccess,
                         groupId.transform(GroupId::serialize),
                         errorMessage));
+        handleSendMessageResult(result);
+        return result;
     }
 
     public SendMessageResult sendNullMessage(RecipientId recipientId) {
-        return handleSendMessage(recipientId, SignalServiceMessageSender::sendNullMessage);
+        final var result = handleSendMessage(recipientId, SignalServiceMessageSender::sendNullMessage);
+        handleSendMessageResult(result);
+        return result;
     }
 
     public SendMessageResult sendSelfMessage(
@@ -225,10 +189,12 @@ public class SendHelper {
     public SendMessageResult sendTypingMessage(
             SignalServiceTypingMessage message, RecipientId recipientId
     ) {
-        return handleSendMessage(recipientId,
+        final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(address,
                         unidentifiedAccess,
                         message));
+        handleSendMessageResult(result);
+        return result;
     }
 
     public List<SendMessageResult> sendGroupTypingMessage(
@@ -242,6 +208,142 @@ public class SendHelper {
         final var recipientIds = g.getMembersWithout(account.getSelfRecipientId());
 
         return sendGroupTypingMessage(message, recipientIds, distributionId);
+    }
+
+    public SendMessageResult resendMessage(
+            final RecipientId recipientId, final long timestamp, final MessageSendLogEntry messageSendLogEntry
+    ) {
+        if (messageSendLogEntry.groupId().isEmpty()) {
+            return handleSendMessage(recipientId,
+                    (messageSender, address, unidentifiedAccess) -> messageSender.resendContent(address,
+                            unidentifiedAccess,
+                            timestamp,
+                            messageSendLogEntry.content(),
+                            messageSendLogEntry.contentHint(),
+                            Optional.absent()));
+        }
+
+        final var groupId = messageSendLogEntry.groupId().get();
+        final var group = account.getGroupStore().getGroup(groupId);
+
+        if (group == null) {
+            logger.debug("Could not find a matching group for the groupId {}! Skipping message send.",
+                    groupId.toBase64());
+            return null;
+        } else if (!group.getMembers().contains(recipientId)) {
+            logger.warn("The target user is no longer in the group {}! Skipping message send.", groupId.toBase64());
+            return null;
+        }
+
+        final var senderKeyDistributionMessage = dependencies.getMessageSender()
+                .getOrCreateNewGroupSession(group.getDistributionId());
+        final var distributionBytes = ByteString.copyFrom(senderKeyDistributionMessage.serialize());
+        final var contentToSend = messageSendLogEntry.content()
+                .toBuilder()
+                .setSenderKeyDistributionMessage(distributionBytes)
+                .build();
+
+        final var result = handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.resendContent(address,
+                        unidentifiedAccess,
+                        timestamp,
+                        contentToSend,
+                        messageSendLogEntry.contentHint(),
+                        Optional.of(group.getGroupId().serialize())));
+
+        if (result.isSuccess()) {
+            final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+            final var addresses = result.getSuccess()
+                    .getDevices()
+                    .stream()
+                    .map(device -> new SignalProtocolAddress(address.getIdentifier(), device))
+                    .collect(Collectors.toList());
+
+            account.getSenderKeyStore().markSenderKeySharedWith(group.getDistributionId(), addresses);
+        }
+
+        return result;
+    }
+
+    private List<SendMessageResult> sendAsGroupMessage(
+            final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo g
+    ) throws IOException, GroupSendingNotAllowedException {
+        GroupUtils.setGroupContext(messageBuilder, g);
+        messageBuilder.withExpiration(g.getMessageExpirationTimer());
+
+        final var message = messageBuilder.build();
+        final var recipients = g.getMembersWithout(account.getSelfRecipientId());
+
+        if (g.isAnnouncementGroup() && !g.isAdmin(account.getSelfRecipientId())) {
+            if (message.getBody().isPresent()
+                    || message.getAttachments().isPresent()
+                    || message.getQuote().isPresent()
+                    || message.getPreviews().isPresent()
+                    || message.getMentions().isPresent()
+                    || message.getSticker().isPresent()) {
+                throw new GroupSendingNotAllowedException(g.getGroupId(), g.getTitle());
+            }
+        }
+
+        return sendGroupMessage(message, recipients, g.getDistributionId(), ContentHint.RESENDABLE);
+    }
+
+    private List<SendMessageResult> sendGroupMessage(
+            final SignalServiceDataMessage message,
+            final Set<RecipientId> recipientIds,
+            final DistributionId distributionId,
+            final ContentHint contentHint
+    ) throws IOException {
+        final var messageSender = dependencies.getMessageSender();
+        final var messageSendLogStore = account.getMessageSendLogStore();
+        final AtomicLong entryId = new AtomicLong(-1);
+
+        final LegacySenderHandler legacySender = (recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendDataMessage(
+                recipients,
+                unidentifiedAccess,
+                isRecipientUpdate,
+                contentHint,
+                message,
+                SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
+                sendResult -> {
+                    logger.trace("Partial message send result: {}", sendResult.isSuccess());
+                    synchronized (entryId) {
+                        if (entryId.get() == -1) {
+                            final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),
+                                    sendResult,
+                                    contentHint);
+                            entryId.set(newId);
+                        } else {
+                            messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
+                        }
+                    }
+                },
+                () -> false);
+        final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> {
+            final var res = messageSender.sendGroupDataMessage(distId,
+                    recipients,
+                    unidentifiedAccess,
+                    isRecipientUpdate,
+                    contentHint,
+                    message,
+                    SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY);
+            synchronized (entryId) {
+                if (entryId.get() == -1) {
+                    final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(), res, contentHint);
+                    entryId.set(newId);
+                } else {
+                    messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), res);
+                }
+            }
+            return res;
+        };
+        final var results = sendGroupMessageInternal(legacySender, senderKeySender, recipientIds, distributionId);
+
+        for (var r : results) {
+            handleSendMessageResult(r);
+        }
+
+        return results;
     }
 
     private List<SendMessageResult> sendGroupTypingMessage(
@@ -462,12 +564,16 @@ public class SendHelper {
     private SendMessageResult sendMessage(
             SignalServiceDataMessage message, RecipientId recipientId
     ) {
-        return handleSendMessage(recipientId,
+        final var messageSendLogStore = account.getMessageSendLogStore();
+        final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
                         unidentifiedAccess,
-                        ContentHint.DEFAULT,
+                        ContentHint.RESENDABLE,
                         message,
                         SignalServiceMessageSender.IndividualSendEvents.EMPTY));
+        messageSendLogStore.insertIfPossible(message.getTimestamp(), result, ContentHint.RESENDABLE);
+        handleSendMessageResult(result);
+        return result;
     }
 
     private SendMessageResult handleSendMessage(RecipientId recipientId, SenderHandler s) {
