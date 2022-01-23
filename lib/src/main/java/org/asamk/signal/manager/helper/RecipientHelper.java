@@ -105,7 +105,7 @@ public class RecipientHelper {
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
                             numbers,
                             serviceEnvironmentConfig.getCdsMrenclave());
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException e) {
+        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
             throw new IOException(e);
         }
 
