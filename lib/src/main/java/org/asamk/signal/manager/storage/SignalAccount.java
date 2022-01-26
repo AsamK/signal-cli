@@ -66,6 +66,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class SignalAccount implements Closeable {
 
@@ -74,13 +75,16 @@ public class SignalAccount implements Closeable {
     private static final int MINIMUM_STORAGE_VERSION = 1;
     private static final int CURRENT_STORAGE_VERSION = 3;
 
-    private int previousStorageVersion;
+    private final Object LOCK = new Object();
 
     private final ObjectMapper jsonProcessor = Utils.createStorageObjectMapper();
 
     private final FileChannel fileChannel;
     private final FileLock lock;
 
+    private int previousStorageVersion;
+
+    private File dataPath;
     private String account;
     private ACI aci;
     private String encryptedDeviceName;
@@ -94,6 +98,9 @@ public class SignalAccount implements Closeable {
     private ProfileKey profileKey;
     private int preKeyIdOffset;
     private int nextSignedPreKeyId;
+    private IdentityKeyPair identityKeyPair;
+    private int localRegistrationId;
+    private TrustNewIdentity trustNewIdentity;
     private long lastReceiveTimestamp = 0;
 
     private boolean registered = false;
@@ -165,9 +172,12 @@ public class SignalAccount implements Closeable {
         signalAccount.account = account;
         signalAccount.profileKey = profileKey;
 
-        signalAccount.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
+        signalAccount.dataPath = dataPath;
+        signalAccount.identityKeyPair = identityKey;
+        signalAccount.localRegistrationId = registrationId;
+        signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, account),
-                signalAccount.recipientStore,
+                signalAccount.getRecipientStore(),
                 signalAccount::saveGroupStore);
         signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
@@ -179,36 +189,6 @@ public class SignalAccount implements Closeable {
         signalAccount.save();
 
         return signalAccount;
-    }
-
-    private void initStores(
-            final File dataPath,
-            final IdentityKeyPair identityKey,
-            final int registrationId,
-            final TrustNewIdentity trustNewIdentity
-    ) throws IOException {
-        recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, account), this::mergeRecipients);
-
-        preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, account));
-        signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, account));
-        sessionStore = new SessionStore(getSessionsPath(dataPath, account), recipientStore);
-        identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, account),
-                recipientStore,
-                identityKey,
-                registrationId,
-                trustNewIdentity);
-        senderKeyStore = new SenderKeyStore(getSharedSenderKeysFile(dataPath, account),
-                getSenderKeysPath(dataPath, account),
-                recipientStore::resolveRecipientAddress,
-                recipientStore);
-        signalProtocolStore = new SignalProtocolStore(preKeyStore,
-                signedPreKeyStore,
-                sessionStore,
-                identityKeyStore,
-                senderKeyStore,
-                this::isMultiDevice);
-
-        messageCache = new MessageCache(getMessageCachePath(dataPath, account));
     }
 
     public static SignalAccount createOrUpdateLinkedAccount(
@@ -240,9 +220,9 @@ public class SignalAccount implements Closeable {
 
         final var signalAccount = load(dataPath, account, true, trustNewIdentity);
         signalAccount.setProvisioningData(account, aci, password, encryptedDeviceName, deviceId, profileKey);
-        signalAccount.recipientStore.resolveRecipientTrusted(signalAccount.getSelfAddress());
-        signalAccount.sessionStore.archiveAllSessions();
-        signalAccount.senderKeyStore.deleteAll();
+        signalAccount.getRecipientStore().resolveRecipientTrusted(signalAccount.getSelfAddress());
+        signalAccount.getSessionStore().archiveAllSessions();
+        signalAccount.getSenderKeyStore().deleteAll();
         signalAccount.clearAllPreKeys();
         return signalAccount;
     }
@@ -250,8 +230,8 @@ public class SignalAccount implements Closeable {
     private void clearAllPreKeys() {
         this.preKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
         this.nextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
-        this.preKeyStore.removeAllPreKeys();
-        this.signedPreKeyStore.removeAllSignedPreKeys();
+        this.getPreKeyStore().removeAllPreKeys();
+        this.getSignedPreKeyStore().removeAllSignedPreKeys();
         save();
     }
 
@@ -275,14 +255,17 @@ public class SignalAccount implements Closeable {
 
         signalAccount.setProvisioningData(account, aci, password, encryptedDeviceName, deviceId, profileKey);
 
-        signalAccount.initStores(dataPath, identityKey, registrationId, trustNewIdentity);
+        signalAccount.dataPath = dataPath;
+        signalAccount.identityKeyPair = identityKey;
+        signalAccount.localRegistrationId = registrationId;
+        signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, account),
-                signalAccount.recipientStore,
+                signalAccount.getRecipientStore(),
                 signalAccount::saveGroupStore);
         signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
-        signalAccount.recipientStore.resolveRecipientTrusted(signalAccount.getSelfAddress());
+        signalAccount.getRecipientStore().resolveRecipientTrusted(signalAccount.getSelfAddress());
         signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
         signalAccount.save();
@@ -335,19 +318,19 @@ public class SignalAccount implements Closeable {
     }
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
-        sessionStore.mergeRecipients(recipientId, toBeMergedRecipientId);
-        identityKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
-        messageCache.mergeRecipients(recipientId, toBeMergedRecipientId);
-        groupStore.mergeRecipients(recipientId, toBeMergedRecipientId);
-        senderKeyStore.mergeRecipients(recipientId, toBeMergedRecipientId);
+        getSessionStore().mergeRecipients(recipientId, toBeMergedRecipientId);
+        getIdentityKeyStore().mergeRecipients(recipientId, toBeMergedRecipientId);
+        getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
+        getGroupStore().mergeRecipients(recipientId, toBeMergedRecipientId);
+        getSenderKeyStore().mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public void removeRecipient(final RecipientId recipientId) {
-        sessionStore.deleteAllSessions(recipientId);
-        identityKeyStore.deleteIdentity(recipientId);
-        messageCache.deleteMessages(recipientId);
-        senderKeyStore.deleteAll(recipientId);
-        recipientStore.deleteRecipientData(recipientId);
+        getSessionStore().deleteAllSessions(recipientId);
+        getIdentityKeyStore().deleteIdentity(recipientId);
+        getMessageCache().deleteMessages(recipientId);
+        getSenderKeyStore().deleteAll(recipientId);
+        getRecipientStore().deleteRecipientData(recipientId);
     }
 
     public static File getFileName(File dataPath, String account) {
@@ -505,7 +488,10 @@ public class SignalAccount implements Closeable {
             migratedLegacyConfig = true;
         }
 
-        initStores(dataPath, identityKeyPair, registrationId, trustNewIdentity);
+        this.dataPath = dataPath;
+        this.identityKeyPair = identityKeyPair;
+        this.localRegistrationId = registrationId;
+        this.trustNewIdentity = trustNewIdentity;
 
         migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 
@@ -513,10 +499,12 @@ public class SignalAccount implements Closeable {
             groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
             groupStore = GroupStore.fromStorage(groupStoreStorage,
                     getGroupCachePath(dataPath, account),
-                    recipientStore,
+                    getRecipientStore(),
                     this::saveGroupStore);
         } else {
-            groupStore = new GroupStore(getGroupCachePath(dataPath, account), recipientStore, this::saveGroupStore);
+            groupStore = new GroupStore(getGroupCachePath(dataPath, account),
+                    getRecipientStore(),
+                    this::saveGroupStore);
         }
 
         if (rootNode.hasNonNull("stickerStore")) {
@@ -551,7 +539,7 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy recipient store.");
             var legacyRecipientStore = jsonProcessor.convertValue(legacyRecipientStoreNode, LegacyRecipientStore.class);
             if (legacyRecipientStore != null) {
-                recipientStore.resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
+                getRecipientStore().resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
             getSelfRecipientId();
             migrated = true;
@@ -561,7 +549,7 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy pre key store.");
             for (var entry : legacySignalProtocolStore.getLegacyPreKeyStore().getPreKeys().entrySet()) {
                 try {
-                    preKeyStore.storePreKey(entry.getKey(), new PreKeyRecord(entry.getValue()));
+                    getPreKeyStore().storePreKey(entry.getKey(), new PreKeyRecord(entry.getValue()));
                 } catch (IOException e) {
                     logger.warn("Failed to migrate pre key, ignoring", e);
                 }
@@ -573,7 +561,7 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy signed pre key store.");
             for (var entry : legacySignalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
                 try {
-                    signedPreKeyStore.storeSignedPreKey(entry.getKey(), new SignedPreKeyRecord(entry.getValue()));
+                    getSignedPreKeyStore().storeSignedPreKey(entry.getKey(), new SignedPreKeyRecord(entry.getValue()));
                 } catch (IOException e) {
                     logger.warn("Failed to migrate signed pre key, ignoring", e);
                 }
@@ -585,7 +573,7 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy session store.");
             for (var session : legacySignalProtocolStore.getLegacySessionStore().getSessions()) {
                 try {
-                    sessionStore.storeSession(new SignalProtocolAddress(session.address.getIdentifier(),
+                    getSessionStore().storeSession(new SignalProtocolAddress(session.address.getIdentifier(),
                             session.deviceId), new SessionRecord(session.sessionRecord));
                 } catch (Exception e) {
                     logger.warn("Failed to migrate session, ignoring", e);
@@ -597,9 +585,9 @@ public class SignalAccount implements Closeable {
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
             logger.debug("Migrating legacy identity session store.");
             for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
-                RecipientId recipientId = recipientStore.resolveRecipientTrusted(identity.getAddress());
-                identityKeyStore.saveIdentity(recipientId, identity.getIdentityKey(), identity.getDateAdded());
-                identityKeyStore.setIdentityTrustLevel(recipientId,
+                RecipientId recipientId = getRecipientStore().resolveRecipientTrusted(identity.getAddress());
+                getIdentityKeyStore().saveIdentity(recipientId, identity.getIdentityKey(), identity.getDateAdded());
+                getIdentityKeyStore().setIdentityTrustLevel(recipientId,
                         identity.getIdentityKey(),
                         identity.getTrustLevel());
             }
@@ -611,8 +599,8 @@ public class SignalAccount implements Closeable {
             final var contactStoreNode = rootNode.get("contactStore");
             final var contactStore = jsonProcessor.convertValue(contactStoreNode, LegacyJsonContactsStore.class);
             for (var contact : contactStore.getContacts()) {
-                final var recipientId = recipientStore.resolveRecipientTrusted(contact.getAddress());
-                recipientStore.storeContact(recipientId,
+                final var recipientId = getRecipientStore().resolveRecipientTrusted(contact.getAddress());
+                getRecipientStore().storeContact(recipientId,
                         new Contact(contact.name,
                                 contact.color,
                                 contact.messageExpirationTime,
@@ -639,9 +627,9 @@ public class SignalAccount implements Closeable {
             var profileStoreNode = rootNode.get("profileStore");
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
-                var recipientId = recipientStore.resolveRecipient(profileEntry.getAddress());
-                recipientStore.storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
-                recipientStore.storeProfileKey(recipientId, profileEntry.getProfileKey());
+                var recipientId = getRecipientStore().resolveRecipient(profileEntry.getAddress());
+                getRecipientStore().storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
+                getRecipientStore().storeProfileKey(recipientId, profileEntry.getProfileKey());
                 final var profile = profileEntry.getProfile();
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
@@ -668,7 +656,7 @@ public class SignalAccount implements Closeable {
                                             ? Profile.UnidentifiedAccessMode.ENABLED
                                             : Profile.UnidentifiedAccessMode.DISABLED,
                             capabilities);
-                    recipientStore.storeProfile(recipientId, newProfile);
+                    getRecipientStore().storeProfile(recipientId, newProfile);
                 }
             }
         }
@@ -687,10 +675,10 @@ public class SignalAccount implements Closeable {
                 }
                 try {
                     if (UuidUtil.isUuid(thread.id) || thread.id.startsWith("+")) {
-                        final var recipientId = recipientStore.resolveRecipient(thread.id);
-                        var contact = recipientStore.getContact(recipientId);
+                        final var recipientId = getRecipientStore().resolveRecipient(thread.id);
+                        var contact = getRecipientStore().getContact(recipientId);
                         if (contact != null) {
-                            recipientStore.storeContact(recipientId,
+                            getRecipientStore().storeContact(recipientId,
                                     Contact.newBuilder(contact)
                                             .withMessageExpirationTime(thread.messageExpirationTime)
                                             .build());
@@ -738,13 +726,10 @@ public class SignalAccount implements Closeable {
                     .put("isMultiDevice", isMultiDevice)
                     .put("lastReceiveTimestamp", lastReceiveTimestamp)
                     .put("password", password)
-                    .put("registrationId", identityKeyStore.getLocalRegistrationId())
+                    .put("registrationId", localRegistrationId)
                     .put("identityPrivateKey",
-                            Base64.getEncoder()
-                                    .encodeToString(identityKeyStore.getIdentityKeyPair().getPrivateKey().serialize()))
-                    .put("identityKey",
-                            Base64.getEncoder()
-                                    .encodeToString(identityKeyStore.getIdentityKeyPair().getPublicKey().serialize()))
+                            Base64.getEncoder().encodeToString(identityKeyPair.getPrivateKey().serialize()))
+                    .put("identityKey", Base64.getEncoder().encodeToString(identityKeyPair.getPublicKey().serialize()))
                     .put("registrationLockPin", registrationLockPin)
                     .put("pinMasterKey",
                             pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
@@ -796,7 +781,7 @@ public class SignalAccount implements Closeable {
                 logger.error("Invalid pre key id {}, expected {}", record.getId(), preKeyIdOffset);
                 throw new AssertionError("Invalid pre key id");
             }
-            preKeyStore.storePreKey(record.getId(), record);
+            getPreKeyStore().storePreKey(record.getId(), record);
             preKeyIdOffset = (preKeyIdOffset + 1) % Medium.MAX_VALUE;
         }
         save();
@@ -807,21 +792,42 @@ public class SignalAccount implements Closeable {
             logger.error("Invalid signed pre key id {}, expected {}", record.getId(), nextSignedPreKeyId);
             throw new AssertionError("Invalid signed pre key id");
         }
-        signalProtocolStore.storeSignedPreKey(record.getId(), record);
+        getSignedPreKeyStore().storeSignedPreKey(record.getId(), record);
         nextSignedPreKeyId = (nextSignedPreKeyId + 1) % Medium.MAX_VALUE;
         save();
     }
 
     public SignalProtocolStore getSignalProtocolStore() {
-        return signalProtocolStore;
+        return getOrCreate(() -> signalProtocolStore,
+                () -> signalProtocolStore = new SignalProtocolStore(getPreKeyStore(),
+                        getSignedPreKeyStore(),
+                        getSessionStore(),
+                        getIdentityKeyStore(),
+                        getSenderKeyStore(),
+                        this::isMultiDevice));
+    }
+
+    private PreKeyStore getPreKeyStore() {
+        return getOrCreate(() -> preKeyStore, () -> preKeyStore = new PreKeyStore(getPreKeysPath(dataPath, account)));
+    }
+
+    private SignedPreKeyStore getSignedPreKeyStore() {
+        return getOrCreate(() -> signedPreKeyStore,
+                () -> signedPreKeyStore = new SignedPreKeyStore(getSignedPreKeysPath(dataPath, account)));
     }
 
     public SessionStore getSessionStore() {
-        return sessionStore;
+        return getOrCreate(() -> sessionStore,
+                () -> sessionStore = new SessionStore(getSessionsPath(dataPath, account), getRecipientStore()));
     }
 
     public IdentityKeyStore getIdentityKeyStore() {
-        return identityKeyStore;
+        return getOrCreate(() -> identityKeyStore,
+                () -> identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, account),
+                        getRecipientStore(),
+                        identityKeyPair,
+                        localRegistrationId,
+                        trustNewIdentity));
     }
 
     public GroupStore getGroupStore() {
@@ -829,15 +835,17 @@ public class SignalAccount implements Closeable {
     }
 
     public ContactsStore getContactStore() {
-        return recipientStore;
+        return getRecipientStore();
     }
 
     public RecipientStore getRecipientStore() {
-        return recipientStore;
+        return getOrCreate(() -> recipientStore,
+                () -> recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, account),
+                        this::mergeRecipients));
     }
 
     public ProfileStore getProfileStore() {
-        return recipientStore;
+        return getRecipientStore();
     }
 
     public StickerStore getStickerStore() {
@@ -845,7 +853,11 @@ public class SignalAccount implements Closeable {
     }
 
     public SenderKeyStore getSenderKeyStore() {
-        return senderKeyStore;
+        return getOrCreate(() -> senderKeyStore,
+                () -> senderKeyStore = new SenderKeyStore(getSharedSenderKeysFile(dataPath, account),
+                        getSenderKeysPath(dataPath, account),
+                        getRecipientStore()::resolveRecipientAddress,
+                        getRecipientStore()));
     }
 
     public ConfigurationStore getConfigurationStore() {
@@ -853,7 +865,8 @@ public class SignalAccount implements Closeable {
     }
 
     public MessageCache getMessageCache() {
-        return messageCache;
+        return getOrCreate(() -> messageCache,
+                () -> messageCache = new MessageCache(getMessageCachePath(dataPath, account)));
     }
 
     public String getAccount() {
@@ -874,7 +887,8 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientId getSelfRecipientId() {
-        return recipientStore.resolveRecipientTrusted(new RecipientAddress(aci == null ? null : aci.uuid(), account));
+        return getRecipientStore().resolveRecipientTrusted(new RecipientAddress(aci == null ? null : aci.uuid(),
+                account));
     }
 
     public String getEncryptedDeviceName() {
@@ -895,11 +909,11 @@ public class SignalAccount implements Closeable {
     }
 
     public IdentityKeyPair getIdentityKeyPair() {
-        return signalProtocolStore.getIdentityKeyPair();
+        return identityKeyPair;
     }
 
     public int getLocalRegistrationId() {
-        return signalProtocolStore.getLocalRegistrationId();
+        return localRegistrationId;
     }
 
     public String getPassword() {
@@ -1026,7 +1040,7 @@ public class SignalAccount implements Closeable {
 
         clearAllPreKeys();
         getSessionStore().archiveAllSessions();
-        senderKeyStore.deleteAll();
+        getSenderKeyStore().deleteAll();
         final var recipientId = getRecipientStore().resolveRecipientTrusted(getSelfAddress());
         final var publicKey = getIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
@@ -1046,5 +1060,26 @@ public class SignalAccount implements Closeable {
                 logger.warn("Failed to close account: {}", e.getMessage(), e);
             }
         }
+    }
+
+    private <T> T getOrCreate(Supplier<T> supplier, Callable creator) {
+        var value = supplier.get();
+        if (value != null) {
+            return value;
+        }
+
+        synchronized (LOCK) {
+            value = supplier.get();
+            if (value != null) {
+                return value;
+            }
+            creator.call();
+            return supplier.get();
+        }
+    }
+
+    private interface Callable {
+
+        void call();
     }
 }

@@ -9,7 +9,6 @@ import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -24,7 +23,7 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
             final File senderKeysPath,
             final RecipientAddressResolver addressResolver,
             final RecipientResolver resolver
-    ) throws IOException {
+    ) {
         this.senderKeyRecordStore = new SenderKeyRecordStore(senderKeysPath, resolver);
         this.senderKeySharedStore = SenderKeySharedStore.load(file, addressResolver, resolver);
     }

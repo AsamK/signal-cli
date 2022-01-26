@@ -49,7 +49,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private long lastId;
     private boolean isBulkUpdating;
 
-    public static RecipientStore load(File file, RecipientMergeHandler recipientMergeHandler) throws IOException {
+    public static RecipientStore load(File file, RecipientMergeHandler recipientMergeHandler) {
         final var objectMapper = Utils.createStorageObjectMapper();
         try (var inputStream = new FileInputStream(file)) {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
@@ -114,6 +114,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         } catch (FileNotFoundException e) {
             logger.trace("Creating new recipient store.");
             return new RecipientStore(objectMapper, file, recipientMergeHandler, new HashMap<>(), 0);
+        } catch (IOException e) {
+            logger.warn("Failed to load recipient store", e);
+            throw new RuntimeException(e);
         }
     }
 

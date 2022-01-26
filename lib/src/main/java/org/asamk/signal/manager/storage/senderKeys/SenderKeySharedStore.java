@@ -42,7 +42,7 @@ public class SenderKeySharedStore {
 
     public static SenderKeySharedStore load(
             final File file, final RecipientAddressResolver addressResolver, final RecipientResolver resolver
-    ) throws IOException {
+    ) {
         final var objectMapper = Utils.createStorageObjectMapper();
         try (var inputStream = new FileInputStream(file)) {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
@@ -70,6 +70,9 @@ public class SenderKeySharedStore {
         } catch (FileNotFoundException e) {
             logger.trace("Creating new shared sender key store.");
             return new SenderKeySharedStore(new HashMap<>(), objectMapper, file, addressResolver, resolver);
+        } catch (IOException e) {
+            logger.warn("Failed to load shared sender key store", e);
+            throw new RuntimeException(e);
         }
     }
 
