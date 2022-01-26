@@ -816,7 +816,9 @@ public record MessageEnvelope(
                     .orNull());
             call = Optional.ofNullable(content.getCallMessage().transform(Call::from).orNull());
         } else {
-            receipt = Optional.empty();
+            receipt = envelope.isReceipt() ? Optional.of(new Receipt(envelope.getServerReceivedTimestamp(),
+                    Receipt.Type.DELIVERY,
+                    List.of(envelope.getTimestamp()))) : Optional.empty();
             typing = Optional.empty();
             data = Optional.empty();
             sync = Optional.empty();
