@@ -301,7 +301,13 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     public void storeProfileKey(RecipientId recipientId, final ProfileKey profileKey) {
         synchronized (recipients) {
             final var recipient = recipients.get(recipientId);
-            if (profileKey != null && profileKey.equals(recipient.getProfileKey())) {
+            if (profileKey != null && profileKey.equals(recipient.getProfileKey()) && (
+                    recipient.getProfile() == null || (
+                            recipient.getProfile().getUnidentifiedAccessMode() != Profile.UnidentifiedAccessMode.UNKNOWN
+                                    && recipient.getProfile().getUnidentifiedAccessMode()
+                                    != Profile.UnidentifiedAccessMode.DISABLED
+                    )
+            )) {
                 return;
             }
 
