@@ -1605,6 +1605,19 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.GroupJoinInfo",
+  "fields":[
+    {"name":"addFromInviteLink_"},
+    {"name":"avatar_"},
+    {"name":"description_"},
+    {"name":"memberCount_"},
+    {"name":"pendingAdminApproval_"},
+    {"name":"publicKey_"},
+    {"name":"revision_"},
+    {"name":"title_"}
+  ]
+},
+{
   "name":"org.signal.storageservice.protos.groups.Member",
   "fields":[
     {"name":"joinedAtRevision_"}, 
@@ -1678,6 +1691,20 @@
     {"name":"promotePendingMembers_"}, 
     {"name":"promoteRequestingMembers_"}, 
     {"name":"revision_"}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo",
+  "fields":[
+    {"name":"addFromInviteLink_"},
+    {"name":"avatar_"},
+    {"name":"description_"},
+    {"name":"isAnnouncementGroup_"},
+    {"name":"memberCount_"},
+    {"name":"pendingAdminApproval_"},
+    {"name":"publicKey_"},
+    {"name":"revision_"},
+    {"name":"title_"}
   ]
 },
 {
