@@ -5,6 +5,7 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
+import org.signal.libsignal.metadata.ProtocolException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
@@ -789,16 +790,21 @@ public record MessageEnvelope(
             SignalServiceContent content,
             RecipientResolver recipientResolver,
             RecipientAddressResolver addressResolver,
-            final AttachmentFileProvider fileProvider
+            final AttachmentFileProvider fileProvider,
+            Exception exception
     ) {
         final var source = !envelope.isUnidentifiedSender() && envelope.hasSourceUuid()
                 ? recipientResolver.resolveRecipient(envelope.getSourceAddress())
                 : envelope.isUnidentifiedSender() && content != null
                         ? recipientResolver.resolveRecipient(content.getSender())
-                        : null;
+                        : exception instanceof ProtocolException e
+                                ? recipientResolver.resolveRecipient(e.getSender())
+                                : null;
         final var sourceDevice = envelope.hasSourceDevice()
                 ? envelope.getSourceDevice()
-                : content != null ? content.getSenderDevice() : 0;
+                : content != null
+                        ? content.getSenderDevice()
+                        : exception instanceof ProtocolException e ? e.getSenderDevice() : 0;
 
         Optional<Receipt> receipt;
         Optional<Typing> typing;

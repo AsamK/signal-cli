@@ -184,7 +184,8 @@ public final class IncomingMessageHandler {
                     content,
                     account.getRecipientStore(),
                     account.getRecipientStore()::resolveRecipientAddress,
-                    context.getAttachmentHelper()::getAttachmentFile), exception);
+                    context.getAttachmentHelper()::getAttachmentFile,
+                    exception), exception);
             return actions;
         }
     }
