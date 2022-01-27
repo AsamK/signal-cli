@@ -127,7 +127,7 @@ public final class IncomingMessageHandler {
                     final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
                     final var selfProfile = context.getProfileHelper()
                             .getRecipientProfile(account.getSelfRecipientId());
-                    if (e.getSenderDevice() != account.getDeviceId()
+                    if ((!sender.equals(account.getSelfRecipientId()) || e.getSenderDevice() != account.getDeviceId())
                             && senderProfile != null
                             && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
                             && selfProfile != null
