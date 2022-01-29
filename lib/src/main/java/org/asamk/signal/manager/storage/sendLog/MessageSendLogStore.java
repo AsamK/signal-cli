@@ -62,6 +62,7 @@ public class MessageSendLogStore implements AutoCloseable {
                 logger.debug("Stopping msl cleanup thread");
             }
         });
+        cleanupThread.setName("msl-cleanup");
         cleanupThread.setDaemon(true);
         cleanupThread.start();
     }

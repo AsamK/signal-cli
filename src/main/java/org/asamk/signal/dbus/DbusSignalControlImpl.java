@@ -96,14 +96,16 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
     public String link(final String newDeviceName) throws Error.Failure {
         try {
             final URI deviceLinkUri = c.getNewProvisioningDeviceLinkUri();
-            new Thread(() -> {
+            final var thread = new Thread(() -> {
                 final ProvisioningManager provisioningManager = c.getProvisioningManagerFor(deviceLinkUri);
                 try {
                     provisioningManager.finishDeviceLink(newDeviceName);
                 } catch (IOException | TimeoutException | UserAlreadyExists e) {
                     e.printStackTrace();
                 }
-            }).start();
+            });
+            thread.setName("dbus-link");
+            thread.start();
             return deviceLinkUri.toString();
         } catch (TimeoutException | IOException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());

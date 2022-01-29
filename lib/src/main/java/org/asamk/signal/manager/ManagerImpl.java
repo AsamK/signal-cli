@@ -81,6 +81,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -749,6 +750,8 @@ public class ManagerImpl implements Manager {
         }
     }
 
+    private static final AtomicInteger threadNumber = new AtomicInteger(0);
+
     private void startReceiveThreadIfRequired() {
         if (receiveThread != null) {
             return;
@@ -784,6 +787,7 @@ public class ManagerImpl implements Manager {
                 }
             }
         });
+        receiveThread.setName("receive-" + threadNumber.getAndIncrement());
 
         receiveThread.start();
     }

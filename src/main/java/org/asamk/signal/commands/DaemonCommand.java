@@ -36,6 +36,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class DaemonCommand implements MultiLocalCommand, LocalCommand {
@@ -234,8 +235,10 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         });
     }
 
+    private static final AtomicInteger threadNumber = new AtomicInteger(0);
+
     private void runSocket(final ServerSocketChannel serverChannel, Consumer<SocketChannel> socketHandler) {
-        new Thread(() -> {
+        final var thread = new Thread(() -> {
             while (true) {
                 final SocketChannel channel;
                 final String clientString;
@@ -250,16 +253,20 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     }
                     break;
                 }
-                new Thread(() -> {
+                final var connectionThread = new Thread(() -> {
                     try (final var c = channel) {
                         socketHandler.accept(c);
                         logger.info("Connection closed: " + clientString);
                     } catch (IOException e) {
                         logger.warn("Failed to close channel", e);
                     }
-                }).start();
+                });
+                connectionThread.setName("daemon-connection-" + threadNumber.getAndIncrement());
+                connectionThread.start();
             }
-        }).start();
+        });
+        thread.setName("daemon-listener");
+        thread.start();
     }
 
     private SignalJsonRpcDispatcherHandler getSignalJsonRpcDispatcherHandler(
@@ -367,6 +374,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var signal = new DbusSignalImpl(m, conn, objectPath, noReceiveOnStart);
         conn.exportObject(signal);
         final var initThread = new Thread(signal::initObjects);
+        initThread.setName("dbus-init");
         initThread.start();
 
         logger.debug("Exported dbus object: " + objectPath);
