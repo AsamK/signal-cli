@@ -17,6 +17,7 @@
 package org.asamk.signal;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.DefaultSettings;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -31,6 +32,7 @@ import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import java.io.File;
 import java.security.Security;
 
 public class Main {
@@ -41,8 +43,11 @@ public class Main {
         installSecurityProviderWorkaround();
 
         // Configuring the logger needs to happen before any logger is initialized
-        final var verboseLevel = getVerboseLevel(args);
-        configureLogging(verboseLevel);
+
+        final var nsLog = parseArgs(args);
+        final var verboseLevel = nsLog == null ? 0 : nsLog.getInt("verbose");
+        final var logFile = nsLog == null ? null : nsLog.<File>get("log-file");
+        configureLogging(verboseLevel, logFile);
 
         var parser = App.buildArgumentParser();
 
@@ -70,35 +75,29 @@ public class Main {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static int getVerboseLevel(String[] args) {
-        var parser = ArgumentParsers.newFor("signal-cli").build().defaultHelp(false);
+    private static Namespace parseArgs(String[] args) {
+        var parser = ArgumentParsers.newFor("signal-cli", DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS)
+                .includeArgumentNamesAsKeysInResult(true)
+                .build()
+                .defaultHelp(false);
         parser.addArgument("--verbose").action(Arguments.count());
+        parser.addArgument("--log-file").type(File.class);
 
-        Namespace ns;
         try {
-            ns = parser.parseKnownArgs(args, null);
+            return parser.parseKnownArgs(args, null);
         } catch (ArgumentParserException e) {
-            return 0;
+            return null;
         }
-
-        return ns.getInt("verbose");
     }
 
-    private static void configureLogging(final int verboseLevel) {
-        final var defaultLogLevel = verboseLevel > 1 ? "trace" : verboseLevel > 0 ? "debug" : "info";
-        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", defaultLogLevel);
+    private static void configureLogging(final int verboseLevel, final File logFile) {
+        LogConfigurator.setVerboseLevel(verboseLevel);
+        LogConfigurator.setLogFile(logFile);
+
         if (verboseLevel > 0) {
-            System.setProperty("org.slf4j.simpleLogger.showThreadName", "true");
-            System.setProperty("org.slf4j.simpleLogger.showShortLogName", "false");
-            System.setProperty("org.slf4j.simpleLogger.showDateTime", "true");
-            System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd'T'HH:mm:ss.SSSXX");
             java.util.logging.Logger.getLogger("")
                     .setLevel(verboseLevel > 2 ? java.util.logging.Level.FINEST : java.util.logging.Level.INFO);
             Manager.initLogger();
-        } else {
-            System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
-            System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
-            System.setProperty("org.slf4j.simpleLogger.showDateTime", "false");
         }
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();

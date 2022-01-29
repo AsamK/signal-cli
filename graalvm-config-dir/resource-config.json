@@ -5,6 +5,9 @@
       "pattern":"\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
     }, 
     {
+      "pattern":"\\QMETA-INF/services/ch.qos.logback.classic.spi.Configurator\\E"
+    }, 
+    {
       "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
     }, 
     {

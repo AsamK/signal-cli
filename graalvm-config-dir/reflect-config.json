@@ -39,6 +39,30 @@
   "allPublicMethods":true
 },
 {
+  "name":"ch.qos.logback.classic.pattern.DateConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LevelConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LineSeparatorConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LoggerConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.MessageConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.ThreadConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"char[]"
 },
 {
@@ -177,6 +201,13 @@
   "allPublicMethods":true
 },
 {
+  "name":"java.io.File",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.io.FilePermission"
+},
+{
   "name":"java.io.Serializable",
   "allDeclaredMethods":true
 },
@@ -229,6 +260,9 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"java.lang.RuntimePermission"
+},
+{
   "name":"java.lang.String",
   "allPublicMethods":true
 },
@@ -249,6 +283,16 @@
   ]
 },
 {
+  "name":"java.net.NetPermission"
+},
+{
+  "name":"java.net.SocketPermission"
+},
+{
+  "name":"java.net.URLPermission",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
   "name":"java.nio.Buffer",
   "allDeclaredMethods":true,
   "fields":[{"name":"address"}]
@@ -259,10 +303,16 @@
   "allPublicMethods":true
 },
 {
+  "name":"java.security.AllPermission"
+},
+{
   "name":"java.security.KeyStoreSpi"
 },
 {
   "name":"java.security.SecureRandomParameters"
+},
+{
+  "name":"java.security.SecurityPermission"
 },
 {
   "name":"java.security.cert.PKIXRevocationChecker"
@@ -321,6 +371,9 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
+},
+{
+  "name":"java.util.PropertyPermission"
 },
 {
   "name":"java.util.RandomAccess",
