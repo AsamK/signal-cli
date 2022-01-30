@@ -76,6 +76,22 @@ The `method` field is the command name and the parameters can be sent as the `pa
 
   `--attachment ATTACH` becomes `"attachment":"ATTACH"`
 
+=== Additional JSON-RPC commands
+
+For receiving message additional commands are provided in JSON-RPC mode with `--receive-mode=manual`.
+
+==== subscribeReceive
+
+Tells the daemon to start receiving messages, returns the subscription id as a single integer value in the result.
+
+==== unsubscribeReceive
+
+Stop a previous subscription for receiving messages.
+
+Params:
+
+- `subscription`: the subscription id returned by `subscribeReceive`
+
 == Examples
 
 REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"5"}` RESPONSE: `{"jsonrpc":"2.0","result":[...],"id":"5"}`

@@ -47,6 +47,14 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
+    public List<Manager> getManagers() {
+        return signalControl.listAccounts()
+                .stream()
+                .map(a -> (Manager) new DbusManagerImpl(getRemoteObject(a, Signal.class), connection))
+                .toList();
+    }
+
+    @Override
     public void addOnManagerAddedHandler(final Consumer<Manager> handler) {
         synchronized (onManagerAddedHandlers) {
             onManagerAddedHandlers.add(handler);

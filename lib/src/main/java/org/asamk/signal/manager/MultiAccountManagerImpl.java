@@ -49,6 +49,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         }
     }
 
+    @Override
+    public List<Manager> getManagers() {
+        synchronized (managers) {
+            return new ArrayList<>(managers);
+        }
+    }
+
     void addManager(final Manager m) {
         synchronized (managers) {
             if (managers.contains(m)) {

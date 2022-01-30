@@ -8,7 +8,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 
 == Name
 
-signal-cli - A commandline and dbus interface for the Signal messenger
+signal-cli - A commandline interface for the Signal messenger
 
 == Synopsis
 
@@ -20,7 +20,7 @@ signal-cli is a commandline interface for libsignal-service-java.
 It supports registering, verifying, sending and receiving messages.
 For registering you need a phone number where you can receive SMS or incoming calls.
 signal-cli was primarily developed to be used on servers to notify admins of important events.
-For this use-case, it has a dbus interface, that can be used to send messages from any programming language that has dbus bindings.
+For this use-case, it has a dbus and a JSON-RPC interface, that can be used to send messages from other programs.
 
 For some functionality the Signal protocol requires that all messages have been received from the server.
 The `receive` command should be regularly executed.
@@ -54,8 +54,9 @@ This flag must not be given for the `link` command.
 It is optional for the `daemon` command.
 For all other commands it is only optional if there is exactly one local user in the config directory.
 
-*--service-environment* ENVIRONMENT
+*--service-environment* ENVIRONMENT::
 Choose the server environment to use:
+
 - `live` (default)
 - `staging`
 

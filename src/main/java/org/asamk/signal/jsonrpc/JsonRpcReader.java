@@ -90,10 +90,11 @@ public class JsonRpcReader {
             String input = lineSupplier.get();
 
             if (input == null) {
-                // Reached end of input stream
+                logger.trace("Reached end of JSON-RPC input stream.");
                 break;
             }
 
+            logger.trace("Incoming JSON-RPC message: {}", input);
             JsonRpcMessage message = parseJsonRpcMessage(input);
             if (message == null) continue;
 

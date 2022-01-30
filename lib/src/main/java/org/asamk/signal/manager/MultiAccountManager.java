@@ -10,6 +10,8 @@ public interface MultiAccountManager extends AutoCloseable {
 
     List<String> getAccountNumbers();
 
+    List<Manager> getManagers();
+
     void addOnManagerAddedHandler(Consumer<Manager> handler);
 
     void addOnManagerRemovedHandler(Consumer<Manager> handler);

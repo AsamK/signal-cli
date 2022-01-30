@@ -155,7 +155,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
-        c.getAccountNumbers().stream().map(c::getManager).filter(Objects::nonNull).forEach(m -> {
+        c.getManagers().forEach(m -> {
             m.setIgnoreAttachments(ignoreAttachments);
             addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);
         });
@@ -317,10 +317,8 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 connection.unExportObject(path);
             });
 
-            final var initThreads = c.getAccountNumbers()
+            final var initThreads = c.getManagers()
                     .stream()
-                    .map(c::getManager)
-                    .filter(Objects::nonNull)
                     .map(m -> exportMultiAccountManager(connection, m, noReceiveOnStart))
                     .filter(Objects::nonNull)
                     .toList();

@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ContainerNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.asamk.signal.commands.Command;
@@ -21,6 +23,7 @@ import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
@@ -29,8 +32,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class SignalJsonRpcDispatcherHandler {
@@ -47,7 +51,7 @@ public class SignalJsonRpcDispatcherHandler {
     private final boolean noReceiveOnStart;
 
     private MultiAccountManager c;
-    private final Map<Manager, Manager.ReceiveMessageHandler> receiveHandlers = new HashMap<>();
+    private final Map<Integer, List<Pair<Manager, Manager.ReceiveMessageHandler>>> receiveHandlers = new HashMap<>();
 
     private Manager m;
 
@@ -64,7 +68,7 @@ public class SignalJsonRpcDispatcherHandler {
         this.c = c;
 
         if (!noReceiveOnStart) {
-            c.getAccountNumbers().stream().map(c::getManager).filter(Objects::nonNull).forEach(this::subscribeReceive);
+            this.subscribeReceive(c.getManagers());
             c.addOnManagerAddedHandler(this::subscribeReceive);
             c.addOnManagerRemovedHandler(this::unsubscribeReceive);
         }
@@ -85,33 +89,46 @@ public class SignalJsonRpcDispatcherHandler {
         handleConnection();
     }
 
-    private void subscribeReceive(final Manager m) {
-        if (receiveHandlers.containsKey(m)) {
-            return;
-        }
+    private static final AtomicInteger nextSubscriptionId = new AtomicInteger(0);
 
-        final var receiveMessageHandler = new JsonReceiveMessageHandler(m,
-                s -> jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive",
-                        objectMapper.valueToTree(s),
-                        null)));
-        m.addReceiveHandler(receiveMessageHandler);
-        receiveHandlers.put(m, receiveMessageHandler);
-
-        while (!m.hasCaughtUpWithOldMessages()) {
-            try {
-                synchronized (m) {
-                    m.wait();
-                }
-            } catch (InterruptedException ignored) {
-            }
-        }
+    private int subscribeReceive(final Manager manager) {
+        return subscribeReceive(List.of(manager));
     }
 
-    void unsubscribeReceive(final Manager m) {
-        final var receiveMessageHandler = receiveHandlers.remove(m);
-        if (receiveMessageHandler != null) {
-            m.removeReceiveHandler(receiveMessageHandler);
+    private int subscribeReceive(final List<Manager> managers) {
+        final var subscriptionId = nextSubscriptionId.getAndIncrement();
+        final var handlers = managers.stream().map(m -> {
+            final var receiveMessageHandler = new JsonReceiveMessageHandler(m, s -> {
+                final ContainerNode<?> params = objectMapper.valueToTree(s);
+                ((ObjectNode) params).set("subscription", IntNode.valueOf(subscriptionId));
+                jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive", params, null));
+            });
+            m.addReceiveHandler(receiveMessageHandler);
+            return new Pair<>(m, (Manager.ReceiveMessageHandler) receiveMessageHandler);
+        }).toList();
+        receiveHandlers.put(subscriptionId, handlers);
+
+        return subscriptionId;
+    }
+
+    private boolean unsubscribeReceive(final int subscriptionId) {
+        final var handlers = receiveHandlers.remove(subscriptionId);
+        if (handlers == null) {
+            return false;
         }
+        for (final var pair : handlers) {
+            unsubscribeReceiveHandler(pair);
+        }
+        return true;
+    }
+
+    private void unsubscribeReceive(final Manager m) {
+        final var subscriptionId = receiveHandlers.entrySet()
+                .stream()
+                .filter(e -> e.getValue().size() == 1 && e.getValue().get(0).first().equals(m))
+                .map(Map.Entry::getKey)
+                .findFirst();
+        subscriptionId.ifPresent(this::unsubscribeReceive);
     }
 
     private void handleConnection() {
@@ -119,9 +136,15 @@ public class SignalJsonRpcDispatcherHandler {
             jsonRpcReader.readMessages((method, params) -> handleRequest(objectMapper, method, params),
                     response -> logger.debug("Received unexpected response for id {}", response.getId()));
         } finally {
-            receiveHandlers.forEach(Manager::removeReceiveHandler);
+            receiveHandlers.forEach((_subscriptionId, handlers) -> handlers.forEach(this::unsubscribeReceiveHandler));
             receiveHandlers.clear();
         }
+    }
+
+    private void unsubscribeReceiveHandler(final Pair<Manager, Manager.ReceiveMessageHandler> pair) {
+        final var m = pair.first();
+        final var handler = pair.second();
+        m.removeReceiveHandler(handler);
     }
 
     private JsonNode handleRequest(
@@ -129,6 +152,12 @@ public class SignalJsonRpcDispatcherHandler {
     ) throws JsonRpcException {
         var command = getCommand(method);
         if (c != null) {
+            if (command instanceof JsonRpcSingleCommand<?> jsonRpcCommand) {
+                final var manager = getManagerFromParams(params);
+                if (manager != null) {
+                    return runCommand(objectMapper, params, new CommandRunnerImpl<>(manager, jsonRpcCommand));
+                }
+            }
             if (command instanceof JsonRpcMultiCommand<?> jsonRpcCommand) {
                 return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
             }
@@ -168,10 +197,15 @@ public class SignalJsonRpcDispatcherHandler {
                 null));
     }
 
-    private Manager getManagerFromParams(final ContainerNode<?> params) {
-        if (params != null && params.has("account")) {
+    private Manager getManagerFromParams(final ContainerNode<?> params) throws JsonRpcException {
+        if (params != null && params.hasNonNull("account")) {
             final var manager = c.getManager(params.get("account").asText());
             ((ObjectNode) params).remove("account");
+            if (manager == null) {
+                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                        "Specified account does not exist",
+                        null));
+            }
             return manager;
         }
         return null;
@@ -322,7 +356,7 @@ public class SignalJsonRpcDispatcherHandler {
         command.handleCommand(requestParams, jsonWriter);
     }
 
-    private class SubscribeReceiveCommand implements JsonRpcSingleCommand<Void> {
+    private class SubscribeReceiveCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiCommand<Void> {
 
         @Override
         public String getName() {
@@ -333,11 +367,20 @@ public class SignalJsonRpcDispatcherHandler {
         public void handleCommand(
                 final Void request, final Manager m, final JsonWriter jsonWriter
         ) throws CommandException {
-            subscribeReceive(m);
+            final var subscriptionId = subscribeReceive(m);
+            jsonWriter.write(subscriptionId);
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request, final MultiAccountManager c, final JsonWriter jsonWriter
+        ) throws CommandException {
+            final var subscriptionId = subscribeReceive(c.getManagers());
+            jsonWriter.write(subscriptionId);
         }
     }
 
-    private class UnsubscribeReceiveCommand implements JsonRpcSingleCommand<Void> {
+    private class UnsubscribeReceiveCommand implements JsonRpcSingleCommand<JsonNode>, JsonRpcMultiCommand<JsonNode> {
 
         @Override
         public String getName() {
@@ -345,10 +388,46 @@ public class SignalJsonRpcDispatcherHandler {
         }
 
         @Override
+        public TypeReference<JsonNode> getRequestType() {
+            return new TypeReference<>() {};
+        }
+
+        @Override
         public void handleCommand(
-                final Void request, final Manager m, final JsonWriter jsonWriter
+                final JsonNode request, final Manager m, final JsonWriter jsonWriter
         ) throws CommandException {
-            unsubscribeReceive(m);
+            final var subscriptionId = getSubscriptionId(request);
+            if (subscriptionId == null) {
+                unsubscribeReceive(m);
+            } else {
+                if (!unsubscribeReceive(subscriptionId)) {
+                    throw new UserErrorException("Unknown subscription id");
+                }
+            }
+        }
+
+        @Override
+        public void handleCommand(
+                final JsonNode request, final MultiAccountManager c, final JsonWriter jsonWriter
+        ) throws CommandException {
+            final var subscriptionId = getSubscriptionId(request);
+            if (subscriptionId == null) {
+                throw new UserErrorException("Missing subscription parameter with subscription id");
+            } else {
+                if (!unsubscribeReceive(subscriptionId)) {
+                    throw new UserErrorException("Unknown subscription id");
+                }
+            }
+        }
+
+        private Integer getSubscriptionId(final JsonNode request) {
+            if (request instanceof ArrayNode req) {
+                return req.get(0).asInt();
+            } else if (request instanceof ObjectNode req) {
+                return req.get("subscription").asInt();
+            } else {
+                return null;
+            }
         }
     }
 }
