@@ -9,9 +9,8 @@ on:
 jobs:
 
   ci_wf:
-    uses: exquo/signal-cli/.github/workflows/ci.yml@master
+    uses: AsamK/signal-cli/.github/workflows/ci.yml@master
       # ${{ github.repository }} not accpeted here
-      # TODO: check the repo name and branch
 
 
   lib_to_jar:
