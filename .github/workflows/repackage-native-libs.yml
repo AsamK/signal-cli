@@ -1,0 +1,184 @@
+name: repackage-native-libs
+
+on:
+  push:
+    tags:
+      - v*
+
+
+jobs:
+
+  ci_wf:
+    uses: exquo/signal-cli/.github/workflows/ci.yml@master
+      # ${{ github.repository }} not accpeted here
+      # TODO: check the repo name and branch
+
+
+  lib_to_jar:
+    needs: ci_wf
+    runs-on: ubuntu-latest
+
+    outputs:
+      signal_cli_version: ${{ steps.cli_ver.outputs.signal_cli_version }}
+      release_id: ${{ steps.create_release.outputs.id }}
+
+    steps:
+
+      - name: Download signal-cli build from CI workflow
+        uses: actions/download-artifact@v2
+
+      - name: Get signal-cli version
+        id: cli_ver
+        run: |
+          #echo ${GITHUB_REF#refs/tag/}
+          tree .
+          mv ./*/*.tar.gz .
+          ver=$(ls ./*.tar.gz | xargs basename | sed -E 's/signal-cli-(.*).tar.gz/\1/')
+          echo $ver
+          echo "::set-output name=signal_cli_version::${ver}"
+          tar -xzf ./*.tar.gz
+
+      - name: Get signal-client jar version
+        id: lib_ver
+        run: |
+          JAR_PREFIX=signal-client-java-
+          jar_file=$(find ./signal-cli-*/lib/ -name "$JAR_PREFIX*.jar")
+          jar_version=$(echo "$jar_file" | xargs basename | sed "s/$JAR_PREFIX//; s/.jar//")
+          echo "$jar_version"
+          echo "::set-output name=signal_client_version::$jar_version"
+
+      - name: Download signal-client builds
+        env:
+          RELEASES_URL: https://github.com/signalapp/libsignal-client/releases/download/
+          FILE_NAMES: signal_jni.dll libsignal_jni.dylib
+          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+        run: |
+          for file_name in $FILE_NAMES; do
+            curl -sOL "${RELEASES_URL}/v${SIGNAL_CLIENT_VER}/${file_name}"  # note: added v
+          done
+          tree .
+
+      - name: Replace Windows lib
+        env:
+          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.signal_cli_version }}
+          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+        run: |
+          mv signal_jni.dll libsignal_jni.so
+          zip -u ./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
+          tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-${SIGNAL_CLI_VER}/
+
+      - name: Replace MacOS lib
+        env:
+          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.signal_cli_version }}
+          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+        run: |
+          jar_file=./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar
+          zip -d "$jar_file" libsignal_jni.so
+          zip "$jar_file" libsignal_jni.dylib
+          tar -czf signal-cli-${SIGNAL_CLI_VER}-MacOS.tar.gz signal-cli-${SIGNAL_CLI_VER}/
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.cli_ver.outputs.signal_cli_version }}  # note: added `v`
+          release_name: v${{ steps.cli_ver.outputs.signal_cli_version }}  # note: added `v`
+          draft: true
+
+      - name: Upload Linux archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Linux.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+
+      - name: Upload windows archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Windows.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Windows.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+
+      - name: Upload macos archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-MacOS.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-MacOS.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+
+
+  run_repackaged:
+
+    needs:
+      - lib_to_jar
+
+    strategy:
+      matrix:
+        runner:
+          - windows-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.runner }}
+
+    defaults:
+      run:
+        shell: bash   # Explicit for windows
+
+    env:
+      JAVA_VERSION: 17
+
+    steps:
+
+      - name: Download the release file
+        env:
+          SIGNAL_CLI_VER: ${{ needs.lib_to_jar.outputs.signal_cli_version }}
+          RELEASE_ID: ${{ needs.lib_to_jar.outputs.release_id }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          #RUNNER_OS=${RUNNER_OS^}  # Capitalize the first letter. Not supported by bash (v3) on macos
+          RUNNER_OS=$(echo $RUNNER_OS | tr m M)  # Windows is already capitalized
+          file_name=signal-cli-${SIGNAL_CLI_VER}-${RUNNER_OS}.tar.gz
+          echo "$file_name"
+          assets_json=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets")
+          asset_dl_url=$(echo "$assets_json" | jq -r ".[] | select (.name == \"$file_name\") | .url")
+          echo "$asset_dl_url"
+          curl -sLOJ \
+            -H 'Accept: application/octet-stream' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "$asset_dl_url"
+          tar -xzf "$file_name"
+
+      - name: Set up JDK for running signal-cli executable
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run signal-cli
+        run: |
+          cd signal-cli-*/bin
+          if [[ "$RUNNER_OS" == 'Windows' ]]; then
+            EXECUTABLE_SUFFIX=".bat"
+          fi
+          if {
+            # Fail iff signal-cli complains about missing libraries.
+            # Signal-cli process's exit code is always 1, because an account is not registered yet.
+            set +o pipefail
+            ./signal-cli${EXECUTABLE_SUFFIX} receive  \
+              2>&1 |  grep 'libsignal'
+              #|&  grep 'libsignal' ;  # in bash on macos `|&` is unknown
+          }; then
+            false
+          fi
