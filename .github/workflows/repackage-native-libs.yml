@@ -171,13 +171,4 @@ jobs:
           if [[ "$RUNNER_OS" == 'Windows' ]]; then
             EXECUTABLE_SUFFIX=".bat"
           fi
-          if {
-            # Fail iff signal-cli complains about missing libraries.
-            # Signal-cli process's exit code is always 1, because an account is not registered yet.
-            set +o pipefail
-            ./signal-cli${EXECUTABLE_SUFFIX} receive  \
-              2>&1 |  grep 'libsignal'
-              #|&  grep 'libsignal' ;  # in bash on macos `|&` is unknown
-          }; then
-            false
-          fi
+          ./signal-cli${EXECUTABLE_SUFFIX} listAccounts
