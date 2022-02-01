@@ -66,7 +66,7 @@ jobs:
           zip -u ./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
           tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-${SIGNAL_CLI_VER}/
 
-      - name: Replace MacOS lib
+      - name: Replace macOS lib
         env:
           SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.signal_cli_version }}
           SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
@@ -74,7 +74,7 @@ jobs:
           jar_file=./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar
           zip -d "$jar_file" libsignal_jni.so
           zip "$jar_file" libsignal_jni.dylib
-          tar -czf signal-cli-${SIGNAL_CLI_VER}-MacOS.tar.gz signal-cli-${SIGNAL_CLI_VER}/
+          tar -czf signal-cli-${SIGNAL_CLI_VER}-macOS.tar.gz signal-cli-${SIGNAL_CLI_VER}/
 
       - name: Create release
         id: create_release
@@ -112,8 +112,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-MacOS.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-MacOS.tar.gz
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-macOS.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-macOS.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
 
 
@@ -145,8 +145,6 @@ jobs:
           RELEASE_ID: ${{ needs.lib_to_jar.outputs.release_id }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          #RUNNER_OS=${RUNNER_OS^}  # Capitalize the first letter. Not supported by bash (v3) on macos
-          RUNNER_OS=$(echo $RUNNER_OS | tr m M)  # Windows is already capitalized
           file_name=signal-cli-${SIGNAL_CLI_VER}-${RUNNER_OS}.tar.gz
           echo "$file_name"
           assets_json=$(curl -s \
