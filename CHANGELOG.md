@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.10.3] - 2022-02-01
+### Added
+- MessageSendLog to cache sent message for 24h.
+  For resending messages in case the recipient fails to decrypt the message.
+- New global `--log-file` parameter to write logs to a separate file.
+  (`--verbose` can be used to increase the log level)
+
+### Improved
+- Better subscription handling for JSON-RPC `subscribeReceive` command
+
+### Fixed
+- Output receipt data for unsealed sender receipts again
+- Fix sending message resend requests to devices that happen to have the same deviceId
+
 ## [0.10.2] - 2022-01-22
 ### Fixed
 - Archive old sessions/sender keys when a recipient's identity key has changed
