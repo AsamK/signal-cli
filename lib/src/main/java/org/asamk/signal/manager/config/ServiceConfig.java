@@ -47,7 +47,10 @@ public class ServiceConfig {
 
     public static boolean isSignalClientAvailable() {
         try {
-            org.signal.client.internal.Native.DeviceTransfer_GeneratePrivateKey();
+            try {
+                org.signal.client.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
+            } catch (IllegalArgumentException ignored) {
+            }
             return true;
         } catch (UnsatisfiedLinkError e) {
             logger.warn("Failed to call libsignal-client: {}", e.getMessage());
