@@ -768,7 +768,7 @@ public class SignalAccount implements Closeable {
                     fileChannel.force(false);
                 }
             } catch (Exception e) {
-                logger.error("Error saving file: {}", e.getMessage());
+                logger.error("Error saving file: {}", e.getMessage(), e);
             }
         }
     }
