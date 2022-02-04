@@ -25,7 +25,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         final var object = new HashMap<String, Object>();
         object.put("account", m.getSelfNumber());
         if (exception != null) {
-            object.put("error", JsonError.from(exception));
+            object.put("exception", JsonError.from(exception));
         }
 
         if (envelope != null) {
