@@ -16,6 +16,7 @@ NUMBER_1="$1"
 NUMBER_2="$2"
 TEST_PIN_1=456test_pin_foo123
 NATIVE=0
+JSON_RPC=0
 
 PATH_TEST_CONFIG="$PWD/build/test-config"
 PATH_MAIN="$PATH_TEST_CONFIG/main"
@@ -23,6 +24,12 @@ PATH_LINK="$PATH_TEST_CONFIG/link"
 
 if [ "$NATIVE" -eq 1 ]; then
 	SIGNAL_CLI="$PWD/build/native/nativeCompile/signal-cli"
+elif [ "$JSON_RPC" -eq 1 ]; then
+	(cd client && cargo build)
+	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_MAIN" --service-environment="staging" daemon --socket --receive-mode=manual&
+	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_LINK" --service-environment="staging" daemon --tcp --receive-mode=manual&
+	sleep 5
+	SIGNAL_CLI="$PWD/client/target/debug/signal-cli-client"
 else
 	./gradlew installDist
 	SIGNAL_CLI="$PWD/build/install/signal-cli/bin/signal-cli"
@@ -30,16 +37,28 @@ fi
 
 run() {
   set -x
-  "$SIGNAL_CLI" --service-environment="staging" $@
+  if [ "$JSON_RPC" -eq 1 ]; then
+    "$SIGNAL_CLI" $@
+  else
+    "$SIGNAL_CLI" --service-environment="staging" $@
+  fi
   set +x
 }
 
 run_main() {
-  run --config="$PATH_MAIN" $@
+  if [ "$JSON_RPC" -eq 1 ]; then
+    run --json-rpc-socket="$XDG_RUNTIME_DIR/signal-cli/socket" $@
+  else
+    run --config="$PATH_MAIN" $@
+  fi
 }
 
 run_linked() {
-  run --config="$PATH_LINK" $@
+  if [ "$JSON_RPC" -eq 1 ]; then
+    run --json-rpc-tcp="127.0.0.1:7583" $@
+  else
+    run --config="$PATH_LINK" $@
+  fi
 }
 
 register() {
@@ -84,6 +103,7 @@ sleep 5
 run_main listAccounts
 run_main --output=json listAccounts
 
+if [ "$JSON_RPC" -eq 0 ]; then
 ## DBus
 #run_main -a "$NUMBER_1" --dbus send "$NUMBER_2" -m daemon_not_running || true
 #run_main daemon &
@@ -127,6 +147,7 @@ exec 3<> "$FIFO_FILE"
 exec 3>&-
 
 wait
+fi
 
 run_main -a "$NUMBER_1" setPin "$TEST_PIN_1"
 run_main -a "$NUMBER_2" removePin
@@ -143,7 +164,7 @@ run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
 run_main -a "$NUMBER_1" receive
 run_main -a "$NUMBER_2" receive
 ## Groups
-GROUP_ID=$(run_main -a "$NUMBER_1" updateGroup -n GRUPPE -a LICENSE -m "$NUMBER_1" | grep -oP '(?<=").+(?=")')
+GROUP_ID=$(run_main -a "$NUMBER_1" --output=json updateGroup -n GRUPPE -a LICENSE -m "$NUMBER_1" | jq -r '.groupId')
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m first
 run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -n GRUPPE_UMB -m "$NUMBER_2" --admin "$NUMBER_2" --description DESCRIPTION --link=enabled-with-approval --set-permission-add-member=only-admins --set-permission-edit-details=only-admins --set-permission-send-messages=only-admins -e 42
 run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" --remove-admin "$NUMBER_2" --reset-link --set-permission-send-messages=every-member
@@ -171,15 +192,15 @@ run_main -a "$NUMBER_2" trust "$NUMBER_1" -a
 ## Basic send/receive
 for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_1" --output="$OUTPUT" getUserStatus "$NUMBER_1" "$NUMBER_2" "+111111111"
-  run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
-  run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
-  run_main -a "$NUMBER_1" send -g "$GROUP_ID" -m hi -a LICENSE --mention "1:1:$NUMBER_2"
-  TIMESTAMP=$(uname -a | run_main -a "$NUMBER_1" send "$NUMBER_2")
-  run_main -a "$NUMBER_2" sendReaction "$NUMBER_1" -e 🍀 -a "$NUMBER_1" -t "$TIMESTAMP"
-  run_main -a "$NUMBER_1" remoteDelete "$NUMBER_2" -t "$TIMESTAMP"
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m hi
+  run_main -a "$NUMBER_2" --output="$OUTPUT" send "$NUMBER_1" -m hi
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send -g "$GROUP_ID" -m hi -a LICENSE --mention "1:1:$NUMBER_2"
+  TIMESTAMP=$(uname -a | run_main -a "$NUMBER_1" --output=json send "$NUMBER_2" | jq '.timestamp')
+  run_main -a "$NUMBER_2" --output="$OUTPUT" sendReaction "$NUMBER_1" -e 🍀 -a "$NUMBER_1" -t "$TIMESTAMP"
+  run_main -a "$NUMBER_1" --output="$OUTPUT" remoteDelete "$NUMBER_2" -t "$TIMESTAMP"
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
   run_main -a "$NUMBER_1" --output="$OUTPUT" receive
-  run_main -a "$NUMBER_1" send -e "$NUMBER_2"
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send -e "$NUMBER_2"
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
 done
 
@@ -194,8 +215,8 @@ run_linked -a "$NUMBER_1" sendSyncRequest
 run_main -a "$NUMBER_1" sendContacts
 
 for OUTPUT in "plain-text" "json"; do
-  run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
-  run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m hi
+  run_main -a "$NUMBER_2" --output="$OUTPUT" send "$NUMBER_1" -m hi
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
   run_main -a "$NUMBER_1" --output="$OUTPUT" receive
   run_linked -a "$NUMBER_1" --output="$OUTPUT" receive
