@@ -1,9 +1,9 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;
-import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.File;
@@ -20,11 +20,11 @@ public class AvatarStore {
         this.avatarsPath = avatarsPath;
     }
 
-    public StreamDetails retrieveContactAvatar(SignalServiceAddress address) throws IOException {
+    public StreamDetails retrieveContactAvatar(RecipientAddress address) throws IOException {
         return retrieveAvatar(getContactAvatarFile(address));
     }
 
-    public StreamDetails retrieveProfileAvatar(SignalServiceAddress address) throws IOException {
+    public StreamDetails retrieveProfileAvatar(RecipientAddress address) throws IOException {
         return retrieveAvatar(getProfileAvatarFile(address));
     }
 
@@ -33,11 +33,11 @@ public class AvatarStore {
         return retrieveAvatar(groupAvatarFile);
     }
 
-    public void storeContactAvatar(SignalServiceAddress address, AvatarStorer storer) throws IOException {
+    public void storeContactAvatar(RecipientAddress address, AvatarStorer storer) throws IOException {
         storeAvatar(getContactAvatarFile(address), storer);
     }
 
-    public void storeProfileAvatar(SignalServiceAddress address, AvatarStorer storer) throws IOException {
+    public void storeProfileAvatar(RecipientAddress address, AvatarStorer storer) throws IOException {
         storeAvatar(getProfileAvatarFile(address), storer);
     }
 
@@ -45,7 +45,7 @@ public class AvatarStore {
         storeAvatar(getGroupAvatarFile(groupId), storer);
     }
 
-    public void deleteProfileAvatar(SignalServiceAddress address) throws IOException {
+    public void deleteProfileAvatar(RecipientAddress address) throws IOException {
         deleteAvatar(getProfileAvatarFile(address));
     }
 
@@ -77,16 +77,12 @@ public class AvatarStore {
         return new File(avatarsPath, "group-" + groupId.toBase64().replace("/", "_"));
     }
 
-    private File getContactAvatarFile(SignalServiceAddress address) {
-        return new File(avatarsPath, "contact-" + getLegacyIdentifier(address));
+    private File getContactAvatarFile(RecipientAddress address) {
+        return new File(avatarsPath, "contact-" + address.getLegacyIdentifier());
     }
 
-    private String getLegacyIdentifier(final SignalServiceAddress address) {
-        return address.getNumber().or(() -> address.getAci().toString());
-    }
-
-    private File getProfileAvatarFile(SignalServiceAddress address) {
-        return new File(avatarsPath, "profile-" + getLegacyIdentifier(address));
+    private File getProfileAvatarFile(RecipientAddress address) {
+        return new File(avatarsPath, "profile-" + address.getLegacyIdentifier());
     }
 
     private void createAvatarsDir() throws IOException {

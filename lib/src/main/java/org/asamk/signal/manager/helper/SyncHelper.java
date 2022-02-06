@@ -4,6 +4,7 @@ import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.Contact;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
@@ -128,7 +129,7 @@ public class SyncHelper {
                     var profileKey = account.getProfileStore().getProfileKey(recipientId);
                     out.write(new DeviceContact(address,
                             Optional.fromNullable(contact.getName()),
-                            createContactAvatarAttachment(address),
+                            createContactAvatarAttachment(new RecipientAddress(address)),
                             Optional.fromNullable(contact.getColor()),
                             Optional.fromNullable(verifiedMessage),
                             Optional.fromNullable(profileKey),
@@ -264,7 +265,7 @@ public class SyncHelper {
             account.getContactStore().storeContact(recipientId, builder.build());
 
             if (c.getAvatar().isPresent()) {
-                downloadContactAvatar(c.getAvatar().get(), c.getAddress());
+                downloadContactAvatar(c.getAvatar().get(), new RecipientAddress(c.getAddress()));
             }
         }
     }
@@ -309,7 +310,7 @@ public class SyncHelper {
         context.getSendHelper().sendSyncMessage(message);
     }
 
-    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(SignalServiceAddress address) throws IOException {
+    private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(RecipientAddress address) throws IOException {
         final var streamDetails = context.getAvatarStore().retrieveContactAvatar(address);
         if (streamDetails == null) {
             return Optional.absent();
@@ -318,7 +319,7 @@ public class SyncHelper {
         return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
     }
 
-    private void downloadContactAvatar(SignalServiceAttachment avatar, SignalServiceAddress address) {
+    private void downloadContactAvatar(SignalServiceAttachment avatar, RecipientAddress address) {
         try {
             context.getAvatarStore()
                     .storeContactAvatar(address,

@@ -4,6 +4,7 @@ import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.ProfileUtils;
@@ -131,7 +132,7 @@ public final class ProfileHelper {
         if (uploadProfile) {
             try (final var streamDetails = avatar == null
                     ? context.getAvatarStore()
-                    .retrieveProfileAvatar(account.getSelfAddress())
+                    .retrieveProfileAvatar(account.getSelfRecipientAddress())
                     : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
@@ -150,10 +151,10 @@ public final class ProfileHelper {
         if (avatar != null) {
             if (avatar.isPresent()) {
                 context.getAvatarStore()
-                        .storeProfileAvatar(account.getSelfAddress(),
+                        .storeProfileAvatar(account.getSelfRecipientAddress(),
                                 outputStream -> IOUtils.copyFileToStream(avatar.get(), outputStream));
             } else {
-                context.getAvatarStore().deleteProfileAvatar(account.getSelfAddress());
+                context.getAvatarStore().deleteProfileAvatar(account.getSelfRecipientAddress());
             }
         }
         account.getProfileStore().storeProfile(account.getSelfRecipientId(), newProfile);
@@ -219,7 +220,7 @@ public final class ProfileHelper {
         var profile = account.getProfileStore().getProfile(recipientId);
         if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
             logger.trace("Downloading profile avatar for {}", recipientId);
-            downloadProfileAvatar(context.getRecipientHelper().resolveSignalServiceAddress(recipientId),
+            downloadProfileAvatar(account.getRecipientStore().resolveRecipientAddress(recipientId),
                     avatarPath,
                     profileKey);
             var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
@@ -330,7 +331,7 @@ public final class ProfileHelper {
     }
 
     private void downloadProfileAvatar(
-            SignalServiceAddress address, String avatarPath, ProfileKey profileKey
+            RecipientAddress address, String avatarPath, ProfileKey profileKey
     ) {
         if (avatarPath == null) {
             try {

@@ -554,7 +554,7 @@ public class SignalAccount implements Closeable {
             if (legacyRecipientStore != null) {
                 getRecipientStore().resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
-            getSelfRecipientId();
+            getRecipientStore().resolveRecipientTrusted(getSelfRecipientAddress());
             migrated = true;
         }
 
@@ -914,9 +914,12 @@ public class SignalAccount implements Closeable {
         return new SignalServiceAddress(aci, account);
     }
 
+    public RecipientAddress getSelfRecipientAddress() {
+        return new RecipientAddress(aci == null ? null : aci.uuid(), account);
+    }
+
     public RecipientId getSelfRecipientId() {
-        return getRecipientStore().resolveRecipientTrusted(new RecipientAddress(aci == null ? null : aci.uuid(),
-                account));
+        return getRecipientStore().resolveRecipient(getSelfRecipientAddress());
     }
 
     public String getEncryptedDeviceName() {
