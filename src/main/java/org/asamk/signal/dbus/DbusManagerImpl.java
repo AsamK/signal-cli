@@ -3,7 +3,6 @@ package org.asamk.signal.dbus;
 import org.asamk.Signal;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -19,6 +18,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -498,12 +499,24 @@ public class DbusManagerImpl implements Manager {
     public void receiveMessages(
             final Duration timeout, final ReceiveMessageHandler handler
     ) throws IOException {
-        addReceiveHandler(handler);
-        try {
-            Thread.sleep(timeout.toMillis());
-        } catch (InterruptedException ignored) {
+        final var lastMessage = new AtomicLong(System.currentTimeMillis());
+
+        final ReceiveMessageHandler receiveHandler = (envelope, e) -> {
+            lastMessage.set(System.currentTimeMillis());
+            handler.handleMessage(envelope, e);
+        };
+        addReceiveHandler(receiveHandler);
+        while (true) {
+            try {
+                final var sleepTimeRemaining = timeout.toMillis() - (System.currentTimeMillis() - lastMessage.get());
+                if (sleepTimeRemaining < 0) {
+                    break;
+                }
+                Thread.sleep(sleepTimeRemaining);
+            } catch (InterruptedException ignored) {
+            }
         }
-        removeReceiveHandler(handler);
+        removeReceiveHandler(receiveHandler);
     }
 
     @Override
