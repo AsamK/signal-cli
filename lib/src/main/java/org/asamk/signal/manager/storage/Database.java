@@ -3,53 +3,38 @@ package org.asamk.signal.manager.storage;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteConfig;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Function;
 
-public class Database implements AutoCloseable {
+public abstract class Database implements AutoCloseable {
 
-    private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
-    private static final long DATABASE_VERSION = 1;
-
+    private final Logger logger;
+    private final long databaseVersion;
     private final HikariDataSource dataSource;
 
-    private Database(final HikariDataSource dataSource) {
+    protected Database(final Logger logger, final long databaseVersion, final HikariDataSource dataSource) {
+        this.logger = logger;
+        this.databaseVersion = databaseVersion;
         this.dataSource = dataSource;
     }
 
-    public static Database init(File databaseFile) throws SQLException {
+    public static <T extends Database> T initDatabase(
+            File databaseFile, Function<HikariDataSource, T> newDatabase
+    ) throws SQLException {
         HikariDataSource dataSource = null;
 
         try {
             dataSource = getHikariDataSource(databaseFile.getAbsolutePath());
 
-            try (final var connection = dataSource.getConnection()) {
-                final var userVersion = getUserVersion(connection);
-                logger.trace("Current database version: {} Program database version: {}",
-                        userVersion,
-                        DATABASE_VERSION);
-
-                if (userVersion > DATABASE_VERSION) {
-                    logger.error("Database has been updated by a newer signal-cli version");
-                    throw new SQLException("Database has been updated by a newer signal-cli version");
-                } else if (userVersion < DATABASE_VERSION) {
-                    if (userVersion < 1) {
-                        logger.debug("Updating database: Creating message send log tables");
-                        MessageSendLogStore.createSql(connection);
-                    }
-                    setUserVersion(connection, DATABASE_VERSION);
-                }
-
-                final var result = new Database(dataSource);
-                dataSource = null;
-                return result;
-            }
+            final var result = newDatabase.apply(dataSource);
+            result.initDb();
+            dataSource = null;
+            return result;
         } finally {
             if (dataSource != null) {
                 dataSource.close();
@@ -57,7 +42,7 @@ public class Database implements AutoCloseable {
         }
     }
 
-    public Connection getConnection() throws SQLException {
+    public final Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
 
@@ -65,6 +50,23 @@ public class Database implements AutoCloseable {
     public void close() throws SQLException {
         dataSource.close();
     }
+
+    protected final void initDb() throws SQLException {
+        try (final var connection = dataSource.getConnection()) {
+            final var userVersion = getUserVersion(connection);
+            logger.trace("Current database version: {} Program database version: {}", userVersion, databaseVersion);
+
+            if (userVersion > databaseVersion) {
+                logger.error("Database has been updated by a newer signal-cli version");
+                throw new SQLException("Database has been updated by a newer signal-cli version");
+            } else if (userVersion < databaseVersion) {
+                upgradeDatabase(connection, userVersion);
+                setUserVersion(connection, databaseVersion);
+            }
+        }
+    }
+
+    protected abstract void upgradeDatabase(final Connection connection, long oldVersion) throws SQLException;
 
     private static long getUserVersion(final Connection connection) throws SQLException {
         try (final var statement = connection.createStatement()) {

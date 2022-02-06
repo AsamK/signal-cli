@@ -124,7 +124,7 @@ public class SignalAccount implements Closeable {
     private MessageCache messageCache;
     private MessageSendLogStore messageSendLogStore;
 
-    private Database database;
+    private AccountDatabase accountDatabase;
 
     private SignalAccount(final FileChannel fileChannel, final FileLock lock) {
         this.fileChannel = fileChannel;
@@ -233,7 +233,7 @@ public class SignalAccount implements Closeable {
     }
 
     public void initDatabase() {
-        getDatabase();
+        getAccountDatabase();
     }
 
     private void clearAllPreKeys() {
@@ -882,10 +882,10 @@ public class SignalAccount implements Closeable {
                 () -> messageCache = new MessageCache(getMessageCachePath(dataPath, account)));
     }
 
-    public Database getDatabase() {
-        return getOrCreate(() -> database, () -> {
+    public AccountDatabase getAccountDatabase() {
+        return getOrCreate(() -> accountDatabase, () -> {
             try {
-                database = Database.init(getDatabaseFile(dataPath, account));
+                accountDatabase = AccountDatabase.init(getDatabaseFile(dataPath, account));
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -894,7 +894,7 @@ public class SignalAccount implements Closeable {
 
     public MessageSendLogStore getMessageSendLogStore() {
         return getOrCreate(() -> messageSendLogStore,
-                () -> messageSendLogStore = new MessageSendLogStore(getRecipientStore(), getDatabase()));
+                () -> messageSendLogStore = new MessageSendLogStore(getRecipientStore(), getAccountDatabase()));
     }
 
     public String getAccount() {
@@ -1081,9 +1081,9 @@ public class SignalAccount implements Closeable {
     @Override
     public void close() {
         synchronized (fileChannel) {
-            if (database != null) {
+            if (accountDatabase != null) {
                 try {
-                    database.close();
+                    accountDatabase.close();
                 } catch (SQLException e) {
                     logger.warn("Failed to close account database: {}", e.getMessage(), e);
                 }
