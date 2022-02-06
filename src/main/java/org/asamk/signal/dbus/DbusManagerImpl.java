@@ -2,10 +2,9 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.DbusConfig;
-import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.NotMasterDeviceException;
-import org.asamk.signal.manager.StickerPackInvalidException;
+import org.asamk.signal.manager.api.StickerPackInvalidException;
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
@@ -14,6 +13,7 @@ import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.NotMasterDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -82,11 +82,6 @@ public class DbusManagerImpl implements Manager {
     @Override
     public String getSelfNumber() {
         return signal.getSelfNumber();
-    }
-
-    @Override
-    public void checkAccountState() throws IOException {
-        throw new UnsupportedOperationException();
     }
 
     @Override

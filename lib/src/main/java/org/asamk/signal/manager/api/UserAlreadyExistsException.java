@@ -1,13 +1,13 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.api;
 
 import java.io.File;
 
-public class UserAlreadyExists extends Exception {
+public class UserAlreadyExistsException extends Exception {
 
     private final String number;
     private final File fileName;
 
-    public UserAlreadyExists(String number, File fileName) {
+    public UserAlreadyExistsException(String number, File fileName) {
         this.number = number;
         this.fileName = fileName;
     }

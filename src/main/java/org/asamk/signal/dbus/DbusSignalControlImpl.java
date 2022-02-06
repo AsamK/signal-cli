@@ -7,7 +7,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
-import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.PinLockedException;
@@ -100,7 +100,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                 final ProvisioningManager provisioningManager = c.getProvisioningManagerFor(deviceLinkUri);
                 try {
                     provisioningManager.finishDeviceLink(newDeviceName);
-                } catch (IOException | TimeoutException | UserAlreadyExists e) {
+                } catch (IOException | TimeoutException | UserAlreadyExistsException e) {
                     e.printStackTrace();
                 }
             });
@@ -127,7 +127,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         try {
             final var provisioningManager = c.getProvisioningManagerFor(new URI(deviceLinkUri));
             return provisioningManager.finishDeviceLink(newDeviceName);
-        } catch (TimeoutException | IOException | UserAlreadyExists | URISyntaxException e) {
+        } catch (TimeoutException | IOException | UserAlreadyExistsException | URISyntaxException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }

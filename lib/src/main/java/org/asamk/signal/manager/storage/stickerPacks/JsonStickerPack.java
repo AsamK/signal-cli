@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.storage.stickerPacks;
 
 import org.asamk.signal.manager.api.StickerPack;
 

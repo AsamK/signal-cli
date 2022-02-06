@@ -2,7 +2,7 @@ package org.asamk.signal.dbus;
 
 import org.asamk.SignalControl;
 import org.asamk.signal.manager.ProvisioningManager;
-import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 
 import java.io.IOException;
@@ -27,9 +27,7 @@ public class DbusProvisioningManagerImpl implements ProvisioningManager {
     }
 
     public DbusProvisioningManagerImpl(
-            final SignalControl signalControl,
-            DBusConnection connection,
-            URI deviceLinkUri
+            final SignalControl signalControl, DBusConnection connection, URI deviceLinkUri
     ) {
         this.signalControl = signalControl;
         this.connection = connection;
@@ -47,7 +45,7 @@ public class DbusProvisioningManagerImpl implements ProvisioningManager {
     }
 
     @Override
-    public String finishDeviceLink(final String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
+    public String finishDeviceLink(final String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException {
         return signalControl.finishLink(deviceLinkUri.toString(), deviceName);
     }
 }

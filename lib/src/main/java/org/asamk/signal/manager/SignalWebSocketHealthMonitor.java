@@ -21,7 +21,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  * The monitor is also responsible for sending heartbeats/keep-alive messages to prevent
  * timeouts.
  */
-public final class SignalWebSocketHealthMonitor implements HealthMonitor {
+final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private final static Logger logger = LoggerFactory.getLogger(SignalWebSocketHealthMonitor.class);
 

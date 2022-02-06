@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.api;
 
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.internal.storage.protos.ContactRecord;

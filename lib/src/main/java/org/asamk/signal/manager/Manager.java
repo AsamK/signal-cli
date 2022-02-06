@@ -1,5 +1,7 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.AccountCheckException;
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
@@ -9,11 +11,14 @@ import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
@@ -38,7 +43,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +57,7 @@ public interface Manager extends Closeable {
             ServiceEnvironment serviceEnvironment,
             String userAgent,
             TrustNewIdentity trustNewIdentity
-    ) throws IOException, NotRegisteredException {
+    ) throws IOException, NotRegisteredException, AccountCheckException {
         var pathConfig = PathConfig.createDefault(settingsPath);
 
         if (!SignalAccount.userExists(pathConfig.dataPath(), number)) {
@@ -70,7 +74,16 @@ public interface Manager extends Closeable {
         account.initDatabase();
         final var serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
 
-        return new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+        final var manager = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+
+        try {
+            manager.checkAccountState();
+        } catch (IOException e) {
+            manager.close();
+            throw new AccountCheckException("Error while checking account " + account + ": " + e.getMessage(), e);
+        }
+
+        return manager;
     }
 
     static void initLogger() {
@@ -81,25 +94,7 @@ public interface Manager extends Closeable {
         return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);
     }
 
-    static List<String> getAllLocalAccountNumbers(File settingsPath) {
-        var pathConfig = PathConfig.createDefault(settingsPath);
-        final var dataPath = pathConfig.dataPath();
-        final var files = dataPath.listFiles();
-
-        if (files == null) {
-            return List.of();
-        }
-
-        return Arrays.stream(files)
-                .filter(File::isFile)
-                .map(File::getName)
-                .filter(file -> PhoneNumberFormatter.isValidNumber(file, null))
-                .toList();
-    }
-
     String getSelfNumber();
-
-    void checkAccountState() throws IOException;
 
     /**
      * This is used for checking a set of phone numbers for registration on Signal

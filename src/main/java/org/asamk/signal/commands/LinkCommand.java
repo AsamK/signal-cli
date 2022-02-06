@@ -7,7 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.ProvisioningManager;
-import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class LinkCommand implements ProvisioningCommand {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
             throw new IOErrorException("Link request error: " + e.getMessage(), e);
-        } catch (UserAlreadyExists e) {
+        } catch (UserAlreadyExistsException e) {
             throw new UserErrorException("The user "
                     + e.getNumber()
                     + " already exists\nDelete \""

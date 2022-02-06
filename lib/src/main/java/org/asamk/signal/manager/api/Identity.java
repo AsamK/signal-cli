@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.TrustLevel;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.whispersystems.libsignal.IdentityKey;
 

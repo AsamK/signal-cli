@@ -2,8 +2,8 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.TrustLevel;
-import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;

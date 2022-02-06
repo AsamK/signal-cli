@@ -1,7 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.UntrustedIdentityException;
+import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.groups.GroupId;

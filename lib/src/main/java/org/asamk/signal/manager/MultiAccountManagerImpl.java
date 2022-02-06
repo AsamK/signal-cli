@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-public class MultiAccountManagerImpl implements MultiAccountManager {
+class MultiAccountManagerImpl implements MultiAccountManager {
 
     private final static Logger logger = LoggerFactory.getLogger(MultiAccountManagerImpl.class);
 
@@ -25,19 +25,19 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     private final Set<Consumer<Manager>> onManagerRemovedHandlers = new HashSet<>();
     private final Set<Manager> managers = new HashSet<>();
     private final Map<URI, ProvisioningManager> provisioningManagers = new HashMap<>();
-    private final File dataPath;
+    private final File settingsPath;
     private final ServiceEnvironment serviceEnvironment;
     private final String userAgent;
 
     public MultiAccountManagerImpl(
             final Collection<Manager> managers,
-            final File dataPath,
+            final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final String userAgent
     ) {
         this.managers.addAll(managers);
         managers.forEach(m -> m.addClosedListener(() -> this.removeManager(m)));
-        this.dataPath = dataPath;
+        this.settingsPath = settingsPath;
         this.serviceEnvironment = serviceEnvironment;
         this.userAgent = userAgent;
     }
@@ -119,12 +119,12 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     private ProvisioningManager getNewProvisioningManager() {
-        return ProvisioningManager.init(dataPath, serviceEnvironment, userAgent, this::addManager);
+        return ProvisioningManager.init(settingsPath, serviceEnvironment, userAgent, this::addManager);
     }
 
     @Override
     public RegistrationManager getNewRegistrationManager(String account) throws IOException {
-        return RegistrationManager.init(account, dataPath, serviceEnvironment, userAgent, this::addManager);
+        return RegistrationManager.init(account, settingsPath, serviceEnvironment, userAgent, this::addManager);
     }
 
     @Override

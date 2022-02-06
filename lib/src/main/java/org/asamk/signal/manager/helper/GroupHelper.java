@@ -1,7 +1,7 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.SendGroupMessageResults;

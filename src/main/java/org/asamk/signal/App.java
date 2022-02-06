@@ -22,10 +22,11 @@ import org.asamk.signal.dbus.DbusMultiAccountManagerImpl;
 import org.asamk.signal.dbus.DbusProvisioningManagerImpl;
 import org.asamk.signal.dbus.DbusRegistrationManagerImpl;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.MultiAccountManagerImpl;
-import org.asamk.signal.manager.NotRegisteredException;
+import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.api.AccountCheckException;
+import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
@@ -46,8 +47,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
 
@@ -143,16 +142,16 @@ public class App {
             return;
         }
 
-        final File dataPath;
-        var config = ns.getString("config");
-        if (config != null) {
-            dataPath = new File(config);
-        } else {
-            dataPath = getDefaultDataPath();
-        }
-
         if (!ServiceConfig.isSignalClientAvailable()) {
             throw new UserErrorException("Missing required native library dependency: libsignal-client");
+        }
+
+        final File configPath;
+        var config = ns.getString("config");
+        if (config != null) {
+            configPath = new File(config);
+        } else {
+            configPath = getDefaultConfigPath();
         }
 
         final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
@@ -170,23 +169,21 @@ public class App {
                 throw new UserErrorException("You cannot specify a account (phone number) when linking");
             }
 
-            handleProvisioningCommand(provisioningCommand, dataPath, serviceEnvironment, outputWriter);
+            handleProvisioningCommand(provisioningCommand, configPath, serviceEnvironment, outputWriter);
             return;
         }
 
         if (account == null) {
-            var accounts = Manager.getAllLocalAccountNumbers(dataPath);
-
             if (command instanceof MultiLocalCommand multiLocalCommand) {
                 handleMultiLocalCommand(multiLocalCommand,
-                        dataPath,
+                        configPath,
                         serviceEnvironment,
-                        accounts,
                         outputWriter,
                         trustNewIdentity);
                 return;
             }
 
+            var accounts = MultiAccountManager.getAllLocalAccountNumbers(configPath);
             if (accounts.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
@@ -200,7 +197,7 @@ public class App {
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
-            handleRegistrationCommand(registrationCommand, account, dataPath, serviceEnvironment);
+            handleRegistrationCommand(registrationCommand, account, configPath, serviceEnvironment);
             return;
         }
 
@@ -210,7 +207,7 @@ public class App {
 
         handleLocalCommand((LocalCommand) command,
                 account,
-                dataPath,
+                configPath,
                 serviceEnvironment,
                 outputWriter,
                 trustNewIdentity);
@@ -218,11 +215,11 @@ public class App {
 
     private void handleProvisioningCommand(
             final ProvisioningCommand command,
-            final File dataPath,
+            final File configPath,
             final ServiceEnvironment serviceEnvironment,
             final OutputWriter outputWriter
     ) throws CommandException {
-        var pm = ProvisioningManager.init(dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+        var pm = ProvisioningManager.init(configPath, serviceEnvironment, BaseConfig.USER_AGENT);
         command.handleCommand(ns, pm, outputWriter);
     }
 
@@ -245,12 +242,12 @@ public class App {
     private void handleRegistrationCommand(
             final RegistrationCommand command,
             final String account,
-            final File dataPath,
+            final File configPath,
             final ServiceEnvironment serviceEnvironment
     ) throws CommandException {
         final RegistrationManager manager;
         try {
-            manager = RegistrationManager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT);
+            manager = RegistrationManager.init(account, configPath, serviceEnvironment, BaseConfig.USER_AGENT);
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading or creating state file: "
                     + e.getMessage()
@@ -283,12 +280,12 @@ public class App {
     private void handleLocalCommand(
             final LocalCommand command,
             final String account,
-            final File dataPath,
+            final File configPath,
             final ServiceEnvironment serviceEnvironment,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        try (var m = loadManager(account, dataPath, serviceEnvironment, trustNewIdentity)) {
+        try (var m = loadManager(account, configPath, serviceEnvironment, trustNewIdentity)) {
             command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
@@ -313,25 +310,15 @@ public class App {
 
     private void handleMultiLocalCommand(
             final MultiLocalCommand command,
-            final File dataPath,
+            final File configPath,
             final ServiceEnvironment serviceEnvironment,
-            final List<String> accounts,
             final OutputWriter outputWriter,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        final var managers = new ArrayList<Manager>();
-        for (String a : accounts) {
-            try {
-                managers.add(loadManager(a, dataPath, serviceEnvironment, trustNewIdentity));
-            } catch (CommandException e) {
-                logger.warn("Ignoring {}: {}", a, e.getMessage());
-            }
-        }
-
-        try (var multiAccountManager = new MultiAccountManagerImpl(managers,
-                dataPath,
+        try (var multiAccountManager = MultiAccountManager.init(configPath,
                 serviceEnvironment,
-                BaseConfig.USER_AGENT)) {
+                BaseConfig.USER_AGENT,
+                trustNewIdentity)) {
             command.handleCommand(ns, multiAccountManager, outputWriter);
         }
     }
@@ -351,16 +338,22 @@ public class App {
 
     private Manager loadManager(
             final String account,
-            final File dataPath,
+            final File configPath,
             final ServiceEnvironment serviceEnvironment,
             final TrustNewIdentity trustNewIdentity
     ) throws CommandException {
-        Manager manager;
         logger.trace("Loading account file for {}", account);
         try {
-            manager = Manager.init(account, dataPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
+            return Manager.init(account, configPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + account + " is not registered.");
+        } catch (AccountCheckException ace) {
+            if (ace.getCause() instanceof IOException e) {
+                throw new IOErrorException("Error while checking account " + account + ": " + e.getMessage(), e);
+            } else {
+                throw new UnexpectedErrorException("Error while checking account " + account + ": " + ace.getMessage(),
+                        ace);
+            }
         } catch (Throwable e) {
             throw new UnexpectedErrorException("Error loading state file for user "
                     + account
@@ -370,20 +363,6 @@ public class App {
                     + e.getClass().getSimpleName()
                     + ")", e);
         }
-
-        logger.trace("Checking account state");
-        try {
-            manager.checkAccountState();
-        } catch (IOException e) {
-            try {
-                manager.close();
-            } catch (IOException ie) {
-                logger.warn("Failed to close broken account", ie);
-            }
-            throw new IOErrorException("Error while checking account " + account + ": " + e.getMessage(), e);
-        }
-
-        return manager;
     }
 
     private void initDbusClient(
@@ -457,7 +436,7 @@ public class App {
     /**
      * @return the default data directory to be used by signal-cli.
      */
-    private static File getDefaultDataPath() {
+    private static File getDefaultConfigPath() {
         return new File(IOUtils.getDataHomeDir(), "signal-cli");
     }
 }

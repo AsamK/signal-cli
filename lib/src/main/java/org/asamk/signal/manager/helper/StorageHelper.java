@@ -1,7 +1,7 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;

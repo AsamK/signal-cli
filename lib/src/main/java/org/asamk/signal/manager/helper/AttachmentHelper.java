@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AttachmentInvalidException;
 import org.asamk.signal.manager.AttachmentStore;
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;

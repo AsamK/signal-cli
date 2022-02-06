@@ -2,7 +2,7 @@ package org.asamk.signal.manager.storage.identities;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;

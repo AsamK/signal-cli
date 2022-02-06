@@ -52,7 +52,7 @@ public class SignalDependencies {
     private ProfileService profileService;
     private SignalServiceCipher cipher;
 
-    public SignalDependencies(
+    SignalDependencies(
             final ServiceEnvironmentConfig serviceEnvironmentConfig,
             final String userAgent,
             final DynamicCredentialsProvider credentialsProvider,

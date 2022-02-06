@@ -16,6 +16,7 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
@@ -24,6 +25,7 @@ import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
+import org.asamk.signal.manager.api.NotMasterDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -31,6 +33,7 @@ import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
+import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
@@ -50,6 +53,8 @@ import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
+import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.stickers.Sticker;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -89,7 +94,7 @@ import java.util.stream.Stream;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
-public class ManagerImpl implements Manager {
+class ManagerImpl implements Manager {
 
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
@@ -166,8 +171,7 @@ public class ManagerImpl implements Manager {
         return account.getAccount();
     }
 
-    @Override
-    public void checkAccountState() throws IOException {
+    void checkAccountState() throws IOException {
         context.getAccountHelper().checkAccountState();
     }
 

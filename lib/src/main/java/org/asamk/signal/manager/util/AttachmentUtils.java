@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.util;
 
-import org.asamk.signal.manager.AttachmentInvalidException;
+import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;

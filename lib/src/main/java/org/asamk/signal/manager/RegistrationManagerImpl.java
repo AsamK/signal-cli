@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
 
-public class RegistrationManagerImpl implements RegistrationManager {
+class RegistrationManagerImpl implements RegistrationManager {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
 

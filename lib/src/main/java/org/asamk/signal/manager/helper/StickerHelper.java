@@ -1,10 +1,10 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.JsonStickerPack;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

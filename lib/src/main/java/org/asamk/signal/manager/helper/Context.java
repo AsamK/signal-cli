@@ -4,7 +4,7 @@ import org.asamk.signal.manager.AttachmentStore;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.JobExecutor;
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.StickerPackStore;
+import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 
 import java.util.function.Supplier;

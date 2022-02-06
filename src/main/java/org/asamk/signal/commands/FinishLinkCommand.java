@@ -6,7 +6,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.MultiAccountManager;
-import org.asamk.signal.manager.UserAlreadyExists;
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.output.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
             throw new IOErrorException("Link request error: " + e.getMessage(), e);
-        } catch (UserAlreadyExists e) {
+        } catch (UserAlreadyExistsException e) {
             throw new UserErrorException("The user "
                     + e.getNumber()
                     + " already exists\nDelete \""

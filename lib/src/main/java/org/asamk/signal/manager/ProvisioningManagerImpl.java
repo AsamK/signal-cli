@@ -16,6 +16,7 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -38,7 +39,7 @@ import java.net.URI;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-public class ProvisioningManagerImpl implements ProvisioningManager {
+class ProvisioningManagerImpl implements ProvisioningManager {
 
     private final static Logger logger = LoggerFactory.getLogger(ProvisioningManagerImpl.class);
 
@@ -87,14 +88,14 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
     }
 
     @Override
-    public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists {
+    public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException {
         var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
 
         logger.info("Received link information from {}, linking in progress ...", number);
 
         if (SignalAccount.userExists(pathConfig.dataPath(), number) && !canRelinkExistingAccount(number)) {
-            throw new UserAlreadyExists(number, SignalAccount.getFileName(pathConfig.dataPath(), number));
+            throw new UserAlreadyExistsException(number, SignalAccount.getFileName(pathConfig.dataPath(), number));
         }
 
         var encryptedDeviceName = deviceName == null

@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.api;
 
 public class AttachmentInvalidException extends Exception {
 

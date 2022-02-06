@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 
@@ -32,5 +33,5 @@ public interface ProvisioningManager {
 
     URI getDeviceLinkUri() throws TimeoutException, IOException;
 
-    String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExists;
+    String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException;
 }

@@ -3,7 +3,7 @@ package org.asamk.signal.manager.storage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.asamk.signal.manager.TrustLevel;
+import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
