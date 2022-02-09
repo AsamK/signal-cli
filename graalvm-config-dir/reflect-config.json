@@ -855,32 +855,6 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.manager.JsonStickerPack",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","org.asamk.signal.manager.JsonStickerPack$JsonSticker","java.util.List"] }, 
-    {"name":"author","parameterTypes":[] }, 
-    {"name":"cover","parameterTypes":[] }, 
-    {"name":"stickers","parameterTypes":[] }, 
-    {"name":"title","parameterTypes":[] }
-  ]
-},
-{
-  "name":"org.asamk.signal.manager.JsonStickerPack$JsonSticker",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.Integer","java.lang.String","java.lang.String","java.lang.String"] }, 
-    {"name":"contentType","parameterTypes":[] }, 
-    {"name":"emoji","parameterTypes":[] }, 
-    {"name":"file","parameterTypes":[] }, 
-    {"name":"id","parameterTypes":[] }
-  ]
-},
-{
   "name":"org.asamk.signal.manager.api.PhoneNumberSharingMode",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -1080,6 +1054,30 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"author","parameterTypes":[] }, 
+    {"name":"cover","parameterTypes":[] }, 
+    {"name":"stickers","parameterTypes":[] }, 
+    {"name":"title","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack$JsonSticker",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"contentType","parameterTypes":[] }, 
+    {"name":"emoji","parameterTypes":[] }, 
+    {"name":"file","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.stickers.StickerStore",
@@ -1806,7 +1804,6 @@
     {"name":"isAnnouncementGroup_"}, 
     {"name":"memberCount_"}, 
     {"name":"pendingAdminApproval_"}, 
-    {"name":"publicKey_"}, 
     {"name":"revision_"}, 
     {"name":"title_"}
   ]
