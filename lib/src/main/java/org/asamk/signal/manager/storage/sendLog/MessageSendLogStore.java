@@ -52,11 +52,11 @@ public class MessageSendLogStore implements AutoCloseable {
                 while (true) {
                     try (final var connection = database.getConnection()) {
                         deleteOutdatedEntries(connection);
-                        Thread.sleep(interval);
                     } catch (SQLException e) {
                         logger.warn("Deleting outdated entries failed");
                         break;
                     }
+                    Thread.sleep(interval);
                 }
             } catch (InterruptedException e) {
                 logger.debug("Stopping msl cleanup thread");
