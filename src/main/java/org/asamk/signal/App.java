@@ -22,9 +22,8 @@ import org.asamk.signal.dbus.DbusMultiAccountManagerImpl;
 import org.asamk.signal.dbus.DbusProvisioningManagerImpl;
 import org.asamk.signal.dbus.DbusRegistrationManagerImpl;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.MultiAccountManager;
-import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -164,26 +163,27 @@ public class App {
                 ? TrustNewIdentity.ON_FIRST_USE
                 : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
+        final SignalAccountFiles signalAccountFiles = new SignalAccountFiles(configPath,
+                serviceEnvironment,
+                BaseConfig.USER_AGENT,
+                trustNewIdentity);
+
         if (command instanceof ProvisioningCommand provisioningCommand) {
             if (account != null) {
                 throw new UserErrorException("You cannot specify a account (phone number) when linking");
             }
 
-            handleProvisioningCommand(provisioningCommand, configPath, serviceEnvironment, outputWriter);
+            handleProvisioningCommand(provisioningCommand, signalAccountFiles, outputWriter);
             return;
         }
 
         if (account == null) {
             if (command instanceof MultiLocalCommand multiLocalCommand) {
-                handleMultiLocalCommand(multiLocalCommand,
-                        configPath,
-                        serviceEnvironment,
-                        outputWriter,
-                        trustNewIdentity);
+                handleMultiLocalCommand(multiLocalCommand, signalAccountFiles, outputWriter);
                 return;
             }
 
-            var accounts = MultiAccountManager.getAllLocalAccountNumbers(configPath);
+            var accounts = signalAccountFiles.getAllLocalAccountNumbers();
             if (accounts.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
@@ -191,13 +191,13 @@ public class App {
                         "Multiple users found, you need to specify an account (phone number) with -a");
             }
 
-            account = accounts.get(0);
+            account = accounts.stream().findFirst().get();
         } else if (!Manager.isValidNumber(account, null)) {
             throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
-            handleRegistrationCommand(registrationCommand, account, configPath, serviceEnvironment);
+            handleRegistrationCommand(registrationCommand, account, signalAccountFiles);
             return;
         }
 
@@ -205,21 +205,15 @@ public class App {
             throw new UserErrorException("Command only works in multi-account mode");
         }
 
-        handleLocalCommand((LocalCommand) command,
-                account,
-                configPath,
-                serviceEnvironment,
-                outputWriter,
-                trustNewIdentity);
+        handleLocalCommand((LocalCommand) command, account, signalAccountFiles, outputWriter);
     }
 
     private void handleProvisioningCommand(
             final ProvisioningCommand command,
-            final File configPath,
-            final ServiceEnvironment serviceEnvironment,
+            final SignalAccountFiles signalAccountFiles,
             final OutputWriter outputWriter
     ) throws CommandException {
-        var pm = ProvisioningManager.init(configPath, serviceEnvironment, BaseConfig.USER_AGENT);
+        var pm = signalAccountFiles.initProvisioningManager();
         command.handleCommand(ns, pm, outputWriter);
     }
 
@@ -240,22 +234,9 @@ public class App {
     }
 
     private void handleRegistrationCommand(
-            final RegistrationCommand command,
-            final String account,
-            final File configPath,
-            final ServiceEnvironment serviceEnvironment
+            final RegistrationCommand command, final String account, final SignalAccountFiles signalAccountFiles
     ) throws CommandException {
-        final RegistrationManager manager;
-        try {
-            manager = RegistrationManager.init(account, configPath, serviceEnvironment, BaseConfig.USER_AGENT);
-        } catch (Throwable e) {
-            throw new UnexpectedErrorException("Error loading or creating state file: "
-                    + e.getMessage()
-                    + " ("
-                    + e.getClass().getSimpleName()
-                    + ")", e);
-        }
-        try (manager) {
+        try (final var manager = loadRegistrationManager(account, signalAccountFiles)) {
             command.handleCommand(ns, manager);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
@@ -280,12 +261,10 @@ public class App {
     private void handleLocalCommand(
             final LocalCommand command,
             final String account,
-            final File configPath,
-            final ServiceEnvironment serviceEnvironment,
-            final OutputWriter outputWriter,
-            final TrustNewIdentity trustNewIdentity
+            final SignalAccountFiles signalAccountFiles,
+            final OutputWriter outputWriter
     ) throws CommandException {
-        try (var m = loadManager(account, configPath, serviceEnvironment, trustNewIdentity)) {
+        try (var m = loadManager(account, signalAccountFiles)) {
             command.handleCommand(ns, m, outputWriter);
         } catch (IOException e) {
             logger.warn("Cleanup failed", e);
@@ -310,15 +289,10 @@ public class App {
 
     private void handleMultiLocalCommand(
             final MultiLocalCommand command,
-            final File configPath,
-            final ServiceEnvironment serviceEnvironment,
-            final OutputWriter outputWriter,
-            final TrustNewIdentity trustNewIdentity
+            final SignalAccountFiles signalAccountFiles,
+            final OutputWriter outputWriter
     ) throws CommandException {
-        try (var multiAccountManager = MultiAccountManager.init(configPath,
-                serviceEnvironment,
-                BaseConfig.USER_AGENT,
-                trustNewIdentity)) {
+        try (var multiAccountManager = signalAccountFiles.initMultiAccountManager()) {
             command.handleCommand(ns, multiAccountManager, outputWriter);
         }
     }
@@ -336,15 +310,26 @@ public class App {
         }
     }
 
+    private RegistrationManager loadRegistrationManager(
+            final String account, final SignalAccountFiles signalAccountFiles
+    ) throws UnexpectedErrorException {
+        try {
+            return signalAccountFiles.initRegistrationManager(account);
+        } catch (Throwable e) {
+            throw new UnexpectedErrorException("Error loading or creating state file: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")", e);
+        }
+    }
+
     private Manager loadManager(
-            final String account,
-            final File configPath,
-            final ServiceEnvironment serviceEnvironment,
-            final TrustNewIdentity trustNewIdentity
+            final String account, final SignalAccountFiles signalAccountFiles
     ) throws CommandException {
         logger.trace("Loading account file for {}", account);
         try {
-            return Manager.init(account, configPath, serviceEnvironment, BaseConfig.USER_AGENT, trustNewIdentity);
+            return signalAccountFiles.initManager(account);
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + account + " is not registered.");
         } catch (AccountCheckException ace) {

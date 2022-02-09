@@ -9,7 +9,7 @@ public class LibSignalLogger implements SignalProtocolLogger {
 
     private final static Logger logger = LoggerFactory.getLogger("LibSignal");
 
-    public static void initLogger() {
+    static void initLogger() {
         SignalProtocolLoggerProvider.setProvider(new LibSignalLogger());
     }
 

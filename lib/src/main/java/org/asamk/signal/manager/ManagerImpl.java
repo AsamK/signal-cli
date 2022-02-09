@@ -45,6 +45,7 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
@@ -99,6 +100,7 @@ class ManagerImpl implements Manager {
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
     private SignalAccount account;
+    private final AccountFileUpdater accountFileUpdater;
     private final SignalDependencies dependencies;
     private final Context context;
 
@@ -114,13 +116,15 @@ class ManagerImpl implements Manager {
     ManagerImpl(
             SignalAccount account,
             PathConfig pathConfig,
+            AccountFileUpdater accountFileUpdater,
             ServiceEnvironmentConfig serviceEnvironmentConfig,
             String userAgent
     ) {
         this.account = account;
+        this.accountFileUpdater = accountFileUpdater;
 
         final var credentialsProvider = new DynamicCredentialsProvider(account.getAci(),
-                account.getAccount(),
+                account.getNumber(),
                 account.getPassword(),
                 account.getDeviceId());
         final var sessionLock = new SignalSessionLock() {
@@ -142,7 +146,12 @@ class ManagerImpl implements Manager {
         final var attachmentStore = new AttachmentStore(pathConfig.attachmentsPath());
         final var stickerPackStore = new StickerPackStore(pathConfig.stickerPacksPath());
 
-        this.context = new Context(account, dependencies, avatarStore, attachmentStore, stickerPackStore);
+        this.context = new Context(account,
+                accountFileUpdater,
+                dependencies,
+                avatarStore,
+                attachmentStore,
+                stickerPackStore);
         this.context.getAccountHelper().setUnregisteredListener(this::close);
         this.context.getReceiveHelper().setAuthenticationFailureListener(this::close);
         this.context.getReceiveHelper().setCaughtUpWithOldMessagesListener(() -> {
@@ -168,7 +177,7 @@ class ManagerImpl implements Manager {
 
     @Override
     public String getSelfNumber() {
-        return account.getAccount();
+        return account.getNumber();
     }
 
     void checkAccountState() throws IOException {
@@ -179,7 +188,7 @@ class ManagerImpl implements Manager {
     public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
         final var canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
-                final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getAccount());
+                final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getNumber());
                 if (!canonicalizedNumber.equals(n)) {
                     logger.debug("Normalized number {} to {}.", n, canonicalizedNumber);
                 }

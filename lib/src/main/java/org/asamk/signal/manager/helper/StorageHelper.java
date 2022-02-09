@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
+import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Contact;
@@ -188,7 +188,7 @@ public class StorageHelper {
             return;
         }
 
-        if (!accountRecord.getE164().equals(account.getAccount())) {
+        if (!accountRecord.getE164().equals(account.getNumber())) {
             // TODO implement changed number handling
         }
 

@@ -27,7 +27,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
-import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.ManagerLogger;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -97,7 +97,7 @@ public class Main {
         if (verboseLevel > 0) {
             java.util.logging.Logger.getLogger("")
                     .setLevel(verboseLevel > 2 ? java.util.logging.Level.FINEST : java.util.logging.Level.INFO);
-            Manager.initLogger();
+            ManagerLogger.initLogger();
         }
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();

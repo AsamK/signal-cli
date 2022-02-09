@@ -1,10 +1,8 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,21 +23,12 @@ class MultiAccountManagerImpl implements MultiAccountManager {
     private final Set<Consumer<Manager>> onManagerRemovedHandlers = new HashSet<>();
     private final Set<Manager> managers = new HashSet<>();
     private final Map<URI, ProvisioningManager> provisioningManagers = new HashMap<>();
-    private final File settingsPath;
-    private final ServiceEnvironment serviceEnvironment;
-    private final String userAgent;
+    private final SignalAccountFiles signalAccountFiles;
 
-    public MultiAccountManagerImpl(
-            final Collection<Manager> managers,
-            final File settingsPath,
-            final ServiceEnvironment serviceEnvironment,
-            final String userAgent
-    ) {
+    public MultiAccountManagerImpl(final Collection<Manager> managers, final SignalAccountFiles signalAccountFiles) {
+        this.signalAccountFiles = signalAccountFiles;
         this.managers.addAll(managers);
         managers.forEach(m -> m.addClosedListener(() -> this.removeManager(m)));
-        this.settingsPath = settingsPath;
-        this.serviceEnvironment = serviceEnvironment;
-        this.userAgent = userAgent;
     }
 
     @Override
@@ -99,9 +88,9 @@ class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public Manager getManager(final String account) {
+    public Manager getManager(final String number) {
         synchronized (managers) {
-            return managers.stream().filter(m -> m.getSelfNumber().equals(account)).findFirst().orElse(null);
+            return managers.stream().filter(m -> m.getSelfNumber().equals(number)).findFirst().orElse(null);
         }
     }
 
@@ -119,12 +108,12 @@ class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     private ProvisioningManager getNewProvisioningManager() {
-        return ProvisioningManager.init(settingsPath, serviceEnvironment, userAgent, this::addManager);
+        return signalAccountFiles.initProvisioningManager(this::addManager);
     }
 
     @Override
-    public RegistrationManager getNewRegistrationManager(String account) throws IOException {
-        return RegistrationManager.init(account, settingsPath, serviceEnvironment, userAgent, this::addManager);
+    public RegistrationManager getNewRegistrationManager(String number) throws IOException {
+        return signalAccountFiles.initRegistrationManager(number, this::addManager);
     }
 
     @Override

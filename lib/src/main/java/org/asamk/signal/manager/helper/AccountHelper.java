@@ -52,7 +52,9 @@ public class AccountHelper {
         try {
             context.getPreKeyHelper().refreshPreKeysIfNecessary();
             if (account.getAci() == null) {
-                account.setAci(ACI.parseOrNull(dependencies.getAccountManager().getWhoAmI().getAci()));
+                final var aci = ACI.parseOrNull(dependencies.getAccountManager().getWhoAmI().getAci());
+                account.setAci(aci);
+                context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), aci);
             }
             updateAccountAttributes();
         } catch (AuthorizationFailedException e) {

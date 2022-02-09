@@ -4,8 +4,8 @@ import org.asamk.signal.manager.AttachmentStore;
 import org.asamk.signal.manager.AvatarStore;
 import org.asamk.signal.manager.JobExecutor;
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 
 import java.util.function.Supplier;
 
@@ -14,6 +14,7 @@ public class Context {
     private final Object LOCK = new Object();
 
     private final SignalAccount account;
+    private final AccountFileUpdater accountFileUpdater;
     private final SignalDependencies dependencies;
     private final AvatarStore avatarStore;
     private final StickerPackStore stickerPackStore;
@@ -40,12 +41,14 @@ public class Context {
 
     public Context(
             final SignalAccount account,
+            final AccountFileUpdater accountFileUpdater,
             final SignalDependencies dependencies,
             final AvatarStore avatarStore,
             final AttachmentStore attachmentStore,
             final StickerPackStore stickerPackStore
     ) {
         this.account = account;
+        this.accountFileUpdater = accountFileUpdater;
         this.dependencies = dependencies;
         this.avatarStore = avatarStore;
         this.stickerPackStore = stickerPackStore;
@@ -55,6 +58,10 @@ public class Context {
 
     public SignalAccount getAccount() {
         return account;
+    }
+
+    public AccountFileUpdater getAccountFileUpdater() {
+        return accountFileUpdater;
     }
 
     public SignalDependencies getDependencies() {

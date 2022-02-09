@@ -20,6 +20,7 @@ import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.accounts.AccountsStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.slf4j.Logger;
@@ -47,6 +48,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
     private final Consumer<Manager> newManagerListener;
+    private final AccountsStore accountsStore;
 
     private final SignalServiceAccountManager accountManager;
     private final IdentityKeyPair tempIdentityKey;
@@ -57,12 +59,14 @@ class ProvisioningManagerImpl implements ProvisioningManager {
             PathConfig pathConfig,
             ServiceEnvironmentConfig serviceEnvironmentConfig,
             String userAgent,
-            final Consumer<Manager> newManagerListener
+            final Consumer<Manager> newManagerListener,
+            final AccountsStore accountsStore
     ) {
         this.pathConfig = pathConfig;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
         this.newManagerListener = newManagerListener;
+        this.accountsStore = accountsStore;
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
@@ -91,11 +95,23 @@ class ProvisioningManagerImpl implements ProvisioningManager {
     public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException {
         var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
+        var aci = ret.getAci();
 
         logger.info("Received link information from {}, linking in progress ...", number);
 
-        if (SignalAccount.userExists(pathConfig.dataPath(), number) && !canRelinkExistingAccount(number)) {
-            throw new UserAlreadyExistsException(number, SignalAccount.getFileName(pathConfig.dataPath(), number));
+        var accountPath = accountsStore.getPathByAci(aci);
+        if (accountPath == null) {
+            accountPath = accountsStore.getPathByNumber(number);
+        }
+        if (accountPath != null
+                && SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)
+                && !canRelinkExistingAccount(accountPath)) {
+            throw new UserAlreadyExistsException(number, SignalAccount.getFileName(pathConfig.dataPath(), accountPath));
+        }
+        if (accountPath == null) {
+            accountPath = accountsStore.addAccount(number, aci);
+        } else {
+            accountsStore.updateAccount(accountPath, number, aci);
         }
 
         var encryptedDeviceName = deviceName == null
@@ -115,8 +131,9 @@ class ProvisioningManagerImpl implements ProvisioningManager {
         SignalAccount account = null;
         try {
             account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
+                    accountPath,
                     number,
-                    ret.getAci(),
+                    aci,
                     password,
                     encryptedDeviceName,
                     deviceId,
@@ -127,7 +144,12 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
             ManagerImpl m = null;
             try {
-                m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+                final var accountPathFinal = accountPath;
+                m = new ManagerImpl(account,
+                        pathConfig,
+                        (newNumber, newAci) -> accountsStore.updateAccount(accountPathFinal, newNumber, newAci),
+                        serviceEnvironmentConfig,
+                        userAgent);
                 account = null;
 
                 logger.debug("Refreshing pre keys");
@@ -162,10 +184,13 @@ class ProvisioningManagerImpl implements ProvisioningManager {
         }
     }
 
-    private boolean canRelinkExistingAccount(final String number) throws IOException {
+    private boolean canRelinkExistingAccount(final String accountPath) throws IOException {
         final SignalAccount signalAccount;
         try {
-            signalAccount = SignalAccount.load(pathConfig.dataPath(), number, false, TrustNewIdentity.ON_FIRST_USE);
+            signalAccount = SignalAccount.load(pathConfig.dataPath(),
+                    accountPath,
+                    false,
+                    TrustNewIdentity.ON_FIRST_USE);
         } catch (IOException e) {
             logger.debug("Account in use or failed to load.", e);
             return false;
@@ -177,7 +202,11 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                 return false;
             }
 
-            final var m = new ManagerImpl(signalAccount, pathConfig, serviceEnvironmentConfig, userAgent);
+            final var m = new ManagerImpl(signalAccount,
+                    pathConfig,
+                    (newNumber, newAci) -> accountsStore.updateAccount(accountPath, newNumber, newAci),
+                    serviceEnvironmentConfig,
+                    userAgent);
             try (m) {
                 m.checkAccountState();
             } catch (AuthorizationFailedException ignored) {

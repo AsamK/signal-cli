@@ -1,6 +1,5 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -12,7 +11,6 @@ import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotMasterDeviceException;
-import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -23,16 +21,12 @@ import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
-import org.asamk.signal.manager.config.ServiceConfig;
-import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -50,45 +44,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface Manager extends Closeable {
-
-    static Manager init(
-            String number,
-            File settingsPath,
-            ServiceEnvironment serviceEnvironment,
-            String userAgent,
-            TrustNewIdentity trustNewIdentity
-    ) throws IOException, NotRegisteredException, AccountCheckException {
-        var pathConfig = PathConfig.createDefault(settingsPath);
-
-        if (!SignalAccount.userExists(pathConfig.dataPath(), number)) {
-            throw new NotRegisteredException();
-        }
-
-        var account = SignalAccount.load(pathConfig.dataPath(), number, true, trustNewIdentity);
-
-        if (!account.isRegistered()) {
-            account.close();
-            throw new NotRegisteredException();
-        }
-
-        account.initDatabase();
-        final var serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
-
-        final var manager = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
-
-        try {
-            manager.checkAccountState();
-        } catch (IOException e) {
-            manager.close();
-            throw new AccountCheckException("Error while checking account " + account + ": " + e.getMessage(), e);
-        }
-
-        return manager;
-    }
-
-    static void initLogger() {
-        LibSignalLogger.initLogger();
-    }
 
     static boolean isValidNumber(final String e164Number, final String countryCode) {
         return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);

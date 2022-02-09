@@ -21,6 +21,7 @@ import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
+import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.Utils;
@@ -59,16 +60,19 @@ class RegistrationManagerImpl implements RegistrationManager {
 
     private final SignalServiceAccountManager accountManager;
     private final PinHelper pinHelper;
+    private final AccountFileUpdater accountFileUpdater;
 
     RegistrationManagerImpl(
             SignalAccount account,
             PathConfig pathConfig,
             ServiceEnvironmentConfig serviceEnvironmentConfig,
             String userAgent,
-            Consumer<Manager> newManagerListener
+            Consumer<Manager> newManagerListener,
+            AccountFileUpdater accountFileUpdater
     ) {
         this.account = account;
         this.pathConfig = pathConfig;
+        this.accountFileUpdater = accountFileUpdater;
         this.serviceEnvironmentConfig = serviceEnvironmentConfig;
         this.userAgent = userAgent;
         this.newManagerListener = newManagerListener;
@@ -82,7 +86,7 @@ class RegistrationManagerImpl implements RegistrationManager {
         this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
-                        null, account.getAccount(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
+                        null, account.getNumber(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
@@ -101,7 +105,7 @@ class RegistrationManagerImpl implements RegistrationManager {
             try {
                 final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                         new DynamicCredentialsProvider(account.getAci(),
-                                account.getAccount(),
+                                account.getNumber(),
                                 account.getPassword(),
                                 account.getDeviceId()),
                         userAgent,
@@ -120,7 +124,11 @@ class RegistrationManagerImpl implements RegistrationManager {
                 account.setRegistered(true);
                 logger.info("Reactivated existing account, verify is not necessary.");
                 if (newManagerListener != null) {
-                    final var m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+                    final var m = new ManagerImpl(account,
+                            pathConfig,
+                            accountFileUpdater,
+                            serviceEnvironmentConfig,
+                            userAgent);
                     account = null;
                     newManagerListener.accept(m);
                 }
@@ -187,11 +195,13 @@ class RegistrationManagerImpl implements RegistrationManager {
         }
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
-        account.finishRegistration(ACI.parseOrNull(response.getUuid()), masterKey, pin);
+        final var aci = ACI.parseOrNull(response.getUuid());
+        account.finishRegistration(aci, masterKey, pin);
+        accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 
         ManagerImpl m = null;
         try {
-            m = new ManagerImpl(account, pathConfig, serviceEnvironmentConfig, userAgent);
+            m = new ManagerImpl(account, pathConfig, accountFileUpdater, serviceEnvironmentConfig, userAgent);
             account = null;
 
             m.refreshPreKeys();
