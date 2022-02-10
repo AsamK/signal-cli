@@ -16,8 +16,9 @@ the [documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service) f
 
 You can [build signal-cli](#building) yourself, or use
 the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and
-Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/) and there is
-a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) available as well.
+Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/), as well as
+a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) and
+an [Alpine aport](https://pkgs.alpinelinux.org/packages?name=signal-cli).
 
 System requirements:
 
