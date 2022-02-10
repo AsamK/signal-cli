@@ -163,10 +163,15 @@ public class App {
                 ? TrustNewIdentity.ON_FIRST_USE
                 : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
-        final SignalAccountFiles signalAccountFiles = new SignalAccountFiles(configPath,
-                serviceEnvironment,
-                BaseConfig.USER_AGENT,
-                trustNewIdentity);
+        final SignalAccountFiles signalAccountFiles;
+        try {
+            signalAccountFiles = new SignalAccountFiles(configPath,
+                    serviceEnvironment,
+                    BaseConfig.USER_AGENT,
+                    trustNewIdentity);
+        } catch (IOException e) {
+            throw new IOErrorException("Failed to read local accounts list", e);
+        }
 
         if (command instanceof ProvisioningCommand provisioningCommand) {
             if (account != null) {

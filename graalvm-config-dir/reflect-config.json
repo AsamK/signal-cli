@@ -860,6 +860,28 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"org.asamk.signal.manager.storage.accounts.AccountsStorage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.util.List"] }, 
+    {"name":"accounts","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.manager.storage.accounts.AccountsStorage$Account",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"path","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]
+},
+{
   "name":"org.asamk.signal.manager.storage.configuration.ConfigurationStore$Storage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
