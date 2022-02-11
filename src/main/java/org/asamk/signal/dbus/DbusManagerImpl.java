@@ -169,7 +169,7 @@ public class DbusManagerImpl implements Manager {
         return signal.listDevices().stream().map(d -> {
             final var device = getRemoteObject(d.getObjectPath(),
                     Signal.Device.class).GetAll("org.asamk.Signal.Device");
-            return new Device(((Long) device.get("Id").getValue()).intValue(),
+            return new Device((Integer) device.get("Id").getValue(),
                     (String) device.get("Name").getValue(),
                     (long) device.get("Created").getValue(),
                     (long) device.get("LastSeen").getValue(),
