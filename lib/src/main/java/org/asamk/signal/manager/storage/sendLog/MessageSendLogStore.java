@@ -354,6 +354,8 @@ public class MessageSendLogStore implements AutoCloseable {
             final var rowCount = statement.executeUpdate();
             if (rowCount > 0) {
                 logger.debug("Removed {} outdated entries from the message send log", rowCount);
+            } else {
+                logger.trace("No outdated entries to be removed from message send log.");
             }
         }
     }
