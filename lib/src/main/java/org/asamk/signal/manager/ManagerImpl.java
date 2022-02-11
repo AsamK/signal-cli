@@ -70,7 +70,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
-import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
 
@@ -100,7 +99,6 @@ class ManagerImpl implements Manager {
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
     private SignalAccount account;
-    private final AccountFileUpdater accountFileUpdater;
     private final SignalDependencies dependencies;
     private final Context context;
 
@@ -121,12 +119,7 @@ class ManagerImpl implements Manager {
             String userAgent
     ) {
         this.account = account;
-        this.accountFileUpdater = accountFileUpdater;
 
-        final var credentialsProvider = new DynamicCredentialsProvider(account.getAci(),
-                account.getNumber(),
-                account.getPassword(),
-                account.getDeviceId());
         final var sessionLock = new SignalSessionLock() {
             private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
 
@@ -138,7 +131,7 @@ class ManagerImpl implements Manager {
         };
         this.dependencies = new SignalDependencies(serviceEnvironmentConfig,
                 userAgent,
-                credentialsProvider,
+                account.getCredentialsProvider(),
                 account.getSignalProtocolStore(),
                 executor,
                 sessionLock);

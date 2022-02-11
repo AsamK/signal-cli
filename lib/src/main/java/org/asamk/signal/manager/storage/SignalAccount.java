@@ -50,6 +50,7 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageKey;
+import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.ByteArrayInputStream;
@@ -899,6 +900,30 @@ public class SignalAccount implements Closeable {
     public MessageSendLogStore getMessageSendLogStore() {
         return getOrCreate(() -> messageSendLogStore,
                 () -> messageSendLogStore = new MessageSendLogStore(getRecipientStore(), getAccountDatabase()));
+    }
+
+    public CredentialsProvider getCredentialsProvider() {
+        return new CredentialsProvider() {
+            @Override
+            public ACI getAci() {
+                return aci;
+            }
+
+            @Override
+            public String getE164() {
+                return number;
+            }
+
+            @Override
+            public String getPassword() {
+                return password;
+            }
+
+            @Override
+            public int getDeviceId() {
+                return deviceId;
+            }
+        };
     }
 
     public String getNumber() {
