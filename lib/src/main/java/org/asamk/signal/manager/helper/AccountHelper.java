@@ -2,10 +2,14 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.DeviceLinkInfo;
 import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.CaptchaRequiredException;
+import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
@@ -76,10 +80,30 @@ public class AccountHelper {
         account.setNumber(number);
         account.setAci(aci);
         account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
-        context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
         // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
+        dependencies.resetAfterAddressChange();
         dependencies.getSignalWebSocket().forceNewWebSockets();
+        context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
+    }
+
+    public void startChangeNumber(
+            String newNumber, String captcha, boolean voiceVerification
+    ) throws IOException, CaptchaRequiredException {
+        final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
+        NumberVerificationUtils.requestVerificationCode(accountManager, captcha, voiceVerification);
+    }
+
+    public void finishChangeNumber(
+            String newNumber, String verificationCode, String pin
+    ) throws IncorrectPinException, PinLockedException, IOException {
+        final var result = NumberVerificationUtils.verifyNumber(verificationCode,
+                pin,
+                context.getPinHelper(),
+                (verificationCode1, registrationLock) -> dependencies.getAccountManager()
+                        .changeNumber(verificationCode1, newNumber, registrationLock));
+        // TODO handle response
+        updateSelfIdentifiers(newNumber, account.getAci());
     }
 
     public void setDeviceName(String deviceName) {

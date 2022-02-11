@@ -68,6 +68,11 @@ public class SignalDependencies {
         this.sessionLock = sessionLock;
     }
 
+    public void resetAfterAddressChange() {
+        this.messageSender = null;
+        this.cipher = null;
+    }
+
     public ServiceEnvironmentConfig getServiceEnvironmentConfig() {
         return serviceEnvironmentConfig;
     }
@@ -79,6 +84,16 @@ public class SignalDependencies {
                         userAgent,
                         getGroupsV2Operations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+    }
+
+    public SignalServiceAccountManager createUnauthenticatedAccountManager(String number, String password) {
+        return new SignalServiceAccountManager(getServiceEnvironmentConfig().getSignalServiceConfiguration(),
+                null,
+                number,
+                password,
+                SignalServiceAddress.DEFAULT_DEVICE_ID,
+                userAgent,
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
 
     public GroupsV2Api getGroupsV2Api() {

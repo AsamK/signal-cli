@@ -189,7 +189,7 @@ public class StorageHelper {
         }
 
         if (!accountRecord.getE164().equals(account.getNumber())) {
-            // TODO implement changed number handling
+            context.getAccountHelper().checkWhoAmiI();
         }
 
         account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());

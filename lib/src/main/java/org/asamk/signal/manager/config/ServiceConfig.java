@@ -30,7 +30,7 @@ public class ServiceConfig {
     public static final AccountAttributes.Capabilities capabilities;
 
     static {
-        capabilities = new AccountAttributes.Capabilities(false, true, false, true, true, true, false);
+        capabilities = new AccountAttributes.Capabilities(false, true, false, true, true, true, true);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();

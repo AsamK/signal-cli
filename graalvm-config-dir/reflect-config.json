@@ -1932,6 +1932,17 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getCode","parameterTypes":[] }, 
+    {"name":"getNumber","parameterTypes":[] }, 
+    {"name":"getRegistrationLock","parameterTypes":[] }
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.api.groupsv2.CredentialResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2936,6 +2947,13 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.serialize.protos.AddressProto",
