@@ -261,6 +261,8 @@ public interface Manager extends Closeable {
      */
     boolean trustIdentityAllKeys(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException;
 
+    void addAddressChangedListener(Runnable listener);
+
     void addClosedListener(Runnable listener);
 
     @Override

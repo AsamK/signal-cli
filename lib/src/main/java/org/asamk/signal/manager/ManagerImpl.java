@@ -109,6 +109,7 @@ class ManagerImpl implements Manager {
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
+    private final List<Runnable> addressChangedListeners = new ArrayList<>();
     private final CompositeDisposable disposable = new CompositeDisposable();
 
     ManagerImpl(
@@ -139,12 +140,12 @@ class ManagerImpl implements Manager {
         final var attachmentStore = new AttachmentStore(pathConfig.attachmentsPath());
         final var stickerPackStore = new StickerPackStore(pathConfig.stickerPacksPath());
 
-        this.context = new Context(account,
-                accountFileUpdater,
-                dependencies,
-                avatarStore,
-                attachmentStore,
-                stickerPackStore);
+        this.context = new Context(account, (number, aci) -> {
+            accountFileUpdater.updateAccountIdentifiers(number, aci);
+            synchronized (addressChangedListeners) {
+                addressChangedListeners.forEach(Runnable::run);
+            }
+        }, dependencies, avatarStore, attachmentStore, stickerPackStore);
         this.context.getAccountHelper().setUnregisteredListener(this::close);
         this.context.getReceiveHelper().setAuthenticationFailureListener(this::close);
         this.context.getReceiveHelper().setCaughtUpWithOldMessagesListener(() -> {
@@ -996,6 +997,13 @@ class ManagerImpl implements Manager {
             context.getReceiveHelper().setNeedsToRetryFailedMessages(true);
         }
         return updated;
+    }
+
+    @Override
+    public void addAddressChangedListener(final Runnable listener) {
+        synchronized (addressChangedListeners) {
+            addressChangedListeners.add(listener);
+        }
     }
 
     @Override

@@ -3,7 +3,6 @@ package org.asamk.signal.dbus;
 import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
@@ -16,6 +15,7 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -79,12 +79,22 @@ public class DbusSignalImpl implements Signal {
         this.connection = connection;
         this.objectPath = objectPath;
         this.noReceiveOnStart = noReceiveOnStart;
+
+        m.addAddressChangedListener(() -> {
+            unExportObjects();
+            exportObjects();
+        });
     }
 
     public void initObjects() {
+        exportObjects();
         if (!noReceiveOnStart) {
             subscribeReceive();
         }
+    }
+
+    private void exportObjects() {
+        exportObject(this);
 
         updateDevices();
         updateGroups();
@@ -96,9 +106,14 @@ public class DbusSignalImpl implements Signal {
             m.removeReceiveHandler(dbusMessageHandler);
             dbusMessageHandler = null;
         }
+        unExportObjects();
+    }
+
+    private void unExportObjects() {
         unExportDevices();
         unExportGroups();
         unExportConfiguration();
+        connection.unExportObject(this.objectPath);
     }
 
     @Override

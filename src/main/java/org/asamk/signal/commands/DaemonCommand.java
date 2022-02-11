@@ -314,7 +314,6 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     }
                 } catch (DBusException ignored) {
                 }
-                connection.unExportObject(path);
             });
 
             final var initThreads = c.getManagers()
@@ -370,7 +369,6 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             final DBusConnection conn, final String objectPath, final Manager m, final boolean noReceiveOnStart
     ) throws DBusException {
         final var signal = new DbusSignalImpl(m, conn, objectPath, noReceiveOnStart);
-        conn.exportObject(signal);
         final var initThread = new Thread(signal::initObjects);
         initThread.setName("dbus-init");
         initThread.start();

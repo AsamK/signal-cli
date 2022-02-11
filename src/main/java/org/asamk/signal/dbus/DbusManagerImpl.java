@@ -622,6 +622,10 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void addAddressChangedListener(final Runnable listener) {
+    }
+
+    @Override
     public void addClosedListener(final Runnable listener) {
         synchronized (closedListeners) {
             closedListeners.add(listener);
