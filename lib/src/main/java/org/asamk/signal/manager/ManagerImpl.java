@@ -133,7 +133,7 @@ class ManagerImpl implements Manager {
         this.dependencies = new SignalDependencies(serviceEnvironmentConfig,
                 userAgent,
                 account.getCredentialsProvider(),
-                account.getSignalProtocolStore(),
+                account.getSignalServiceDataStore(),
                 executor,
                 sessionLock);
         final var avatarStore = new AvatarStore(pathConfig.avatarsPath());

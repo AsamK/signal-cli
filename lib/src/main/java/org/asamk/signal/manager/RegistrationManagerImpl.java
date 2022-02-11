@@ -153,8 +153,7 @@ class RegistrationManagerImpl implements RegistrationManager {
                     userAgent,
                     null,
                     ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-            accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
-                    null,
+            accountManager.setAccountAttributes(null,
                     account.getLocalRegistrationId(),
                     true,
                     null,
@@ -162,7 +161,8 @@ class RegistrationManagerImpl implements RegistrationManager {
                     account.getSelfUnidentifiedAccessKey(),
                     account.isUnrestrictedUnidentifiedAccess(),
                     capabilities,
-                    account.isDiscoverableByPhoneNumber());
+                    account.isDiscoverableByPhoneNumber(),
+                    account.getEncryptedDeviceName());
             account.setRegistered(true);
             logger.info("Reactivated existing account, verify is not necessary.");
             if (newManagerListener != null) {

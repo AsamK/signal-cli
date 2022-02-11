@@ -90,8 +90,8 @@ public class SignalDependencies {
         return new SignalServiceAccountManager(getServiceEnvironmentConfig().getSignalServiceConfiguration(),
                 null,
                 number,
-                password,
                 SignalServiceAddress.DEFAULT_DEVICE_ID,
+                password,
                 userAgent,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
     }
@@ -191,7 +191,7 @@ public class SignalDependencies {
             final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.getUnidentifiedSenderTrustRoot());
             final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
             final var deviceId = credentialsProvider.getDeviceId();
-            cipher = new SignalServiceCipher(address, deviceId, dataStore, sessionLock, certificateValidator);
+            cipher = new SignalServiceCipher(address, deviceId, dataStore.aci(), sessionLock, certificateValidator);
         });
     }
 

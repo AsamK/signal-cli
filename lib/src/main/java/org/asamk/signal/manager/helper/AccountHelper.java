@@ -114,8 +114,7 @@ public class AccountHelper {
 
     public void updateAccountAttributes() throws IOException {
         dependencies.getAccountManager()
-                .setAccountAttributes(account.getEncryptedDeviceName(),
-                        null,
+                .setAccountAttributes(null,
                         account.getLocalRegistrationId(),
                         true,
                         null,
@@ -123,7 +122,8 @@ public class AccountHelper {
                         account.getSelfUnidentifiedAccessKey(),
                         account.isUnrestrictedUnidentifiedAccess(),
                         ServiceConfig.capabilities,
-                        account.isDiscoverableByPhoneNumber());
+                        account.isDiscoverableByPhoneNumber(),
+                        account.getEncryptedDeviceName());
     }
 
     public void addDevice(DeviceLinkInfo deviceLinkInfo) throws IOException, InvalidDeviceLinkException {

@@ -44,9 +44,12 @@ import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 import org.whispersystems.libsignal.util.Medium;
+import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
+import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.AccountIdentifier;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageKey;
@@ -814,7 +817,31 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public SignalProtocolStore getSignalProtocolStore() {
+    public SignalServiceDataStore getSignalServiceDataStore() {
+        return new SignalServiceDataStore() {
+            @Override
+            public SignalServiceAccountDataStore get(final AccountIdentifier accountIdentifier) {
+                return getSignalServiceAccountDataStore();
+            }
+
+            @Override
+            public SignalServiceAccountDataStore aci() {
+                return getSignalServiceAccountDataStore();
+            }
+
+            @Override
+            public SignalServiceAccountDataStore pni() {
+                return getSignalServiceAccountDataStore();
+            }
+
+            @Override
+            public boolean isMultiDevice() {
+                return SignalAccount.this.isMultiDevice();
+            }
+        };
+    }
+
+    public SignalServiceAccountDataStore getSignalServiceAccountDataStore() {
         return getOrCreate(() -> signalProtocolStore,
                 () -> signalProtocolStore = new SignalProtocolStore(getPreKeyStore(),
                         getSignedPreKeyStore(),
@@ -957,8 +984,8 @@ public class SignalAccount implements Closeable {
         return getRecipientStore().resolveRecipient(getSelfRecipientAddress());
     }
 
-    public String getEncryptedDeviceName() {
-        return encryptedDeviceName;
+    public byte[] getEncryptedDeviceName() {
+        return encryptedDeviceName == null ? null : Base64.getDecoder().decode(encryptedDeviceName);
     }
 
     public void setEncryptedDeviceName(final String encryptedDeviceName) {
