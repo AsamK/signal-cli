@@ -52,15 +52,34 @@ public class AccountHelper {
         try {
             context.getPreKeyHelper().refreshPreKeysIfNecessary();
             if (account.getAci() == null) {
-                final var aci = ACI.parseOrNull(dependencies.getAccountManager().getWhoAmI().getAci());
-                account.setAci(aci);
-                context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), aci);
+                checkWhoAmiI();
             }
             updateAccountAttributes();
         } catch (AuthorizationFailedException e) {
             account.setRegistered(false);
             throw e;
         }
+    }
+
+    public void checkWhoAmiI() throws IOException {
+        final var whoAmI = dependencies.getAccountManager().getWhoAmI();
+        final var number = whoAmI.getNumber();
+        final var aci = ACI.parseOrNull(whoAmI.getAci());
+        if (number.equals(account.getNumber()) && aci.equals(account.getAci())) {
+            return;
+        }
+
+        updateSelfIdentifiers(number, aci);
+    }
+
+    private void updateSelfIdentifiers(final String number, final ACI aci) {
+        account.setNumber(number);
+        account.setAci(aci);
+        account.getRecipientStore().resolveRecipientTrusted(account.getSelfRecipientAddress());
+        context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
+        // TODO check and update remote storage
+        context.getUnidentifiedAccessHelper().rotateSenderCertificates();
+        dependencies.getSignalWebSocket().forceNewWebSockets();
     }
 
     public void setDeviceName(String deviceName) {

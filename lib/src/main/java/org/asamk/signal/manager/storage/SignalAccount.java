@@ -930,6 +930,11 @@ public class SignalAccount implements Closeable {
         return number;
     }
 
+    public void setNumber(final String number) {
+        this.number = number;
+        save();
+    }
+
     public ACI getAci() {
         return aci;
     }

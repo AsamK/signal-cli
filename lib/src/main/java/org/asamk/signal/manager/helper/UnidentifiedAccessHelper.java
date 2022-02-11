@@ -37,6 +37,11 @@ public class UnidentifiedAccessHelper {
         this.context = context;
     }
 
+    public void rotateSenderCertificates() {
+        privacySenderCertificate = null;
+        senderCertificate = null;
+    }
+
     public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
         return recipients.stream().map(this::getAccessFor).toList();
     }
