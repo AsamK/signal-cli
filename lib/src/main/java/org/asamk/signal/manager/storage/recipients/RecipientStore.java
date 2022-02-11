@@ -42,6 +42,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private final ObjectMapper objectMapper;
     private final File file;
     private final RecipientMergeHandler recipientMergeHandler;
+    private final SelfAddressProvider selfAddressProvider;
 
     private final Map<RecipientId, Recipient> recipients;
     private final Map<Long, Long> recipientsMerged = new HashMap<>();
@@ -49,7 +50,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     private long lastId;
     private boolean isBulkUpdating;
 
-    public static RecipientStore load(File file, RecipientMergeHandler recipientMergeHandler) {
+    public static RecipientStore load(
+            File file, RecipientMergeHandler recipientMergeHandler, SelfAddressProvider selfAddressProvider
+    ) {
         final var objectMapper = Utils.createStorageObjectMapper();
         try (var inputStream = new FileInputStream(file)) {
             final var storage = objectMapper.readValue(inputStream, Storage.class);
@@ -57,6 +60,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
             final var recipientStore = new RecipientStore(objectMapper,
                     file,
                     recipientMergeHandler,
+                    selfAddressProvider,
                     new HashMap<>(),
                     storage.lastId);
             final var recipients = storage.recipients.stream().map(r -> {
@@ -113,7 +117,12 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
             return recipientStore;
         } catch (FileNotFoundException e) {
             logger.trace("Creating new recipient store.");
-            return new RecipientStore(objectMapper, file, recipientMergeHandler, new HashMap<>(), 0);
+            return new RecipientStore(objectMapper,
+                    file,
+                    recipientMergeHandler,
+                    selfAddressProvider,
+                    new HashMap<>(),
+                    0);
         } catch (IOException e) {
             logger.warn("Failed to load recipient store", e);
             throw new RuntimeException(e);
@@ -124,12 +133,14 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
             final ObjectMapper objectMapper,
             final File file,
             final RecipientMergeHandler recipientMergeHandler,
+            final SelfAddressProvider selfAddressProvider,
             final Map<RecipientId, Recipient> recipients,
             final long lastId
     ) {
         this.objectMapper = objectMapper;
         this.file = file;
         this.recipientMergeHandler = recipientMergeHandler;
+        this.selfAddressProvider = selfAddressProvider;
         this.recipients = recipients;
         this.lastId = lastId;
     }
@@ -161,7 +172,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     @Override
     public RecipientId resolveRecipient(ACI aci) {
-        return resolveRecipient(new RecipientAddress(aci.uuid()), false);
+        return resolveRecipient(new RecipientAddress(aci.uuid()), false, false);
     }
 
     @Override
@@ -172,7 +183,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
 
     @Override
     public RecipientId resolveRecipient(final String identifier) {
-        return resolveRecipient(Utils.getRecipientAddressFromIdentifier(identifier), false);
+        return resolveRecipient(Utils.getRecipientAddressFromIdentifier(identifier), false, false);
     }
 
     public RecipientId resolveRecipient(
@@ -188,26 +199,30 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 throw new UnregisteredRecipientException(new RecipientAddress(null, number));
             }
 
-            return resolveRecipient(new RecipientAddress(aci.uuid(), number), false);
+            return resolveRecipient(new RecipientAddress(aci.uuid(), number), false, false);
         }
         return byNumber.get().getRecipientId();
     }
 
     public RecipientId resolveRecipient(RecipientAddress address) {
-        return resolveRecipient(address, false);
+        return resolveRecipient(address, false, false);
     }
 
     @Override
     public RecipientId resolveRecipient(final SignalServiceAddress address) {
-        return resolveRecipient(new RecipientAddress(address), false);
+        return resolveRecipient(new RecipientAddress(address), false, false);
+    }
+
+    public RecipientId resolveSelfRecipientTrusted(RecipientAddress address) {
+        return resolveRecipient(address, true, true);
     }
 
     public RecipientId resolveRecipientTrusted(RecipientAddress address) {
-        return resolveRecipient(address, true);
+        return resolveRecipient(address, true, false);
     }
 
     public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
-        return resolveRecipient(new RecipientAddress(address), true);
+        return resolveRecipient(new RecipientAddress(address), true, false);
     }
 
     public List<RecipientId> resolveRecipientsTrusted(List<RecipientAddress> addresses) {
@@ -215,7 +230,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         final List<Pair<RecipientId, RecipientId>> toBeMerged = new ArrayList<>();
         synchronized (recipients) {
             recipientIds = addresses.stream().map(address -> {
-                final var pair = resolveRecipientLocked(address, true);
+                final var pair = resolveRecipientLocked(address, true, false);
                 if (pair.second().isPresent()) {
                     toBeMerged.add(new Pair<>(pair.first(), pair.second().get()));
                 }
@@ -345,10 +360,10 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
      * @param isHighTrust true, if the number/uuid connection was obtained from a trusted source.
      *                    Has no effect, if the address contains only a number or a uuid.
      */
-    private RecipientId resolveRecipient(RecipientAddress address, boolean isHighTrust) {
+    private RecipientId resolveRecipient(RecipientAddress address, boolean isHighTrust, boolean isSelf) {
         final Pair<RecipientId, Optional<RecipientId>> pair;
         synchronized (recipients) {
-            pair = resolveRecipientLocked(address, isHighTrust);
+            pair = resolveRecipientLocked(address, isHighTrust, isSelf);
         }
 
         if (pair.second().isPresent()) {
@@ -358,8 +373,13 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     private Pair<RecipientId, Optional<RecipientId>> resolveRecipientLocked(
-            RecipientAddress address, boolean isHighTrust
+            RecipientAddress address, boolean isHighTrust, boolean isSelf
     ) {
+        if (isHighTrust && !isSelf) {
+            if (selfAddressProvider.getSelfAddress().matches(address)) {
+                isHighTrust = false;
+            }
+        }
         final var byNumber = address.number().isEmpty()
                 ? Optional.<Recipient>empty()
                 : findByNumberLocked(address.number().get());

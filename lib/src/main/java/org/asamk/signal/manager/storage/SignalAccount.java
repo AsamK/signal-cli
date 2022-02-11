@@ -226,7 +226,7 @@ public class SignalAccount implements Closeable {
 
         final var signalAccount = load(dataPath, accountPath, true, trustNewIdentity);
         signalAccount.setProvisioningData(number, aci, password, encryptedDeviceName, deviceId, profileKey);
-        signalAccount.getRecipientStore().resolveRecipientTrusted(signalAccount.getSelfAddress());
+        signalAccount.getRecipientStore().resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
         signalAccount.getSessionStore().archiveAllSessions();
         signalAccount.getSenderKeyStore().deleteAll();
         signalAccount.clearAllPreKeys();
@@ -277,7 +277,7 @@ public class SignalAccount implements Closeable {
         signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
-        signalAccount.getRecipientStore().resolveRecipientTrusted(signalAccount.getSelfAddress());
+        signalAccount.getRecipientStore().resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
         signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
         signalAccount.save();
@@ -558,7 +558,7 @@ public class SignalAccount implements Closeable {
             if (legacyRecipientStore != null) {
                 getRecipientStore().resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
-            getRecipientStore().resolveRecipientTrusted(getSelfRecipientAddress());
+            getRecipientStore().resolveSelfRecipientTrusted(getSelfRecipientAddress());
             migrated = true;
         }
 
@@ -859,7 +859,8 @@ public class SignalAccount implements Closeable {
     public RecipientStore getRecipientStore() {
         return getOrCreate(() -> recipientStore,
                 () -> recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, accountPath),
-                        this::mergeRecipients));
+                        this::mergeRecipients,
+                        this::getSelfRecipientAddress));
     }
 
     public ProfileStore getProfileStore() {
@@ -1106,7 +1107,7 @@ public class SignalAccount implements Closeable {
         clearAllPreKeys();
         getSessionStore().archiveAllSessions();
         getSenderKeyStore().deleteAll();
-        final var recipientId = getRecipientStore().resolveRecipientTrusted(getSelfAddress());
+        final var recipientId = getRecipientStore().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         final var publicKey = getIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
         getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);

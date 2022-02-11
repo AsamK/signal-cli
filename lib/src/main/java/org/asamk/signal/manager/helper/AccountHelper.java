@@ -75,7 +75,7 @@ public class AccountHelper {
     private void updateSelfIdentifiers(final String number, final ACI aci) {
         account.setNumber(number);
         account.setAci(aci);
-        account.getRecipientStore().resolveRecipientTrusted(account.getSelfRecipientAddress());
+        account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
         context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
         // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
