@@ -24,22 +24,15 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.util.Utils;
+import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.api.KbsPinData;
-import org.whispersystems.signalservice.api.KeyBackupServicePinException;
-import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
-import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.ServiceResponse;
-import org.whispersystems.signalservice.internal.push.LockedException;
-import org.whispersystems.signalservice.internal.push.RequestVerificationCodeResponse;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -100,98 +93,25 @@ class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
-        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
-        if (account.getAci() != null) {
-            try {
-                final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                        new DynamicCredentialsProvider(account.getAci(),
-                                account.getNumber(),
-                                account.getPassword(),
-                                account.getDeviceId()),
-                        userAgent,
-                        null,
-                        ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-                accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
-                        null,
-                        account.getLocalRegistrationId(),
-                        true,
-                        null,
-                        account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
-                        account.getSelfUnidentifiedAccessKey(),
-                        account.isUnrestrictedUnidentifiedAccess(),
-                        capabilities,
-                        account.isDiscoverableByPhoneNumber());
-                account.setRegistered(true);
-                logger.info("Reactivated existing account, verify is not necessary.");
-                if (newManagerListener != null) {
-                    final var m = new ManagerImpl(account,
-                            pathConfig,
-                            accountFileUpdater,
-                            serviceEnvironmentConfig,
-                            userAgent);
-                    account = null;
-                    newManagerListener.accept(m);
-                }
-                return;
-            } catch (IOException e) {
-                logger.debug("Failed to reactivate account");
-            }
+        if (account.getAci() != null && attemptReactivateAccount()) {
+            return;
         }
-        final ServiceResponse<RequestVerificationCodeResponse> response;
-        if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(null),
-                    Optional.fromNullable(captcha),
-                    Optional.absent(),
-                    Optional.absent());
-        } else {
-            response = accountManager.requestSmsVerificationCode(false,
-                    Optional.fromNullable(captcha),
-                    Optional.absent(),
-                    Optional.absent());
-        }
-        try {
-            handleResponseException(response);
-        } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
-            throw new CaptchaRequiredException(e.getMessage(), e);
-        }
+
+        NumberVerificationUtils.requestVerificationCode(accountManager, captcha, voiceVerification);
     }
 
     @Override
     public void verifyAccount(
             String verificationCode, String pin
     ) throws IOException, PinLockedException, IncorrectPinException {
-        verificationCode = verificationCode.replace("-", "");
-        VerifyAccountResponse response;
-        MasterKey masterKey;
-        try {
-            response = verifyAccountWithCode(verificationCode, null);
-
-            masterKey = null;
+        final var result = NumberVerificationUtils.verifyNumber(verificationCode,
+                pin,
+                pinHelper,
+                this::verifyAccountWithCode);
+        final var response = result.first();
+        final var masterKey = result.second();
+        if (masterKey == null) {
             pin = null;
-        } catch (LockedException e) {
-            if (pin == null) {
-                throw new PinLockedException(e.getTimeRemaining());
-            }
-
-            KbsPinData registrationLockData;
-            try {
-                registrationLockData = pinHelper.getRegistrationLockData(pin, e);
-            } catch (KeyBackupSystemNoDataException ex) {
-                throw new IOException(e);
-            } catch (KeyBackupServicePinException ex) {
-                throw new IncorrectPinException(ex.getTriesRemaining());
-            }
-            if (registrationLockData == null) {
-                throw e;
-            }
-
-            var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
-            try {
-                response = verifyAccountWithCode(verificationCode, registrationLock);
-            } catch (LockedException _e) {
-                throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
-            }
-            masterKey = registrationLockData.getMasterKey();
         }
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
@@ -226,12 +146,46 @@ class RegistrationManagerImpl implements RegistrationManager {
         }
     }
 
-    private VerifyAccountResponse verifyAccountWithCode(
+    private boolean attemptReactivateAccount() {
+        try {
+            final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+                    account.getCredentialsProvider(),
+                    userAgent,
+                    null,
+                    ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+            accountManager.setAccountAttributes(account.getEncryptedDeviceName(),
+                    null,
+                    account.getLocalRegistrationId(),
+                    true,
+                    null,
+                    account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
+                    account.getSelfUnidentifiedAccessKey(),
+                    account.isUnrestrictedUnidentifiedAccess(),
+                    capabilities,
+                    account.isDiscoverableByPhoneNumber());
+            account.setRegistered(true);
+            logger.info("Reactivated existing account, verify is not necessary.");
+            if (newManagerListener != null) {
+                final var m = new ManagerImpl(account,
+                        pathConfig,
+                        accountFileUpdater,
+                        serviceEnvironmentConfig,
+                        userAgent);
+                account = null;
+                newManagerListener.accept(m);
+            }
+            return true;
+        } catch (IOException e) {
+            logger.debug("Failed to reactivate account");
+        }
+        return false;
+    }
+
+    private ServiceResponse<VerifyAccountResponse> verifyAccountWithCode(
             final String verificationCode, final String registrationLock
-    ) throws IOException {
-        final ServiceResponse<VerifyAccountResponse> response;
+    ) {
         if (registrationLock == null) {
-            response = accountManager.verifyAccount(verificationCode,
+            return accountManager.verifyAccount(verificationCode,
                     account.getLocalRegistrationId(),
                     true,
                     account.getSelfUnidentifiedAccessKey(),
@@ -239,7 +193,7 @@ class RegistrationManagerImpl implements RegistrationManager {
                     ServiceConfig.capabilities,
                     account.isDiscoverableByPhoneNumber());
         } else {
-            response = accountManager.verifyAccountWithRegistrationLockPin(verificationCode,
+            return accountManager.verifyAccountWithRegistrationLockPin(verificationCode,
                     account.getLocalRegistrationId(),
                     true,
                     registrationLock,
@@ -248,8 +202,6 @@ class RegistrationManagerImpl implements RegistrationManager {
                     ServiceConfig.capabilities,
                     account.isDiscoverableByPhoneNumber());
         }
-        handleResponseException(response);
-        return response.getResult().get();
     }
 
     @Override
@@ -257,17 +209,6 @@ class RegistrationManagerImpl implements RegistrationManager {
         if (account != null) {
             account.close();
             account = null;
-        }
-    }
-
-    private void handleResponseException(final ServiceResponse<?> response) throws IOException {
-        final var throwableOptional = response.getExecutionError().or(response.getApplicationError());
-        if (throwableOptional.isPresent()) {
-            if (throwableOptional.get() instanceof IOException) {
-                throw (IOException) throwableOptional.get();
-            } else {
-                throw new IOException(throwableOptional.get());
-            }
         }
     }
 }

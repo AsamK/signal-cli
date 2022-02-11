@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.util.PinHashing;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.KbsPinData;
@@ -47,13 +48,19 @@ public class PinHelper {
 
     public KbsPinData getRegistrationLockData(
             String pin, LockedException e
-    ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
+    ) throws IOException, IncorrectPinException {
         var basicStorageCredentials = e.getBasicStorageCredentials();
         if (basicStorageCredentials == null) {
             return null;
         }
 
-        return getRegistrationLockData(pin, basicStorageCredentials);
+        try {
+            return getRegistrationLockData(pin, basicStorageCredentials);
+        } catch (KeyBackupSystemNoDataException ex) {
+            throw new IOException(e);
+        } catch (KeyBackupServicePinException ex) {
+            throw new IncorrectPinException(ex.getTriesRemaining());
+        }
     }
 
     private KbsPinData getRegistrationLockData(
