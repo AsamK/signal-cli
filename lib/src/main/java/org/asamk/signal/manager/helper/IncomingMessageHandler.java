@@ -2,8 +2,6 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.SignalDependencies;
-import org.asamk.signal.manager.api.TrustLevel;
-import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
@@ -22,6 +20,8 @@ import org.asamk.signal.manager.actions.SendSyncKeysAction;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.StickerPackId;
+import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupUtils;
@@ -228,7 +228,10 @@ public final class IncomingMessageHandler {
 
         if (content.getDecryptionErrorMessage().isPresent()) {
             var message = content.getDecryptionErrorMessage().get();
-            logger.debug("Received a decryption error message (resend request for {})", message.getTimestamp());
+            logger.debug("Received a decryption error message from {}.{} (resend request for {})",
+                    sender,
+                    senderDeviceId,
+                    message.getTimestamp());
             if (message.getDeviceId() == account.getDeviceId()) {
                 handleDecryptionErrorMessage(actions, sender, senderDeviceId, message);
             } else {

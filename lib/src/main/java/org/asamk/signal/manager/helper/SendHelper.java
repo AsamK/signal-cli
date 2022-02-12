@@ -213,6 +213,7 @@ public class SendHelper {
     public SendMessageResult resendMessage(
             final RecipientId recipientId, final long timestamp, final MessageSendLogEntry messageSendLogEntry
     ) {
+        logger.trace("Resending message {} to {}", timestamp, recipientId);
         if (messageSendLogEntry.groupId().isEmpty()) {
             return handleSendMessage(recipientId,
                     (messageSender, address, unidentifiedAccess) -> messageSender.resendContent(address,
