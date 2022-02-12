@@ -49,7 +49,7 @@ public class MessageSendLogStore implements AutoCloseable {
         this.cleanupThread = new Thread(() -> {
             try {
                 final var interval = Duration.ofHours(1).toMillis();
-                while (true) {
+                while (!Thread.interrupted()) {
                     try (final var connection = database.getConnection()) {
                         deleteOutdatedEntries(connection);
                     } catch (SQLException e) {

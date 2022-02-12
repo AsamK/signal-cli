@@ -347,9 +347,6 @@ public final class ProfileHelper {
                     .storeProfileAvatar(address,
                             outputStream -> retrieveProfileAvatar(avatarPath, profileKey, outputStream));
         } catch (Throwable e) {
-            if (e instanceof AssertionError && e.getCause() instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
             logger.warn("Failed to download profile avatar, ignoring: {}", e.getMessage());
         }
     }
