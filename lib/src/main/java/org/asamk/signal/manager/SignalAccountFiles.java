@@ -47,11 +47,11 @@ public class SignalAccountFiles {
     }
 
     public MultiAccountManager initMultiAccountManager() {
-        final var managers = getAllLocalAccountNumbers().stream().map(a -> {
+        final var managers = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
-                return initManager(a);
+                return initManager(a.path());
             } catch (NotRegisteredException | IOException | AccountCheckException e) {
-                logger.warn("Ignoring {}: {} ({})", a, e.getMessage(), e.getClass().getSimpleName());
+                logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
                 return null;
             }
         }).filter(Objects::nonNull).toList();
@@ -61,7 +61,16 @@ public class SignalAccountFiles {
 
     public Manager initManager(String number) throws IOException, NotRegisteredException, AccountCheckException {
         final var accountPath = accountsStore.getPathByNumber(number);
-        if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
+        return this.initManager(number, accountPath);
+    }
+
+    private Manager initManager(
+            String number, String accountPath
+    ) throws IOException, NotRegisteredException, AccountCheckException {
+        if (accountPath == null) {
+            throw new NotRegisteredException();
+        }
+        if (!SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
             throw new NotRegisteredException();
         }
 

@@ -41,14 +41,18 @@ public class AccountsStore {
         }
     }
 
-    public Set<String> getAllNumbers() {
+    public synchronized Set<String> getAllNumbers() {
         return readAccounts().stream()
                 .map(AccountsStorage.Account::number)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
-    public String getPathByNumber(String number) {
+    public synchronized Set<AccountsStorage.Account> getAllAccounts() {
+        return readAccounts().stream().filter(a -> a.number() != null).collect(Collectors.toSet());
+    }
+
+    public synchronized String getPathByNumber(String number) {
         return readAccounts().stream()
                 .filter(a -> number.equals(a.number()))
                 .map(AccountsStorage.Account::path)
@@ -56,7 +60,7 @@ public class AccountsStore {
                 .orElse(null);
     }
 
-    public String getPathByAci(ACI aci) {
+    public synchronized String getPathByAci(ACI aci) {
         return readAccounts().stream()
                 .filter(a -> aci.toString().equals(a.uuid()))
                 .map(AccountsStorage.Account::path)
@@ -64,7 +68,7 @@ public class AccountsStore {
                 .orElse(null);
     }
 
-    public void updateAccount(String path, String number, ACI aci) {
+    public synchronized void updateAccount(String path, String number, ACI aci) {
         updateAccounts(accounts -> accounts.stream().map(a -> {
             if (path.equals(a.path())) {
                 return new AccountsStorage.Account(a.path(), number, aci == null ? null : aci.toString());
@@ -81,7 +85,7 @@ public class AccountsStore {
         }).toList());
     }
 
-    public String addAccount(String number, ACI aci) {
+    public synchronized String addAccount(String number, ACI aci) {
         final var accountPath = generateNewAccountPath();
         final var account = new AccountsStorage.Account(accountPath, number, aci == null ? null : aci.toString());
         updateAccounts(accounts -> {
