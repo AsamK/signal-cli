@@ -136,7 +136,7 @@ public class IOUtils {
             logger.info("Listening on socket: " + address);
             postBind(address);
         } catch (IOException e) {
-            throw new IOErrorException("Failed to bind socket: " + e.getMessage(), e);
+            throw new IOErrorException("Failed to bind socket " + address + ": " + e.getMessage(), e);
         }
         return serverChannel;
     }

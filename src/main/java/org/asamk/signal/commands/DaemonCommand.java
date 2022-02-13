@@ -340,40 +340,38 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         } else {
             busType = DBusConnection.DBusBusType.SESSION;
         }
+        DBusConnection conn;
         try {
-            var conn = DBusConnection.getConnection(busType);
+            conn = DBusConnection.getConnection(busType);
             dbusRunner.run(conn, DbusConfig.getObjectPath());
-
-            conn.requestBusName(DbusConfig.getBusname());
-
-            logger.info("DBus daemon running on {} bus: {}", busType, DbusConfig.getBusname());
         } catch (DBusException e) {
-            logger.error("Dbus command failed", e);
-            throw new UnexpectedErrorException("Dbus command failed", e);
+            throw new UnexpectedErrorException("Dbus command failed: " + e.getMessage(), e);
         }
+
+        try {
+            conn.requestBusName(DbusConfig.getBusname());
+        } catch (DBusException e) {
+            throw new UnexpectedErrorException("Dbus command failed, maybe signal-cli dbus daemon is already running: "
+                    + e.getMessage(), e);
+        }
+
+        logger.info("DBus daemon running on {} bus: {}", busType, DbusConfig.getBusname());
     }
 
     private Thread exportMultiAccountManager(
             final DBusConnection conn, final Manager m, final boolean noReceiveOnStart
     ) {
-        try {
-            final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
-            return exportDbusObject(conn, objectPath, m, noReceiveOnStart);
-        } catch (DBusException e) {
-            logger.error("Failed to export object", e);
-            return null;
-        }
+        final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
+        return exportDbusObject(conn, objectPath, m, noReceiveOnStart);
     }
 
     private Thread exportDbusObject(
             final DBusConnection conn, final String objectPath, final Manager m, final boolean noReceiveOnStart
-    ) throws DBusException {
+    ) {
         final var signal = new DbusSignalImpl(m, conn, objectPath, noReceiveOnStart);
         final var initThread = new Thread(signal::initObjects);
         initThread.setName("dbus-init");
         initThread.start();
-
-        logger.debug("Exported dbus object: " + objectPath);
 
         return initThread;
     }

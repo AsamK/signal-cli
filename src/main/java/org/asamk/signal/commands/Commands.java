@@ -29,8 +29,8 @@ public class Commands {
         addCommand(new RegisterCommand());
         addCommand(new RemoveContactCommand());
         addCommand(new RemoveDeviceCommand());
-        addCommand(new RemoteDeleteCommand());
         addCommand(new RemovePinCommand());
+        addCommand(new RemoteDeleteCommand());
         addCommand(new SendCommand());
         addCommand(new SendContactsCommand());
         addCommand(new SendReactionCommand());
