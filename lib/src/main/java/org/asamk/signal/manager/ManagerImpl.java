@@ -770,7 +770,7 @@ class ManagerImpl implements Manager {
                     Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
                         try {
                             h.handleMessage(envelope, e);
-                        } catch (Exception ex) {
+                        } catch (Throwable ex) {
                             logger.warn("Message handler failed, ignoring", ex);
                         }
                     });

@@ -35,7 +35,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -240,12 +239,13 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     private void runSocket(final ServerSocketChannel serverChannel, Consumer<SocketChannel> socketHandler) {
         final var thread = new Thread(() -> {
             while (true) {
+                final var connectionId = threadNumber.getAndIncrement();
                 final SocketChannel channel;
                 final String clientString;
                 try {
                     channel = serverChannel.accept();
                     clientString = channel.getRemoteAddress() + " " + IOUtils.getUnixDomainPrincipal(channel);
-                    logger.info("Accepted new client: " + clientString);
+                    logger.info("Accepted new client connection {}: {}", connectionId, clientString);
                 } catch (IOException e) {
                     logger.error("Failed to accept new socket connection", e);
                     synchronized (this) {
@@ -256,12 +256,14 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 final var connectionThread = new Thread(() -> {
                     try (final var c = channel) {
                         socketHandler.accept(c);
-                        logger.info("Connection closed: " + clientString);
                     } catch (IOException e) {
                         logger.warn("Failed to close channel", e);
+                    } catch (Throwable e) {
+                        logger.warn("Connection handler failed, closing connection", e);
                     }
+                    logger.info("Connection {} closed: {}", connectionId, clientString);
                 });
-                connectionThread.setName("daemon-connection-" + threadNumber.getAndIncrement());
+                connectionThread.setName("daemon-connection-" + connectionId);
                 connectionThread.start();
             }
         });
@@ -298,11 +300,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
             c.addOnManagerAddedHandler(m -> {
                 final var thread = exportMultiAccountManager(connection, m, noReceiveOnStart);
-                if (thread != null) {
-                    try {
-                        thread.join();
-                    } catch (InterruptedException ignored) {
-                    }
+                try {
+                    thread.join();
+                } catch (InterruptedException ignored) {
                 }
             });
             c.addOnManagerRemovedHandler(m -> {
@@ -319,7 +319,6 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             final var initThreads = c.getManagers()
                     .stream()
                     .map(m -> exportMultiAccountManager(connection, m, noReceiveOnStart))
-                    .filter(Objects::nonNull)
                     .toList();
 
             for (var t : initThreads) {
