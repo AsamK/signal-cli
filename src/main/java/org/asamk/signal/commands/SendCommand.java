@@ -51,7 +51,11 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .help("Send the message to self without notification.")
                 .action(Arguments.storeTrue());
 
-        subparser.addArgument("-m", "--message").help("Specify the message, if missing standard input is used.");
+        var mut = subparser.addMutuallyExclusiveGroup();
+        mut.addArgument("-m", "--message").help("Specify the message to be sent.");
+        mut.addArgument("--message-from-stdin")
+                .action(Arguments.storeTrue())
+                .help("Read the message from standard input.");
         subparser.addArgument("-a", "--attachment").nargs("*").help("Add file as attachment");
         subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
@@ -107,16 +111,13 @@ public class SendCommand implements JsonRpcLocalCommand {
         final var sticker = stickerString == null ? null : parseSticker(stickerString);
 
         var messageText = ns.getString("message");
-        if (messageText == null) {
-            if (sticker != null) {
-                messageText = "";
-            } else {
-                logger.debug("Reading message from stdin...");
-                try {
-                    messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
-                } catch (IOException e) {
-                    throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
-                }
+        final var readMessageFromStdin = ns.getBoolean("message-from-stdin") == Boolean.TRUE;
+        if (readMessageFromStdin || (messageText == null && sticker == null)) {
+            logger.debug("Reading message from stdin...");
+            try {
+                messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
+            } catch (IOException e) {
+                throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
             }
         }
 
@@ -146,7 +147,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         }
 
         try {
-            var results = m.sendMessage(new Message(messageText,
+            var results = m.sendMessage(new Message(messageText == null ? "" : messageText,
                     attachments,
                     mentions,
                     Optional.ofNullable(quote),

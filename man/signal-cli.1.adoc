@@ -212,7 +212,11 @@ Send the message to self without notification.
 Specify the recipient group ID in base64 encoding.
 
 *-m* MESSAGE, *--message* MESSAGE::
-Specify the message, if missing, standard input is used.
+Specify the message.
+Currently, signal-cli reads the message from stdin if `-m` is missing, but this will change in a future version and the explicit flag `--message-from-stdin` should be used instead.
+
+*--message-from-stdin*::
+Read the message from standard input.
 
 *-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
 Add one or more files as attachment.
@@ -578,7 +582,7 @@ Send a message to one or more recipients::
 signal-cli -a ACCOUNT send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
 
 Pipe the message content from another process::
-uname -a | signal-cli -a ACCOUNT send [RECIPIENT [RECIPIENT ...]]
+uname -a | signal-cli -a ACCOUNT send --message-from-stdin [RECIPIENT [RECIPIENT ...]]
 
 Create a group::
 signal-cli -a ACCOUNT updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]

@@ -25,7 +25,8 @@ System requirements:
 - at least Java Runtime Environment (JRE) 17
 - native library: libsignal-client
 
-  The native libs are bundled for x86_64 Linux (with recent enough glibc, see #643), Windows and MacOS. For other systems/architectures
+  The native libs are bundled for x86_64 Linux (with recent enough glibc, see #643), Windows and MacOS. For other
+  systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
 ### Install system-wide on Linux
@@ -75,7 +76,7 @@ of all country codes.)
 
 * Pipe the message content from another process.
 
-        uname -a | signal-cli -a ACCOUNT send RECIPIENT
+        uname -a | signal-cli -a ACCOUNT send --message-from-stdin RECIPIENT
 
 * Receive messages
 
