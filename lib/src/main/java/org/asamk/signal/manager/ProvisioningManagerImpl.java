@@ -37,6 +37,7 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -193,6 +194,9 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                     TrustNewIdentity.ON_FIRST_USE);
         } catch (IOException e) {
             logger.debug("Account in use or failed to load.", e);
+            return false;
+        } catch (OverlappingFileLockException e) {
+            logger.debug("Account in use.", e);
             return false;
         }
 
