@@ -103,8 +103,8 @@ public class SignalAccount implements Closeable {
     private StorageKey storageKey;
     private long storageManifestVersion = -1;
     private ProfileKey profileKey;
-    private int preKeyIdOffset;
-    private int nextSignedPreKeyId;
+    private int preKeyIdOffset = 1;
+    private int nextSignedPreKeyId = 1;
     private IdentityKeyPair identityKeyPair;
     private int localRegistrationId;
     private TrustNewIdentity trustNewIdentity;
@@ -479,14 +479,14 @@ public class SignalAccount implements Closeable {
             storageManifestVersion = rootNode.get("storageManifestVersion").asLong();
         }
         if (rootNode.hasNonNull("preKeyIdOffset")) {
-            preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(0);
+            preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(1);
         } else {
-            preKeyIdOffset = 0;
+            preKeyIdOffset = 1;
         }
         if (rootNode.hasNonNull("nextSignedPreKeyId")) {
-            nextSignedPreKeyId = rootNode.get("nextSignedPreKeyId").asInt();
+            nextSignedPreKeyId = rootNode.get("nextSignedPreKeyId").asInt(1);
         } else {
-            nextSignedPreKeyId = 0;
+            nextSignedPreKeyId = 1;
         }
         if (rootNode.hasNonNull("profileKey")) {
             try {
