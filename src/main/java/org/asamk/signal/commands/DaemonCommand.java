@@ -10,6 +10,7 @@ import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusSignalControlImpl;
 import org.asamk.signal.dbus.DbusSignalImpl;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
@@ -282,7 +283,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     private void runDbusSingleAccount(
             final Manager m, final boolean isDbusSystem, final boolean noReceiveOnStart
-    ) throws UnexpectedErrorException {
+    ) throws CommandException {
         runDbus(isDbusSystem, (conn, objectPath) -> {
             try {
                 exportDbusObject(conn, objectPath, m, noReceiveOnStart).join();
@@ -293,7 +294,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     private void runDbusMultiAccount(
             final MultiAccountManager c, final boolean noReceiveOnStart, final boolean isDbusSystem
-    ) throws UnexpectedErrorException {
+    ) throws CommandException {
         runDbus(isDbusSystem, (connection, objectPath) -> {
             final var signalControl = new DbusSignalControlImpl(c, objectPath);
             connection.exportObject(signalControl);
@@ -332,7 +333,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     private void runDbus(
             final boolean isDbusSystem, DbusRunner dbusRunner
-    ) throws UnexpectedErrorException {
+    ) throws CommandException {
         DBusConnection.DBusBusType busType;
         if (isDbusSystem) {
             busType = DBusConnection.DBusBusType.SYSTEM;
@@ -345,6 +346,8 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             dbusRunner.run(conn, DbusConfig.getObjectPath());
         } catch (DBusException e) {
             throw new UnexpectedErrorException("Dbus command failed: " + e.getMessage(), e);
+        } catch (UnsupportedOperationException e) {
+            throw new UserErrorException("Failed to connect to Dbus: " + e.getMessage(), e);
         }
 
         try {
