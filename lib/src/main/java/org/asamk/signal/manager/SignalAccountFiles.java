@@ -125,14 +125,16 @@ public class SignalAccountFiles {
         final var accountPath = accountsStore.getPathByNumber(number);
         if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
             final var newAccountPath = accountPath == null ? accountsStore.addAccount(number, null) : accountPath;
-            var identityKey = KeyUtils.generateIdentityKeyPair();
+            var aciIdentityKey = KeyUtils.generateIdentityKeyPair();
+            var pniIdentityKey = KeyUtils.generateIdentityKeyPair();
             var registrationId = KeyHelper.generateRegistrationId(false);
 
             var profileKey = KeyUtils.createProfileKey();
             var account = SignalAccount.create(pathConfig.dataPath(),
                     newAccountPath,
                     number,
-                    identityKey,
+                    aciIdentityKey,
+                    pniIdentityKey,
                     registrationId,
                     profileKey,
                     trustNewIdentity);

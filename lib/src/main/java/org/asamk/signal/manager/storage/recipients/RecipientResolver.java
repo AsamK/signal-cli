@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 public interface RecipientResolver {
@@ -11,7 +11,7 @@ public interface RecipientResolver {
 
     RecipientId resolveRecipient(SignalServiceAddress address);
 
-    RecipientId resolveRecipient(ACI aci);
+    RecipientId resolveRecipient(ServiceId aci);
 
     RecipientId resolveRecipient(long recipientId);
 }

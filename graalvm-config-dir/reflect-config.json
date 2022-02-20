@@ -2024,11 +2024,6 @@
   "queryAllDeclaredConstructors":true
 },
 {
-  "name":"org.whispersystems.signalservice.api.push.AccountIdentifier",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true
-},
-{
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2314,16 +2309,19 @@
 {
   "name":"org.whispersystems.signalservice.internal.push.ProvisioningProtos$ProvisionMessage",
   "fields":[
+    {"name":"aciIdentityKeyPrivate_"}, 
+    {"name":"aciIdentityKeyPublic_"}, 
+    {"name":"aci_"}, 
     {"name":"bitField0_"}, 
-    {"name":"identityKeyPrivate_"}, 
-    {"name":"identityKeyPublic_"}, 
     {"name":"number_"}, 
+    {"name":"pniIdentityKeyPrivate_"}, 
+    {"name":"pniIdentityKeyPublic_"}, 
+    {"name":"pni_"}, 
     {"name":"profileKey_"}, 
     {"name":"provisioningCode_"}, 
     {"name":"provisioningVersion_"}, 
     {"name":"readReceipts_"}, 
-    {"name":"userAgent_"}, 
-    {"name":"uuid_"}
+    {"name":"userAgent_"}
   ]
 },
 {
@@ -2686,6 +2684,7 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"content_"}, 
+    {"name":"destinationUuid_"}, 
     {"name":"legacyMessage_"}, 
     {"name":"relay_"}, 
     {"name":"serverGuid_"}, 
@@ -2850,6 +2849,14 @@
     {"name":"threadE164_"}, 
     {"name":"threadUuid_"}, 
     {"name":"type_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$PniIdentity",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"privateKey_"}, 
+    {"name":"publicKey_"}
   ]
 },
 {

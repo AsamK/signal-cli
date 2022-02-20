@@ -278,7 +278,7 @@ class ManagerImpl implements Manager {
     public List<Device> getLinkedDevices() throws IOException {
         var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
-        var identityKey = account.getIdentityKeyPair().getPrivateKey();
+        var identityKey = account.getAciIdentityKeyPair().getPrivateKey();
         return devices.stream().map(d -> {
             String deviceName = d.getName();
             if (deviceName != null) {
@@ -568,7 +568,7 @@ class ManagerImpl implements Manager {
             final var recipientId = context.getRecipientHelper().resolveRecipient(m.recipient());
             mentions.add(new SignalServiceDataMessage.Mention(context.getRecipientHelper()
                     .resolveSignalServiceAddress(recipientId)
-                    .getAci(), m.start(), m.length()));
+                    .getServiceId(), m.start(), m.length()));
         }
         return mentions;
     }

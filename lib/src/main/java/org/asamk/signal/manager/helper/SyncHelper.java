@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.helper;
 
+import com.google.protobuf.ByteString;
+
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -49,11 +51,20 @@ public class SyncHelper {
     }
 
     public void requestAllSyncData() {
-        requestSyncGroups();
-        requestSyncContacts();
-        requestSyncBlocked();
-        requestSyncConfiguration();
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.GROUPS);
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS);
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED);
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION);
         requestSyncKeys();
+        requestSyncPniIdentity();
+    }
+
+    public void requestSyncKeys() {
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.KEYS);
+    }
+
+    public void requestSyncPniIdentity() {
+        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.PNI_IDENTITY);
     }
 
     public void sendSyncFetchProfileMessage() {
@@ -217,6 +228,15 @@ public class SyncHelper {
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
+    public void sendPniIdentity() {
+        final var pniIdentityKeyPair = account.getPniIdentityKeyPair();
+        var pniIdentity = SignalServiceProtos.SyncMessage.PniIdentity.newBuilder()
+                .setPrivateKey(ByteString.copyFrom(pniIdentityKeyPair.getPrivateKey().serialize()))
+                .setPublicKey(ByteString.copyFrom(pniIdentityKeyPair.getPublicKey().serialize()))
+                .build();
+        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forPniIdentity(pniIdentity));
+    }
+
     public void handleSyncDeviceContacts(final InputStream input) throws IOException {
         final var s = new DeviceContactsInputStream(input);
         DeviceContact c;
@@ -270,42 +290,8 @@ public class SyncHelper {
         }
     }
 
-    private void requestSyncGroups() {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.GROUPS)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        context.getSendHelper().sendSyncMessage(message);
-    }
-
-    private void requestSyncContacts() {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        context.getSendHelper().sendSyncMessage(message);
-    }
-
-    private void requestSyncBlocked() {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        context.getSendHelper().sendSyncMessage(message);
-    }
-
-    private void requestSyncConfiguration() {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION)
-                .build();
-        var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        context.getSendHelper().sendSyncMessage(message);
-    }
-
-    private void requestSyncKeys() {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder()
-                .setType(SignalServiceProtos.SyncMessage.Request.Type.KEYS)
-                .build();
+    private void requestSyncData(final SignalServiceProtos.SyncMessage.Request.Type type) {
+        var r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(type).build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         context.getSendHelper().sendSyncMessage(message);
     }

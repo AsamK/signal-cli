@@ -38,6 +38,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
 import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2ChangeException;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 
@@ -150,7 +151,7 @@ class GroupV2Helper {
         final var memberList = new ArrayList<>(members);
         final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
-                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getAci().uuid());
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid());
         var candidates = Utils.zip(uuids,
                         credentials,
                         (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
@@ -218,7 +219,7 @@ class GroupV2Helper {
         final var memberList = new ArrayList<>(newMembers);
         final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
-                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getAci().uuid());
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid());
         var candidates = Utils.zip(uuids,
                         credentials,
                         (uuid, credential) -> new GroupCandidate(uuid, Optional.fromNullable(credential)))
@@ -245,8 +246,8 @@ class GroupV2Helper {
 
         final var adminUuids = membersToMakeAdmin.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getAci)
-                .map(ACI::uuid)
+                .map(SignalServiceAddress::getServiceId)
+                .map(ServiceId::uuid)
                 .toList();
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2,
@@ -258,8 +259,8 @@ class GroupV2Helper {
     ) throws IOException {
         final var memberUuids = members.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getAci)
-                .map(ACI::uuid)
+                .map(SignalServiceAddress::getServiceId)
+                .map(ServiceId::uuid)
                 .collect(Collectors.toSet());
         return ejectMembers(groupInfoV2, memberUuids);
     }
@@ -270,8 +271,8 @@ class GroupV2Helper {
         var pendingMembersList = groupInfoV2.getGroup().getPendingMembersList();
         final var memberUuids = members.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
-                .map(SignalServiceAddress::getAci)
-                .map(ACI::uuid)
+                .map(SignalServiceAddress::getServiceId)
+                .map(ServiceId::uuid)
                 .map(uuid -> DecryptedGroupUtil.findPendingByUuid(pendingMembersList, uuid))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -343,7 +344,7 @@ class GroupV2Helper {
 
         change.setSourceUuid(context.getRecipientHelper()
                 .resolveSignalServiceAddress(selfRecipientId)
-                .getAci()
+                .getServiceId()
                 .toByteString());
 
         return commitChange(groupSecretParams, decryptedGroupJoinInfo.getRevision(), change, groupLinkPassword);
@@ -360,7 +361,7 @@ class GroupV2Helper {
 
         final var change = groupOperations.createAcceptInviteChange(profileKeyCredential);
 
-        final var aci = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId).getAci();
+        final var aci = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId).getServiceId();
         change.setSourceUuid(aci.toByteString());
 
         return commitChange(groupInfoV2, change);
@@ -372,7 +373,7 @@ class GroupV2Helper {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         final var newRole = admin ? Member.Role.ADMINISTRATOR : Member.Role.DEFAULT;
-        final var change = groupOperations.createChangeMemberRole(address.getAci().uuid(), newRole);
+        final var change = groupOperations.createChangeMemberRole(address.getServiceId().uuid(), newRole);
         return commitChange(groupInfoV2, change);
     }
 

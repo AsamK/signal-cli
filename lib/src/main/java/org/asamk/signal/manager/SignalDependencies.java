@@ -89,6 +89,7 @@ public class SignalDependencies {
     public SignalServiceAccountManager createUnauthenticatedAccountManager(String number, String password) {
         return new SignalServiceAccountManager(getServiceEnvironmentConfig().getSignalServiceConfiguration(),
                 null,
+                null,
                 number,
                 SignalServiceAddress.DEFAULT_DEVICE_ID,
                 password,

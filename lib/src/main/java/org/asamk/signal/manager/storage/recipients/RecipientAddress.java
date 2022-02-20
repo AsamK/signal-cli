@@ -28,7 +28,7 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
     }
 
     public RecipientAddress(SignalServiceAddress address) {
-        this(Optional.of(address.getAci().uuid()), Optional.ofNullable(address.getNumber().orNull()));
+        this(Optional.of(address.getServiceId().uuid()), Optional.ofNullable(address.getNumber().orNull()));
     }
 
     public RecipientAddress(UUID uuid) {

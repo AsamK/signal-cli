@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,17 +29,32 @@ public class PreKeyHelper {
     }
 
     public void refreshPreKeysIfNecessary() throws IOException {
-        if (dependencies.getAccountManager().getPreKeysCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-            refreshPreKeys();
+        refreshPreKeysIfNecessary(ServiceIdType.ACI);
+        refreshPreKeysIfNecessary(ServiceIdType.PNI);
+    }
+
+    public void refreshPreKeysIfNecessary(ServiceIdType serviceIdType) throws IOException {
+        if (dependencies.getAccountManager().getPreKeysCount(serviceIdType) < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+            refreshPreKeys(serviceIdType);
         }
     }
 
     public void refreshPreKeys() throws IOException {
+        refreshPreKeys(ServiceIdType.ACI);
+        refreshPreKeys(ServiceIdType.PNI);
+    }
+
+    public void refreshPreKeys(ServiceIdType serviceIdType) throws IOException {
+        if (serviceIdType != ServiceIdType.ACI) {
+            // TODO implement
+            return;
+        }
         var oneTimePreKeys = generatePreKeys();
-        final var identityKeyPair = account.getIdentityKeyPair();
+        final var identityKeyPair = account.getAciIdentityKeyPair();
         var signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
 
-        dependencies.getAccountManager().setPreKeys(identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+        dependencies.getAccountManager()
+                .setPreKeys(serviceIdType, identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
     private List<PreKeyRecord> generatePreKeys() {

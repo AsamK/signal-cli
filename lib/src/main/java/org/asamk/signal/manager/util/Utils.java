@@ -65,8 +65,8 @@ public class Utils {
         if (isUuidCapable) {
             // Version 2: UUID user
             version = 2;
-            ownId = ownAddress.getAci().toByteArray();
-            theirId = theirAddress.getAci().toByteArray();
+            ownId = ownAddress.getServiceId().toByteArray();
+            theirId = theirAddress.getServiceId().toByteArray();
         } else {
             // Version 1: E164 user
             version = 1;

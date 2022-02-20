@@ -31,6 +31,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.ServiceResponse;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
@@ -79,7 +80,7 @@ class RegistrationManagerImpl implements RegistrationManager {
         this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
-                        null, account.getNumber(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
+                        null, null, account.getNumber(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
@@ -116,7 +117,8 @@ class RegistrationManagerImpl implements RegistrationManager {
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         final var aci = ACI.parseOrNull(response.getUuid());
-        account.finishRegistration(aci, masterKey, pin);
+        final var pni = PNI.parseOrNull(response.getPni());
+        account.finishRegistration(aci, pni, masterKey, pin);
         accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 
         ManagerImpl m = null;

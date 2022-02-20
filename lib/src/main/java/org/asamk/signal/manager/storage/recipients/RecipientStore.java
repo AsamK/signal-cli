@@ -13,6 +13,7 @@ import org.signal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -171,8 +172,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
-    public RecipientId resolveRecipient(ACI aci) {
-        return resolveRecipient(new RecipientAddress(aci.uuid()), false, false);
+    public RecipientId resolveRecipient(ServiceId serviceId) {
+        return resolveRecipient(new RecipientAddress(serviceId.uuid()), false, false);
     }
 
     @Override

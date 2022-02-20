@@ -79,7 +79,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
             groupsV2Operations = null;
         }
         accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                new DynamicCredentialsProvider(null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
+                new DynamicCredentialsProvider(null, null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
@@ -97,6 +97,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
         var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
         var aci = ret.getAci();
+        var pni = ret.getPni();
 
         logger.info("Received link information from {}, linking in progress ...", number);
 
@@ -117,7 +118,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
         var encryptedDeviceName = deviceName == null
                 ? null
-                : DeviceNameUtil.encryptDeviceName(deviceName, ret.getIdentity().getPrivateKey());
+                : DeviceNameUtil.encryptDeviceName(deviceName, ret.getAciIdentity().getPrivateKey());
 
         logger.debug("Finishing new device registration");
         var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
@@ -135,10 +136,12 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                     accountPath,
                     number,
                     aci,
+                    pni,
                     password,
                     encryptedDeviceName,
                     deviceId,
-                    ret.getIdentity(),
+                    ret.getAciIdentity(),
+                    ret.getPniIdentity(),
                     registrationId,
                     profileKey,
                     TrustNewIdentity.ON_FIRST_USE);
