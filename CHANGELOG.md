@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.10.4] - 2022-02-20
+### Added
+- Implement support for change number as linked device
+- Add `--message-from-stdin` flag for send command.  The current behavior of
+  reading from stdin if the `-m` flag is not given, will be removed in a future
+  version.
+
+### Changed
+- Align receive timeout behavior for dbus client with cli and JSON-RPC.
+  Timeout is reset by every incoming message
+- Renamed `error` field in json receive response to `exception`
+
+### Fixed
+- Prevent a stale jsonrpc connection from interfering with message receiving
+
 ## [0.10.3] - 2022-02-01
 ### Added
 - MessageSendLog to cache sent message for 24h.
