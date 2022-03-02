@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.4.1] - 2022-03-02
+### Fixed
+- Linking to current apps (which currently don't include a PNI identity yet)
+- Show better error message when --target-timestamp is missing for sendReceipt
+
 ## [0.10.4] - 2022-02-20
 ### Added
 - Implement support for change number as linked device
