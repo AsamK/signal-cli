@@ -28,6 +28,7 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
         subparser.addArgument("-t", "--target-timestamp")
                 .type(long.class)
                 .nargs("+")
+                .required(true)
                 .help("Specify the timestamp of the messages for which a receipt should be sent.");
         subparser.addArgument("--type")
                 .help("Specify the receipt type (default is read receipt).")
