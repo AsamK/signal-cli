@@ -3,9 +3,9 @@ package org.asamk.signal.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 import java.util.UUID;
@@ -48,8 +48,7 @@ public record JsonMessageEnvelope(
             source = sourceAddress.getLegacyIdentifier();
             sourceNumber = sourceAddress.number().orElse(null);
             sourceUuid = sourceAddress.uuid().map(UUID::toString).orElse(null);
-            sourceName = m.getContactOrProfileName(RecipientIdentifier.Single.fromAddress(envelope.sourceAddress()
-                    .get()));
+            sourceName = m.getContactOrProfileName(RecipientIdentifier.Single.fromAddress(sourceAddress));
         } else {
             source = null;
             sourceNumber = null;
