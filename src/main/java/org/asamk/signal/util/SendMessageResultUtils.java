@@ -100,6 +100,8 @@ public class SendMessageResultUtils {
                     failure.getRetryAfterSeconds());
         } else if (result.isNetworkFailure()) {
             return String.format("Network failure for \"%s\"", identifier);
+        } else if (result.isRateLimitFailure()) {
+            return String.format("Rate limit failure for \"%s\"", identifier);
         } else if (result.isUnregisteredFailure()) {
             return String.format("Unregistered user \"%s\"", identifier);
         } else if (result.isIdentityFailure()) {

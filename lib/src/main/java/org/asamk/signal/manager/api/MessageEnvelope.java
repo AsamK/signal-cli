@@ -13,6 +13,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
+import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
@@ -242,7 +243,7 @@ public record MessageEnvelope(
                     RecipientResolver recipientResolver,
                     RecipientAddressResolver addressResolver
             ) {
-                return new Mention(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(mention.getAci())),
+                return new Mention(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(mention.getServiceId())),
                         mention.getStart(),
                         mention.getLength());
             }
@@ -481,7 +482,7 @@ public record MessageEnvelope(
         public record Preview(String title, String description, long date, String url, Optional<Attachment> image) {
 
             static Preview from(
-                    SignalServiceDataMessage.Preview preview, final AttachmentFileProvider fileProvider
+                    SignalServicePreview preview, final AttachmentFileProvider fileProvider
             ) {
                 return new Preview(preview.getTitle(),
                         preview.getDescription(),

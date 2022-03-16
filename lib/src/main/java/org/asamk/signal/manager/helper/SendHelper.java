@@ -190,9 +190,10 @@ public class SendHelper {
             SignalServiceTypingMessage message, RecipientId recipientId
     ) {
         final var result = handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(address,
-                        unidentifiedAccess,
-                        message));
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(List.of(address),
+                        List.of(unidentifiedAccess),
+                        message,
+                        null).get(0));
         handleSendMessageResult(result);
         return result;
     }

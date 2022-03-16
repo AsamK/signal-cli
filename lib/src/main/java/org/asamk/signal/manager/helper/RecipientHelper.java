@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
@@ -75,7 +76,7 @@ public class RecipientHelper {
 
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
-            return account.getRecipientStore().resolveRecipient(ACI.from(uuidRecipient.uuid()));
+            return account.getRecipientStore().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
         } else {
             final var number = ((RecipientIdentifier.Number) recipient).number();
             return account.getRecipientStore().resolveRecipient(number, () -> {

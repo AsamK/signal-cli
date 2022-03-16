@@ -41,8 +41,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStre
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
-import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.DistributionId;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 
 import java.io.File;
@@ -391,8 +391,8 @@ public class GroupHelper {
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.getMembersList()) {
-            final var aci = ACI.fromByteString(member.getUuid());
-            final var recipientId = account.getRecipientStore().resolveRecipient(aci);
+            final var serviceId = ServiceId.fromByteString(member.getUuid());
+            final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
             try {
                 account.getProfileStore()
                         .storeProfileKey(recipientId, new ProfileKey(member.getProfileKey().toByteArray()));

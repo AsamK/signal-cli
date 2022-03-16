@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Optional;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
 
-    public static final UUID UNKNOWN_UUID = ACI.UNKNOWN.uuid();
+    public static final UUID UNKNOWN_UUID = ServiceId.UNKNOWN.uuid();
 
     /**
      * Construct a RecipientAddress.
@@ -62,7 +62,7 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(ACI.from(uuid.orElse(UNKNOWN_UUID)),
+        return new SignalServiceAddress(ServiceId.from(uuid.orElse(UNKNOWN_UUID)),
                 org.whispersystems.libsignal.util.guava.Optional.fromNullable(number.orElse(null)));
     }
 }

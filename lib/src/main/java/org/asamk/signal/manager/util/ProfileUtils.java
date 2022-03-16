@@ -35,7 +35,7 @@ public class ProfileUtils {
                     getUnidentifiedAccessMode(encryptedProfile, profileCipher),
                     getCapabilities(encryptedProfile));
         } catch (InvalidCiphertextException e) {
-            logger.debug("Failed to decrypt profile for {}", encryptedProfile.getAci(), e);
+            logger.debug("Failed to decrypt profile for {}", encryptedProfile.getServiceId(), e);
             return null;
         }
     }

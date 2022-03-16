@@ -24,7 +24,11 @@ public record JsonSendMessageResult(
                         ? Type.SUCCESS
                         : result.isNetworkFailure()
                                 ? Type.NETWORK_FAILURE
-                                : result.isUnregisteredFailure() ? Type.UNREGISTERED_FAILURE : Type.IDENTITY_FAILURE,
+                                : result.isRateLimitFailure()
+                                        ? Type.RATE_LIMIT_FAILURE
+                                        : result.isUnregisteredFailure()
+                                                ? Type.UNREGISTERED_FAILURE
+                                                : Type.IDENTITY_FAILURE,
                 result.proofRequiredFailure() != null ? result.proofRequiredFailure().getToken() : null,
                 result.proofRequiredFailure() != null ? result.proofRequiredFailure().getRetryAfterSeconds() : null);
     }
@@ -34,5 +38,6 @@ public record JsonSendMessageResult(
         NETWORK_FAILURE,
         UNREGISTERED_FAILURE,
         IDENTITY_FAILURE,
+        RATE_LIMIT_FAILURE,
     }
 }

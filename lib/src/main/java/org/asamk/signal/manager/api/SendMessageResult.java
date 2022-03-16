@@ -11,29 +11,30 @@ public record SendMessageResult(
         boolean isNetworkFailure,
         boolean isUnregisteredFailure,
         boolean isIdentityFailure,
+        boolean isRateLimitFailure,
         ProofRequiredException proofRequiredFailure
 ) {
 
     public static SendMessageResult success(RecipientAddress address) {
-        return new SendMessageResult(address, true, false, false, false, null);
+        return new SendMessageResult(address, true, false, false, false, false, null);
     }
 
     public static SendMessageResult networkFailure(RecipientAddress address) {
-        return new SendMessageResult(address, false, true, false, false, null);
+        return new SendMessageResult(address, false, true, false, false, false, null);
     }
 
     public static SendMessageResult unregisteredFailure(RecipientAddress address) {
-        return new SendMessageResult(address, false, false, true, false, null);
+        return new SendMessageResult(address, false, false, true, false, false, null);
     }
 
     public static SendMessageResult identityFailure(RecipientAddress address, IdentityKey identityKey) {
-        return new SendMessageResult(address, false, false, false, true, null);
+        return new SendMessageResult(address, false, false, false, true, false, null);
     }
 
     public static SendMessageResult proofRequiredFailure(
             RecipientAddress address, ProofRequiredException proofRequiredException
     ) {
-        return new SendMessageResult(address, false, true, false, false, proofRequiredException);
+        return new SendMessageResult(address, false, true, false, false, false, proofRequiredException);
     }
 
     public static SendMessageResult from(
@@ -47,10 +48,9 @@ public record SendMessageResult(
                 sendMessageResult.isNetworkFailure(),
                 sendMessageResult.isUnregisteredFailure(),
                 sendMessageResult.getIdentityFailure() != null,
+                sendMessageResult.getRateLimitFailure() != null,
                 sendMessageResult.getProofRequiredFailure() == null
                         ? null
                         : new ProofRequiredException(sendMessageResult.getProofRequiredFailure()));
     }
-
-    public record IdentityFailure(IdentityKey identityKey) {}
 }

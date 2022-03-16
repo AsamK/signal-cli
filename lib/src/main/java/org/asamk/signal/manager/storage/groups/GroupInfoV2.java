@@ -10,8 +10,8 @@ import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.EnabledState;
 import org.signal.zkgroup.groups.GroupMasterKey;
-import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.DistributionId;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -112,7 +112,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getMembersList()
                 .stream()
-                .map(m -> ACI.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.fromByteString(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -124,7 +124,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getPendingMembersList()
                 .stream()
-                .map(m -> ACI.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.fromByteString(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -136,7 +136,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getRequestingMembersList()
                 .stream()
-                .map(m -> ACI.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.fromByteString(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -149,7 +149,7 @@ public final class GroupInfoV2 extends GroupInfo {
         return group.getMembersList()
                 .stream()
                 .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
-                .map(m -> ACI.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.fromByteString(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }

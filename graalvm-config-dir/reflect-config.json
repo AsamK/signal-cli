@@ -2484,6 +2484,7 @@
     {"name":"nullMessage_"}, 
     {"name":"receiptMessage_"}, 
     {"name":"senderKeyDistributionMessage_"}, 
+    {"name":"storyMessage_"}, 
     {"name":"syncMessage_"}, 
     {"name":"typingMessage_"}
   ]
@@ -2627,21 +2628,9 @@
   ]
 },
 {
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Preview",
-  "fields":[
-    {"name":"bitField0_"}, 
-    {"name":"date_"}, 
-    {"name":"description_"}, 
-    {"name":"image_"}, 
-    {"name":"title_"}, 
-    {"name":"url_"}
-  ]
-},
-{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote",
   "fields":[
     {"name":"attachments_"}, 
-    {"name":"authorE164_"}, 
     {"name":"authorUuid_"}, 
     {"name":"bitField0_"}, 
     {"name":"bodyRanges_"}, 
@@ -2764,6 +2753,17 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Preview",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"date_"}, 
+    {"name":"description_"}, 
+    {"name":"image_"}, 
+    {"name":"title_"}, 
+    {"name":"url_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ReceiptMessage",
   "fields":[
     {"name":"bitField0_"}, 
@@ -2846,7 +2846,6 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"groupId_"}, 
-    {"name":"threadE164_"}, 
     {"name":"threadUuid_"}, 
     {"name":"type_"}
   ]
@@ -2863,7 +2862,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"senderE164_"}, 
     {"name":"senderUuid_"}, 
     {"name":"timestamp_"}
   ]
@@ -2879,7 +2877,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"destinationE164_"}, 
     {"name":"destinationUuid_"}, 
     {"name":"expirationStartTimestamp_"}, 
     {"name":"isRecipientUpdate_"}, 
@@ -2892,7 +2889,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$UnidentifiedDeliveryStatus",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"destinationE164_"}, 
     {"name":"destinationUuid_"}, 
     {"name":"unidentified_"}
   ]
@@ -2910,7 +2906,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$ViewOnceOpen",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"senderE164_"}, 
     {"name":"senderUuid_"}, 
     {"name":"timestamp_"}
   ]
@@ -2919,7 +2914,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Viewed",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"senderE164_"}, 
     {"name":"senderUuid_"}, 
     {"name":"timestamp_"}
   ]
@@ -2937,7 +2931,6 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Verified",
   "fields":[
     {"name":"bitField0_"}, 
-    {"name":"destinationE164_"}, 
     {"name":"destinationUuid_"}, 
     {"name":"identityKey_"}, 
     {"name":"nullMessage_"}, 
@@ -3102,6 +3095,10 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.util.JsonUtil$IdentityKeySerializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.util.JsonUtil$ServiceIdDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {

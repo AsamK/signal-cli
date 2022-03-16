@@ -2,7 +2,7 @@ package org.asamk.signal.manager.util;
 
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.DataInputStream;
@@ -23,9 +23,9 @@ public class MessageCacheUtils {
             }
             var type = in.readInt();
             var source = in.readUTF();
-            ACI sourceAci = null;
+            ServiceId sourceServiceId = null;
             if (version >= 3) {
-                sourceAci = ACI.parseOrNull(in.readUTF());
+                sourceServiceId = ServiceId.parseOrNull(in.readUTF());
             }
             var sourceDevice = in.readInt();
             if (version == 1) {
@@ -58,9 +58,9 @@ public class MessageCacheUtils {
             if (version >= 4) {
                 serverDeliveredTimestamp = in.readLong();
             }
-            Optional<SignalServiceAddress> addressOptional = sourceAci == null
+            Optional<SignalServiceAddress> addressOptional = sourceServiceId == null
                     ? Optional.absent()
-                    : Optional.of(new SignalServiceAddress(sourceAci, source));
+                    : Optional.of(new SignalServiceAddress(sourceServiceId, source));
             return new SignalServiceEnvelope(type,
                     addressOptional,
                     sourceDevice,
