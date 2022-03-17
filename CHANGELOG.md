@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.4.2] - 2022-03-17
+### Fixed
+- Crash in json output when receiving message from untrusted identity
+- Fix multi account commands for newly created accounts
+
 ## [0.10.4.1] - 2022-03-02
 ### Fixed
 - Linking to current apps (which currently don't include a PNI identity yet)
