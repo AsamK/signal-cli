@@ -705,9 +705,6 @@ public class SignalAccount implements Closeable {
                         if (profile.getCapabilities().gv1Migration) {
                             capabilities.add(Profile.Capability.gv1Migration);
                         }
-                        if (profile.getCapabilities().gv2) {
-                            capabilities.add(Profile.Capability.gv2);
-                        }
                         if (profile.getCapabilities().storage) {
                             capabilities.add(Profile.Capability.storage);
                         }

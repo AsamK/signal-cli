@@ -62,7 +62,6 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
@@ -82,6 +81,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -246,14 +246,9 @@ class ManagerImpl implements Manager {
 
     @Override
     public void setProfile(
-            String givenName, final String familyName, String about, String aboutEmoji, java.util.Optional<File> avatar
+            String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException {
-        context.getProfileHelper()
-                .setProfile(givenName,
-                        familyName,
-                        about,
-                        aboutEmoji,
-                        avatar == null ? null : Optional.fromNullable(avatar.orElse(null)));
+        context.getProfileHelper().setProfile(givenName, familyName, about, aboutEmoji, avatar);
         context.getSyncHelper().sendSyncFetchProfileMessage();
     }
 
@@ -308,7 +303,7 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setRegistrationLockPin(java.util.Optional<String> pin) throws IOException, NotMasterDeviceException {
+    public void setRegistrationLockPin(Optional<String> pin) throws IOException, NotMasterDeviceException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
@@ -442,7 +437,7 @@ class ManagerImpl implements Manager {
         final var timestamp = System.currentTimeMillis();
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single single) {
-                final var message = new SignalServiceTypingMessage(action, timestamp, Optional.absent());
+                final var message = new SignalServiceTypingMessage(action, timestamp, Optional.empty());
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(single);
                     final var result = context.getSendHelper().sendTypingMessage(message, recipientId);
@@ -558,7 +553,7 @@ class ManagerImpl implements Manager {
                     stickerPack.getPackKey(),
                     stickerId,
                     manifestSticker.emoji(),
-                    AttachmentUtils.createAttachment(streamDetails, Optional.absent())));
+                    AttachmentUtils.createAttachment(streamDetails, Optional.empty())));
         }
     }
 
@@ -719,7 +714,7 @@ class ManagerImpl implements Manager {
                             pack.isInstalled(),
                             manifest.title(),
                             manifest.author(),
-                            java.util.Optional.ofNullable(manifest.cover() == null ? null : manifest.cover().toApi()),
+                            Optional.ofNullable(manifest.cover() == null ? null : manifest.cover().toApi()),
                             manifest.stickers().stream().map(JsonStickerPack.JsonSticker::toApi).toList());
                 } catch (Exception e) {
                     logger.warn("Failed to read local sticker pack manifest: {}", e.getMessage(), e);

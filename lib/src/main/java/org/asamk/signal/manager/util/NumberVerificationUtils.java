@@ -5,7 +5,6 @@ import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.helper.PinHelper;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
@@ -15,6 +14,7 @@ import org.whispersystems.signalservice.internal.push.RequestVerificationCodeRes
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class NumberVerificationUtils {
 
@@ -26,14 +26,14 @@ public class NumberVerificationUtils {
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
             response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(null),
-                    Optional.fromNullable(captcha),
-                    Optional.absent(),
-                    Optional.absent());
+                    Optional.ofNullable(captcha),
+                    Optional.empty(),
+                    Optional.empty());
         } else {
             response = accountManager.requestSmsVerificationCode(false,
-                    Optional.fromNullable(captcha),
-                    Optional.absent(),
-                    Optional.absent());
+                    Optional.ofNullable(captcha),
+                    Optional.empty(),
+                    Optional.empty());
         }
         try {
             handleResponseException(response);
@@ -82,7 +82,7 @@ public class NumberVerificationUtils {
     }
 
     private static void handleResponseException(final ServiceResponse<?> response) throws IOException {
-        final var throwableOptional = response.getExecutionError().or(response.getApplicationError());
+        final var throwableOptional = response.getExecutionError().or(response::getApplicationError);
         if (throwableOptional.isPresent()) {
             if (throwableOptional.get() instanceof IOException) {
                 throw (IOException) throwableOptional.get();

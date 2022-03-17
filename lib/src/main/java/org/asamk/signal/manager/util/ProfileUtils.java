@@ -62,9 +62,6 @@ public class ProfileUtils {
         if (encryptedProfile.getCapabilities().isGv1Migration()) {
             capabilities.add(Profile.Capability.gv1Migration);
         }
-        if (encryptedProfile.getCapabilities().isGv2()) {
-            capabilities.add(Profile.Capability.gv2);
-        }
         if (encryptedProfile.getCapabilities().isStorage()) {
             capabilities.add(Profile.Capability.storage);
         }

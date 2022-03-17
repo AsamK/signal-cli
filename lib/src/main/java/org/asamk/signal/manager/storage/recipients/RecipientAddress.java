@@ -28,7 +28,7 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
     }
 
     public RecipientAddress(SignalServiceAddress address) {
-        this(Optional.of(address.getServiceId().uuid()), Optional.ofNullable(address.getNumber().orNull()));
+        this(Optional.of(address.getServiceId().uuid()), address.getNumber());
     }
 
     public RecipientAddress(UUID uuid) {
@@ -62,7 +62,6 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(ServiceId.from(uuid.orElse(UNKNOWN_UUID)),
-                org.whispersystems.libsignal.util.guava.Optional.fromNullable(number.orElse(null)));
+        return new SignalServiceAddress(ServiceId.from(uuid.orElse(UNKNOWN_UUID)), number);
     }
 }

@@ -10,12 +10,12 @@ import org.signal.libsignal.metadata.certificate.SenderCertificate;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class UnidentifiedAccessHelper {
@@ -54,26 +54,26 @@ public class UnidentifiedAccessHelper {
         var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipientId, noRefresh);
         if (recipientUnidentifiedAccessKey == null) {
             logger.trace("Unidentified access not available for {}", recipientId);
-            return Optional.absent();
+            return Optional.empty();
         }
 
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(noRefresh);
         if (selfUnidentifiedAccessKey == null) {
             logger.trace("Unidentified access not available for self");
-            return Optional.absent();
+            return Optional.empty();
         }
 
         var senderCertificate = getSenderCertificateFor(recipientId);
         if (senderCertificate == null) {
             logger.trace("Unidentified access not available due to missing sender certificate");
-            return Optional.absent();
+            return Optional.empty();
         }
 
         try {
             return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
                     senderCertificate), new UnidentifiedAccess(selfUnidentifiedAccessKey, senderCertificate)));
         } catch (InvalidCertificateException e) {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 
@@ -82,7 +82,7 @@ public class UnidentifiedAccessHelper {
         var selfUnidentifiedAccessCertificate = getSenderCertificate();
 
         if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         try {
@@ -90,7 +90,7 @@ public class UnidentifiedAccessHelper {
                     selfUnidentifiedAccessCertificate),
                     new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
         } catch (InvalidCertificateException e) {
-            return Optional.absent();
+            return Optional.empty();
         }
     }
 

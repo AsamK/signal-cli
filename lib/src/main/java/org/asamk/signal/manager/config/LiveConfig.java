@@ -4,7 +4,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalCdshUrl;
@@ -18,6 +17,7 @@ import org.whispersystems.signalservice.internal.configuration.SignalStorageUrl;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import okhttp3.Dns;
 import okhttp3.Interceptor;
@@ -42,8 +42,8 @@ class LiveConfig {
     private final static String SIGNAL_CDSH_URL = "";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
-    private final static Optional<Dns> dns = Optional.absent();
-    private final static Optional<SignalProxy> proxy = Optional.absent();
+    private final static Optional<Dns> dns = Optional.empty();
+    private final static Optional<SignalProxy> proxy = Optional.empty();
 
     private final static byte[] zkGroupServerPublicParams = Base64.getDecoder()
             .decode("AMhf5ywVwITZMsff/eCyudZx9JDmkkkbV6PInzG4p8x3VqVJSFiMvnvlEKWuRob/1eaIetR31IYeAbm0NdOuHH8Qi+Rexi1wLlpzIo1gstHWBfZzy1+qHRV5A4TqPp15YzBPm0WSggW6PbSn+F4lf57VCnHF7p8SvzAA2ZZJPYJURt8X7bbg+H3i+PEjH9DXItNEqs2sNcug37xZQDLm7X36nOoGPs54XsEGzPdEV+itQNGUFEjY6X9Uv+Acuks7NpyGvCoKxGwgKgE5XyJ+nNKlyHHOLb6N1NuHyBrZrgtY/JYJHRooo5CEqYKBqdFnmbTVGEkCvJKxLnjwKWf+fEPoWeQFj5ObDjcKMZf2Jm2Ae69x+ikU5gBXsRmoF94GXQ==");

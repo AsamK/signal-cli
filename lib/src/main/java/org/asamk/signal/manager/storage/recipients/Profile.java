@@ -142,7 +142,6 @@ public class Profile {
     }
 
     public enum Capability {
-        gv2,
         storage,
         gv1Migration,
         senderKey,

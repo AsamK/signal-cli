@@ -21,7 +21,6 @@ import org.whispersystems.libsignal.InvalidRegistrationIdException;
 import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.protocol.DecryptionErrorMessage;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
@@ -47,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -138,7 +138,7 @@ public class SendHelper {
         final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendRetryReceipt(address,
                         unidentifiedAccess,
-                        groupId.transform(GroupId::serialize),
+                        groupId.map(GroupId::serialize),
                         errorMessage));
         handleSendMessageResult(result);
         return result;
@@ -222,7 +222,7 @@ public class SendHelper {
                             timestamp,
                             messageSendLogEntry.content(),
                             messageSendLogEntry.contentHint(),
-                            Optional.absent()));
+                            Optional.empty()));
         }
 
         final var groupId = messageSendLogEntry.groupId().get();
@@ -457,7 +457,7 @@ public class SendHelper {
             }
 
             final var access = context.getUnidentifiedAccessHelper().getAccessFor(recipientId);
-            if (!access.isPresent() || !access.get().getTargetUnidentifiedAccess().isPresent()) {
+            if (access.isEmpty() || access.get().getTargetUnidentifiedAccess().isEmpty()) {
                 continue;
             }
 

@@ -12,7 +12,6 @@ import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
@@ -37,6 +36,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class SyncHelper {
 
@@ -81,7 +81,7 @@ public class SyncHelper {
                 for (var record : account.getGroupStore().getGroups()) {
                     if (record instanceof GroupInfoV1 groupInfo) {
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
-                                Optional.fromNullable(groupInfo.name),
+                                Optional.ofNullable(groupInfo.name),
                                 groupInfo.getMembers()
                                         .stream()
                                         .map(context.getRecipientHelper()::resolveSignalServiceAddress)
@@ -89,9 +89,9 @@ public class SyncHelper {
                                 context.getGroupHelper().createGroupAvatarAttachment(groupInfo.getGroupId()),
                                 groupInfo.isMember(account.getSelfRecipientId()),
                                 Optional.of(groupInfo.messageExpirationTime),
-                                Optional.fromNullable(groupInfo.color),
+                                Optional.ofNullable(groupInfo.color),
                                 groupInfo.blocked,
-                                Optional.absent(),
+                                Optional.empty(),
                                 groupInfo.archived));
                     }
                 }
@@ -139,28 +139,28 @@ public class SyncHelper {
 
                     var profileKey = account.getProfileStore().getProfileKey(recipientId);
                     out.write(new DeviceContact(address,
-                            Optional.fromNullable(contact.getName()),
+                            Optional.ofNullable(contact.getName()),
                             createContactAvatarAttachment(new RecipientAddress(address)),
-                            Optional.fromNullable(contact.getColor()),
-                            Optional.fromNullable(verifiedMessage),
-                            Optional.fromNullable(profileKey),
+                            Optional.ofNullable(contact.getColor()),
+                            Optional.ofNullable(verifiedMessage),
+                            Optional.ofNullable(profileKey),
                             contact.isBlocked(),
                             Optional.of(contact.getMessageExpirationTime()),
-                            Optional.absent(),
+                            Optional.empty(),
                             contact.isArchived()));
                 }
 
                 if (account.getProfileKey() != null) {
                     // Send our own profile key as well
                     out.write(new DeviceContact(account.getSelfAddress(),
-                            Optional.absent(),
-                            Optional.absent(),
-                            Optional.absent(),
-                            Optional.absent(),
+                            Optional.empty(),
+                            Optional.empty(),
+                            Optional.empty(),
+                            Optional.empty(),
                             Optional.of(account.getProfileKey()),
                             false,
-                            Optional.absent(),
-                            Optional.absent(),
+                            Optional.empty(),
+                            Optional.empty(),
                             false));
                 }
             }
@@ -215,16 +215,16 @@ public class SyncHelper {
     }
 
     public void sendKeysMessage() {
-        var keysMessage = new KeysMessage(Optional.fromNullable(account.getStorageKey()));
+        var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()));
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 
     public void sendConfigurationMessage() {
         final var config = account.getConfigurationStore();
-        var configurationMessage = new ConfigurationMessage(Optional.fromNullable(config.getReadReceipts()),
-                Optional.fromNullable(config.getUnidentifiedDeliveryIndicators()),
-                Optional.fromNullable(config.getTypingIndicators()),
-                Optional.fromNullable(config.getLinkPreviews()));
+        var configurationMessage = new ConfigurationMessage(Optional.ofNullable(config.getReadReceipts()),
+                Optional.ofNullable(config.getUnidentifiedDeliveryIndicators()),
+                Optional.ofNullable(config.getTypingIndicators()),
+                Optional.ofNullable(config.getLinkPreviews()));
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
@@ -299,10 +299,10 @@ public class SyncHelper {
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(RecipientAddress address) throws IOException {
         final var streamDetails = context.getAvatarStore().retrieveContactAvatar(address);
         if (streamDetails == null) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.empty()));
     }
 
     private void downloadContactAvatar(SignalServiceAttachment avatar, RecipientAddress address) {

@@ -70,7 +70,7 @@ public class Utils {
         } else {
             // Version 1: E164 user
             version = 1;
-            if (!ownAddress.getNumber().isPresent() || !theirAddress.getNumber().isPresent()) {
+            if (ownAddress.getNumber().isEmpty() || theirAddress.getNumber().isEmpty()) {
                 return null;
             }
             ownId = ownAddress.getNumber().get().getBytes();
@@ -102,7 +102,7 @@ public class Utils {
     public static <L, R, T> Stream<T> zip(Stream<L> leftStream, Stream<R> rightStream, BiFunction<L, R, T> combiner) {
         Spliterator<L> lefts = leftStream.spliterator();
         Spliterator<R> rights = rightStream.spliterator();
-        return StreamSupport.stream(new Spliterators.AbstractSpliterator<T>(Long.min(lefts.estimateSize(),
+        return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(Long.min(lefts.estimateSize(),
                 rights.estimateSize()), lefts.characteristics() & rights.characteristics()) {
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {

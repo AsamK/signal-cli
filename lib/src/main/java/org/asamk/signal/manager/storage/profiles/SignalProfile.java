@@ -89,9 +89,6 @@ public class SignalProfile {
         public boolean uuid;
 
         @JsonProperty
-        public boolean gv2;
-
-        @JsonProperty
         public boolean storage;
 
         @JsonProperty

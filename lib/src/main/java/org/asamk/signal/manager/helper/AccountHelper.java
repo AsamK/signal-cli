@@ -13,13 +13,13 @@ import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.InvalidKeyException;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class AccountHelper {
@@ -176,7 +176,7 @@ public class AccountHelper {
         // When setting an empty GCM id, the Signal-Server also sets the fetchesMessages property to false.
         // If this is the master device, other users can't send messages to this number anymore.
         // If this is a linked device, other users can still send messages, but this device doesn't receive them anymore.
-        dependencies.getAccountManager().setGcmId(Optional.absent());
+        dependencies.getAccountManager().setGcmId(Optional.empty());
 
         account.setRegistered(false);
         unregisteredListener.call();

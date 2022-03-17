@@ -4,7 +4,6 @@ import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.zkgroup.profiles.ClientZkProfileOperations;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
@@ -23,6 +22,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -137,7 +137,7 @@ public class SignalDependencies {
                 public WebSocketConnection createUnidentifiedWebSocket() {
                     return new WebSocketConnection("unidentified",
                             serviceEnvironmentConfig.getSignalServiceConfiguration(),
-                            Optional.absent(),
+                            Optional.empty(),
                             userAgent,
                             healthMonitor);
                 }
@@ -164,7 +164,7 @@ public class SignalDependencies {
                         sessionLock,
                         userAgent,
                         getSignalWebSocket(),
-                        Optional.absent(),
+                        Optional.empty(),
                         getClientZkProfileOperations(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,

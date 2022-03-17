@@ -67,9 +67,10 @@ This can be piped to a QR encoder to create a display that can be captured by a 
 
 For example:
 
-```
+[source]
+----
 dbus-send --session --dest=org.asamk.Signal --type=method_call --print-reply /org/asamk/Signal org.asamk.Signal.link string:"My secondary client" | tr '\n' '\0' | sed 's/.*string //g' | sed 's/\"//g' | qrencode -s10 -tANSI256
-```
+----
 
 listAccounts() -> accountList<as>::
 * accountList : Array of all attached accounts in DBus object path form

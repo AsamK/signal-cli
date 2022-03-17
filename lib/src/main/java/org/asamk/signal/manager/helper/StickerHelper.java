@@ -64,14 +64,14 @@ public class StickerHelper {
             context.getStickerPackStore().storeSticker(packId, id, o -> IOUtils.copyStream(inputStream, o));
         }
 
-        final var jsonManifest = new JsonStickerPack(manifest.getTitle().orNull(),
-                manifest.getAuthor().orNull(),
+        final var jsonManifest = new JsonStickerPack(manifest.getTitle().orElse(null),
+                manifest.getAuthor().orElse(null),
                 manifest.getCover()
-                        .transform(c -> new JsonStickerPack.JsonSticker(c.getId(),
+                        .map(c -> new JsonStickerPack.JsonSticker(c.getId(),
                                 c.getEmoji(),
                                 String.valueOf(c.getId()),
                                 c.getContentType()))
-                        .orNull(),
+                        .orElse(null),
                 manifest.getStickers()
                         .stream()
                         .map(c -> new JsonStickerPack.JsonSticker(c.getId(),

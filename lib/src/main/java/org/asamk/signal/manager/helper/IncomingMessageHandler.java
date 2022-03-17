@@ -270,7 +270,7 @@ public final class IncomingMessageHandler {
             final DecryptionErrorMessage message
     ) {
         final var logEntries = account.getMessageSendLogStore()
-                .findMessages(sender, senderDeviceId, message.getTimestamp(), !message.getRatchetKey().isPresent());
+                .findMessages(sender, senderDeviceId, message.getTimestamp(), message.getRatchetKey().isEmpty());
 
         for (final var logEntry : logEntries) {
             actions.add(new ResendMessageAction(sender, message.getTimestamp(), logEntry));
@@ -318,7 +318,7 @@ public final class IncomingMessageHandler {
         account.setMultiDevice(true);
         if (syncMessage.getSent().isPresent()) {
             var message = syncMessage.getSent().get();
-            final var destination = message.getDestination().orNull();
+            final var destination = message.getDestination().orElse(null);
             actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
                     true,
                     sender,
@@ -388,11 +388,11 @@ public final class IncomingMessageHandler {
         if (syncMessage.getStickerPackOperations().isPresent()) {
             final var stickerPackOperationMessages = syncMessage.getStickerPackOperations().get();
             for (var m : stickerPackOperationMessages) {
-                if (!m.getPackId().isPresent()) {
+                if (m.getPackId().isEmpty()) {
                     continue;
                 }
                 final var stickerPackId = StickerPackId.deserialize(m.getPackId().get());
-                final var installed = !m.getType().isPresent()
+                final var installed = m.getType().isEmpty()
                         || m.getType().get() == StickerPackOperationMessage.Type.INSTALL;
 
                 var sticker = account.getStickerStore().getStickerPack(stickerPackId);
@@ -488,12 +488,12 @@ public final class IncomingMessageHandler {
             return false;
         }
 
-        if (content == null || !content.getDataMessage().isPresent()) {
+        if (content == null || content.getDataMessage().isEmpty()) {
             return false;
         }
 
         var message = content.getDataMessage().get();
-        if (!message.getGroupContext().isPresent()) {
+        if (message.getGroupContext().isEmpty()) {
             return false;
         }
 

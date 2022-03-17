@@ -1574,11 +1574,16 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.BannedMember",
+  "fields":[{"name":"userId_"}]
+},
+{
   "name":"org.signal.storageservice.protos.groups.Group",
   "fields":[
     {"name":"accessControl_"}, 
     {"name":"announcementsOnly_"}, 
     {"name":"avatar_"}, 
+    {"name":"bannedMembers_"}, 
     {"name":"description_"}, 
     {"name":"disappearingMessagesTimer_"}, 
     {"name":"inviteLinkPassword_"}, 
@@ -1608,9 +1613,11 @@
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions",
   "fields":[
+    {"name":"addBannedMembers_"}, 
     {"name":"addMembers_"}, 
     {"name":"addPendingMembers_"}, 
     {"name":"addRequestingMembers_"}, 
+    {"name":"deleteBannedMembers_"}, 
     {"name":"deleteMembers_"}, 
     {"name":"deletePendingMembers_"}, 
     {"name":"deleteRequestingMembers_"}, 
@@ -1632,6 +1639,10 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddBannedMemberAction",
+  "fields":[{"name":"added_"}]
+},
+{
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddMemberAction",
   "fields":[
     {"name":"added_"}, 
@@ -1645,6 +1656,10 @@
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddRequestingMemberAction",
   "fields":[{"name":"added_"}]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteBannedMemberAction",
+  "fields":[{"name":"deletedUserId_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteMemberAction",
@@ -1778,10 +1793,15 @@
   ]
 },
 {
+  "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
+  "fields":[{"name":"uuid_"}]
+},
+{
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
   "fields":[
     {"name":"accessControl_"}, 
     {"name":"avatar_"}, 
+    {"name":"bannedMembers_"}, 
     {"name":"description_"}, 
     {"name":"disappearingMessagesTimer_"}, 
     {"name":"inviteLinkPassword_"}, 
@@ -1796,6 +1816,7 @@
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupChange",
   "fields":[
+    {"name":"deleteBannedMembers_"}, 
     {"name":"deleteMembers_"}, 
     {"name":"deletePendingMembers_"}, 
     {"name":"deleteRequestingMembers_"}, 
@@ -1804,6 +1825,7 @@
     {"name":"modifyMemberRoles_"}, 
     {"name":"newAttributeAccess_"}, 
     {"name":"newAvatar_"}, 
+    {"name":"newBannedMembers_"}, 
     {"name":"newDescription_"}, 
     {"name":"newInviteLinkAccess_"}, 
     {"name":"newInviteLinkPassword_"}, 

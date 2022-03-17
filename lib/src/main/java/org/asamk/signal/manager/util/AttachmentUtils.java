@@ -1,7 +1,6 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.AttachmentInvalidException;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.util.StreamDetails;
@@ -11,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AttachmentUtils {
 
@@ -39,10 +39,10 @@ public class AttachmentUtils {
     ) {
         // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final var uploadTimestamp = System.currentTimeMillis();
-        Optional<byte[]> preview = Optional.absent();
-        Optional<String> caption = Optional.absent();
-        Optional<String> blurHash = Optional.absent();
-        final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.absent();
+        Optional<byte[]> preview = Optional.empty();
+        Optional<String> caption = Optional.empty();
+        Optional<String> blurHash = Optional.empty();
+        final Optional<ResumableUploadSpec> resumableUploadSpec = Optional.empty();
         return new SignalServiceAttachmentStream(streamDetails.getStream(),
                 streamDetails.getContentType(),
                 streamDetails.getLength(),

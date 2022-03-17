@@ -82,7 +82,7 @@ public record MessageEnvelope(
         public static Typing from(final SignalServiceTypingMessage typingMessage) {
             return new Typing(typingMessage.getTimestamp(),
                     typingMessage.isTypingStarted() ? Type.STARTED : Type.STOPPED,
-                    Optional.ofNullable(typingMessage.getGroupId().transform(GroupId::unknownVersion).orNull()));
+                    typingMessage.getGroupId().map(GroupId::unknownVersion));
         }
 
         public enum Type {
@@ -119,43 +119,33 @@ public record MessageEnvelope(
                 final AttachmentFileProvider fileProvider
         ) {
             return new Data(dataMessage.getTimestamp(),
-                    Optional.ofNullable(dataMessage.getGroupContext().transform(GroupContext::from).orNull()),
-                    Optional.ofNullable(dataMessage.getGroupCallUpdate().transform(GroupCallUpdate::from).orNull()),
-                    Optional.ofNullable(dataMessage.getBody().orNull()),
+                    dataMessage.getGroupContext().map(GroupContext::from),
+                    dataMessage.getGroupCallUpdate().map(GroupCallUpdate::from),
+                    dataMessage.getBody(),
                     dataMessage.getExpiresInSeconds(),
                     dataMessage.isExpirationUpdate(),
                     dataMessage.isViewOnce(),
                     dataMessage.isEndSession(),
                     dataMessage.getProfileKey().isPresent(),
-                    Optional.ofNullable(dataMessage.getReaction()
-                            .transform(r -> Reaction.from(r, recipientResolver, addressResolver))
-                            .orNull()),
-                    Optional.ofNullable(dataMessage.getQuote()
-                            .transform(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider))
-                            .orNull()),
-                    Optional.ofNullable(dataMessage.getPayment()
-                            .transform(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null)
-                            .orNull()),
+                    dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
+                    dataMessage.getQuote().map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
+                    dataMessage.getPayment().map(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null),
                     dataMessage.getAttachments()
-                            .transform(a -> a.stream().map(as -> Attachment.from(as, fileProvider)).toList())
-                            .or(List.of()),
-                    Optional.ofNullable(dataMessage.getRemoteDelete()
-                            .transform(SignalServiceDataMessage.RemoteDelete::getTargetSentTimestamp)
-                            .orNull()),
-                    Optional.ofNullable(dataMessage.getSticker().transform(Sticker::from).orNull()),
+                            .map(a -> a.stream().map(as -> Attachment.from(as, fileProvider)).toList())
+                            .orElse(List.of()),
+                    dataMessage.getRemoteDelete().map(SignalServiceDataMessage.RemoteDelete::getTargetSentTimestamp),
+                    dataMessage.getSticker().map(Sticker::from),
                     dataMessage.getSharedContacts()
-                            .transform(a -> a.stream()
+                            .map(a -> a.stream()
                                     .map(sharedContact -> SharedContact.from(sharedContact, fileProvider))
                                     .toList())
-                            .or(List.of()),
+                            .orElse(List.of()),
                     dataMessage.getMentions()
-                            .transform(a -> a.stream()
-                                    .map(m -> Mention.from(m, recipientResolver, addressResolver))
-                                    .toList())
-                            .or(List.of()),
+                            .map(a -> a.stream().map(m -> Mention.from(m, recipientResolver, addressResolver)).toList())
+                            .orElse(List.of()),
                     dataMessage.getPreviews()
-                            .transform(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
-                            .or(List.of()));
+                            .map(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
+                            .orElse(List.of()));
         }
 
         public record GroupContext(GroupId groupId, boolean isGroupUpdate, int revision) {
@@ -271,13 +261,13 @@ public record MessageEnvelope(
                     final var a = attachment.asPointer();
                     return new Attachment(Optional.of(a.getRemoteId().toString()),
                             Optional.of(fileProvider.getFile(a.getRemoteId())),
-                            Optional.ofNullable(a.getFileName().orNull()),
+                            a.getFileName(),
                             a.getContentType(),
                             a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
-                            Optional.ofNullable(a.getSize().transform(Integer::longValue).orNull()),
-                            Optional.ofNullable(a.getPreview().orNull()),
+                            a.getSize().map(Integer::longValue),
+                            a.getPreview(),
                             Optional.empty(),
-                            Optional.ofNullable(a.getCaption().orNull()),
+                            a.getCaption(),
                             a.getWidth() == 0 ? Optional.empty() : Optional.of(a.getWidth()),
                             a.getHeight() == 0 ? Optional.empty() : Optional.of(a.getHeight()),
                             a.getVoiceNote(),
@@ -287,13 +277,13 @@ public record MessageEnvelope(
                     final var a = attachment.asStream();
                     return new Attachment(Optional.empty(),
                             Optional.empty(),
-                            Optional.ofNullable(a.getFileName().orNull()),
+                            a.getFileName(),
                             a.getContentType(),
                             a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
                             Optional.of(a.getLength()),
-                            Optional.ofNullable(a.getPreview().orNull()),
+                            a.getPreview(),
                             Optional.empty(),
-                            Optional.ofNullable(a.getCaption().orNull()),
+                            a.getCaption(),
                             a.getWidth() == 0 ? Optional.empty() : Optional.of(a.getWidth()),
                             a.getHeight() == 0 ? Optional.empty() : Optional.of(a.getHeight()),
                             a.getVoiceNote(),
@@ -347,13 +337,11 @@ public record MessageEnvelope(
                     final AttachmentFileProvider fileProvider
             ) {
                 return new SharedContact(Name.from(sharedContact.getName()),
-                        Optional.ofNullable(sharedContact.getAvatar()
-                                .transform(avatar1 -> Avatar.from(avatar1, fileProvider))
-                                .orNull()),
-                        sharedContact.getPhone().transform(p -> p.stream().map(Phone::from).toList()).or(List.of()),
-                        sharedContact.getEmail().transform(p -> p.stream().map(Email::from).toList()).or(List.of()),
-                        sharedContact.getAddress().transform(p -> p.stream().map(Address::from).toList()).or(List.of()),
-                        Optional.ofNullable(sharedContact.getOrganization().orNull()));
+                        sharedContact.getAvatar().map(avatar1 -> Avatar.from(avatar1, fileProvider)),
+                        sharedContact.getPhone().map(p -> p.stream().map(Phone::from).toList()).orElse(List.of()),
+                        sharedContact.getEmail().map(p -> p.stream().map(Email::from).toList()).orElse(List.of()),
+                        sharedContact.getAddress().map(p -> p.stream().map(Address::from).toList()).orElse(List.of()),
+                        sharedContact.getOrganization());
             }
 
             public record Name(
@@ -366,12 +354,12 @@ public record MessageEnvelope(
             ) {
 
                 static Name from(org.whispersystems.signalservice.api.messages.shared.SharedContact.Name name) {
-                    return new Name(Optional.ofNullable(name.getDisplay().orNull()),
-                            Optional.ofNullable(name.getGiven().orNull()),
-                            Optional.ofNullable(name.getFamily().orNull()),
-                            Optional.ofNullable(name.getPrefix().orNull()),
-                            Optional.ofNullable(name.getSuffix().orNull()),
-                            Optional.ofNullable(name.getMiddle().orNull()));
+                    return new Name(name.getDisplay(),
+                            name.getGiven(),
+                            name.getFamily(),
+                            name.getPrefix(),
+                            name.getSuffix(),
+                            name.getMiddle());
                 }
             }
 
@@ -390,9 +378,7 @@ public record MessageEnvelope(
             ) {
 
                 static Phone from(org.whispersystems.signalservice.api.messages.shared.SharedContact.Phone phone) {
-                    return new Phone(phone.getValue(),
-                            Type.from(phone.getType()),
-                            Optional.ofNullable(phone.getLabel().orNull()));
+                    return new Phone(phone.getValue(), Type.from(phone.getType()), phone.getLabel());
                 }
 
                 public enum Type {
@@ -417,9 +403,7 @@ public record MessageEnvelope(
             ) {
 
                 static Email from(org.whispersystems.signalservice.api.messages.shared.SharedContact.Email email) {
-                    return new Email(email.getValue(),
-                            Type.from(email.getType()),
-                            Optional.ofNullable(email.getLabel().orNull()));
+                    return new Email(email.getValue(), Type.from(email.getType()), email.getLabel());
                 }
 
                 public enum Type {
@@ -453,14 +437,14 @@ public record MessageEnvelope(
 
                 static Address from(org.whispersystems.signalservice.api.messages.shared.SharedContact.PostalAddress address) {
                     return new Address(Address.Type.from(address.getType()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()),
-                            Optional.ofNullable(address.getLabel().orNull()));
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel(),
+                            address.getLabel());
                 }
 
                 public enum Type {
@@ -488,9 +472,7 @@ public record MessageEnvelope(
                         preview.getDescription(),
                         preview.getDate(),
                         preview.getUrl(),
-                        Optional.ofNullable(preview.getImage()
-                                .transform(as -> Attachment.from(as, fileProvider))
-                                .orNull()));
+                        preview.getImage().map(as -> Attachment.from(as, fileProvider)));
             }
         }
     }
@@ -512,30 +494,22 @@ public record MessageEnvelope(
                 RecipientAddressResolver addressResolver,
                 final AttachmentFileProvider fileProvider
         ) {
-            return new Sync(Optional.ofNullable(syncMessage.getSent()
-                    .transform(s -> Sent.from(s, recipientResolver, addressResolver, fileProvider))
-                    .orNull()),
-                    Optional.ofNullable(syncMessage.getBlockedList()
-                            .transform(b -> Blocked.from(b, recipientResolver, addressResolver))
-                            .orNull()),
+            return new Sync(syncMessage.getSent()
+                    .map(s -> Sent.from(s, recipientResolver, addressResolver, fileProvider)),
+                    syncMessage.getBlockedList().map(b -> Blocked.from(b, recipientResolver, addressResolver)),
                     syncMessage.getRead()
-                            .transform(r -> r.stream()
-                                    .map(rm -> Read.from(rm, recipientResolver, addressResolver))
-                                    .toList())
-                            .or(List.of()),
+                            .map(r -> r.stream().map(rm -> Read.from(rm, recipientResolver, addressResolver)).toList())
+                            .orElse(List.of()),
                     syncMessage.getViewed()
-                            .transform(r -> r.stream()
+                            .map(r -> r.stream()
                                     .map(rm -> Viewed.from(rm, recipientResolver, addressResolver))
                                     .toList())
-                            .or(List.of()),
-                    Optional.ofNullable(syncMessage.getViewOnceOpen()
-                            .transform(rm -> ViewOnceOpen.from(rm, recipientResolver, addressResolver))
-                            .orNull()),
-                    Optional.ofNullable(syncMessage.getContacts().transform(Contacts::from).orNull()),
-                    Optional.ofNullable(syncMessage.getGroups().transform(Groups::from).orNull()),
-                    Optional.ofNullable(syncMessage.getMessageRequestResponse()
-                            .transform(m -> MessageRequestResponse.from(m, recipientResolver, addressResolver))
-                            .orNull()));
+                            .orElse(List.of()),
+                    syncMessage.getViewOnceOpen().map(rm -> ViewOnceOpen.from(rm, recipientResolver, addressResolver)),
+                    syncMessage.getContacts().map(Contacts::from),
+                    syncMessage.getGroups().map(Groups::from),
+                    syncMessage.getMessageRequestResponse()
+                            .map(m -> MessageRequestResponse.from(m, recipientResolver, addressResolver)));
         }
 
         public record Sent(
@@ -554,10 +528,8 @@ public record MessageEnvelope(
             ) {
                 return new Sent(sentMessage.getTimestamp(),
                         sentMessage.getExpirationStartTimestamp(),
-                        Optional.ofNullable(sentMessage.getDestination()
-                                .transform(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(
-                                        d)))
-                                .orNull()),
+                        sentMessage.getDestination()
+                                .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d))),
                         sentMessage.getRecipients()
                                 .stream()
                                 .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d)))
@@ -638,13 +610,9 @@ public record MessageEnvelope(
                     RecipientAddressResolver addressResolver
             ) {
                 return new MessageRequestResponse(Type.from(messageRequestResponse.getType()),
-                        Optional.ofNullable(messageRequestResponse.getGroupId()
-                                .transform(GroupId::unknownVersion)
-                                .orNull()),
-                        Optional.ofNullable(messageRequestResponse.getPerson()
-                                .transform(p -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(
-                                        p)))
-                                .orNull()));
+                        messageRequestResponse.getGroupId().map(GroupId::unknownVersion),
+                        messageRequestResponse.getPerson()
+                                .map(p -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(p))));
             }
 
             public enum Type {
@@ -682,17 +650,17 @@ public record MessageEnvelope(
     ) {
 
         public static Call from(final SignalServiceCallMessage callMessage) {
-            return new Call(Optional.ofNullable(callMessage.getDestinationDeviceId().orNull()),
-                    Optional.ofNullable(callMessage.getGroupId().transform(GroupId::unknownVersion).orNull()),
-                    Optional.ofNullable(callMessage.getTimestamp().orNull()),
-                    Optional.ofNullable(callMessage.getOfferMessage().transform(Offer::from).orNull()),
-                    Optional.ofNullable(callMessage.getAnswerMessage().transform(Answer::from).orNull()),
-                    Optional.ofNullable(callMessage.getHangupMessage().transform(Hangup::from).orNull()),
-                    Optional.ofNullable(callMessage.getBusyMessage().transform(Busy::from).orNull()),
+            return new Call(callMessage.getDestinationDeviceId(),
+                    callMessage.getGroupId().map(GroupId::unknownVersion),
+                    callMessage.getTimestamp(),
+                    callMessage.getOfferMessage().map(Offer::from),
+                    callMessage.getAnswerMessage().map(Answer::from),
+                    callMessage.getHangupMessage().map(Hangup::from),
+                    callMessage.getBusyMessage().map(Busy::from),
                     callMessage.getIceUpdateMessages()
-                            .transform(m -> m.stream().map(IceUpdate::from).toList())
-                            .or(List.of()),
-                    Optional.ofNullable(callMessage.getOpaqueMessage().transform(Opaque::from).orNull()));
+                            .map(m -> m.stream().map(IceUpdate::from).toList())
+                            .orElse(List.of()),
+                    callMessage.getOpaqueMessage().map(Opaque::from));
         }
 
         public record Offer(long id, String sdp, Type type, byte[] opaque) {
@@ -813,15 +781,12 @@ public record MessageEnvelope(
         Optional<Sync> sync;
         Optional<Call> call;
         if (content != null) {
-            receipt = Optional.ofNullable(content.getReceiptMessage().transform(Receipt::from).orNull());
-            typing = Optional.ofNullable(content.getTypingMessage().transform(Typing::from).orNull());
-            data = Optional.ofNullable(content.getDataMessage()
-                    .transform(dataMessage -> Data.from(dataMessage, recipientResolver, addressResolver, fileProvider))
-                    .orNull());
-            sync = Optional.ofNullable(content.getSyncMessage()
-                    .transform(s -> Sync.from(s, recipientResolver, addressResolver, fileProvider))
-                    .orNull());
-            call = Optional.ofNullable(content.getCallMessage().transform(Call::from).orNull());
+            receipt = content.getReceiptMessage().map(Receipt::from);
+            typing = content.getTypingMessage().map(Typing::from);
+            data = content.getDataMessage()
+                    .map(dataMessage -> Data.from(dataMessage, recipientResolver, addressResolver, fileProvider));
+            sync = content.getSyncMessage().map(s -> Sync.from(s, recipientResolver, addressResolver, fileProvider));
+            call = content.getCallMessage().map(Call::from);
         } else {
             receipt = envelope.isReceipt() ? Optional.of(new Receipt(envelope.getServerReceivedTimestamp(),
                     Receipt.Type.DELIVERY,

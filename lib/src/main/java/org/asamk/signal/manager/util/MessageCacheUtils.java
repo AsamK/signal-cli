@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.util;
 
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -11,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Optional;
 
 public class MessageCacheUtils {
 
@@ -59,7 +59,7 @@ public class MessageCacheUtils {
                 serverDeliveredTimestamp = in.readLong();
             }
             Optional<SignalServiceAddress> addressOptional = sourceServiceId == null
-                    ? Optional.absent()
+                    ? Optional.empty()
                     : Optional.of(new SignalServiceAddress(sourceServiceId, source));
             return new SignalServiceEnvelope(type,
                     addressOptional,

@@ -34,7 +34,6 @@ import org.signal.zkgroup.groups.GroupSecretParams;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
@@ -53,6 +52,7 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class GroupHelper {
@@ -91,10 +91,10 @@ public class GroupHelper {
     public Optional<SignalServiceAttachmentStream> createGroupAvatarAttachment(GroupIdV1 groupId) throws IOException {
         final var streamDetails = context.getAvatarStore().retrieveGroupAvatar(groupId);
         if (streamDetails == null) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.absent()));
+        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.empty()));
     }
 
     public GroupInfoV2 getOrMigrateGroup(
@@ -625,9 +625,7 @@ public class GroupHelper {
 
         try {
             final var attachment = createGroupAvatarAttachment(g.getGroupId());
-            if (attachment.isPresent()) {
-                group.withAvatar(attachment.get());
-            }
+            attachment.ifPresent(group::withAvatar);
         } catch (IOException e) {
             throw new AttachmentInvalidException(g.getGroupId().toBase64(), e);
         }

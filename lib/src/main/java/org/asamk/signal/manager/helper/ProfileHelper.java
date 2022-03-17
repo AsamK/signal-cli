@@ -15,8 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
+import org.whispersystems.signalservice.api.profiles.AvatarUploadParams;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -130,20 +131,23 @@ public final class ProfileHelper {
         var newProfile = builder.build();
 
         if (uploadProfile) {
-            try (final var streamDetails = avatar == null
-                    ? context.getAvatarStore()
-                    .retrieveProfileAvatar(account.getSelfRecipientAddress())
-                    : avatar.isPresent() ? Utils.createStreamDetailsFromFile(avatar.get()) : null) {
+            try (final var streamDetails = avatar != null && avatar.isPresent() ? Utils.createStreamDetailsFromFile(
+                    avatar.get()) : null) {
+                final var avatarUploadParams = avatar == null
+                        ? AvatarUploadParams.unchanged(true)
+                        : avatar.isPresent()
+                                ? AvatarUploadParams.forAvatar(streamDetails)
+                                : AvatarUploadParams.unchanged(false);
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
                                 account.getProfileKey(),
                                 newProfile.getInternalServiceName(),
                                 newProfile.getAbout() == null ? "" : newProfile.getAbout(),
                                 newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
-                                Optional.absent(),
-                                streamDetails,
+                                Optional.empty(),
+                                avatarUploadParams,
                                 List.of(/* TODO */));
-                builder.withAvatarUrlPath(avatarPath.orNull());
+                builder.withAvatarUrlPath(avatarPath.orElse(null));
                 newProfile = builder.build();
             }
         }
@@ -202,7 +206,7 @@ public final class ProfileHelper {
 
     private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
         final var locale = Utils.getDefaultLocale(Locale.US);
-        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.absent(), locale);
+        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.empty(), locale);
     }
 
     private Profile decryptProfileAndDownloadAvatar(
@@ -246,7 +250,7 @@ public final class ProfileHelper {
             RecipientId recipientId, SignalServiceProfile.RequestType requestType
     ) {
         var unidentifiedAccess = getUnidentifiedAccess(recipientId);
-        var profileKey = Optional.fromNullable(account.getProfileStore().getProfileKey(recipientId));
+        var profileKey = Optional.ofNullable(account.getProfileStore().getProfileKey(recipientId));
 
         logger.trace("Retrieving profile for {} {}",
                 recipientId,
@@ -259,7 +263,7 @@ public final class ProfileHelper {
             if (requestType == SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL
                     || account.getProfileStore().getProfileKeyCredential(recipientId) == null) {
                 logger.trace("Storing profile credential");
-                final var profileKeyCredential = p.getProfileKeyCredential().orNull();
+                final var profileKeyCredential = p.getProfileKeyCredential().orElse(null);
                 account.getProfileStore().storeProfileKeyCredential(recipientId, profileKeyCredential);
             }
 
@@ -324,8 +328,8 @@ public final class ProfileHelper {
                 throw new NotFoundException("Profile not found");
             } else {
                 throw pair.getExecutionError()
-                        .or(pair.getApplicationError())
-                        .or(new IOException("Unknown error while retrieving profile"));
+                        .or(pair::getApplicationError)
+                        .orElseThrow(() -> new IOException("Unknown error while retrieving profile"));
             }
         });
     }
@@ -380,6 +384,6 @@ public final class ProfileHelper {
             return unidentifiedAccess.get().getTargetUnidentifiedAccess();
         }
 
-        return Optional.absent();
+        return Optional.empty();
     }
 }

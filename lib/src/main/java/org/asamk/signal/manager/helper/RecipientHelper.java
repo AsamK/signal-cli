@@ -91,7 +91,7 @@ public class RecipientHelper {
 
     public RecipientId refreshRegisteredUser(RecipientId recipientId) throws IOException, UnregisteredRecipientException {
         final var address = resolveSignalServiceAddress(recipientId);
-        if (!address.getNumber().isPresent()) {
+        if (address.getNumber().isEmpty()) {
             return recipientId;
         }
         final var number = address.getNumber().get();

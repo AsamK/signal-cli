@@ -7,6 +7,7 @@ import org.freedesktop.dbus.types.Variant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public abstract class DbusProperties implements Properties {
@@ -25,7 +26,7 @@ public abstract class DbusProperties implements Properties {
         return handler.get();
     }
 
-    private java.util.Optional<DbusInterfacePropertiesHandler> getHandlerOptional(final String interfaceName) {
+    private Optional<DbusInterfacePropertiesHandler> getHandlerOptional(final String interfaceName) {
         return handlers.stream().filter(h -> h.getInterfaceName().equals(interfaceName)).findFirst();
     }
 

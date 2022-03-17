@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.InvalidKeyException;
-import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
@@ -25,6 +24,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public class StorageHelper {
 
@@ -51,7 +51,7 @@ public class StorageHelper {
             return;
         }
 
-        if (!manifest.isPresent()) {
+        if (manifest.isEmpty()) {
             logger.debug("Manifest is up to date, does not exist or couldn't be decrypted, ignoring.");
             return;
         }
@@ -79,7 +79,7 @@ public class StorageHelper {
     }
 
     private void readContactRecord(final SignalStorageRecord record) {
-        if (record == null || !record.getContact().isPresent()) {
+        if (record == null || record.getContact().isEmpty()) {
             return;
         }
 
@@ -92,9 +92,9 @@ public class StorageHelper {
                 (contact == null || !contact.isBlocked()) && contactRecord.isBlocked()
         )) {
             final var newContact = (contact == null ? Contact.newBuilder() : Contact.newBuilder(contact)).withBlocked(
-                            contactRecord.isBlocked())
-                    .withName((contactRecord.getGivenName().or("") + " " + contactRecord.getFamilyName().or("")).trim())
-                    .build();
+                    contactRecord.isBlocked()).withName((
+                    contactRecord.getGivenName().orElse("") + " " + contactRecord.getFamilyName().orElse("")
+            ).trim()).build();
             account.getContactStore().storeContact(recipientId, newContact);
         }
 
@@ -122,7 +122,7 @@ public class StorageHelper {
     }
 
     private void readGroupV1Record(final SignalStorageRecord record) {
-        if (record == null || !record.getGroupV1().isPresent()) {
+        if (record == null || record.getGroupV1().isEmpty()) {
             return;
         }
 
@@ -145,7 +145,7 @@ public class StorageHelper {
     }
 
     private void readGroupV2Record(final SignalStorageRecord record) {
-        if (record == null || !record.getGroupV2().isPresent()) {
+        if (record == null || record.getGroupV2().isEmpty()) {
             return;
         }
 
@@ -171,7 +171,7 @@ public class StorageHelper {
 
     private void readAccountRecord(final SignalStorageManifest manifest) throws IOException {
         Optional<StorageId> accountId = manifest.getAccountStorageId();
-        if (!accountId.isPresent()) {
+        if (accountId.isEmpty()) {
             logger.warn("Manifest has no account record, ignoring.");
             return;
         }
@@ -182,7 +182,7 @@ public class StorageHelper {
             return;
         }
 
-        SignalAccountRecord accountRecord = record.getAccount().orNull();
+        SignalAccountRecord accountRecord = record.getAccount().orElse(null);
         if (accountRecord == null) {
             logger.warn("The storage record didn't actually have an account, ignoring.");
             return;
@@ -217,15 +217,15 @@ public class StorageHelper {
             }
             if (profileKey != null) {
                 account.setProfileKey(profileKey);
-                final var avatarPath = accountRecord.getAvatarUrlPath().orNull();
+                final var avatarPath = accountRecord.getAvatarUrlPath().orElse(null);
                 context.getProfileHelper().downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, profileKey);
             }
         }
 
         context.getProfileHelper()
                 .setProfile(false,
-                        accountRecord.getGivenName().orNull(),
-                        accountRecord.getFamilyName().orNull(),
+                        accountRecord.getGivenName().orElse(null),
+                        accountRecord.getFamilyName().orElse(null),
                         null,
                         null,
                         null);
