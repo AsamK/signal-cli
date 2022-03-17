@@ -49,7 +49,7 @@ public class SignalAccountFiles {
     public MultiAccountManager initMultiAccountManager() {
         final var managers = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
-                return initManager(a.path());
+                return initManager(a.number(), a.path());
             } catch (NotRegisteredException | IOException | AccountCheckException e) {
                 logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
                 return null;
