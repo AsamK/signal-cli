@@ -64,7 +64,7 @@ run_linked() {
 register() {
   NUMBER=$1
   PIN=$2
-  echo -n "Enter a captcha token (https://signalcaptchas.org/staging/challenge/generate.html): "
+  echo -n "Enter a captcha token (https://signalcaptchas.org/staging/registration/generate.html): "
   read CAPTCHA
   run_main -a "$NUMBER" register --captcha "$CAPTCHA"
   echo -n "Enter validation code for ${NUMBER}: "
