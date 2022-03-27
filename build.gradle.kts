@@ -3,7 +3,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.9.10"
+    id("org.graalvm.buildtools.native") version "0.9.11"
 }
 
 version = "0.10.4.2"
