@@ -1,9 +1,9 @@
 package org.asamk.signal;
 
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.output.PlainTextWriter;
@@ -309,7 +309,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 writer.println("- {}", address.getLegacyIdentifier());
             }
             for (var groupId : blockedList.groupIds()) {
-                writer.println("- {}", groupId);
+                writer.println("- {}", groupId.toBase64());
             }
         }
         if (syncMessage.viewOnceOpen().isPresent()) {
