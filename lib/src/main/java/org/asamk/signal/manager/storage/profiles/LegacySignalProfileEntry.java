@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.profiles;
 
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.signal.zkgroup.profiles.ProfileKey;
-import org.signal.zkgroup.profiles.ProfileKeyCredential;
+import org.signal.libsignal.zkgroup.profiles.ProfileKey;
+import org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential;
 
 public class LegacySignalProfileEntry {
 

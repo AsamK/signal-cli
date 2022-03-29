@@ -1,10 +1,11 @@
 package org.asamk.signal.manager.storage.prekeys;
 
 import org.asamk.signal.manager.util.IOUtils;
+import org.signal.libsignal.protocol.InvalidKeyIdException;
+import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.InvalidKeyIdException;
-import org.whispersystems.libsignal.state.PreKeyRecord;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,7 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 
-public class PreKeyStore implements org.whispersystems.libsignal.state.PreKeyStore {
+public class PreKeyStore implements org.signal.libsignal.protocol.state.PreKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(PreKeyStore.class);
 
@@ -31,7 +32,7 @@ public class PreKeyStore implements org.whispersystems.libsignal.state.PreKeySto
         }
         try (var inputStream = new FileInputStream(file)) {
             return new PreKeyRecord(inputStream.readAllBytes());
-        } catch (IOException e) {
+        } catch (IOException | InvalidMessageException e) {
             logger.error("Failed to load pre key: {}", e.getMessage());
             throw new AssertionError(e);
         }

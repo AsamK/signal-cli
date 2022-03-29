@@ -2,10 +2,10 @@ package org.asamk.signal.manager.groups;
 
 import com.google.protobuf.ByteString;
 
+import org.signal.libsignal.zkgroup.InvalidInputException;
+import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.protos.groups.GroupInviteLink;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
-import org.signal.zkgroup.InvalidInputException;
-import org.signal.zkgroup.groups.GroupMasterKey;
 import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;

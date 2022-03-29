@@ -7,10 +7,10 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
-import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.PinLockedException;
+import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.freedesktop.dbus.DBusPath;
 
 import java.io.IOException;

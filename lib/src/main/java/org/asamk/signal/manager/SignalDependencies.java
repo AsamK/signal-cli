@@ -3,7 +3,7 @@ package org.asamk.signal.manager;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
-import org.signal.zkgroup.profiles.ClientZkProfileOperations;
+import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
@@ -94,7 +94,8 @@ public class SignalDependencies {
                 SignalServiceAddress.DEFAULT_DEVICE_ID,
                 password,
                 userAgent,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
+                ServiceConfig.GROUP_MAX_SIZE);
     }
 
     public GroupsV2Api getGroupsV2Api() {
@@ -103,8 +104,10 @@ public class SignalDependencies {
 
     public GroupsV2Operations getGroupsV2Operations() {
         return getOrCreate(() -> groupsV2Operations,
-                () -> groupsV2Operations = capabilities.isGv2() ? new GroupsV2Operations(ClientZkOperations.create(
-                        serviceEnvironmentConfig.getSignalServiceConfiguration())) : null);
+                () -> groupsV2Operations = capabilities.isGv2()
+                        ? new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
+                        ServiceConfig.GROUP_MAX_SIZE)
+                        : null);
     }
 
     private ClientZkOperations getClientZkOperations() {

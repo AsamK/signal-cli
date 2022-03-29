@@ -6,9 +6,9 @@ import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.util.IOUtils;
+import org.signal.libsignal.protocol.InvalidMessageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.InvalidMessageException;
 import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.IOException;

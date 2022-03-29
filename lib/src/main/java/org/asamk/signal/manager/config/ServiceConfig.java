@@ -24,6 +24,7 @@ public class ServiceConfig {
     public final static long MAX_ENVELOPE_SIZE = 0;
     public final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
     public final static boolean AUTOMATIC_NETWORK_RETRY = true;
+    public final static int GROUP_MAX_SIZE = 1001;
 
     private final static KeyStore iasKeyStore;
 
@@ -48,7 +49,7 @@ public class ServiceConfig {
     public static boolean isSignalClientAvailable() {
         try {
             try {
-                org.signal.client.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
+                org.signal.libsignal.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
             } catch (IllegalArgumentException ignored) {
             }
             return true;

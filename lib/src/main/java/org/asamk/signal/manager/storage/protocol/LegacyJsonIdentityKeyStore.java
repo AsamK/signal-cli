@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.signal.libsignal.protocol.IdentityKey;
+import org.signal.libsignal.protocol.IdentityKeyPair;
+import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.IdentityKey;
-import org.whispersystems.libsignal.IdentityKeyPair;
-import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;

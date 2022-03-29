@@ -73,7 +73,8 @@ class RegistrationManagerImpl implements RegistrationManager {
 
         GroupsV2Operations groupsV2Operations;
         try {
-            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
+                    ServiceConfig.GROUP_MAX_SIZE);
         } catch (Throwable ignored) {
             groupsV2Operations = null;
         }

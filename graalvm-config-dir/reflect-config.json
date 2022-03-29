@@ -1554,6 +1554,43 @@
   "allPublicConstructors":true
 },
 {
+  "name":"org.signal.libsignal.protocol.state.IdentityKeyStore",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.protocol.state.PreKeyStore",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SessionStore",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SignalProtocolStore",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.zkgroup.internal.ByteArray",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.signal.libsignal.zkgroup.profiles.ProfileKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"org.signal.storageservice.protos.groups.AccessControl",
   "fields":[
     {"name":"addFromInviteLink_"}, 
@@ -1575,7 +1612,10 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.BannedMember",
-  "fields":[{"name":"userId_"}]
+  "fields":[
+    {"name":"timestamp_"}, 
+    {"name":"userId_"}
+  ]
 },
 {
   "name":"org.signal.storageservice.protos.groups.Group",
@@ -1794,7 +1834,10 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
-  "fields":[{"name":"uuid_"}]
+  "fields":[
+    {"name":"timestamp_"}, 
+    {"name":"uuid_"}
+  ]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
@@ -1904,44 +1947,7 @@
   "fields":[{"name":"duration_"}]
 },
 {
-  "name":"org.signal.zkgroup.internal.ByteArray",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true
-},
-{
-  "name":"org.signal.zkgroup.profiles.ProfileKey",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
-},
-{
-  "name":"org.signal.zkgroup.profiles.ProfileKeyCredential",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
-},
-{
   "name":"org.sqlite.JDBC"
-},
-{
-  "name":"org.whispersystems.libsignal.state.IdentityKeyStore",
-  "allDeclaredMethods":true
-},
-{
-  "name":"org.whispersystems.libsignal.state.PreKeyStore",
-  "allDeclaredMethods":true
-},
-{
-  "name":"org.whispersystems.libsignal.state.SessionStore",
-  "allDeclaredMethods":true
-},
-{
-  "name":"org.whispersystems.libsignal.state.SignalProtocolStore",
-  "allDeclaredMethods":true
-},
-{
-  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore",
-  "allDeclaredMethods":true
 },
 {
   "name":"org.whispersystems.signalservice.api.account.AccountAttributes",
@@ -2794,6 +2800,17 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$StoryMessage",
+  "fields":[
+    {"name":"allowsReplies_"}, 
+    {"name":"attachmentCase_"}, 
+    {"name":"attachment_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"group_"}, 
+    {"name":"profileKey_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage",
   "fields":[
     {"name":"bitField0_"}, 
@@ -2806,6 +2823,7 @@
     {"name":"messageRequestResponse_"}, 
     {"name":"outgoingPayment_"}, 
     {"name":"padding_"}, 
+    {"name":"pniIdentity_"}, 
     {"name":"read_"}, 
     {"name":"request_"}, 
     {"name":"sent_"}, 

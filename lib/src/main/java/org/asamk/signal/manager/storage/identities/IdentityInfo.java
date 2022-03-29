@@ -2,7 +2,7 @@ package org.asamk.signal.manager.storage.identities;
 
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.whispersystems.libsignal.IdentityKey;
+import org.signal.libsignal.protocol.IdentityKey;
 
 import java.util.Date;
 

@@ -3,10 +3,11 @@ package org.asamk.signal.manager.storage.senderKeys;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
+import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.libsignal.SignalProtocolAddress;
-import org.whispersystems.libsignal.groups.state.SenderKeyRecord;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,7 +23,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups.state.SenderKeyStore {
+public class SenderKeyRecordStore implements org.signal.libsignal.protocol.groups.state.SenderKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(SenderKeyRecordStore.class);
 
@@ -203,7 +204,7 @@ public class SenderKeyRecordStore implements org.whispersystems.libsignal.groups
             final var senderKeyRecord = new SenderKeyRecord(inputStream.readAllBytes());
             cachedSenderKeys.put(key, senderKeyRecord);
             return senderKeyRecord;
-        } catch (IOException e) {
+        } catch (IOException | InvalidMessageException e) {
             logger.warn("Failed to load sender key, resetting sender key: {}", e.getMessage());
             return null;
         }

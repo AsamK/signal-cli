@@ -2,7 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.util.PinHashing;
-import org.whispersystems.libsignal.InvalidKeyException;
+import org.signal.libsignal.protocol.InvalidKeyException;
 import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;

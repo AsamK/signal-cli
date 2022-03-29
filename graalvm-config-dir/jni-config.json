@@ -56,23 +56,120 @@
 {
   "name":"org.asamk.signal.manager.storage.protocol.SignalProtocolStore",
   "methods":[
-    {"name":"getIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"getIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, 
     {"name":"getIdentityKeyPair","parameterTypes":[] }, 
     {"name":"getLocalRegistrationId","parameterTypes":[] }, 
-    {"name":"isTrustedIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey","org.whispersystems.libsignal.state.IdentityKeyStore$Direction"] }, 
+    {"name":"isTrustedIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey","org.signal.libsignal.protocol.state.IdentityKeyStore$Direction"] }, 
     {"name":"loadPreKey","parameterTypes":["int"] }, 
-    {"name":"loadSenderKey","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","java.util.UUID"] }, 
-    {"name":"loadSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress"] }, 
+    {"name":"loadSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID"] }, 
+    {"name":"loadSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, 
     {"name":"loadSignedPreKey","parameterTypes":["int"] }, 
     {"name":"removePreKey","parameterTypes":["int"] }, 
-    {"name":"saveIdentity","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.IdentityKey"] }, 
-    {"name":"storeSenderKey","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","java.util.UUID","org.whispersystems.libsignal.groups.state.SenderKeyRecord"] }, 
-    {"name":"storeSession","parameterTypes":["org.whispersystems.libsignal.SignalProtocolAddress","org.whispersystems.libsignal.state.SessionRecord"] }
+    {"name":"saveIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey"] }, 
+    {"name":"storeSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID","org.signal.libsignal.protocol.groups.state.SenderKeyRecord"] }, 
+    {"name":"storeSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.state.SessionRecord"] }
   ]
 },
 {
   "name":"org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
   "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.DuplicateMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.IdentityKey",
+  "methods":[
+    {"name":"<init>","parameterTypes":["byte[]"] }, 
+    {"name":"serialize","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.signal.libsignal.protocol.IdentityKeyPair",
+  "methods":[{"name":"serialize","parameterTypes":[] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.InvalidKeyException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.InvalidKeyIdException"
+},
+{
+  "name":"org.signal.libsignal.protocol.InvalidMessageException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.SignalProtocolAddress",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.UntrustedIdentityException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.groups.state.SenderKeyRecord",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.groups.state.SenderKeyStore"
+},
+{
+  "name":"org.signal.libsignal.protocol.logging.Log",
+  "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.message.PlaintextContent",
+  "fields":[{"name":"unsafeHandle"}]
+},
+{
+  "name":"org.signal.libsignal.protocol.message.PreKeySignalMessage",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.message.SenderKeyMessage",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.message.SignalMessage",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.IdentityKeyStore"
+},
+{
+  "name":"org.signal.libsignal.protocol.state.IdentityKeyStore$Direction",
+  "fields":[
+    {"name":"RECEIVING"}, 
+    {"name":"SENDING"}
+  ]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.PreKeyRecord",
+  "fields":[{"name":"unsafeHandle"}]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.PreKeyStore"
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SessionRecord",
+  "fields":[{"name":"unsafeHandle"}],
+  "methods":[{"name":"<init>","parameterTypes":["byte[]"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SessionStore"
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SignedPreKeyRecord",
+  "fields":[{"name":"unsafeHandle"}]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore"
 },
 {
   "name":"org.sqlite.Collation"
@@ -103,102 +200,5 @@
     {"name":"pointer"}, 
     {"name":"udfdatalist"}
   ]
-},
-{
-  "name":"org.whispersystems.libsignal.DuplicateMessageException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.IdentityKey",
-  "methods":[
-    {"name":"<init>","parameterTypes":["byte[]"] }, 
-    {"name":"serialize","parameterTypes":[] }
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.IdentityKeyPair",
-  "methods":[{"name":"serialize","parameterTypes":[] }]
-},
-{
-  "name":"org.whispersystems.libsignal.InvalidKeyException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.InvalidKeyIdException"
-},
-{
-  "name":"org.whispersystems.libsignal.InvalidMessageException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.SignalProtocolAddress",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.UntrustedIdentityException",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.groups.state.SenderKeyRecord",
-  "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.groups.state.SenderKeyStore"
-},
-{
-  "name":"org.whispersystems.libsignal.logging.Log",
-  "methods":[{"name":"log","parameterTypes":["int","java.lang.String","java.lang.String"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.PlaintextContent",
-  "fields":[{"name":"unsafeHandle"}]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.PreKeySignalMessage",
-  "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.SenderKeyMessage",
-  "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.protocol.SignalMessage",
-  "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["long"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.state.IdentityKeyStore"
-},
-{
-  "name":"org.whispersystems.libsignal.state.IdentityKeyStore$Direction",
-  "fields":[
-    {"name":"RECEIVING"}, 
-    {"name":"SENDING"}
-  ]
-},
-{
-  "name":"org.whispersystems.libsignal.state.PreKeyRecord",
-  "fields":[{"name":"unsafeHandle"}]
-},
-{
-  "name":"org.whispersystems.libsignal.state.PreKeyStore"
-},
-{
-  "name":"org.whispersystems.libsignal.state.SessionRecord",
-  "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["byte[]"] }]
-},
-{
-  "name":"org.whispersystems.libsignal.state.SessionStore"
-},
-{
-  "name":"org.whispersystems.libsignal.state.SignedPreKeyRecord",
-  "fields":[{"name":"unsafeHandle"}]
-},
-{
-  "name":"org.whispersystems.libsignal.state.SignedPreKeyStore"
 }
 ]

@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.config;
 
-import org.whispersystems.libsignal.ecc.ECPublicKey;
+import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
 public class ServiceEnvironmentConfig {
