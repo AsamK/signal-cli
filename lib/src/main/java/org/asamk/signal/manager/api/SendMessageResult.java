@@ -48,7 +48,7 @@ public record SendMessageResult(
                 sendMessageResult.isNetworkFailure(),
                 sendMessageResult.isUnregisteredFailure(),
                 sendMessageResult.getIdentityFailure() != null,
-                sendMessageResult.getRateLimitFailure() != null,
+                sendMessageResult.getRateLimitFailure() != null || sendMessageResult.getProofRequiredFailure() != null,
                 sendMessageResult.getProofRequiredFailure() == null
                         ? null
                         : new ProofRequiredException(sendMessageResult.getProofRequiredFailure()));

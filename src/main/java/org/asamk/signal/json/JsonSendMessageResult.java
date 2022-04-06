@@ -22,10 +22,10 @@ public record JsonSendMessageResult(
                 groupId != null ? groupId.toBase64() : null,
                 result.isSuccess()
                         ? Type.SUCCESS
-                        : result.isNetworkFailure()
-                                ? Type.NETWORK_FAILURE
-                                : result.isRateLimitFailure()
-                                        ? Type.RATE_LIMIT_FAILURE
+                        : result.isRateLimitFailure()
+                                ? Type.RATE_LIMIT_FAILURE
+                                : result.isNetworkFailure()
+                                        ? Type.NETWORK_FAILURE
                                         : result.isUnregisteredFailure()
                                                 ? Type.UNREGISTERED_FAILURE
                                                 : Type.IDENTITY_FAILURE,
