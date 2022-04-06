@@ -874,7 +874,7 @@ public class DbusSignalImpl implements Signal {
         }
 
         var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
-        if (errors.size() < results.size()) {
+        if (errors.size() == 0 || errors.size() < results.size()) {
             return;
         }
 
