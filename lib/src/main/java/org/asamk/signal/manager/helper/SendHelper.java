@@ -175,7 +175,7 @@ public class SendHelper {
         } catch (RateLimitException e) {
             var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
-            return SendMessageResult.networkFailure(address);
+            return SendMessageResult.rateLimitFailure(address, e);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
@@ -603,7 +603,7 @@ public class SendHelper {
             return SendMessageResult.proofRequiredFailure(address, e);
         } catch (RateLimitException e) {
             logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
-            return SendMessageResult.networkFailure(address);
+            return SendMessageResult.rateLimitFailure(address, e);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             return SendMessageResult.identityFailure(address, e.getIdentityKey());
         } catch (IOException e) {
