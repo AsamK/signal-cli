@@ -420,6 +420,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.asamk.Signal$Error$LastGroupAdmin",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.asamk.Signal$Error$UntrustedIdentity",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -458,7 +462,9 @@
 },
 {
   "name":"org.asamk.Signal$StructGroup",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["org.freedesktop.dbus.DBusPath","byte[]","java.lang.String"] }]
 },
 {
   "name":"org.asamk.Signal$SyncMessageReceived",
