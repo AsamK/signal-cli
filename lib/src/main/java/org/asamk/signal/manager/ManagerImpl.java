@@ -348,6 +348,11 @@ class ManagerImpl implements Manager {
 
     @Override
     public void deleteGroup(GroupId groupId) throws IOException {
+        final var group = context.getGroupHelper().getGroup(groupId);
+        if (group.isMember(account.getSelfRecipientId())) {
+            throw new IOException(
+                    "The local group information cannot be removed, as the user is still a member of the group");
+        }
         context.getGroupHelper().deleteGroup(groupId);
     }
 
