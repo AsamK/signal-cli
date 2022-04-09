@@ -53,7 +53,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final var groupInviteLink = group.groupInviteLinkUrl();
 
             writer.println(
-                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Message expiration: {} Link: {}",
+                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Admins: {} Banned: {} Message expiration: {} Link: {}",
                     group.groupId().toBase64(),
                     group.title(),
                     group.description(),
@@ -63,6 +63,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                     resolveMembers(group.pendingMembers()),
                     resolveMembers(group.requestingMembers()),
                     resolveMembers(group.adminMembers()),
+                    resolveMembers(group.bannedMembers()),
                     group.messageExpirationTimer() == 0 ? "disabled" : group.messageExpirationTimer() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
@@ -95,6 +96,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                         resolveJsonMembers(group.pendingMembers()),
                         resolveJsonMembers(group.requestingMembers()),
                         resolveJsonMembers(group.adminMembers()),
+                        resolveJsonMembers(group.bannedMembers()),
                         group.permissionAddMember().name(),
                         group.permissionEditDetails().name(),
                         group.permissionSendMessage().name(),
@@ -122,6 +124,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             Set<JsonGroupMember> pendingMembers,
             Set<JsonGroupMember> requestingMembers,
             Set<JsonGroupMember> admins,
+            Set<JsonGroupMember> banned,
             String permissionAddMember,
             String permissionEditDetails,
             String permissionSendMessage,

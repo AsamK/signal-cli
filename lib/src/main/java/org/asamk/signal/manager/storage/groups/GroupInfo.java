@@ -26,6 +26,10 @@ public sealed abstract class GroupInfo permits GroupInfoV1, GroupInfoV2 {
 
     public abstract Set<RecipientId> getMembers();
 
+    public Set<RecipientId> getBannedMembers() {
+        return Set.of();
+    }
+
     public Set<RecipientId> getPendingMembers() {
         return Set.of();
     }

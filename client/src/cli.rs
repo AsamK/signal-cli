@@ -268,6 +268,12 @@ pub enum CliCommands {
         #[clap(long = "remove-admin")]
         remove_admin: Vec<String>,
 
+        #[clap(long)]
+        ban: Vec<String>,
+
+        #[clap(long)]
+        unban: Vec<String>,
+
         #[clap(long = "reset-link")]
         reset_link: bool,
 

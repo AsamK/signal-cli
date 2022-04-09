@@ -357,6 +357,13 @@ Specify one or more members to make a group admin
 *--remove-admin* [MEMBER [MEMBER ...]]::
 Specify one or more members to remove group admin privileges
 
+*--ban* [MEMBER [MEMBER ...]]::
+Specify one or more members to ban from joining the group.
+Banned members cannot join or request to join via a group link.
+
+*--unban* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove from the ban list
+
 *--reset-link*::
 Reset group link and create new link password
 

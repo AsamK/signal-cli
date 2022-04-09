@@ -194,6 +194,8 @@ public class GroupHelper {
             final Set<RecipientId> removeMembers,
             final Set<RecipientId> admins,
             final Set<RecipientId> removeAdmins,
+            final Set<RecipientId> banMembers,
+            final Set<RecipientId> unbanMembers,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
             final GroupPermission addMemberPermission,
@@ -213,6 +215,8 @@ public class GroupHelper {
                         removeMembers,
                         admins,
                         removeAdmins,
+                        banMembers,
+                        unbanMembers,
                         resetGroupLink,
                         groupLinkState,
                         addMemberPermission,
@@ -230,6 +234,8 @@ public class GroupHelper {
                         removeMembers,
                         admins,
                         removeAdmins,
+                        banMembers,
+                        unbanMembers,
                         resetGroupLink,
                         groupLinkState,
                         addMemberPermission,
@@ -467,6 +473,8 @@ public class GroupHelper {
             final Set<RecipientId> removeMembers,
             final Set<RecipientId> admins,
             final Set<RecipientId> removeAdmins,
+            final Set<RecipientId> banMembers,
+            final Set<RecipientId> unbanMembers,
             final boolean resetGroupLink,
             final GroupLinkState groupLinkState,
             final GroupPermission addMemberPermission,
@@ -493,7 +501,13 @@ public class GroupHelper {
 
         if (removeMembers != null) {
             var existingRemoveMembers = new HashSet<>(removeMembers);
+            if (banMembers != null) {
+                existingRemoveMembers.addAll(banMembers);
+            }
             existingRemoveMembers.retainAll(group.getMembers());
+            if (members != null) {
+                existingRemoveMembers.removeAll(members);
+            }
             existingRemoveMembers.remove(account.getSelfRecipientId());// self can be removed with sendQuitGroupMessage
             if (existingRemoveMembers.size() > 0) {
                 var groupGroupChangePair = groupV2Helper.removeMembers(group, existingRemoveMembers);
@@ -532,6 +546,24 @@ public class GroupHelper {
                             groupGroupChangePair.first(),
                             groupGroupChangePair.second());
                 }
+            }
+        }
+
+        if (banMembers != null) {
+            final var newlyBannedMembers = new HashSet<>(banMembers);
+            newlyBannedMembers.removeAll(group.getBannedMembers());
+            if (newlyBannedMembers.size() > 0) {
+                var groupGroupChangePair = groupV2Helper.banMembers(group, newlyBannedMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
+        }
+
+        if (unbanMembers != null) {
+            var existingUnbanMembers = new HashSet<>(unbanMembers);
+            existingUnbanMembers.retainAll(group.getBannedMembers());
+            if (existingUnbanMembers.size() > 0) {
+                var groupGroupChangePair = groupV2Helper.unbanMembers(group, existingUnbanMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
         }
 

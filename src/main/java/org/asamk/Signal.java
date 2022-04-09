@@ -523,6 +523,7 @@ public interface Signal extends DBusInterface {
     @DBusProperty(name = "PendingMembers", type = String[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "RequestingMembers", type = String[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "Admins", type = String[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Banned", type = String[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "PermissionAddMember", type = String.class)
     @DBusProperty(name = "PermissionEditDetails", type = String.class)
     @DBusProperty(name = "PermissionSendMessage", type = String.class)

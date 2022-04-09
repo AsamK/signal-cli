@@ -1162,6 +1162,8 @@ public class DbusSignalImpl implements Signal {
                                     () -> new Variant<>(getRecipientStrings(getGroup().requestingMembers()), "as")),
                             new DbusProperty<>("Admins",
                                     () -> new Variant<>(getRecipientStrings(getGroup().adminMembers()), "as")),
+                            new DbusProperty<>("Banned",
+                                    () -> new Variant<>(getRecipientStrings(getGroup().bannedMembers()), "as")),
                             new DbusProperty<>("PermissionAddMember",
                                     () -> getGroup().permissionAddMember().name(),
                                     this::setGroupPermissionAddMember),

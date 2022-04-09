@@ -583,6 +583,9 @@ public class DbusManagerImpl implements Manager {
                     ((List<String>) group.get("Admins").getValue()).stream()
                             .map(m -> new RecipientAddress(null, m))
                             .collect(Collectors.toSet()),
+                    ((List<String>) group.get("Banned").getValue()).stream()
+                            .map(m -> new RecipientAddress(null, m))
+                            .collect(Collectors.toSet()),
                     (boolean) group.get("IsBlocked").getValue(),
                     (int) group.get("MessageExpirationTimer").getValue(),
                     GroupPermission.valueOf((String) group.get("PermissionAddMember").getValue()),

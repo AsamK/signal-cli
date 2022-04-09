@@ -55,6 +55,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--remove-admin")
                 .nargs("*")
                 .help("Specify one or more members to remove group admin privileges");
+        subparser.addArgument("--ban").nargs("*").help("Specify one or more members to ban from joining the group");
+        subparser.addArgument("--unban").nargs("*").help("Specify one or more members to remove from the ban list");
 
         subparser.addArgument("--reset-link")
                 .action(Arguments.storeTrue())
@@ -114,6 +116,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         var groupRemoveMembers = CommandUtil.getSingleRecipientIdentifiers(ns.getList("remove-member"), localNumber);
         var groupAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("admin"), localNumber);
         var groupRemoveAdmins = CommandUtil.getSingleRecipientIdentifiers(ns.getList("remove-admin"), localNumber);
+        var groupBan = CommandUtil.getSingleRecipientIdentifiers(ns.getList("ban"), localNumber);
+        var groupUnban = CommandUtil.getSingleRecipientIdentifiers(ns.getList("unban"), localNumber);
         var groupAvatar = ns.getString("avatar");
         var groupResetLink = Boolean.TRUE.equals(ns.getBoolean("reset-link"));
         var groupLinkState = getGroupLinkState(ns.getString("link"));
@@ -145,6 +149,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                             .withRemoveMembers(groupRemoveMembers)
                             .withAdmins(groupAdmins)
                             .withRemoveAdmins(groupRemoveAdmins)
+                            .withBanMembers(groupBan)
+                            .withUnbanMembers(groupUnban)
                             .withResetGroupLink(groupResetLink)
                             .withGroupLinkState(groupLinkState)
                             .withAddMemberPermission(groupAddMemberPermission)

@@ -118,6 +118,18 @@ public final class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
+    public Set<RecipientId> getBannedMembers() {
+        if (this.group == null) {
+            return Set.of();
+        }
+        return group.getBannedMembersList()
+                .stream()
+                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(recipientResolver::resolveRecipient)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
     public Set<RecipientId> getPendingMembers() {
         if (this.group == null) {
             return Set.of();

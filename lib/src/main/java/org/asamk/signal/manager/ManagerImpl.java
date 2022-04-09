@@ -386,6 +386,12 @@ class ManagerImpl implements Manager {
                         updateGroup.getRemoveAdmins() == null
                                 ? null
                                 : context.getRecipientHelper().resolveRecipients(updateGroup.getRemoveAdmins()),
+                        updateGroup.getBanMembers() == null
+                                ? null
+                                : context.getRecipientHelper().resolveRecipients(updateGroup.getBanMembers()),
+                        updateGroup.getUnbanMembers() == null
+                                ? null
+                                : context.getRecipientHelper().resolveRecipients(updateGroup.getUnbanMembers()),
                         updateGroup.isResetGroupLink(),
                         updateGroup.getGroupLinkState(),
                         updateGroup.getAddMemberPermission(),

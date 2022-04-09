@@ -20,6 +20,7 @@ public record Group(
         Set<RecipientAddress> pendingMembers,
         Set<RecipientAddress> requestingMembers,
         Set<RecipientAddress> adminMembers,
+        Set<RecipientAddress> bannedMembers,
         boolean isBlocked,
         int messageExpirationTimer,
         GroupPermission permissionAddMember,
@@ -49,6 +50,10 @@ public record Group(
                         .map(recipientStore::resolveRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getAdminMembers()
+                        .stream()
+                        .map(recipientStore::resolveRecipientAddress)
+                        .collect(Collectors.toSet()),
+                groupInfo.getBannedMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
                         .collect(Collectors.toSet()),

@@ -2058,6 +2058,12 @@
   "queryAllDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.api.push.ServiceId",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,

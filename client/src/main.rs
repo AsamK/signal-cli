@@ -243,6 +243,8 @@ async fn main() -> Result<(), anyhow::Error> {
             remove_member,
             admin,
             remove_admin,
+            ban,
+            unban,
             reset_link,
             link,
             set_permission_add_member,
@@ -261,6 +263,8 @@ async fn main() -> Result<(), anyhow::Error> {
                     remove_member,
                     admin,
                     remove_admin,
+                    ban,
+                    unban,
                     reset_link,
                     link.map(|link| match link {
                         LinkState::Enabled => "enabled".to_owned(),

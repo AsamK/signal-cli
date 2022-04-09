@@ -14,6 +14,8 @@ public class UpdateGroup {
     private final Set<RecipientIdentifier.Single> removeMembers;
     private final Set<RecipientIdentifier.Single> admins;
     private final Set<RecipientIdentifier.Single> removeAdmins;
+    private final Set<RecipientIdentifier.Single> banMembers;
+    private final Set<RecipientIdentifier.Single> unbanMembers;
     private final boolean resetGroupLink;
     private final GroupLinkState groupLinkState;
     private final GroupPermission addMemberPermission;
@@ -29,6 +31,8 @@ public class UpdateGroup {
         removeMembers = builder.removeMembers;
         admins = builder.admins;
         removeAdmins = builder.removeAdmins;
+        banMembers = builder.banMembers;
+        unbanMembers = builder.unbanMembers;
         resetGroupLink = builder.resetGroupLink;
         groupLinkState = builder.groupLinkState;
         addMemberPermission = builder.addMemberPermission;
@@ -43,21 +47,56 @@ public class UpdateGroup {
     }
 
     public static Builder newBuilder(final UpdateGroup copy) {
-        Builder builder = new Builder();
-        builder.name = copy.getName();
-        builder.description = copy.getDescription();
-        builder.members = copy.getMembers();
-        builder.removeMembers = copy.getRemoveMembers();
-        builder.admins = copy.getAdmins();
-        builder.removeAdmins = copy.getRemoveAdmins();
-        builder.resetGroupLink = copy.isResetGroupLink();
-        builder.groupLinkState = copy.getGroupLinkState();
-        builder.addMemberPermission = copy.getAddMemberPermission();
-        builder.editDetailsPermission = copy.getEditDetailsPermission();
-        builder.avatarFile = copy.getAvatarFile();
-        builder.expirationTimer = copy.getExpirationTimer();
-        builder.isAnnouncementGroup = copy.getIsAnnouncementGroup();
+        Builder builder = new Builder(copy.name,
+                copy.description,
+                copy.members,
+                copy.removeMembers,
+                copy.admins,
+                copy.removeAdmins,
+                copy.banMembers,
+                copy.unbanMembers,
+                copy.resetGroupLink,
+                copy.groupLinkState,
+                copy.addMemberPermission,
+                copy.editDetailsPermission,
+                copy.avatarFile,
+                copy.expirationTimer,
+                copy.isAnnouncementGroup);
         return builder;
+    }
+
+    public static Builder newBuilder(
+            final String name,
+            final String description,
+            final Set<RecipientIdentifier.Single> members,
+            final Set<RecipientIdentifier.Single> removeMembers,
+            final Set<RecipientIdentifier.Single> admins,
+            final Set<RecipientIdentifier.Single> removeAdmins,
+            final Set<RecipientIdentifier.Single> banMembers,
+            final Set<RecipientIdentifier.Single> unbanMembers,
+            final boolean resetGroupLink,
+            final GroupLinkState groupLinkState,
+            final GroupPermission addMemberPermission,
+            final GroupPermission editDetailsPermission,
+            final File avatarFile,
+            final Integer expirationTimer,
+            final Boolean isAnnouncementGroup
+    ) {
+        return new Builder(name,
+                description,
+                members,
+                removeMembers,
+                admins,
+                removeAdmins,
+                banMembers,
+                unbanMembers,
+                resetGroupLink,
+                groupLinkState,
+                addMemberPermission,
+                editDetailsPermission,
+                avatarFile,
+                expirationTimer,
+                isAnnouncementGroup);
     }
 
     public String getName() {
@@ -82,6 +121,14 @@ public class UpdateGroup {
 
     public Set<RecipientIdentifier.Single> getRemoveAdmins() {
         return removeAdmins;
+    }
+
+    public Set<RecipientIdentifier.Single> getBanMembers() {
+        return banMembers;
+    }
+
+    public Set<RecipientIdentifier.Single> getUnbanMembers() {
+        return unbanMembers;
     }
 
     public boolean isResetGroupLink() {
@@ -120,6 +167,8 @@ public class UpdateGroup {
         private Set<RecipientIdentifier.Single> removeMembers;
         private Set<RecipientIdentifier.Single> admins;
         private Set<RecipientIdentifier.Single> removeAdmins;
+        private Set<RecipientIdentifier.Single> banMembers;
+        private Set<RecipientIdentifier.Single> unbanMembers;
         private boolean resetGroupLink;
         private GroupLinkState groupLinkState;
         private GroupPermission addMemberPermission;
@@ -129,6 +178,40 @@ public class UpdateGroup {
         private Boolean isAnnouncementGroup;
 
         private Builder() {
+        }
+
+        private Builder(
+                final String name,
+                final String description,
+                final Set<RecipientIdentifier.Single> members,
+                final Set<RecipientIdentifier.Single> removeMembers,
+                final Set<RecipientIdentifier.Single> admins,
+                final Set<RecipientIdentifier.Single> removeAdmins,
+                final Set<RecipientIdentifier.Single> banMembers,
+                final Set<RecipientIdentifier.Single> unbanMembers,
+                final boolean resetGroupLink,
+                final GroupLinkState groupLinkState,
+                final GroupPermission addMemberPermission,
+                final GroupPermission editDetailsPermission,
+                final File avatarFile,
+                final Integer expirationTimer,
+                final Boolean isAnnouncementGroup
+        ) {
+            this.name = name;
+            this.description = description;
+            this.members = members;
+            this.removeMembers = removeMembers;
+            this.admins = admins;
+            this.removeAdmins = removeAdmins;
+            this.banMembers = banMembers;
+            this.unbanMembers = unbanMembers;
+            this.resetGroupLink = resetGroupLink;
+            this.groupLinkState = groupLinkState;
+            this.addMemberPermission = addMemberPermission;
+            this.editDetailsPermission = editDetailsPermission;
+            this.avatarFile = avatarFile;
+            this.expirationTimer = expirationTimer;
+            this.isAnnouncementGroup = isAnnouncementGroup;
         }
 
         public Builder withName(final String val) {
@@ -158,6 +241,16 @@ public class UpdateGroup {
 
         public Builder withRemoveAdmins(final Set<RecipientIdentifier.Single> val) {
             removeAdmins = val;
+            return this;
+        }
+
+        public Builder withBanMembers(final Set<RecipientIdentifier.Single> val) {
+            banMembers = val;
+            return this;
+        }
+
+        public Builder withUnbanMembers(final Set<RecipientIdentifier.Single> val) {
+            unbanMembers = val;
             return this;
         }
 

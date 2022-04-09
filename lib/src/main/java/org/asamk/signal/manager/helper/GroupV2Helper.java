@@ -203,9 +203,13 @@ class GroupV2Helper {
                         credentials,
                         (uuid, credential) -> new GroupCandidate(uuid, Optional.ofNullable(credential)))
                 .collect(Collectors.toSet());
+        final var bannedUuids = groupInfoV2.getBannedMembers()
+                .stream()
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid())
+                .collect(Collectors.toSet());
 
         final var aci = getSelfAci();
-        final var change = groupOperations.createModifyGroupMembershipChange(candidates, Set.of(), aci.uuid());
+        final var change = groupOperations.createModifyGroupMembershipChange(candidates, bannedUuids, aci.uuid());
 
         change.setSourceUuid(getSelfAci().toByteString());
 
@@ -257,6 +261,40 @@ class GroupV2Helper {
                 .map(Optional::get)
                 .collect(Collectors.toSet());
         return revokeInvites(groupInfoV2, memberUuids);
+    }
+
+    Pair<DecryptedGroup, GroupChange> banMembers(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> block
+    ) throws IOException {
+        GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+
+        final var uuids = block.stream()
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid())
+                .collect(Collectors.toSet());
+
+        final var change = groupOperations.createBanUuidsChange(uuids,
+                false,
+                groupInfoV2.getGroup().getBannedMembersList());
+
+        change.setSourceUuid(getSelfAci().toByteString());
+
+        return commitChange(groupInfoV2, change);
+    }
+
+    Pair<DecryptedGroup, GroupChange> unbanMembers(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> block
+    ) throws IOException {
+        GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+
+        final var uuids = block.stream()
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid())
+                .collect(Collectors.toSet());
+
+        final var change = groupOperations.createUnbanUuidsChange(uuids);
+
+        change.setSourceUuid(getSelfAci().toByteString());
+
+        return commitChange(groupInfoV2, change);
     }
 
     Pair<DecryptedGroup, GroupChange> resetGroupLinkPassword(GroupInfoV2 groupInfoV2) throws IOException {

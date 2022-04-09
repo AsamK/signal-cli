@@ -227,6 +227,8 @@ pub trait Rpc {
         #[allow(non_snake_case)] removeMember: Vec<String>,
         admin: Vec<String>,
         #[allow(non_snake_case)] removeAdmin: Vec<String>,
+        ban: Vec<String>,
+        unban: Vec<String>,
         #[allow(non_snake_case)] resetLink: bool,
         #[allow(non_snake_case)] link: Option<String>,
         #[allow(non_snake_case)] setPermissionAddMember: Option<String>,
