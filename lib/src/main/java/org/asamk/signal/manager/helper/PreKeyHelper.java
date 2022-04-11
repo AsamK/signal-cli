@@ -45,32 +45,31 @@ public class PreKeyHelper {
     }
 
     public void refreshPreKeys(ServiceIdType serviceIdType) throws IOException {
-        if (serviceIdType != ServiceIdType.ACI) {
-            // TODO implement
+        final var oneTimePreKeys = generatePreKeys(serviceIdType);
+        final var identityKeyPair = account.getIdentityKeyPair(serviceIdType);
+        if (identityKeyPair == null) {
             return;
         }
-        var oneTimePreKeys = generatePreKeys();
-        final var identityKeyPair = account.getAciIdentityKeyPair();
-        var signedPreKeyRecord = generateSignedPreKey(identityKeyPair);
+        final var signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
 
         dependencies.getAccountManager()
                 .setPreKeys(serviceIdType, identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
     }
 
-    private List<PreKeyRecord> generatePreKeys() {
-        final var offset = account.getPreKeyIdOffset();
+    private List<PreKeyRecord> generatePreKeys(ServiceIdType serviceIdType) {
+        final var offset = account.getPreKeyIdOffset(serviceIdType);
 
         var records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
-        account.addPreKeys(records);
+        account.addPreKeys(serviceIdType, records);
 
         return records;
     }
 
-    private SignedPreKeyRecord generateSignedPreKey(IdentityKeyPair identityKeyPair) {
-        final var signedPreKeyId = account.getNextSignedPreKeyId();
+    private SignedPreKeyRecord generateSignedPreKey(ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair) {
+        final var signedPreKeyId = account.getNextSignedPreKeyId(serviceIdType);
 
         var record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
-        account.addSignedPreKey(record);
+        account.addSignedPreKey(serviceIdType, record);
 
         return record;
     }
