@@ -416,6 +416,10 @@
   "allDeclaredClasses":true
 },
 {
+  "name":"org.asamk.Signal$Error$AttachmentInvalid",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.asamk.Signal$Error$Failure",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
