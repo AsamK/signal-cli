@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.10.5] - 2022-04-11
+**Attention**: Now requires native libsignal-client version 0.15
+
+### Added
+- New `--ban`, `--unban` flags for `updateGroup` command to ban users from joining by group link
+
+### Fixed
+- Fix plain text output of blocked group ids
+- Fix error output in case of rate limiting
+- Fix error when creating a group with no members
+- Fix adding recent Signal-Desktop versions as linked devices
+
 ## [0.10.4.2] - 2022-03-17
 ### Fixed
 - Crash in json output when receiving message from untrusted identity
