@@ -40,7 +40,7 @@ jobs:
       - name: Get signal-client jar version
         id: lib_ver
         run: |
-          JAR_PREFIX=signal-client-java-
+          JAR_PREFIX=libsignal-client-
           jar_file=$(find ./signal-cli-*/lib/ -name "$JAR_PREFIX*.jar")
           jar_version=$(echo "$jar_file" | xargs basename | sed "s/$JAR_PREFIX//; s/.jar//")
           echo "$jar_version"
@@ -48,7 +48,7 @@ jobs:
 
       - name: Download signal-client builds
         env:
-          RELEASES_URL: https://github.com/signalapp/libsignal-client/releases/download/
+          RELEASES_URL: https://github.com/signalapp/libsignal/releases/download/
           FILE_NAMES: signal_jni.dll libsignal_jni.dylib
           SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
         run: |
@@ -63,7 +63,7 @@ jobs:
           SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
         run: |
           mv signal_jni.dll libsignal_jni.so
-          zip -u ./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
+          zip -u ./signal-cli-${SIGNAL_CLI_VER}/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
           tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-${SIGNAL_CLI_VER}/
 
       - name: Replace macOS lib
@@ -71,7 +71,7 @@ jobs:
           SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.signal_cli_version }}
           SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
         run: |
-          jar_file=./signal-cli-${SIGNAL_CLI_VER}/lib/signal-client-java-${SIGNAL_CLIENT_VER}.jar
+          jar_file=./signal-cli-${SIGNAL_CLI_VER}/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar
           zip -d "$jar_file" libsignal_jni.so
           zip "$jar_file" libsignal_jni.dylib
           tar -czf signal-cli-${SIGNAL_CLI_VER}-macOS.tar.gz signal-cli-${SIGNAL_CLI_VER}/
