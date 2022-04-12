@@ -135,7 +135,7 @@ jobs:
         shell: bash   # Explicit for windows
 
     env:
-      JAVA_VERSION: 17
+      JAVA_VERSION: 18
 
     steps:
 
