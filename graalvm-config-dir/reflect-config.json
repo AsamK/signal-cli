@@ -3142,6 +3142,10 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.storage.protos.StoryDistributionListRecord",
+  "allDeclaredFields":true
+},
+{
   "name":"org.whispersystems.signalservice.internal.util.JsonUtil$AciDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },

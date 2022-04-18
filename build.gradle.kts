@@ -38,7 +38,7 @@ dependencies {
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.0.0")
     implementation("org.slf4j", "slf4j-api", "1.7.36")
-    implementation("ch.qos.logback", "logback-classic", "1.2.10")
+    implementation("ch.qos.logback", "logback-classic", "1.2.11")
     implementation("org.slf4j", "jul-to-slf4j", "1.7.36")
     implementation(project(":lib"))
 }
