@@ -495,7 +495,11 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"deviceLinkUri","parameterTypes":[] }, 
+    {"name":"deviceName","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.commands.FinishLinkCommand$JsonFinishLink",
@@ -578,7 +582,11 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }, 
+    {"name":"captcha","parameterTypes":[] }, 
+    {"name":"voice","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.commands.StartLinkCommand$JsonLink",
@@ -592,7 +600,11 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"pin","parameterTypes":[] }, 
+    {"name":"verificationCode","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonAttachment",
@@ -1049,7 +1061,11 @@
   "name":"org.asamk.signal.manager.storage.recipients.RecipientAddress",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage",
