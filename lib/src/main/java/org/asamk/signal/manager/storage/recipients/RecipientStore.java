@@ -279,11 +279,13 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         synchronized (recipients) {
             logger.debug("Deleting recipient data for {}", recipientId);
             final var recipient = recipients.get(recipientId);
-            storeRecipientLocked(recipientId,
-                    Recipient.newBuilder()
-                            .withRecipientId(recipientId)
-                            .withAddress(new RecipientAddress(recipient.getAddress().uuid().orElse(null)))
-                            .build());
+            recipient.getAddress()
+                    .uuid()
+                    .ifPresent(uuid -> storeRecipientLocked(recipientId,
+                            Recipient.newBuilder()
+                                    .withRecipientId(recipientId)
+                                    .withAddress(new RecipientAddress(uuid))
+                                    .build()));
         }
     }
 
