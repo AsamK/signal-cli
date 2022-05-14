@@ -517,7 +517,7 @@ public record MessageEnvelope(
                 long expirationStartTimestamp,
                 Optional<RecipientAddress> destination,
                 Set<RecipientAddress> recipients,
-                Data message
+                Optional<Data> message
         ) {
 
             static Sent from(
@@ -534,7 +534,8 @@ public record MessageEnvelope(
                                 .stream()
                                 .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d)))
                                 .collect(Collectors.toSet()),
-                        Data.from(sentMessage.getMessage(), recipientResolver, addressResolver, fileProvider));
+                        sentMessage.getDataMessage()
+                                .map(message -> Data.from(message, recipientResolver, addressResolver, fileProvider)));
             }
         }
 

@@ -31,7 +31,7 @@ public class ServiceConfig {
     public static final AccountAttributes.Capabilities capabilities;
 
     static {
-        capabilities = new AccountAttributes.Capabilities(false, true, false, true, true, true, true, false);
+        capabilities = new AccountAttributes.Capabilities(false, true, false, true, true, true, true, false, false);
 
         try {
             TrustStore contactTrustStore = new IasTrustStore();
@@ -50,7 +50,8 @@ public class ServiceConfig {
         try {
             try {
                 org.signal.libsignal.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
-            } catch (IllegalArgumentException ignored) {
+            } catch (Exception e) {
+                logger.trace("Expected exception when checking libsignal-client: {}", e.getMessage());
             }
             return true;
         } catch (UnsatisfiedLinkError e) {

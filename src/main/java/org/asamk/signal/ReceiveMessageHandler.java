@@ -298,8 +298,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         .println("Expiration started at: {}",
                                 DateUtils.formatTimestamp(sentTranscriptMessage.expirationStartTimestamp()));
             }
-            var message = sentTranscriptMessage.message();
-            printDataMessage(writer.indentedWriter(), message);
+            if (sentTranscriptMessage.message().isPresent()) {
+                var message = sentTranscriptMessage.message().get();
+                printDataMessage(writer.indentedWriter(), message);
+            }
         }
         if (syncMessage.blocked().isPresent()) {
             writer.println("Received sync message with block list");

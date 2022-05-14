@@ -616,10 +616,12 @@ public class SendHelper {
         var address = account.getSelfAddress();
         var transcript = new SentTranscriptMessage(Optional.of(address),
                 message.getTimestamp(),
-                message,
+                Optional.of(message),
                 message.getExpiresInSeconds(),
                 Map.of(address, true),
-                false);
+                false,
+                Optional.empty(),
+                Set.of());
         var syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
         return sendSyncMessage(syncMessage);

@@ -540,7 +540,8 @@ class ManagerImpl implements Manager {
                             .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(quote.author())),
                     quote.message(),
                     List.of(),
-                    resolveMentions(quote.mentions())));
+                    resolveMentions(quote.mentions()),
+                    SignalServiceDataMessage.Quote.Type.NORMAL));
         }
         if (message.sticker().isPresent()) {
             final var sticker = message.sticker().get();

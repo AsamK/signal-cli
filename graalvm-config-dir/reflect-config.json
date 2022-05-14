@@ -2560,6 +2560,7 @@
     {"name":"delete_"}, 
     {"name":"expireTimer_"}, 
     {"name":"flags_"}, 
+    {"name":"giftBadge_"}, 
     {"name":"groupCallUpdate_"}, 
     {"name":"groupV2_"}, 
     {"name":"group_"}, 
@@ -2953,6 +2954,8 @@
     {"name":"expirationStartTimestamp_"}, 
     {"name":"isRecipientUpdate_"}, 
     {"name":"message_"}, 
+    {"name":"storyMessageRecipients_"}, 
+    {"name":"storyMessage_"}, 
     {"name":"timestamp_"}, 
     {"name":"unidentifiedStatus_"}
   ]
@@ -3042,6 +3045,7 @@
   "fields":[
     {"name":"address_"}, 
     {"name":"bitField0_"}, 
+    {"name":"destinationUuid_"}, 
     {"name":"groupId_"}, 
     {"name":"needsReceipt_"}, 
     {"name":"senderDevice_"}, 

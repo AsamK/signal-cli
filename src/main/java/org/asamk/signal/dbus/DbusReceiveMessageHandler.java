@@ -79,27 +79,29 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
             if (syncMessage.sent().isPresent()) {
                 var transcript = syncMessage.sent().get();
 
-                if (transcript.destination().isPresent() || transcript.message().groupContext().isPresent()) {
-                    var message = transcript.message();
-                    var groupId = message.groupContext()
-                            .map(MessageEnvelope.Data.GroupContext::groupId)
-                            .map(GroupId::serialize)
-                            .orElseGet(() -> new byte[0]);
+                if (transcript.message().isPresent()) {
+                    final var dataMessage = transcript.message().get();
+                    if (transcript.destination().isPresent() || dataMessage.groupContext().isPresent()) {
+                        var groupId = dataMessage.groupContext()
+                                .map(MessageEnvelope.Data.GroupContext::groupId)
+                                .map(GroupId::serialize)
+                                .orElseGet(() -> new byte[0]);
 
-                    conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
-                            transcript.message().timestamp(),
-                            senderString,
-                            transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
-                            groupId,
-                            message.body().orElse(""),
-                            getAttachments(message)));
-                    conn.sendMessage(new Signal.SyncMessageReceivedV2(objectPath,
-                            transcript.message().timestamp(),
-                            senderString,
-                            transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
-                            groupId,
-                            message.body().orElse(""),
-                            getMessageExtras(message)));
+                        conn.sendMessage(new Signal.SyncMessageReceived(objectPath,
+                                dataMessage.timestamp(),
+                                senderString,
+                                transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
+                                groupId,
+                                dataMessage.body().orElse(""),
+                                getAttachments(dataMessage)));
+                        conn.sendMessage(new Signal.SyncMessageReceivedV2(objectPath,
+                                dataMessage.timestamp(),
+                                senderString,
+                                transcript.destination().map(RecipientAddress::getLegacyIdentifier).orElse(""),
+                                groupId,
+                                dataMessage.body().orElse(""),
+                                getMessageExtras(dataMessage)));
+                    }
                 }
             }
         }

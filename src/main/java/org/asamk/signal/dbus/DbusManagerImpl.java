@@ -786,7 +786,7 @@ public class DbusManagerImpl implements Manager {
                                         ? Optional.empty()
                                         : Optional.of(new RecipientAddress(null, syncReceived.getDestination())),
                                 Set.of(),
-                                new MessageEnvelope.Data(syncReceived.getTimestamp(),
+                                Optional.of(new MessageEnvelope.Data(syncReceived.getTimestamp(),
                                         syncReceived.getGroupId().length > 0
                                                 ? Optional.of(new MessageEnvelope.Data.GroupContext(GroupId.unknownVersion(
                                                 syncReceived.getGroupId()), false, 0))
@@ -806,7 +806,7 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         List.of(),
                                         List.of(),
-                                        List.of()))),
+                                        List.of())))),
                                 Optional.empty(),
                                 List.of(),
                                 List.of(),

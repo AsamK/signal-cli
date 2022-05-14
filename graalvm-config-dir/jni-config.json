@@ -81,6 +81,7 @@
 {
   "name":"org.signal.libsignal.protocol.IdentityKey",
   "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
     {"name":"<init>","parameterTypes":["byte[]"] }, 
     {"name":"serialize","parameterTypes":[] }
   ]
@@ -102,7 +103,10 @@
 },
 {
   "name":"org.signal.libsignal.protocol.SignalProtocolAddress",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
+    {"name":"<init>","parameterTypes":["java.lang.String","int"] }
+  ]
 },
 {
   "name":"org.signal.libsignal.protocol.UntrustedIdentityException",
@@ -159,7 +163,10 @@
 {
   "name":"org.signal.libsignal.protocol.state.SessionRecord",
   "fields":[{"name":"unsafeHandle"}],
-  "methods":[{"name":"<init>","parameterTypes":["byte[]"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long"] }, 
+    {"name":"<init>","parameterTypes":["byte[]"] }
+  ]
 },
 {
   "name":"org.signal.libsignal.protocol.state.SessionStore"
@@ -170,6 +177,10 @@
 },
 {
   "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore"
+},
+{
+  "name":"org.signal.libsignal.zkgroup.InvalidInputException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.sqlite.Collation"

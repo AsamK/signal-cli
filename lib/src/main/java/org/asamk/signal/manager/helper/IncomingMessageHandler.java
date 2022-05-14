@@ -122,7 +122,8 @@ public final class IncomingMessageHandler {
                 actions.add(new RetrieveProfileAction(recipientId));
                 exception = new UntrustedIdentityException(account.getRecipientStore()
                         .resolveRecipientAddress(recipientId), e.getSenderDevice());
-            } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException | ProtocolInvalidMessageException e) {
+            } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException |
+                     ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);
                 final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
                 if (context.getContactHelper().isContactBlocked(sender)) {
@@ -319,11 +320,13 @@ public final class IncomingMessageHandler {
         if (syncMessage.getSent().isPresent()) {
             var message = syncMessage.getSent().get();
             final var destination = message.getDestination().orElse(null);
-            actions.addAll(handleSignalServiceDataMessage(message.getMessage(),
-                    true,
-                    sender,
-                    destination == null ? null : context.getRecipientHelper().resolveRecipient(destination),
-                    ignoreAttachments));
+            if (message.getDataMessage().isPresent()) {
+                actions.addAll(handleSignalServiceDataMessage(message.getDataMessage().get(),
+                        true,
+                        sender,
+                        destination == null ? null : context.getRecipientHelper().resolveRecipient(destination),
+                        ignoreAttachments));
+            }
         }
         if (syncMessage.getRequest().isPresent() && account.isMasterDevice()) {
             var rm = syncMessage.getRequest().get();

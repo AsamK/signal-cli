@@ -3,6 +3,7 @@ package org.asamk.signal.manager.util;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,7 +19,7 @@ public class MessageCacheUtils {
         try (var f = new FileInputStream(file)) {
             var in = new DataInputStream(f);
             var version = in.readInt();
-            if (version > 4) {
+            if (version > 5) {
                 return null;
             }
             var type = in.readInt();
@@ -31,6 +32,10 @@ public class MessageCacheUtils {
             if (version == 1) {
                 // read legacy relay field
                 in.readUTF();
+            }
+            String destinationUuid = null;
+            if (version >= 5) {
+                destinationUuid = in.readUTF();
             }
             var timestamp = in.readLong();
             byte[] content = null;
@@ -69,18 +74,20 @@ public class MessageCacheUtils {
                     content,
                     serverReceivedTimestamp,
                     serverDeliveredTimestamp,
-                    uuid);
+                    uuid,
+                    destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid);
         }
     }
 
     public static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (var f = new FileOutputStream(file)) {
             try (var out = new DataOutputStream(f)) {
-                out.writeInt(4); // version
+                out.writeInt(5); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
                 out.writeInt(envelope.getSourceDevice());
+                out.writeUTF(envelope.getDestinationUuid() == null ? "" : envelope.getDestinationUuid());
                 out.writeLong(envelope.getTimestamp());
                 if (envelope.hasContent()) {
                     out.writeInt(envelope.getContent().length);

@@ -19,10 +19,13 @@ record JsonSyncDataMessage(
             return new JsonSyncDataMessage(address.getLegacyIdentifier(),
                     address.number().orElse(null),
                     address.uuid().map(UUID::toString).orElse(null),
-                    JsonDataMessage.from(transcriptMessage.message()));
+                    transcriptMessage.message().map(JsonDataMessage::from).orElse(null));
 
         } else {
-            return new JsonSyncDataMessage(null, null, null, JsonDataMessage.from(transcriptMessage.message()));
+            return new JsonSyncDataMessage(null,
+                    null,
+                    null,
+                    transcriptMessage.message().map(JsonDataMessage::from).orElse(null));
         }
     }
 }

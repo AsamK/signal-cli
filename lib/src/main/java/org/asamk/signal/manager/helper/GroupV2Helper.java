@@ -529,7 +529,8 @@ class GroupV2Helper {
         final var today = currentTimeDays();
         if (groupApiCredentials == null || !groupApiCredentials.containsKey(today)) {
             // Returns credentials for the next 7 days
-            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(today);
+            final var isAci = true; // TODO enable group handling with PNI
+            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(today, isAci);
             // TODO cache credentials on disk until they expire
         }
         var authCredentialResponse = groupApiCredentials.get(today);
