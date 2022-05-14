@@ -441,7 +441,7 @@ public class SendHelper {
     }
 
     private Set<RecipientId> getSenderKeyCapableRecipientIds(final Set<RecipientId> recipientIds) {
-        final var selfProfile = context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
+        final var selfProfile = context.getProfileHelper().getSelfProfile();
         if (selfProfile == null || !selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
             logger.debug("Not all of our devices support sender key. Using legacy.");
             return Set.of();

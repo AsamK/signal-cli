@@ -130,8 +130,7 @@ public final class IncomingMessageHandler {
                     logger.debug("Received invalid message from blocked contact, ignoring.");
                 } else {
                     final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
-                    final var selfProfile = context.getProfileHelper()
-                            .getRecipientProfile(account.getSelfRecipientId());
+                    final var selfProfile = context.getProfileHelper().getSelfProfile();
                     if ((!sender.equals(account.getSelfRecipientId()) || e.getSenderDevice() != account.getDeviceId())
                             && senderProfile != null
                             && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)

@@ -114,7 +114,7 @@ public final class ProfileHelper {
             String aboutEmoji,
             Optional<File> avatar
     ) throws IOException {
-        var profile = getRecipientProfile(account.getSelfRecipientId());
+        var profile = getSelfProfile();
         var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
         if (givenName != null) {
             builder.withGivenName(givenName);
@@ -162,6 +162,10 @@ public final class ProfileHelper {
             }
         }
         account.getProfileStore().storeProfile(account.getSelfRecipientId(), newProfile);
+    }
+
+    public Profile getSelfProfile() {
+        return getRecipientProfile(account.getSelfRecipientId());
     }
 
     public List<Profile> getRecipientProfile(List<RecipientId> recipientIds) {

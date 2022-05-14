@@ -143,7 +143,7 @@ public class UnidentifiedAccessHelper {
     private byte[] getSelfUnidentifiedAccessKey(boolean noRefresh) {
         var selfProfile = noRefresh
                 ? account.getProfileStore().getProfile(account.getSelfRecipientId())
-                : context.getProfileHelper().getRecipientProfile(account.getSelfRecipientId());
+                : context.getProfileHelper().getSelfProfile();
         if (selfProfile != null
                 && selfProfile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED) {
             return createUnrestrictedUnidentifiedAccess();
