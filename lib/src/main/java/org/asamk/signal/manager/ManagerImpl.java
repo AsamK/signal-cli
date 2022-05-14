@@ -517,6 +517,11 @@ class ManagerImpl implements Manager {
     public SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
+        final var selfProfile = context.getProfileHelper().getSelfProfile();
+        if (selfProfile == null || selfProfile.getDisplayName().isEmpty()) {
+            logger.warn(
+                    "No profile name set. When sending a message it's recommended to set a profile name wit the updateProfile command. This may become mandatory in the future.");
+        }
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients);
