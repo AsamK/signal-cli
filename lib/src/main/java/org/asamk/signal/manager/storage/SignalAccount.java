@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
@@ -95,6 +96,7 @@ public class SignalAccount implements Closeable {
 
     private File dataPath;
     private String accountPath;
+    private ServiceEnvironment serviceEnvironment;
     private String number;
     private ACI aci;
     private PNI pni;
@@ -170,6 +172,7 @@ public class SignalAccount implements Closeable {
             File dataPath,
             String accountPath,
             String number,
+            ServiceEnvironment serviceEnvironment,
             IdentityKeyPair aciIdentityKey,
             IdentityKeyPair pniIdentityKey,
             int registrationId,
@@ -187,6 +190,7 @@ public class SignalAccount implements Closeable {
 
         signalAccount.accountPath = accountPath;
         signalAccount.number = number;
+        signalAccount.serviceEnvironment = serviceEnvironment;
         signalAccount.profileKey = profileKey;
 
         signalAccount.dataPath = dataPath;
@@ -213,6 +217,7 @@ public class SignalAccount implements Closeable {
             File dataPath,
             String accountPath,
             String number,
+            ServiceEnvironment serviceEnvironment,
             ACI aci,
             PNI pni,
             String password,
@@ -230,6 +235,7 @@ public class SignalAccount implements Closeable {
             return createLinkedAccount(dataPath,
                     accountPath,
                     number,
+                    serviceEnvironment,
                     aci,
                     pni,
                     password,
@@ -279,6 +285,7 @@ public class SignalAccount implements Closeable {
             File dataPath,
             String accountPath,
             String number,
+            ServiceEnvironment serviceEnvironment,
             ACI aci,
             PNI pni,
             String password,
@@ -308,6 +315,7 @@ public class SignalAccount implements Closeable {
 
         signalAccount.dataPath = dataPath;
         signalAccount.accountPath = accountPath;
+        signalAccount.serviceEnvironment = serviceEnvironment;
         signalAccount.localRegistrationId = registrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
@@ -488,6 +496,9 @@ public class SignalAccount implements Closeable {
         number = Utils.getNotNullNode(rootNode, "username").asText();
         if (rootNode.hasNonNull("password")) {
             password = rootNode.get("password").asText();
+        }
+        if (rootNode.hasNonNull("serviceEnvironment")) {
+            serviceEnvironment = ServiceEnvironment.valueOf(rootNode.get("serviceEnvironment").asText());
         }
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("uuid")) {
@@ -814,6 +825,7 @@ public class SignalAccount implements Closeable {
             var rootNode = jsonProcessor.createObjectNode();
             rootNode.put("version", CURRENT_STORAGE_VERSION)
                     .put("username", number)
+                    .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
                     .put("uuid", aci == null ? null : aci.toString())
                     .put("pni", pni == null ? null : pni.toString())
                     .put("deviceName", encryptedDeviceName)
@@ -1106,6 +1118,15 @@ public class SignalAccount implements Closeable {
 
     public void setNumber(final String number) {
         this.number = number;
+        save();
+    }
+
+    public ServiceEnvironment getServiceEnvironment() {
+        return serviceEnvironment;
+    }
+
+    public void setServiceEnvironment(final ServiceEnvironment serviceEnvironment) {
+        this.serviceEnvironment = serviceEnvironment;
         save();
     }
 

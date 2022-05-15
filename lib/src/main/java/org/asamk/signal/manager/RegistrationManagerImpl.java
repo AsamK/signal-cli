@@ -95,6 +95,12 @@ class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
+        if (account.isRegistered()
+                && account.getServiceEnvironment() != null
+                && account.getServiceEnvironment() != serviceEnvironmentConfig.getType()) {
+            throw new IOException("Account is registered in another environment: " + account.getServiceEnvironment());
+        }
+
         if (account.getAci() != null && attemptReactivateAccount()) {
             return;
         }

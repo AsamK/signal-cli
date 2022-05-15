@@ -136,6 +136,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
             account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
                     accountPath,
                     number,
+                    serviceEnvironmentConfig.getType(),
                     aci,
                     pni,
                     password,
@@ -207,6 +208,13 @@ class ProvisioningManagerImpl implements ProvisioningManager {
         try (signalAccount) {
             if (signalAccount.isMasterDevice()) {
                 logger.debug("Account is a master device.");
+                return false;
+            }
+            if (signalAccount.isRegistered()
+                    && signalAccount.getServiceEnvironment() != null
+                    && signalAccount.getServiceEnvironment() != serviceEnvironmentConfig.getType()) {
+                logger.debug("Account is registered in another environment: {}.",
+                        signalAccount.getServiceEnvironment());
                 return false;
             }
 

@@ -75,11 +75,13 @@ public class ServiceConfig {
         final var interceptors = List.of(userAgentInterceptor);
 
         return switch (serviceEnvironment) {
-            case LIVE -> new ServiceEnvironmentConfig(LiveConfig.createDefaultServiceConfiguration(interceptors),
+            case LIVE -> new ServiceEnvironmentConfig(serviceEnvironment,
+                    LiveConfig.createDefaultServiceConfiguration(interceptors),
                     LiveConfig.getUnidentifiedSenderTrustRoot(),
                     LiveConfig.createKeyBackupConfig(),
                     LiveConfig.getCdsMrenclave());
-            case STAGING -> new ServiceEnvironmentConfig(StagingConfig.createDefaultServiceConfiguration(interceptors),
+            case STAGING -> new ServiceEnvironmentConfig(serviceEnvironment,
+                    StagingConfig.createDefaultServiceConfiguration(interceptors),
                     StagingConfig.getUnidentifiedSenderTrustRoot(),
                     StagingConfig.createKeyBackupConfig(),
                     StagingConfig.getCdsMrenclave());

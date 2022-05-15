@@ -24,6 +24,7 @@ public class SignalAccountFiles {
     private static final Logger logger = LoggerFactory.getLogger(MultiAccountManager.class);
 
     private final PathConfig pathConfig;
+    private final ServiceEnvironment serviceEnvironment;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
     private final TrustNewIdentity trustNewIdentity;
@@ -36,7 +37,8 @@ public class SignalAccountFiles {
             final TrustNewIdentity trustNewIdentity
     ) throws IOException {
         this.pathConfig = PathConfig.createDefault(settingsPath);
-        this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(serviceEnvironment, userAgent);
+        this.serviceEnvironment = serviceEnvironment;
+        this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment, userAgent);
         this.userAgent = userAgent;
         this.trustNewIdentity = trustNewIdentity;
         this.accountsStore = new AccountsStore(pathConfig.dataPath());
@@ -85,6 +87,10 @@ public class SignalAccountFiles {
             throw new NotRegisteredException();
         }
 
+        if (account.getServiceEnvironment() != null && account.getServiceEnvironment() != serviceEnvironment) {
+            throw new IOException("Account is registered in another environment: " + account.getServiceEnvironment());
+        }
+
         account.initDatabase();
 
         final var manager = new ManagerImpl(account,
@@ -98,6 +104,10 @@ public class SignalAccountFiles {
         } catch (IOException e) {
             manager.close();
             throw new AccountCheckException("Error while checking account " + number + ": " + e.getMessage(), e);
+        }
+
+        if (account.getServiceEnvironment() == null) {
+            account.setServiceEnvironment(serviceEnvironment);
         }
 
         return manager;
@@ -133,6 +143,7 @@ public class SignalAccountFiles {
             var account = SignalAccount.create(pathConfig.dataPath(),
                     newAccountPath,
                     number,
+                    serviceEnvironment,
                     aciIdentityKey,
                     pniIdentityKey,
                     registrationId,
