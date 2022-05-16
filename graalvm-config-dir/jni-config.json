@@ -102,6 +102,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.signal.libsignal.protocol.NoSessionException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.protocol.SignalProtocolAddress",
   "methods":[
     {"name":"<init>","parameterTypes":["long"] }, 
