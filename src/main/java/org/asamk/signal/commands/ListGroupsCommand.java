@@ -11,6 +11,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
+import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
         subparser.addArgument("-d", "--detailed")
                 .action(Arguments.storeTrue())
                 .help("List the members and group invite links of each group. If output=json, then this is always set");
+        subparser.addArgument("-g", "--group-id").help("Specify one or more group IDs to show.").nargs("*");
     }
 
     private static Set<String> resolveMembers(Set<RecipientAddress> addresses) {
@@ -79,7 +81,13 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        final var groups = m.getGroups();
+        var groups = m.getGroups();
+
+        final var groupIdStrings = ns.<String>getList("group-id");
+        final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
+        if (groupIds.size() > 0) {
+            groups = groups.stream().filter(g -> groupIds.contains(g.groupId())).toList();
+        }
 
         if (outputWriter instanceof JsonWriter jsonWriter) {
 

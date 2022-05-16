@@ -413,6 +413,9 @@ In json mode this is outputted as an list of objects and is always in detailed m
 *-d*, *--detailed*::
 Include the list of members of each group and the group invite link.
 
+*-g*, *--group-id*::
+Filter the group list by one or more group IDs.
+
 === listContacts
 
 Show a list of known contacts with names.
