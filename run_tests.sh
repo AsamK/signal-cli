@@ -5,12 +5,6 @@ if [ $# -ne 2 ]; then
 fi
 
 set -e
-# To update graalvm config, set GRAALVM_HOME, e.g:
-# export GRAALVM_HOME=/usr/lib/jvm/java-17-graalvm
-if [ ! -z "$GRAALVM_HOME" ]; then
-  export JAVA_HOME=$GRAALVM_HOME
-  export SIGNAL_CLI_OPTS='-agentlib:native-image-agent=config-merge-dir=graalvm-config-dir/'
-fi
 
 NUMBER_1="$1"
 NUMBER_2="$2"
@@ -36,6 +30,13 @@ else
 fi
 
 run() {
+  # To update graalvm config, set GRAALVM_HOME, e.g:
+  # export GRAALVM_HOME=/usr/lib/jvm/java-17-graalvm
+  if [ ! -z "$GRAALVM_HOME" ]; then
+    export JAVA_HOME=$GRAALVM_HOME
+    export SIGNAL_CLI_OPTS="-agentlib:native-image-agent=config-merge-dir=graalvm-config-dir-${SIGNAL_CLI_AGENT_ID}/"
+  fi
+
   set -x
   if [ "$JSON_RPC" -eq 1 ]; then
     "$SIGNAL_CLI" $@
@@ -46,19 +47,23 @@ run() {
 }
 
 run_main() {
+  export SIGNAL_CLI_AGENT_ID=main
   if [ "$JSON_RPC" -eq 1 ]; then
     run --json-rpc-socket="$XDG_RUNTIME_DIR/signal-cli/socket" $@
   else
     run --config="$PATH_MAIN" $@
   fi
+  unset SIGNAL_CLI_AGENT_ID
 }
 
 run_linked() {
+  export SIGNAL_CLI_AGENT_ID=linked
   if [ "$JSON_RPC" -eq 1 ]; then
     run --json-rpc-tcp="127.0.0.1:7583" $@
   else
     run --config="$PATH_LINK" $@
   fi
+  unset SIGNAL_CLI_AGENT_ID
 }
 
 register() {
@@ -227,3 +232,8 @@ run_main -a "$NUMBER_1" removeDevice -d 2
 ## Unregister
 run_main -a "$NUMBER_1" unregister
 run_main -a "$NUMBER_2" unregister --delete-account
+
+if [ ! -z "$GRAALVM_HOME" ]; then
+  "$GRAALVM_HOME"/lib/svm/bin/native-image-configure generate --input-dir=graalvm-config-dir/ --input-dir=graalvm-config-dir-linked/ --input-dir=graalvm-config-dir-main/ --output-dir=graalvm-config-dir//
+  rm -r graalvm-config-dir-main graalvm-config-dir-linked
+fi
