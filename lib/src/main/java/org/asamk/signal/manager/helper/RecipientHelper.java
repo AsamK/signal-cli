@@ -51,7 +51,11 @@ public class RecipientHelper {
         final ACI aci;
         try {
             aci = getRegisteredUser(number);
-        } catch (UnregisteredRecipientException | IOException e) {
+        } catch (UnregisteredRecipientException e) {
+            logger.warn("Failed to get uuid for e164 number: {}", number);
+            // Return SignalServiceAddress with unknown UUID
+            return address.toSignalServiceAddress();
+        } catch (IOException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number, e);
             // Return SignalServiceAddress with unknown UUID
             return address.toSignalServiceAddress();
@@ -106,7 +110,8 @@ public class RecipientHelper {
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
                             numbers,
                             serviceEnvironmentConfig.getCdsMrenclave());
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException | UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
+        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException |
+                 UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
             throw new IOException(e);
         }
 
