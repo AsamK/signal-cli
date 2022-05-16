@@ -14,4 +14,8 @@ public interface RegistrationManager extends Closeable {
     void verifyAccount(
             String verificationCode, String pin
     ) throws IOException, PinLockedException, IncorrectPinException;
+
+    void deleteLocalAccountData() throws IOException;
+
+    boolean isRegistered();
 }

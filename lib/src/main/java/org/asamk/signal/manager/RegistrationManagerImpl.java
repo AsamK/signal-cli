@@ -155,6 +155,18 @@ class RegistrationManagerImpl implements RegistrationManager {
         }
     }
 
+    @Override
+    public void deleteLocalAccountData() throws IOException {
+        account.deleteAccountData();
+        accountFileUpdater.removeAccount();
+        account = null;
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return account.isRegistered();
+    }
+
     private boolean attemptReactivateAccount() {
         try {
             final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),

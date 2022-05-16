@@ -70,9 +70,11 @@ import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -1328,6 +1330,17 @@ public class SignalAccount implements Closeable {
         final var publicKey = getAciIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
         getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);
+    }
+
+    public void deleteAccountData() throws IOException {
+        close();
+        try (final var files = Files.walk(getUserPath(dataPath, accountPath).toPath())
+                .sorted(Comparator.reverseOrder())) {
+            for (final var file = files.iterator(); file.hasNext(); ) {
+                Files.delete(file.next());
+            }
+        }
+        Files.delete(getFileName(dataPath, accountPath).toPath());
     }
 
     @Override

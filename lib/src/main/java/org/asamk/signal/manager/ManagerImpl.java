@@ -66,6 +66,7 @@ import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -99,6 +100,7 @@ class ManagerImpl implements Manager {
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
     private SignalAccount account;
+    private AccountFileUpdater accountFileUpdater;
     private final SignalDependencies dependencies;
     private final Context context;
 
@@ -120,6 +122,7 @@ class ManagerImpl implements Manager {
             String userAgent
     ) {
         this.account = account;
+        this.accountFileUpdater = accountFileUpdater;
 
         final var sessionLock = new SignalSessionLock() {
             private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
@@ -140,10 +143,18 @@ class ManagerImpl implements Manager {
         final var attachmentStore = new AttachmentStore(pathConfig.attachmentsPath());
         final var stickerPackStore = new StickerPackStore(pathConfig.stickerPacksPath());
 
-        this.context = new Context(account, (number, aci) -> {
-            accountFileUpdater.updateAccountIdentifiers(number, aci);
-            synchronized (addressChangedListeners) {
-                addressChangedListeners.forEach(Runnable::run);
+        this.context = new Context(account, new AccountFileUpdater() {
+            @Override
+            public void updateAccountIdentifiers(final String number, final ACI aci) {
+                accountFileUpdater.updateAccountIdentifiers(number, aci);
+                synchronized (addressChangedListeners) {
+                    addressChangedListeners.forEach(Runnable::run);
+                }
+            }
+
+            @Override
+            public void removeAccount() {
+                accountFileUpdater.removeAccount();
             }
         }, dependencies, avatarStore, attachmentStore, stickerPackStore);
         this.context.getAccountHelper().setUnregisteredListener(this::close);

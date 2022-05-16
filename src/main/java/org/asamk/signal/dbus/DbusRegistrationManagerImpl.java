@@ -48,6 +48,16 @@ public class DbusRegistrationManagerImpl implements RegistrationManager {
     }
 
     @Override
+    public void deleteLocalAccountData() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isRegistered() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void close() {
     }
 }

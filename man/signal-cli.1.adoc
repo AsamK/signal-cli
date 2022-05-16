@@ -121,6 +121,16 @@ You will have to be readded to each group.
 
 CAUTION: Only delete your account if you won't use this number again!
 
+=== deleteLocalAccountData
+
+Delete all local data for this account.
+Data should only be deleted if the account is unregistered.
+
+CAUTION: This cannot be undone.
+
+*--ignore-registered*::
+Delete the account data even though the account is still registered on the Signal servers.
+
 === updateAccount
 
 Update the account attributes on the signal server.

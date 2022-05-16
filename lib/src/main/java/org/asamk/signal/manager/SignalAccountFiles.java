@@ -95,7 +95,7 @@ public class SignalAccountFiles {
 
         final var manager = new ManagerImpl(account,
                 pathConfig,
-                (newNumber, newAci) -> accountsStore.updateAccount(accountPath, newNumber, newAci),
+                new AccountFileUpdaterImpl(accountsStore, accountPath),
                 serviceEnvironmentConfig,
                 userAgent);
 
@@ -155,7 +155,7 @@ public class SignalAccountFiles {
                     serviceEnvironmentConfig,
                     userAgent,
                     newManagerListener,
-                    (newNumber, newAci) -> accountsStore.updateAccount(newAccountPath, newNumber, newAci));
+                    new AccountFileUpdaterImpl(accountsStore, newAccountPath));
         }
 
         var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, trustNewIdentity);
@@ -169,6 +169,6 @@ public class SignalAccountFiles {
                 serviceEnvironmentConfig,
                 userAgent,
                 newManagerListener,
-                (newNumber, newAci) -> accountsStore.updateAccount(accountPath, newNumber, newAci));
+                new AccountFileUpdaterImpl(accountsStore, accountPath));
     }
 }

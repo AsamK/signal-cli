@@ -13,6 +13,7 @@ public class Commands {
         addCommand(new AddDeviceCommand());
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
+        addCommand(new DeleteLocalAccountDataCommand());
         addCommand(new FinishLinkCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new JoinGroupCommand());

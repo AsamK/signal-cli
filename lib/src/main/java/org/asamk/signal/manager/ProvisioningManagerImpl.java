@@ -153,7 +153,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                 final var accountPathFinal = accountPath;
                 m = new ManagerImpl(account,
                         pathConfig,
-                        (newNumber, newAci) -> accountsStore.updateAccount(accountPathFinal, newNumber, newAci),
+                        new AccountFileUpdaterImpl(accountsStore, accountPathFinal),
                         serviceEnvironmentConfig,
                         userAgent);
                 account = null;
@@ -220,7 +220,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
             final var m = new ManagerImpl(signalAccount,
                     pathConfig,
-                    (newNumber, newAci) -> accountsStore.updateAccount(accountPath, newNumber, newAci),
+                    new AccountFileUpdaterImpl(accountsStore, accountPath),
                     serviceEnvironmentConfig,
                     userAgent);
             try (m) {

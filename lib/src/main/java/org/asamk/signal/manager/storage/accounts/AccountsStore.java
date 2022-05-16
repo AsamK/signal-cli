@@ -104,6 +104,10 @@ public class AccountsStore {
         return accountPath;
     }
 
+    public void removeAccount(final String accountPath) {
+        updateAccounts(accounts -> accounts.stream().filter(a -> !a.path().equals(accountPath)).toList());
+    }
+
     private String generateNewAccountPath() {
         return new Random().ints(100000, 1000000)
                 .mapToObj(String::valueOf)
