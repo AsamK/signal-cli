@@ -262,7 +262,7 @@ public class GroupHelper {
             groupJoinInfo = context.getGroupV2Helper()
                     .getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword());
         } catch (GroupLinkNotActiveException e) {
-            throw new InactiveGroupLinkException("Group link inactive", e);
+            throw new InactiveGroupLinkException("Group link inactive (reason: " + e.getReason() + ")", e);
         }
         final var groupChange = context.getGroupV2Helper()
                 .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);
