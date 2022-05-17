@@ -38,6 +38,7 @@ import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -84,7 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -190,7 +190,7 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException {
+    public Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException {
         final var canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
                 final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getNumber());
@@ -213,7 +213,13 @@ class ManagerImpl implements Manager {
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);
             final var aci = registeredUsers.get(number);
-            return new Pair<>(number.isEmpty() ? null : number, aci == null ? null : aci.uuid());
+            final var profile = aci == null
+                    ? null
+                    : context.getProfileHelper().getRecipientProfile(account.getRecipientStore().resolveRecipient(aci));
+            return new UserStatus(number.isEmpty() ? null : number,
+                    aci == null ? null : aci.uuid(),
+                    profile != null
+                            && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED);
         }));
     }
 

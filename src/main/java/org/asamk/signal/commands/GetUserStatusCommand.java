@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.UUID;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
@@ -38,9 +37,9 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         // Get a map of registration statuses
-        Map<String, Pair<String, UUID>> registered;
+        Map<String, UserStatus> registered;
         try {
-            registered = m.areUsersRegistered(new HashSet<>(ns.getList("recipient")));
+            registered = m.getUserStatus(new HashSet<>(ns.getList("recipient")));
         } catch (IOException e) {
             throw new IOErrorException("Unable to check if users are registered: "
                     + e.getMessage()
@@ -53,8 +52,8 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         if (outputWriter instanceof JsonWriter jsonWriter) {
 
             var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
-                final var number = entry.getValue().first();
-                final var uuid = entry.getValue().second();
+                final var number = entry.getValue().number();
+                final var uuid = entry.getValue().uuid();
                 return new JsonUserStatus(entry.getKey(), number, uuid == null ? null : uuid.toString(), uuid != null);
             }).toList();
 
@@ -63,8 +62,11 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
             final var writer = (PlainTextWriter) outputWriter;
 
             for (var entry : registered.entrySet()) {
-                final var uuid = entry.getValue().second();
-                writer.println("{}: {}", entry.getKey(), uuid != null);
+                final var userStatus = entry.getValue();
+                writer.println("{}: {}{}",
+                        entry.getKey(),
+                        userStatus.uuid() != null,
+                        userStatus.unrestrictedUnidentifiedAccess() ? " (unrestricted sealed sender)" : "");
             }
         }
     }

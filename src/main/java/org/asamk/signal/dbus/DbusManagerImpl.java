@@ -22,6 +22,7 @@ import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -53,7 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -87,14 +87,16 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public Map<String, Pair<String, UUID>> areUsersRegistered(final Set<String> numbers) throws IOException {
+    public Map<String, UserStatus> getUserStatus(final Set<String> numbers) throws IOException {
         final var numbersList = new ArrayList<>(numbers);
         final var registered = signal.isRegistered(numbersList);
 
-        final var result = new HashMap<String, Pair<String, UUID>>();
+        final var result = new HashMap<String, UserStatus>();
         for (var i = 0; i < numbersList.size(); i++) {
             result.put(numbersList.get(i),
-                    new Pair<>(numbersList.get(i), registered.get(i) ? RecipientAddress.UNKNOWN_UUID : null));
+                    new UserStatus(numbersList.get(i),
+                            registered.get(i) ? RecipientAddress.UNKNOWN_UUID : null,
+                            false));
         }
         return result;
     }

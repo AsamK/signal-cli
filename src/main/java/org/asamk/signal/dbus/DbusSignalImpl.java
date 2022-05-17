@@ -19,6 +19,7 @@ import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupLinkState;
@@ -53,7 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -641,17 +641,14 @@ public class DbusSignalImpl implements Signal {
             return List.of();
         }
 
-        Map<String, Pair<String, UUID>> registered;
+        Map<String, UserStatus> registered;
         try {
-            registered = m.areUsersRegistered(new HashSet<>(numbers));
+            registered = m.getUserStatus(new HashSet<>(numbers));
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
 
-        return numbers.stream().map(number -> {
-            var uuid = registered.get(number).second();
-            return uuid != null;
-        }).toList();
+        return numbers.stream().map(number -> registered.get(number).uuid() != null).toList();
     }
 
     @Override

@@ -21,6 +21,7 @@ import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 public interface Manager extends Closeable {
 
@@ -58,7 +58,7 @@ public interface Manager extends Closeable {
      * @return A map of numbers to canonicalized number and uuid. If a number is not registered the uuid is null.
      * @throws IOException if it's unable to get the contacts to check if they're registered
      */
-    Map<String, Pair<String, UUID>> areUsersRegistered(Set<String> numbers) throws IOException;
+    Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException;
 
     void updateAccountAttributes(String deviceName) throws IOException;
 
