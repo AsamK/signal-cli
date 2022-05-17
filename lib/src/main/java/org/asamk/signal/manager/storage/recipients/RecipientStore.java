@@ -103,6 +103,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             r.profile.about,
                             r.profile.aboutEmoji,
                             r.profile.avatarUrlPath,
+                            r.profile.paymentAddress == null
+                                    ? null
+                                    : Base64.getDecoder().decode(r.profile.paymentAddress),
                             Profile.UnidentifiedAccessMode.valueOfOrUnknown(r.profile.unidentifiedAccessMode),
                             r.profile.capabilities.stream()
                                     .map(Profile.Capability::valueOfOrNull)
@@ -535,27 +538,28 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         final var base64 = Base64.getEncoder();
         var storage = new Storage(recipients.entrySet().stream().map(pair -> {
             final var recipient = pair.getValue();
-            final var contact = recipient.getContact() == null
+            final var recipientContact = recipient.getContact();
+            final var contact = recipientContact == null
                     ? null
-                    : new Storage.Recipient.Contact(recipient.getContact().getName(),
-                            recipient.getContact().getColor(),
-                            recipient.getContact().getMessageExpirationTime(),
-                            recipient.getContact().isBlocked(),
-                            recipient.getContact().isArchived());
-            final var profile = recipient.getProfile() == null
+                    : new Storage.Recipient.Contact(recipientContact.getName(),
+                            recipientContact.getColor(),
+                            recipientContact.getMessageExpirationTime(),
+                            recipientContact.isBlocked(),
+                            recipientContact.isArchived());
+            final var recipientProfile = recipient.getProfile();
+            final var profile = recipientProfile == null
                     ? null
-                    : new Storage.Recipient.Profile(recipient.getProfile().getLastUpdateTimestamp(),
-                            recipient.getProfile().getGivenName(),
-                            recipient.getProfile().getFamilyName(),
-                            recipient.getProfile().getAbout(),
-                            recipient.getProfile().getAboutEmoji(),
-                            recipient.getProfile().getAvatarUrlPath(),
-                            recipient.getProfile().getUnidentifiedAccessMode().name(),
-                            recipient.getProfile()
-                                    .getCapabilities()
-                                    .stream()
-                                    .map(Enum::name)
-                                    .collect(Collectors.toSet()));
+                    : new Storage.Recipient.Profile(recipientProfile.getLastUpdateTimestamp(),
+                            recipientProfile.getGivenName(),
+                            recipientProfile.getFamilyName(),
+                            recipientProfile.getAbout(),
+                            recipientProfile.getAboutEmoji(),
+                            recipientProfile.getAvatarUrlPath(),
+                            recipientProfile.getPaymentAddress() == null
+                                    ? null
+                                    : base64.encodeToString(recipientProfile.getPaymentAddress()),
+                            recipientProfile.getUnidentifiedAccessMode().name(),
+                            recipientProfile.getCapabilities().stream().map(Enum::name).collect(Collectors.toSet()));
             return new Storage.Recipient(pair.getKey().id(),
                     recipient.getAddress().number().orElse(null),
                     recipient.getAddress().uuid().map(UUID::toString).orElse(null),
@@ -605,6 +609,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                     String about,
                     String aboutEmoji,
                     String avatarUrlPath,
+                    String paymentAddress,
                     String unidentifiedAccessMode,
                     Set<String> capabilities
             ) {}

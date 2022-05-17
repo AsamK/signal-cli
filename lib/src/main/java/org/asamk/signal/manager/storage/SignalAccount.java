@@ -757,6 +757,7 @@ public class SignalAccount implements Closeable {
                             profile.getAbout(),
                             profile.getAboutEmoji(),
                             null,
+                            null,
                             profile.isUnrestrictedUnidentifiedAccess()
                                     ? Profile.UnidentifiedAccessMode.UNRESTRICTED
                                     : profile.getUnidentifiedAccess() != null

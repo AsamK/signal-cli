@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.helper;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -23,6 +25,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException;
 import org.whispersystems.signalservice.api.services.ProfileService;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.io.File;
 import java.io.IOException;
@@ -138,13 +141,20 @@ public final class ProfileHelper {
                         : avatar.isPresent()
                                 ? AvatarUploadParams.forAvatar(streamDetails)
                                 : AvatarUploadParams.unchanged(false);
+                final var paymentsAddress = Optional.ofNullable(newProfile.getPaymentAddress()).map(data -> {
+                    try {
+                        return SignalServiceProtos.PaymentAddress.parseFrom(data);
+                    } catch (InvalidProtocolBufferException e) {
+                        return null;
+                    }
+                });
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
                                 account.getProfileKey(),
                                 newProfile.getInternalServiceName(),
                                 newProfile.getAbout() == null ? "" : newProfile.getAbout(),
                                 newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
-                                Optional.empty(),
+                                paymentsAddress,
                                 avatarUploadParams,
                                 List.of(/* TODO */));
                 builder.withAvatarUrlPath(avatarPath.orElse(null));

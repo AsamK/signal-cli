@@ -32,6 +32,7 @@ public class ProfileUtils {
                     about,
                     aboutEmoji,
                     encryptedProfile.getAvatar(),
+                    encryptedProfile.getPaymentAddress(),
                     getUnidentifiedAccessMode(encryptedProfile, profileCipher),
                     getCapabilities(encryptedProfile));
         } catch (InvalidCiphertextException e) {

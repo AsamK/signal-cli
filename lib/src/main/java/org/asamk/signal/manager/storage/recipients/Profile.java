@@ -20,6 +20,8 @@ public class Profile {
 
     private final String avatarUrlPath;
 
+    private final byte[] paymentAddress;
+
     private final UnidentifiedAccessMode unidentifiedAccessMode;
 
     private final Set<Capability> capabilities;
@@ -31,6 +33,7 @@ public class Profile {
             final String about,
             final String aboutEmoji,
             final String avatarUrlPath,
+            final byte[] paymentAddress,
             final UnidentifiedAccessMode unidentifiedAccessMode,
             final Set<Capability> capabilities
     ) {
@@ -40,6 +43,7 @@ public class Profile {
         this.about = about;
         this.aboutEmoji = aboutEmoji;
         this.avatarUrlPath = avatarUrlPath;
+        this.paymentAddress = paymentAddress;
         this.unidentifiedAccessMode = unidentifiedAccessMode;
         this.capabilities = capabilities;
     }
@@ -51,6 +55,7 @@ public class Profile {
         about = builder.about;
         aboutEmoji = builder.aboutEmoji;
         avatarUrlPath = builder.avatarUrlPath;
+        paymentAddress = builder.paymentAddress;
         unidentifiedAccessMode = builder.unidentifiedAccessMode;
         capabilities = builder.capabilities;
     }
@@ -67,6 +72,7 @@ public class Profile {
         builder.about = copy.getAbout();
         builder.aboutEmoji = copy.getAboutEmoji();
         builder.avatarUrlPath = copy.getAvatarUrlPath();
+        builder.paymentAddress = copy.getPaymentAddress();
         builder.unidentifiedAccessMode = copy.getUnidentifiedAccessMode();
         builder.capabilities = copy.getCapabilities();
         return builder;
@@ -116,6 +122,10 @@ public class Profile {
 
     public String getAvatarUrlPath() {
         return avatarUrlPath;
+    }
+
+    public byte[] getPaymentAddress() {
+        return paymentAddress;
     }
 
     public UnidentifiedAccessMode getUnidentifiedAccessMode() {
@@ -190,6 +200,7 @@ public class Profile {
         private String about;
         private String aboutEmoji;
         private String avatarUrlPath;
+        private byte[] paymentAddress;
         private UnidentifiedAccessMode unidentifiedAccessMode = UnidentifiedAccessMode.UNKNOWN;
         private Set<Capability> capabilities = Collections.emptySet();
         private long lastUpdateTimestamp = 0;
@@ -238,6 +249,11 @@ public class Profile {
 
         public Builder withLastUpdateTimestamp(final long val) {
             lastUpdateTimestamp = val;
+            return this;
+        }
+
+        public Builder withPaymentAddress(final byte[] val) {
+            paymentAddress = val;
             return this;
         }
     }
