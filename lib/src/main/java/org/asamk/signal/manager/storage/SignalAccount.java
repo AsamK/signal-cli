@@ -884,17 +884,25 @@ public class SignalAccount implements Closeable {
 
     private static Pair<FileChannel, FileLock> openFileChannel(File fileName, boolean waitForLock) throws IOException {
         var fileChannel = new RandomAccessFile(fileName, "rw").getChannel();
-        var lock = fileChannel.tryLock();
-        if (lock == null) {
-            if (!waitForLock) {
-                logger.debug("Config file is in use by another instance.");
-                throw new IOException("Config file is in use by another instance.");
+        try {
+            var lock = fileChannel.tryLock();
+            if (lock == null) {
+                if (!waitForLock) {
+                    logger.debug("Config file is in use by another instance.");
+                    throw new IOException("Config file is in use by another instance.");
+                }
+                logger.info("Config file is in use by another instance, waiting…");
+                lock = fileChannel.lock();
+                logger.info("Config file lock acquired.");
             }
-            logger.info("Config file is in use by another instance, waiting…");
-            lock = fileChannel.lock();
-            logger.info("Config file lock acquired.");
+            final var result = new Pair<>(fileChannel, lock);
+            fileChannel = null;
+            return result;
+        } finally {
+            if (fileChannel != null) {
+                fileChannel.close();
+            }
         }
-        return new Pair<>(fileChannel, lock);
     }
 
     public void addPreKeys(ServiceIdType serviceIdType, List<PreKeyRecord> records) {
