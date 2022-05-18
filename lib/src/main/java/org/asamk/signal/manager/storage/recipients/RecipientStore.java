@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             r.contact.color,
                             r.contact.messageExpirationTime,
                             r.contact.blocked,
-                            r.contact.archived);
+                            r.contact.archived,
+                            r.contact.profileSharingEnabled);
                 }
 
                 ProfileKey profileKey = null;
@@ -149,10 +151,6 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         this.lastId = lastId;
     }
 
-    public boolean isBulkUpdating() {
-        return isBulkUpdating;
-    }
-
     public void setBulkUpdating(final boolean bulkUpdating) {
         isBulkUpdating = bulkUpdating;
         if (!bulkUpdating) {
@@ -171,6 +169,15 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     public Recipient getRecipient(RecipientId recipientId) {
         synchronized (recipients) {
             return recipients.get(recipientId);
+        }
+    }
+
+    public Collection<RecipientId> getRecipientIdsWithEnabledProfileSharing() {
+        synchronized (recipients) {
+            return recipients.values().stream().filter(r -> {
+                final var contact = r.getContact();
+                return contact != null && !contact.isBlocked() && contact.isProfileSharingEnabled();
+            }).map(Recipient::getRecipientId).toList();
         }
     }
 
@@ -545,7 +552,8 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             recipientContact.getColor(),
                             recipientContact.getMessageExpirationTime(),
                             recipientContact.isBlocked(),
-                            recipientContact.isArchived());
+                            recipientContact.isArchived(),
+                            recipientContact.isProfileSharingEnabled());
             final var recipientProfile = recipient.getProfile();
             final var profile = recipientProfile == null
                     ? null
@@ -599,7 +607,12 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         ) {
 
             private record Contact(
-                    String name, String color, int messageExpirationTime, boolean blocked, boolean archived
+                    String name,
+                    String color,
+                    int messageExpirationTime,
+                    boolean blocked,
+                    boolean archived,
+                    boolean profileSharingEnabled
             ) {}
 
             private record Profile(

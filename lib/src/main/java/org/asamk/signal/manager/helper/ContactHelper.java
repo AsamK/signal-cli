@@ -36,6 +36,9 @@ public class ContactHelper {
     public void setContactBlocked(RecipientId recipientId, boolean blocked) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+        if (blocked) {
+            builder.withProfileSharingEnabled(false);
+        }
         account.getContactStore().storeContact(recipientId, builder.withBlocked(blocked).build());
     }
 }

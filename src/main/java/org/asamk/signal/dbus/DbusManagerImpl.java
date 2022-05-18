@@ -554,7 +554,7 @@ public class DbusManagerImpl implements Manager {
                 return null;
             }
             return new Pair<>(new RecipientAddress(null, n),
-                    new Contact(contactName, null, 0, signal.isContactBlocked(n), false));
+                    new Contact(contactName, null, 0, signal.isContactBlocked(n), false, false));
         }).filter(Objects::nonNull).toList();
     }
 

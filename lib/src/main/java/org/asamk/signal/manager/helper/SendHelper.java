@@ -11,6 +11,7 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogEntry;
@@ -73,10 +74,20 @@ public class SendHelper {
     public SendMessageResult sendMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final RecipientId recipientId
     ) throws IOException {
-        final var contact = account.getContactStore().getContact(recipientId);
-        final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
+        var contact = account.getContactStore().getContact(recipientId);
+        if (contact == null || !contact.isProfileSharingEnabled()) {
+            final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+            contact = contactBuilder.withProfileSharingEnabled(true).build();
+            account.getContactStore().storeContact(recipientId, contact);
+        }
+
+        final var expirationTime = contact.getMessageExpirationTime();
         messageBuilder.withExpiration(expirationTime);
-        messageBuilder.withProfileKey(account.getProfileKey().serialize());
+
+        if (!contact.isBlocked()) {
+            final var profileKey = account.getProfileKey().serialize();
+            messageBuilder.withProfileKey(profileKey);
+        }
 
         final var message = messageBuilder.build();
         return sendMessage(message, recipientId);

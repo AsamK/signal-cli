@@ -14,18 +14,22 @@ public class Contact {
 
     private final boolean archived;
 
+    private final boolean profileSharingEnabled;
+
     public Contact(
             final String name,
             final String color,
             final int messageExpirationTime,
             final boolean blocked,
-            final boolean archived
+            final boolean archived,
+            final boolean profileSharingEnabled
     ) {
         this.name = name;
         this.color = color;
         this.messageExpirationTime = messageExpirationTime;
         this.blocked = blocked;
         this.archived = archived;
+        this.profileSharingEnabled = profileSharingEnabled;
     }
 
     private Contact(final Builder builder) {
@@ -34,6 +38,7 @@ public class Contact {
         messageExpirationTime = builder.messageExpirationTime;
         blocked = builder.blocked;
         archived = builder.archived;
+        profileSharingEnabled = builder.profileSharingEnabled;
     }
 
     public static Builder newBuilder() {
@@ -47,6 +52,7 @@ public class Contact {
         builder.messageExpirationTime = copy.getMessageExpirationTime();
         builder.blocked = copy.isBlocked();
         builder.archived = copy.isArchived();
+        builder.profileSharingEnabled = copy.isProfileSharingEnabled();
         return builder;
     }
 
@@ -70,6 +76,10 @@ public class Contact {
         return archived;
     }
 
+    public boolean isProfileSharingEnabled() {
+        return profileSharingEnabled;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -78,13 +88,14 @@ public class Contact {
         return messageExpirationTime == contact.messageExpirationTime
                 && blocked == contact.blocked
                 && archived == contact.archived
+                && profileSharingEnabled == contact.profileSharingEnabled
                 && Objects.equals(name, contact.name)
                 && Objects.equals(color, contact.color);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, color, messageExpirationTime, blocked, archived);
+        return Objects.hash(name, color, messageExpirationTime, blocked, archived, profileSharingEnabled);
     }
 
     public static final class Builder {
@@ -94,6 +105,7 @@ public class Contact {
         private int messageExpirationTime;
         private boolean blocked;
         private boolean archived;
+        private boolean profileSharingEnabled;
 
         private Builder() {
         }
@@ -120,6 +132,11 @@ public class Contact {
 
         public Builder withArchived(final boolean val) {
             archived = val;
+            return this;
+        }
+
+        public Builder withProfileSharingEnabled(final boolean val) {
+            profileSharingEnabled = val;
             return this;
         }
 

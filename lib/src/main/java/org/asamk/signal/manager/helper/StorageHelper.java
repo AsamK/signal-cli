@@ -88,13 +88,18 @@ public class StorageHelper {
 
         final var recipientId = account.getRecipientStore().resolveRecipient(address);
         final var contact = account.getContactStore().getContact(recipientId);
-        if (contactRecord.getGivenName().isPresent() || contactRecord.getFamilyName().isPresent() || (
-                (contact == null || !contact.isBlocked()) && contactRecord.isBlocked()
-        )) {
-            final var newContact = (contact == null ? Contact.newBuilder() : Contact.newBuilder(contact)).withBlocked(
-                    contactRecord.isBlocked()).withName((
-                    contactRecord.getGivenName().orElse("") + " " + contactRecord.getFamilyName().orElse("")
-            ).trim()).build();
+        final var blocked = contact != null && contact.isBlocked();
+        final var profileShared = contact != null && contact.isProfileSharingEnabled();
+        if (contactRecord.getGivenName().isPresent()
+                || contactRecord.getFamilyName().isPresent()
+                || blocked != contactRecord.isBlocked()
+                || profileShared != contactRecord.isProfileSharingEnabled()) {
+            final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+            final var name = contactRecord.getGivenName().orElse("") + " " + contactRecord.getFamilyName().orElse("");
+            final var newContact = contactBuilder.withBlocked(contactRecord.isBlocked())
+                    .withName(name.trim())
+                    .withProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
+                    .build();
             account.getContactStore().storeContact(recipientId, newContact);
         }
 
