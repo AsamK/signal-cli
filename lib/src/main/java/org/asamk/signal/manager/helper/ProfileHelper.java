@@ -157,7 +157,9 @@ public final class ProfileHelper {
                                 paymentsAddress,
                                 avatarUploadParams,
                                 List.of(/* TODO */));
-                builder.withAvatarUrlPath(avatarPath.orElse(null));
+                if (!avatarUploadParams.keepTheSame) {
+                    builder.withAvatarUrlPath(avatarPath.orElse(null));
+                }
                 newProfile = builder.build();
             }
         }
