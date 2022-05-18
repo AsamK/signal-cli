@@ -1302,8 +1302,8 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isUnrestrictedUnidentifiedAccess() {
-        // TODO make configurable
-        return false;
+        final var profile = getProfileStore().getProfile(getSelfRecipientId());
+        return profile != null && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED;
     }
 
     public boolean isDiscoverableByPhoneNumber() {
