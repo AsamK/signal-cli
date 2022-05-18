@@ -373,7 +373,7 @@ public class SignalAccount implements Closeable {
             setProfileKey(KeyUtils.createProfileKey());
         }
         // Ensure our profile key is stored in profile store
-        getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
+        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
         if (previousStorageVersion < 3) {
             for (final var group : groupStore.getGroups()) {
                 if (group instanceof GroupInfoV2 && group.getDistributionId() == null) {
@@ -1266,6 +1266,7 @@ public class SignalAccount implements Closeable {
         }
         this.profileKey = profileKey;
         save();
+        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
     }
 
     public byte[] getSelfUnidentifiedAccessKey() {

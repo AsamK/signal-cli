@@ -326,7 +326,16 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
     }
 
     @Override
+    public void storeSelfProfileKey(final RecipientId recipientId, final ProfileKey profileKey) {
+        storeProfileKey(recipientId, profileKey, false);
+    }
+
+    @Override
     public void storeProfileKey(RecipientId recipientId, final ProfileKey profileKey) {
+        storeProfileKey(recipientId, profileKey, true);
+    }
+
+    private void storeProfileKey(RecipientId recipientId, final ProfileKey profileKey, boolean resetProfile) {
         synchronized (recipients) {
             final var recipient = recipients.get(recipientId);
             if (profileKey != null && profileKey.equals(recipient.getProfileKey()) && (
@@ -339,13 +348,15 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 return;
             }
 
-            final var newRecipient = Recipient.newBuilder(recipient)
+            final var builder = Recipient.newBuilder(recipient)
                     .withProfileKey(profileKey)
-                    .withProfileKeyCredential(null)
-                    .withProfile(recipient.getProfile() == null
-                            ? null
-                            : Profile.newBuilder(recipient.getProfile()).withLastUpdateTimestamp(0).build())
-                    .build();
+                    .withProfileKeyCredential(null);
+            if (resetProfile) {
+                builder.withProfile(recipient.getProfile() == null
+                        ? null
+                        : Profile.newBuilder(recipient.getProfile()).withLastUpdateTimestamp(0).build());
+            }
+            final var newRecipient = builder.build();
             storeRecipientLocked(recipientId, newRecipient);
         }
     }

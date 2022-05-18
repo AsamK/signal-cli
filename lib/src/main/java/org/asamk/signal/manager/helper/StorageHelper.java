@@ -229,6 +229,7 @@ public class StorageHelper {
 
         context.getProfileHelper()
                 .setProfile(false,
+                        false,
                         accountRecord.getGivenName().orElse(null),
                         accountRecord.getFamilyName().orElse(null),
                         null,

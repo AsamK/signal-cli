@@ -254,6 +254,24 @@ public class GroupHelper {
         return result;
     }
 
+    public void updateGroupProfileKey(GroupIdV2 groupId) throws GroupNotFoundException, NotAGroupMemberException, IOException {
+        var group = getGroupForUpdating(groupId);
+
+        if (group instanceof GroupInfoV2 groupInfoV2) {
+            Pair<DecryptedGroup, GroupChange> groupChangePair;
+            try {
+                groupChangePair = context.getGroupV2Helper().updateSelfProfileKey(groupInfoV2);
+            } catch (ConflictException e) {
+                // Detected conflicting update, refreshing group and trying again
+                groupInfoV2 = (GroupInfoV2) getGroup(groupId, true);
+                groupChangePair = context.getGroupV2Helper().updateSelfProfileKey(groupInfoV2);
+            }
+            if (groupChangePair != null) {
+                sendUpdateGroupV2Message(groupInfoV2, groupChangePair.first(), groupChangePair.second());
+            }
+        }
+    }
+
     public Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
     ) throws IOException, InactiveGroupLinkException {

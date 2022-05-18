@@ -139,6 +139,21 @@ public class SendHelper {
         return result;
     }
 
+    public SendMessageResult sendProfileKey(RecipientId recipientId) {
+        logger.debug("Sending updated profile key to recipient: {}", recipientId);
+        final var profileKey = account.getProfileKey().serialize();
+        final var message = SignalServiceDataMessage.newBuilder()
+                .asProfileKeyUpdate(true)
+                .withProfileKey(profileKey)
+                .build();
+        return handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
+                        unidentifiedAccess,
+                        ContentHint.IMPLICIT,
+                        message,
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY));
+    }
+
     public SendMessageResult sendRetryReceipt(
             DecryptionErrorMessage errorMessage, RecipientId recipientId, Optional<GroupId> groupId
     ) {

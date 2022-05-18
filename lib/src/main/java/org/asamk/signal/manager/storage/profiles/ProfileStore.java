@@ -15,6 +15,8 @@ public interface ProfileStore {
 
     void storeProfile(RecipientId recipientId, Profile profile);
 
+    void storeSelfProfileKey(RecipientId recipientId, ProfileKey profileKey);
+
     void storeProfileKey(RecipientId recipientId, ProfileKey profileKey);
 
     void storeProfileKeyCredential(RecipientId recipientId, ProfileKeyCredential profileKeyCredential);

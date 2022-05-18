@@ -11,6 +11,7 @@ import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendPniIdentityKeyAction;
+import org.asamk.signal.manager.actions.SendProfileKeyAction;
 import org.asamk.signal.manager.actions.SendReceiptAction;
 import org.asamk.signal.manager.actions.SendRetryMessageRequestAction;
 import org.asamk.signal.manager.actions.SendSyncBlockedListAction;
@@ -18,6 +19,7 @@ import org.asamk.signal.manager.actions.SendSyncConfigurationAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
 import org.asamk.signal.manager.actions.SendSyncKeysAction;
+import org.asamk.signal.manager.actions.UpdateAccountAttributesAction;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.StickerPackId;
@@ -246,6 +248,13 @@ public final class IncomingMessageHandler {
 
             if (content.isNeedsReceipt()) {
                 actions.add(new SendReceiptAction(sender, message.getTimestamp()));
+            } else {
+                // Message wasn't sent as unidentified sender message
+                final var contact = context.getAccount().getContactStore().getContact(sender);
+                if (contact != null && !contact.isBlocked() && contact.isProfileSharingEnabled()) {
+                    actions.add(UpdateAccountAttributesAction.create());
+                    actions.add(new SendProfileKeyAction(sender));
+                }
             }
 
             actions.addAll(handleSignalServiceDataMessage(message,

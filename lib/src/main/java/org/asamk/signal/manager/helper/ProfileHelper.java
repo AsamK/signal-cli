@@ -4,11 +4,15 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.groups.GroupNotFoundException;
+import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.ProfileUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -55,6 +59,35 @@ public final class ProfileHelper {
         this.account = context.getAccount();
         this.dependencies = context.getDependencies();
         this.context = context;
+    }
+
+    public void rotateProfileKey() throws IOException {
+        var profileKey = KeyUtils.createProfileKey();
+        account.setProfileKey(profileKey);
+        context.getAccountHelper().updateAccountAttributes();
+        setProfile(true, true, null, null, null, null, null);
+        // TODO update profile key in storage
+
+        final var recipientIds = account.getRecipientStore().getRecipientIdsWithEnabledProfileSharing();
+        for (final var recipientId : recipientIds) {
+            context.getSendHelper().sendProfileKey(recipientId);
+        }
+
+        final var selfRecipientId = account.getSelfRecipientId();
+        final var activeGroupIds = account.getGroupStore()
+                .getGroups()
+                .stream()
+                .filter(g -> g instanceof GroupInfoV2 && g.isMember(selfRecipientId))
+                .map(g -> (GroupInfoV2) g)
+                .map(GroupInfoV2::getGroupId)
+                .toList();
+        for (final var groupId : activeGroupIds) {
+            try {
+                context.getGroupHelper().updateGroupProfileKey(groupId);
+            } catch (GroupNotFoundException | NotAGroupMemberException | IOException e) {
+                logger.warn("Failed to update group profile key: {}", e.getMessage());
+            }
+        }
     }
 
     public Profile getRecipientProfile(RecipientId recipientId) {
@@ -106,11 +139,12 @@ public final class ProfileHelper {
     public void setProfile(
             String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
     ) throws IOException {
-        setProfile(true, givenName, familyName, about, aboutEmoji, avatar);
+        setProfile(true, false, givenName, familyName, about, aboutEmoji, avatar);
     }
 
     public void setProfile(
             boolean uploadProfile,
+            boolean forceUploadAvatar,
             String givenName,
             final String familyName,
             String about,
@@ -134,13 +168,14 @@ public final class ProfileHelper {
         var newProfile = builder.build();
 
         if (uploadProfile) {
-            try (final var streamDetails = avatar != null && avatar.isPresent() ? Utils.createStreamDetailsFromFile(
-                    avatar.get()) : null) {
-                final var avatarUploadParams = avatar == null
-                        ? AvatarUploadParams.unchanged(true)
-                        : avatar.isPresent()
-                                ? AvatarUploadParams.forAvatar(streamDetails)
-                                : AvatarUploadParams.unchanged(false);
+            final var streamDetails = avatar != null && avatar.isPresent()
+                    ? Utils.createStreamDetailsFromFile(avatar.get())
+                    : forceUploadAvatar && avatar == null ? context.getAvatarStore()
+                            .retrieveProfileAvatar(account.getSelfRecipientAddress()) : null;
+            try (streamDetails) {
+                final var avatarUploadParams = streamDetails != null
+                        ? AvatarUploadParams.forAvatar(streamDetails)
+                        : avatar == null ? AvatarUploadParams.unchanged(true) : AvatarUploadParams.unchanged(false);
                 final var paymentsAddress = Optional.ofNullable(newProfile.getPaymentAddress()).map(data -> {
                     try {
                         return SignalServiceProtos.PaymentAddress.parseFrom(data);
@@ -148,6 +183,7 @@ public final class ProfileHelper {
                         return null;
                     }
                 });
+                logger.debug("Uploading new profile");
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
                                 account.getProfileKey(),
@@ -156,7 +192,7 @@ public final class ProfileHelper {
                                 newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
                                 paymentsAddress,
                                 avatarUploadParams,
-                                List.of(/* TODO */));
+                                List.of(/* TODO implement support for badges */));
                 if (!avatarUploadParams.keepTheSame) {
                     builder.withAvatarUrlPath(avatarPath.orElse(null));
                 }

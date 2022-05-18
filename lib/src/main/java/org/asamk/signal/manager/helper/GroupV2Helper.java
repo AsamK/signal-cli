@@ -25,6 +25,7 @@ import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
+import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -337,6 +339,36 @@ class GroupV2Helper {
 
         final var accessRequired = toAccessControl(permission);
         final var change = groupOperations.createChangeMembershipRights(accessRequired);
+        return commitChange(groupInfoV2, change);
+    }
+
+    Pair<DecryptedGroup, GroupChange> updateSelfProfileKey(GroupInfoV2 groupInfoV2) throws IOException {
+        Optional<DecryptedMember> selfInGroup = groupInfoV2.getGroup() == null
+                ? Optional.empty()
+                : DecryptedGroupUtil.findMemberByUuid(groupInfoV2.getGroup().getMembersList(), getSelfAci().uuid());
+        if (selfInGroup.isEmpty()) {
+            logger.trace("Not updating group, self not in group " + groupInfoV2.getGroupId().toBase64());
+            return null;
+        }
+
+        final var profileKey = context.getAccount().getProfileKey();
+        if (Arrays.equals(profileKey.serialize(), selfInGroup.get().getProfileKey().toByteArray())) {
+            logger.trace("Not updating group, own Profile Key is already up to date in group "
+                    + groupInfoV2.getGroupId().toBase64());
+            return null;
+        }
+        logger.debug("Updating own profile key in group " + groupInfoV2.getGroupId().toBase64());
+
+        final var selfRecipientId = context.getAccount().getSelfRecipientId();
+        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
+        if (profileKeyCredential == null) {
+            logger.trace("Cannot update profile key as self does not have a versioned profile");
+            return null;
+        }
+
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var change = groupOperations.createUpdateProfileKeyCredentialChange(profileKeyCredential);
+        change.setSourceUuid(getSelfAci().toByteString());
         return commitChange(groupInfoV2, change);
     }
 

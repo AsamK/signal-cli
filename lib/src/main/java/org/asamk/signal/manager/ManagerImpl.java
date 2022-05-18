@@ -694,27 +694,48 @@ class ManagerImpl implements Manager {
             return;
         }
         final var recipientIds = context.getRecipientHelper().resolveRecipients(recipients);
+        final var selfRecipientId = account.getSelfRecipientId();
+        boolean shouldRotateProfileKey = false;
         for (final var recipientId : recipientIds) {
+            if (context.getContactHelper().isContactBlocked(recipientId) == blocked) {
+                continue;
+            }
             context.getContactHelper().setContactBlocked(recipientId, blocked);
+            // if we don't have a common group with the blocked contact we need to rotate the profile key
+            shouldRotateProfileKey = blocked && (
+                    shouldRotateProfileKey || account.getGroupStore()
+                            .getGroups()
+                            .stream()
+                            .noneMatch(g -> g.isMember(selfRecipientId) && g.isMember(recipientId))
+            );
         }
-        // TODO cycle our profile key, if we're not together in a group with recipient
+        if (shouldRotateProfileKey) {
+            context.getProfileHelper().rotateProfileKey();
+        }
         context.getSyncHelper().sendBlockedList();
     }
 
     @Override
     public void setGroupsBlocked(
             final Collection<GroupId> groupIds, final boolean blocked
-    ) throws GroupNotFoundException, NotMasterDeviceException {
+    ) throws GroupNotFoundException, NotMasterDeviceException, IOException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
         if (groupIds.size() == 0) {
             return;
         }
+        boolean shouldRotateProfileKey = false;
         for (final var groupId : groupIds) {
+            if (context.getGroupHelper().isGroupBlocked(groupId) == blocked) {
+                continue;
+            }
             context.getGroupHelper().setGroupBlocked(groupId, blocked);
+            shouldRotateProfileKey = blocked;
         }
-        // TODO cycle our profile key
+        if (shouldRotateProfileKey) {
+            context.getProfileHelper().rotateProfileKey();
+        }
         context.getSyncHelper().sendBlockedList();
     }
 
