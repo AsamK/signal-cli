@@ -47,6 +47,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -410,17 +411,21 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void setContactBlocked(
-            final RecipientIdentifier.Single recipient, final boolean blocked
+    public void setContactsBlocked(
+            final Collection<RecipientIdentifier.Single> recipients, final boolean blocked
     ) throws NotMasterDeviceException, IOException {
-        signal.setContactBlocked(recipient.getIdentifier(), blocked);
+        for (final var recipient : recipients) {
+            signal.setContactBlocked(recipient.getIdentifier(), blocked);
+        }
     }
 
     @Override
-    public void setGroupBlocked(
-            final GroupId groupId, final boolean blocked
+    public void setGroupsBlocked(
+            final Collection<GroupId> groupIds, final boolean blocked
     ) throws GroupNotFoundException, IOException {
-        setGroupProperty(groupId, "IsBlocked", blocked);
+        for (final var groupId : groupIds) {
+            setGroupProperty(groupId, "IsBlocked", blocked);
+        }
     }
 
     private void setGroupProperty(final GroupId groupId, final String propertyName, final boolean blocked) {

@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -151,12 +152,12 @@ public interface Manager extends Closeable {
             RecipientIdentifier.Single recipient, String name
     ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
 
-    void setContactBlocked(
-            RecipientIdentifier.Single recipient, boolean blocked
+    void setContactsBlocked(
+            Collection<RecipientIdentifier.Single> recipient, boolean blocked
     ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
 
-    void setGroupBlocked(
-            GroupId groupId, boolean blocked
+    void setGroupsBlocked(
+            Collection<GroupId> groupId, boolean blocked
     ) throws GroupNotFoundException, IOException, NotMasterDeviceException;
 
     /**

@@ -79,6 +79,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -683,25 +684,36 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setContactBlocked(
-            RecipientIdentifier.Single recipient, boolean blocked
+    public void setContactsBlocked(
+            Collection<RecipientIdentifier.Single> recipients, boolean blocked
     ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        context.getContactHelper().setContactBlocked(context.getRecipientHelper().resolveRecipient(recipient), blocked);
+        if (recipients.size() == 0) {
+            return;
+        }
+        final var recipientIds = context.getRecipientHelper().resolveRecipients(recipients);
+        for (final var recipientId : recipientIds) {
+            context.getContactHelper().setContactBlocked(recipientId, blocked);
+        }
         // TODO cycle our profile key, if we're not together in a group with recipient
         context.getSyncHelper().sendBlockedList();
     }
 
     @Override
-    public void setGroupBlocked(
-            final GroupId groupId, final boolean blocked
+    public void setGroupsBlocked(
+            final Collection<GroupId> groupIds, final boolean blocked
     ) throws GroupNotFoundException, NotMasterDeviceException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
-        context.getGroupHelper().setGroupBlocked(groupId, blocked);
+        if (groupIds.size() == 0) {
+            return;
+        }
+        for (final var groupId : groupIds) {
+            context.getGroupHelper().setGroupBlocked(groupId, blocked);
+        }
         // TODO cycle our profile key
         context.getSyncHelper().sendBlockedList();
     }
