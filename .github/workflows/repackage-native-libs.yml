@@ -31,7 +31,7 @@ jobs:
         run: |
           #echo ${GITHUB_REF#refs/tag/}
           tree .
-          mv ./*/*.tar.gz .
+          mv ./$(ls */ -d | tail -n1)/*.tar.gz .
           ver=$(ls ./*.tar.gz | xargs basename | sed -E 's/signal-cli-(.*).tar.gz/\1/')
           echo $ver
           echo "::set-output name=signal_cli_version::${ver}"
