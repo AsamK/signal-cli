@@ -639,6 +639,20 @@ class ManagerImpl implements Manager {
     }
 
     @Override
+    public SendMessageResults sendPaymentNotificationMessage(
+            byte[] receipt, String note, RecipientIdentifier.Single recipient
+    ) throws IOException {
+        final var paymentNotification = new SignalServiceDataMessage.PaymentNotification(receipt, note);
+        final var payment = new SignalServiceDataMessage.Payment(paymentNotification);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withPayment(payment);
+        try {
+            return sendMessage(messageBuilder, Set.of(recipient));
+        } catch (NotAGroupMemberException | GroupNotFoundException | GroupSendingNotAllowedException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Override
     public SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException {
         var messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
 

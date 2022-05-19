@@ -141,6 +141,10 @@ public interface Manager extends Closeable {
             Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
+    SendMessageResults sendPaymentNotificationMessage(
+            byte[] receipt, String note, RecipientIdentifier.Single recipient
+    ) throws IOException;
+
     SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException;
 
     void deleteRecipient(RecipientIdentifier.Single recipient);

@@ -256,6 +256,19 @@ Specify the mentions of the original message (same format as `--mention`).
 *-e*, *--end-session*::
 Clear session state and send end session message.
 
+=== sendPaymentNotification
+
+Send a payment notification.
+
+RECIPIENT::
+Specify the recipient’s phone number.
+
+*--receipt* RECEIPT::
+The base64 encoded receipt blob.
+
+*--note* NOTE::
+Specify a note for the payment notification.
+
 === sendReaction
 
 Send reaction to a previously received or sent message.

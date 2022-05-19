@@ -389,6 +389,13 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public SendMessageResults sendPaymentNotificationMessage(
+            final byte[] receipt, final String note, final RecipientIdentifier.Single recipient
+    ) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public SendMessageResults sendEndSessionMessage(final Set<RecipientIdentifier.Single> recipients) throws IOException {
         signal.sendEndSessionMessage(recipients.stream().map(RecipientIdentifier.Single::getIdentifier).toList());
         return new SendMessageResults(0, Map.of());
