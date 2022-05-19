@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.SignalDependencies;
@@ -19,6 +20,7 @@ import org.signal.libsignal.zkgroup.auth.AuthCredentialResponse;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.libsignal.zkgroup.groups.UuidCiphertext;
+import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.Member;
@@ -27,10 +29,12 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
+import org.signal.storageservice.protos.groups.local.DecryptedRequestingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
+import org.whispersystems.signalservice.api.groupsv2.GroupHistoryPage;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2AuthorizationString;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
@@ -40,6 +44,7 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,7 +58,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class GroupV2Helper {
 
@@ -94,6 +101,35 @@ class GroupV2Helper {
                 .getGroupJoinInfo(groupSecretParams,
                         Optional.ofNullable(password).map(GroupLinkPassword::serialize),
                         getGroupAuthForToday(groupSecretParams));
+    }
+
+    GroupHistoryPage getDecryptedGroupHistoryPage(
+            final GroupSecretParams groupSecretParams, int fromRevision
+    ) throws NotAGroupMemberException {
+        try {
+            final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
+            return dependencies.getGroupsV2Api()
+                    .getGroupHistoryPage(groupSecretParams, fromRevision, groupsV2AuthorizationString, false);
+        } catch (NonSuccessfulResponseCodeException e) {
+            if (e.getCode() == 403) {
+                throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
+            }
+            logger.warn("Failed to retrieve Group V2 history, ignoring: {}", e.getMessage());
+            return null;
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+            logger.warn("Failed to retrieve Group V2 history, ignoring: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    int findRevisionWeWereAdded(DecryptedGroup partialDecryptedGroup) {
+        ByteString bytes = UuidUtil.toByteString(getSelfAci().uuid());
+        for (DecryptedMember decryptedMember : partialDecryptedGroup.getMembersList()) {
+            if (decryptedMember.getUuid().equals(bytes)) {
+                return decryptedMember.getJoinedAtRevision();
+            }
+        }
+        return partialDecryptedGroup.getRevision();
     }
 
     Pair<GroupInfoV2, DecryptedGroup> createGroup(
@@ -522,21 +558,43 @@ class GroupV2Helper {
                         Optional.ofNullable(password).map(GroupLinkPassword::serialize));
     }
 
-    DecryptedGroup getUpdatedDecryptedGroup(
-            DecryptedGroup group, byte[] signedGroupChange, GroupMasterKey groupMasterKey
-    ) {
+    Pair<ServiceId, ProfileKey> getAuthoritativeProfileKeyFromChange(final DecryptedGroupChange change) {
+        UUID editor = UuidUtil.fromByteStringOrNull(change.getEditor());
+        final var editorProfileKeyBytes = Stream.concat(Stream.of(change.getNewMembersList().stream(),
+                                change.getPromotePendingMembersList().stream(),
+                                change.getModifiedProfileKeysList().stream())
+                        .flatMap(Function.identity())
+                        .filter(m -> UuidUtil.fromByteString(m.getUuid()).equals(editor))
+                        .map(DecryptedMember::getProfileKey),
+                change.getNewRequestingMembersList()
+                        .stream()
+                        .filter(m -> UuidUtil.fromByteString(m.getUuid()).equals(editor))
+                        .map(DecryptedRequestingMember::getProfileKey)).findFirst();
+
+        if (editorProfileKeyBytes.isEmpty()) {
+            return null;
+        }
+
+        ProfileKey profileKey;
         try {
-            final var decryptedGroupChange = getDecryptedGroupChange(signedGroupChange, groupMasterKey);
-            if (decryptedGroupChange == null) {
-                return null;
-            }
+            profileKey = new ProfileKey(editorProfileKeyBytes.get().toByteArray());
+        } catch (InvalidInputException e) {
+            logger.debug("Bad profile key in group");
+            return null;
+        }
+
+        return new Pair<>(ServiceId.from(editor), profileKey);
+    }
+
+    DecryptedGroup getUpdatedDecryptedGroup(DecryptedGroup group, DecryptedGroupChange decryptedGroupChange) {
+        try {
             return DecryptedGroupUtil.apply(group, decryptedGroupChange);
         } catch (NotAbleToApplyGroupV2ChangeException e) {
             return null;
         }
     }
 
-    private DecryptedGroupChange getDecryptedGroupChange(byte[] signedGroupChange, GroupMasterKey groupMasterKey) {
+    DecryptedGroupChange getDecryptedGroupChange(byte[] signedGroupChange, GroupMasterKey groupMasterKey) {
         if (signedGroupChange != null) {
             var groupOperations = dependencies.getGroupsV2Operations()
                     .forGroup(GroupSecretParams.deriveFromMasterKey(groupMasterKey));

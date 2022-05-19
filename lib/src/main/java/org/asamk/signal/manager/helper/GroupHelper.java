@@ -31,9 +31,11 @@ import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.signal.storageservice.protos.groups.GroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupHistoryEntry;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
@@ -50,8 +52,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -123,12 +127,22 @@ public class GroupHelper {
             if (signedGroupChange != null
                     && groupInfoV2.getGroup() != null
                     && groupInfoV2.getGroup().getRevision() + 1 == revision) {
-                group = context.getGroupV2Helper()
-                        .getUpdatedDecryptedGroup(groupInfoV2.getGroup(), signedGroupChange, groupMasterKey);
+                final var decryptedGroupChange = context.getGroupV2Helper()
+                        .getDecryptedGroupChange(signedGroupChange, groupMasterKey);
+
+                if (decryptedGroupChange != null) {
+                    storeProfileKeyFromChange(decryptedGroupChange);
+                    group = context.getGroupV2Helper()
+                            .getUpdatedDecryptedGroup(groupInfoV2.getGroup(), decryptedGroupChange);
+                }
             }
             if (group == null) {
                 try {
                     group = context.getGroupV2Helper().getDecryptedGroup(groupSecretParams);
+
+                    if (group != null) {
+                        storeProfileKeysFromHistory(groupSecretParams, groupInfoV2, group);
+                    }
                 } catch (NotAGroupMemberException ignored) {
                 }
             }
@@ -373,6 +387,17 @@ public class GroupHelper {
                     groupInfoV2.setPermissionDenied(true);
                     decryptedGroup = null;
                 }
+                if (decryptedGroup != null) {
+                    try {
+                        storeProfileKeysFromHistory(groupSecretParams, groupInfoV2, decryptedGroup);
+                    } catch (NotAGroupMemberException ignored) {
+                    }
+                    storeProfileKeysFromMembers(decryptedGroup);
+                    final var avatar = decryptedGroup.getAvatar();
+                    if (avatar != null && !avatar.isEmpty()) {
+                        downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
+                    }
+                }
                 groupInfoV2.setGroup(decryptedGroup, account.getRecipientStore());
                 account.getGroupStore().updateGroup(group);
             }
@@ -417,12 +442,61 @@ public class GroupHelper {
         for (var member : group.getMembersList()) {
             final var serviceId = ServiceId.fromByteString(member.getUuid());
             final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+            final var profileStore = account.getProfileStore();
+            if (profileStore.getProfileKey(recipientId) != null) {
+                // We already have a profile key, not updating it from a non-authoritative source
+                continue;
+            }
             try {
-                account.getProfileStore()
-                        .storeProfileKey(recipientId, new ProfileKey(member.getProfileKey().toByteArray()));
+                profileStore.storeProfileKey(recipientId, new ProfileKey(member.getProfileKey().toByteArray()));
             } catch (InvalidInputException ignored) {
             }
         }
+    }
+
+    private void storeProfileKeyFromChange(final DecryptedGroupChange decryptedGroupChange) {
+        final var profileKeyFromChange = context.getGroupV2Helper()
+                .getAuthoritativeProfileKeyFromChange(decryptedGroupChange);
+
+        if (profileKeyFromChange != null) {
+            final var serviceId = profileKeyFromChange.first();
+            final var profileKey = profileKeyFromChange.second();
+            final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+            account.getProfileStore().storeProfileKey(recipientId, profileKey);
+        }
+    }
+
+    private void storeProfileKeysFromHistory(
+            final GroupSecretParams groupSecretParams,
+            final GroupInfoV2 localGroup,
+            final DecryptedGroup newDecryptedGroup
+    ) throws NotAGroupMemberException {
+        final var revisionWeWereAdded = context.getGroupV2Helper().findRevisionWeWereAdded(newDecryptedGroup);
+        final var localRevision = localGroup.getGroup() == null ? 0 : localGroup.getGroup().getRevision();
+        var fromRevision = Math.max(revisionWeWereAdded, localRevision);
+        final var newProfileKeys = new HashMap<RecipientId, ProfileKey>();
+        while (true) {
+            final var page = context.getGroupV2Helper().getDecryptedGroupHistoryPage(groupSecretParams, fromRevision);
+            page.getResults()
+                    .stream()
+                    .map(DecryptedGroupHistoryEntry::getChange)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(context.getGroupV2Helper()::getAuthoritativeProfileKeyFromChange)
+                    .filter(Objects::nonNull)
+                    .forEach(p -> {
+                        final var serviceId = p.first();
+                        final var profileKey = p.second();
+                        final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+                        newProfileKeys.put(recipientId, profileKey);
+                    });
+            if (!page.getPagingData().hasMorePages()) {
+                break;
+            }
+            fromRevision = page.getPagingData().getNextPageRevision();
+        }
+
+        newProfileKeys.forEach(account.getProfileStore()::storeProfileKey);
     }
 
     private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
