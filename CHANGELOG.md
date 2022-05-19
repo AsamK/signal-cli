@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.10.6] - 2022-05-19
+**Attention**: Now requires native libsignal-client version 0.17
+
+### Added
+- Check if account is used on the environment it was registered (live or staging)
+- New command `deleteLocalAccountData` to delete all local data of an unregistered account
+- New parameter `-g` for `listGroups` command to filter for specific groups
+
+### Fixed
+- Fix deleting a recipient which has no uuid
+
+### Changed
+- Show warning when sending a message and no profile name has been set.
+  (A profile name may become mandatory in the future)
+- After blocking a contact/group the profile key is now rotated
+- Only update profile keys from authoritative group changes
+
 ## [0.10.5] - 2022-04-11
 **Attention**: Now requires native libsignal-client version 0.15
 
