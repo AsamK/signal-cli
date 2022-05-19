@@ -21,7 +21,6 @@ graalvmNative {
     binaries {
         this["main"].run {
             configurationFileDirectories.from(file("graalvm-config-dir"))
-            buildArgs.add("--allow-incomplete-classpath")
             buildArgs.add("--report-unsupported-elements-at-runtime")
         }
     }
@@ -34,7 +33,7 @@ repositories {
 
 dependencies {
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
-    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.2.2")
+    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.3")
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.0.0")
     implementation("org.slf4j", "slf4j-api", "1.7.36")

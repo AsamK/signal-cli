@@ -6,7 +6,7 @@ import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
-import org.whispersystems.signalservice.internal.configuration.SignalCdshUrl;
+import org.whispersystems.signalservice.internal.configuration.SignalCdsiUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalKeyBackupServiceUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalProxy;
@@ -39,7 +39,7 @@ class LiveConfig {
     private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api.directory.signal.org";
     private final static String SIGNAL_KEY_BACKUP_URL = "https://api.backup.signal.org";
     private final static String STORAGE_URL = "https://storage.signal.org";
-    private final static String SIGNAL_CDSH_URL = "";
+    private final static String SIGNAL_CDSI_URL = "";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     private final static Optional<Dns> dns = Optional.empty();
@@ -60,7 +60,7 @@ class LiveConfig {
                         TRUST_STORE)},
                 new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
-                new SignalCdshUrl[]{new SignalCdshUrl(SIGNAL_CDSH_URL, TRUST_STORE)},
+                new SignalCdsiUrl[]{new SignalCdsiUrl(SIGNAL_CDSI_URL, TRUST_STORE)},
                 interceptors,
                 dns,
                 proxy,
