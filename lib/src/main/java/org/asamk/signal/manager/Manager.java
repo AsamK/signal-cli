@@ -28,9 +28,8 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.Closeable;
@@ -215,7 +214,12 @@ public interface Manager extends Closeable {
 
     void sendContacts() throws IOException;
 
-    List<Pair<RecipientAddress, Contact>> getContacts();
+    List<Recipient> getRecipients(
+            boolean onlyContacts,
+            Optional<Boolean> blocked,
+            Collection<RecipientIdentifier.Single> address,
+            Optional<String> name
+    );
 
     String getContactOrProfileName(RecipientIdentifier.Single recipient);
 

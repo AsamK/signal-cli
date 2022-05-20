@@ -4,14 +4,12 @@ import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
-import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.NotMasterDeviceException;
-import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
@@ -28,7 +26,6 @@ import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.DBusPath;
@@ -55,7 +52,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DbusSignalImpl implements Signal {
 
@@ -719,9 +715,9 @@ public class DbusSignalImpl implements Signal {
     // all numbers the system knows
     @Override
     public List<String> listNumbers() {
-        return Stream.concat(m.getIdentities().stream().map(Identity::recipient),
-                        m.getContacts().stream().map(Pair::first))
-                .map(a -> a.number().orElse(null))
+        return m.getRecipients(false, Optional.empty(), Set.of(), Optional.empty())
+                .stream()
+                .map(r -> r.getAddress().number().orElse(null))
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -729,30 +725,10 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public List<String> getContactNumber(final String name) {
-        // Contact names have precedence.
-        var numbers = new ArrayList<String>();
-        var contacts = m.getContacts();
-        for (var c : contacts) {
-            if (name.equals(c.second().getName())) {
-                numbers.add(c.first().getLegacyIdentifier());
-            }
-        }
-        // Try profiles if no contact name was found
-        for (var identity : m.getIdentities()) {
-            final var address = identity.recipient();
-            var number = address.number().orElse(null);
-            if (number != null) {
-                Profile profile = null;
-                try {
-                    profile = m.getRecipientProfile(RecipientIdentifier.Single.fromAddress(address));
-                } catch (IOException | UnregisteredRecipientException ignored) {
-                }
-                if (profile != null && profile.getDisplayName().equals(name)) {
-                    numbers.add(number);
-                }
-            }
-        }
-        return numbers;
+        return m.getRecipients(false, Optional.empty(), Set.of(), Optional.of(name))
+                .stream()
+                .map(r -> r.getAddress().getLegacyIdentifier())
+                .toList();
     }
 
     @Override

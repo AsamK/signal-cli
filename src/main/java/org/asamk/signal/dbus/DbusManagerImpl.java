@@ -32,6 +32,7 @@ import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
@@ -547,14 +548,32 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public List<Pair<RecipientAddress, Contact>> getContacts() {
-        return signal.listNumbers().stream().map(n -> {
-            final var contactName = signal.getContactName(n);
-            if (contactName.length() == 0) {
+    public List<Recipient> getRecipients(
+            final boolean onlyContacts,
+            final Optional<Boolean> blocked,
+            final Collection<RecipientIdentifier.Single> addresses,
+            final Optional<String> name
+    ) {
+        final var numbers = addresses.stream()
+                .filter(s -> s instanceof RecipientIdentifier.Number)
+                .map(s -> ((RecipientIdentifier.Number) s).number())
+                .collect(Collectors.toSet());
+        return signal.listNumbers().stream().filter(n -> addresses.isEmpty() || numbers.contains(n)).map(n -> {
+            final var contactBlocked = signal.isContactBlocked(n);
+            if (blocked.isPresent() && blocked.get() != contactBlocked) {
                 return null;
             }
-            return new Pair<>(new RecipientAddress(null, n),
-                    new Contact(contactName, null, 0, signal.isContactBlocked(n), false, false));
+            final var contactName = signal.getContactName(n);
+            if (onlyContacts && contactName.length() == 0) {
+                return null;
+            }
+            if (name.isPresent() && !name.get().equals(contactName)) {
+                return null;
+            }
+            return Recipient.newBuilder()
+                    .withAddress(new RecipientAddress(null, n))
+                    .withContact(new Contact(contactName, null, 0, contactBlocked, false, false))
+                    .build();
         }).filter(Objects::nonNull).toList();
     }
 

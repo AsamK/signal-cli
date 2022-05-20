@@ -277,6 +277,24 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                 .toList();
     }
 
+    public List<Recipient> getRecipients(
+            boolean onlyContacts, Optional<Boolean> blocked, Set<RecipientId> recipientIds, Optional<String> name
+    ) {
+        return recipients.values()
+                .stream()
+                .filter(r -> !onlyContacts || r.getContact() != null)
+                .filter(r -> blocked.isEmpty() || (
+                        blocked.get() == (
+                                r.getContact() != null && r.getContact().isBlocked()
+                        )
+                ))
+                .filter(r -> recipientIds.isEmpty() || (recipientIds.contains(r.getRecipientId())))
+                .filter(r -> name.isEmpty()
+                        || (r.getContact() != null && name.get().equals(r.getContact().getName()))
+                        || (r.getProfile() != null && name.get().equals(r.getProfile().getDisplayName())))
+                .toList();
+    }
+
     @Override
     public void deleteContact(RecipientId recipientId) {
         synchronized (recipients) {

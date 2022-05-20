@@ -475,7 +475,7 @@ public class SendHelper {
 
         final var senderKeyTargets = new HashSet<RecipientId>();
         final var recipientList = new ArrayList<>(recipientIds);
-        final var profiles = context.getProfileHelper().getRecipientProfile(recipientList).iterator();
+        final var profiles = context.getProfileHelper().getRecipientProfiles(recipientList).iterator();
         for (final var recipientId : recipientList) {
             final var profile = profiles.next();
             if (profile == null || !profile.getCapabilities().contains(Profile.Capability.senderKey)) {

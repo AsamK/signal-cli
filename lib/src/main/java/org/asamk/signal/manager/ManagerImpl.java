@@ -51,9 +51,8 @@ import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
-import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
@@ -84,6 +83,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -101,7 +101,6 @@ class ManagerImpl implements Manager {
     private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
     private SignalAccount account;
-    private AccountFileUpdater accountFileUpdater;
     private final SignalDependencies dependencies;
     private final Context context;
 
@@ -123,7 +122,6 @@ class ManagerImpl implements Manager {
             String userAgent
     ) {
         this.account = account;
-        this.accountFileUpdater = accountFileUpdater;
 
         final var sessionLock = new SignalSessionLock() {
             private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
@@ -337,7 +335,7 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         return context.getProfileHelper().getRecipientProfile(context.getRecipientHelper().resolveRecipient(recipient));
     }
 
@@ -495,7 +493,7 @@ class ManagerImpl implements Manager {
     @Override
     public SendMessageResults sendReadReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException {
+    ) {
         final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
                 messageIds,
@@ -507,7 +505,7 @@ class ManagerImpl implements Manager {
     @Override
     public SendMessageResults sendViewedReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException {
+    ) {
         final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
                 messageIds,
@@ -520,7 +518,7 @@ class ManagerImpl implements Manager {
             final RecipientIdentifier.Single sender,
             final long timestamp,
             final SignalServiceReceiptMessage receiptMessage
-    ) throws IOException {
+    ) {
         try {
             final var result = context.getSendHelper()
                     .sendReceiptMessage(receiptMessage, context.getRecipientHelper().resolveRecipient(sender));
@@ -592,7 +590,7 @@ class ManagerImpl implements Manager {
         }
     }
 
-    private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws IOException, UnregisteredRecipientException {
+    private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws UnregisteredRecipientException {
         final var mentions = new ArrayList<SignalServiceDataMessage.Mention>();
         for (final var m : mentionList) {
             final var recipientId = context.getRecipientHelper().resolveRecipient(m.recipient());
@@ -676,7 +674,7 @@ class ManagerImpl implements Manager {
     @Override
     public void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException {
+    ) throws NotMasterDeviceException, UnregisteredRecipientException {
         if (!account.isMasterDevice()) {
             throw new NotMasterDeviceException();
         }
@@ -932,7 +930,7 @@ class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = context.getRecipientHelper().resolveRecipient(recipient);
-        } catch (IOException | UnregisteredRecipientException e) {
+        } catch (UnregisteredRecipientException e) {
             return false;
         }
         return context.getContactHelper().isContactBlocked(recipientId);
@@ -944,12 +942,22 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public List<Pair<RecipientAddress, Contact>> getContacts() {
-        return account.getContactStore()
-                .getContacts()
-                .stream()
-                .map(p -> new Pair<>(account.getRecipientStore().resolveRecipientAddress(p.first()), p.second()))
-                .toList();
+    public List<Recipient> getRecipients(
+            boolean onlyContacts,
+            Optional<Boolean> blocked,
+            Collection<RecipientIdentifier.Single> recipients,
+            Optional<String> name
+    ) {
+        final var recipientIds = recipients.stream().map(a -> {
+            try {
+                return context.getRecipientHelper().resolveRecipient(a);
+            } catch (UnregisteredRecipientException e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
+        // refresh profiles of explicitly given recipients
+        context.getProfileHelper().refreshRecipientProfiles(recipientIds);
+        return account.getRecipientStore().getRecipients(onlyContacts, blocked, recipientIds, name);
     }
 
     @Override
@@ -957,7 +965,7 @@ class ManagerImpl implements Manager {
         final RecipientId recipientId;
         try {
             recipientId = context.getRecipientHelper().resolveRecipient(recipient);
-        } catch (IOException | UnregisteredRecipientException e) {
+        } catch (UnregisteredRecipientException e) {
             return null;
         }
 
@@ -1007,7 +1015,7 @@ class ManagerImpl implements Manager {
         try {
             identity = account.getIdentityKeyStore()
                     .getIdentity(context.getRecipientHelper().resolveRecipient(recipient));
-        } catch (IOException | UnregisteredRecipientException e) {
+        } catch (UnregisteredRecipientException e) {
             identity = null;
         }
         return identity == null ? List.of() : List.of(toIdentity(identity));
@@ -1044,12 +1052,7 @@ class ManagerImpl implements Manager {
     private boolean trustIdentity(
             RecipientIdentifier.Single recipient, Function<RecipientId, Boolean> trustMethod
     ) throws UnregisteredRecipientException {
-        RecipientId recipientId;
-        try {
-            recipientId = context.getRecipientHelper().resolveRecipient(recipient);
-        } catch (IOException e) {
-            return false;
-        }
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
         final var updated = trustMethod.apply(recipientId);
         if (updated && this.isReceiving()) {
             context.getReceiveHelper().setNeedsToRetryFailedMessages(true);

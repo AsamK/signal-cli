@@ -69,7 +69,7 @@ public class RecipientHelper {
         return account.getRecipientStore().resolveRecipient(address);
     }
 
-    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws IOException, UnregisteredRecipientException {
+    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredRecipientException {
         final var recipientIds = new HashSet<RecipientId>(recipients.size());
         for (var number : recipients) {
             final var recipientId = resolveRecipient(number);
@@ -78,7 +78,7 @@ public class RecipientHelper {
         return recipientIds;
     }
 
-    public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+    public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
             return account.getRecipientStore().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
         } else {

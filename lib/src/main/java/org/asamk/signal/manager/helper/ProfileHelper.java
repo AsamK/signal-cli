@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -94,8 +95,16 @@ public final class ProfileHelper {
         return getRecipientProfile(recipientId, false);
     }
 
+    public List<Profile> getRecipientProfiles(Collection<RecipientId> recipientIds) {
+        return getRecipientProfiles(recipientIds, false);
+    }
+
     public void refreshRecipientProfile(RecipientId recipientId) {
         getRecipientProfile(recipientId, true);
+    }
+
+    public void refreshRecipientProfiles(Collection<RecipientId> recipientIds) {
+        getRecipientProfiles(recipientIds, true);
     }
 
     public List<ProfileKeyCredential> getRecipientProfileKeyCredential(List<RecipientId> recipientIds) {
@@ -216,11 +225,12 @@ public final class ProfileHelper {
         return getRecipientProfile(account.getSelfRecipientId());
     }
 
-    public List<Profile> getRecipientProfile(List<RecipientId> recipientIds) {
+    private List<Profile> getRecipientProfiles(Collection<RecipientId> recipientIds, boolean force) {
+        final var profileStore = account.getProfileStore();
         try {
             account.getRecipientStore().setBulkUpdating(true);
             final var profileFetches = Flowable.fromIterable(recipientIds)
-                    .filter(recipientId -> isProfileRefreshRequired(account.getProfileStore().getProfile(recipientId)))
+                    .filter(recipientId -> force || isProfileRefreshRequired(profileStore.getProfile(recipientId)))
                     .map(recipientId -> retrieveProfile(recipientId,
                             SignalServiceProfile.RequestType.PROFILE).onErrorComplete());
             Maybe.merge(profileFetches, 10).blockingSubscribe();
@@ -228,7 +238,7 @@ public final class ProfileHelper {
             account.getRecipientStore().setBulkUpdating(false);
         }
 
-        return recipientIds.stream().map(r -> account.getProfileStore().getProfile(r)).toList();
+        return recipientIds.stream().map(profileStore::getProfile).toList();
     }
 
     private Profile getRecipientProfile(RecipientId recipientId, boolean force) {
