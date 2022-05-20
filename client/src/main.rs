@@ -41,6 +41,11 @@ async fn main() -> Result<(), anyhow::Error> {
             recipient,
             group_id,
         } => client.block(cli.account, recipient, group_id).await,
+        cli::CliCommands::DeleteLocalAccountData { ignore_registered } => {
+            client
+                .delete_local_account_data(cli.account, ignore_registered)
+                .await
+        }
         cli::CliCommands::GetUserStatus { recipient } => {
             client.get_user_status(cli.account, recipient).await
         }
@@ -55,9 +60,21 @@ async fn main() -> Result<(), anyhow::Error> {
             client.finish_link(url, name).await
         }
         cli::CliCommands::ListAccounts => client.list_accounts().await,
-        cli::CliCommands::ListContacts => client.list_contacts(cli.account).await,
+        cli::CliCommands::ListContacts {
+            recipient,
+            all_recipients,
+            blocked,
+            name,
+        } => {
+            client
+                .list_contacts(cli.account, recipient, all_recipients, blocked, name)
+                .await
+        }
         cli::CliCommands::ListDevices => client.list_devices(cli.account).await,
-        cli::CliCommands::ListGroups { detailed: _ } => client.list_groups(cli.account).await,
+        cli::CliCommands::ListGroups {
+            detailed: _,
+            group_id,
+        } => client.list_groups(cli.account, group_id).await,
         cli::CliCommands::ListIdentities { number } => {
             client.list_identities(cli.account, number).await
         }

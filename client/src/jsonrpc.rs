@@ -20,6 +20,13 @@ pub trait Rpc {
         #[allow(non_snake_case)] groupIds: Vec<String>,
     ) -> Result<Value>;
 
+    #[rpc(name = "deleteLocalAccountData", params = "named")]
+    fn delete_local_account_data(
+        &self,
+        account: Option<String>,
+        #[allow(non_snake_case)] ignoreRegistered: Option<bool>,
+    ) -> Result<Value>;
+
     #[rpc(name = "getUserStatus", params = "named")]
     fn get_user_status(&self, account: Option<String>, recipients: Vec<String>) -> Result<Value>;
 
@@ -37,13 +44,24 @@ pub trait Rpc {
     fn list_accounts(&self) -> Result<Value>;
 
     #[rpc(name = "listContacts", params = "named")]
-    fn list_contacts(&self, account: Option<String>) -> Result<Value>;
+    fn list_contacts(
+        &self,
+        account: Option<String>,
+        recipients: Vec<String>,
+        #[allow(non_snake_case)] allRecipients: bool,
+        blocked: Option<bool>,
+        name: Option<String>,
+    ) -> Result<Value>;
 
     #[rpc(name = "listDevices", params = "named")]
     fn list_devices(&self, account: Option<String>) -> Result<Value>;
 
     #[rpc(name = "listGroups", params = "named")]
-    fn list_groups(&self, account: Option<String>) -> Result<Value>;
+    fn list_groups(
+        &self,
+        account: Option<String>,
+        #[allow(non_snake_case)] groupIds: Vec<String>,
+    ) -> Result<Value>;
 
     #[rpc(name = "listIdentities", params = "named")]
     fn list_identities(&self, account: Option<String>, number: Option<String>) -> Result<Value>;

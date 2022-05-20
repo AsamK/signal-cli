@@ -49,6 +49,10 @@ pub enum CliCommands {
         #[clap(short = 'g', long)]
         group_id: Vec<String>,
     },
+    DeleteLocalAccountData {
+        #[clap(long = "ignore-registered")]
+        ignore_registered: Option<bool>,
+    },
     GetUserStatus {
         recipient: Vec<String>,
     },
@@ -61,11 +65,21 @@ pub enum CliCommands {
         name: String,
     },
     ListAccounts,
-    ListContacts,
+    ListContacts {
+        recipient: Vec<String>,
+        #[clap(short = 'a', long = "all-recipients")]
+        all_recipients: bool,
+        #[clap(long, parse(try_from_str))]
+        blocked: Option<bool>,
+        #[clap(long)]
+        name: Option<String>,
+    },
     ListDevices,
     ListGroups {
         #[clap(short = 'd', long)]
         detailed: bool,
+        #[clap(short = 'g', long = "group-id")]
+        group_id: Vec<String>,
     },
     ListIdentities {
         #[clap(short = 'n', long)]
@@ -225,13 +239,13 @@ pub enum CliCommands {
         #[clap(long = "read-receipts", parse(try_from_str))]
         read_receipts: Option<bool>,
 
-        #[clap(long = "unidentified-delivery-indicators")]
+        #[clap(long = "unidentified-delivery-indicators", parse(try_from_str))]
         unidentified_delivery_indicators: Option<bool>,
 
-        #[clap(long = "typing-indicators")]
+        #[clap(long = "typing-indicators", parse(try_from_str))]
         typing_indicators: Option<bool>,
 
-        #[clap(long = "link-previews")]
+        #[clap(long = "link-previews", parse(try_from_str))]
         link_previews: Option<bool>,
     },
     UpdateContact {
