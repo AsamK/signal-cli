@@ -81,10 +81,10 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                                         r.getProfile().getFamilyName(),
                                         r.getProfile().getAbout(),
                                         r.getProfile().getAboutEmoji(),
-                                        r.getProfile().getPaymentAddress() == null
+                                        r.getProfile().getMobileCoinAddress() == null
                                                 ? null
                                                 : Base64.getEncoder()
-                                                        .encodeToString(r.getProfile().getPaymentAddress())));
+                                                        .encodeToString(r.getProfile().getMobileCoinAddress())));
             }).toList();
 
             writer.write(jsonContacts);
@@ -92,12 +92,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
     }
 
     private record JsonContact(
-            String number,
-            String uuid,
-            String name,
-            boolean isBlocked,
-            int messageExpirationTime,
-            JsonProfile profile
+            String number, String uuid, String name, boolean isBlocked, int messageExpirationTime, JsonProfile profile
     ) {
 
         private record JsonProfile(
@@ -106,7 +101,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                 String familyName,
                 String about,
                 String aboutEmoji,
-                String paymentAddress
+                String mobileCoinAddress
         ) {}
     }
 }

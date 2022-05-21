@@ -538,7 +538,7 @@
     {"name":"familyName","parameterTypes":[] }, 
     {"name":"givenName","parameterTypes":[] }, 
     {"name":"lastUpdateTimestamp","parameterTypes":[] }, 
-    {"name":"paymentAddress","parameterTypes":[] }
+    {"name":"mobileCoinAddress","parameterTypes":[] }
   ]
 },
 {
@@ -2844,6 +2844,21 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"padding_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PaymentAddress",
+  "fields":[
+    {"name":"addressCase_"}, 
+    {"name":"address_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PaymentAddress$MobileCoinAddress",
+  "fields":[
+    {"name":"address_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"signature_"}
   ]
 },
 {

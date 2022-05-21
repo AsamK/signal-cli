@@ -105,9 +105,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             r.profile.about,
                             r.profile.aboutEmoji,
                             r.profile.avatarUrlPath,
-                            r.profile.paymentAddress == null
+                            r.profile.mobileCoinAddress == null
                                     ? null
-                                    : Base64.getDecoder().decode(r.profile.paymentAddress),
+                                    : Base64.getDecoder().decode(r.profile.mobileCoinAddress),
                             Profile.UnidentifiedAccessMode.valueOfOrUnknown(r.profile.unidentifiedAccessMode),
                             r.profile.capabilities.stream()
                                     .map(Profile.Capability::valueOfOrNull)
@@ -592,9 +592,9 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                             recipientProfile.getAbout(),
                             recipientProfile.getAboutEmoji(),
                             recipientProfile.getAvatarUrlPath(),
-                            recipientProfile.getPaymentAddress() == null
+                            recipientProfile.getMobileCoinAddress() == null
                                     ? null
-                                    : base64.encodeToString(recipientProfile.getPaymentAddress()),
+                                    : base64.encodeToString(recipientProfile.getMobileCoinAddress()),
                             recipientProfile.getUnidentifiedAccessMode().name(),
                             recipientProfile.getCapabilities().stream().map(Enum::name).collect(Collectors.toSet()));
             return new Storage.Recipient(pair.getKey().id(),
@@ -651,7 +651,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
                     String about,
                     String aboutEmoji,
                     String avatarUrlPath,
-                    String paymentAddress,
+                    String mobileCoinAddress,
                     String unidentifiedAccessMode,
                     Set<String> capabilities
             ) {}

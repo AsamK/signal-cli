@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
@@ -13,6 +11,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.PaymentUtils;
 import org.asamk.signal.manager.util.ProfileUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -29,7 +28,6 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException;
 import org.whispersystems.signalservice.api.services.ProfileService;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.io.File;
 import java.io.IOException;
@@ -185,13 +183,9 @@ public final class ProfileHelper {
                 final var avatarUploadParams = streamDetails != null
                         ? AvatarUploadParams.forAvatar(streamDetails)
                         : avatar == null ? AvatarUploadParams.unchanged(true) : AvatarUploadParams.unchanged(false);
-                final var paymentsAddress = Optional.ofNullable(newProfile.getPaymentAddress()).map(data -> {
-                    try {
-                        return SignalServiceProtos.PaymentAddress.parseFrom(data);
-                    } catch (InvalidProtocolBufferException e) {
-                        return null;
-                    }
-                });
+                final var paymentsAddress = Optional.ofNullable(newProfile.getMobileCoinAddress())
+                        .map(address -> PaymentUtils.signPaymentsAddress(address,
+                                account.getAciIdentityKeyPair().getPrivateKey()));
                 logger.debug("Uploading new profile");
                 final var avatarPath = dependencies.getAccountManager()
                         .setVersionedProfile(account.getAci(),
