@@ -147,6 +147,15 @@ async fn main() -> Result<(), anyhow::Error> {
                 .await
         }
         cli::CliCommands::SendContacts => client.send_contacts(cli.account).await,
+        cli::CliCommands::SendPaymentNotification {
+            recipient,
+            receipt,
+            note,
+        } => {
+            client
+                .send_payment_notification(cli.account, recipient, receipt, note)
+                .await
+        }
         cli::CliCommands::SendReaction {
             recipient,
             group_id,
@@ -309,6 +318,7 @@ async fn main() -> Result<(), anyhow::Error> {
             family_name,
             about,
             about_emoji,
+            mobile_coin_address,
             avatar,
             remove_avatar,
         } => {
@@ -319,6 +329,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     family_name,
                     about,
                     about_emoji,
+                    mobile_coin_address,
                     avatar,
                     remove_avatar,
                 )

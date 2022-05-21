@@ -164,6 +164,15 @@ pub enum CliCommands {
         sticker: Option<String>,
     },
     SendContacts,
+    SendPaymentNotification {
+        recipient: String,
+
+        #[clap(long)]
+        receipt: String,
+
+        #[clap(long)]
+        note: String,
+    },
     SendReaction {
         recipient: Vec<String>,
 
@@ -318,6 +327,9 @@ pub enum CliCommands {
 
         #[clap(long = "about-emoji")]
         about_emoji: Option<String>,
+
+        #[clap(long = "mobile-coin-address")]
+        mobile_coin_address: Option<String>,
 
         #[clap(long)]
         avatar: Option<String>,

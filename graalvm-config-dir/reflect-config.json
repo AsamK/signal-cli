@@ -2972,6 +2972,30 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"note_"}, 
+    {"name":"paymentDetailCase_"}, 
+    {"name":"paymentDetail_"}, 
+    {"name":"recipientUuid_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment$MobileCoin",
+  "fields":[
+    {"name":"amountPicoMob_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"feePicoMob_"}, 
+    {"name":"ledgerBlockIndex_"}, 
+    {"name":"ledgerBlockTimestamp_"}, 
+    {"name":"outputPublicKeys_"}, 
+    {"name":"receipt_"}, 
+    {"name":"recipientAddress_"}, 
+    {"name":"spentKeyImages_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$PniIdentity",
   "fields":[
     {"name":"bitField0_"}, 

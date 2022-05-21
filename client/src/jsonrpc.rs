@@ -135,6 +135,15 @@ pub trait Rpc {
     #[rpc(name = "sendContacts", params = "named")]
     fn send_contacts(&self, account: Option<String>) -> Result<Value>;
 
+    #[rpc(name = "sendPaymentNotification", params = "named")]
+    fn send_payment_notification(
+        &self,
+        account: Option<String>,
+        recipient: String,
+        receipt: String,
+        note: String,
+    ) -> Result<Value>;
+
     #[rpc(name = "sendReaction", params = "named")]
     fn send_reaction(
         &self,
@@ -263,6 +272,7 @@ pub trait Rpc {
         #[allow(non_snake_case)] familyName: Option<String>,
         about: Option<String>,
         #[allow(non_snake_case)] aboutEmoji: Option<String>,
+        #[allow(non_snake_case)] mobileCoinAddress: Option<String>,
         avatar: Option<String>,
         #[allow(non_snake_case)] removeAvatar: bool,
     ) -> Result<Value>;
