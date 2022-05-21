@@ -6,26 +6,23 @@ verifying, sending and receiving messages. To be able to link to an existing Sig
 signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because
 libsignal-service-java does not yet
 support [provisioning as a linked device](https://github.com/WhisperSystems/libsignal-service-java/pull/21). For
-registering you need a phone number where you can receive SMS or incoming calls. signal-cli is primarily intended to be
-used on servers to notify admins of important events. For this use-case, it has a dbus
-interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)), that can be used to
-send messages from any programming language that has dbus bindings. It also has a JSON-RPC based interface, see
-the [documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service) for more information.
+registering you need a phone number where you can receive SMS or incoming calls.
+
+signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a daemon mode with D-BUS
+interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-PRC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)). For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
 ## Installation
 
-You can [build signal-cli](#building) yourself, or use
+You can [build signal-cli](#building) yourself or use
 the [provided binary files](https://github.com/AsamK/signal-cli/releases/latest), which should work on Linux, macOS and
-Windows. For Arch Linux there is also a [package in AUR](https://aur.archlinux.org/packages/signal-cli/), as well as
-a [FreeBSD port](https://www.freshports.org/net-im/signal-cli) and
-an [Alpine aport](https://pkgs.alpinelinux.org/packages?name=signal-cli).
+Windows. There's also a [docker image and some Linux packages](https://github.com/AsamK/signal-cli/wiki/Binary-distributions) provided by the community.
 
 System requirements:
 
 - at least Java Runtime Environment (JRE) 17
 - native library: libsignal-client
 
-  The native libs are bundled for x86_64 Linux (with recent enough glibc, see #643), Windows and MacOS. For other
+  The native libs are bundled for x86_64 Linux (with recent enough glibc), Windows and MacOS. For other
   systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
