@@ -2755,6 +2755,14 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$StoryContext",
+  "fields":[
+    {"name":"authorUuid_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"sentTimestamp_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Envelope",
   "fields":[
     {"name":"bitField0_"}, 

@@ -21,6 +21,7 @@ import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -67,15 +68,10 @@ public interface Manager extends Closeable {
     void updateConfiguration(Configuration configuration) throws IOException, NotMasterDeviceException;
 
     /**
-     * @param givenName  if null, the previous givenName will be kept
-     * @param familyName if null, the previous familyName will be kept
-     * @param about      if null, the previous about text will be kept
-     * @param aboutEmoji if null, the previous about emoji will be kept
-     * @param avatar     if avatar is null the image from the local avatar store is used (if present),
+     * Update the user's profile.
+     * If a field is null, the previous value will be kept.
      */
-    void setProfile(
-            String givenName, String familyName, String about, String aboutEmoji, Optional<File> avatar
-    ) throws IOException;
+    void updateProfile(UpdateProfile updateProfile) throws IOException;
 
     void unregister() throws IOException;
 

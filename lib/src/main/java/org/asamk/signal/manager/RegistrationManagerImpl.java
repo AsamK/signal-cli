@@ -19,6 +19,7 @@ package org.asamk.signal.manager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.PinLockedException;
+import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
@@ -139,7 +140,7 @@ class RegistrationManagerImpl implements RegistrationManager {
             }
             // Set an initial empty profile so user can be added to groups
             try {
-                m.setProfile(null, null, null, null, null);
+                m.updateProfile(UpdateProfile.newBuilder().build());
             } catch (NoClassDefFoundError e) {
                 logger.warn("Failed to set default profile: {}", e.getMessage());
             }

@@ -38,6 +38,7 @@ import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.groups.GroupId;
@@ -261,10 +262,15 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setProfile(
-            String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
-    ) throws IOException {
-        context.getProfileHelper().setProfile(givenName, familyName, about, aboutEmoji, avatar);
+    public void updateProfile(UpdateProfile updateProfile) throws IOException {
+        context.getProfileHelper()
+                .setProfile(updateProfile.getGivenName(),
+                        updateProfile.getFamilyName(),
+                        updateProfile.getAbout(),
+                        updateProfile.getAboutEmoji(),
+                        updateProfile.isDeleteAvatar()
+                                ? Optional.empty()
+                                : updateProfile.getAvatar() == null ? null : Optional.of(updateProfile.getAvatar()));
         context.getSyncHelper().sendSyncFetchProfileMessage();
     }
 

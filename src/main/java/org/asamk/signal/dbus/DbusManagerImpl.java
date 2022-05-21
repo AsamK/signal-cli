@@ -22,6 +22,7 @@ import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -138,19 +139,13 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void setProfile(
-            final String givenName,
-            final String familyName,
-            final String about,
-            final String aboutEmoji,
-            final Optional<File> avatar
-    ) throws IOException {
-        signal.updateProfile(emptyIfNull(givenName),
-                emptyIfNull(familyName),
-                emptyIfNull(about),
-                emptyIfNull(aboutEmoji),
-                avatar == null ? "" : avatar.map(File::getPath).orElse(""),
-                avatar != null && avatar.isEmpty());
+    public void updateProfile(UpdateProfile updateProfile) throws IOException {
+        signal.updateProfile(emptyIfNull(updateProfile.getGivenName()),
+                emptyIfNull(updateProfile.getFamilyName()),
+                emptyIfNull(updateProfile.getAbout()),
+                emptyIfNull(updateProfile.getAboutEmoji()),
+                updateProfile.getAvatar() == null ? "" : updateProfile.getAvatar().getPath(),
+                updateProfile.isDeleteAvatar());
     }
 
     @Override

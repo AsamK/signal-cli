@@ -17,6 +17,7 @@ import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
+import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
@@ -662,10 +663,15 @@ public class DbusSignalImpl implements Signal {
             about = nullIfEmpty(about);
             aboutEmoji = nullIfEmpty(aboutEmoji);
             avatarPath = nullIfEmpty(avatarPath);
-            Optional<File> avatarFile = removeAvatar
-                    ? Optional.empty()
-                    : avatarPath == null ? null : Optional.of(new File(avatarPath));
-            m.setProfile(givenName, familyName, about, aboutEmoji, avatarFile);
+            File avatarFile = removeAvatar || avatarPath == null ? null : new File(avatarPath);
+            m.updateProfile(UpdateProfile.newBuilder()
+                    .withGivenName(givenName)
+                    .withFamilyName(familyName)
+                    .withAbout(about)
+                    .withAboutEmoji(aboutEmoji)
+                    .withAvatar(avatarFile)
+                    .withDeleteAvatar(removeAvatar)
+                    .build());
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }
