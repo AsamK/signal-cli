@@ -10,6 +10,7 @@ public class UpdateProfile {
     private final String aboutEmoji;
     private final File avatar;
     private final boolean deleteAvatar;
+    private final byte[] mobileCoinAddress;
 
     private UpdateProfile(final Builder builder) {
         givenName = builder.givenName;
@@ -18,6 +19,7 @@ public class UpdateProfile {
         aboutEmoji = builder.aboutEmoji;
         avatar = builder.avatar;
         deleteAvatar = builder.deleteAvatar;
+        mobileCoinAddress = builder.mobileCoinAddress;
     }
 
     public static Builder newBuilder() {
@@ -32,6 +34,7 @@ public class UpdateProfile {
         builder.aboutEmoji = copy.getAboutEmoji();
         builder.avatar = copy.getAvatar();
         builder.deleteAvatar = copy.isDeleteAvatar();
+        builder.mobileCoinAddress = copy.getMobileCoinAddress();
         return builder;
     }
 
@@ -59,6 +62,10 @@ public class UpdateProfile {
         return deleteAvatar;
     }
 
+    public byte[] getMobileCoinAddress() {
+        return mobileCoinAddress;
+    }
+
     public static final class Builder {
 
         private String givenName;
@@ -67,6 +74,7 @@ public class UpdateProfile {
         private String aboutEmoji;
         private File avatar;
         private boolean deleteAvatar;
+        private byte[] mobileCoinAddress;
 
         private Builder() {
         }
@@ -98,6 +106,11 @@ public class UpdateProfile {
 
         public Builder withDeleteAvatar(final boolean val) {
             deleteAvatar = val;
+            return this;
+        }
+
+        public Builder withMobileCoinAddress(final byte[] val) {
+            mobileCoinAddress = val;
             return this;
         }
 

@@ -270,7 +270,8 @@ class ManagerImpl implements Manager {
                         updateProfile.getAboutEmoji(),
                         updateProfile.isDeleteAvatar()
                                 ? Optional.empty()
-                                : updateProfile.getAvatar() == null ? null : Optional.of(updateProfile.getAvatar()));
+                                : updateProfile.getAvatar() == null ? null : Optional.of(updateProfile.getAvatar()),
+                        updateProfile.getMobileCoinAddress());
         context.getSyncHelper().sendSyncFetchProfileMessage();
     }
 

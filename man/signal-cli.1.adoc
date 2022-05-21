@@ -493,6 +493,9 @@ Path to the new avatar image file.
 *--remove-avatar*::
 Remove the avatar
 
+*--mobile-coin-address*::
+New MobileCoin address (Base64 encoded public address)
+
 === updateContact
 
 Update the info associated to a number on our contact list.

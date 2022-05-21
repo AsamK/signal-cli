@@ -64,7 +64,7 @@ public final class ProfileHelper {
         var profileKey = KeyUtils.createProfileKey();
         account.setProfileKey(profileKey);
         context.getAccountHelper().updateAccountAttributes();
-        setProfile(true, true, null, null, null, null, null);
+        setProfile(true, true, null, null, null, null, null, null);
         // TODO update profile key in storage
 
         final var recipientIds = account.getRecipientStore().getRecipientIdsWithEnabledProfileSharing();
@@ -144,9 +144,14 @@ public final class ProfileHelper {
      * @param avatar     if avatar is null the image from the local avatar store is used (if present),
      */
     public void setProfile(
-            String givenName, final String familyName, String about, String aboutEmoji, Optional<File> avatar
+            String givenName,
+            final String familyName,
+            String about,
+            String aboutEmoji,
+            Optional<File> avatar,
+            byte[] mobileCoinAddress
     ) throws IOException {
-        setProfile(true, false, givenName, familyName, about, aboutEmoji, avatar);
+        setProfile(true, false, givenName, familyName, about, aboutEmoji, avatar, mobileCoinAddress);
     }
 
     public void setProfile(
@@ -156,7 +161,8 @@ public final class ProfileHelper {
             final String familyName,
             String about,
             String aboutEmoji,
-            Optional<File> avatar
+            Optional<File> avatar,
+            byte[] mobileCoinAddress
     ) throws IOException {
         var profile = getSelfProfile();
         var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
@@ -171,6 +177,9 @@ public final class ProfileHelper {
         }
         if (aboutEmoji != null) {
             builder.withAboutEmoji(aboutEmoji);
+        }
+        if (mobileCoinAddress != null) {
+            builder.withMobileCoinAddress(mobileCoinAddress);
         }
         var newProfile = builder.build();
 
