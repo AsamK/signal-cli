@@ -418,7 +418,20 @@ Filter the group list by one or more group IDs.
 
 === listContacts
 
-Show a list of known contacts with names.
+Show a list of known contacts with names and profiles.
+When a specific recipient is given, its profile will be refreshed.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-a*, *--all-recipients*::
+Include all known recipients, not only contacts.
+
+*--blocked*::
+Specify if only blocked or unblocked contacts should be shown (default: all contacts)
+
+*--name*::
+Find contacts with the given contact or profile name.
 
 === listIdentities
 
