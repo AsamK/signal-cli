@@ -108,17 +108,12 @@ public final class ProfileHelper {
     }
 
     public List<ExpiringProfileKeyCredential> getExpiringProfileKeyCredential(List<RecipientId> recipientIds) {
-        try {
-            account.getRecipientStore().setBulkUpdating(true);
-            final var profileFetches = Flowable.fromIterable(recipientIds)
-                    .filter(recipientId -> !ExpiringProfileCredentialUtil.isValid(account.getProfileStore()
-                            .getExpiringProfileKeyCredential(recipientId)))
-                    .map(recipientId -> retrieveProfile(recipientId,
-                            SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL).onErrorComplete());
-            Maybe.merge(profileFetches, 10).blockingSubscribe();
-        } finally {
-            account.getRecipientStore().setBulkUpdating(false);
-        }
+        final var profileFetches = Flowable.fromIterable(recipientIds)
+                .filter(recipientId -> !ExpiringProfileCredentialUtil.isValid(account.getProfileStore()
+                        .getExpiringProfileKeyCredential(recipientId)))
+                .map(recipientId -> retrieveProfile(recipientId,
+                        SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL).onErrorComplete());
+        Maybe.merge(profileFetches, 10).blockingSubscribe();
 
         return recipientIds.stream().map(r -> account.getProfileStore().getExpiringProfileKeyCredential(r)).toList();
     }
@@ -233,16 +228,11 @@ public final class ProfileHelper {
 
     private List<Profile> getRecipientProfiles(Collection<RecipientId> recipientIds, boolean force) {
         final var profileStore = account.getProfileStore();
-        try {
-            account.getRecipientStore().setBulkUpdating(true);
-            final var profileFetches = Flowable.fromIterable(recipientIds)
-                    .filter(recipientId -> force || isProfileRefreshRequired(profileStore.getProfile(recipientId)))
-                    .map(recipientId -> retrieveProfile(recipientId,
-                            SignalServiceProfile.RequestType.PROFILE).onErrorComplete());
-            Maybe.merge(profileFetches, 10).blockingSubscribe();
-        } finally {
-            account.getRecipientStore().setBulkUpdating(false);
-        }
+        final var profileFetches = Flowable.fromIterable(recipientIds)
+                .filter(recipientId -> force || isProfileRefreshRequired(profileStore.getProfile(recipientId)))
+                .map(recipientId -> retrieveProfile(recipientId,
+                        SignalServiceProfile.RequestType.PROFILE).onErrorComplete());
+        Maybe.merge(profileFetches, 10).blockingSubscribe();
 
         return recipientIds.stream().map(profileStore::getProfile).toList();
     }

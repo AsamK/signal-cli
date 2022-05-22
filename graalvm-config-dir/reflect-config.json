@@ -1134,6 +1134,34 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List","long"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","boolean","boolean","boolean"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.Set"] }]
+},
+{
   "name":"org.asamk.signal.manager.storage.recipients.RecipientAddress",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -1142,30 +1170,6 @@
     {"name":"number","parameterTypes":[] }, 
     {"name":"uuid","parameterTypes":[] }
   ]
-},
-{
-  "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage$Recipient",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage$Recipient$Contact",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.recipients.RecipientStore$Storage$Recipient$Profile",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore$Storage",

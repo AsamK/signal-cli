@@ -20,7 +20,6 @@ public interface ProfileStore {
     void storeProfileKey(RecipientId recipientId, ProfileKey profileKey);
 
     void storeExpiringProfileKeyCredential(
-            RecipientId recipientId,
-            ExpiringProfileKeyCredential expiringProfileKeyCredential
+            RecipientId recipientId, ExpiringProfileKeyCredential expiringProfileKeyCredential
     );
 }

@@ -53,18 +53,25 @@ public abstract class Database implements AutoCloseable {
 
     protected final void initDb() throws SQLException {
         try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
             final var userVersion = getUserVersion(connection);
             logger.trace("Current database version: {} Program database version: {}", userVersion, databaseVersion);
 
-            if (userVersion > databaseVersion) {
+            if (userVersion == 0) {
+                createDatabase(connection);
+                setUserVersion(connection, databaseVersion);
+            } else if (userVersion > databaseVersion) {
                 logger.error("Database has been updated by a newer signal-cli version");
                 throw new SQLException("Database has been updated by a newer signal-cli version");
             } else if (userVersion < databaseVersion) {
                 upgradeDatabase(connection, userVersion);
                 setUserVersion(connection, databaseVersion);
             }
+            connection.commit();
         }
     }
+
+    protected abstract void createDatabase(final Connection connection) throws SQLException;
 
     protected abstract void upgradeDatabase(final Connection connection, long oldVersion) throws SQLException;
 

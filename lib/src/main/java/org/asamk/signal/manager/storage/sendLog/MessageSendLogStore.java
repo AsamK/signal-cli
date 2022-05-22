@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.sendLog;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.Database;
+import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.zkgroup.InvalidInputException;
@@ -15,18 +16,11 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class MessageSendLogStore implements AutoCloseable {
 
@@ -68,12 +62,13 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public static void createSql(Connection connection) throws SQLException {
+        // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
         try (final var statement = connection.createStatement()) {
             statement.executeUpdate("""
                                     CREATE TABLE message_send_log (
                                       _id INTEGER PRIMARY KEY,
                                       content_id INTEGER NOT NULL REFERENCES message_send_log_content (_id) ON DELETE CASCADE,
-                                      recipient_id INTEGER NOT NULL,
+                                      recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
                                       device_id INTEGER NOT NULL
                                     );
                                     CREATE TABLE message_send_log_content (
@@ -106,7 +101,7 @@ public class MessageSendLogStore implements AutoCloseable {
                 statement.setLong(1, recipientId.id());
                 statement.setInt(2, deviceId);
                 statement.setLong(3, timestamp);
-                try (var result = executeQueryForStream(statement, resultSet -> {
+                try (var result = Utils.executeQueryForStream(statement, resultSet -> {
                     final var groupId = Optional.ofNullable(resultSet.getBytes("group_id"))
                             .map(GroupId::unknownVersion);
                     final SignalServiceProtos.Content content;
@@ -387,33 +382,6 @@ public class MessageSendLogStore implements AutoCloseable {
         try (final var statement = connection.prepareStatement(sql)) {
             statement.executeUpdate();
         }
-    }
-
-    private <T> Stream<T> executeQueryForStream(
-            PreparedStatement statement, ResultSetMapper<T> mapper
-    ) throws SQLException {
-        final var resultSet = statement.executeQuery();
-
-        return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE, Spliterator.ORDERED) {
-            @Override
-            public boolean tryAdvance(final Consumer<? super T> consumer) {
-                try {
-                    if (!resultSet.next()) {
-                        return false;
-                    }
-                    consumer.accept(mapper.apply(resultSet));
-                    return true;
-                } catch (SQLException e) {
-                    logger.warn("Failed to read from database result", e);
-                    throw new RuntimeException(e);
-                }
-            }
-        }, false);
-    }
-
-    private interface ResultSetMapper<T> {
-
-        T apply(ResultSet resultSet) throws SQLException;
     }
 
     private record RecipientDevices(RecipientId recipientId, List<Integer> deviceIds) {}

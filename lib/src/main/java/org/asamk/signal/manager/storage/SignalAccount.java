@@ -26,6 +26,7 @@ import org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.SignalProtocolStore;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
+import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -93,7 +94,7 @@ public class SignalAccount implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 4;
+    private static final int CURRENT_STORAGE_VERSION = 5;
 
     private final Object LOCK = new Object();
 
@@ -392,8 +393,6 @@ public class SignalAccount implements Closeable {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
         }
-        // Ensure our profile key is stored in profile store
-        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
         if (previousStorageVersion < 3) {
             for (final var group : groupStore.getGroups()) {
                 if (group instanceof GroupInfoV2 && group.getDistributionId() == null) {
@@ -514,9 +513,10 @@ public class SignalAccount implements Closeable {
         if (rootNode.hasNonNull("version")) {
             var accountVersion = rootNode.get("version").asInt(1);
             if (accountVersion > CURRENT_STORAGE_VERSION) {
-                throw new IOException("Config file was created by a more recent version!");
+                throw new IOException("Config file was created by a more recent version: " + accountVersion);
             } else if (accountVersion < MINIMUM_STORAGE_VERSION) {
-                throw new IOException("Config file was created by a no longer supported older version!");
+                throw new IOException("Config file was created by a no longer supported older version: "
+                        + accountVersion);
             }
             previousStorageVersion = accountVersion;
             if (accountVersion < CURRENT_STORAGE_VERSION) {
@@ -621,6 +621,15 @@ public class SignalAccount implements Closeable {
             }
         }
 
+        if (previousStorageVersion < 5) {
+            final var legacyRecipientsStoreFile = getRecipientsStoreFile(dataPath, accountPath);
+            if (legacyRecipientsStoreFile.exists()) {
+                LegacyRecipientStore2.migrate(legacyRecipientsStoreFile, getRecipientStore());
+                // Ensure our profile key is stored in profile store
+                getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
+                migratedLegacyConfig = true;
+            }
+        }
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
@@ -681,7 +690,8 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy recipient store.");
             var legacyRecipientStore = jsonProcessor.convertValue(legacyRecipientStoreNode, LegacyRecipientStore.class);
             if (legacyRecipientStore != null) {
-                getRecipientStore().resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
+                legacyRecipientStore.getAddresses()
+                        .forEach(recipient -> getRecipientStore().resolveRecipientTrusted(recipient));
             }
             getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
             migrated = true;
@@ -1094,22 +1104,42 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientResolver getRecipientResolver() {
-        return getRecipientStore();
+        return new RecipientResolver() {
+            @Override
+            public RecipientId resolveRecipient(final RecipientAddress address) {
+                return getRecipientStore().resolveRecipient(address);
+            }
+
+            @Override
+            public RecipientId resolveRecipient(final long recipientId) {
+                return getRecipientStore().resolveRecipient(recipientId);
+            }
+        };
     }
 
     public RecipientTrustedResolver getRecipientTrustedResolver() {
-        return getRecipientStore();
+        return new RecipientTrustedResolver() {
+            @Override
+            public RecipientId resolveSelfRecipientTrusted(final RecipientAddress address) {
+                return getRecipientStore().resolveSelfRecipientTrusted(address);
+            }
+
+            @Override
+            public RecipientId resolveRecipientTrusted(final SignalServiceAddress address) {
+                return getRecipientStore().resolveRecipientTrusted(address);
+            }
+        };
     }
 
     public RecipientAddressResolver getRecipientAddressResolver() {
-        return getRecipientStore()::resolveRecipientAddress;
+        return recipientId -> getRecipientStore().resolveRecipientAddress(recipientId);
     }
 
     public RecipientStore getRecipientStore() {
         return getOrCreate(() -> recipientStore,
-                () -> recipientStore = RecipientStore.load(getRecipientsStoreFile(dataPath, accountPath),
-                        this::mergeRecipients,
-                        this::getSelfRecipientAddress));
+                () -> recipientStore = new RecipientStore(this::mergeRecipients,
+                        this::getSelfRecipientAddress,
+                        getAccountDatabase()));
     }
 
     public ProfileStore getProfileStore() {

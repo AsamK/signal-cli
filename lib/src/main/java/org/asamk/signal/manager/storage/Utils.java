@@ -10,12 +10,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.InvalidObjectException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Utils {
+
+    private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
     }
@@ -48,5 +60,52 @@ public class Utils {
         } else {
             return new RecipientAddress(Optional.empty(), Optional.of(identifier));
         }
+    }
+
+    public static <T> T executeQuerySingleRow(
+            PreparedStatement statement, ResultSetMapper<T> mapper
+    ) throws SQLException {
+        final var resultSet = statement.executeQuery();
+        if (!resultSet.next()) {
+            throw new RuntimeException("Expected a row in result set, but none found.");
+        }
+        return mapper.apply(resultSet);
+    }
+
+    public static <T> Optional<T> executeQueryForOptional(
+            PreparedStatement statement, ResultSetMapper<T> mapper
+    ) throws SQLException {
+        final var resultSet = statement.executeQuery();
+        if (!resultSet.next()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(mapper.apply(resultSet));
+    }
+
+    public static <T> Stream<T> executeQueryForStream(
+            PreparedStatement statement, ResultSetMapper<T> mapper
+    ) throws SQLException {
+        final var resultSet = statement.executeQuery();
+
+        return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            @Override
+            public boolean tryAdvance(final Consumer<? super T> consumer) {
+                try {
+                    if (!resultSet.next()) {
+                        return false;
+                    }
+                    consumer.accept(mapper.apply(resultSet));
+                    return true;
+                } catch (SQLException e) {
+                    logger.warn("Failed to read from database result", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        }, false);
+    }
+
+    public interface ResultSetMapper<T> {
+
+        T apply(ResultSet resultSet) throws SQLException;
     }
 }
