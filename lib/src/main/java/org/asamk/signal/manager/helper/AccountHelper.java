@@ -5,6 +5,7 @@ import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -95,7 +96,7 @@ public class AccountHelper {
 
     public void startChangeNumber(
             String newNumber, String captcha, boolean voiceVerification
-    ) throws IOException, CaptchaRequiredException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
         NumberVerificationUtils.requestVerificationCode(accountManager, captcha, voiceVerification);
     }

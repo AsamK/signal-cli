@@ -18,6 +18,7 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
+import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -95,7 +96,9 @@ class RegistrationManagerImpl implements RegistrationManager {
     }
 
     @Override
-    public void register(boolean voiceVerification, String captcha) throws IOException, CaptchaRequiredException {
+    public void register(
+            boolean voiceVerification, String captcha
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
                 && account.getServiceEnvironment() != serviceEnvironmentConfig.getType()) {

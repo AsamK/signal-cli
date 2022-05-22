@@ -2,6 +2,7 @@ package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
+import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.helper.PinHelper;
@@ -20,7 +21,7 @@ public class NumberVerificationUtils {
 
     public static void requestVerificationCode(
             SignalServiceAccountManager accountManager, String captcha, boolean voiceVerification
-    ) throws IOException, CaptchaRequiredException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
 
         final ServiceResponse<RequestVerificationCodeResponse> response;
@@ -39,6 +40,11 @@ public class NumberVerificationUtils {
             handleResponseException(response);
         } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
             throw new CaptchaRequiredException(e.getMessage(), e);
+        } catch (org.whispersystems.signalservice.api.push.exceptions.NonNormalizedPhoneNumberException e) {
+            throw new NonNormalizedPhoneNumberException("Phone number is not normalized ("
+                    + e.getMessage()
+                    + "). Expected normalized: "
+                    + e.getNormalizedNumber(), e);
         }
     }
 

@@ -12,6 +12,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
+import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.output.JsonWriter;
 
 import java.io.IOException;
@@ -76,6 +77,8 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
                 message = "Invalid captcha given.";
             }
             throw new UserErrorException(message);
+        } catch (NonNormalizedPhoneNumberException e) {
+            throw new UserErrorException("Failed to register: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new IOErrorException("Request verify error: " + e.getMessage(), e);
         }
