@@ -69,10 +69,10 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             String message;
             if (captcha == null) {
                 message = """
-                        Captcha required for verification, use --captcha CAPTCHA
-                        To get the token, go to https://signalcaptchas.org/registration/generate.html
-                        Check the developer tools (F12) console for a failed redirect to signalcaptcha://
-                        Everything after signalcaptcha:// is the captcha token.""";
+                          Captcha required for verification, use --captcha CAPTCHA
+                          To get the token, go to https://signalcaptchas.org/registration/generate.html
+                          Check the developer tools (F12) console for a failed redirect to signalcaptcha://
+                          Everything after signalcaptcha:// is the captcha token.""";
             } else {
                 message = "Invalid captcha given.";
             }

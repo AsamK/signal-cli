@@ -70,23 +70,23 @@ public class MessageSendLogStore implements AutoCloseable {
     public static void createSql(Connection connection) throws SQLException {
         try (final var statement = connection.createStatement()) {
             statement.executeUpdate("""
-                    CREATE TABLE message_send_log (
-                      _id INTEGER PRIMARY KEY,
-                      content_id INTEGER NOT NULL REFERENCES message_send_log_content (_id) ON DELETE CASCADE,
-                      recipient_id INTEGER NOT NULL,
-                      device_id INTEGER NOT NULL
-                    );
-                    CREATE TABLE message_send_log_content (
-                      _id INTEGER PRIMARY KEY,
-                      group_id BLOB,
-                      timestamp INTEGER NOT NULL,
-                      content BLOB NOT NULL,
-                      content_hint INTEGER NOT NULL
-                    );
-                    CREATE INDEX mslc_timestamp_index ON message_send_log_content (timestamp);
-                    CREATE INDEX msl_recipient_index ON message_send_log (recipient_id, device_id, content_id);
-                    CREATE INDEX msl_content_index ON message_send_log (content_id);
-                    """);
+                                    CREATE TABLE message_send_log (
+                                      _id INTEGER PRIMARY KEY,
+                                      content_id INTEGER NOT NULL REFERENCES message_send_log_content (_id) ON DELETE CASCADE,
+                                      recipient_id INTEGER NOT NULL,
+                                      device_id INTEGER NOT NULL
+                                    );
+                                    CREATE TABLE message_send_log_content (
+                                      _id INTEGER PRIMARY KEY,
+                                      group_id BLOB,
+                                      timestamp INTEGER NOT NULL,
+                                      content BLOB NOT NULL,
+                                      content_hint INTEGER NOT NULL
+                                    );
+                                    CREATE INDEX mslc_timestamp_index ON message_send_log_content (timestamp);
+                                    CREATE INDEX msl_recipient_index ON message_send_log (recipient_id, device_id, content_id);
+                                    CREATE INDEX msl_content_index ON message_send_log (content_id);
+                                    """);
         }
     }
 

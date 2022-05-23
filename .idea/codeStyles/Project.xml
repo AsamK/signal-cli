@@ -4,6 +4,7 @@
     <JavaCodeStyleSettings>
       <option name="GENERATE_FINAL_LOCALS" value="true" />
       <option name="GENERATE_FINAL_PARAMETERS" value="true" />
+      <option name="ALIGN_MULTILINE_TEXT_BLOCKS" value="true" />
       <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="50" />
       <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="50" />
       <option name="IMPORT_LAYOUT_TABLE">
