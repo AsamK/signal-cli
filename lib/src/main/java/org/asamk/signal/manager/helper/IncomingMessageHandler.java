@@ -460,6 +460,7 @@ public final class IncomingMessageHandler {
             final var pniIdentity = syncMessage.getPniIdentity().get();
             account.setPniIdentityKeyPair(KeyUtils.getIdentityKeyPair(pniIdentity.getPublicKey().toByteArray(),
                     pniIdentity.getPrivateKey().toByteArray()));
+            actions.add(RefreshPreKeysAction.create());
         }
         return actions;
     }
