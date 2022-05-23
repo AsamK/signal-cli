@@ -45,11 +45,11 @@ public class PreKeyHelper {
     }
 
     public void refreshPreKeys(ServiceIdType serviceIdType) throws IOException {
-        final var oneTimePreKeys = generatePreKeys(serviceIdType);
         final var identityKeyPair = account.getIdentityKeyPair(serviceIdType);
         if (identityKeyPair == null) {
             return;
         }
+        final var oneTimePreKeys = generatePreKeys(serviceIdType);
         final var signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
 
         dependencies.getAccountManager()
