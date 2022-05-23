@@ -61,6 +61,8 @@ public final class ProfileHelper {
     }
 
     public void rotateProfileKey() throws IOException {
+        // refresh our profile, before creating a new profile key
+        getSelfProfile();
         var profileKey = KeyUtils.createProfileKey();
         account.setProfileKey(profileKey);
         context.getAccountHelper().updateAccountAttributes();
