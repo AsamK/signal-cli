@@ -95,9 +95,9 @@ public class StorageHelper {
                 || blocked != contactRecord.isBlocked()
                 || profileShared != contactRecord.isProfileSharingEnabled()) {
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            final var name = contactRecord.getGivenName().orElse("") + " " + contactRecord.getFamilyName().orElse("");
             final var newContact = contactBuilder.withBlocked(contactRecord.isBlocked())
-                    .withName(name.trim())
+                    .withGivenName(contactRecord.getGivenName().orElse(null))
+                    .withFamilyName(contactRecord.getFamilyName().orElse(null))
                     .withProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
                     .build();
             account.getContactStore().storeContact(recipientId, newContact);

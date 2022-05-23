@@ -261,7 +261,7 @@ public class SyncHelper {
             var contact = account.getContactStore().getContact(recipientId);
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             if (c.getName().isPresent()) {
-                builder.withName(c.getName().get());
+                builder.withGivenName(c.getName().get());
             }
             if (c.getColor().isPresent()) {
                 builder.withColor(c.getColor().get());

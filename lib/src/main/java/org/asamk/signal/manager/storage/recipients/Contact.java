@@ -1,10 +1,14 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import org.whispersystems.signalservice.internal.util.Util;
+
 import java.util.Objects;
 
 public class Contact {
 
-    private final String name;
+    private final String givenName;
+
+    private final String familyName;
 
     private final String color;
 
@@ -17,14 +21,16 @@ public class Contact {
     private final boolean profileSharingEnabled;
 
     public Contact(
-            final String name,
+            final String givenName,
+            final String familyName,
             final String color,
             final int messageExpirationTime,
             final boolean blocked,
             final boolean archived,
             final boolean profileSharingEnabled
     ) {
-        this.name = name;
+        this.givenName = givenName;
+        this.familyName = familyName;
         this.color = color;
         this.messageExpirationTime = messageExpirationTime;
         this.blocked = blocked;
@@ -33,7 +39,8 @@ public class Contact {
     }
 
     private Contact(final Builder builder) {
-        name = builder.name;
+        givenName = builder.givenName;
+        familyName = builder.familyName;
         color = builder.color;
         messageExpirationTime = builder.messageExpirationTime;
         blocked = builder.blocked;
@@ -47,7 +54,8 @@ public class Contact {
 
     public static Builder newBuilder(final Contact copy) {
         Builder builder = new Builder();
-        builder.name = copy.getName();
+        builder.givenName = copy.getGivenName();
+        builder.familyName = copy.getFamilyName();
         builder.color = copy.getColor();
         builder.messageExpirationTime = copy.getMessageExpirationTime();
         builder.blocked = copy.isBlocked();
@@ -57,7 +65,26 @@ public class Contact {
     }
 
     public String getName() {
-        return name;
+        final var noGivenName = Util.isEmpty(givenName);
+        final var noFamilyName = Util.isEmpty(familyName);
+
+        if (noGivenName && noFamilyName) {
+            return "";
+        } else if (noGivenName) {
+            return familyName;
+        } else if (noFamilyName) {
+            return givenName;
+        }
+
+        return givenName + " " + familyName;
+    }
+
+    public String getGivenName() {
+        return givenName;
+    }
+
+    public String getFamilyName() {
+        return familyName;
     }
 
     public String getColor() {
@@ -89,18 +116,26 @@ public class Contact {
                 && blocked == contact.blocked
                 && archived == contact.archived
                 && profileSharingEnabled == contact.profileSharingEnabled
-                && Objects.equals(name, contact.name)
+                && Objects.equals(givenName, contact.givenName)
+                && Objects.equals(familyName, contact.familyName)
                 && Objects.equals(color, contact.color);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, color, messageExpirationTime, blocked, archived, profileSharingEnabled);
+        return Objects.hash(givenName,
+                familyName,
+                color,
+                messageExpirationTime,
+                blocked,
+                archived,
+                profileSharingEnabled);
     }
 
     public static final class Builder {
 
-        private String name;
+        private String givenName;
+        private String familyName;
         private String color;
         private int messageExpirationTime;
         private boolean blocked;
@@ -110,8 +145,13 @@ public class Contact {
         private Builder() {
         }
 
-        public Builder withName(final String val) {
-            name = val;
+        public Builder withGivenName(final String val) {
+            givenName = val;
+            return this;
+        }
+
+        public Builder withFamilyName(final String val) {
+            familyName = val;
             return this;
         }
 

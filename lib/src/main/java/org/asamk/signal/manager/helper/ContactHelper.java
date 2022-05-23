@@ -20,7 +20,7 @@ public class ContactHelper {
     public void setContactName(final RecipientId recipientId, final String name) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-        account.getContactStore().storeContact(recipientId, builder.withName(name).build());
+        account.getContactStore().storeContact(recipientId, builder.withGivenName(name).build());
     }
 
     public void setExpirationTimer(RecipientId recipientId, int messageExpirationTimer) {

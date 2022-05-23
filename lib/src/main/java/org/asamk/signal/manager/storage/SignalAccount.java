@@ -717,6 +717,7 @@ public class SignalAccount implements Closeable {
                 final var recipientId = getRecipientStore().resolveRecipientTrusted(contact.getAddress());
                 getContactStore().storeContact(recipientId,
                         new Contact(contact.name,
+                                null,
                                 contact.color,
                                 contact.messageExpirationTime,
                                 contact.blocked,

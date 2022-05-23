@@ -73,6 +73,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                 Contact contact = null;
                 if (r.contact != null) {
                     contact = new Contact(r.contact.name,
+                            null,
                             r.contact.color,
                             r.contact.messageExpirationTime,
                             r.contact.blocked,

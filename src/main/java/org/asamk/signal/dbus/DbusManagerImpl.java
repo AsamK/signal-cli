@@ -574,7 +574,7 @@ public class DbusManagerImpl implements Manager {
             }
             return Recipient.newBuilder()
                     .withAddress(new RecipientAddress(null, n))
-                    .withContact(new Contact(contactName, null, 0, contactBlocked, false, false))
+                    .withContact(new Contact(contactName, null, null, 0, contactBlocked, false, false))
                     .build();
         }).filter(Objects::nonNull).toList();
     }
