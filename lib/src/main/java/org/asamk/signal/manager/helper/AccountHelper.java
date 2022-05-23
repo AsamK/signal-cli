@@ -86,7 +86,7 @@ public class AccountHelper {
         account.setNumber(number);
         account.setAci(aci);
         account.setPni(pni);
-        account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
+        account.getRecipientTrustedResolver().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
         // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
         dependencies.resetAfterAddressChange();

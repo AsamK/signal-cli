@@ -168,9 +168,9 @@ class ManagerImpl implements Manager {
             logger.trace("Archiving old sessions for {}", recipientId);
             account.getSessionStore().archiveSessions(recipientId);
             account.getSenderKeyStore().deleteSharedWith(recipientId);
-            final var profile = account.getRecipientStore().getProfile(recipientId);
+            final var profile = account.getProfileStore().getProfile(recipientId);
             if (profile != null) {
-                account.getRecipientStore()
+                account.getProfileStore()
                         .storeProfile(recipientId,
                                 Profile.newBuilder(profile)
                                         .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
@@ -215,7 +215,8 @@ class ManagerImpl implements Manager {
             final var aci = registeredUsers.get(number);
             final var profile = aci == null
                     ? null
-                    : context.getProfileHelper().getRecipientProfile(account.getRecipientStore().resolveRecipient(aci));
+                    : context.getProfileHelper()
+                            .getRecipientProfile(account.getRecipientResolver().resolveRecipient(aci));
             return new UserStatus(number.isEmpty() ? null : number,
                     aci == null ? null : aci.uuid(),
                     profile != null
@@ -356,9 +357,7 @@ class ManagerImpl implements Manager {
             return null;
         }
 
-        return Group.from(groupInfo,
-                account.getRecipientStore()::resolveRecipientAddress,
-                account.getSelfRecipientId());
+        return Group.from(groupInfo, account.getRecipientAddressResolver(), account.getSelfRecipientId());
     }
 
     @Override
@@ -459,9 +458,7 @@ class ManagerImpl implements Manager {
     }
 
     private SendMessageResult toSendMessageResult(final org.whispersystems.signalservice.api.messages.SendMessageResult result) {
-        return SendMessageResult.from(result,
-                account.getRecipientStore(),
-                account.getRecipientStore()::resolveRecipientAddress);
+        return SendMessageResult.from(result, account.getRecipientResolver(), account.getRecipientAddressResolver());
     }
 
     private SendMessageResults sendTypingMessage(
@@ -683,13 +680,13 @@ class ManagerImpl implements Manager {
 
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) {
-        account.removeRecipient(account.getRecipientStore().resolveRecipient(recipient.toPartialRecipientAddress()));
+        account.removeRecipient(account.getRecipientResolver().resolveRecipient(recipient.toPartialRecipientAddress()));
     }
 
     @Override
     public void deleteContact(final RecipientIdentifier.Single recipient) {
         account.getContactStore()
-                .deleteContact(account.getRecipientStore().resolveRecipient(recipient.toPartialRecipientAddress()));
+                .deleteContact(account.getRecipientResolver().resolveRecipient(recipient.toPartialRecipientAddress()));
     }
 
     @Override
@@ -1018,7 +1015,8 @@ class ManagerImpl implements Manager {
             return null;
         }
 
-        final var address = account.getRecipientStore().resolveRecipientAddress(identityInfo.getRecipientId());
+        final var address = account.getRecipientAddressResolver()
+                .resolveRecipientAddress(identityInfo.getRecipientId());
         final var scannableFingerprint = context.getIdentityHelper()
                 .computeSafetyNumberForScanning(identityInfo.getRecipientId(), identityInfo.getIdentityKey());
         return new Identity(address,

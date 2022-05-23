@@ -257,7 +257,7 @@ public class SyncHelper {
             if (c.getAddress().matches(account.getSelfAddress()) && c.getProfileKey().isPresent()) {
                 account.setProfileKey(c.getProfileKey().get());
             }
-            final var recipientId = account.getRecipientStore().resolveRecipientTrusted(c.getAddress());
+            final var recipientId = account.getRecipientTrustedResolver().resolveRecipientTrusted(c.getAddress());
             var contact = account.getContactStore().getContact(recipientId);
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             if (c.getName().isPresent()) {
@@ -272,7 +272,7 @@ public class SyncHelper {
             if (c.getVerified().isPresent()) {
                 final var verifiedMessage = c.getVerified().get();
                 account.getIdentityKeyStore()
-                        .setIdentityTrustLevel(account.getRecipientStore()
+                        .setIdentityTrustLevel(account.getRecipientTrustedResolver()
                                         .resolveRecipientTrusted(verifiedMessage.getDestination()),
                                 verifiedMessage.getIdentityKey(),
                                 TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));

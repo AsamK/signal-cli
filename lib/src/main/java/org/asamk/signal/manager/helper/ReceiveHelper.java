@@ -141,7 +141,7 @@ public class ReceiveHelper {
                 isWaitingForMessage = true;
                 var result = signalWebSocket.readOrEmpty(timeout.toMillis(), envelope1 -> {
                     isWaitingForMessage = false;
-                    final var recipientId = envelope1.hasSourceUuid() ? account.getRecipientStore()
+                    final var recipientId = envelope1.hasSourceUuid() ? account.getRecipientResolver()
                             .resolveRecipient(envelope1.getSourceAddress()) : null;
                     logger.trace("Storing new message from {}", recipientId);
                     // store message on disk, before acknowledging receipt to the server
@@ -211,7 +211,7 @@ public class ReceiveHelper {
                 if (exception instanceof UntrustedIdentityException) {
                     logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
-                    final var recipientId = account.getRecipientStore().resolveRecipient(address);
+                    final var recipientId = account.getRecipientResolver().resolveRecipient(address);
                     if (!envelope.hasSourceUuid()) {
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
@@ -260,7 +260,7 @@ public class ReceiveHelper {
             }
             if (!envelope.hasSourceUuid()) {
                 final var identifier = ((UntrustedIdentityException) exception).getSender();
-                final var recipientId = account.getRecipientStore().resolveRecipient(identifier);
+                final var recipientId = account.getRecipientResolver().resolveRecipient(identifier);
                 try {
                     account.getMessageCache().replaceSender(cachedMessage, recipientId);
                 } catch (IOException ioException) {

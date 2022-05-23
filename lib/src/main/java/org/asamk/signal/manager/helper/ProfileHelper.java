@@ -289,7 +289,7 @@ public final class ProfileHelper {
         var profile = account.getProfileStore().getProfile(recipientId);
         if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
             logger.trace("Downloading profile avatar for {}", recipientId);
-            downloadProfileAvatar(account.getRecipientStore().resolveRecipientAddress(recipientId),
+            downloadProfileAvatar(account.getRecipientAddressResolver().resolveRecipientAddress(recipientId),
                     avatarPath,
                     profileKey);
             var builder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);

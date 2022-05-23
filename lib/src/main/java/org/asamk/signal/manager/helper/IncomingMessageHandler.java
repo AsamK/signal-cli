@@ -89,8 +89,8 @@ public final class IncomingMessageHandler {
             try {
                 content = dependencies.getCipher().decrypt(envelope);
             } catch (ProtocolUntrustedIdentityException e) {
-                final var recipientId = account.getRecipientStore().resolveRecipient(e.getSender());
-                final var exception = new UntrustedIdentityException(account.getRecipientStore()
+                final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
+                final var exception = new UntrustedIdentityException(account.getRecipientAddressResolver()
                         .resolveRecipientAddress(recipientId), e.getSenderDevice());
                 return new Pair<>(List.of(), exception);
             } catch (Exception e) {
@@ -112,7 +112,7 @@ public final class IncomingMessageHandler {
         if (envelope.hasSourceUuid()) {
             // Store uuid if we don't have it already
             // address/uuid in envelope is sent by server
-            account.getRecipientStore().resolveRecipientTrusted(envelope.getSourceAddress());
+            account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
         }
         SignalServiceContent content = null;
         Exception exception = null;
@@ -120,14 +120,14 @@ public final class IncomingMessageHandler {
             try {
                 content = dependencies.getCipher().decrypt(envelope);
             } catch (ProtocolUntrustedIdentityException e) {
-                final var recipientId = account.getRecipientStore().resolveRecipient(e.getSender());
+                final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
                 actions.add(new RetrieveProfileAction(recipientId));
-                exception = new UntrustedIdentityException(account.getRecipientStore()
+                exception = new UntrustedIdentityException(account.getRecipientAddressResolver()
                         .resolveRecipientAddress(recipientId), e.getSenderDevice());
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException |
                      ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);
-                final var sender = account.getRecipientStore().resolveRecipient(e.getSender());
+                final var sender = account.getRecipientResolver().resolveRecipient(e.getSender());
                 if (context.getContactHelper().isContactBlocked(sender)) {
                     logger.debug("Received invalid message from blocked contact, ignoring.");
                 } else {
@@ -169,7 +169,7 @@ public final class IncomingMessageHandler {
         if (!envelope.hasSourceUuid() && content != null) {
             // Store uuid if we don't have it already
             // address/uuid is validated by unidentified sender certificate
-            account.getRecipientStore().resolveRecipientTrusted(content.getSender());
+            account.getRecipientTrustedResolver().resolveRecipientTrusted(content.getSender());
         }
         if (envelope.isReceipt()) {
             final var senderPair = getSender(envelope, content);
@@ -195,8 +195,8 @@ public final class IncomingMessageHandler {
             }
             handler.handleMessage(MessageEnvelope.from(envelope,
                     content,
-                    account.getRecipientStore(),
-                    account.getRecipientStore()::resolveRecipientAddress,
+                    account.getRecipientResolver(),
+                    account.getRecipientAddressResolver(),
                     context.getAttachmentHelper()::getAttachmentFile,
                     exception), exception);
             return actions;
@@ -391,7 +391,7 @@ public final class IncomingMessageHandler {
         if (syncMessage.getVerified().isPresent()) {
             final var verifiedMessage = syncMessage.getVerified().get();
             account.getIdentityKeyStore()
-                    .setIdentityTrustLevel(account.getRecipientStore()
+                    .setIdentityTrustLevel(account.getRecipientTrustedResolver()
                                     .resolveRecipientTrusted(verifiedMessage.getDestination()),
                             verifiedMessage.getIdentityKey(),
                             TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));

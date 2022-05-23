@@ -7,6 +7,7 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
@@ -27,7 +28,9 @@ import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
+import org.asamk.signal.manager.storage.recipients.RecipientTrustedResolver;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
@@ -201,7 +204,7 @@ public class SignalAccount implements Closeable {
         signalAccount.localRegistrationId = registrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                signalAccount.getRecipientStore(),
+                signalAccount.getRecipientResolver(),
                 signalAccount::saveGroupStore);
         signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
@@ -260,7 +263,8 @@ public class SignalAccount implements Closeable {
                 aciIdentityKey,
                 pniIdentityKey,
                 profileKey);
-        signalAccount.getRecipientStore().resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
+        signalAccount.getRecipientTrustedResolver()
+                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
         signalAccount.getSessionStore().archiveAllSessions();
         signalAccount.getSenderKeyStore().deleteAll();
         signalAccount.clearAllPreKeys();
@@ -321,12 +325,13 @@ public class SignalAccount implements Closeable {
         signalAccount.localRegistrationId = registrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                signalAccount.getRecipientStore(),
+                signalAccount.getRecipientResolver(),
                 signalAccount::saveGroupStore);
         signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
-        signalAccount.getRecipientStore().resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
+        signalAccount.getRecipientTrustedResolver()
+                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
         signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
         signalAccount.clearAllPreKeys();
@@ -608,11 +613,11 @@ public class SignalAccount implements Closeable {
             groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
             groupStore = GroupStore.fromStorage(groupStoreStorage,
                     getGroupCachePath(dataPath, accountPath),
-                    getRecipientStore(),
+                    getRecipientResolver(),
                     this::saveGroupStore);
         } else {
             groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                    getRecipientStore(),
+                    getRecipientResolver(),
                     this::saveGroupStore);
         }
 
@@ -650,7 +655,7 @@ public class SignalAccount implements Closeable {
             if (legacyRecipientStore != null) {
                 getRecipientStore().resolveRecipientsTrusted(legacyRecipientStore.getAddresses());
             }
-            getRecipientStore().resolveSelfRecipientTrusted(getSelfRecipientAddress());
+            getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
             migrated = true;
         }
 
@@ -710,7 +715,7 @@ public class SignalAccount implements Closeable {
             final var contactStore = jsonProcessor.convertValue(contactStoreNode, LegacyJsonContactsStore.class);
             for (var contact : contactStore.getContacts()) {
                 final var recipientId = getRecipientStore().resolveRecipientTrusted(contact.getAddress());
-                getRecipientStore().storeContact(recipientId,
+                getContactStore().storeContact(recipientId,
                         new Contact(contact.name,
                                 contact.color,
                                 contact.messageExpirationTime,
@@ -738,9 +743,9 @@ public class SignalAccount implements Closeable {
             var profileStoreNode = rootNode.get("profileStore");
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
-                var recipientId = getRecipientStore().resolveRecipient(profileEntry.getAddress());
-                getRecipientStore().storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
-                getRecipientStore().storeProfileKey(recipientId, profileEntry.getProfileKey());
+                var recipientId = getRecipientResolver().resolveRecipient(profileEntry.getAddress());
+                getProfileStore().storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
+                getProfileStore().storeProfileKey(recipientId, profileEntry.getProfileKey());
                 final var profile = profileEntry.getProfile();
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
@@ -765,7 +770,7 @@ public class SignalAccount implements Closeable {
                                             ? Profile.UnidentifiedAccessMode.ENABLED
                                             : Profile.UnidentifiedAccessMode.DISABLED,
                             capabilities);
-                    getRecipientStore().storeProfile(recipientId, newProfile);
+                    getProfileStore().storeProfile(recipientId, newProfile);
                 }
             }
         }
@@ -784,10 +789,10 @@ public class SignalAccount implements Closeable {
                 }
                 try {
                     if (UuidUtil.isUuid(thread.id) || thread.id.startsWith("+")) {
-                        final var recipientId = getRecipientStore().resolveRecipient(thread.id);
-                        var contact = getRecipientStore().getContact(recipientId);
+                        final var recipientId = getRecipientResolver().resolveRecipient(thread.id);
+                        var contact = getContactStore().getContact(recipientId);
                         if (contact != null) {
-                            getRecipientStore().storeContact(recipientId,
+                            getContactStore().storeContact(recipientId,
                                     Contact.newBuilder(contact)
                                             .withMessageExpirationTime(thread.messageExpirationTime)
                                             .build());
@@ -1028,13 +1033,13 @@ public class SignalAccount implements Closeable {
 
     public SessionStore getSessionStore() {
         return getOrCreate(() -> sessionStore,
-                () -> sessionStore = new SessionStore(getSessionsPath(dataPath, accountPath), getRecipientStore()));
+                () -> sessionStore = new SessionStore(getSessionsPath(dataPath, accountPath), getRecipientResolver()));
     }
 
     public IdentityKeyStore getIdentityKeyStore() {
         return getOrCreate(() -> identityKeyStore,
                 () -> identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, accountPath),
-                        getRecipientStore(),
+                        getRecipientResolver(),
                         aciIdentityKeyPair,
                         localRegistrationId,
                         trustNewIdentity));
@@ -1046,6 +1051,18 @@ public class SignalAccount implements Closeable {
 
     public ContactsStore getContactStore() {
         return getRecipientStore();
+    }
+
+    public RecipientResolver getRecipientResolver() {
+        return getRecipientStore();
+    }
+
+    public RecipientTrustedResolver getRecipientTrustedResolver() {
+        return getRecipientStore();
+    }
+
+    public RecipientAddressResolver getRecipientAddressResolver() {
+        return getRecipientStore()::resolveRecipientAddress;
     }
 
     public RecipientStore getRecipientStore() {
@@ -1067,8 +1084,8 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> senderKeyStore,
                 () -> senderKeyStore = new SenderKeyStore(getSharedSenderKeysFile(dataPath, accountPath),
                         getSenderKeysPath(dataPath, accountPath),
-                        getRecipientStore()::resolveRecipientAddress,
-                        getRecipientStore()));
+                        getRecipientAddressResolver(),
+                        getRecipientResolver()));
     }
 
     public ConfigurationStore getConfigurationStore() {
@@ -1092,7 +1109,7 @@ public class SignalAccount implements Closeable {
 
     public MessageSendLogStore getMessageSendLogStore() {
         return getOrCreate(() -> messageSendLogStore,
-                () -> messageSendLogStore = new MessageSendLogStore(getRecipientStore(), getAccountDatabase()));
+                () -> messageSendLogStore = new MessageSendLogStore(getRecipientResolver(), getAccountDatabase()));
     }
 
     public CredentialsProvider getCredentialsProvider() {
@@ -1169,7 +1186,7 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientId getSelfRecipientId() {
-        return getRecipientStore().resolveRecipient(getSelfRecipientAddress());
+        return getRecipientResolver().resolveRecipient(getSelfRecipientAddress());
     }
 
     public byte[] getEncryptedDeviceName() {
@@ -1337,7 +1354,7 @@ public class SignalAccount implements Closeable {
         clearAllPreKeys();
         getSessionStore().archiveAllSessions();
         getSenderKeyStore().deleteAll();
-        final var recipientId = getRecipientStore().resolveSelfRecipientTrusted(getSelfRecipientAddress());
+        final var recipientId = getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         final var publicKey = getAciIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
         getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);

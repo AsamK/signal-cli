@@ -153,7 +153,7 @@ public class GroupHelper {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
-            groupInfoV2.setGroup(group, account.getRecipientStore());
+            groupInfoV2.setGroup(group, account.getRecipientResolver());
             account.getGroupStore().updateGroup(groupInfoV2);
         }
 
@@ -183,7 +183,7 @@ public class GroupHelper {
         final var gv2 = gv2Pair.first();
         final var decryptedGroup = gv2Pair.second();
 
-        gv2.setGroup(decryptedGroup, account.getRecipientStore());
+        gv2.setGroup(decryptedGroup, account.getRecipientResolver());
         if (avatarFile != null) {
             context.getAvatarStore()
                     .storeGroupAvatar(gv2.getGroupId(),
@@ -398,7 +398,7 @@ public class GroupHelper {
                         downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
                     }
                 }
-                groupInfoV2.setGroup(decryptedGroup, account.getRecipientStore());
+                groupInfoV2.setGroup(decryptedGroup, account.getRecipientResolver());
                 account.getGroupStore().updateGroup(group);
             }
         }
@@ -441,7 +441,7 @@ public class GroupHelper {
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.getMembersList()) {
             final var serviceId = ServiceId.fromByteString(member.getUuid());
-            final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+            final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             final var profileStore = account.getProfileStore();
             if (profileStore.getProfileKey(recipientId) != null) {
                 // We already have a profile key, not updating it from a non-authoritative source
@@ -461,7 +461,7 @@ public class GroupHelper {
         if (profileKeyFromChange != null) {
             final var serviceId = profileKeyFromChange.first();
             final var profileKey = profileKeyFromChange.second();
-            final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+            final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             account.getProfileStore().storeProfileKey(recipientId, profileKey);
         }
     }
@@ -487,7 +487,7 @@ public class GroupHelper {
                     .forEach(p -> {
                         final var serviceId = p.first();
                         final var profileKey = p.second();
-                        final var recipientId = account.getRecipientStore().resolveRecipient(serviceId);
+                        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
                         newProfileKeys.put(recipientId, profileKey);
                     });
             if (!page.getPagingData().hasMorePages()) {
@@ -729,7 +729,7 @@ public class GroupHelper {
             throw new LastGroupAdminException(groupInfoV2.getGroupId(), groupInfoV2.getTitle());
         }
         final var groupGroupChangePair = context.getGroupV2Helper().leaveGroup(groupInfoV2, newAdmins);
-        groupInfoV2.setGroup(groupGroupChangePair.first(), account.getRecipientStore());
+        groupInfoV2.setGroup(groupGroupChangePair.first(), account.getRecipientResolver());
         account.getGroupStore().updateGroup(groupInfoV2);
 
         var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
@@ -773,7 +773,7 @@ public class GroupHelper {
     ) throws IOException {
         final var selfRecipientId = account.getSelfRecipientId();
         final var members = group.getMembersIncludingPendingWithout(selfRecipientId);
-        group.setGroup(newDecryptedGroup, account.getRecipientStore());
+        group.setGroup(newDecryptedGroup, account.getRecipientResolver());
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
         account.getGroupStore().updateGroup(group);
 
@@ -792,8 +792,8 @@ public class GroupHelper {
         return new SendGroupMessageResults(timestamp,
                 results.stream()
                         .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,
-                                account.getRecipientStore(),
-                                account.getRecipientStore()::resolveRecipientAddress))
+                                account.getRecipientResolver(),
+                                account.getRecipientAddressResolver()))
                         .toList());
     }
 }

@@ -37,7 +37,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class RecipientStore implements RecipientResolver, ContactsStore, ProfileStore {
+public class RecipientStore implements RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
     private final static Logger logger = LoggerFactory.getLogger(RecipientStore.class);
 
@@ -224,6 +224,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         return resolveRecipient(new RecipientAddress(address), false, false);
     }
 
+    @Override
     public RecipientId resolveSelfRecipientTrusted(RecipientAddress address) {
         return resolveRecipient(address, true, true);
     }
@@ -232,6 +233,7 @@ public class RecipientStore implements RecipientResolver, ContactsStore, Profile
         return resolveRecipient(address, true, false);
     }
 
+    @Override
     public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
         return resolveRecipient(new RecipientAddress(address), true, false);
     }

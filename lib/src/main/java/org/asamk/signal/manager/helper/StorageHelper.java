@@ -86,7 +86,7 @@ public class StorageHelper {
         final var contactRecord = record.getContact().get();
         final var address = contactRecord.getAddress();
 
-        final var recipientId = account.getRecipientStore().resolveRecipient(address);
+        final var recipientId = account.getRecipientResolver().resolveRecipient(address);
         final var contact = account.getContactStore().getContact(recipientId);
         final var blocked = contact != null && contact.isBlocked();
         final var profileShared = contact != null && contact.isProfileSharingEnabled();

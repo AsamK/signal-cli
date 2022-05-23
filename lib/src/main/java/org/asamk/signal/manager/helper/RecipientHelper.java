@@ -40,7 +40,7 @@ public class RecipientHelper {
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
-        final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
+        final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
         if (address.number().isEmpty() || address.uuid().isPresent()) {
             return address.toSignalServiceAddress();
         }
@@ -60,13 +60,13 @@ public class RecipientHelper {
             // Return SignalServiceAddress with unknown UUID
             return address.toSignalServiceAddress();
         }
-        return account.getRecipientStore()
-                .resolveRecipientAddress(account.getRecipientStore().resolveRecipient(aci))
+        return account.getRecipientAddressResolver()
+                .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(aci))
                 .toSignalServiceAddress();
     }
 
     public RecipientId resolveRecipient(final SignalServiceAddress address) {
-        return account.getRecipientStore().resolveRecipient(address);
+        return account.getRecipientResolver().resolveRecipient(address);
     }
 
     public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredRecipientException {
@@ -80,7 +80,7 @@ public class RecipientHelper {
 
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
-            return account.getRecipientStore().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
+            return account.getRecipientResolver().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
         } else {
             final var number = ((RecipientIdentifier.Number) recipient).number();
             return account.getRecipientStore().resolveRecipient(number, () -> {
@@ -100,7 +100,7 @@ public class RecipientHelper {
         }
         final var number = address.getNumber().get();
         final var uuid = getRegisteredUser(number);
-        return account.getRecipientStore().resolveRecipientTrusted(new SignalServiceAddress(uuid, number));
+        return account.getRecipientTrustedResolver().resolveRecipientTrusted(new SignalServiceAddress(uuid, number));
     }
 
     public Map<String, ACI> getRegisteredUsers(final Set<String> numbers) throws IOException {
@@ -116,7 +116,7 @@ public class RecipientHelper {
         }
 
         // Store numbers as recipients, so we have the number/uuid association
-        registeredUsers.forEach((number, aci) -> account.getRecipientStore()
+        registeredUsers.forEach((number, aci) -> account.getRecipientTrustedResolver()
                 .resolveRecipientTrusted(new SignalServiceAddress(aci, number)));
 
         return registeredUsers;
