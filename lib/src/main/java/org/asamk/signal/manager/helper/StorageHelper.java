@@ -58,16 +58,12 @@ public class StorageHelper {
 
         account.setStorageManifestVersion(manifest.get().getVersion());
 
-        readAccountRecord(manifest.get());
-
-        final var storageIds = manifest.get()
-                .getStorageIds()
-                .stream()
-                .filter(id -> !id.isUnknown() && id.getType() != ManifestRecord.Identifier.Type.ACCOUNT_VALUE)
-                .toList();
+        final var storageIds = manifest.get().getStorageIds().stream().filter(id -> !id.isUnknown()).toList();
 
         for (final var record : getSignalStorageRecords(storageIds)) {
-            if (record.getType() == ManifestRecord.Identifier.Type.GROUPV2_VALUE) {
+            if (record.getType() == ManifestRecord.Identifier.Type.ACCOUNT_VALUE) {
+                readAccountRecord(record);
+            } else if (record.getType() == ManifestRecord.Identifier.Type.GROUPV2_VALUE) {
                 readGroupV2Record(record);
             } else if (record.getType() == ManifestRecord.Identifier.Type.GROUPV1_VALUE) {
                 readGroupV1Record(record);
@@ -174,14 +170,7 @@ public class StorageHelper {
         }
     }
 
-    private void readAccountRecord(final SignalStorageManifest manifest) throws IOException {
-        Optional<StorageId> accountId = manifest.getAccountStorageId();
-        if (accountId.isEmpty()) {
-            logger.warn("Manifest has no account record, ignoring.");
-            return;
-        }
-
-        SignalStorageRecord record = getSignalStorageRecord(accountId.get());
+    private void readAccountRecord(final SignalStorageRecord record) throws IOException {
         if (record == null) {
             logger.warn("Could not find account record, even though we had an ID, ignoring.");
             return;
