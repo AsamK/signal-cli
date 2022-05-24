@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.api;
 
-public class NotMasterDeviceException extends Exception {
+public class NotPrimaryDeviceException extends Exception {
 
-    public NotMasterDeviceException() {
+    public NotPrimaryDeviceException() {
         super("This function is not supported for linked devices.");
     }
 }

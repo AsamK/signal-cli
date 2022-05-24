@@ -10,7 +10,7 @@ import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -65,7 +65,7 @@ public interface Manager extends Closeable {
 
     Configuration getConfiguration();
 
-    void updateConfiguration(Configuration configuration) throws IOException, NotMasterDeviceException;
+    void updateConfiguration(Configuration configuration) throws IOException, NotPrimaryDeviceException;
 
     /**
      * Update the user's profile.
@@ -85,7 +85,7 @@ public interface Manager extends Closeable {
 
     void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException;
 
-    void setRegistrationLockPin(Optional<String> pin) throws IOException, NotMasterDeviceException;
+    void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException;
 
     Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
 
@@ -149,15 +149,15 @@ public interface Manager extends Closeable {
 
     void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
+    ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException;
 
     void setContactsBlocked(
             Collection<RecipientIdentifier.Single> recipient, boolean blocked
-    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException;
+    ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException;
 
     void setGroupsBlocked(
             Collection<GroupId> groupId, boolean blocked
-    ) throws GroupNotFoundException, IOException, NotMasterDeviceException;
+    ) throws GroupNotFoundException, IOException, NotPrimaryDeviceException;
 
     /**
      * Change the expiration timer for a contact

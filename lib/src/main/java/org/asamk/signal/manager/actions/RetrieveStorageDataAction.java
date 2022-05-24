@@ -17,7 +17,7 @@ public class RetrieveStorageDataAction implements HandleAction {
     public void execute(Context context) throws Throwable {
         if (context.getAccount().getStorageKey() != null) {
             context.getStorageHelper().readDataFromStorage();
-        } else if (!context.getAccount().isMasterDevice()) {
+        } else if (!context.getAccount().isPrimaryDevice()) {
             context.getSyncHelper().requestSyncKeys();
         }
     }

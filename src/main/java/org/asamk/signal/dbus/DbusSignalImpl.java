@@ -9,7 +9,7 @@ import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
@@ -490,7 +490,7 @@ public class DbusSignalImpl implements Signal {
     public void setContactName(final String number, final String name) {
         try {
             m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {
             throw new Error.Failure("Contact is not registered.");
@@ -514,7 +514,7 @@ public class DbusSignalImpl implements Signal {
     public void setContactBlocked(final String number, final boolean blocked) {
         try {
             m.setContactsBlocked(List.of(getSingleRecipientIdentifier(number, m.getSelfNumber())), blocked);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
@@ -527,7 +527,7 @@ public class DbusSignalImpl implements Signal {
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
         try {
             m.setGroupsBlocked(List.of(getGroupId(groupId)), blocked);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (GroupNotFoundException e) {
             throw new Error.GroupNotFound(e.getMessage());
@@ -694,7 +694,7 @@ public class DbusSignalImpl implements Signal {
             m.setRegistrationLockPin(Optional.empty());
         } catch (IOException e) {
             throw new Error.Failure("Remove pin error: " + e.getMessage());
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
@@ -705,7 +705,7 @@ public class DbusSignalImpl implements Signal {
             m.setRegistrationLockPin(Optional.of(registrationLockPin));
         } catch (IOException e) {
             throw new Error.Failure("Set pin error: " + e.getMessage());
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         }
     }
@@ -1092,7 +1092,7 @@ public class DbusSignalImpl implements Signal {
                         Optional.ofNullable(linkPreviews)));
             } catch (IOException e) {
                 throw new Error.Failure("UpdateAccount error: " + e.getMessage());
-            } catch (NotMasterDeviceException e) {
+            } catch (NotPrimaryDeviceException e) {
                 throw new Error.Failure("This command doesn't work on linked devices.");
             }
         }
@@ -1270,7 +1270,7 @@ public class DbusSignalImpl implements Signal {
         private void setIsBlocked(final boolean isBlocked) {
             try {
                 m.setGroupsBlocked(List.of(groupId), isBlocked);
-            } catch (NotMasterDeviceException e) {
+            } catch (NotPrimaryDeviceException e) {
                 throw new Error.Failure("This command doesn't work on linked devices.");
             } catch (GroupNotFoundException e) {
                 throw new Error.GroupNotFound(e.getMessage());

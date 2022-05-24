@@ -336,7 +336,7 @@ public final class IncomingMessageHandler {
                         ignoreAttachments));
             }
         }
-        if (syncMessage.getRequest().isPresent() && account.isMasterDevice()) {
+        if (syncMessage.getRequest().isPresent() && account.isPrimaryDevice()) {
             var rm = syncMessage.getRequest().get();
             if (rm.isContactsRequest()) {
                 actions.add(SendSyncContactsAction.create());

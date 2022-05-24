@@ -85,7 +85,7 @@ public class SessionStore implements SignalServiceSessionStore {
 
         synchronized (cachedSessions) {
             return getKeysLocked(recipientId).stream()
-                    // get all sessions for recipient except main device session
+                    // get all sessions for recipient except primary device session
                     .filter(key -> key.deviceId() != 1 && key.recipientId().equals(recipientId))
                     .map(Key::deviceId)
                     .toList();

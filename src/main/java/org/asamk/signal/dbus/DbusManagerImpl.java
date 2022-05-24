@@ -12,7 +12,7 @@ import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -409,14 +409,14 @@ public class DbusManagerImpl implements Manager {
     @Override
     public void setContactName(
             final RecipientIdentifier.Single recipient, final String name
-    ) throws NotMasterDeviceException {
+    ) throws NotPrimaryDeviceException {
         signal.setContactName(recipient.getIdentifier(), name);
     }
 
     @Override
     public void setContactsBlocked(
             final Collection<RecipientIdentifier.Single> recipients, final boolean blocked
-    ) throws NotMasterDeviceException, IOException {
+    ) throws NotPrimaryDeviceException, IOException {
         for (final var recipient : recipients) {
             signal.setContactBlocked(recipient.getIdentifier(), blocked);
         }

@@ -7,7 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.output.OutputWriter;
@@ -41,7 +41,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
         final var recipients = CommandUtil.getSingleRecipientIdentifiers(contacts, m.getSelfNumber());
         try {
             m.setContactsBlocked(recipients, true);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         } catch (IOException e) {
             throw new UnexpectedErrorException("Failed to sync block to linked devices: " + e.getMessage(), e);
@@ -53,7 +53,7 @@ public class BlockCommand implements JsonRpcLocalCommand {
         final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
         try {
             m.setGroupsBlocked(groupIds, true);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         } catch (GroupNotFoundException e) {
             logger.warn("Unknown group id: {}", e.getMessage());

@@ -25,7 +25,7 @@ import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -241,9 +241,9 @@ class ManagerImpl implements Manager {
     @Override
     public void updateConfiguration(
             Configuration configuration
-    ) throws NotMasterDeviceException {
-        if (!account.isMasterDevice()) {
-            throw new NotMasterDeviceException();
+    ) throws NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
         }
 
         final var configurationStore = account.getConfigurationStore();
@@ -327,9 +327,9 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setRegistrationLockPin(Optional<String> pin) throws IOException, NotMasterDeviceException {
-        if (!account.isMasterDevice()) {
-            throw new NotMasterDeviceException();
+    public void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
         }
         if (pin.isPresent()) {
             context.getAccountHelper().setRegistrationPin(pin.get());
@@ -692,9 +692,9 @@ class ManagerImpl implements Manager {
     @Override
     public void setContactName(
             RecipientIdentifier.Single recipient, String name
-    ) throws NotMasterDeviceException, UnregisteredRecipientException {
-        if (!account.isMasterDevice()) {
-            throw new NotMasterDeviceException();
+    ) throws NotPrimaryDeviceException, UnregisteredRecipientException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
         }
         context.getContactHelper().setContactName(context.getRecipientHelper().resolveRecipient(recipient), name);
     }
@@ -702,9 +702,9 @@ class ManagerImpl implements Manager {
     @Override
     public void setContactsBlocked(
             Collection<RecipientIdentifier.Single> recipients, boolean blocked
-    ) throws NotMasterDeviceException, IOException, UnregisteredRecipientException {
-        if (!account.isMasterDevice()) {
-            throw new NotMasterDeviceException();
+    ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
         }
         if (recipients.size() == 0) {
             return;
@@ -734,9 +734,9 @@ class ManagerImpl implements Manager {
     @Override
     public void setGroupsBlocked(
             final Collection<GroupId> groupIds, final boolean blocked
-    ) throws GroupNotFoundException, NotMasterDeviceException, IOException {
-        if (!account.isMasterDevice()) {
-            throw new NotMasterDeviceException();
+    ) throws GroupNotFoundException, NotPrimaryDeviceException, IOException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
         }
         if (groupIds.size() == 0) {
             return;

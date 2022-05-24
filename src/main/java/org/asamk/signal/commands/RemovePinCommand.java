@@ -7,7 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.manager.api.NotMasterDeviceException;
+import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.output.OutputWriter;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class RemovePinCommand implements JsonRpcLocalCommand {
             m.setRegistrationLockPin(Optional.empty());
         } catch (IOException e) {
             throw new IOErrorException("Remove pin error: " + e.getMessage(), e);
-        } catch (NotMasterDeviceException e) {
+        } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         }
     }

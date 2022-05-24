@@ -388,7 +388,7 @@ public class SignalAccount implements Closeable {
             }
             save();
         }
-        if (isMasterDevice() && getPniIdentityKeyPair() == null) {
+        if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
     }
@@ -1203,7 +1203,7 @@ public class SignalAccount implements Closeable {
         return deviceId;
     }
 
-    public boolean isMasterDevice() {
+    public boolean isPrimaryDevice() {
         return deviceId == SignalServiceAddress.DEFAULT_DEVICE_ID;
     }
 

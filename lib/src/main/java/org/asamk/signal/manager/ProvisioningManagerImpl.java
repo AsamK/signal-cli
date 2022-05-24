@@ -206,8 +206,8 @@ class ProvisioningManagerImpl implements ProvisioningManager {
         }
 
         try (signalAccount) {
-            if (signalAccount.isMasterDevice()) {
-                logger.debug("Account is a master device.");
+            if (signalAccount.isPrimaryDevice()) {
+                logger.debug("Account is a primary device.");
                 return false;
             }
             if (signalAccount.isRegistered()

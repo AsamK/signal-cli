@@ -114,7 +114,7 @@
 ### Changed
 - libzkgroup dependency is no longer required
 - Renamed `-u` and `--username` flags to `-a` and `--account` to prevent confusion with upcoming Signal usernames. The old flags are also still supported for now.
-- Respect phone number sharing mode and unlisted state set by main device
+- Respect phone number sharing mode and unlisted state set by primary device
 - Adapt register command to reactivate account if possible.
 - dbus-java now uses Java 16 native unix sockets, which should provide better cross-platform compatibility
 - If sending to a recipient fails (e.g. unregistered) signal-cli now exits with a success exit code and prints additional information about the failure.
@@ -166,7 +166,7 @@
 
 ### Added
 - New global parameter `--trust-new-identities=always` to allow trusting any new identity key without verification
-- New parameter `--device-name` for `updateAccount` command to change the device name (also works for the main device)
+- New parameter `--device-name` for `updateAccount` command to change the device name (also works for the primary device)
 - New SignalControl DBus interface, to register/verify/link new accounts
 - New `jsonRpc` command that provides a JSON-RPC based API on stdout/stdin
 - Support for announcement groups
@@ -217,7 +217,7 @@
 ### Added
 - A manual page for the DBus interface (Thanks @bublath, @exquo)
 - Remote message delete command (Thanks @adaptivegarage)
-- sendSyncRequest command to request complete contact/group list from master device
+- sendSyncRequest command to request complete contact/group list from primary device
 - New `--delete-account` argument for unregister (Dangerous)
 - New `--family-name` argument for updateProfile
 
@@ -225,7 +225,7 @@
 - Sending reaction to group (Thanks @adaptivegarage)
 - Displaying of address for messages from untrusted identities
 - Handling of recipient number or uuid changes (e.g. after account deletions)
-- Only respond to sync requests from master device
+- Only respond to sync requests from primary device
 - Display of quit group messages
 
 ### Changed

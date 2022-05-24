@@ -19,7 +19,7 @@ public class SendSyncRequestCommand implements JsonRpcLocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.help("Send a synchronization request message to master device (for group, contacts, ...).");
+        subparser.help("Send a synchronization request message to primary device (for group, contacts, ...).");
     }
 
     @Override
