@@ -21,10 +21,13 @@ import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.storage.protos.ManifestRecord;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class StorageHelper {
 
@@ -56,11 +59,19 @@ public class StorageHelper {
             return;
         }
 
-        account.setStorageManifestVersion(manifest.get().getVersion());
+        logger.trace("Remote storage manifest has {} records", manifest.get().getStorageIds().size());
+        final var storageIds = manifest.get()
+                .getStorageIds()
+                .stream()
+                .filter(id -> !id.isUnknown())
+                .collect(Collectors.toSet());
 
-        final var storageIds = manifest.get().getStorageIds().stream().filter(id -> !id.isUnknown()).toList();
+        Optional<SignalStorageManifest> localManifest = account.getStorageManifest();
+        localManifest.ifPresent(m -> m.getStorageIds().forEach(storageIds::remove));
 
+        logger.trace("Reading {} new records", manifest.get().getStorageIds().size());
         for (final var record : getSignalStorageRecords(storageIds)) {
+            logger.debug("Reading record of type {}", record.getType());
             if (record.getType() == ManifestRecord.Identifier.Type.ACCOUNT_VALUE) {
                 readAccountRecord(record);
             } else if (record.getType() == ManifestRecord.Identifier.Type.GROUPV2_VALUE) {
@@ -71,6 +82,8 @@ public class StorageHelper {
                 readContactRecord(record);
             }
         }
+        account.setStorageManifestVersion(manifest.get().getVersion());
+        account.setStorageManifest(manifest.get());
         logger.debug("Done reading data from remote storage");
     }
 
@@ -86,10 +99,12 @@ public class StorageHelper {
         final var contact = account.getContactStore().getContact(recipientId);
         final var blocked = contact != null && contact.isBlocked();
         final var profileShared = contact != null && contact.isProfileSharingEnabled();
-        if (contactRecord.getGivenName().isPresent()
-                || contactRecord.getFamilyName().isPresent()
-                || blocked != contactRecord.isBlocked()
-                || profileShared != contactRecord.isProfileSharingEnabled()) {
+        final var givenName = contact == null ? null : contact.getGivenName();
+        final var familyName = contact == null ? null : contact.getFamilyName();
+        if ((contactRecord.getGivenName().isPresent() && !contactRecord.getGivenName().get().equals(givenName)) || (
+                contactRecord.getFamilyName().isPresent() && !contactRecord.getFamilyName().get().equals(familyName)
+        ) || blocked != contactRecord.isBlocked() || profileShared != contactRecord.isProfileSharingEnabled()) {
+            logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withBlocked(contactRecord.isBlocked())
                     .withGivenName(contactRecord.getGivenName().orElse(null))
@@ -101,6 +116,7 @@ public class StorageHelper {
 
         if (contactRecord.getProfileKey().isPresent()) {
             try {
+                logger.trace("Storing profile key {}", recipientId);
                 final var profileKey = new ProfileKey(contactRecord.getProfileKey().get());
                 account.getProfileStore().storeProfileKey(recipientId, profileKey);
             } catch (InvalidInputException e) {
@@ -109,6 +125,7 @@ public class StorageHelper {
         }
         if (contactRecord.getIdentityKey().isPresent()) {
             try {
+                logger.trace("Storing identity key {}", recipientId);
                 final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());
                 account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
 
@@ -239,10 +256,11 @@ public class StorageHelper {
         return records.size() > 0 ? records.get(0) : null;
     }
 
-    private List<SignalStorageRecord> getSignalStorageRecords(final List<StorageId> storageIds) throws IOException {
+    private List<SignalStorageRecord> getSignalStorageRecords(final Collection<StorageId> storageIds) throws IOException {
         List<SignalStorageRecord> records;
         try {
-            records = dependencies.getAccountManager().readStorageRecords(account.getStorageKey(), storageIds);
+            records = dependencies.getAccountManager()
+                    .readStorageRecords(account.getStorageKey(), new ArrayList<>(storageIds));
         } catch (InvalidKeyException e) {
             logger.warn("Failed to read storage records, ignoring.");
             return List.of();

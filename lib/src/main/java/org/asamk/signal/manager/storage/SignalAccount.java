@@ -59,6 +59,7 @@ import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -67,6 +68,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
@@ -81,6 +84,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class SignalAccount implements Closeable {
@@ -465,6 +469,10 @@ public class SignalAccount implements Closeable {
 
     private static File getRecipientsStoreFile(File dataPath, String account) {
         return new File(getUserPath(dataPath, account), "recipients-store");
+    }
+
+    private static File getStorageManifestFile(File dataPath, String account) {
+        return new File(getUserPath(dataPath, account), "storage-manifest");
     }
 
     private static File getDatabaseFile(File dataPath, String account) {
@@ -1272,6 +1280,30 @@ public class SignalAccount implements Closeable {
         }
         this.storageManifestVersion = storageManifestVersion;
         save();
+    }
+
+    public Optional<SignalStorageManifest> getStorageManifest() {
+        final var storageManifestFile = getStorageManifestFile(dataPath, accountPath);
+        if (!storageManifestFile.exists()) {
+            return Optional.empty();
+        }
+        try (var inputStream = new FileInputStream(storageManifestFile)) {
+            return Optional.of(SignalStorageManifest.deserialize(inputStream.readAllBytes()));
+        } catch (IOException e) {
+            logger.warn("Failed to read local storage manifest.", e);
+            return Optional.empty();
+        }
+    }
+
+    public void setStorageManifest(SignalStorageManifest manifest) {
+        final var manifestBytes = manifest.serialize();
+
+        final var storageManifestFile = getStorageManifestFile(dataPath, accountPath);
+        try (var outputStream = new FileOutputStream(storageManifestFile)) {
+            outputStream.write(manifestBytes);
+        } catch (IOException e) {
+            logger.error("Failed to store local storage manifest.", e);
+        }
     }
 
     public ProfileKey getProfileKey() {
