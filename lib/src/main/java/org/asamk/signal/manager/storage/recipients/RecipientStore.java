@@ -73,7 +73,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                 Contact contact = null;
                 if (r.contact != null) {
                     contact = new Contact(r.contact.name,
-                            null,
+                            r.contact.familyName,
                             r.contact.color,
                             r.contact.messageExpirationTime,
                             r.contact.blocked,
@@ -580,7 +580,8 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
             final var recipientContact = recipient.getContact();
             final var contact = recipientContact == null
                     ? null
-                    : new Storage.Recipient.Contact(recipientContact.getName(),
+                    : new Storage.Recipient.Contact(recipientContact.getGivenName(),
+                            recipientContact.getFamilyName(),
                             recipientContact.getColor(),
                             recipientContact.getMessageExpirationTime(),
                             recipientContact.isBlocked(),
@@ -640,6 +641,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
 
             private record Contact(
                     String name,
+                    String familyName,
                     String color,
                     int messageExpirationTime,
                     boolean blocked,
