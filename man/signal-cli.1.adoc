@@ -253,6 +253,20 @@ Specify the message of the original message.
 *--quote-mention*::
 Specify the mentions of the original message (same format as `--mention`).
 
+*--preview-url*::
+Specify the url for the link preview.
+The same url must also appear in the message body, otherwise the preview won't be
+displayed by the apps.
+
+*--preview-title*::
+Specify the title for the link preview (mandatory).
+
+*--preview-description*::
+Specify the description for the link preview (optional).
+
+*--preview-image*::
+Specify the image file for the link preview (optional).
+
 *-e*, *--end-session*::
 Clear session state and send end session message.
 

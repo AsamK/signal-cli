@@ -15,6 +15,7 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonPayment payment,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonPreview> previews,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonAttachment> attachments,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
@@ -35,6 +36,10 @@ record JsonDataMessage(
         final var mentions = dataMessage.mentions().size() > 0 ? dataMessage.mentions()
                 .stream()
                 .map(JsonMention::from)
+                .toList() : null;
+        final var previews = dataMessage.previews().size() > 0 ? dataMessage.previews()
+                .stream()
+                .map(JsonPreview::from)
                 .toList() : null;
         final var remoteDelete = dataMessage.remoteDeleteId().isPresent()
                 ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get())
@@ -57,6 +62,7 @@ record JsonDataMessage(
                 quote,
                 payment,
                 mentions,
+                previews,
                 attachments,
                 sticker,
                 remoteDelete,

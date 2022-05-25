@@ -216,7 +216,8 @@ public class DbusSignalImpl implements Signal {
                             attachments,
                             List.of(),
                             Optional.empty(),
-                            Optional.empty()),
+                            Optional.empty(),
+                            List.of()),
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
@@ -367,7 +368,8 @@ public class DbusSignalImpl implements Signal {
                     attachments,
                     List.of(),
                     Optional.empty(),
-                    Optional.empty()), Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
+                    Optional.empty(),
+                    List.of()), Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
@@ -408,7 +410,8 @@ public class DbusSignalImpl implements Signal {
                     attachments,
                     List.of(),
                     Optional.empty(),
-                    Optional.empty()), Set.of(getGroupRecipientIdentifier(groupId)));
+                    Optional.empty(),
+                    List.of()), Set.of(getGroupRecipientIdentifier(groupId)));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException | InvalidStickerException e) {

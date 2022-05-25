@@ -72,6 +72,11 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .nargs("*")
                 .help("Quote with mention of another group member (syntax: start:length:recipientNumber)");
         subparser.addArgument("--sticker").help("Send a sticker (syntax: stickerPackId:stickerId)");
+        subparser.addArgument("--preview-url")
+                .help("Specify the url for the link preview (the same url must also appear in the message body).");
+        subparser.addArgument("--preview-title").help("Specify the title for the link preview (mandatory).");
+        subparser.addArgument("--preview-description").help("Specify the description for the link preview (optional).");
+        subparser.addArgument("--preview-image").help("Specify the image file for the link preview (optional).");
     }
 
     @Override
@@ -146,12 +151,27 @@ public class SendCommand implements JsonRpcLocalCommand {
             quote = null;
         }
 
+        final List<Message.Preview> previews;
+        String previewUrl = ns.getString("preview-url");
+        if (previewUrl != null) {
+            String previewTitle = ns.getString("preview-title");
+            String previewDescription = ns.getString("preview-description");
+            String previewImage = ns.getString("preview-image");
+            previews = List.of(new Message.Preview(previewUrl,
+                    Optional.ofNullable(previewTitle).orElse(""),
+                    Optional.ofNullable(previewDescription).orElse(""),
+                    Optional.ofNullable(previewImage)));
+        } else {
+            previews = List.of();
+        }
+
         try {
             var results = m.sendMessage(new Message(messageText == null ? "" : messageText,
                     attachments,
                     mentions,
                     Optional.ofNullable(quote),
-                    Optional.ofNullable(sticker)), recipientIdentifiers);
+                    Optional.ofNullable(sticker),
+                    previews), recipientIdentifiers);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

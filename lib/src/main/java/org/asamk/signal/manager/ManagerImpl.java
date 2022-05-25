@@ -65,6 +65,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -551,9 +552,8 @@ class ManagerImpl implements Manager {
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
         messageBuilder.withBody(message.messageText());
-        final var attachments = message.attachments();
-        if (attachments != null) {
-            messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(attachments));
+        if (message.attachments().size() > 0) {
+            messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
         }
         if (message.mentions().size() > 0) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));
@@ -591,6 +591,19 @@ class ManagerImpl implements Manager {
                     stickerId,
                     manifestSticker.emoji(),
                     AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty())));
+        }
+        if (message.previews().size() > 0) {
+            final var previews = new ArrayList<SignalServicePreview>(message.previews().size());
+            for (final var p : message.previews()) {
+                final var image = p.image().isPresent() ? context.getAttachmentHelper()
+                        .uploadAttachment(p.image().get()) : null;
+                previews.add(new SignalServicePreview(p.url(),
+                        p.title(),
+                        p.description(),
+                        0,
+                        Optional.ofNullable(image)));
+            }
+            messageBuilder.withPreviews(previews);
         }
     }
 

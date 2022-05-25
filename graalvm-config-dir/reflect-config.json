@@ -756,6 +756,19 @@
   ]
 },
 {
+  "name":"org.asamk.signal.json.JsonPreview",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"date","parameterTypes":[] }, 
+    {"name":"description","parameterTypes":[] }, 
+    {"name":"image","parameterTypes":[] }, 
+    {"name":"title","parameterTypes":[] }, 
+    {"name":"url","parameterTypes":[] }
+  ]
+},
+{
   "name":"org.asamk.signal.json.JsonQuote",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2721,7 +2734,8 @@
     {"name":"bitField0_"}, 
     {"name":"bodyRanges_"}, 
     {"name":"id_"}, 
-    {"name":"text_"}
+    {"name":"text_"}, 
+    {"name":"type_"}
   ]
 },
 {
