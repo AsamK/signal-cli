@@ -590,7 +590,7 @@ class ManagerImpl implements Manager {
                     stickerPack.getPackKey(),
                     stickerId,
                     manifestSticker.emoji(),
-                    AttachmentUtils.createAttachment(streamDetails, Optional.empty())));
+                    AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty())));
         }
     }
 

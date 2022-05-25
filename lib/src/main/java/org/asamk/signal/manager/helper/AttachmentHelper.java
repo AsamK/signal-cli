@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 
 import java.io.File;
@@ -39,19 +40,24 @@ public class AttachmentHelper {
     }
 
     public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
-        var attachmentStreams = AttachmentUtils.getSignalServiceAttachments(attachments);
+        var attachmentStreams = AttachmentUtils.createAttachmentStreams(attachments);
 
         // Upload attachments here, so we only upload once even for multiple recipients
-        var messageSender = dependencies.getMessageSender();
         var attachmentPointers = new ArrayList<SignalServiceAttachment>(attachmentStreams.size());
-        for (var attachment : attachmentStreams) {
-            if (attachment.isStream()) {
-                attachmentPointers.add(messageSender.uploadAttachment(attachment.asStream()));
-            } else if (attachment.isPointer()) {
-                attachmentPointers.add(attachment.asPointer());
-            }
+        for (var attachmentStream : attachmentStreams) {
+            attachmentPointers.add(uploadAttachment(attachmentStream));
         }
         return attachmentPointers;
+    }
+
+    public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {
+        var attachmentStream = AttachmentUtils.createAttachmentStream(new File(attachment));
+        return uploadAttachment(attachmentStream);
+    }
+
+    public SignalServiceAttachmentPointer uploadAttachment(SignalServiceAttachmentStream attachment) throws IOException {
+        var messageSender = dependencies.getMessageSender();
+        return messageSender.uploadAttachment(attachment);
     }
 
     public void downloadAttachment(final SignalServiceAttachment attachment) {

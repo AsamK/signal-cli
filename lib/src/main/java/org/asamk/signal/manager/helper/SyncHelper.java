@@ -302,7 +302,7 @@ public class SyncHelper {
             return Optional.empty();
         }
 
-        return Optional.of(AttachmentUtils.createAttachment(streamDetails, Optional.empty()));
+        return Optional.of(AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty()));
     }
 
     private void downloadContactAvatar(SignalServiceAttachment avatar, RecipientAddress address) {

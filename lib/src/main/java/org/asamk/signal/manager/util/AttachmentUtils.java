@@ -1,7 +1,6 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.AttachmentInvalidException;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
@@ -14,30 +13,30 @@ import java.util.Optional;
 
 public class AttachmentUtils {
 
-    public static List<SignalServiceAttachment> getSignalServiceAttachments(List<String> attachments) throws AttachmentInvalidException {
-        List<SignalServiceAttachment> signalServiceAttachments = null;
-        if (attachments != null) {
-            signalServiceAttachments = new ArrayList<>(attachments.size());
-            for (var attachment : attachments) {
-                try {
-                    signalServiceAttachments.add(createAttachment(new File(attachment)));
-                } catch (IOException e) {
-                    throw new AttachmentInvalidException(attachment, e);
-                }
-            }
+    public static List<SignalServiceAttachmentStream> createAttachmentStreams(List<String> attachments) throws AttachmentInvalidException {
+        if (attachments == null) {
+            return null;
+        }
+        final var signalServiceAttachments = new ArrayList<SignalServiceAttachmentStream>(attachments.size());
+        for (var attachment : attachments) {
+            signalServiceAttachments.add(createAttachmentStream(new File(attachment)));
         }
         return signalServiceAttachments;
     }
 
-    public static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        final var streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
-        return createAttachment(streamDetails, Optional.of(attachmentFile.getName()));
+    public static SignalServiceAttachmentStream createAttachmentStream(File attachmentFile) throws AttachmentInvalidException {
+        try {
+            final var streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
+            return createAttachmentStream(streamDetails, Optional.of(attachmentFile.getName()));
+        } catch (IOException e) {
+            throw new AttachmentInvalidException(attachmentFile.toString(), e);
+        }
     }
 
-    public static SignalServiceAttachmentStream createAttachment(
+    public static SignalServiceAttachmentStream createAttachmentStream(
             StreamDetails streamDetails, Optional<String> name
     ) {
-        // TODO mabybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
+        // TODO maybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final var uploadTimestamp = System.currentTimeMillis();
         Optional<byte[]> preview = Optional.empty();
         Optional<String> caption = Optional.empty();
