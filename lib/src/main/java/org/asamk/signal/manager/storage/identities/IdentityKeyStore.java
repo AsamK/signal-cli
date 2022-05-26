@@ -186,7 +186,7 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
         }
     }
 
-    final Pattern identityFileNamePattern = Pattern.compile("([0-9]+)");
+    final Pattern identityFileNamePattern = Pattern.compile("(\\d+)");
 
     public List<IdentityInfo> getIdentities() {
         final var files = identitiesPath.listFiles();
@@ -198,6 +198,7 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
                 .map(f -> resolver.resolveRecipient(Long.parseLong(f.getName())))
                 .filter(Objects::nonNull)
                 .map(this::loadIdentityLocked)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

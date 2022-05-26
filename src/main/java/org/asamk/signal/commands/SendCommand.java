@@ -189,7 +189,7 @@ public class SendCommand implements JsonRpcLocalCommand {
             final Manager m, final List<String> mentionStrings
     ) throws UserErrorException {
         List<Message.Mention> mentions;
-        final Pattern mentionPattern = Pattern.compile("([0-9]+):([0-9]+):(.+)");
+        final Pattern mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
         mentions = new ArrayList<>();
         for (final var mention : mentionStrings) {
             final var matcher = mentionPattern.matcher(mention);
@@ -205,7 +205,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private Message.Sticker parseSticker(final String stickerString) throws UserErrorException {
-        final Pattern stickerPattern = Pattern.compile("([0-9a-f]+):([0-9]+)");
+        final Pattern stickerPattern = Pattern.compile("([\\da-f]+):(\\d+)");
         final var matcher = stickerPattern.matcher(stickerString);
         if (!matcher.matches() || matcher.group(1).length() % 2 != 0) {
             throw new UserErrorException("Invalid sticker syntax ("

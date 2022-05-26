@@ -36,7 +36,7 @@ public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.Si
         return loadSignedPreKeyRecord(file);
     }
 
-    final Pattern signedPreKeyFileNamePattern = Pattern.compile("([0-9]+)");
+    final Pattern signedPreKeyFileNamePattern = Pattern.compile("(\\d+)");
 
     @Override
     public List<SignedPreKeyRecord> loadSignedPreKeys() {

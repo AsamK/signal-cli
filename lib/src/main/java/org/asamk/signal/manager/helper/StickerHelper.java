@@ -49,7 +49,8 @@ public class StickerHelper {
 
     public void retrieveStickerPack(StickerPackId packId, byte[] packKey) throws InvalidMessageException, IOException {
         logger.debug("Retrieving sticker pack {}.", Hex.toStringCondensed(packId.serialize()));
-        final var manifest = dependencies.getMessageReceiver().retrieveStickerManifest(packId.serialize(), packKey);
+        final var messageReceiver = dependencies.getMessageReceiver();
+        final var manifest = messageReceiver.retrieveStickerManifest(packId.serialize(), packKey);
 
         final var stickerIds = new HashSet<Integer>();
         if (manifest.getCover().isPresent()) {
@@ -60,8 +61,9 @@ public class StickerHelper {
         }
 
         for (var id : stickerIds) {
-            final var inputStream = dependencies.getMessageReceiver().retrieveSticker(packId.serialize(), packKey, id);
-            context.getStickerPackStore().storeSticker(packId, id, o -> IOUtils.copyStream(inputStream, o));
+            try (final var inputStream = messageReceiver.retrieveSticker(packId.serialize(), packKey, id)) {
+                context.getStickerPackStore().storeSticker(packId, id, o -> IOUtils.copyStream(inputStream, o));
+            }
         }
 
         final var jsonManifest = new JsonStickerPack(manifest.getTitle().orElse(null),

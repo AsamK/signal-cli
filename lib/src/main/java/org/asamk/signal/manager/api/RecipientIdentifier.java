@@ -15,7 +15,7 @@ public sealed interface RecipientIdentifier {
 
     record NoteToSelf() implements RecipientIdentifier {
 
-        public static NoteToSelf INSTANCE = new NoteToSelf();
+        public static final NoteToSelf INSTANCE = new NoteToSelf();
 
         @Override
         public String getIdentifier() {

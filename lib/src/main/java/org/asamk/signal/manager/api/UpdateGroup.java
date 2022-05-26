@@ -47,7 +47,7 @@ public class UpdateGroup {
     }
 
     public static Builder newBuilder(final UpdateGroup copy) {
-        Builder builder = new Builder(copy.name,
+        return new Builder(copy.name,
                 copy.description,
                 copy.members,
                 copy.removeMembers,
@@ -62,7 +62,6 @@ public class UpdateGroup {
                 copy.avatarFile,
                 copy.expirationTimer,
                 copy.isAnnouncementGroup);
-        return builder;
     }
 
     public static Builder newBuilder(

@@ -242,7 +242,7 @@ public class SessionStore implements SignalServiceSessionStore {
         return parseFileNames(files);
     }
 
-    final Pattern sessionFileNamePattern = Pattern.compile("([0-9]+)_([0-9]+)");
+    final Pattern sessionFileNamePattern = Pattern.compile("(\\d+)_(\\d+)");
 
     private List<Key> parseFileNames(final File[] files) {
         return Arrays.stream(files)

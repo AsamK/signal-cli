@@ -161,7 +161,7 @@ public class SenderKeyRecordStore implements org.signal.libsignal.protocol.group
         return parseFileNames(files);
     }
 
-    final Pattern senderKeyFileNamePattern = Pattern.compile("([0-9]+)_([0-9]+)_([0-9a-z\\-]+)");
+    final Pattern senderKeyFileNamePattern = Pattern.compile("(\\d+)_(\\d+)_([\\da-z\\-]+)");
 
     private List<Key> parseFileNames(final File[] files) {
         return Arrays.stream(files)

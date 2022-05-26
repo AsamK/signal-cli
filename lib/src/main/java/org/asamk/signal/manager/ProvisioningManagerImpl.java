@@ -150,10 +150,9 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
             ManagerImpl m = null;
             try {
-                final var accountPathFinal = accountPath;
                 m = new ManagerImpl(account,
                         pathConfig,
-                        new AccountFileUpdaterImpl(accountsStore, accountPathFinal),
+                        new AccountFileUpdaterImpl(accountsStore, accountPath),
                         serviceEnvironmentConfig,
                         userAgent);
                 account = null;
