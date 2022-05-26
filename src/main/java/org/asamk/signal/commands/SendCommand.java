@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -120,7 +119,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (readMessageFromStdin || (messageText == null && sticker == null)) {
             logger.debug("Reading message from stdin...");
             try {
-                messageText = IOUtils.readAll(System.in, Charset.defaultCharset());
+                messageText = IOUtils.readAll(System.in, IOUtils.getConsoleCharset());
             } catch (IOException e) {
                 throw new UserErrorException("Failed to read message from stdin: " + e.getMessage());
             }

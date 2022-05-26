@@ -46,7 +46,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
 
@@ -123,7 +122,7 @@ public class App {
         var outputType = outputTypeInput == null
                 ? command.getSupportedOutputTypes().stream().findFirst().orElse(null)
                 : outputTypeInput;
-        var writer = new BufferedWriter(new OutputStreamWriter(System.out, Charset.defaultCharset()));
+        var writer = new BufferedWriter(new OutputStreamWriter(System.out, IOUtils.getConsoleCharset()));
         var outputWriter = outputType == null
                 ? null
                 : outputType == OutputType.JSON ? new JsonWriterImpl(writer) : new PlainTextWriterImpl(writer);

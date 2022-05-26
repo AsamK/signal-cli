@@ -48,7 +48,8 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         m.setIgnoreAttachments(ignoreAttachments);
 
         final var jsonOutputWriter = (JsonWriter) outputWriter;
-        final Supplier<String> lineSupplier = IOUtils.getLineSupplier(new InputStreamReader(System.in));
+        final Supplier<String> lineSupplier = IOUtils.getLineSupplier(new InputStreamReader(System.in,
+                IOUtils.getConsoleCharset()));
 
         final var handler = new SignalJsonRpcDispatcherHandler(jsonOutputWriter, lineSupplier, false);
         handler.handleConnection(m);

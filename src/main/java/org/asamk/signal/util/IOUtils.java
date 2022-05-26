@@ -39,6 +39,11 @@ public class IOUtils {
     private IOUtils() {
     }
 
+    public static Charset getConsoleCharset() {
+        final var console = System.console();
+        return console == null ? Charset.defaultCharset() : console.charset();
+    }
+
     public static String readAll(InputStream in, Charset charset) throws IOException {
         var output = new StringWriter();
         var buffer = new byte[4096];
