@@ -34,6 +34,7 @@ import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriterImpl;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.errors.ServiceUnknown;
 import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -365,7 +366,7 @@ public class App {
             } else {
                 busType = DBusConnection.DBusBusType.SESSION;
             }
-            try (var dBusConn = DBusConnection.getConnection(busType)) {
+            try (var dBusConn = DBusConnectionBuilder.forType(busType).build()) {
                 if (command instanceof ProvisioningCommand c) {
                     if (account != null) {
                         throw new UserErrorException("You cannot specify a account (phone number) when linking");

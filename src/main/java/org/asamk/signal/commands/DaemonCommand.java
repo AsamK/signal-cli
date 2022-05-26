@@ -23,6 +23,7 @@ import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -342,7 +343,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
         DBusConnection conn;
         try {
-            conn = DBusConnection.getConnection(busType);
+            conn = DBusConnectionBuilder.forType(busType).build();
             dbusRunner.run(conn, DbusConfig.getObjectPath());
         } catch (DBusException e) {
             throw new UnexpectedErrorException("Dbus command failed: " + e.getMessage(), e);
