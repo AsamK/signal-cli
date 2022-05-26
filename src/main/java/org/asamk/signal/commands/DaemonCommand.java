@@ -17,6 +17,7 @@ import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.JsonWriterImpl;
 import org.asamk.signal.output.OutputWriter;
@@ -94,7 +95,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
-        m.setIgnoreAttachments(ignoreAttachments);
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments));
         addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);
 
         final Channel inheritedChannel;
@@ -156,12 +157,13 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
 
+        final var receiveConfig = new ReceiveConfig(ignoreAttachments);
         c.getManagers().forEach(m -> {
-            m.setIgnoreAttachments(ignoreAttachments);
+            m.setReceiveConfig(receiveConfig);
             addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);
         });
         c.addOnManagerAddedHandler(m -> {
-            m.setIgnoreAttachments(ignoreAttachments);
+            m.setReceiveConfig(receiveConfig);
             addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);
         });
 

@@ -22,6 +22,7 @@ import org.asamk.signal.manager.actions.SendSyncKeysAction;
 import org.asamk.signal.manager.actions.UpdateAccountAttributesAction;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.UntrustedIdentityException;
@@ -76,7 +77,7 @@ public final class IncomingMessageHandler {
 
     public Pair<List<HandleAction>, Exception> handleRetryEnvelope(
             final SignalServiceEnvelope envelope,
-            final boolean ignoreAttachments,
+            final ReceiveConfig receiveConfig,
             final Manager.ReceiveMessageHandler handler
     ) {
         final List<HandleAction> actions = new ArrayList<>();
@@ -100,13 +101,13 @@ public final class IncomingMessageHandler {
                 account.getIdentityKeyStore().setRetryingDecryption(false);
             }
         }
-        actions.addAll(checkAndHandleMessage(envelope, content, ignoreAttachments, handler, null));
+        actions.addAll(checkAndHandleMessage(envelope, content, receiveConfig, handler, null));
         return new Pair<>(actions, null);
     }
 
     public Pair<List<HandleAction>, Exception> handleEnvelope(
             final SignalServiceEnvelope envelope,
-            final boolean ignoreAttachments,
+            final ReceiveConfig receiveConfig,
             final Manager.ReceiveMessageHandler handler
     ) {
         final var actions = new ArrayList<HandleAction>();
@@ -156,14 +157,14 @@ public final class IncomingMessageHandler {
             }
         }
 
-        actions.addAll(checkAndHandleMessage(envelope, content, ignoreAttachments, handler, exception));
+        actions.addAll(checkAndHandleMessage(envelope, content, receiveConfig, handler, exception));
         return new Pair<>(actions, exception);
     }
 
     private List<HandleAction> checkAndHandleMessage(
             final SignalServiceEnvelope envelope,
             final SignalServiceContent content,
-            final boolean ignoreAttachments,
+            final ReceiveConfig receiveConfig,
             final Manager.ReceiveMessageHandler handler,
             final Exception exception
     ) {
@@ -190,7 +191,7 @@ public final class IncomingMessageHandler {
         } else {
             List<HandleAction> actions;
             if (content != null) {
-                actions = handleMessage(envelope, content, ignoreAttachments);
+                actions = handleMessage(envelope, content, receiveConfig);
             } else {
                 actions = List.of();
             }
@@ -205,7 +206,7 @@ public final class IncomingMessageHandler {
     }
 
     public List<HandleAction> handleMessage(
-            SignalServiceEnvelope envelope, SignalServiceContent content, boolean ignoreAttachments
+            SignalServiceEnvelope envelope, SignalServiceContent content, ReceiveConfig receiveConfig
     ) {
         var actions = new ArrayList<HandleAction>();
         final var senderPair = getSender(envelope, content);
@@ -264,12 +265,12 @@ public final class IncomingMessageHandler {
                     false,
                     sender,
                     account.getSelfRecipientId(),
-                    ignoreAttachments));
+                    receiveConfig.ignoreAttachments()));
         }
 
         if (content.getSyncMessage().isPresent()) {
             var syncMessage = content.getSyncMessage().get();
-            actions.addAll(handleSyncMessage(syncMessage, sender, ignoreAttachments));
+            actions.addAll(handleSyncMessage(syncMessage, sender, receiveConfig.ignoreAttachments()));
         }
 
         return actions;

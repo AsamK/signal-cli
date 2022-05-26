@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.actions.HandleAction;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
@@ -34,7 +35,7 @@ public class ReceiveHelper {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private boolean ignoreAttachments = false;
+    private ReceiveConfig receiveConfig = new ReceiveConfig(false);
     private boolean needsToRetryFailedMessages = false;
     private boolean hasCaughtUpWithOldMessages = false;
     private boolean isWaitingForMessage = false;
@@ -48,8 +49,8 @@ public class ReceiveHelper {
         this.context = context;
     }
 
-    public void setIgnoreAttachments(final boolean ignoreAttachments) {
-        this.ignoreAttachments = ignoreAttachments;
+    public void setReceiveConfig(final ReceiveConfig receiveConfig) {
+        this.receiveConfig = receiveConfig;
     }
 
     public void setNeedsToRetryFailedMessages(final boolean needsToRetryFailedMessages) {
@@ -192,7 +193,7 @@ public class ReceiveHelper {
                 continue;
             }
 
-            final var result = context.getIncomingMessageHandler().handleEnvelope(envelope, ignoreAttachments, handler);
+            final var result = context.getIncomingMessageHandler().handleEnvelope(envelope, receiveConfig, handler);
             for (final var h : result.first()) {
                 final var existingAction = queuedActions.get(h);
                 if (existingAction == null) {
@@ -247,8 +248,7 @@ public class ReceiveHelper {
             return null;
         }
 
-        final var result = context.getIncomingMessageHandler()
-                .handleRetryEnvelope(envelope, ignoreAttachments, handler);
+        final var result = context.getIncomingMessageHandler().handleRetryEnvelope(envelope, receiveConfig, handler);
         final var actions = result.first();
         final var exception = result.second();
 

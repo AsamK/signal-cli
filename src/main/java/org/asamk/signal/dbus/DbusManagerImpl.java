@@ -14,6 +14,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
@@ -531,7 +532,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void setIgnoreAttachments(final boolean ignoreAttachments) {
+    public void setReceiveConfig(final ReceiveConfig receiveConfig) {
     }
 
     @Override

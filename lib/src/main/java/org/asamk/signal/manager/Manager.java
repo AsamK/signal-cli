@@ -12,6 +12,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
@@ -206,7 +207,7 @@ public interface Manager extends Closeable {
      */
     void receiveMessages(ReceiveMessageHandler handler) throws IOException;
 
-    void setIgnoreAttachments(boolean ignoreAttachments);
+    void setReceiveConfig(ReceiveConfig receiveConfig);
 
     boolean hasCaughtUpWithOldMessages();
 

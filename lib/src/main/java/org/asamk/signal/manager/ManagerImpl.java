@@ -27,6 +27,7 @@ import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
@@ -947,8 +948,8 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void setIgnoreAttachments(final boolean ignoreAttachments) {
-        context.getReceiveHelper().setIgnoreAttachments(ignoreAttachments);
+    public void setReceiveConfig(final ReceiveConfig receiveConfig) {
+        context.getReceiveHelper().setReceiveConfig(receiveConfig);
     }
 
     @Override

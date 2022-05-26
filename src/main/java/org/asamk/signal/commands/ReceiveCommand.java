@@ -10,6 +10,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
@@ -52,7 +53,7 @@ public class ReceiveCommand implements LocalCommand {
     ) throws CommandException {
         double timeout = ns.getDouble("timeout");
         boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
-        m.setIgnoreAttachments(ignoreAttachments);
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments));
         try {
             final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
                     (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);

@@ -8,6 +8,7 @@ import org.asamk.signal.OutputType;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.IOUtils;
@@ -45,7 +46,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
-        m.setIgnoreAttachments(ignoreAttachments);
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments));
 
         final var jsonOutputWriter = (JsonWriter) outputWriter;
         final Supplier<String> lineSupplier = IOUtils.getLineSupplier(new InputStreamReader(System.in,
