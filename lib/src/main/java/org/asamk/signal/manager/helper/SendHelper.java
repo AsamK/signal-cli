@@ -116,16 +116,6 @@ public class SendHelper {
         return sendGroupMessage(message, recipientIds, distributionId, ContentHint.IMPLICIT);
     }
 
-    public SendMessageResult sendDeliveryReceipt(
-            RecipientId recipientId, List<Long> messageIds
-    ) {
-        var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.DELIVERY,
-                messageIds,
-                System.currentTimeMillis());
-
-        return sendReceiptMessage(receiptMessage, recipientId);
-    }
-
     public SendMessageResult sendReceiptMessage(
             final SignalServiceReceiptMessage receiptMessage, final RecipientId recipientId
     ) {

@@ -51,6 +51,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -247,7 +248,9 @@ public final class IncomingMessageHandler {
             var message = content.getDataMessage().get();
 
             if (content.isNeedsReceipt()) {
-                actions.add(new SendReceiptAction(sender, message.getTimestamp()));
+                actions.add(new SendReceiptAction(sender,
+                        SignalServiceReceiptMessage.Type.DELIVERY,
+                        message.getTimestamp()));
             } else {
                 // Message wasn't sent as unidentified sender message
                 final var contact = context.getAccount().getContactStore().getContact(sender);
