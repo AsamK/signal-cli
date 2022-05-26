@@ -79,6 +79,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--send-read-receipts")
+                .help("Send read receipts for all incoming data messages (in addition to the default delivery receipts)")
+                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -94,8 +97,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var noReceiveStdOut = Boolean.TRUE.equals(ns.getBoolean("no-receive-stdout"));
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        final boolean sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
 
-        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments));
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, sendReadReceipts));
         addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);
 
         final Channel inheritedChannel;
@@ -156,8 +160,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var noReceiveStdOut = Boolean.TRUE.equals(ns.getBoolean("no-receive-stdout"));
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        final boolean sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
 
-        final var receiveConfig = new ReceiveConfig(ignoreAttachments);
+        final var receiveConfig = new ReceiveConfig(ignoreAttachments, sendReadReceipts);
         c.getManagers().forEach(m -> {
             m.setReceiveConfig(receiveConfig);
             addDefaultReceiveHandler(m, noReceiveStdOut ? null : outputWriter, receiveMode != ReceiveMode.ON_START);

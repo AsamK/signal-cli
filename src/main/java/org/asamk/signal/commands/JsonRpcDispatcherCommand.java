@@ -34,6 +34,9 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--send-read-receipts")
+                .help("Send read receipts for all incoming data messages (in addition to the default delivery receipts)")
+                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -46,7 +49,8 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final boolean ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
-        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments));
+        final boolean sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, sendReadReceipts));
 
         final var jsonOutputWriter = (JsonWriter) outputWriter;
         final Supplier<String> lineSupplier = IOUtils.getLineSupplier(new InputStreamReader(System.in,

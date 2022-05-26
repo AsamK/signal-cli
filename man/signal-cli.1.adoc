@@ -357,6 +357,9 @@ Default is 5 seconds.
 *--ignore-attachments*::
 Don’t download attachments of received messages.
 
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
+
 === joinGroup
 
 Join a group via an invitation link.
@@ -627,6 +630,9 @@ See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.
+
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
 
 *--no-receive-stdout*::
 Don’t print received messages to stdout.

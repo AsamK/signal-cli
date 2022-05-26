@@ -1,3 +1,3 @@
 package org.asamk.signal.manager.api;
 
-public record ReceiveConfig(boolean ignoreAttachments) {}
+public record ReceiveConfig(boolean ignoreAttachments, boolean sendReadReceipts) {}

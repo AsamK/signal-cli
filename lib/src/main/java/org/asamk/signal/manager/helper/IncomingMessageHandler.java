@@ -260,6 +260,11 @@ public final class IncomingMessageHandler {
                     actions.add(new SendProfileKeyAction(sender));
                 }
             }
+            if (receiveConfig.sendReadReceipts()) {
+                actions.add(new SendReceiptAction(sender,
+                        SignalServiceReceiptMessage.Type.READ,
+                        message.getTimestamp()));
+            }
 
             actions.addAll(handleSignalServiceDataMessage(message,
                     false,
