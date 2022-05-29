@@ -522,8 +522,11 @@ If the contact doesn't exist yet, it will be added.
 NUMBER::
 Specify the contact phone number.
 
-*-n*, *--name*::
-Specify the new name for this contact.
+*--given-name* NAME, *--name* NAME::
+New (given) name.
+
+*--family-name* FAMILY_NAME::
+New family name.
 
 *-e*, *--expiration* EXPIRATION_SECONDS::
 Set expiration time of messages (seconds).

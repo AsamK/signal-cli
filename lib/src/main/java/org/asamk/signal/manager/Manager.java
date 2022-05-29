@@ -149,7 +149,7 @@ public interface Manager extends Closeable {
     void deleteContact(RecipientIdentifier.Single recipient);
 
     void setContactName(
-            RecipientIdentifier.Single recipient, String name
+            RecipientIdentifier.Single recipient, String givenName, final String familyName
     ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException;
 
     void setContactsBlocked(

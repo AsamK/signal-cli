@@ -409,9 +409,9 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void setContactName(
-            final RecipientIdentifier.Single recipient, final String name
+            final RecipientIdentifier.Single recipient, final String givenName, final String familyName
     ) throws NotPrimaryDeviceException {
-        signal.setContactName(recipient.getIdentifier(), name);
+        signal.setContactName(recipient.getIdentifier(), givenName);
     }
 
     @Override

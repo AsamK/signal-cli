@@ -26,6 +26,8 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("recipient").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");
+        subparser.addArgument("--given-name").help("New contact given name");
+        subparser.addArgument("--family-name").help("New contact family name");
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
@@ -42,9 +44,16 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
                 m.setExpirationTimer(recipient, expiration);
             }
 
-            var name = ns.getString("name");
-            if (name != null) {
-                m.setContactName(recipient, name);
+            var givenName = ns.getString("given-name");
+            var familyName = ns.getString("family-name");
+            if (givenName == null) {
+                givenName = ns.getString("name");
+                if (givenName != null && familyName == null) {
+                    familyName = "";
+                }
+            }
+            if (givenName != null || familyName != null) {
+                m.setContactName(recipient, givenName, familyName);
             }
         } catch (IOException e) {
             throw new IOErrorException("Update contact error: " + e.getMessage(), e);

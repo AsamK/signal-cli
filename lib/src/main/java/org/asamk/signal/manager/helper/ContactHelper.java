@@ -17,10 +17,16 @@ public class ContactHelper {
         return sourceContact != null && sourceContact.isBlocked();
     }
 
-    public void setContactName(final RecipientId recipientId, final String name) {
+    public void setContactName(final RecipientId recipientId, final String givenName, final String familyName) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-        account.getContactStore().storeContact(recipientId, builder.withGivenName(name).build());
+        if (givenName != null) {
+            builder.withGivenName(givenName);
+        }
+        if (familyName != null) {
+            builder.withFamilyName(familyName);
+        }
+        account.getContactStore().storeContact(recipientId, builder.build());
     }
 
     public void setExpirationTimer(RecipientId recipientId, int messageExpirationTimer) {

@@ -492,7 +492,7 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void setContactName(final String number, final String name) {
         try {
-            m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name);
+            m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name, "");
         } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (IOException e) {

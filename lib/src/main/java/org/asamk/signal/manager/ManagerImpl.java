@@ -705,12 +705,13 @@ class ManagerImpl implements Manager {
 
     @Override
     public void setContactName(
-            RecipientIdentifier.Single recipient, String name
+            RecipientIdentifier.Single recipient, String givenName, final String familyName
     ) throws NotPrimaryDeviceException, UnregisteredRecipientException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }
-        context.getContactHelper().setContactName(context.getRecipientHelper().resolveRecipient(recipient), name);
+        context.getContactHelper()
+                .setContactName(context.getRecipientHelper().resolveRecipient(recipient), givenName, familyName);
     }
 
     @Override
