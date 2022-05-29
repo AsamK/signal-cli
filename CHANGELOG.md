@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.10.7] - 2022-05-29
+
+### Added
+- Added profile information to `listContacts` command output
+- Added filter flags for `listContacts` command
+- New `sendPaymentNotification` command to send payment receipt blobs
+- New `--given-name` and `--family-name` parameters for `updateContact` command
+- Implement sending link previews with `--preview-url`, `--preview-title` parameters for the `send` command
+- New `--send-read-receipts` parameter for `receive` and `daemon` commands for automatically marking received messages as read
+
+### Fixed
+- Issue with endless growing `pre-keys-pni` data directory
+
 ## [0.10.6] - 2022-05-19
 **Attention**: Now requires native libsignal-client version 0.17
 
