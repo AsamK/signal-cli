@@ -9,6 +9,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -44,11 +46,42 @@ public class Utils {
         return mime;
     }
 
+    private static boolean isBase64DataString(String[] parts) {
+        return parts.length == 2
+                && parts[0].startsWith("data:")
+                && parts[0].contains("/")
+                && parts[1].startsWith("base64,");
+    }
+
+    public static boolean isBase64DataString(String value) {
+        return isBase64DataString(value.split(";", 2));
+    }
+
+    public static StreamDetails createStreamDetailsFromBase64(String base64) {
+        final String[] parts = base64.split(";", 2);
+        if (!isBase64DataString(parts)) {
+            throw new IllegalArgumentException("The given argument is not a valid base64 string.");
+        }
+
+        parts[0] = parts[0].substring(5);
+        byte[] bytes = Base64.getDecoder().decode(parts[1].substring(7).getBytes(StandardCharsets.UTF_8));
+
+        return new StreamDetails(new ByteArrayInputStream(bytes), parts[0], bytes.length);
+    }
+
     public static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
         InputStream stream = new FileInputStream(file);
         final var size = file.length();
         final var mime = getFileMimeType(file, "application/octet-stream");
         return new StreamDetails(stream, mime, size);
+    }
+
+    public static StreamDetails createStreamDetails(String value) throws IOException {
+        if (isBase64DataString(value)) {
+            return createStreamDetailsFromBase64(value);
+        }
+
+        return createStreamDetailsFromFile(new File(value));
     }
 
     public static Fingerprint computeSafetyNumber(

@@ -6,6 +6,7 @@ import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,17 +20,21 @@ public class AttachmentUtils {
         }
         final var signalServiceAttachments = new ArrayList<SignalServiceAttachmentStream>(attachments.size());
         for (var attachment : attachments) {
-            signalServiceAttachments.add(createAttachmentStream(new File(attachment)));
+            signalServiceAttachments.add(createAttachmentStream(attachment));
         }
         return signalServiceAttachments;
     }
 
-    public static SignalServiceAttachmentStream createAttachmentStream(File attachmentFile) throws AttachmentInvalidException {
+    public static SignalServiceAttachmentStream createAttachmentStream(String attachment) throws AttachmentInvalidException {
         try {
-            final var streamDetails = Utils.createStreamDetailsFromFile(attachmentFile);
-            return createAttachmentStream(streamDetails, Optional.of(attachmentFile.getName()));
+            final var streamDetails = Utils.createStreamDetails(attachment);
+            final var name = streamDetails.getStream() instanceof FileInputStream
+                    ? new File(attachment).getName()
+                    : null;
+
+            return createAttachmentStream(streamDetails, Optional.ofNullable(name));
         } catch (IOException e) {
-            throw new AttachmentInvalidException(attachmentFile.toString(), e);
+            throw new AttachmentInvalidException(attachment, e);
         }
     }
 
