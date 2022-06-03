@@ -28,11 +28,8 @@ public class AttachmentUtils {
     public static SignalServiceAttachmentStream createAttachmentStream(String attachment) throws AttachmentInvalidException {
         try {
             final var streamDetails = Utils.createStreamDetails(attachment);
-            final var name = streamDetails.getStream() instanceof FileInputStream
-                    ? new File(attachment).getName()
-                    : null;
 
-            return createAttachmentStream(streamDetails, Optional.ofNullable(name));
+            return createAttachmentStream(streamDetails.first(), streamDetails.second());
         } catch (IOException e) {
             throw new AttachmentInvalidException(attachment, e);
         }

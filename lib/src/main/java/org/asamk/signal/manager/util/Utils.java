@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.Pair;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
@@ -22,6 +23,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
@@ -33,10 +35,10 @@ public class Utils {
 
     private final static Logger logger = LoggerFactory.getLogger(Utils.class);
 
-    public static String getFileMimeType(File file, String defaultMimeType) throws IOException {
+    public static String getFileMimeType(final File file, final String defaultMimeType) throws IOException {
         var mime = Files.probeContentType(file.toPath());
         if (mime == null) {
-            try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
+            try (final InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
                 mime = URLConnection.guessContentTypeFromStream(bufferedStream);
             }
         }
@@ -46,42 +48,29 @@ public class Utils {
         return mime;
     }
 
-    private static boolean isBase64DataString(final String[] parts) {
-        return parts.length == 2
-                && parts[0].startsWith("data:")
-                && parts[0].contains("/")
-                && parts[1].startsWith("base64,");
+    public static Pair<StreamDetails, Optional<String>> createStreamDetailsFromDataURI(final String dataURI) {
+        final DataURI uri = DataURI.of(dataURI);
+
+        return new Pair<>(new StreamDetails(
+                new ByteArrayInputStream(uri.data()), uri.mediaType(), uri.data().length),
+                Optional.ofNullable(uri.parameter().get("filename")));
     }
 
-    public static boolean isBase64DataString(final String value) {
-        return isBase64DataString(value.split(";", 2));
-    }
-
-    public static StreamDetails createStreamDetailsFromBase64(final String base64) {
-        final String[] parts = base64.split(";", 2);
-        if (!isBase64DataString(parts)) {
-            throw new IllegalArgumentException("The given argument is not a valid base64 string.");
-        }
-
-        parts[0] = parts[0].substring(5);
-        final byte[] bytes = Base64.getDecoder().decode(parts[1].substring(7).getBytes(StandardCharsets.UTF_8));
-
-        return new StreamDetails(new ByteArrayInputStream(bytes), parts[0], bytes.length);
-    }
-
-    public static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
-        InputStream stream = new FileInputStream(file);
+    public static StreamDetails createStreamDetailsFromFile(final File file) throws IOException {
+        final InputStream stream = new FileInputStream(file);
         final var size = file.length();
         final var mime = getFileMimeType(file, "application/octet-stream");
         return new StreamDetails(stream, mime, size);
     }
 
-    public static StreamDetails createStreamDetails(final String value) throws IOException {
-        if (isBase64DataString(value)) {
-            return createStreamDetailsFromBase64(value);
-        }
+    public static Pair<StreamDetails, Optional<String>> createStreamDetails(final String value) throws IOException {
+        try {
+            return createStreamDetailsFromDataURI(value);
+        } catch (final IllegalArgumentException e) {
+            final File f = new File(value);
 
-        return createStreamDetailsFromFile(new File(value));
+            return new Pair<>(createStreamDetailsFromFile(f), Optional.of(f.getName()));
+        }
     }
 
     public static Fingerprint computeSafetyNumber(
