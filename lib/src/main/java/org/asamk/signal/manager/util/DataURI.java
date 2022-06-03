@@ -9,25 +9,31 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Data URI record that follows RFC 2397.
- *
- * @param mediaType the media type. If empty, the default media type "text/plain" is used.
- * @param parameter the list of parameters. Must be URL escaped encoded.
- * @param data      the data. If base64 is not given, the data is treated as ASCII string.
- */
 @SuppressWarnings({"java:S6218"})
 public record DataURI(String mediaType, Map<String, String> parameter, byte[] data) {
 
     public static final Pattern DATA_URI_PATTERN = Pattern.compile(
-            "data:(?<type>.+?\\/.+?)?(?<parameters>;.+?)?(?<base64>;base64)?,(?<data>.+)",
+            "\\Adata:(?<type>.+?/.+?)?(?<parameters>;.+?=.+?)?(?<base64>;base64)?,(?<data>.+)\\z",
             Pattern.CASE_INSENSITIVE);
     public static final Pattern PARAMETER_PATTERN = Pattern.compile("\\G;(?<key>.+)=(?<value>.+)",
             Pattern.CASE_INSENSITIVE);
     public static final String DEFAULT_TYPE = "text/plain";
 
     /**
-     * Generates a new {@link DataURI} object from the given string.
+     * Generates a new {@link DataURI} object that follows
+     * <a href="https://datatracker.ietf.org/doc/html/rfc2397">RFC 2397</a> from the given string.
+     * <p>
+     * The {@code dataURI} must be of the form:
+     * <p>
+     * {@code
+     * data:[<mediatype>][;base64],<data>
+     * }
+     * <p>
+     * The {@code <mediatype>} is an Internet media type specification (with
+     * optional parameters.) The appearance of ";base64" means that the data
+     * is encoded as base64. Without ";base64", the data is represented using (ASCII) URL Escaped encoding.
+     * If {@code <mediatype>} is omitted, it defaults to {@link DataURI#DEFAULT_TYPE}.
+     * Parameter values should use the URL Escaped encoding.
      *
      * @param dataURI the data URI
      * @return a data URI object
