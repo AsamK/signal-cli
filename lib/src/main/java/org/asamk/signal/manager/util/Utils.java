@@ -46,25 +46,25 @@ public class Utils {
         return mime;
     }
 
-    private static boolean isBase64DataString(String[] parts) {
+    private static boolean isBase64DataString(final String[] parts) {
         return parts.length == 2
                 && parts[0].startsWith("data:")
                 && parts[0].contains("/")
                 && parts[1].startsWith("base64,");
     }
 
-    public static boolean isBase64DataString(String value) {
+    public static boolean isBase64DataString(final String value) {
         return isBase64DataString(value.split(";", 2));
     }
 
-    public static StreamDetails createStreamDetailsFromBase64(String base64) {
+    public static StreamDetails createStreamDetailsFromBase64(final String base64) {
         final String[] parts = base64.split(";", 2);
         if (!isBase64DataString(parts)) {
             throw new IllegalArgumentException("The given argument is not a valid base64 string.");
         }
 
         parts[0] = parts[0].substring(5);
-        byte[] bytes = Base64.getDecoder().decode(parts[1].substring(7).getBytes(StandardCharsets.UTF_8));
+        final byte[] bytes = Base64.getDecoder().decode(parts[1].substring(7).getBytes(StandardCharsets.UTF_8));
 
         return new StreamDetails(new ByteArrayInputStream(bytes), parts[0], bytes.length);
     }
@@ -76,7 +76,7 @@ public class Utils {
         return new StreamDetails(stream, mime, size);
     }
 
-    public static StreamDetails createStreamDetails(String value) throws IOException {
+    public static StreamDetails createStreamDetails(final String value) throws IOException {
         if (isBase64DataString(value)) {
             return createStreamDetailsFromBase64(value);
         }
