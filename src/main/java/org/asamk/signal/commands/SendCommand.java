@@ -55,8 +55,8 @@ public class SendCommand implements JsonRpcLocalCommand {
         mut.addArgument("--message-from-stdin")
                 .action(Arguments.storeTrue())
                 .help("Read the message from standard input.");
-        subparser.addArgument("-a", "--attachment").nargs("*").help("Add file as attachment."
-                + "Data URI encoded attachments can be added and must follow the RFC 2397. Additionally a file name can be added, e.g. "
+        subparser.addArgument("-a", "--attachment").nargs("*").help("Add an attachment. "
+                + "Can be either a file path or a data URI. Data URI encoded attachments must follow the RFC 2397. Additionally a file name can be added, e.g. "
                 + "data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>.");
         subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
