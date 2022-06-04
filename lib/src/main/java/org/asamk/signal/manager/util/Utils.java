@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.Pair;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
@@ -9,6 +10,7 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,9 +19,11 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
@@ -31,10 +35,10 @@ public class Utils {
 
     private final static Logger logger = LoggerFactory.getLogger(Utils.class);
 
-    public static String getFileMimeType(File file, String defaultMimeType) throws IOException {
+    public static String getFileMimeType(final File file, final String defaultMimeType) throws IOException {
         var mime = Files.probeContentType(file.toPath());
         if (mime == null) {
-            try (InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
+            try (final InputStream bufferedStream = new BufferedInputStream(new FileInputStream(file))) {
                 mime = URLConnection.guessContentTypeFromStream(bufferedStream);
             }
         }
@@ -44,11 +48,29 @@ public class Utils {
         return mime;
     }
 
-    public static StreamDetails createStreamDetailsFromFile(File file) throws IOException {
-        InputStream stream = new FileInputStream(file);
+    public static Pair<StreamDetails, Optional<String>> createStreamDetailsFromDataURI(final String dataURI) {
+        final DataURI uri = DataURI.of(dataURI);
+
+        return new Pair<>(new StreamDetails(
+                new ByteArrayInputStream(uri.data()), uri.mediaType(), uri.data().length),
+                Optional.ofNullable(uri.parameter().get("filename")));
+    }
+
+    public static StreamDetails createStreamDetailsFromFile(final File file) throws IOException {
+        final InputStream stream = new FileInputStream(file);
         final var size = file.length();
         final var mime = getFileMimeType(file, "application/octet-stream");
         return new StreamDetails(stream, mime, size);
+    }
+
+    public static Pair<StreamDetails, Optional<String>> createStreamDetails(final String value) throws IOException {
+        try {
+            return createStreamDetailsFromDataURI(value);
+        } catch (final IllegalArgumentException e) {
+            final File f = new File(value);
+
+            return new Pair<>(createStreamDetailsFromFile(f), Optional.of(f.getName()));
+        }
     }
 
     public static Fingerprint computeSafetyNumber(

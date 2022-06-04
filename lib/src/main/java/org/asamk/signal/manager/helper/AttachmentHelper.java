@@ -51,7 +51,7 @@ public class AttachmentHelper {
     }
 
     public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {
-        var attachmentStream = AttachmentUtils.createAttachmentStream(new File(attachment));
+        var attachmentStream = AttachmentUtils.createAttachmentStream(attachment);
         return uploadAttachment(attachmentStream);
     }
 
