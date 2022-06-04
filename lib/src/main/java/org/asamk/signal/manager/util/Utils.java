@@ -19,7 +19,6 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -51,8 +50,7 @@ public class Utils {
     public static Pair<StreamDetails, Optional<String>> createStreamDetailsFromDataURI(final String dataURI) {
         final DataURI uri = DataURI.of(dataURI);
 
-        return new Pair<>(new StreamDetails(
-                new ByteArrayInputStream(uri.data()), uri.mediaType(), uri.data().length),
+        return new Pair<>(new StreamDetails(new ByteArrayInputStream(uri.data()), uri.mediaType(), uri.data().length),
                 Optional.ofNullable(uri.parameter().get("filename")));
     }
 
