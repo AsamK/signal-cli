@@ -107,15 +107,18 @@ public class Utils {
     public static Locale getDefaultLocale(Locale fallback) {
         final var locale = Locale.getDefault();
         if (locale == null) {
+            logger.debug("No default locale found, using fallback: {}", fallback);
             return fallback;
         }
+        final var localeString = locale.getLanguage() + "-" + locale.getCountry();
         try {
-            Locale.LanguageRange.parse(locale.getLanguage() + "-" + locale.getCountry());
+            Locale.LanguageRange.parse(localeString);
         } catch (IllegalArgumentException e) {
-            logger.debug("Invalid locale, ignoring: {}", locale);
+            logger.debug("Invalid locale '{}', using fallback: {}", locale, fallback);
             return fallback;
         }
 
+        logger.debug("Using default locale: {} ({})", locale, localeString);
         return locale;
     }
 
