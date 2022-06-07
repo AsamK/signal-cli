@@ -2,7 +2,7 @@ package org.asamk.signal.manager.storage.threads;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ThreadInfo {
+public class LegacyThreadInfo {
 
     @JsonProperty
     public String id;

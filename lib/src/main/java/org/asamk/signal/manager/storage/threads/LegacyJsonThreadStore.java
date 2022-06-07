@@ -25,9 +25,9 @@ public class LegacyJsonThreadStore {
     @JsonProperty("threads")
     @JsonSerialize(using = MapToListSerializer.class)
     @JsonDeserialize(using = ThreadsDeserializer.class)
-    private Map<String, ThreadInfo> threads = new HashMap<>();
+    private Map<String, LegacyThreadInfo> threads = new HashMap<>();
 
-    public List<ThreadInfo> getThreads() {
+    public List<LegacyThreadInfo> getThreads() {
         return new ArrayList<>(threads.values());
     }
 
@@ -41,16 +41,16 @@ public class LegacyJsonThreadStore {
         }
     }
 
-    private static class ThreadsDeserializer extends JsonDeserializer<Map<String, ThreadInfo>> {
+    private static class ThreadsDeserializer extends JsonDeserializer<Map<String, LegacyThreadInfo>> {
 
         @Override
-        public Map<String, ThreadInfo> deserialize(
+        public Map<String, LegacyThreadInfo> deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext
         ) throws IOException {
-            var threads = new HashMap<String, ThreadInfo>();
+            var threads = new HashMap<String, LegacyThreadInfo>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
             for (var n : node) {
-                var t = jsonProcessor.treeToValue(n, ThreadInfo.class);
+                var t = jsonProcessor.treeToValue(n, LegacyThreadInfo.class);
                 threads.put(t.id, t);
             }
 
