@@ -6,6 +6,7 @@ import org.asamk.signal.manager.util.IOUtils;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
+import org.signal.libsignal.protocol.groups.state.SenderKeyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +24,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SenderKeyRecordStore implements org.signal.libsignal.protocol.groups.state.SenderKeyStore {
+public class SenderKeyRecordStore implements SenderKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(SenderKeyRecordStore.class);
 
@@ -138,7 +139,7 @@ public class SenderKeyRecordStore implements org.signal.libsignal.protocol.group
     }
 
     /**
-     * @param identifier can be either a serialized uuid or a e164 phone number
+     * @param identifier can be either a serialized uuid or an e164 phone number
      */
     private RecipientId resolveRecipient(String identifier) {
         return resolver.resolveRecipient(identifier);
