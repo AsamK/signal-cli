@@ -80,7 +80,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         } catch (NonNormalizedPhoneNumberException e) {
             throw new UserErrorException("Failed to register: " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new IOErrorException("Request verify error: " + e.getMessage(), e);
+            throw new IOErrorException("Failed to register: " + e.getMessage(), e);
         }
     }
 
