@@ -34,7 +34,7 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.stickers.Sticker;
+import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyException;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyIdException;
@@ -439,7 +439,8 @@ public final class IncomingMessageHandler {
                 var sticker = account.getStickerStore().getStickerPack(stickerPackId);
                 if (m.getPackKey().isPresent()) {
                     if (sticker == null) {
-                        sticker = new Sticker(stickerPackId, m.getPackKey().get());
+                        sticker = new StickerPack(-1, stickerPackId, m.getPackKey().get(), installed);
+                        account.getStickerStore().addStickerPack(sticker);
                     }
                     if (installed) {
                         context.getJobExecutor()
@@ -447,9 +448,8 @@ public final class IncomingMessageHandler {
                     }
                 }
 
-                if (sticker != null) {
-                    sticker.setInstalled(installed);
-                    account.getStickerStore().updateSticker(sticker);
+                if (sticker != null && sticker.isInstalled() != installed) {
+                    account.getStickerStore().updateStickerPackInstalled(sticker.packId(), installed);
                 }
             }
         }
@@ -703,8 +703,8 @@ public final class IncomingMessageHandler {
             final var stickerPackId = StickerPackId.deserialize(messageSticker.getPackId());
             var sticker = account.getStickerStore().getStickerPack(stickerPackId);
             if (sticker == null) {
-                sticker = new Sticker(stickerPackId, messageSticker.getPackKey());
-                account.getStickerStore().updateSticker(sticker);
+                sticker = new StickerPack(stickerPackId, messageSticker.getPackKey());
+                account.getStickerStore().addStickerPack(sticker);
             }
             context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }

@@ -32,7 +32,6 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
-import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
@@ -58,7 +57,7 @@ import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
-import org.asamk.signal.manager.storage.stickers.Sticker;
+import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.StickerUtils;
@@ -580,7 +579,7 @@ class ManagerImpl implements Manager {
             if (stickerPack == null) {
                 throw new InvalidStickerException("Sticker pack not found");
             }
-            final var manifest = context.getStickerHelper().getOrRetrieveStickerPack(packId, stickerPack.getPackKey());
+            final var manifest = context.getStickerHelper().getOrRetrieveStickerPack(packId, stickerPack.packKey());
             if (manifest.stickers().size() <= stickerId) {
                 throw new InvalidStickerException("Sticker id not part of this pack");
             }
@@ -590,7 +589,7 @@ class ManagerImpl implements Manager {
                 throw new InvalidStickerException("Missing local sticker file");
             }
             messageBuilder.withSticker(new SignalServiceDataMessage.Sticker(packId.serialize(),
-                    stickerPack.getPackKey(),
+                    stickerPack.packKey(),
                     stickerId,
                     manifestSticker.emoji(),
                     AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty())));
@@ -796,21 +795,21 @@ class ManagerImpl implements Manager {
         var packIdString = messageSender.uploadStickerManifest(manifest, packKey);
         var packId = StickerPackId.deserialize(Hex.fromStringCondensed(packIdString));
 
-        var sticker = new Sticker(packId, packKey);
-        account.getStickerStore().updateSticker(sticker);
+        var sticker = new StickerPack(packId, packKey);
+        account.getStickerStore().addStickerPack(sticker);
 
         return new StickerPackUrl(packId, packKey);
     }
 
     @Override
-    public List<StickerPack> getStickerPacks() {
+    public List<org.asamk.signal.manager.api.StickerPack> getStickerPacks() {
         final var stickerPackStore = context.getStickerPackStore();
         return account.getStickerStore().getStickerPacks().stream().map(pack -> {
-            if (stickerPackStore.existsStickerPack(pack.getPackId())) {
+            if (stickerPackStore.existsStickerPack(pack.packId())) {
                 try {
-                    final var manifest = stickerPackStore.retrieveManifest(pack.getPackId());
-                    return new StickerPack(pack.getPackId(),
-                            new StickerPackUrl(pack.getPackId(), pack.getPackKey()),
+                    final var manifest = stickerPackStore.retrieveManifest(pack.packId());
+                    return new org.asamk.signal.manager.api.StickerPack(pack.packId(),
+                            new StickerPackUrl(pack.packId(), pack.packKey()),
                             pack.isInstalled(),
                             manifest.title(),
                             manifest.author(),
@@ -821,7 +820,7 @@ class ManagerImpl implements Manager {
                 }
             }
 
-            return new StickerPack(pack.getPackId(), pack.getPackKey(), pack.isInstalled());
+            return new org.asamk.signal.manager.api.StickerPack(pack.packId(), pack.packKey(), pack.isInstalled());
         }).toList();
     }
 

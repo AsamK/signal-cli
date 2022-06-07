@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
+import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 2;
+    private static final long DATABASE_VERSION = 3;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -28,6 +29,7 @@ public class AccountDatabase extends Database {
     protected void createDatabase(final Connection connection) throws SQLException {
         RecipientStore.createSql(connection);
         MessageSendLogStore.createSql(connection);
+        StickerStore.createSql(connection);
     }
 
     @Override
@@ -61,6 +63,19 @@ public class AccountDatabase extends Database {
                                           profile_mobile_coin_address BLOB,
                                           profile_unidentified_access_mode TEXT,
                                           profile_capabilities TEXT
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 3) {
+            logger.debug("Updating database: Creating sticker table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE sticker (
+                                          _id INTEGER PRIMARY KEY,
+                                          pack_id BLOB UNIQUE NOT NULL,
+                                          pack_key BLOB NOT NULL,
+                                          installed BOOLEAN NOT NULL DEFAULT FALSE
                                         );
                                         """);
             }

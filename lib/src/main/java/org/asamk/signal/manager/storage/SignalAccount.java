@@ -36,6 +36,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientTrustedResolver;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
+import org.asamk.signal.manager.storage.stickers.LegacyStickerStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.util.IOUtils;
@@ -146,7 +147,6 @@ public class SignalAccount implements Closeable {
     private GroupStore.Storage groupStoreStorage;
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
-    private StickerStore.Storage stickerStoreStorage;
     private ConfigurationStore configurationStore;
     private ConfigurationStore.Storage configurationStoreStorage;
 
@@ -216,7 +216,6 @@ public class SignalAccount implements Closeable {
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
                 signalAccount.getRecipientResolver(),
                 signalAccount::saveGroupStore);
-        signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.registered = false;
@@ -341,7 +340,6 @@ public class SignalAccount implements Closeable {
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
                 signalAccount.getRecipientResolver(),
                 signalAccount::saveGroupStore);
-        signalAccount.stickerStore = new StickerStore(signalAccount::saveStickerStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.getRecipientTrustedResolver()
@@ -659,10 +657,10 @@ public class SignalAccount implements Closeable {
         }
 
         if (rootNode.hasNonNull("stickerStore")) {
-            stickerStoreStorage = jsonProcessor.convertValue(rootNode.get("stickerStore"), StickerStore.Storage.class);
-            stickerStore = StickerStore.fromStorage(stickerStoreStorage, this::saveStickerStore);
-        } else {
-            stickerStore = new StickerStore(this::saveStickerStore);
+            final var storage = jsonProcessor.convertValue(rootNode.get("stickerStore"),
+                    LegacyStickerStore.Storage.class);
+            LegacyStickerStore.migrate(storage, getStickerStore());
+            migratedLegacyConfig = true;
         }
 
         if (rootNode.hasNonNull("configurationStore")) {
@@ -853,11 +851,6 @@ public class SignalAccount implements Closeable {
         return false;
     }
 
-    private void saveStickerStore(StickerStore.Storage storage) {
-        this.stickerStoreStorage = storage;
-        save();
-    }
-
     private void saveGroupStore(GroupStore.Storage storage) {
         this.groupStoreStorage = storage;
         save();
@@ -910,7 +903,6 @@ public class SignalAccount implements Closeable {
                             profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
                     .putPOJO("groupStore", groupStoreStorage)
-                    .putPOJO("stickerStore", stickerStoreStorage)
                     .putPOJO("configurationStore", configurationStoreStorage);
             try {
                 try (var output = new ByteArrayOutputStream()) {
@@ -1147,7 +1139,7 @@ public class SignalAccount implements Closeable {
     }
 
     public StickerStore getStickerStore() {
-        return stickerStore;
+        return getOrCreate(() -> stickerStore, () -> stickerStore = new StickerStore(getAccountDatabase()));
     }
 
     public SenderKeyStore getSenderKeyStore() {

@@ -1210,23 +1210,25 @@
   ]
 },
 {
+  "name":"org.asamk.signal.manager.storage.stickers.LegacyStickerStore$Storage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.stickers.LegacyStickerStore$Storage$Sticker",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] }]
+},
+{
   "name":"org.asamk.signal.manager.storage.stickers.StickerStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
   "fields":[{"name":"stickers", "allowWrite":true}]
-},
-{
-  "name":"org.asamk.signal.manager.storage.stickers.StickerStore$Storage",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.stickers.StickerStore$Storage$Sticker",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
 },
 {
   "name":"org.asamk.signal.util.SecurityProvider$DefaultRandom",
