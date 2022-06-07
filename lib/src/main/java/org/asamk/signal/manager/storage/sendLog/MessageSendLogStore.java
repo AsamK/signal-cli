@@ -93,13 +93,16 @@ public class MessageSendLogStore implements AutoCloseable {
     public List<MessageSendLogEntry> findMessages(
             final RecipientId recipientId, final int deviceId, final long timestamp, final boolean isSenderKey
     ) {
+        final var sql = """
+                        SELECT group_id, content, content_hint
+                        FROM %s l
+                             INNER JOIN %s lc ON l.content_id = lc._id
+                        WHERE l.recipient_id = ? AND l.device_id = ? AND lc.timestamp = ?
+                        """.formatted(TABLE_MESSAGE_SEND_LOG, TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
             deleteOutdatedEntries(connection);
 
-            try (final var statement = connection.prepareStatement(
-                    "SELECT group_id, content, content_hint FROM %s l INNER JOIN %s lc ON l.content_id = lc._id WHERE l.recipient_id = ? AND l.device_id = ? AND lc.timestamp = ?".formatted(
-                            TABLE_MESSAGE_SEND_LOG,
-                            TABLE_MESSAGE_SEND_LOG_CONTENT))) {
+            try (final var statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, recipientId.id());
                 statement.setInt(2, deviceId);
                 statement.setLong(3, timestamp);
@@ -185,10 +188,12 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public void deleteEntryForGroup(long sentTimestamp, GroupId groupId) {
+        final var sql = """
+                        DELETE FROM %s AS lc
+                        WHERE lc.timestamp = ? AND lc.group_id = ?
+                        """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(
-                    "DELETE FROM %s AS lc WHERE lc.timestamp = ? AND lc.group_id = ?".formatted(
-                            TABLE_MESSAGE_SEND_LOG_CONTENT))) {
+            try (final var statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, sentTimestamp);
                 statement.setBytes(2, groupId.serialize());
                 statement.executeUpdate();
@@ -199,12 +204,13 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public void deleteEntryForRecipientNonGroup(long sentTimestamp, RecipientId recipientId) {
+        final var sql = """
+                        DELETE FROM %s AS lc
+                        WHERE lc.timestamp = ? AND lc.group_id IS NULL AND lc._id IN (SELECT content_id FROM %s l WHERE l.recipient_id = ?)
+                        """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT, TABLE_MESSAGE_SEND_LOG);
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
-            try (final var statement = connection.prepareStatement(
-                    "DELETE FROM %s AS lc WHERE lc.timestamp = ? AND lc.group_id IS NULL AND lc._id IN (SELECT content_id FROM %s l WHERE l.recipient_id = ?)".formatted(
-                            TABLE_MESSAGE_SEND_LOG_CONTENT,
-                            TABLE_MESSAGE_SEND_LOG))) {
+            try (final var statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, sentTimestamp);
                 statement.setLong(2, recipientId.id());
                 statement.executeUpdate();
@@ -222,12 +228,13 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public void deleteEntriesForRecipient(List<Long> sentTimestamps, RecipientId recipientId, int deviceId) {
+        final var sql = """
+                        DELETE FROM %s AS l
+                        WHERE l.content_id IN (SELECT _id FROM %s lc WHERE lc.timestamp = ?) AND l.recipient_id = ? AND l.device_id = ?
+                        """.formatted(TABLE_MESSAGE_SEND_LOG, TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
-            try (final var statement = connection.prepareStatement(
-                    "DELETE FROM %s AS l WHERE l.content_id IN (SELECT _id FROM %s lc WHERE lc.timestamp = ?) AND l.recipient_id = ? AND l.device_id = ?".formatted(
-                            TABLE_MESSAGE_SEND_LOG,
-                            TABLE_MESSAGE_SEND_LOG_CONTENT))) {
+            try (final var statement = connection.prepareStatement(sql)) {
                 for (final var sentTimestamp : sentTimestamps) {
                     statement.setLong(1, sentTimestamp);
                     statement.setLong(2, recipientId.id());
@@ -269,12 +276,14 @@ public class MessageSendLogStore implements AutoCloseable {
     ) {
         byte[] groupId = getGroupId(content);
 
+        final var sql = """
+                        INSERT INTO %s (timestamp, group_id, content, content_hint)
+                        VALUES (?,?,?,?)
+                        """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
             final long contentId;
-            try (final var statement = connection.prepareStatement(
-                    "INSERT INTO %s (timestamp, group_id, content, content_hint) VALUES (?,?,?,?)".formatted(
-                            TABLE_MESSAGE_SEND_LOG_CONTENT))) {
+            try (final var statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, sentTimestamp);
                 statement.setBytes(2, groupId);
                 statement.setBytes(3, content.toByteArray());
@@ -334,8 +343,11 @@ public class MessageSendLogStore implements AutoCloseable {
     private void insertRecipientsForExistingContent(
             final long contentId, final List<RecipientDevices> recipientDevices, final Connection connection
     ) throws SQLException {
-        try (final var statement = connection.prepareStatement(
-                "INSERT INTO %s (recipient_id, device_id, content_id) VALUES (?,?,?)".formatted(TABLE_MESSAGE_SEND_LOG))) {
+        final var sql = """
+                        INSERT INTO %s (recipient_id, device_id, content_id)
+                        VALUES (?,?,?)
+                        """.formatted(TABLE_MESSAGE_SEND_LOG);
+        try (final var statement = connection.prepareStatement(sql)) {
             for (final var recipientDevice : recipientDevices) {
                 for (final var deviceId : recipientDevice.deviceIds()) {
                     statement.setLong(1, recipientDevice.recipientId().id());
@@ -348,8 +360,11 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     private void deleteOutdatedEntries(final Connection connection) throws SQLException {
-        try (final var statement = connection.prepareStatement("DELETE FROM %s WHERE timestamp < ?".formatted(
-                TABLE_MESSAGE_SEND_LOG_CONTENT))) {
+        final var sql = """
+                        DELETE FROM %s
+                        WHERE timestamp < ?
+                        """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT);
+        try (final var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, System.currentTimeMillis() - LOG_DURATION.toMillis());
             final var rowCount = statement.executeUpdate();
             if (rowCount > 0) {
@@ -361,9 +376,11 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     private void deleteOrphanedLogContents(final Connection connection) throws SQLException {
-        try (final var statement = connection.prepareStatement(
-                "DELETE FROM %s WHERE _id NOT IN (SELECT content_id FROM %s)".formatted(TABLE_MESSAGE_SEND_LOG_CONTENT,
-                        TABLE_MESSAGE_SEND_LOG))) {
+        final var sql = """
+                        DELETE FROM %s
+                        WHERE _id NOT IN (SELECT content_id FROM %s)
+                        """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT, TABLE_MESSAGE_SEND_LOG);
+        try (final var statement = connection.prepareStatement(sql)) {
             statement.executeUpdate();
         }
     }
