@@ -860,7 +860,8 @@ class ManagerImpl implements Manager {
             logger.debug("Starting receiving messages");
             context.getReceiveHelper().receiveMessagesContinuously((envelope, e) -> {
                 synchronized (messageHandlers) {
-                    Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
+                    final var handlers = Stream.concat(messageHandlers.stream(), weakHandlers.stream()).toList();
+                    handlers.forEach(h -> {
                         try {
                             h.handleMessage(envelope, e);
                         } catch (Throwable ex) {

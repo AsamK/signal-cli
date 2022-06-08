@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +102,14 @@ public class SignalJsonRpcDispatcherHandler {
             final var receiveMessageHandler = new JsonReceiveMessageHandler(m, s -> {
                 final ContainerNode<?> params = objectMapper.valueToTree(s);
                 ((ObjectNode) params).set("subscription", IntNode.valueOf(subscriptionId));
-                jsonRpcSender.sendRequest(JsonRpcRequest.forNotification("receive", params, null));
+                final var jsonRpcRequest = JsonRpcRequest.forNotification("receive", params, null);
+                try {
+                    jsonRpcSender.sendRequest(jsonRpcRequest);
+                } catch (AssertionError e) {
+                    if (e.getCause() instanceof ClosedChannelException) {
+                        unsubscribeReceive(subscriptionId);
+                    }
+                }
             });
             m.addReceiveHandler(receiveMessageHandler);
             return new Pair<>(m, (Manager.ReceiveMessageHandler) receiveMessageHandler);
