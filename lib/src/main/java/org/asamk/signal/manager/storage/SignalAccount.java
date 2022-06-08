@@ -313,6 +313,11 @@ public class SignalAccount implements Closeable {
         final var pair = openFileChannel(fileName, true);
         var signalAccount = new SignalAccount(pair.first(), pair.second());
 
+        signalAccount.dataPath = dataPath;
+        signalAccount.accountPath = accountPath;
+        signalAccount.serviceEnvironment = serviceEnvironment;
+        signalAccount.localRegistrationId = registrationId;
+        signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.setProvisioningData(number,
                 aci,
                 pni,
@@ -323,11 +328,6 @@ public class SignalAccount implements Closeable {
                 pniIdentityKey,
                 profileKey);
 
-        signalAccount.dataPath = dataPath;
-        signalAccount.accountPath = accountPath;
-        signalAccount.serviceEnvironment = serviceEnvironment;
-        signalAccount.localRegistrationId = registrationId;
-        signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
                 signalAccount.getRecipientResolver(),
                 signalAccount::saveGroupStore);
@@ -360,6 +360,7 @@ public class SignalAccount implements Closeable {
         this.pni = pni;
         this.password = password;
         this.profileKey = profileKey;
+        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
         this.encryptedDeviceName = encryptedDeviceName;
         this.deviceId = deviceId;
         this.aciIdentityKeyPair = aciIdentity;
