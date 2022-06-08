@@ -1,0 +1,108 @@
+name: Build Native Image
+
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - 'v*'
+
+jobs:
+  native-image:
+    env:
+      LIBSIGNAL_VERSION: 0.17.0
+    strategy:
+      fail-fast: false
+      matrix:
+        job_name:
+          - linux-amd64
+          - macos-amd64
+          #- windows-amd64
+
+        include:
+          - job_name: linux-amd64
+            os: ubuntu-latest
+
+          - job_name: macos-amd64
+            os: macOS-latest
+
+          #- job_name: windows-amd64
+          #  os: windows-latest
+      
+    name: ${{ matrix.job_name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # git checkout
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      # Add libs
+      - name: Add lib on *nix x86
+        run: |
+          curl -Lo /tmp/libsignal_jni.so.tar.gz "https://github.com/exquo/signal-libs-build/releases/download/libsignal-client_v${LIBSIGNAL_VERSION}/libsignal_jni.so-v${LIBSIGNAL_VERSION}-x86_64-unknown-linux-gnu.tar.gz" 
+          tar -C lib/src/main/resources/ -xzf "/tmp/libsignal_jni.so.tar.gz"
+        if: success() && matrix.os == 'ubuntu-latest'
+
+      - name: Add lib on Mac x86
+        run: | 
+          curl -Lo /tmp/libsignal_jni.dylib.tar.gz "https://github.com/exquo/signal-libs-build/releases/download/libsignal-client_v${LIBSIGNAL_VERSION}/libsignal_jni.dylib-v${LIBSIGNAL_VERSION}-x86_64-apple-darwin.tar.gz" 
+          tar -C lib/src/main/resources/ -xzf "/tmp/libsignal_jni.dylib.tar.gz"
+        if: success() && matrix.os == 'macOS-latest'
+
+      #- name: Add lib on Windows
+      #  run: Invoke-WebRequest -Uri https://github.com/signalapp/libsignal/releases/latest/download/signal_jni.dll -OutFile lib/src/main/resources/signal_jni.dll
+      #  if: success() && matrix.os == 'windows-latest'
+
+      # install build dependencies (windows only)
+      #- name: Configure Developer Command Prompt for Microsoft Visual C++ on Windows
+      #  uses: ilammy/msvc-dev-cmd@v1.10.0
+      #  if: matrix.os == 'windows-latest'
+
+      #- name: Configure MSBuild on Windows
+      #  uses: microsoft/setup-msbuild@v1
+      #  if: matrix.os == 'windows-latest'
+
+      # set up graalvm
+      - name: Set up GraalVM environment
+        uses: ayltai/setup-graalvm@v1
+        with:
+          java-version: 17
+          graalvm-version: 22.1.0
+          native-image: true
+
+      # build native image
+      - name: Build Native Image
+        run: ./gradlew nativeCompile
+
+      # package native image
+      - name: Build Package on *nix x86
+        run: |
+          VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')
+          mkdir -p signal-cli-${VERSION}-${{ matrix.job_name }}/
+          mv ./build/native/nativeCompile/signal-cli signal-cli-${VERSION}-${{ matrix.job_name }}
+          zip -r signal-cli-${VERSION}-${{ matrix.job_name }}.zip ./signal-cli-${VERSION}-${{ matrix.job_name }}
+        if: success() && matrix.os == 'ubuntu-latest'
+      
+      - name: Build Package on Mac x86
+        run: |
+          VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')
+          mkdir -p signal-cli-${VERSION}-${{ matrix.job_name }}/
+          mv ./build/native/nativeCompile/signal-cli signal-cli-${VERSION}-${{ matrix.job_name }}
+          zip -r signal-cli-${VERSION}-${{ matrix.job_name }}.zip ./signal-cli-${VERSION}-${{ matrix.job_name }}
+        if: success() && matrix.os == 'macOS-latest'
+      
+      #- name: Build Package on Windows
+      #  run: |
+      #    $VERSION = .\gradlew.bat properties -q | Select-String -Pattern 'version:' | Select-Object -First 1
+      #    New-Item "./signal-cli-${VERSION}-${{ matrix.job_name }}/" -ItemType Directory -ea 0
+      #    Move-Item -Path ./build/native/nativeCompile/signal-cli.exe -Destination "./signal-cli-${VERSION}-${{ matrix.job_name }}"
+      #    Compress-Archive -Path "./signal-cli-${VERSION}-${{ matrix.job_name }}" -Update -DestinationPath ./signal-cli-${VERSION}-${{ matrix.job_name }}.zip
+      #  if: success() && matrix.os == 'windows-latest'
+
+      # publish artifact
+      - name: Publish artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.job_name }}
+          path: signal-cli-*-${{ matrix.job_name }}.zip
