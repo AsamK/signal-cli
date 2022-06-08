@@ -43,7 +43,7 @@ public final class GroupInfoV1 extends GroupInfo {
         this.groupId = groupId;
         this.expectedV2Id = expectedV2Id;
         this.name = name;
-        this.members = members;
+        this.members = new HashSet<>(members);
         this.color = color;
         this.messageExpirationTime = messageExpirationTime;
         this.blocked = blocked;
@@ -78,7 +78,7 @@ public final class GroupInfoV1 extends GroupInfo {
     }
 
     public Set<RecipientId> getMembers() {
-        return members;
+        return new HashSet<>(members);
     }
 
     @Override

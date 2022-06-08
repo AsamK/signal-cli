@@ -1,24 +1,16 @@
 package org.asamk.signal.manager.storage.groups;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.groups.GroupIdV1;
 import org.asamk.signal.manager.groups.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupUtils;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.manager.storage.Database;
+import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
-import org.asamk.signal.manager.util.IOUtils;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
@@ -26,359 +18,421 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.signalservice.internal.util.Hex;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GroupStore {
 
     private final static Logger logger = LoggerFactory.getLogger(GroupStore.class);
+    private static final String TABLE_GROUP_V2 = "group_v2";
+    private static final String TABLE_GROUP_V1 = "group_v1";
+    private static final String TABLE_GROUP_V1_MEMBER = "group_v1_member";
 
-    private final File groupCachePath;
-    private final Map<GroupId, GroupInfo> groups;
+    private final Database database;
     private final RecipientResolver recipientResolver;
-    private final Saver saver;
+    private final RecipientIdCreator recipientIdCreator;
 
-    private GroupStore(
-            final File groupCachePath,
-            final Map<GroupId, GroupInfo> groups,
-            final RecipientResolver recipientResolver,
-            final Saver saver
-    ) {
-        this.groupCachePath = groupCachePath;
-        this.groups = groups;
-        this.recipientResolver = recipientResolver;
-        this.saver = saver;
+    public static void createSql(Connection connection) throws SQLException {
+        // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
+        try (final var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                                    CREATE TABLE group_v2 (
+                                      _id INTEGER PRIMARY KEY,
+                                      group_id BLOB UNIQUE NOT NULL,
+                                      master_key BLOB NOT NULL,
+                                      group_data BLOB,
+                                      distribution_id BLOB UNIQUE NOT NULL,
+                                      blocked BOOLEAN NOT NULL DEFAULT FALSE,
+                                      permission_denied BOOLEAN NOT NULL DEFAULT FALSE
+                                    );
+                                    CREATE TABLE group_v1 (
+                                      _id INTEGER PRIMARY KEY,
+                                      group_id BLOB UNIQUE NOT NULL,
+                                      group_id_v2 BLOB UNIQUE,
+                                      name TEXT,
+                                      color TEXT,
+                                      expiration_time INTEGER NOT NULL DEFAULT 0,
+                                      blocked BOOLEAN NOT NULL DEFAULT FALSE,
+                                      archived BOOLEAN NOT NULL DEFAULT FALSE
+                                    );
+                                    CREATE TABLE group_v1_member (
+                                      _id INTEGER PRIMARY KEY,
+                                      group_id INTEGER NOT NULL REFERENCES group_v1 (_id) ON DELETE CASCADE,
+                                      recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                      UNIQUE(group_id, recipient_id)
+                                    );
+                                    """);
+        }
     }
 
     public GroupStore(
-            final File groupCachePath, final RecipientResolver recipientResolver, final Saver saver
-    ) {
-        this.groups = new HashMap<>();
-        this.groupCachePath = groupCachePath;
-        this.recipientResolver = recipientResolver;
-        this.saver = saver;
-    }
-
-    public static GroupStore fromStorage(
-            final Storage storage,
-            final File groupCachePath,
+            final Database database,
             final RecipientResolver recipientResolver,
-            final Saver saver
+            final RecipientIdCreator recipientIdCreator
     ) {
-        final var groups = storage.groups.stream().map(g -> {
-            if (g instanceof Storage.GroupV1 g1) {
-                final var members = g1.members.stream().map(m -> {
-                    if (m.recipientId == null) {
-                        return recipientResolver.resolveRecipient(new RecipientAddress(UuidUtil.parseOrNull(m.uuid),
-                                m.number));
-                    }
-
-                    return recipientResolver.resolveRecipient(m.recipientId);
-                }).filter(Objects::nonNull).collect(Collectors.toSet());
-
-                return new GroupInfoV1(GroupIdV1.fromBase64(g1.groupId),
-                        g1.expectedV2Id == null ? null : GroupIdV2.fromBase64(g1.expectedV2Id),
-                        g1.name,
-                        members,
-                        g1.color,
-                        g1.messageExpirationTime,
-                        g1.blocked,
-                        g1.archived);
-            }
-
-            final var g2 = (Storage.GroupV2) g;
-            var groupId = GroupIdV2.fromBase64(g2.groupId);
-            GroupMasterKey masterKey;
-            try {
-                masterKey = new GroupMasterKey(Base64.getDecoder().decode(g2.masterKey));
-            } catch (InvalidInputException | IllegalArgumentException e) {
-                throw new AssertionError("Invalid master key for group " + groupId.toBase64());
-            }
-
-            return new GroupInfoV2(groupId,
-                    masterKey,
-                    g2.distributionId == null ? null : DistributionId.from(g2.distributionId),
-                    g2.blocked,
-                    g2.permissionDenied);
-        }).collect(Collectors.toMap(GroupInfo::getGroupId, g -> g));
-
-        return new GroupStore(groupCachePath, groups, recipientResolver, saver);
+        this.database = database;
+        this.recipientResolver = recipientResolver;
+        this.recipientIdCreator = recipientIdCreator;
     }
 
     public void updateGroup(GroupInfo group) {
-        final Storage storage;
-        synchronized (groups) {
-            groups.put(group.getGroupId(), group);
-            if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() != null) {
-                try {
-                    IOUtils.createPrivateDirectories(groupCachePath);
-                    try (var stream = new FileOutputStream(getGroupV2File(group.getGroupId()))) {
-                        ((GroupInfoV2) group).getGroup().writeTo(stream);
-                    }
-                    final var groupFileLegacy = getGroupV2FileLegacy(group.getGroupId());
-                    if (groupFileLegacy.exists()) {
-                        try {
-                            Files.delete(groupFileLegacy.toPath());
-                        } catch (IOException e) {
-                            logger.error("Failed to delete legacy group file {}: {}", groupFileLegacy, e.getMessage());
-                        }
-                    }
-                } catch (IOException e) {
-                    logger.warn("Failed to cache group, ignoring: {}", e.getMessage());
-                }
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            final Long internalId;
+            final var sql = (
+                    """
+                    SELECT g._id
+                    FROM %s g
+                    WHERE g.group_id = ?
+                    """
+            ).formatted(group instanceof GroupInfoV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2);
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBytes(1, group.getGroupId().serialize());
+                internalId = Utils.executeQueryForOptional(statement, res -> res.getLong("_id")).orElse(null);
             }
-            storage = toStorageLocked();
+            insertOrReplaceGroup(connection, internalId, group);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
         }
-        saver.save(storage);
-    }
-
-    public void deleteGroupV1(GroupIdV1 groupIdV1) {
-        deleteGroup(groupIdV1);
     }
 
     public void deleteGroup(GroupId groupId) {
-        final Storage storage;
-        synchronized (groups) {
-            groups.remove(groupId);
-            storage = toStorageLocked();
+        if (groupId instanceof GroupIdV1 groupIdV1) {
+            deleteGroup(groupIdV1);
+        } else if (groupId instanceof GroupIdV2 groupIdV2) {
+            deleteGroup(groupIdV2);
         }
-        saver.save(storage);
+    }
+
+    public void deleteGroup(GroupIdV1 groupIdV1) {
+        final var sql = (
+                """
+                DELETE FROM %s
+                WHERE group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V1);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBytes(1, groupIdV1.serialize());
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
+        }
+    }
+
+    public void deleteGroup(GroupIdV2 groupIdV2) {
+        final var sql = (
+                """
+                DELETE FROM %s
+                WHERE group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V2);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBytes(1, groupIdV2.serialize());
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
+        }
     }
 
     public GroupInfo getGroup(GroupId groupId) {
-        synchronized (groups) {
-            return getGroupLocked(groupId);
+        try (final var connection = database.getConnection()) {
+            if (groupId instanceof GroupIdV1 groupIdV1) {
+                final var group = getGroup(connection, groupIdV1);
+                if (group != null) {
+                    return group;
+                }
+                return getGroupV2ByV1Id(connection, groupIdV1);
+            } else if (groupId instanceof GroupIdV2 groupIdV2) {
+                final var group = getGroup(connection, groupIdV2);
+                if (group != null) {
+                    return group;
+                }
+                return getGroupV1ByV2Id(connection, groupIdV2);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
         }
+        throw new AssertionError("Invalid group id type");
     }
 
     public GroupInfoV1 getOrCreateGroupV1(GroupIdV1 groupId) {
-        synchronized (groups) {
-            var group = getGroupLocked(groupId);
-            if (group instanceof GroupInfoV1) {
-                return (GroupInfoV1) group;
+        try (final var connection = database.getConnection()) {
+            var group = getGroup(connection, groupId);
+
+            if (group != null) {
+                return group;
             }
 
-            if (group == null) {
+            if (getGroupV2ByV1Id(connection, groupId) == null) {
                 return new GroupInfoV1(groupId);
             }
 
             return null;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
         }
     }
 
     public List<GroupInfo> getGroups() {
-        synchronized (groups) {
-            final var groups = this.groups.values();
-            for (var group : groups) {
-                loadDecryptedGroupLocked(group);
-            }
-            return new ArrayList<>(groups);
-        }
+        return Stream.concat(getGroupsV2().stream(), getGroupsV1().stream()).toList();
     }
 
     public void mergeRecipients(final RecipientId recipientId, final RecipientId toBeMergedRecipientId) {
-        Storage storage = null;
-        synchronized (groups) {
-            var modified = false;
-            for (var group : this.groups.values()) {
-                if (group instanceof GroupInfoV1 groupV1) {
-                    if (groupV1.isMember(toBeMergedRecipientId)) {
-                        groupV1.removeMember(toBeMergedRecipientId);
-                        groupV1.addMembers(List.of(recipientId));
-                        modified = true;
-                    }
+        final var sql = (
+                """
+                UPDATE OR REPLACE %s
+                SET recipient_id = ?
+                WHERE recipient_id = ?
+                """
+        ).formatted(TABLE_GROUP_V1_MEMBER);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, recipientId.id());
+                statement.setLong(2, toBeMergedRecipientId.id());
+                final var updatedRows = statement.executeUpdate();
+                if (updatedRows > 0) {
+                    logger.info("Updated {} group members when merging recipients", updatedRows);
                 }
             }
-            if (modified) {
-                storage = toStorageLocked();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
+        }
+    }
+
+    void addLegacyGroups(final Collection<GroupInfo> groups) {
+        logger.debug("Migrating legacy groups to database");
+        long start = System.nanoTime();
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            for (final var group : groups) {
+                insertOrReplaceGroup(connection, null, group);
             }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
         }
-        if (storage != null) {
-            saver.save(storage);
-        }
+        logger.debug("Complete groups migration took {}ms", (System.nanoTime() - start) / 1000000);
     }
 
-    private GroupInfo getGroupLocked(final GroupId groupId) {
-        var group = groups.get(groupId);
-        if (group == null) {
-            if (groupId instanceof GroupIdV1) {
-                group = getGroupByV1IdLocked((GroupIdV1) groupId);
-            } else if (groupId instanceof GroupIdV2) {
-                group = getGroupV1ByV2IdLocked((GroupIdV2) groupId);
-            }
-        }
-        loadDecryptedGroupLocked(group);
-        return group;
-    }
-
-    private GroupInfo getGroupByV1IdLocked(final GroupIdV1 groupId) {
-        return groups.get(GroupUtils.getGroupIdV2(groupId));
-    }
-
-    private GroupInfoV1 getGroupV1ByV2IdLocked(GroupIdV2 groupIdV2) {
-        for (var g : groups.values()) {
-            if (g instanceof GroupInfoV1 gv1) {
-                if (groupIdV2.equals(gv1.getExpectedV2Id())) {
-                    return gv1;
+    private void insertOrReplaceGroup(
+            final Connection connection, Long internalId, final GroupInfo group
+    ) throws SQLException {
+        if (group instanceof GroupInfoV1 groupV1) {
+            if (internalId != null) {
+                final var sqlDeleteMembers = "DELETE FROM %s where group_id = ?".formatted(TABLE_GROUP_V1_MEMBER);
+                try (final var statement = connection.prepareStatement(sqlDeleteMembers)) {
+                    statement.setLong(1, internalId);
+                    statement.executeUpdate();
                 }
             }
-        }
-        return null;
-    }
-
-    private void loadDecryptedGroupLocked(final GroupInfo group) {
-        if (group instanceof GroupInfoV2 && ((GroupInfoV2) group).getGroup() == null) {
-            var groupFile = getGroupV2File(group.getGroupId());
-            if (!groupFile.exists()) {
-                groupFile = getGroupV2FileLegacy(group.getGroupId());
-            }
-            if (!groupFile.exists()) {
-                return;
-            }
-            try (var stream = new FileInputStream(groupFile)) {
-                ((GroupInfoV2) group).setGroup(DecryptedGroup.parseFrom(stream), recipientResolver);
-            } catch (IOException ignored) {
-            }
-        }
-    }
-
-    private File getGroupV2FileLegacy(final GroupId groupId) {
-        return new File(groupCachePath, Hex.toStringCondensed(groupId.serialize()));
-    }
-
-    private File getGroupV2File(final GroupId groupId) {
-        return new File(groupCachePath, groupId.toBase64().replace("/", "_"));
-    }
-
-    private Storage toStorageLocked() {
-        return new Storage(groups.values().stream().map(g -> {
-            if (g instanceof GroupInfoV1 g1) {
-                return new Storage.GroupV1(g1.getGroupId().toBase64(),
-                        g1.getExpectedV2Id().toBase64(),
-                        g1.name,
-                        g1.color,
-                        g1.messageExpirationTime,
-                        g1.blocked,
-                        g1.archived,
-                        g1.members.stream().map(m -> new Storage.GroupV1.Member(m.id(), null, null)).toList());
-            }
-
-            final var g2 = (GroupInfoV2) g;
-            return new Storage.GroupV2(g2.getGroupId().toBase64(),
-                    Base64.getEncoder().encodeToString(g2.getMasterKey().serialize()),
-                    g2.getDistributionId() == null ? null : g2.getDistributionId().toString(),
-                    g2.isBlocked(),
-                    g2.isPermissionDenied());
-        }).toList());
-    }
-
-    public record Storage(@JsonDeserialize(using = GroupsDeserializer.class) List<Record> groups) {
-
-        private record GroupV1(
-                String groupId,
-                String expectedV2Id,
-                String name,
-                String color,
-                int messageExpirationTime,
-                boolean blocked,
-                boolean archived,
-                @JsonDeserialize(using = MembersDeserializer.class) @JsonSerialize(using = MembersSerializer.class) List<Member> members
-        ) {
-
-            private record Member(Long recipientId, String uuid, String number) {}
-
-            private record JsonRecipientAddress(String uuid, String number) {}
-
-            private static class MembersSerializer extends JsonSerializer<List<Member>> {
-
-                @Override
-                public void serialize(
-                        final List<Member> value, final JsonGenerator jgen, final SerializerProvider provider
-                ) throws IOException {
-                    jgen.writeStartArray(null, value.size());
-                    for (var address : value) {
-                        if (address.recipientId != null) {
-                            jgen.writeNumber(address.recipientId);
-                        } else if (address.uuid != null) {
-                            jgen.writeObject(new JsonRecipientAddress(address.uuid, address.number));
-                        } else {
-                            jgen.writeString(address.number);
-                        }
-                    }
-                    jgen.writeEndArray();
-                }
-            }
-
-            private static class MembersDeserializer extends JsonDeserializer<List<Member>> {
-
-                @Override
-                public List<Member> deserialize(
-                        JsonParser jsonParser, DeserializationContext deserializationContext
-                ) throws IOException {
-                    var addresses = new ArrayList<Member>();
-                    JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-                    for (var n : node) {
-                        if (n.isTextual()) {
-                            addresses.add(new Member(null, null, n.textValue()));
-                        } else if (n.isNumber()) {
-                            addresses.add(new Member(n.numberValue().longValue(), null, null));
-                        } else {
-                            var address = jsonParser.getCodec().treeToValue(n, JsonRecipientAddress.class);
-                            addresses.add(new Member(null, address.uuid, address.number));
-                        }
-                    }
-
-                    return addresses;
-                }
-            }
-        }
-
-        private record GroupV2(
-                String groupId,
-                String masterKey,
-                String distributionId,
-                @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean blocked,
-                @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean permissionDenied
-        ) {}
-    }
-
-    private static class GroupsDeserializer extends JsonDeserializer<List<Object>> {
-
-        @Override
-        public List<Object> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
-        ) throws IOException {
-            var groups = new ArrayList<>();
-            JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-            for (var n : node) {
-                Object g;
-                if (n.hasNonNull("masterKey")) {
-                    // a v2 group
-                    g = jsonParser.getCodec().treeToValue(n, Storage.GroupV2.class);
+            final var sql = """
+                            INSERT OR REPLACE INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            """.formatted(TABLE_GROUP_V1);
+            try (final var statement = connection.prepareStatement(sql)) {
+                if (internalId == null) {
+                    statement.setNull(1, Types.NUMERIC);
                 } else {
-                    g = jsonParser.getCodec().treeToValue(n, Storage.GroupV1.class);
+                    statement.setLong(1, internalId);
                 }
-                groups.add(g);
-            }
+                statement.setBytes(2, groupV1.getGroupId().serialize());
+                statement.setBytes(3, groupV1.getExpectedV2Id().serialize());
+                statement.setString(4, groupV1.getTitle());
+                statement.setString(5, groupV1.color);
+                statement.setLong(6, groupV1.getMessageExpirationTimer());
+                statement.setBoolean(7, groupV1.isBlocked());
+                statement.setBoolean(8, groupV1.archived);
+                statement.executeUpdate();
 
-            return groups;
+                if (internalId == null) {
+                    final var generatedKeys = statement.getGeneratedKeys();
+                    if (generatedKeys.next()) {
+                        internalId = generatedKeys.getLong(1);
+                    } else {
+                        throw new RuntimeException("Failed to add new recipient to database");
+                    }
+                }
+            }
+            final var sqlInsertMember = """
+                                        INSERT OR REPLACE INTO %s (group_id, recipient_id)
+                                        VALUES (?, ?)
+                                        """.formatted(TABLE_GROUP_V1_MEMBER);
+            try (final var statement = connection.prepareStatement(sqlInsertMember)) {
+                for (final var recipient : groupV1.getMembers()) {
+                    statement.setLong(1, internalId);
+                    statement.setLong(2, recipient.id());
+                    statement.executeUpdate();
+                }
+            }
+        } else if (group instanceof GroupInfoV2 groupV2) {
+            final var sql = (
+                    """
+                    INSERT OR REPLACE INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, distribution_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """
+            ).formatted(TABLE_GROUP_V2);
+            try (final var statement = connection.prepareStatement(sql)) {
+                if (internalId == null) {
+                    statement.setNull(1, Types.NUMERIC);
+                } else {
+                    statement.setLong(1, internalId);
+                }
+                statement.setBytes(2, groupV2.getGroupId().serialize());
+                statement.setBytes(3, groupV2.getMasterKey().serialize());
+                if (groupV2.getGroup() == null) {
+                    statement.setNull(4, Types.NUMERIC);
+                } else {
+                    statement.setBytes(4, groupV2.getGroup().toByteArray());
+                }
+                statement.setBytes(5, UuidUtil.toByteArray(groupV2.getDistributionId().asUuid()));
+                statement.setBoolean(6, groupV2.isBlocked());
+                statement.setBoolean(7, groupV2.isPermissionDenied());
+                statement.executeUpdate();
+            }
+        } else {
+            throw new AssertionError("Invalid group id type");
         }
     }
 
-    public interface Saver {
+    private List<GroupInfoV2> getGroupsV2() {
+        final var sql = (
+                """
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.permission_denied
+                FROM %s g
+                """
+        ).formatted(TABLE_GROUP_V2);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                return Utils.executeQueryForStream(statement, this::getGroupInfoV2FromResultSet)
+                        .filter(Objects::nonNull)
+                        .toList();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
 
-        void save(Storage storage);
+    private GroupInfoV2 getGroup(Connection connection, GroupIdV2 groupIdV2) throws SQLException {
+        final var sql = (
+                """
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.permission_denied
+                FROM %s g
+                WHERE g.group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V2);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, groupIdV2.serialize());
+            return Utils.executeQueryForOptional(statement, this::getGroupInfoV2FromResultSet).orElse(null);
+        }
+    }
+
+    private GroupInfoV2 getGroupInfoV2FromResultSet(ResultSet resultSet) throws SQLException {
+        try {
+            final var groupId = resultSet.getBytes("group_id");
+            final var masterKey = resultSet.getBytes("master_key");
+            final var groupData = resultSet.getBytes("group_data");
+            final var distributionId = resultSet.getBytes("distribution_id");
+            final var blocked = resultSet.getBoolean("blocked");
+            final var permissionDenied = resultSet.getBoolean("permission_denied");
+            return new GroupInfoV2(GroupId.v2(groupId),
+                    new GroupMasterKey(masterKey),
+                    groupData == null ? null : DecryptedGroup.parseFrom(groupData),
+                    DistributionId.from(UuidUtil.parseOrThrow(distributionId)),
+                    blocked,
+                    permissionDenied,
+                    recipientResolver);
+        } catch (InvalidInputException | InvalidProtocolBufferException e) {
+            return null;
+        }
+    }
+
+    private List<GroupInfoV1> getGroupsV1() {
+        final var sql = (
+                """
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived
+                FROM %s g
+                """
+        ).formatted(TABLE_GROUP_V1_MEMBER, TABLE_GROUP_V1);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                return Utils.executeQueryForStream(statement, this::getGroupInfoV1FromResultSet)
+                        .filter(Objects::nonNull)
+                        .toList();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
+
+    private GroupInfoV1 getGroup(Connection connection, GroupIdV1 groupIdV1) throws SQLException {
+        final var sql = (
+                """
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived
+                FROM %s g
+                WHERE g.group_id = ?
+                """
+        ).formatted(TABLE_GROUP_V1_MEMBER, TABLE_GROUP_V1);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, groupIdV1.serialize());
+            return Utils.executeQueryForOptional(statement, this::getGroupInfoV1FromResultSet).orElse(null);
+        }
+    }
+
+    private GroupInfoV1 getGroupInfoV1FromResultSet(ResultSet resultSet) throws SQLException {
+        final var groupId = resultSet.getBytes("group_id");
+        final var groupIdV2 = resultSet.getBytes("group_id_v2");
+        final var name = resultSet.getString("name");
+        final var color = resultSet.getString("color");
+        final var membersString = resultSet.getString("members");
+        final var members = membersString == null
+                ? Set.<RecipientId>of()
+                : Arrays.stream(membersString.split(","))
+                        .map(Integer::valueOf)
+                        .map(recipientIdCreator::create)
+                        .collect(Collectors.toSet());
+        final var expirationTime = resultSet.getInt("expiration_time");
+        final var blocked = resultSet.getBoolean("blocked");
+        final var archived = resultSet.getBoolean("archived");
+        return new GroupInfoV1(GroupId.v1(groupId),
+                groupIdV2 == null ? null : GroupId.v2(groupIdV2),
+                name,
+                members,
+                color,
+                expirationTime,
+                blocked,
+                archived);
+    }
+
+    private GroupInfoV2 getGroupV2ByV1Id(final Connection connection, final GroupIdV1 groupId) throws SQLException {
+        return getGroup(connection, GroupUtils.getGroupIdV2(groupId));
+    }
+
+    private GroupInfoV1 getGroupV1ByV2Id(Connection connection, GroupIdV2 groupIdV2) throws SQLException {
+        final var sql = (
+                """
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived
+                FROM %s g
+                WHERE g.group_id_v2 = ?
+                """
+        ).formatted(TABLE_GROUP_V1_MEMBER, TABLE_GROUP_V1);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, groupIdV2.serialize());
+            return Utils.executeQueryForOptional(statement, this::getGroupInfoV1FromResultSet).orElse(null);
+        }
     }
 }

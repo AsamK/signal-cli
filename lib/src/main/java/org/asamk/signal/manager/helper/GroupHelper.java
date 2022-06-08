@@ -111,15 +111,17 @@ public class GroupHelper {
         final GroupInfoV2 groupInfoV2;
         if (groupInfo instanceof GroupInfoV1) {
             // Received a v2 group message for a v1 group, we need to locally migrate the group
-            account.getGroupStore().deleteGroupV1(((GroupInfoV1) groupInfo).getGroupId());
-            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
+            account.getGroupStore().deleteGroup(((GroupInfoV1) groupInfo).getGroupId());
+            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, account.getRecipientResolver());
+            groupInfoV2.setBlocked(groupInfo.isBlocked());
+            account.getGroupStore().updateGroup(groupInfoV2);
             logger.info("Locally migrated group {} to group v2, id: {}",
                     groupInfo.getGroupId().toBase64(),
                     groupInfoV2.getGroupId().toBase64());
         } else if (groupInfo instanceof GroupInfoV2) {
             groupInfoV2 = (GroupInfoV2) groupInfo;
         } else {
-            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey);
+            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, account.getRecipientResolver());
         }
 
         if (groupInfoV2.getGroup() == null || groupInfoV2.getGroup().getRevision() < revision) {
@@ -153,7 +155,7 @@ public class GroupHelper {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
-            groupInfoV2.setGroup(group, account.getRecipientResolver());
+            groupInfoV2.setGroup(group);
             account.getGroupStore().updateGroup(groupInfoV2);
         }
 
@@ -183,7 +185,7 @@ public class GroupHelper {
         final var gv2 = gv2Pair.first();
         final var decryptedGroup = gv2Pair.second();
 
-        gv2.setGroup(decryptedGroup, account.getRecipientResolver());
+        gv2.setGroup(decryptedGroup);
         if (avatarFile != null) {
             context.getAvatarStore()
                     .storeGroupAvatar(gv2.getGroupId(),
@@ -398,7 +400,7 @@ public class GroupHelper {
                         downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
                     }
                 }
-                groupInfoV2.setGroup(decryptedGroup, account.getRecipientResolver());
+                groupInfoV2.setGroup(decryptedGroup);
                 account.getGroupStore().updateGroup(group);
             }
         }
@@ -729,7 +731,7 @@ public class GroupHelper {
             throw new LastGroupAdminException(groupInfoV2.getGroupId(), groupInfoV2.getTitle());
         }
         final var groupGroupChangePair = context.getGroupV2Helper().leaveGroup(groupInfoV2, newAdmins);
-        groupInfoV2.setGroup(groupGroupChangePair.first(), account.getRecipientResolver());
+        groupInfoV2.setGroup(groupGroupChangePair.first());
         account.getGroupStore().updateGroup(groupInfoV2);
 
         var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
@@ -773,7 +775,7 @@ public class GroupHelper {
     ) throws IOException {
         final var selfRecipientId = account.getSelfRecipientId();
         final var members = group.getMembersIncludingPendingWithout(selfRecipientId);
-        group.setGroup(newDecryptedGroup, account.getRecipientResolver());
+        group.setGroup(newDecryptedGroup);
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
         account.getGroupStore().updateGroup(group);
 

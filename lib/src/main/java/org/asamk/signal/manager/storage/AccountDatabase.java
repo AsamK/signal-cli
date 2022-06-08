@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
@@ -17,7 +18,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 4;
+    private static final long DATABASE_VERSION = 5;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -34,6 +35,7 @@ public class AccountDatabase extends Database {
         StickerStore.createSql(connection);
         PreKeyStore.createSql(connection);
         SignedPreKeyStore.createSql(connection);
+        GroupStore.createSql(connection);
     }
 
     @Override
@@ -105,6 +107,38 @@ public class AccountDatabase extends Database {
                                           public_key BLOB NOT NULL,
                                           private_key BLOB NOT NULL,
                                           UNIQUE(account_id_type, key_id)
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 5) {
+            logger.debug("Updating database: Creating group tables");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE group_v2 (
+                                          _id INTEGER PRIMARY KEY,
+                                          group_id BLOB UNIQUE NOT NULL,
+                                          master_key BLOB NOT NULL,
+                                          group_data BLOB,
+                                          distribution_id BLOB UNIQUE NOT NULL,
+                                          blocked BOOLEAN NOT NULL DEFAULT FALSE,
+                                          permission_denied BOOLEAN NOT NULL DEFAULT FALSE
+                                        );
+                                        CREATE TABLE group_v1 (
+                                          _id INTEGER PRIMARY KEY,
+                                          group_id BLOB UNIQUE NOT NULL,
+                                          group_id_v2 BLOB UNIQUE,
+                                          name TEXT,
+                                          color TEXT,
+                                          expiration_time INTEGER NOT NULL DEFAULT 0,
+                                          blocked BOOLEAN NOT NULL DEFAULT FALSE,
+                                          archived BOOLEAN NOT NULL DEFAULT FALSE
+                                        );
+                                        CREATE TABLE group_v1_member (
+                                          _id INTEGER PRIMARY KEY,
+                                          group_id INTEGER NOT NULL REFERENCES group_v1 (_id) ON DELETE CASCADE,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          UNIQUE(group_id, recipient_id)
                                         );
                                         """);
             }

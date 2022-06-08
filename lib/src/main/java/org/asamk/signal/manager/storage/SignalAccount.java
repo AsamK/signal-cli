@@ -12,8 +12,8 @@ import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
-import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.groups.GroupStore;
+import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
@@ -61,7 +61,6 @@ import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
-import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
@@ -147,7 +146,6 @@ public class SignalAccount implements Closeable {
     private SignalIdentityKeyStore aciIdentityKeyStore;
     private SenderKeyStore senderKeyStore;
     private GroupStore groupStore;
-    private GroupStore.Storage groupStoreStorage;
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
     private ConfigurationStore configurationStore;
@@ -216,9 +214,6 @@ public class SignalAccount implements Closeable {
         signalAccount.localRegistrationId = registrationId;
         signalAccount.localPniRegistrationId = pniRegistrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
-        signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                signalAccount.getRecipientResolver(),
-                signalAccount::saveGroupStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.registered = false;
@@ -340,9 +335,6 @@ public class SignalAccount implements Closeable {
                 pniIdentityKey,
                 profileKey);
 
-        signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                signalAccount.getRecipientResolver(),
-                signalAccount::saveGroupStore);
         signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.getRecipientTrustedResolver()
@@ -393,15 +385,6 @@ public class SignalAccount implements Closeable {
         if (getProfileKey() == null) {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
-        }
-        if (previousStorageVersion < 3) {
-            for (final var group : groupStore.getGroups()) {
-                if (group instanceof GroupInfoV2 && group.getDistributionId() == null) {
-                    ((GroupInfoV2) group).setDistributionId(DistributionId.create());
-                    groupStore.updateGroup(group);
-                }
-            }
-            save();
         }
         if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
@@ -668,15 +651,13 @@ public class SignalAccount implements Closeable {
         migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 
         if (rootNode.hasNonNull("groupStore")) {
-            groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"), GroupStore.Storage.class);
-            groupStore = GroupStore.fromStorage(groupStoreStorage,
+            final var groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"),
+                    LegacyGroupStore.Storage.class);
+            LegacyGroupStore.migrate(groupStoreStorage,
                     getGroupCachePath(dataPath, accountPath),
                     getRecipientResolver(),
-                    this::saveGroupStore);
-        } else {
-            groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
-                    getRecipientResolver(),
-                    this::saveGroupStore);
+                    getGroupStore());
+            migratedLegacyConfig = true;
         }
 
         if (rootNode.hasNonNull("stickerStore")) {
@@ -858,10 +839,10 @@ public class SignalAccount implements Closeable {
                                             .build());
                         }
                     } else {
-                        var groupInfo = groupStore.getGroup(GroupId.fromBase64(thread.id));
+                        var groupInfo = getGroupStore().getGroup(GroupId.fromBase64(thread.id));
                         if (groupInfo instanceof GroupInfoV1) {
                             ((GroupInfoV1) groupInfo).messageExpirationTime = thread.messageExpirationTime;
-                            groupStore.updateGroup(groupInfo);
+                            getGroupStore().updateGroup(groupInfo);
                         }
                     }
                 } catch (Exception e) {
@@ -872,11 +853,6 @@ public class SignalAccount implements Closeable {
         }
 
         return false;
-    }
-
-    private void saveGroupStore(GroupStore.Storage storage) {
-        this.groupStoreStorage = storage;
-        save();
     }
 
     private void saveConfigurationStore(ConfigurationStore.Storage storage) {
@@ -925,7 +901,6 @@ public class SignalAccount implements Closeable {
                     .put("profileKey",
                             profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
-                    .putPOJO("groupStore", groupStoreStorage)
                     .putPOJO("configurationStore", configurationStoreStorage);
             try {
                 try (var output = new ByteArrayOutputStream()) {
@@ -1111,7 +1086,10 @@ public class SignalAccount implements Closeable {
     }
 
     public GroupStore getGroupStore() {
-        return groupStore;
+        return getOrCreate(() -> groupStore,
+                () -> groupStore = new GroupStore(getAccountDatabase(),
+                        getRecipientResolver(),
+                        getRecipientIdCreator()));
     }
 
     public ContactsStore getContactStore() {

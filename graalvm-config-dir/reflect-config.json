@@ -1031,45 +1031,40 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$GroupsDeserializer",
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$GroupsDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1$JsonRecipientAddress",
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
-    {"name":"number","parameterTypes":[] }, 
-    {"name":"uuid","parameterTypes":[] }
-  ]
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
 },
 {
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1$MembersDeserializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV1$MembersSerializer",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.groups.GroupStore$Storage$GroupV2",
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1",
   "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","int","boolean","boolean","java.util.List"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1$JsonRecipientAddress",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1$MembersDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV2",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.identities.IdentityKeyStore$IdentityStorage",
@@ -1222,13 +1217,6 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] }]
-},
-{
-  "name":"org.asamk.signal.manager.storage.stickers.StickerStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true,
-  "fields":[{"name":"stickers", "allowWrite":true}]
 },
 {
   "name":"org.asamk.signal.util.SecurityProvider$DefaultRandom",

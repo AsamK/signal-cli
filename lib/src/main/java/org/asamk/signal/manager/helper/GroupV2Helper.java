@@ -161,7 +161,7 @@ class GroupV2Helper {
 
         final var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
         final var masterKey = groupSecretParams.getMasterKey();
-        var g = new GroupInfoV2(groupId, masterKey);
+        var g = new GroupInfoV2(groupId, masterKey, context.getAccount().getRecipientResolver());
 
         return new Pair<>(g, decryptedGroup);
     }

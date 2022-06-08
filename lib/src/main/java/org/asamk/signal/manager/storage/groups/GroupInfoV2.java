@@ -22,29 +22,36 @@ public final class GroupInfoV2 extends GroupInfo {
     private final GroupMasterKey masterKey;
     private DistributionId distributionId;
     private boolean blocked;
-    private DecryptedGroup group; // stored as a file with base64 groupId as name
+    private DecryptedGroup group;
     private boolean permissionDenied;
 
-    private RecipientResolver recipientResolver;
+    private final RecipientResolver recipientResolver;
 
-    public GroupInfoV2(final GroupIdV2 groupId, final GroupMasterKey masterKey) {
+    public GroupInfoV2(
+            final GroupIdV2 groupId, final GroupMasterKey masterKey, final RecipientResolver recipientResolver
+    ) {
         this.groupId = groupId;
         this.masterKey = masterKey;
         this.distributionId = DistributionId.create();
+        this.recipientResolver = recipientResolver;
     }
 
     public GroupInfoV2(
             final GroupIdV2 groupId,
             final GroupMasterKey masterKey,
+            final DecryptedGroup group,
             final DistributionId distributionId,
             final boolean blocked,
-            final boolean permissionDenied
+            final boolean permissionDenied,
+            final RecipientResolver recipientResolver
     ) {
         this.groupId = groupId;
         this.masterKey = masterKey;
+        this.group = group;
         this.distributionId = distributionId;
         this.blocked = blocked;
         this.permissionDenied = permissionDenied;
+        this.recipientResolver = recipientResolver;
     }
 
     @Override
@@ -60,16 +67,11 @@ public final class GroupInfoV2 extends GroupInfo {
         return distributionId;
     }
 
-    public void setDistributionId(final DistributionId distributionId) {
-        this.distributionId = distributionId;
-    }
-
-    public void setGroup(final DecryptedGroup group, final RecipientResolver recipientResolver) {
+    public void setGroup(final DecryptedGroup group) {
         if (group != null) {
             this.permissionDenied = false;
         }
         this.group = group;
-        this.recipientResolver = recipientResolver;
     }
 
     public DecryptedGroup getGroup() {
