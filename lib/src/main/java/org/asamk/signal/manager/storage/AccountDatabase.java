@@ -2,6 +2,8 @@ package org.asamk.signal.manager.storage;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
+import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
@@ -15,7 +17,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 3;
+    private static final long DATABASE_VERSION = 4;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -30,6 +32,8 @@ public class AccountDatabase extends Database {
         RecipientStore.createSql(connection);
         MessageSendLogStore.createSql(connection);
         StickerStore.createSql(connection);
+        PreKeyStore.createSql(connection);
+        SignedPreKeyStore.createSql(connection);
     }
 
     @Override
@@ -76,6 +80,31 @@ public class AccountDatabase extends Database {
                                           pack_id BLOB UNIQUE NOT NULL,
                                           pack_key BLOB NOT NULL,
                                           installed BOOLEAN NOT NULL DEFAULT FALSE
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 4) {
+            logger.debug("Updating database: Creating pre key tables");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE signed_pre_key (
+                                          _id INTEGER PRIMARY KEY,
+                                          account_id_type INTEGER NOT NULL,
+                                          key_id INTEGER NOT NULL,
+                                          public_key BLOB NOT NULL,
+                                          private_key BLOB NOT NULL,
+                                          signature BLOB NOT NULL,
+                                          timestamp INTEGER DEFAULT 0,
+                                          UNIQUE(account_id_type, key_id)
+                                        );
+                                        CREATE TABLE pre_key (
+                                          _id INTEGER PRIMARY KEY,
+                                          account_id_type INTEGER NOT NULL,
+                                          key_id INTEGER NOT NULL,
+                                          public_key BLOB NOT NULL,
+                                          private_key BLOB NOT NULL,
+                                          UNIQUE(account_id_type, key_id)
                                         );
                                         """);
             }

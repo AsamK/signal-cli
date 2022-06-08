@@ -18,6 +18,8 @@ import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
+import org.asamk.signal.manager.storage.prekeys.LegacyPreKeyStore;
+import org.asamk.signal.manager.storage.prekeys.LegacySignedPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.profiles.LegacyProfileStore;
@@ -628,6 +630,26 @@ public class SignalAccount implements Closeable {
                 migratedLegacyConfig = true;
             }
         }
+        final var legacyAciPreKeysPath = getAciPreKeysPath(dataPath, accountPath);
+        if (legacyAciPreKeysPath.exists()) {
+            LegacyPreKeyStore.migrate(legacyAciPreKeysPath, getAciPreKeyStore());
+            migratedLegacyConfig = true;
+        }
+        final var legacyPniPreKeysPath = getPniPreKeysPath(dataPath, accountPath);
+        if (legacyPniPreKeysPath.exists()) {
+            LegacyPreKeyStore.migrate(legacyPniPreKeysPath, getPniPreKeyStore());
+            migratedLegacyConfig = true;
+        }
+        final var legacyAciSignedPreKeysPath = getAciSignedPreKeysPath(dataPath, accountPath);
+        if (legacyAciSignedPreKeysPath.exists()) {
+            LegacySignedPreKeyStore.migrate(legacyAciSignedPreKeysPath, getAciSignedPreKeyStore());
+            migratedLegacyConfig = true;
+        }
+        final var legacyPniSignedPreKeysPath = getPniSignedPreKeysPath(dataPath, accountPath);
+        if (legacyPniSignedPreKeysPath.exists()) {
+            LegacySignedPreKeyStore.migrate(legacyPniSignedPreKeysPath, getPniSignedPreKeyStore());
+            migratedLegacyConfig = true;
+        }
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
@@ -1012,7 +1034,7 @@ public class SignalAccount implements Closeable {
             @Override
             public SignalServiceAccountDataStore get(final ServiceId accountIdentifier) {
                 if (accountIdentifier.equals(aci)) {
-                    return getSignalServiceAccountDataStore();
+                    return getAciSignalServiceAccountDataStore();
                 } else if (accountIdentifier.equals(pni)) {
                     throw new AssertionError("PNI not to be used yet!");
                 } else {
@@ -1022,7 +1044,7 @@ public class SignalAccount implements Closeable {
 
             @Override
             public SignalServiceAccountDataStore aci() {
-                return getSignalServiceAccountDataStore();
+                return getAciSignalServiceAccountDataStore();
             }
 
             @Override
@@ -1037,7 +1059,7 @@ public class SignalAccount implements Closeable {
         };
     }
 
-    public SignalServiceAccountDataStore getSignalServiceAccountDataStore() {
+    private SignalServiceAccountDataStore getAciSignalServiceAccountDataStore() {
         return getOrCreate(() -> signalProtocolStore,
                 () -> signalProtocolStore = new SignalProtocolStore(getAciPreKeyStore(),
                         getAciSignedPreKeyStore(),
@@ -1049,22 +1071,22 @@ public class SignalAccount implements Closeable {
 
     private PreKeyStore getAciPreKeyStore() {
         return getOrCreate(() -> aciPreKeyStore,
-                () -> aciPreKeyStore = new PreKeyStore(getAciPreKeysPath(dataPath, accountPath)));
+                () -> aciPreKeyStore = new PreKeyStore(getAccountDatabase(), ServiceIdType.ACI));
     }
 
     private SignedPreKeyStore getAciSignedPreKeyStore() {
         return getOrCreate(() -> aciSignedPreKeyStore,
-                () -> aciSignedPreKeyStore = new SignedPreKeyStore(getAciSignedPreKeysPath(dataPath, accountPath)));
+                () -> aciSignedPreKeyStore = new SignedPreKeyStore(getAccountDatabase(), ServiceIdType.ACI));
     }
 
     private PreKeyStore getPniPreKeyStore() {
         return getOrCreate(() -> pniPreKeyStore,
-                () -> pniPreKeyStore = new PreKeyStore(getPniPreKeysPath(dataPath, accountPath)));
+                () -> pniPreKeyStore = new PreKeyStore(getAccountDatabase(), ServiceIdType.PNI));
     }
 
     private SignedPreKeyStore getPniSignedPreKeyStore() {
         return getOrCreate(() -> pniSignedPreKeyStore,
-                () -> pniSignedPreKeyStore = new SignedPreKeyStore(getPniSignedPreKeysPath(dataPath, accountPath)));
+                () -> pniSignedPreKeyStore = new SignedPreKeyStore(getAccountDatabase(), ServiceIdType.PNI));
     }
 
     public SessionStore getSessionStore() {
@@ -1219,6 +1241,10 @@ public class SignalAccount implements Closeable {
     public void setServiceEnvironment(final ServiceEnvironment serviceEnvironment) {
         this.serviceEnvironment = serviceEnvironment;
         save();
+    }
+
+    public ServiceId getAccountId(ServiceIdType serviceIdType) {
+        return serviceIdType.equals(ServiceIdType.ACI) ? aci : pni;
     }
 
     public ACI getAci() {

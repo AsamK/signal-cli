@@ -49,6 +49,10 @@ public class PreKeyHelper {
         if (identityKeyPair == null) {
             return;
         }
+        final var accountId = account.getAccountId(serviceIdType);
+        if (accountId == null) {
+            return;
+        }
         final var oneTimePreKeys = generatePreKeys(serviceIdType);
         final var signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
 

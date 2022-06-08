@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.InvalidObjectException;
@@ -60,6 +61,13 @@ public class Utils {
         } else {
             return new RecipientAddress(Optional.empty(), Optional.of(identifier));
         }
+    }
+
+    public static int getAccountIdType(ServiceIdType serviceIdType) {
+        return switch (serviceIdType) {
+            case ACI -> 0;
+            case PNI -> 1;
+        };
     }
 
     public static <T> T executeQuerySingleRow(
