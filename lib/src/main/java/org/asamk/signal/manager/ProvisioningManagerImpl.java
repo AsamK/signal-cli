@@ -161,7 +161,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                 try {
                     m.refreshPreKeys();
                 } catch (Exception e) {
-                    logger.error("Failed to refresh pre keys.");
+                    logger.error("Failed to refresh pre keys.", e);
                 }
 
                 logger.debug("Requesting sync data");
@@ -169,7 +169,8 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                     m.requestAllSyncData();
                 } catch (Exception e) {
                     logger.error(
-                            "Failed to request sync messages from linked device, data can be requested again with `sendSyncRequest`.");
+                            "Failed to request sync messages from linked device, data can be requested again with `sendSyncRequest`.",
+                            e);
                 }
 
                 if (newManagerListener != null) {
