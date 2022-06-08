@@ -30,7 +30,8 @@ public class ProfileUtils {
         IdentityKey identityKey = null;
         try {
             identityKey = new IdentityKey(Base64.getDecoder().decode(encryptedProfile.getIdentityKey()), 0);
-        } catch (InvalidKeyException ignored) {
+        } catch (InvalidKeyException e) {
+            logger.debug("Failed to decode identity key in profile, can't verify payment address", e);
         }
 
         try {
@@ -112,6 +113,7 @@ public class ProfileUtils {
         try {
             decrypted = profileCipher.decryptWithLength(encryptedPaymentAddress);
         } catch (IOException e) {
+            logger.debug("Failed to decrypt payment address", e);
             return null;
         }
 
@@ -119,6 +121,7 @@ public class ProfileUtils {
         try {
             paymentAddress = SignalServiceProtos.PaymentAddress.parseFrom(decrypted);
         } catch (InvalidProtocolBufferException e) {
+            logger.debug("Failed to parse payment address", e);
             return null;
         }
 

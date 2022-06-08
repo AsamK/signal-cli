@@ -6,9 +6,13 @@ import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.ecc.ECPrivateKey;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 public class PaymentUtils {
+
+    private final static Logger logger = LoggerFactory.getLogger(PaymentUtils.class);
 
     private PaymentUtils() {
     }
@@ -37,6 +41,7 @@ public class PaymentUtils {
             SignalServiceProtos.PaymentAddress paymentAddress, ECPublicKey publicKey
     ) {
         if (!paymentAddress.hasMobileCoinAddress()) {
+            logger.debug("Got payment address without mobile coin address, ignoring.");
             return null;
         }
 
@@ -44,6 +49,7 @@ public class PaymentUtils {
         byte[] signature = paymentAddress.getMobileCoinAddress().getSignature().toByteArray();
 
         if (signature.length != 64 || !publicKey.verifySignature(bytes, signature)) {
+            logger.debug("Got mobile coin address with invalid signature, ignoring.");
             return null;
         }
 
