@@ -32,6 +32,7 @@ import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2;
 import org.asamk.signal.manager.storage.recipients.Profile;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.recipients.RecipientTrustedResolver;
@@ -1115,6 +1116,10 @@ public class SignalAccount implements Closeable {
 
     public ContactsStore getContactStore() {
         return getRecipientStore();
+    }
+
+    private RecipientIdCreator getRecipientIdCreator() {
+        return recipientId -> getRecipientStore().create(recipientId);
     }
 
     public RecipientResolver getRecipientResolver() {

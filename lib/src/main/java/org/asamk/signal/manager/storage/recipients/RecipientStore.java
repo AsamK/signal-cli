@@ -31,7 +31,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class RecipientStore implements RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
+public class RecipientStore implements RecipientIdCreator, RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
     private final static Logger logger = LoggerFactory.getLogger(RecipientStore.class);
     private static final String TABLE_RECIPIENT = "recipient";
@@ -142,6 +142,15 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from recipient store", e);
         }
+    }
+
+    /**
+     * Should only be used for recipientIds from the database.
+     * Where the foreign key relations ensure a valid recipientId.
+     */
+    @Override
+    public RecipientId create(final long recipientId) {
+        return new RecipientId(recipientId, this);
     }
 
     public RecipientId resolveRecipient(
