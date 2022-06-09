@@ -1049,7 +1049,7 @@ class ManagerImpl implements Manager {
         IdentityInfo identity;
         try {
             identity = account.getIdentityKeyStore()
-                    .getIdentity(context.getRecipientHelper().resolveRecipient(recipient));
+                    .getIdentityInfo(context.getRecipientHelper().resolveRecipient(recipient));
         } catch (UnregisteredRecipientException e) {
             identity = null;
         }

@@ -7,9 +7,8 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
 import org.signal.libsignal.protocol.IdentityKey;
-import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.signal.libsignal.protocol.state.IdentityKeyStore.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ import java.util.regex.Pattern;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 import io.reactivex.rxjava3.subjects.Subject;
 
-public class IdentityKeyStore implements org.signal.libsignal.protocol.state.IdentityKeyStore {
+public class IdentityKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(IdentityKeyStore.class);
     private final ObjectMapper objectMapper = org.asamk.signal.manager.storage.Utils.createStorageObjectMapper();
@@ -42,24 +41,16 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
     private final File identitiesPath;
 
     private final RecipientResolver resolver;
-    private final IdentityKeyPair identityKeyPair;
-    private final int localRegistrationId;
     private final TrustNewIdentity trustNewIdentity;
     private final PublishSubject<RecipientId> identityChanges = PublishSubject.create();
 
     private boolean isRetryingDecryption = false;
 
     public IdentityKeyStore(
-            final File identitiesPath,
-            final RecipientResolver resolver,
-            final IdentityKeyPair identityKeyPair,
-            final int localRegistrationId,
-            final TrustNewIdentity trustNewIdentity
+            final File identitiesPath, final RecipientResolver resolver, final TrustNewIdentity trustNewIdentity
     ) {
         this.identitiesPath = identitiesPath;
         this.resolver = resolver;
-        this.identityKeyPair = identityKeyPair;
-        this.localRegistrationId = localRegistrationId;
         this.trustNewIdentity = trustNewIdentity;
     }
 
@@ -67,21 +58,8 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
         return identityChanges;
     }
 
-    @Override
-    public IdentityKeyPair getIdentityKeyPair() {
-        return identityKeyPair;
-    }
-
-    @Override
-    public int getLocalRegistrationId() {
-        return localRegistrationId;
-    }
-
-    @Override
-    public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        final var recipientId = resolveRecipient(address.getName());
-
-        return saveIdentity(recipientId, identityKey, new Date());
+    public boolean saveIdentity(final RecipientId recipientId, final IdentityKey identityKey) {
+        return saveIdentity(recipientId, identityKey, null);
     }
 
     public boolean saveIdentity(final RecipientId recipientId, final IdentityKey identityKey, Date added) {
@@ -100,7 +78,10 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
                     trustNewIdentity == TrustNewIdentity.ON_FIRST_USE && identityInfo == null
             ) ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
             logger.debug("Storing new identity for recipient {} with trust {}", recipientId, trustLevel);
-            final var newIdentityInfo = new IdentityInfo(recipientId, identityKey, trustLevel, added);
+            final var newIdentityInfo = new IdentityInfo(recipientId,
+                    identityKey,
+                    trustLevel,
+                    added == null ? new Date() : added);
             storeIdentityLocked(recipientId, newIdentityInfo);
             identityChanges.onNext(recipientId);
             return true;
@@ -137,26 +118,23 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
         }
     }
 
-    @Override
-    public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
+    public boolean isTrustedIdentity(RecipientId recipientId, IdentityKey identityKey, Direction direction) {
         if (trustNewIdentity == TrustNewIdentity.ALWAYS) {
             return true;
         }
-
-        var recipientId = resolveRecipient(address.getName());
 
         synchronized (cachedIdentities) {
             // TODO implement possibility for different handling of incoming/outgoing trust decisions
             var identityInfo = loadIdentityLocked(recipientId);
             if (identityInfo == null) {
                 logger.debug("Initial identity found for {}, saving.", recipientId);
-                saveIdentity(address, identityKey);
+                saveIdentity(recipientId, identityKey);
                 identityInfo = loadIdentityLocked(recipientId);
             } else if (!identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity found, but different
                 if (direction == Direction.SENDING) {
                     logger.debug("Changed identity found for {}, saving.", recipientId);
-                    saveIdentity(address, identityKey);
+                    saveIdentity(recipientId, identityKey);
                     identityInfo = loadIdentityLocked(recipientId);
                 } else {
                     logger.trace("Trusting identity for {} for {}: {}", recipientId, direction, false);
@@ -170,17 +148,14 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
         }
     }
 
-    @Override
-    public IdentityKey getIdentity(SignalProtocolAddress address) {
-        var recipientId = resolveRecipient(address.getName());
-
+    public IdentityKey getIdentity(RecipientId recipientId) {
         synchronized (cachedIdentities) {
             var identity = loadIdentityLocked(recipientId);
             return identity == null ? null : identity.getIdentityKey();
         }
     }
 
-    public IdentityInfo getIdentity(RecipientId recipientId) {
+    public IdentityInfo getIdentityInfo(RecipientId recipientId) {
         synchronized (cachedIdentities) {
             return loadIdentityLocked(recipientId);
         }
@@ -212,13 +187,6 @@ public class IdentityKeyStore implements org.signal.libsignal.protocol.state.Ide
         synchronized (cachedIdentities) {
             deleteIdentityLocked(recipientId);
         }
-    }
-
-    /**
-     * @param identifier can be either a serialized uuid or a e164 phone number
-     */
-    private RecipientId resolveRecipient(String identifier) {
-        return resolver.resolveRecipient(identifier);
     }
 
     private File getIdentityFile(final RecipientId recipientId) {

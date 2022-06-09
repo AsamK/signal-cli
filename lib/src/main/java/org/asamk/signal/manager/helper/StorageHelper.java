@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -127,7 +126,7 @@ public class StorageHelper {
             try {
                 logger.trace("Storing identity key {}", recipientId);
                 final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());
-                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
+                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey);
 
                 final var trustLevel = TrustLevel.fromIdentityState(contactRecord.getIdentityState());
                 if (trustLevel != null) {

@@ -16,7 +16,6 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.function.Function;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
@@ -85,7 +84,7 @@ public class IdentityHelper {
     private boolean trustIdentity(
             RecipientId recipientId, Function<IdentityKey, Boolean> verifier, TrustLevel trustLevel
     ) {
-        var identity = account.getIdentityKeyStore().getIdentity(recipientId);
+        var identity = account.getIdentityKeyStore().getIdentityInfo(recipientId);
         if (identity == null) {
             return false;
         }
@@ -110,7 +109,7 @@ public class IdentityHelper {
     ) {
         final var identityKey = identityFailure.getIdentityKey();
         if (identityKey != null) {
-            account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
+            account.getIdentityKeyStore().saveIdentity(recipientId, identityKey);
         } else {
             // Retrieve profile to get the current identity key from the server
             context.getProfileHelper().refreshRecipientProfile(recipientId);

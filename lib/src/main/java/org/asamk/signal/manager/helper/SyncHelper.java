@@ -128,7 +128,7 @@ public class SyncHelper {
                     final var contact = contactPair.second();
                     final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
 
-                    var currentIdentity = account.getIdentityKeyStore().getIdentity(recipientId);
+                    var currentIdentity = account.getIdentityKeyStore().getIdentityInfo(recipientId);
                     VerifiedMessage verifiedMessage = null;
                     if (currentIdentity != null) {
                         verifiedMessage = new VerifiedMessage(address,

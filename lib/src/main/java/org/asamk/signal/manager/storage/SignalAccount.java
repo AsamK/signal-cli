@@ -15,6 +15,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
+import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
@@ -81,7 +82,6 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -137,6 +137,7 @@ public class SignalAccount implements Closeable {
     private SignedPreKeyStore pniSignedPreKeyStore;
     private SessionStore sessionStore;
     private IdentityKeyStore identityKeyStore;
+    private SignalIdentityKeyStore aciIdentityKeyStore;
     private SenderKeyStore senderKeyStore;
     private GroupStore groupStore;
     private GroupStore.Storage groupStoreStorage;
@@ -1016,7 +1017,7 @@ public class SignalAccount implements Closeable {
                 () -> signalProtocolStore = new SignalProtocolStore(getAciPreKeyStore(),
                         getAciSignedPreKeyStore(),
                         getSessionStore(),
-                        getIdentityKeyStore(),
+                        getAciIdentityKeyStore(),
                         getSenderKeyStore(),
                         this::isMultiDevice));
     }
@@ -1050,9 +1051,15 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> identityKeyStore,
                 () -> identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, accountPath),
                         getRecipientResolver(),
-                        aciIdentityKeyPair,
-                        localRegistrationId,
                         trustNewIdentity));
+    }
+
+    public SignalIdentityKeyStore getAciIdentityKeyStore() {
+        return getOrCreate(() -> aciIdentityKeyStore,
+                () -> aciIdentityKeyStore = new SignalIdentityKeyStore(getRecipientResolver(),
+                        () -> aciIdentityKeyPair,
+                        localRegistrationId,
+                        getIdentityKeyStore()));
     }
 
     public GroupStore getGroupStore() {
@@ -1390,7 +1397,7 @@ public class SignalAccount implements Closeable {
         getSenderKeyStore().deleteAll();
         final var recipientId = getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         final var publicKey = getAciIdentityKeyPair().getPublicKey();
-        getIdentityKeyStore().saveIdentity(recipientId, publicKey, new Date());
+        getIdentityKeyStore().saveIdentity(recipientId, publicKey);
         getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);
     }
 

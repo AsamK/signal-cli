@@ -35,7 +35,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -354,7 +353,7 @@ public final class ProfileHelper {
             try {
                 logger.trace("Storing identity");
                 final var identityKey = new IdentityKey(Base64.getDecoder().decode(encryptedProfile.getIdentityKey()));
-                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey, new Date());
+                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey);
             } catch (InvalidKeyException ignored) {
                 logger.warn("Got invalid identity key in profile for {}",
                         context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier());

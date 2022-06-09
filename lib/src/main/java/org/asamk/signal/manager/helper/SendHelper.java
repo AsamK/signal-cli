@@ -477,7 +477,7 @@ public class SendHelper {
                 continue;
             }
 
-            final var identity = account.getIdentityKeyStore().getIdentity(recipientId);
+            final var identity = account.getIdentityKeyStore().getIdentityInfo(recipientId);
             if (identity == null || !identity.getTrustLevel().isTrusted()) {
                 continue;
             }
