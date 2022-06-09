@@ -13,7 +13,7 @@ public class RenewSessionAction implements HandleAction {
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getAccount().getSessionStore().archiveSessions(recipientId);
+        context.getAccount().getAciSessionStore().archiveSessions(recipientId);
         if (!recipientId.equals(context.getAccount().getSelfRecipientId())) {
             context.getSendHelper().sendNullMessage(recipientId);
         }

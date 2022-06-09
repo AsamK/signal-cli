@@ -214,6 +214,7 @@ public final class IncomingMessageHandler {
         final var senderPair = getSender(envelope, content);
         final var sender = senderPair.first();
         final var senderDeviceId = senderPair.second();
+        final var destination = getDestination(envelope);
 
         if (content.getReceiptMessage().isPresent()) {
             final var message = content.getReceiptMessage().get();
@@ -274,7 +275,7 @@ public final class IncomingMessageHandler {
             actions.addAll(handleSignalServiceDataMessage(message,
                     false,
                     sender,
-                    account.getSelfRecipientId(),
+                    destination,
                     receiveConfig.ignoreAttachments()));
         }
 
@@ -305,13 +306,14 @@ public final class IncomingMessageHandler {
         }
 
         if (message.getRatchetKey().isPresent()) {
-            if (account.getSessionStore().isCurrentRatchetKey(sender, senderDeviceId, message.getRatchetKey().get())) {
+            if (account.getAciSessionStore()
+                    .isCurrentRatchetKey(sender, senderDeviceId, message.getRatchetKey().get())) {
                 if (logEntries.isEmpty()) {
                     logger.debug("Renewing the session with sender");
                     actions.add(new RenewSessionAction(sender));
                 } else {
                     logger.trace("Archiving the session with sender, a resend message has already been queued");
-                    context.getAccount().getSessionStore().archiveSessions(sender);
+                    context.getAccount().getAciSessionStore().archiveSessions(sender);
                 }
             }
             return;
@@ -641,7 +643,7 @@ public final class IncomingMessageHandler {
 
         final var conversationPartnerAddress = isSync ? destination : source;
         if (conversationPartnerAddress != null && message.isEndSession()) {
-            account.getSessionStore().deleteAllSessions(conversationPartnerAddress);
+            account.getAciSessionStore().deleteAllSessions(conversationPartnerAddress);
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
@@ -775,5 +777,16 @@ public final class IncomingMessageHandler {
             return new Pair<>(context.getRecipientHelper().resolveRecipient(content.getSender()),
                     content.getSenderDevice());
         }
+    }
+
+    private RecipientId getDestination(SignalServiceEnvelope envelope) {
+        if (!envelope.hasDestinationUuid()) {
+            return account.getSelfRecipientId();
+        }
+        final var addressOptional = SignalServiceAddress.fromRaw(envelope.getDestinationUuid(), null);
+        if (addressOptional.isEmpty()) {
+            return account.getSelfRecipientId();
+        }
+        return context.getRecipientHelper().resolveRecipient(addressOptional.get());
     }
 }

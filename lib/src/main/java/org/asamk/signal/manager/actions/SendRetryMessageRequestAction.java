@@ -29,7 +29,7 @@ public class SendRetryMessageRequestAction implements HandleAction {
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getAccount().getSessionStore().archiveSessions(recipientId);
+        context.getAccount().getAciSessionStore().archiveSessions(recipientId);
 
         int senderDevice = protocolException.getSenderDevice();
         Optional<GroupId> groupId = protocolException.getGroupId().isPresent() ? Optional.of(GroupId.unknownVersion(

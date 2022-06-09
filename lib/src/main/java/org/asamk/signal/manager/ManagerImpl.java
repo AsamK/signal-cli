@@ -167,7 +167,8 @@ class ManagerImpl implements Manager {
         });
         disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(recipientId -> {
             logger.trace("Archiving old sessions for {}", recipientId);
-            account.getSessionStore().archiveSessions(recipientId);
+            account.getAciSessionStore().archiveSessions(recipientId);
+            account.getPniSessionStore().archiveSessions(recipientId);
             account.getSenderKeyStore().deleteSharedWith(recipientId);
             final var profile = account.getProfileStore().getProfile(recipientId);
             if (profile != null) {
@@ -688,7 +689,7 @@ class ManagerImpl implements Manager {
                 } catch (UnregisteredRecipientException e) {
                     continue;
                 }
-                account.getSessionStore().deleteAllSessions(recipientId);
+                account.getAciSessionStore().deleteAllSessions(recipientId);
             }
         }
     }
