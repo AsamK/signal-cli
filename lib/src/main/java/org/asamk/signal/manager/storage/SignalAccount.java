@@ -38,6 +38,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.recipients.RecipientTrustedResolver;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
+import org.asamk.signal.manager.storage.sessions.LegacySessionStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.LegacyStickerStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
@@ -634,6 +635,11 @@ public class SignalAccount implements Closeable {
             LegacySignedPreKeyStore.migrate(legacyPniSignedPreKeysPath, getPniSignedPreKeyStore());
             migratedLegacyConfig = true;
         }
+        final var legacySessionsPath = getSessionsPath(dataPath, accountPath);
+        if (legacySessionsPath.exists()) {
+            LegacySessionStore.migrate(legacySessionsPath, getRecipientResolver(), getSessionStore());
+            migratedLegacyConfig = true;
+        }
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
@@ -1067,7 +1073,10 @@ public class SignalAccount implements Closeable {
 
     public SessionStore getSessionStore() {
         return getOrCreate(() -> sessionStore,
-                () -> sessionStore = new SessionStore(getSessionsPath(dataPath, accountPath), getRecipientResolver()));
+                () -> sessionStore = new SessionStore(getAccountDatabase(),
+                        ServiceIdType.ACI,
+                        getRecipientResolver(),
+                        getRecipientIdCreator()));
     }
 
     public IdentityKeyStore getIdentityKeyStore() {

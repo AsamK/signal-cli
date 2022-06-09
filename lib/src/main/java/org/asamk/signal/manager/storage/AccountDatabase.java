@@ -7,6 +7,7 @@ import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
+import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 5;
+    private static final long DATABASE_VERSION = 6;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -36,6 +37,7 @@ public class AccountDatabase extends Database {
         PreKeyStore.createSql(connection);
         SignedPreKeyStore.createSql(connection);
         GroupStore.createSql(connection);
+        SessionStore.createSql(connection);
     }
 
     @Override
@@ -139,6 +141,21 @@ public class AccountDatabase extends Database {
                                           group_id INTEGER NOT NULL REFERENCES group_v1 (_id) ON DELETE CASCADE,
                                           recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
                                           UNIQUE(group_id, recipient_id)
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 6) {
+            logger.debug("Updating database: Creating session tables");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE session (
+                                          _id INTEGER PRIMARY KEY,
+                                          account_id_type INTEGER NOT NULL,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          device_id INTEGER NOT NULL,
+                                          record BLOB NOT NULL,
+                                          UNIQUE(account_id_type, recipient_id, device_id)
                                         );
                                         """);
             }
