@@ -3,6 +3,7 @@ package org.asamk.signal.manager.helper;
 import com.google.protobuf.ByteString;
 
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.Contact;
@@ -21,6 +22,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
@@ -36,7 +38,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class SyncHelper {
 
@@ -235,6 +239,48 @@ public class SyncHelper {
                 .setPublicKey(ByteString.copyFrom(pniIdentityKeyPair.getPublicKey().serialize()))
                 .build();
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forPniIdentity(pniIdentity));
+    }
+
+    public void handleSyncDeviceGroups(final InputStream input) {
+        final var s = new DeviceGroupsInputStream(input);
+        DeviceGroup g;
+        while (true) {
+            try {
+                g = s.read();
+            } catch (IOException e) {
+                logger.warn("Sync groups contained invalid group, ignoring: {}", e.getMessage());
+                continue;
+            }
+            if (g == null) {
+                break;
+            }
+            var syncGroup = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(g.getId()));
+            if (syncGroup != null) {
+                if (g.getName().isPresent()) {
+                    syncGroup.name = g.getName().get();
+                }
+                syncGroup.addMembers(g.getMembers()
+                        .stream()
+                        .map(account.getRecipientResolver()::resolveRecipient)
+                        .collect(Collectors.toSet()));
+                if (!g.isActive()) {
+                    syncGroup.removeMember(account.getSelfRecipientId());
+                } else {
+                    // Add ourself to the member set as it's marked as active
+                    syncGroup.addMembers(List.of(account.getSelfRecipientId()));
+                }
+                syncGroup.blocked = g.isBlocked();
+                if (g.getColor().isPresent()) {
+                    syncGroup.color = g.getColor().get();
+                }
+
+                if (g.getAvatar().isPresent()) {
+                    context.getGroupHelper().downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get());
+                }
+                syncGroup.archived = g.isArchived();
+                account.getGroupStore().updateGroup(syncGroup);
+            }
+        }
     }
 
     public void handleSyncDeviceContacts(final InputStream input) throws IOException {

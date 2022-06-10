@@ -367,7 +367,13 @@ public final class IncomingMessageHandler {
             }
         }
         if (syncMessage.getGroups().isPresent()) {
-            logger.warn("Received a group v1 sync message, that can't be handled anymore, ignoring.");
+            try {
+                final var groupsMessage = syncMessage.getGroups().get();
+                context.getAttachmentHelper()
+                        .retrieveAttachment(groupsMessage, context.getSyncHelper()::handleSyncDeviceGroups);
+            } catch (Exception e) {
+                logger.warn("Failed to handle received sync groups, ignoring: {}", e.getMessage());
+            }
         }
         if (syncMessage.getBlockedList().isPresent()) {
             final var blockedListMessage = syncMessage.getBlockedList().get();
