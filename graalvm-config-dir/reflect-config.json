@@ -1168,16 +1168,18 @@
   ]
 },
 {
-  "name":"org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore$Storage",
+  "name":"org.asamk.signal.manager.storage.senderKeys.LegacySenderKeySharedStore$Storage",
   "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
 },
 {
-  "name":"org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore$Storage$SharedSenderKey",
+  "name":"org.asamk.signal.manager.storage.senderKeys.LegacySenderKeySharedStore$Storage$SharedSenderKey",
   "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["long","int","java.lang.String"] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack",

@@ -38,6 +38,8 @@ import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.recipients.RecipientTrustedResolver;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
+import org.asamk.signal.manager.storage.senderKeys.LegacySenderKeyRecordStore;
+import org.asamk.signal.manager.storage.senderKeys.LegacySenderKeySharedStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.LegacySessionStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
@@ -668,6 +670,16 @@ public class SignalAccount implements Closeable {
 
         migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 
+        final var legacySenderKeysPath = getSenderKeysPath(dataPath, accountPath);
+        if (legacySenderKeysPath.exists()) {
+            LegacySenderKeyRecordStore.migrate(legacySenderKeysPath, getRecipientResolver(), getSenderKeyStore());
+            migratedLegacyConfig = true;
+        }
+        final var legacySenderKeysSharedPath = getSharedSenderKeysFile(dataPath, accountPath);
+        if (legacySenderKeysSharedPath.exists()) {
+            LegacySenderKeySharedStore.migrate(legacySenderKeysSharedPath, getRecipientResolver(), getSenderKeyStore());
+            migratedLegacyConfig = true;
+        }
         if (rootNode.hasNonNull("groupStore")) {
             final var groupStoreStorage = jsonProcessor.convertValue(rootNode.get("groupStore"),
                     LegacyGroupStore.Storage.class);
@@ -1196,10 +1208,10 @@ public class SignalAccount implements Closeable {
 
     public SenderKeyStore getSenderKeyStore() {
         return getOrCreate(() -> senderKeyStore,
-                () -> senderKeyStore = new SenderKeyStore(getSharedSenderKeysFile(dataPath, accountPath),
-                        getSenderKeysPath(dataPath, accountPath),
+                () -> senderKeyStore = new SenderKeyStore(getAccountDatabase(),
                         getRecipientAddressResolver(),
-                        getRecipientResolver()));
+                        getRecipientResolver(),
+                        getRecipientIdCreator()));
     }
 
     public ConfigurationStore getConfigurationStore() {

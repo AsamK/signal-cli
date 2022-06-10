@@ -8,6 +8,8 @@ import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
+import org.asamk.signal.manager.storage.senderKeys.SenderKeyRecordStore;
+import org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.slf4j.Logger;
@@ -20,7 +22,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 7;
+    private static final long DATABASE_VERSION = 8;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -40,6 +42,8 @@ public class AccountDatabase extends Database {
         GroupStore.createSql(connection);
         SessionStore.createSql(connection);
         IdentityKeyStore.createSql(connection);
+        SenderKeyRecordStore.createSql(connection);
+        SenderKeySharedStore.createSql(connection);
     }
 
     @Override
@@ -172,6 +176,30 @@ public class AccountDatabase extends Database {
                                           identity_key BLOB NOT NULL,
                                           added_timestamp INTEGER NOT NULL,
                                           trust_level INTEGER NOT NULL
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 8) {
+            logger.debug("Updating database: Creating sender key tables");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE sender_key (
+                                          _id INTEGER PRIMARY KEY,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          device_id INTEGER NOT NULL,
+                                          distribution_id BLOB NOT NULL,
+                                          record BLOB NOT NULL,
+                                          created_timestamp INTEGER NOT NULL,
+                                          UNIQUE(recipient_id, device_id, distribution_id)
+                                        );
+                                        CREATE TABLE sender_key_shared (
+                                          _id INTEGER PRIMARY KEY,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          device_id INTEGER NOT NULL,
+                                          distribution_id BLOB NOT NULL,
+                                          timestamp INTEGER NOT NULL,
+                                          UNIQUE(recipient_id, device_id, distribution_id)
                                         );
                                         """);
             }

@@ -1,15 +1,18 @@
 package org.asamk.signal.manager.storage.senderKeys;
 
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
+import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
 
-import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,13 +22,13 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
     private final SenderKeySharedStore senderKeySharedStore;
 
     public SenderKeyStore(
-            final File file,
-            final File senderKeysPath,
+            final Database database,
             final RecipientAddressResolver addressResolver,
-            final RecipientResolver resolver
+            final RecipientResolver resolver,
+            final RecipientIdCreator recipientIdCreator
     ) {
-        this.senderKeyRecordStore = new SenderKeyRecordStore(senderKeysPath, resolver);
-        this.senderKeySharedStore = SenderKeySharedStore.load(file, addressResolver, resolver);
+        this.senderKeyRecordStore = new SenderKeyRecordStore(database, resolver);
+        this.senderKeySharedStore = new SenderKeySharedStore(database, recipientIdCreator, addressResolver, resolver);
     }
 
     @Override
@@ -87,5 +90,13 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
     public void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
         senderKeySharedStore.mergeRecipients(recipientId, toBeMergedRecipientId);
         senderKeyRecordStore.mergeRecipients(recipientId, toBeMergedRecipientId);
+    }
+
+    void addLegacySenderKeys(final Collection<Pair<SenderKeyRecordStore.Key, SenderKeyRecord>> senderKeys) {
+        senderKeyRecordStore.addLegacySenderKeys(senderKeys);
+    }
+
+    void addLegacySenderKeysShared(final Map<DistributionId, Set<SenderKeySharedStore.SenderKeySharedEntry>> sharedSenderKeys) {
+        senderKeySharedStore.addLegacySenderKeysShared(sharedSenderKeys);
     }
 }
