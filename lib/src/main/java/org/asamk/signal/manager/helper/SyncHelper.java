@@ -138,7 +138,7 @@ public class SyncHelper {
                         verifiedMessage = new VerifiedMessage(address,
                                 currentIdentity.getIdentityKey(),
                                 currentIdentity.getTrustLevel().toVerifiedState(),
-                                currentIdentity.getDateAdded().getTime());
+                                currentIdentity.getDateAddedTimestamp());
                     }
 
                     var profileKey = account.getProfileStore().getProfileKey(recipientId);

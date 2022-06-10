@@ -1067,10 +1067,11 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] }]
 },
 {
-  "name":"org.asamk.signal.manager.storage.identities.IdentityKeyStore$IdentityStorage",
+  "name":"org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore$IdentityStorage",
   "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int","long"] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.profiles.LegacyProfileStore",

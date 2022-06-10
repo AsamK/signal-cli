@@ -54,7 +54,8 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
         var recipientId = resolveRecipient(address.getName());
-        return identityKeyStore.getIdentity(recipientId);
+        final var identityInfo = identityKeyStore.getIdentityInfo(recipientId);
+        return identityInfo == null ? null : identityInfo.getIdentityKey();
     }
 
     /**

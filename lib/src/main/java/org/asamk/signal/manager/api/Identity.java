@@ -3,15 +3,13 @@ package org.asamk.signal.manager.api;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.protocol.IdentityKey;
 
-import java.util.Date;
-
 public record Identity(
         RecipientAddress recipient,
         IdentityKey identityKey,
         String safetyNumber,
         byte[] scannableSafetyNumber,
         TrustLevel trustLevel,
-        Date dateAdded
+        long dateAddedTimestamp
 ) {
 
     public byte[] getFingerprint() {

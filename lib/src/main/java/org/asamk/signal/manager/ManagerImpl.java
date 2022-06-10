@@ -1044,7 +1044,7 @@ class ManagerImpl implements Manager {
                         .computeSafetyNumber(identityInfo.getRecipientId(), identityInfo.getIdentityKey()),
                 scannableFingerprint == null ? null : scannableFingerprint.getSerialized(),
                 identityInfo.getTrustLevel(),
-                identityInfo.getDateAdded());
+                identityInfo.getDateAddedTimestamp());
     }
 
     @Override

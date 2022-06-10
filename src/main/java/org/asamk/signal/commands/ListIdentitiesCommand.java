@@ -10,6 +10,7 @@ import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Hex;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
         writer.println("{}: {} Added: {} Fingerprint: {} Safety Number: {}",
                 theirId.recipient().getLegacyIdentifier(),
                 theirId.trustLevel(),
-                theirId.dateAdded(),
+                DateUtils.formatTimestamp(theirId.dateAddedTimestamp()),
                 Hex.toString(theirId.getFingerprint()),
                 Util.formatSafetyNumber(theirId.safetyNumber()));
     }
@@ -74,7 +75,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                                 ? null
                                 : Base64.getEncoder().encodeToString(scannableSafetyNumber),
                         id.trustLevel().name(),
-                        id.dateAdded().getTime());
+                        id.dateAddedTimestamp());
             }).toList();
 
             writer.write(jsonIdentities);

@@ -4,22 +4,20 @@ import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.protocol.IdentityKey;
 
-import java.util.Date;
-
 public class IdentityInfo {
 
     private final RecipientId recipientId;
     private final IdentityKey identityKey;
     private final TrustLevel trustLevel;
-    private final Date added;
+    private final long addedTimestamp;
 
     IdentityInfo(
-            final RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel, Date added
+            final RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp
     ) {
         this.recipientId = recipientId;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;
-        this.added = added;
+        this.addedTimestamp = addedTimestamp;
     }
 
     public RecipientId getRecipientId() {
@@ -38,7 +36,7 @@ public class IdentityInfo {
         return trustLevel == TrustLevel.TRUSTED_UNVERIFIED || trustLevel == TrustLevel.TRUSTED_VERIFIED;
     }
 
-    public Date getDateAdded() {
-        return this.added;
+    public long getDateAddedTimestamp() {
+        return this.addedTimestamp;
     }
 }

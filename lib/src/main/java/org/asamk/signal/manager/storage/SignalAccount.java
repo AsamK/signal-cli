@@ -15,6 +15,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
+import org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
@@ -646,6 +647,11 @@ public class SignalAccount implements Closeable {
             LegacySessionStore.migrate(legacySessionsPath, getRecipientResolver(), getAciSessionStore());
             migratedLegacyConfig = true;
         }
+        final var legacyIdentitiesPath = getIdentitiesPath(dataPath, accountPath);
+        if (legacyIdentitiesPath.exists()) {
+            LegacyIdentityKeyStore.migrate(legacyIdentitiesPath, getRecipientResolver(), getIdentityKeyStore());
+            migratedLegacyConfig = true;
+        }
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
@@ -753,7 +759,7 @@ public class SignalAccount implements Closeable {
             logger.debug("Migrating legacy identity session store.");
             for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
                 RecipientId recipientId = getRecipientStore().resolveRecipientTrusted(identity.getAddress());
-                getIdentityKeyStore().saveIdentity(recipientId, identity.getIdentityKey(), identity.getDateAdded());
+                getIdentityKeyStore().saveIdentity(recipientId, identity.getIdentityKey());
                 getIdentityKeyStore().setIdentityTrustLevel(recipientId,
                         identity.getIdentityKey(),
                         identity.getTrustLevel());
@@ -1105,8 +1111,8 @@ public class SignalAccount implements Closeable {
 
     public IdentityKeyStore getIdentityKeyStore() {
         return getOrCreate(() -> identityKeyStore,
-                () -> identityKeyStore = new IdentityKeyStore(getIdentitiesPath(dataPath, accountPath),
-                        getRecipientResolver(),
+                () -> identityKeyStore = new IdentityKeyStore(getAccountDatabase(),
+                        getRecipientIdCreator(),
                         trustNewIdentity));
     }
 

@@ -1,90 +1,81 @@
 package org.asamk.signal.manager.storage.identities;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.storage.Database;
+import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
-import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.IdentityKeyStore.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Pattern;
 
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
-import io.reactivex.rxjava3.subjects.Subject;
 
 public class IdentityKeyStore {
 
     private final static Logger logger = LoggerFactory.getLogger(IdentityKeyStore.class);
-    private final ObjectMapper objectMapper = org.asamk.signal.manager.storage.Utils.createStorageObjectMapper();
-
-    private final Map<RecipientId, IdentityInfo> cachedIdentities = new HashMap<>();
-
-    private final File identitiesPath;
-
-    private final RecipientResolver resolver;
+    private static final String TABLE_IDENTITY = "identity";
+    private final Database database;
+    private final RecipientIdCreator recipientIdCreator;
     private final TrustNewIdentity trustNewIdentity;
     private final PublishSubject<RecipientId> identityChanges = PublishSubject.create();
 
     private boolean isRetryingDecryption = false;
 
+    public static void createSql(Connection connection) throws SQLException {
+        // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
+        try (final var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                                    CREATE TABLE identity (
+                                      _id INTEGER PRIMARY KEY,
+                                      recipient_id INTEGER UNIQUE NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                      identity_key BLOB NOT NULL,
+                                      added_timestamp INTEGER NOT NULL,
+                                      trust_level INTEGER NOT NULL
+                                    );
+                                    """);
+        }
+    }
+
     public IdentityKeyStore(
-            final File identitiesPath, final RecipientResolver resolver, final TrustNewIdentity trustNewIdentity
+            final Database database,
+            final RecipientIdCreator recipientIdCreator,
+            final TrustNewIdentity trustNewIdentity
     ) {
-        this.identitiesPath = identitiesPath;
-        this.resolver = resolver;
+        this.database = database;
+        this.recipientIdCreator = recipientIdCreator;
         this.trustNewIdentity = trustNewIdentity;
     }
 
-    public Subject<RecipientId> getIdentityChanges() {
+    public Observable<RecipientId> getIdentityChanges() {
         return identityChanges;
     }
 
     public boolean saveIdentity(final RecipientId recipientId, final IdentityKey identityKey) {
-        return saveIdentity(recipientId, identityKey, null);
-    }
-
-    public boolean saveIdentity(final RecipientId recipientId, final IdentityKey identityKey, Date added) {
         if (isRetryingDecryption) {
             return false;
         }
-        synchronized (cachedIdentities) {
-            final var identityInfo = loadIdentityLocked(recipientId);
+        try (final var connection = database.getConnection()) {
+            final var identityInfo = loadIdentity(connection, recipientId);
             if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity already exists, not updating the trust level
                 logger.trace("Not storing new identity for recipient {}, identity already stored", recipientId);
                 return false;
             }
 
-            final var trustLevel = trustNewIdentity == TrustNewIdentity.ALWAYS || (
-                    trustNewIdentity == TrustNewIdentity.ON_FIRST_USE && identityInfo == null
-            ) ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
-            logger.debug("Storing new identity for recipient {} with trust {}", recipientId, trustLevel);
-            final var newIdentityInfo = new IdentityInfo(recipientId,
-                    identityKey,
-                    trustLevel,
-                    added == null ? new Date() : added);
-            storeIdentityLocked(recipientId, newIdentityInfo);
-            identityChanges.onNext(recipientId);
+            saveNewIdentity(connection, recipientId, identityKey, identityInfo == null);
             return true;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update identity store", e);
         }
     }
 
@@ -93,8 +84,8 @@ public class IdentityKeyStore {
     }
 
     public boolean setIdentityTrustLevel(RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel) {
-        synchronized (cachedIdentities) {
-            final var identityInfo = loadIdentityLocked(recipientId);
+        try (final var connection = database.getConnection()) {
+            final var identityInfo = loadIdentity(connection, recipientId);
             if (identityInfo == null) {
                 logger.debug("Not updating trust level for recipient {}, identity not found", recipientId);
                 return false;
@@ -112,9 +103,11 @@ public class IdentityKeyStore {
             final var newIdentityInfo = new IdentityInfo(recipientId,
                     identityKey,
                     trustLevel,
-                    identityInfo.getDateAdded());
-            storeIdentityLocked(recipientId, newIdentityInfo);
+                    identityInfo.getDateAddedTimestamp());
+            storeIdentity(connection, newIdentityInfo);
             return true;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update identity store", e);
         }
     }
 
@@ -123,19 +116,19 @@ public class IdentityKeyStore {
             return true;
         }
 
-        synchronized (cachedIdentities) {
+        try (final var connection = database.getConnection()) {
             // TODO implement possibility for different handling of incoming/outgoing trust decisions
-            var identityInfo = loadIdentityLocked(recipientId);
+            var identityInfo = loadIdentity(connection, recipientId);
             if (identityInfo == null) {
                 logger.debug("Initial identity found for {}, saving.", recipientId);
-                saveIdentity(recipientId, identityKey);
-                identityInfo = loadIdentityLocked(recipientId);
+                saveNewIdentity(connection, recipientId, identityKey, true);
+                identityInfo = loadIdentity(connection, recipientId);
             } else if (!identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity found, but different
                 if (direction == Direction.SENDING) {
                     logger.debug("Changed identity found for {}, saving.", recipientId);
-                    saveIdentity(recipientId, identityKey);
-                    identityInfo = loadIdentityLocked(recipientId);
+                    saveNewIdentity(connection, recipientId, identityKey, false);
+                    identityInfo = loadIdentity(connection, recipientId);
                 } else {
                     logger.trace("Trusting identity for {} for {}: {}", recipientId, direction, false);
                     return false;
@@ -145,125 +138,156 @@ public class IdentityKeyStore {
             final var isTrusted = identityInfo != null && identityInfo.isTrusted();
             logger.trace("Trusting identity for {} for {}: {}", recipientId, direction, isTrusted);
             return isTrusted;
-        }
-    }
-
-    public IdentityKey getIdentity(RecipientId recipientId) {
-        synchronized (cachedIdentities) {
-            var identity = loadIdentityLocked(recipientId);
-            return identity == null ? null : identity.getIdentityKey();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from identity store", e);
         }
     }
 
     public IdentityInfo getIdentityInfo(RecipientId recipientId) {
-        synchronized (cachedIdentities) {
-            return loadIdentityLocked(recipientId);
+        try (final var connection = database.getConnection()) {
+            return loadIdentity(connection, recipientId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from identity store", e);
         }
     }
 
-    final Pattern identityFileNamePattern = Pattern.compile("(\\d+)");
-
     public List<IdentityInfo> getIdentities() {
-        final var files = identitiesPath.listFiles();
-        if (files == null) {
-            return List.of();
+        try (final var connection = database.getConnection()) {
+            final var sql = (
+                    """
+                    SELECT i.recipient_id, i.identity_key, i.added_timestamp, i.trust_level
+                    FROM %s AS i
+                    """
+            ).formatted(TABLE_IDENTITY);
+            try (final var statement = connection.prepareStatement(sql)) {
+                return Utils.executeQueryForStream(statement, this::getIdentityInfoFromResultSet).toList();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from identity store", e);
         }
-        return Arrays.stream(files)
-                .filter(f -> identityFileNamePattern.matcher(f.getName()).matches())
-                .map(f -> resolver.resolveRecipient(Long.parseLong(f.getName())))
-                .filter(Objects::nonNull)
-                .map(this::loadIdentityLocked)
-                .filter(Objects::nonNull)
-                .toList();
     }
 
     public void mergeRecipients(final RecipientId recipientId, final RecipientId toBeMergedRecipientId) {
-        synchronized (cachedIdentities) {
-            deleteIdentityLocked(toBeMergedRecipientId);
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            final var sql = (
+                    """
+                    UPDATE OR IGNORE %s
+                    SET recipient_id = ?
+                    WHERE recipient_id = ?
+                    """
+            ).formatted(TABLE_IDENTITY);
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, recipientId.id());
+                statement.setLong(2, toBeMergedRecipientId.id());
+                statement.executeUpdate();
+            }
+
+            deleteIdentity(connection, toBeMergedRecipientId);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update identity store", e);
         }
     }
 
     public void deleteIdentity(final RecipientId recipientId) {
-        synchronized (cachedIdentities) {
-            deleteIdentityLocked(recipientId);
+        try (final var connection = database.getConnection()) {
+            deleteIdentity(connection, recipientId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update identity store", e);
         }
     }
 
-    private File getIdentityFile(final RecipientId recipientId) {
-        try {
-            IOUtils.createPrivateDirectories(identitiesPath);
-        } catch (IOException e) {
-            throw new AssertionError("Failed to create identities path", e);
-        }
-        return new File(identitiesPath, String.valueOf(recipientId.id()));
-    }
-
-    private IdentityInfo loadIdentityLocked(final RecipientId recipientId) {
-        {
-            final var session = cachedIdentities.get(recipientId);
-            if (session != null) {
-                return session;
+    void addLegacyIdentities(final Collection<IdentityInfo> identities) {
+        logger.debug("Migrating legacy identities to database");
+        long start = System.nanoTime();
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            for (final var identityInfo : identities) {
+                storeIdentity(connection, identityInfo);
             }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update identity store", e);
         }
+        logger.debug("Complete identities migration took {}ms", (System.nanoTime() - start) / 1000000);
+    }
 
-        final var file = getIdentityFile(recipientId);
-        if (!file.exists()) {
-            return null;
-        }
-        try (var inputStream = new FileInputStream(file)) {
-            var storage = objectMapper.readValue(inputStream, IdentityStorage.class);
-
-            var id = new IdentityKey(Base64.getDecoder().decode(storage.identityKey()));
-            var trustLevel = TrustLevel.fromInt(storage.trustLevel());
-            var added = new Date(storage.addedTimestamp());
-
-            final var identityInfo = new IdentityInfo(recipientId, id, trustLevel, added);
-            cachedIdentities.put(recipientId, identityInfo);
-            return identityInfo;
-        } catch (IOException | InvalidKeyException e) {
-            logger.warn("Failed to load identity key: {}", e.getMessage());
-            return null;
+    private IdentityInfo loadIdentity(
+            final Connection connection, final RecipientId recipientId
+    ) throws SQLException {
+        final var sql = (
+                """
+                SELECT i.recipient_id, i.identity_key, i.added_timestamp, i.trust_level
+                FROM %s AS i
+                WHERE i.recipient_id = ?
+                """
+        ).formatted(TABLE_IDENTITY);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, recipientId.id());
+            return Utils.executeQueryForOptional(statement, this::getIdentityInfoFromResultSet).orElse(null);
         }
     }
 
-    private void storeIdentityLocked(final RecipientId recipientId, final IdentityInfo identityInfo) {
+    private void saveNewIdentity(
+            final Connection connection,
+            final RecipientId recipientId,
+            final IdentityKey identityKey,
+            final boolean firstIdentity
+    ) throws SQLException {
+        final var trustLevel = trustNewIdentity == TrustNewIdentity.ALWAYS || (
+                trustNewIdentity == TrustNewIdentity.ON_FIRST_USE && firstIdentity
+        ) ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
+        logger.debug("Storing new identity for recipient {} with trust {}", recipientId, trustLevel);
+        final var newIdentityInfo = new IdentityInfo(recipientId, identityKey, trustLevel, System.currentTimeMillis());
+        storeIdentity(connection, newIdentityInfo);
+        identityChanges.onNext(recipientId);
+    }
+
+    private void storeIdentity(final Connection connection, final IdentityInfo identityInfo) throws SQLException {
         logger.trace("Storing identity info for {}, trust: {}, added: {}",
-                recipientId,
+                identityInfo.getRecipientId(),
                 identityInfo.getTrustLevel(),
-                identityInfo.getDateAdded());
-        cachedIdentities.put(recipientId, identityInfo);
-
-        var storage = new IdentityStorage(Base64.getEncoder().encodeToString(identityInfo.getIdentityKey().serialize()),
-                identityInfo.getTrustLevel().ordinal(),
-                identityInfo.getDateAdded().getTime());
-
-        final var file = getIdentityFile(recipientId);
-        // Write to memory first to prevent corrupting the file in case of serialization errors
-        try (var inMemoryOutput = new ByteArrayOutputStream()) {
-            objectMapper.writeValue(inMemoryOutput, storage);
-
-            var input = new ByteArrayInputStream(inMemoryOutput.toByteArray());
-            try (var outputStream = new FileOutputStream(file)) {
-                input.transferTo(outputStream);
-            }
-        } catch (Exception e) {
-            logger.error("Error saving identity file: {}", e.getMessage());
+                identityInfo.getDateAddedTimestamp());
+        final var sql = (
+                """
+                INSERT OR REPLACE INTO %s (recipient_id, identity_key, added_timestamp, trust_level)
+                VALUES (?, ?, ?, ?)
+                """
+        ).formatted(TABLE_IDENTITY);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, identityInfo.getRecipientId().id());
+            statement.setBytes(2, identityInfo.getIdentityKey().serialize());
+            statement.setLong(3, identityInfo.getDateAddedTimestamp());
+            statement.setInt(4, identityInfo.getTrustLevel().ordinal());
+            statement.executeUpdate();
         }
     }
 
-    private void deleteIdentityLocked(final RecipientId recipientId) {
-        cachedIdentities.remove(recipientId);
-
-        final var file = getIdentityFile(recipientId);
-        if (!file.exists()) {
-            return;
+    private void deleteIdentity(final Connection connection, final RecipientId recipientId) throws SQLException {
+        final var sql = (
+                """
+                DELETE FROM %s AS i
+                WHERE i.recipient_id = ?
+                """
+        ).formatted(TABLE_IDENTITY);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, recipientId.id());
+            statement.executeUpdate();
         }
+    }
+
+    private IdentityInfo getIdentityInfoFromResultSet(ResultSet resultSet) throws SQLException {
         try {
-            Files.delete(file.toPath());
-        } catch (IOException e) {
-            logger.error("Failed to delete identity file {}: {}", file, e.getMessage());
+            final var recipientId = recipientIdCreator.create(resultSet.getLong("recipient_id"));
+            final var id = new IdentityKey(resultSet.getBytes("identity_key"));
+            final var trustLevel = TrustLevel.fromInt(resultSet.getInt("trust_level"));
+            final var added = resultSet.getLong("added_timestamp");
+
+            return new IdentityInfo(recipientId, id, trustLevel, added);
+        } catch (InvalidKeyException e) {
+            logger.warn("Failed to load identity key, resetting: {}", e.getMessage());
+            return null;
         }
     }
-
-    private record IdentityStorage(String identityKey, int trustLevel, long addedTimestamp) {}
 }

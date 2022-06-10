@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage;
 import com.zaxxer.hikari.HikariDataSource;
 
 import org.asamk.signal.manager.storage.groups.GroupStore;
+import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
@@ -19,7 +20,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 6;
+    private static final long DATABASE_VERSION = 7;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -38,6 +39,7 @@ public class AccountDatabase extends Database {
         SignedPreKeyStore.createSql(connection);
         GroupStore.createSql(connection);
         SessionStore.createSql(connection);
+        IdentityKeyStore.createSql(connection);
     }
 
     @Override
@@ -156,6 +158,20 @@ public class AccountDatabase extends Database {
                                           device_id INTEGER NOT NULL,
                                           record BLOB NOT NULL,
                                           UNIQUE(account_id_type, recipient_id, device_id)
+                                        );
+                                        """);
+            }
+        }
+        if (oldVersion < 7) {
+            logger.debug("Updating database: Creating identity table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE identity (
+                                          _id INTEGER PRIMARY KEY,
+                                          recipient_id INTEGER UNIQUE NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          identity_key BLOB NOT NULL,
+                                          added_timestamp INTEGER NOT NULL,
+                                          trust_level INTEGER NOT NULL
                                         );
                                         """);
             }
