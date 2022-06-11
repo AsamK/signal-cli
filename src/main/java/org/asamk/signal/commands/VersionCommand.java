@@ -1,14 +1,23 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import net.sourceforge.argparse4j.inf.Namespace;
+import net.sourceforge.argparse4j.inf.Subparser;
+
 import org.asamk.signal.BaseConfig;
+import org.asamk.signal.OutputType;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.output.PlainTextWriter;
 
+import java.util.List;
 import java.util.Map;
 
-public class VersionCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiCommand<Void> {
+public class VersionCommand implements JsonRpcLocalCommand, JsonRpcMultiLocalCommand {
 
     @Override
     public String getName() {
@@ -16,21 +25,41 @@ public class VersionCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiC
     }
 
     @Override
-    public void handleCommand(
-            final Void request, final Manager m, final JsonWriter jsonWriter
-    ) throws CommandException {
-        outputVersion(jsonWriter);
+    public List<OutputType> getSupportedOutputTypes() {
+        return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
+    }
+
+    @Override
+    public void attachToSubparser(final Subparser subparser) {
     }
 
     @Override
     public void handleCommand(
-            final Void request, final MultiAccountManager c, final JsonWriter jsonWriter
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        outputVersion(jsonWriter);
+        outputVersion(outputWriter);
     }
 
-    private void outputVersion(final JsonWriter jsonWriter) {
-        jsonWriter.write(Map.of("version",
-                BaseConfig.PROJECT_VERSION == null ? "unknown" : BaseConfig.PROJECT_VERSION));
+    @Override
+    public void handleCommand(
+            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+    ) throws CommandException {
+        outputVersion(outputWriter);
+    }
+
+    @Override
+    public TypeReference<Map<String, Object>> getRequestType() {
+        return new TypeReference<>() {};
+    }
+
+    private void outputVersion(final OutputWriter outputWriter) {
+        final var projectName = BaseConfig.PROJECT_NAME == null ? "signal-cli" : BaseConfig.PROJECT_NAME;
+        final var version = BaseConfig.PROJECT_VERSION == null ? "unknown" : BaseConfig.PROJECT_VERSION;
+
+        if (outputWriter instanceof JsonWriter jsonWriter) {
+            jsonWriter.write(Map.of("version", version));
+        } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
+            plainTextWriter.println("{} {}", projectName, version);
+        }
     }
 }
