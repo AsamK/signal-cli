@@ -31,10 +31,10 @@ In daemon mode messages are continuously received.
 *-h*, *--help*::
 Show help message and quit.
 
-*-v*, *--version*::
+*--version*::
 Print the version and quit.
 
-*--verbose*::
+*-v*, *--verbose*::
 Raise log level and include lib signal logs.
 
 *--log-file* LOG_FILE::

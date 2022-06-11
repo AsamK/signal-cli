@@ -80,7 +80,7 @@ public class Main {
                 .includeArgumentNamesAsKeysInResult(true)
                 .build()
                 .defaultHelp(false);
-        parser.addArgument("--verbose").action(Arguments.count());
+        parser.addArgument("-v", "--verbose").action(Arguments.count());
         parser.addArgument("--log-file").type(File.class);
 
         try {
