@@ -3,6 +3,8 @@ package org.asamk.signal.manager.storage.accounts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
@@ -29,39 +31,52 @@ import java.util.stream.Stream;
 
 public class AccountsStore {
 
+    private static final int MINIMUM_STORAGE_VERSION = 1;
+    private static final int CURRENT_STORAGE_VERSION = 2;
     private final static Logger logger = LoggerFactory.getLogger(AccountsStore.class);
     private final ObjectMapper objectMapper = Utils.createStorageObjectMapper();
 
     private final File dataPath;
+    private final String serviceEnvironment;
+    private final AccountLoader accountLoader;
 
-    public AccountsStore(final File dataPath) throws IOException {
+    public AccountsStore(
+            final File dataPath, final ServiceEnvironment serviceEnvironment, final AccountLoader accountLoader
+    ) throws IOException {
         this.dataPath = dataPath;
+        this.serviceEnvironment = getServiceEnvironmentString(serviceEnvironment);
+        this.accountLoader = accountLoader;
         if (!getAccountsFile().exists()) {
             createInitialAccounts();
         }
     }
 
-    public synchronized Set<String> getAllNumbers() {
+    public synchronized Set<String> getAllNumbers() throws IOException {
         return readAccounts().stream()
                 .map(AccountsStorage.Account::number)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
-    public synchronized Set<AccountsStorage.Account> getAllAccounts() {
-        return readAccounts().stream().filter(a -> a.number() != null).collect(Collectors.toSet());
+    public synchronized Set<AccountsStorage.Account> getAllAccounts() throws IOException {
+        return readAccounts().stream()
+                .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
+                .filter(a -> a.number() != null)
+                .collect(Collectors.toSet());
     }
 
-    public synchronized String getPathByNumber(String number) {
+    public synchronized String getPathByNumber(String number) throws IOException {
         return readAccounts().stream()
+                .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
                 .filter(a -> number.equals(a.number()))
                 .map(AccountsStorage.Account::path)
                 .findFirst()
                 .orElse(null);
     }
 
-    public synchronized String getPathByAci(ACI aci) {
+    public synchronized String getPathByAci(ACI aci) throws IOException {
         return readAccounts().stream()
+                .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
                 .filter(a -> aci.toString().equals(a.uuid()))
                 .map(AccountsStorage.Account::path)
                 .findFirst()
@@ -70,15 +85,22 @@ public class AccountsStore {
 
     public synchronized void updateAccount(String path, String number, ACI aci) {
         updateAccounts(accounts -> accounts.stream().map(a -> {
+            if (a.environment() != null && !serviceEnvironment.equals(a.environment())) {
+                return a;
+            }
+
             if (path.equals(a.path())) {
-                return new AccountsStorage.Account(a.path(), number, aci == null ? null : aci.toString());
+                return new AccountsStorage.Account(a.path(),
+                        serviceEnvironment,
+                        number,
+                        aci == null ? null : aci.toString());
             }
 
             if (number != null && number.equals(a.number())) {
-                return new AccountsStorage.Account(a.path(), null, a.uuid());
+                return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid());
             }
             if (aci != null && aci.toString().equals(a.toString())) {
-                return new AccountsStorage.Account(a.path(), a.number(), null);
+                return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null);
             }
 
             return a;
@@ -87,14 +109,21 @@ public class AccountsStore {
 
     public synchronized String addAccount(String number, ACI aci) {
         final var accountPath = generateNewAccountPath();
-        final var account = new AccountsStorage.Account(accountPath, number, aci == null ? null : aci.toString());
+        final var account = new AccountsStorage.Account(accountPath,
+                serviceEnvironment,
+                number,
+                aci == null ? null : aci.toString());
         updateAccounts(accounts -> {
             final var existingAccounts = accounts.stream().map(a -> {
-                if (number != null && number.equals(a.number())) {
-                    return new AccountsStorage.Account(a.path(), null, a.uuid());
+                if (a.environment() != null && !serviceEnvironment.equals(a.environment())) {
+                    return a;
                 }
-                if (aci != null && aci.toString().equals(a.toString())) {
-                    return new AccountsStorage.Account(a.path(), a.number(), null);
+
+                if (number != null && number.equals(a.number())) {
+                    return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid());
+                }
+                if (aci != null && aci.toString().equals(a.uuid())) {
+                    return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null);
                 }
 
                 return a;
@@ -105,7 +134,9 @@ public class AccountsStore {
     }
 
     public void removeAccount(final String accountPath) {
-        updateAccounts(accounts -> accounts.stream().filter(a -> !a.path().equals(accountPath)).toList());
+        updateAccounts(accounts -> accounts.stream().filter(a -> !(
+                (a.environment() == null || serviceEnvironment.equals(a.environment())) && a.path().equals(accountPath)
+        )).toList());
     }
 
     private String generateNewAccountPath() {
@@ -123,8 +154,8 @@ public class AccountsStore {
     private void createInitialAccounts() throws IOException {
         final var legacyAccountPaths = getLegacyAccountPaths();
         final var accountsStorage = new AccountsStorage(legacyAccountPaths.stream()
-                .map(number -> new AccountsStorage.Account(number, number, null))
-                .toList());
+                .map(number -> new AccountsStorage.Account(number, null, number, null))
+                .toList(), CURRENT_STORAGE_VERSION);
 
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getAccountsFile();
@@ -152,15 +183,52 @@ public class AccountsStore {
                 .collect(Collectors.toSet());
     }
 
-    private List<AccountsStorage.Account> readAccounts() {
-        try {
-            final var pair = openFileChannel(getAccountsFile());
-            try (final var fileChannel = pair.first(); final var lock = pair.second()) {
-                return readAccountsLocked(fileChannel).accounts();
+    private List<AccountsStorage.Account> readAccounts() throws IOException {
+        final var pair = openFileChannel(getAccountsFile());
+        try (final var fileChannel = pair.first(); final var lock = pair.second()) {
+            final var storage = readAccountsLocked(fileChannel);
+
+            var accountsVersion = storage.version() == null ? 1 : storage.version();
+            if (accountsVersion > CURRENT_STORAGE_VERSION) {
+                throw new IOException("Accounts file was created by a more recent version: " + accountsVersion);
+            } else if (accountsVersion < MINIMUM_STORAGE_VERSION) {
+                throw new IOException("Accounts file was created by a no longer supported older version: "
+                        + accountsVersion);
+            } else if (accountsVersion < CURRENT_STORAGE_VERSION) {
+                return upgradeAccountsFile(fileChannel, storage, accountsVersion).accounts();
             }
-        } catch (IOException e) {
-            logger.error("Failed to read accounts list", e);
-            return List.of();
+            return storage.accounts();
+        }
+    }
+
+    private AccountsStorage upgradeAccountsFile(
+            final FileChannel fileChannel, final AccountsStorage storage, final int accountsVersion
+    ) {
+        try {
+            List<AccountsStorage.Account> newAccounts = storage.accounts();
+            if (accountsVersion < 2) {
+                // add environment field
+                newAccounts = newAccounts.stream().map(a -> {
+                    if (a.environment() != null) {
+                        return a;
+                    }
+                    try (final var account = accountLoader.loadAccountOrNull(a.path())) {
+                        if (account == null || account.getServiceEnvironment() == null) {
+                            return a;
+                        }
+                        return new AccountsStorage.Account(a.path(),
+                                getServiceEnvironmentString(account.getServiceEnvironment()),
+                                a.number(),
+                                a.uuid());
+                    }
+                }).toList();
+            }
+            final var newStorage = new AccountsStorage(newAccounts, CURRENT_STORAGE_VERSION);
+            saveAccountsLocked(fileChannel, newStorage);
+            return newStorage;
+        } catch (Exception e) {
+            logger.warn("Failed to upgrade accounts file", e);
+            return storage;
         }
     }
 
@@ -170,7 +238,7 @@ public class AccountsStore {
             try (final var fileChannel = pair.first(); final var lock = pair.second()) {
                 final var accountsStorage = readAccountsLocked(fileChannel);
                 final var newAccountsStorage = updater.apply(accountsStorage.accounts());
-                saveAccountsLocked(fileChannel, new AccountsStorage(newAccountsStorage));
+                saveAccountsLocked(fileChannel, new AccountsStorage(newAccountsStorage, CURRENT_STORAGE_VERSION));
             }
         } catch (IOException e) {
             logger.error("Failed to update accounts list", e);
@@ -208,5 +276,17 @@ public class AccountsStore {
             logger.info("Config file lock acquired.");
         }
         return new Pair<>(fileChannel, lock);
+    }
+
+    private String getServiceEnvironmentString(final ServiceEnvironment serviceEnvironment) {
+        return switch (serviceEnvironment) {
+            case LIVE -> "LIVE";
+            case STAGING -> "STAGING";
+        };
+    }
+
+    public interface AccountLoader {
+
+        SignalAccount loadAccountOrNull(String accountPath);
     }
 }

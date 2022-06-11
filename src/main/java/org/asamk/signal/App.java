@@ -46,6 +46,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Set;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
 
@@ -188,7 +189,12 @@ public class App {
                 return;
             }
 
-            var accounts = signalAccountFiles.getAllLocalAccountNumbers();
+            Set<String> accounts = null;
+            try {
+                accounts = signalAccountFiles.getAllLocalAccountNumbers();
+            } catch (IOException e) {
+                throw new IOErrorException("Failed to load local accounts file", e);
+            }
             if (accounts.size() == 0) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
@@ -299,6 +305,8 @@ public class App {
     ) throws CommandException {
         try (var multiAccountManager = signalAccountFiles.initMultiAccountManager()) {
             command.handleCommand(ns, multiAccountManager, outputWriter);
+        } catch (IOException e) {
+            throw new IOErrorException("Failed to load local accounts file", e);
         }
     }
 

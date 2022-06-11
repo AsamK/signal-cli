@@ -41,14 +41,24 @@ public class SignalAccountFiles {
         this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment, userAgent);
         this.userAgent = userAgent;
         this.trustNewIdentity = trustNewIdentity;
-        this.accountsStore = new AccountsStore(pathConfig.dataPath());
+        this.accountsStore = new AccountsStore(pathConfig.dataPath(), serviceEnvironment, accountPath -> {
+            if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
+                return null;
+            }
+
+            try {
+                return SignalAccount.load(pathConfig.dataPath(), accountPath, false, trustNewIdentity);
+            } catch (Exception e) {
+                return null;
+            }
+        });
     }
 
-    public Set<String> getAllLocalAccountNumbers() {
+    public Set<String> getAllLocalAccountNumbers() throws IOException {
         return accountsStore.getAllNumbers();
     }
 
-    public MultiAccountManager initMultiAccountManager() {
+    public MultiAccountManager initMultiAccountManager() throws IOException {
         final var managers = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
                 return initManager(a.number(), a.path());
@@ -108,6 +118,7 @@ public class SignalAccountFiles {
 
         if (account.getServiceEnvironment() == null) {
             account.setServiceEnvironment(serviceEnvironment);
+            accountsStore.updateAccount(accountPath, account.getNumber(), account.getAci());
         }
 
         return manager;

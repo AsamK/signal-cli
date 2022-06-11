@@ -914,8 +914,9 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.util.List"] }, 
-    {"name":"accounts","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["java.util.List","java.lang.Integer"] }, 
+    {"name":"accounts","parameterTypes":[] }, 
+    {"name":"version","parameterTypes":[] }
   ]
 },
 {
@@ -924,7 +925,8 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, 
+    {"name":"environment","parameterTypes":[] }, 
     {"name":"number","parameterTypes":[] }, 
     {"name":"path","parameterTypes":[] }, 
     {"name":"uuid","parameterTypes":[] }
