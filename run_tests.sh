@@ -20,8 +20,8 @@ if [ "$NATIVE" -eq 1 ]; then
 	SIGNAL_CLI="$PWD/build/native/nativeCompile/signal-cli"
 elif [ "$JSON_RPC" -eq 1 ]; then
 	(cd client && cargo build)
-	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_MAIN" --service-environment="staging" daemon --socket --receive-mode=manual&
-	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_LINK" --service-environment="staging" daemon --tcp --receive-mode=manual&
+	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_MAIN" --service-environment="staging" --log-file="$PATH_MAIN/log" daemon --socket --receive-mode=manual&
+	"$PWD/build/install/signal-cli/bin/signal-cli" --verbose --verbose --trust-new-identities=always --config="$PATH_LINK" --service-environment="staging" --log-file="$PATH_LINK/log" daemon --tcp --receive-mode=manual&
 	sleep 5
 	SIGNAL_CLI="$PWD/client/target/debug/signal-cli-client"
 else
@@ -41,7 +41,7 @@ run() {
   if [ "$JSON_RPC" -eq 1 ]; then
     "$SIGNAL_CLI" $@
   else
-    "$SIGNAL_CLI" --service-environment="staging" $@
+    "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@
   fi
   set +x
 }
@@ -51,7 +51,7 @@ run_main() {
   if [ "$JSON_RPC" -eq 1 ]; then
     run --json-rpc-socket="$XDG_RUNTIME_DIR/signal-cli/socket" $@
   else
-    run --config="$PATH_MAIN" $@
+    run --config="$PATH_MAIN" --log-file="$PATH_MAIN/log" $@
   fi
   unset SIGNAL_CLI_AGENT_ID
 }
@@ -61,7 +61,7 @@ run_linked() {
   if [ "$JSON_RPC" -eq 1 ]; then
     run --json-rpc-tcp="127.0.0.1:7583" $@
   else
-    run --config="$PATH_LINK" $@
+    run --config="$PATH_LINK" --log-file="$PATH_LINK/log" $@
   fi
   unset SIGNAL_CLI_AGENT_ID
 }
@@ -177,14 +177,14 @@ run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -r "$NUMBER_2"
 run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" listGroups -d
 run_main -a "$NUMBER_1" --output=json listGroups -d
-run_main -a "$NUMBER_2" --verbose receive
+run_main -a "$NUMBER_2" receive
 run_main -a "$NUMBER_2" quitGroup -g "$GROUP_ID"
 run_main -a "$NUMBER_2" listGroups -d
 run_main -a "$NUMBER_2" --output=json listGroups -d
 run_main -a "$NUMBER_1" receive
 run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
-run_main -a "$NUMBER_1" --verbose block -g "$GROUP_ID"
-run_main -a "$NUMBER_1" --verbose unblock -g "$GROUP_ID"
+run_main -a "$NUMBER_1" block -g "$GROUP_ID"
+run_main -a "$NUMBER_1" unblock -g "$GROUP_ID"
 
 ## Configuration
 run_main -a "$NUMBER_1" updateConfiguration --read-receipts=true
