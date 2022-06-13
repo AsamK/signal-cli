@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.10.8] - 2022-06-13
+
+### Added
+- Attachments can now be given as data: URIs with base64 data instead of just file paths (Thanks @KevinRoebert)
+- `version` command can now be used on the commandline, in addition to the `--version` flag.
+  In the next version the current short form `-v` will change its meaning to `--verbose`!
+
+### Improved
+- An account can now be registered on both LIVE and STAGING environment in the same config directory.
+- Logging output for registering has been extended.
+
 ## [0.10.7] - 2022-05-29
 
 ### Added
