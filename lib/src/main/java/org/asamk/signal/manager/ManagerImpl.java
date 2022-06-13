@@ -989,6 +989,9 @@ class ManagerImpl implements Manager {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toSet());
+        if (!recipients.isEmpty() && recipientIds.isEmpty()) {
+            return List.of();
+        }
         // refresh profiles of explicitly given recipients
         context.getProfileHelper().refreshRecipientProfiles(recipientIds);
         return account.getRecipientStore().getRecipients(onlyContacts, blocked, recipientIds, name);
