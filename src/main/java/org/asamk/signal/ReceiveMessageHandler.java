@@ -141,8 +141,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (message.expiresInSeconds() > 0) {
             writer.println("Expires in: {} seconds", message.expiresInSeconds());
         }
-        if (message.hasProfileKey()) {
+        if (message.isProfileKeyUpdate()) {
             writer.println("Profile key update");
+        }
+        if (message.hasProfileKey()) {
+            writer.println("With profile key");
         }
         if (message.reaction().isPresent()) {
             writer.println("Reaction:");
