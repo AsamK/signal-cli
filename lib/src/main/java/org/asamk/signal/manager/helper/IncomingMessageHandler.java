@@ -255,7 +255,10 @@ public final class IncomingMessageHandler {
             } else {
                 // Message wasn't sent as unidentified sender message
                 final var contact = context.getAccount().getContactStore().getContact(sender);
-                if (contact != null && !contact.isBlocked() && contact.isProfileSharingEnabled()) {
+                if (account.isPrimaryDevice()
+                        && contact != null
+                        && !contact.isBlocked()
+                        && contact.isProfileSharingEnabled()) {
                     actions.add(UpdateAccountAttributesAction.create());
                     actions.add(new SendProfileKeyAction(sender));
                 }
