@@ -9,7 +9,7 @@ support [provisioning as a linked device](https://github.com/WhisperSystems/libs
 registering you need a phone number where you can receive SMS or incoming calls.
 
 signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a daemon mode with D-BUS
-interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-PRC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)). For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
+interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-RPC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)). For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
 ## Installation
 
