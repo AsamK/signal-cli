@@ -371,6 +371,7 @@ public class SignalAccount implements Closeable {
         this.lastReceiveTimestamp = 0;
         this.pinMasterKey = null;
         this.storageManifestVersion = -1;
+        this.setStorageManifest(null);
         this.storageKey = null;
     }
 
@@ -1329,9 +1330,19 @@ public class SignalAccount implements Closeable {
     }
 
     public void setStorageManifest(SignalStorageManifest manifest) {
-        final var manifestBytes = manifest.serialize();
-
         final var storageManifestFile = getStorageManifestFile(dataPath, accountPath);
+        if (manifest == null) {
+            if (storageManifestFile.exists()) {
+                try {
+                    Files.delete(storageManifestFile.toPath());
+                } catch (IOException e) {
+                    logger.error("Failed to delete local storage manifest.", e);
+                }
+            }
+            return;
+        }
+
+        final var manifestBytes = manifest.serialize();
         try (var outputStream = new FileOutputStream(storageManifestFile)) {
             outputStream.write(manifestBytes);
         } catch (IOException e) {
@@ -1406,6 +1417,7 @@ public class SignalAccount implements Closeable {
     public void finishRegistration(final ACI aci, final PNI pni, final MasterKey masterKey, final String pin) {
         this.pinMasterKey = masterKey;
         this.storageManifestVersion = -1;
+        this.setStorageManifest(null);
         this.storageKey = null;
         this.encryptedDeviceName = null;
         this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
