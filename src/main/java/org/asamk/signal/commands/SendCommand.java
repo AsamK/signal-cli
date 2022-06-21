@@ -170,6 +170,11 @@ public class SendCommand implements JsonRpcLocalCommand {
             previews = List.of();
         }
 
+        if (messageText.isEmpty() && attachments.isEmpty() && sticker == null && quote == null) {
+            throw new UserErrorException(
+                    "Sending empty message is not allowed, either a message, attachment or sticker must be given.");
+        }
+
         try {
             var results = m.sendMessage(new Message(messageText,
                     attachments,
