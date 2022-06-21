@@ -1253,13 +1253,31 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public void setRegistrationLockPin(final String registrationLockPin, final MasterKey pinMasterKey) {
+    public void setRegistrationLockPin(final String registrationLockPin) {
         this.registrationLockPin = registrationLockPin;
-        this.pinMasterKey = pinMasterKey;
         save();
     }
 
-    public MasterKey getPinMasterKey() {
+    public String getRegistrationLock() {
+        final var masterKey = getPinBackedMasterKey();
+        if (masterKey == null) {
+            return null;
+        }
+        return masterKey.deriveRegistrationLock();
+    }
+
+    public MasterKey getPinBackedMasterKey() {
+        if (registrationLockPin == null) {
+            return null;
+        }
+        return pinMasterKey;
+    }
+
+    public MasterKey getOrCreatePinMasterKey() {
+        if (pinMasterKey == null) {
+            pinMasterKey = KeyUtils.createMasterKey();
+            save();
+        }
         return pinMasterKey;
     }
 

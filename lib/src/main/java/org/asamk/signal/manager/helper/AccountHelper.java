@@ -9,7 +9,6 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
@@ -125,7 +124,7 @@ public class AccountHelper {
                         account.getLocalRegistrationId(),
                         true,
                         null,
-                        account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
+                        account.getRegistrationLock(),
                         account.getSelfUnidentifiedAccessKey(),
                         account.isUnrestrictedUnidentifiedAccess(),
                         ServiceConfig.capabilities,
@@ -157,20 +156,18 @@ public class AccountHelper {
     }
 
     public void setRegistrationPin(String pin) throws IOException {
-        final var masterKey = account.getPinMasterKey() != null
-                ? account.getPinMasterKey()
-                : KeyUtils.createMasterKey();
+        var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().setRegistrationLockPin(pin, masterKey);
 
-        account.setRegistrationLockPin(pin, masterKey);
+        account.setRegistrationLockPin(pin);
     }
 
     public void removeRegistrationPin() throws IOException {
         // Remove KBS Pin
         context.getPinHelper().removeRegistrationLockPin();
 
-        account.setRegistrationLockPin(null, null);
+        account.setRegistrationLockPin(null);
     }
 
     public void unregister() throws IOException {
@@ -189,7 +186,7 @@ public class AccountHelper {
         } catch (IOException e) {
             logger.warn("Failed to remove registration lock pin");
         }
-        account.setRegistrationLockPin(null, null);
+        account.setRegistrationLockPin(null);
 
         dependencies.getAccountManager().deleteAccount();
 

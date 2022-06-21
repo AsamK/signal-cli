@@ -182,7 +182,7 @@ class RegistrationManagerImpl implements RegistrationManager {
                     account.getLocalRegistrationId(),
                     true,
                     null,
-                    account.getPinMasterKey() == null ? null : account.getPinMasterKey().deriveRegistrationLock(),
+                    account.getRegistrationLock(),
                     account.getSelfUnidentifiedAccessKey(),
                     account.isUnrestrictedUnidentifiedAccess(),
                     capabilities,
