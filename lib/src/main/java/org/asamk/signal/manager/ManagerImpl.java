@@ -830,9 +830,7 @@ class ManagerImpl implements Manager {
     }
 
     void retrieveRemoteStorage() throws IOException {
-        if (account.getStorageKey() != null) {
-            context.getStorageHelper().readDataFromStorage();
-        }
+        context.getStorageHelper().readDataFromStorage();
     }
 
     @Override

@@ -43,11 +43,18 @@ public class StorageHelper {
     }
 
     public void readDataFromStorage() throws IOException {
+        final var storageKey = account.getOrCreateStorageKey();
+        if (storageKey == null) {
+            logger.debug("Storage key unknown, requesting from primary device.");
+            context.getSyncHelper().requestSyncKeys();
+            return;
+        }
+
         logger.debug("Reading data from remote storage");
         Optional<SignalStorageManifest> manifest;
         try {
             manifest = dependencies.getAccountManager()
-                    .getStorageManifestIfDifferentVersion(account.getStorageKey(), account.getStorageManifestVersion());
+                    .getStorageManifestIfDifferentVersion(storageKey, account.getStorageManifestVersion());
         } catch (InvalidKeyException e) {
             logger.warn("Manifest couldn't be decrypted, ignoring.");
             return;

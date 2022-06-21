@@ -1288,6 +1288,13 @@ public class SignalAccount implements Closeable {
         return storageKey;
     }
 
+    public StorageKey getOrCreateStorageKey() {
+        if (isPrimaryDevice()) {
+            return getOrCreatePinMasterKey().deriveStorageServiceKey();
+        }
+        return storageKey;
+    }
+
     public void setStorageKey(final StorageKey storageKey) {
         if (storageKey.equals(this.storageKey)) {
             return;
