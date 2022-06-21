@@ -200,7 +200,7 @@ for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m hi
   run_main -a "$NUMBER_2" --output="$OUTPUT" send "$NUMBER_1" -m hi
   run_main -a "$NUMBER_1" --output="$OUTPUT" send -g "$GROUP_ID" -m hi -a LICENSE --mention "1:1:$NUMBER_2"
-  TIMESTAMP=$(uname -a | run_main -a "$NUMBER_1" --output=json send "$NUMBER_2" | jq '.timestamp')
+  TIMESTAMP=$(uname -a | run_main -a "$NUMBER_1" --output=json send --message-from-stdin "$NUMBER_2" | jq '.timestamp')
   run_main -a "$NUMBER_2" --output="$OUTPUT" sendReaction "$NUMBER_1" -e 🍀 -a "$NUMBER_1" -t "$TIMESTAMP"
   run_main -a "$NUMBER_1" --output="$OUTPUT" remoteDelete "$NUMBER_2" -t "$TIMESTAMP"
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive

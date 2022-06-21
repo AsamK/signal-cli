@@ -224,7 +224,6 @@ Specify the recipient group ID in base64 encoding.
 
 *-m* MESSAGE, *--message* MESSAGE::
 Specify the message.
-Currently, signal-cli reads the message from stdin if `-m` is missing, but this will change in a future version and the explicit flag `--message-from-stdin` should be used instead.
 
 *--message-from-stdin*::
 Read the message from standard input.
