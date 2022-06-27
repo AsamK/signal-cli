@@ -19,6 +19,7 @@ import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -143,6 +144,7 @@ public class GroupHelper {
             }
             groupInfoV2.setGroup(group);
             account.getGroupStore().updateGroup(groupInfoV2);
+            context.getJobExecutor().enqueueJob(new SyncStorageJob());
         }
 
         return groupInfoV2;
@@ -185,6 +187,7 @@ public class GroupHelper {
         final var result = sendGroupMessage(messageBuilder,
                 gv2.getMembersIncludingPendingWithout(selfRecipientId),
                 gv2.getDistributionId());
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
         return new Pair<>(gv2.getGroupId(), result);
     }
 
@@ -209,10 +212,11 @@ public class GroupHelper {
         var group = getGroupForUpdating(groupId);
         final var avatarBytes = readAvatarBytes(avatarFile);
 
+        SendGroupMessageResults results;
         switch (group) {
             case GroupInfoV2 gv2 -> {
                 try {
-                    return updateGroupV2(gv2,
+                    results = updateGroupV2(gv2,
                             name,
                             description,
                             members,
@@ -231,7 +235,7 @@ public class GroupHelper {
                 } catch (ConflictException e) {
                     // Detected conflicting update, refreshing group and trying again
                     group = getGroup(groupId, true);
-                    return updateGroupV2((GroupInfoV2) group,
+                    results = updateGroupV2((GroupInfoV2) group,
                             name,
                             description,
                             members,
@@ -251,13 +255,14 @@ public class GroupHelper {
             }
 
             case GroupInfoV1 gv1 -> {
-                final var result = updateGroupV1(gv1, name, members, avatarBytes);
+                results = updateGroupV1(gv1, name, members, avatarBytes);
                 if (expirationTimer != null) {
                     setExpirationTimer(gv1, expirationTimer);
                 }
-                return result;
             }
         }
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
+        return results;
     }
 
     public void updateGroupProfileKey(GroupIdV2 groupId) throws GroupNotFoundException, NotAGroupMemberException, IOException {
@@ -304,6 +309,7 @@ public class GroupHelper {
 
         final var result = sendUpdateGroupV2Message(group, group.getGroup(), groupChange);
 
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
         return new Pair<>(group.getGroupId(), result);
     }
 
@@ -327,6 +333,7 @@ public class GroupHelper {
     public void deleteGroup(GroupId groupId) throws IOException {
         account.getGroupStore().deleteGroup(groupId);
         context.getAvatarStore().deleteGroupAvatar(groupId);
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
@@ -337,6 +344,7 @@ public class GroupHelper {
 
         group.setBlocked(blocked);
         account.getGroupStore().updateGroup(group);
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     public SendGroupMessageResults sendGroupInfoRequest(

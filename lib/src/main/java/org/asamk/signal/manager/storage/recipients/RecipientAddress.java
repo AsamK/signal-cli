@@ -89,6 +89,10 @@ public record RecipientAddress(
                 address.username.equals(this.username) ? Optional.empty() : this.username);
     }
 
+    public Optional<ACI> aci() {
+        return serviceId.map(s -> s instanceof ServiceId.ACI aci ? aci : null);
+    }
+
     public String getIdentifier() {
         if (serviceId.isPresent()) {
             return serviceId.get().toString();

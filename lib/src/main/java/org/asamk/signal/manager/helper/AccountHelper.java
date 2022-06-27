@@ -8,6 +8,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
@@ -137,11 +138,11 @@ public class AccountHelper {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
         account.getRecipientTrustedResolver().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
-        // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
         dependencies.resetAfterAddressChange();
         context.getGroupV2Helper().clearAuthCredentialCache();
         context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     public void setPni(
@@ -450,6 +451,7 @@ public class AccountHelper {
             throw new InvalidDeviceLinkException("Invalid device link", e);
         }
         account.setMultiDevice(true);
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     public void removeLinkedDevices(int deviceId) throws IOException {

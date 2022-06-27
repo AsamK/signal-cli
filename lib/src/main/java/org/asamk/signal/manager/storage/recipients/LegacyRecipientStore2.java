@@ -83,7 +83,13 @@ public class LegacyRecipientStore2 {
                                     .collect(Collectors.toSet()));
                 }
 
-                return new Recipient(recipientId, address, contact, profileKey, expiringProfileKeyCredential, profile);
+                return new Recipient(recipientId,
+                        address,
+                        contact,
+                        profileKey,
+                        expiringProfileKeyCredential,
+                        profile,
+                        null);
             }).collect(Collectors.toMap(Recipient::getRecipientId, r -> r));
 
             recipientStore.addLegacyRecipients(recipients);

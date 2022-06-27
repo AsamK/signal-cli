@@ -113,6 +113,10 @@ public class KeyUtils {
         return MasterKey.createNew(secureRandom);
     }
 
+    public static byte[] createRawStorageId() {
+        return getSecretBytes(16);
+    }
+
     private static String getSecret(int size) {
         var secret = getSecretBytes(size);
         return Base64.getEncoder().encodeToString(secret);

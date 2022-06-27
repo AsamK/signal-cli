@@ -70,11 +70,13 @@ public class JobExecutor implements AutoCloseable {
 
     @Override
     public void close() {
+        final boolean queueEmpty;
         synchronized (queue) {
-            if (queue.isEmpty()) {
-                executorService.close();
-                return;
-            }
+            queueEmpty = queue.isEmpty();
+        }
+        if (queueEmpty) {
+            executorService.close();
+            return;
         }
         synchronized (this) {
             try {

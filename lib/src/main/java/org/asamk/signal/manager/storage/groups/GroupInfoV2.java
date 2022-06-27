@@ -24,6 +24,7 @@ public final class GroupInfoV2 extends GroupInfo {
     private final DistributionId distributionId;
     private boolean blocked;
     private DecryptedGroup group;
+    private byte[] storageRecord;
     private boolean permissionDenied;
 
     private final RecipientResolver recipientResolver;
@@ -44,6 +45,7 @@ public final class GroupInfoV2 extends GroupInfo {
             final DistributionId distributionId,
             final boolean blocked,
             final boolean permissionDenied,
+            final byte[] storageRecord,
             final RecipientResolver recipientResolver
     ) {
         this.groupId = groupId;
@@ -52,6 +54,7 @@ public final class GroupInfoV2 extends GroupInfo {
         this.distributionId = distributionId;
         this.blocked = blocked;
         this.permissionDenied = permissionDenied;
+        this.storageRecord = storageRecord;
         this.recipientResolver = recipientResolver;
     }
 
@@ -62,6 +65,10 @@ public final class GroupInfoV2 extends GroupInfo {
 
     public GroupMasterKey getMasterKey() {
         return masterKey;
+    }
+
+    public byte[] getStorageRecord() {
+        return storageRecord;
     }
 
     public DistributionId getDistributionId() {

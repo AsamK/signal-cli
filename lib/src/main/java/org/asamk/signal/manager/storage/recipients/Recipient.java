@@ -21,13 +21,16 @@ public class Recipient {
 
     private final Profile profile;
 
+    private final byte[] storageRecord;
+
     public Recipient(
             final RecipientId recipientId,
             final RecipientAddress address,
             final Contact contact,
             final ProfileKey profileKey,
             final ExpiringProfileKeyCredential expiringProfileKeyCredential,
-            final Profile profile
+            final Profile profile,
+            final byte[] storageRecord
     ) {
         this.recipientId = recipientId;
         this.address = address;
@@ -35,6 +38,7 @@ public class Recipient {
         this.profileKey = profileKey;
         this.expiringProfileKeyCredential = expiringProfileKeyCredential;
         this.profile = profile;
+        this.storageRecord = storageRecord;
     }
 
     private Recipient(final Builder builder) {
@@ -42,8 +46,9 @@ public class Recipient {
         address = builder.address;
         contact = builder.contact;
         profileKey = builder.profileKey;
-        expiringProfileKeyCredential = builder.expiringProfileKeyCredential1;
+        expiringProfileKeyCredential = builder.expiringProfileKeyCredential;
         profile = builder.profile;
+        storageRecord = builder.storageRecord;
     }
 
     public static Builder newBuilder() {
@@ -56,8 +61,9 @@ public class Recipient {
         builder.address = copy.getAddress();
         builder.contact = copy.getContact();
         builder.profileKey = copy.getProfileKey();
-        builder.expiringProfileKeyCredential1 = copy.getExpiringProfileKeyCredential();
+        builder.expiringProfileKeyCredential = copy.getExpiringProfileKeyCredential();
         builder.profile = copy.getProfile();
+        builder.storageRecord = copy.getStorageRecord();
         return builder;
     }
 
@@ -85,6 +91,10 @@ public class Recipient {
         return profile;
     }
 
+    public byte[] getStorageRecord() {
+        return storageRecord;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -109,8 +119,9 @@ public class Recipient {
         private RecipientAddress address;
         private Contact contact;
         private ProfileKey profileKey;
-        private ExpiringProfileKeyCredential expiringProfileKeyCredential1;
+        private ExpiringProfileKeyCredential expiringProfileKeyCredential;
         private Profile profile;
+        private byte[] storageRecord;
 
         private Builder() {
         }
@@ -136,12 +147,17 @@ public class Recipient {
         }
 
         public Builder withExpiringProfileKeyCredential(final ExpiringProfileKeyCredential val) {
-            expiringProfileKeyCredential1 = val;
+            expiringProfileKeyCredential = val;
             return this;
         }
 
         public Builder withProfile(final Profile val) {
             profile = val;
+            return this;
+        }
+
+        public Builder withStorageRecord(final byte[] val) {
+            storageRecord = val;
             return this;
         }
 

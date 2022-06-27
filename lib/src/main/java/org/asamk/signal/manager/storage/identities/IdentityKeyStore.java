@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
+import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.IdentityKeyStore.Direction;
@@ -27,6 +28,7 @@ public class IdentityKeyStore {
     private static final String TABLE_IDENTITY = "identity";
     private final Database database;
     private final TrustNewIdentity trustNewIdentity;
+    private final RecipientStore recipientStore;
     private final PublishSubject<ServiceId> identityChanges = PublishSubject.create();
 
     private boolean isRetryingDecryption = false;
@@ -46,9 +48,12 @@ public class IdentityKeyStore {
         }
     }
 
-    public IdentityKeyStore(final Database database, final TrustNewIdentity trustNewIdentity) {
+    public IdentityKeyStore(
+            final Database database, final TrustNewIdentity trustNewIdentity, RecipientStore recipientStore
+    ) {
         this.database = database;
         this.trustNewIdentity = trustNewIdentity;
+        this.recipientStore = recipientStore;
     }
 
     public Observable<ServiceId> getIdentityChanges() {
@@ -59,23 +64,35 @@ public class IdentityKeyStore {
         return saveIdentity(serviceId.toString(), identityKey);
     }
 
+    public boolean saveIdentity(
+            final Connection connection, final ServiceId serviceId, final IdentityKey identityKey
+    ) throws SQLException {
+        return saveIdentity(connection, serviceId.toString(), identityKey);
+    }
+
     boolean saveIdentity(final String address, final IdentityKey identityKey) {
         if (isRetryingDecryption) {
             return false;
         }
         try (final var connection = database.getConnection()) {
-            final var identityInfo = loadIdentity(connection, address);
-            if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
-                // Identity already exists, not updating the trust level
-                logger.trace("Not storing new identity for recipient {}, identity already stored", address);
-                return false;
-            }
-
-            saveNewIdentity(connection, address, identityKey, identityInfo == null);
-            return true;
+            return saveIdentity(connection, address, identityKey);
         } catch (SQLException e) {
             throw new RuntimeException("Failed update identity store", e);
         }
+    }
+
+    private boolean saveIdentity(
+            final Connection connection, final String address, final IdentityKey identityKey
+    ) throws SQLException {
+        final var identityInfo = loadIdentity(connection, address);
+        if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
+            // Identity already exists, not updating the trust level
+            logger.trace("Not storing new identity for recipient {}, identity already stored", address);
+            return false;
+        }
+
+        saveNewIdentity(connection, address, identityKey, identityInfo == null);
+        return true;
     }
 
     public void setRetryingDecryption(final boolean retryingDecryption) {
@@ -84,31 +101,40 @@ public class IdentityKeyStore {
 
     public boolean setIdentityTrustLevel(ServiceId serviceId, IdentityKey identityKey, TrustLevel trustLevel) {
         try (final var connection = database.getConnection()) {
-            final var address = serviceId.toString();
-            final var identityInfo = loadIdentity(connection, address);
-            if (identityInfo == null) {
-                logger.debug("Not updating trust level for recipient {}, identity not found", serviceId);
-                return false;
-            }
-            if (!identityInfo.getIdentityKey().equals(identityKey)) {
-                logger.debug("Not updating trust level for recipient {}, different identity found", serviceId);
-                return false;
-            }
-            if (identityInfo.getTrustLevel() == trustLevel) {
-                logger.trace("Not updating trust level for recipient {}, trust level already matches", serviceId);
-                return false;
-            }
-
-            logger.debug("Updating trust level for recipient {} with trust {}", serviceId, trustLevel);
-            final var newIdentityInfo = new IdentityInfo(address,
-                    identityKey,
-                    trustLevel,
-                    identityInfo.getDateAddedTimestamp());
-            storeIdentity(connection, newIdentityInfo);
-            return true;
+            return setIdentityTrustLevel(connection, serviceId, identityKey, trustLevel);
         } catch (SQLException e) {
             throw new RuntimeException("Failed update identity store", e);
         }
+    }
+
+    public boolean setIdentityTrustLevel(
+            final Connection connection,
+            final ServiceId serviceId,
+            final IdentityKey identityKey,
+            final TrustLevel trustLevel
+    ) throws SQLException {
+        final var address = serviceId.toString();
+        final var identityInfo = loadIdentity(connection, address);
+        if (identityInfo == null) {
+            logger.debug("Not updating trust level for recipient {}, identity not found", serviceId);
+            return false;
+        }
+        if (!identityInfo.getIdentityKey().equals(identityKey)) {
+            logger.debug("Not updating trust level for recipient {}, different identity found", serviceId);
+            return false;
+        }
+        if (identityInfo.getTrustLevel() == trustLevel) {
+            logger.trace("Not updating trust level for recipient {}, trust level already matches", serviceId);
+            return false;
+        }
+
+        logger.debug("Updating trust level for recipient {} with trust {}", serviceId, trustLevel);
+        final var newIdentityInfo = new IdentityInfo(address,
+                identityKey,
+                trustLevel,
+                identityInfo.getDateAddedTimestamp());
+        storeIdentity(connection, newIdentityInfo);
+        return true;
     }
 
     public boolean isTrustedIdentity(ServiceId serviceId, IdentityKey identityKey, Direction direction) {
@@ -157,6 +183,10 @@ public class IdentityKeyStore {
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from identity store", e);
         }
+    }
+
+    public IdentityInfo getIdentityInfo(Connection connection, String address) throws SQLException {
+        return loadIdentity(connection, address);
     }
 
     public List<IdentityInfo> getIdentities() {
@@ -252,6 +282,7 @@ public class IdentityKeyStore {
             statement.setInt(4, identityInfo.getTrustLevel().ordinal());
             statement.executeUpdate();
         }
+        recipientStore.rotateStorageId(connection, identityInfo.getServiceId());
     }
 
     private void deleteIdentity(final Connection connection, final String address) throws SQLException {

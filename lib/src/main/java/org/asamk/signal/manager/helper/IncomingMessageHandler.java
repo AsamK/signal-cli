@@ -6,7 +6,6 @@ import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
 import org.asamk.signal.manager.actions.ResendMessageAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
-import org.asamk.signal.manager.actions.RetrieveStorageDataAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
 import org.asamk.signal.manager.actions.SendProfileKeyAction;
@@ -17,6 +16,7 @@ import org.asamk.signal.manager.actions.SendSyncConfigurationAction;
 import org.asamk.signal.manager.actions.SendSyncContactsAction;
 import org.asamk.signal.manager.actions.SendSyncGroupsAction;
 import org.asamk.signal.manager.actions.SendSyncKeysAction;
+import org.asamk.signal.manager.actions.SyncStorageDataAction;
 import org.asamk.signal.manager.actions.UpdateAccountAttributesAction;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
@@ -511,6 +511,7 @@ public final class IncomingMessageHandler {
             if (rm.isConfigurationRequest()) {
                 actions.add(SendSyncConfigurationAction.create());
             }
+            actions.add(SyncStorageDataAction.create());
         }
         if (syncMessage.getGroups().isPresent()) {
             try {
@@ -578,7 +579,7 @@ public final class IncomingMessageHandler {
         if (syncMessage.getFetchType().isPresent()) {
             switch (syncMessage.getFetchType().get()) {
                 case LOCAL_PROFILE -> actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
-                case STORAGE_MANIFEST -> actions.add(RetrieveStorageDataAction.create());
+                case STORAGE_MANIFEST -> actions.add(SyncStorageDataAction.create());
             }
         }
         if (syncMessage.getKeys().isPresent()) {
@@ -586,7 +587,12 @@ public final class IncomingMessageHandler {
             if (keysMessage.getStorageService().isPresent()) {
                 final var storageKey = keysMessage.getStorageService().get();
                 account.setStorageKey(storageKey);
-                actions.add(RetrieveStorageDataAction.create());
+                actions.add(SyncStorageDataAction.create());
+            }
+            if (keysMessage.getMaster().isPresent()) {
+                final var masterKey = keysMessage.getMaster().get();
+                account.setMasterKey(masterKey);
+                actions.add(SyncStorageDataAction.create());
             }
         }
         if (syncMessage.getConfiguration().isPresent()) {

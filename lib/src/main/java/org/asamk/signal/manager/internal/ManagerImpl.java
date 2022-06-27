@@ -66,6 +66,7 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.helper.RecipientHelper.RegisteredUser;
+import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -125,6 +126,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class ManagerImpl implements Manager {
 
@@ -193,22 +195,25 @@ public class ManagerImpl implements Manager {
                 this.notifyAll();
             }
         });
-        disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(serviceId -> {
-            logger.trace("Archiving old sessions for {}", serviceId);
-            account.getAccountData(ServiceIdType.ACI).getSessionStore().archiveSessions(serviceId);
-            account.getAccountData(ServiceIdType.PNI).getSessionStore().archiveSessions(serviceId);
-            account.getSenderKeyStore().deleteSharedWith(serviceId);
-            final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
-            final var profile = account.getProfileStore().getProfile(recipientId);
-            if (profile != null) {
-                account.getProfileStore()
-                        .storeProfile(recipientId,
-                                Profile.newBuilder(profile)
-                                        .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
-                                        .withLastUpdateTimestamp(0)
-                                        .build());
-            }
-        }));
+        disposable.add(account.getIdentityKeyStore()
+                .getIdentityChanges()
+                .observeOn(Schedulers.from(executor))
+                .subscribe(serviceId -> {
+                    logger.trace("Archiving old sessions for {}", serviceId);
+                    account.getAccountData(ServiceIdType.ACI).getSessionStore().archiveSessions(serviceId);
+                    account.getAccountData(ServiceIdType.PNI).getSessionStore().archiveSessions(serviceId);
+                    account.getSenderKeyStore().deleteSharedWith(serviceId);
+                    final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
+                    final var profile = account.getProfileStore().getProfile(recipientId);
+                    if (profile != null) {
+                        account.getProfileStore()
+                                .storeProfile(recipientId,
+                                        Profile.newBuilder(profile)
+                                                .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
+                                                .withLastUpdateTimestamp(0)
+                                                .build());
+                    }
+                }));
     }
 
     @Override
@@ -295,13 +300,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void updateConfiguration(
-            Configuration configuration
-    ) throws NotPrimaryDeviceException {
-        if (!account.isPrimaryDevice()) {
-            throw new NotPrimaryDeviceException();
-        }
-
+    public void updateConfiguration(Configuration configuration) {
         final var configurationStore = account.getConfigurationStore();
         if (configuration.readReceipts().isPresent()) {
             configurationStore.setReadReceipts(configuration.readReceipts().get());
@@ -316,6 +315,7 @@ public class ManagerImpl implements Manager {
             configurationStore.setLinkPreviews(configuration.linkPreviews().get());
         }
         context.getSyncHelper().sendConfigurationMessage();
+        syncRemoteStorage();
     }
 
     @Override
@@ -870,6 +870,7 @@ public class ManagerImpl implements Manager {
         if (recipientIdOptional.isPresent()) {
             context.getContactHelper().setContactHidden(recipientIdOptional.get(), true);
             account.removeRecipient(recipientIdOptional.get());
+            syncRemoteStorage();
         }
     }
 
@@ -878,6 +879,7 @@ public class ManagerImpl implements Manager {
         final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
         if (recipientIdOptional.isPresent()) {
             account.removeRecipient(recipientIdOptional.get());
+            syncRemoteStorage();
         }
     }
 
@@ -886,6 +888,7 @@ public class ManagerImpl implements Manager {
         final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
         if (recipientIdOptional.isPresent()) {
             account.getContactStore().deleteContact(recipientIdOptional.get());
+            syncRemoteStorage();
         }
     }
 
@@ -898,15 +901,13 @@ public class ManagerImpl implements Manager {
         }
         context.getContactHelper()
                 .setContactName(context.getRecipientHelper().resolveRecipient(recipient), givenName, familyName);
+        syncRemoteStorage();
     }
 
     @Override
     public void setContactsBlocked(
             Collection<RecipientIdentifier.Single> recipients, boolean blocked
-    ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException {
-        if (!account.isPrimaryDevice()) {
-            throw new NotPrimaryDeviceException();
-        }
+    ) throws IOException, UnregisteredRecipientException {
         if (recipients.isEmpty()) {
             return;
         }
@@ -930,15 +931,13 @@ public class ManagerImpl implements Manager {
             context.getProfileHelper().rotateProfileKey();
         }
         context.getSyncHelper().sendBlockedList();
+        syncRemoteStorage();
     }
 
     @Override
     public void setGroupsBlocked(
             final Collection<GroupId> groupIds, final boolean blocked
-    ) throws GroupNotFoundException, NotPrimaryDeviceException, IOException {
-        if (!account.isPrimaryDevice()) {
-            throw new NotPrimaryDeviceException();
-        }
+    ) throws GroupNotFoundException, IOException {
         if (groupIds.isEmpty()) {
             return;
         }
@@ -954,6 +953,7 @@ public class ManagerImpl implements Manager {
             context.getProfileHelper().rotateProfileKey();
         }
         context.getSyncHelper().sendBlockedList();
+        syncRemoteStorage();
     }
 
     @Override
@@ -968,6 +968,7 @@ public class ManagerImpl implements Manager {
         } catch (NotAGroupMemberException | GroupNotFoundException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         }
+        syncRemoteStorage();
     }
 
     @Override
@@ -1025,13 +1026,13 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void requestAllSyncData() throws IOException {
+    public void requestAllSyncData() {
         context.getSyncHelper().requestAllSyncData();
-        retrieveRemoteStorage();
+        syncRemoteStorage();
     }
 
-    void retrieveRemoteStorage() throws IOException {
-        context.getStorageHelper().readDataFromStorage();
+    void syncRemoteStorage() {
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
 
     @Override

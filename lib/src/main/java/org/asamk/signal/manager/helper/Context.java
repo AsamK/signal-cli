@@ -80,7 +80,7 @@ public class Context implements AutoCloseable {
         return attachmentStore;
     }
 
-    JobExecutor getJobExecutor() {
+    public JobExecutor getJobExecutor() {
         return jobExecutor;
     }
 

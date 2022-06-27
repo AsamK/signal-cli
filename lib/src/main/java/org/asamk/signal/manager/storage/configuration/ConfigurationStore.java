@@ -3,10 +3,15 @@ package org.asamk.signal.manager.storage.configuration;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.storage.keyValue.KeyValueEntry;
 import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
+import org.asamk.signal.manager.storage.recipients.RecipientStore;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class ConfigurationStore {
 
     private final KeyValueStore keyValueStore;
+    private final RecipientStore recipientStore;
 
     private final KeyValueEntry<Boolean> readReceipts = new KeyValueEntry<>("config-read-receipts", Boolean.class);
     private final KeyValueEntry<Boolean> unidentifiedDeliveryIndicators = new KeyValueEntry<>(
@@ -20,9 +25,11 @@ public class ConfigurationStore {
     private final KeyValueEntry<PhoneNumberSharingMode> phoneNumberSharingMode = new KeyValueEntry<>(
             "config-phone-number-sharing-mode",
             PhoneNumberSharingMode.class);
+    private final KeyValueEntry<String> usernameLinkColor = new KeyValueEntry<>("username-link-color", String.class);
 
-    public ConfigurationStore(final KeyValueStore keyValueStore) {
+    public ConfigurationStore(final KeyValueStore keyValueStore, RecipientStore recipientStore) {
         this.keyValueStore = keyValueStore;
+        this.recipientStore = recipientStore;
     }
 
     public Boolean getReadReceipts() {
@@ -30,7 +37,15 @@ public class ConfigurationStore {
     }
 
     public void setReadReceipts(final boolean value) {
-        keyValueStore.storeEntry(readReceipts, value);
+        if (keyValueStore.storeEntry(readReceipts, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setReadReceipts(final Connection connection, final boolean value) throws SQLException {
+        if (keyValueStore.storeEntry(connection, readReceipts, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 
     public Boolean getUnidentifiedDeliveryIndicators() {
@@ -38,7 +53,17 @@ public class ConfigurationStore {
     }
 
     public void setUnidentifiedDeliveryIndicators(final boolean value) {
-        keyValueStore.storeEntry(unidentifiedDeliveryIndicators, value);
+        if (keyValueStore.storeEntry(unidentifiedDeliveryIndicators, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setUnidentifiedDeliveryIndicators(
+            final Connection connection, final boolean value
+    ) throws SQLException {
+        if (keyValueStore.storeEntry(connection, unidentifiedDeliveryIndicators, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 
     public Boolean getTypingIndicators() {
@@ -46,7 +71,15 @@ public class ConfigurationStore {
     }
 
     public void setTypingIndicators(final boolean value) {
-        keyValueStore.storeEntry(typingIndicators, value);
+        if (keyValueStore.storeEntry(typingIndicators, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setTypingIndicators(final Connection connection, final boolean value) throws SQLException {
+        if (keyValueStore.storeEntry(connection, typingIndicators, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 
     public Boolean getLinkPreviews() {
@@ -54,7 +87,15 @@ public class ConfigurationStore {
     }
 
     public void setLinkPreviews(final boolean value) {
-        keyValueStore.storeEntry(linkPreviews, value);
+        if (keyValueStore.storeEntry(linkPreviews, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setLinkPreviews(final Connection connection, final boolean value) throws SQLException {
+        if (keyValueStore.storeEntry(connection, linkPreviews, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 
     public Boolean getPhoneNumberUnlisted() {
@@ -62,7 +103,15 @@ public class ConfigurationStore {
     }
 
     public void setPhoneNumberUnlisted(final boolean value) {
-        keyValueStore.storeEntry(phoneNumberUnlisted, value);
+        if (keyValueStore.storeEntry(phoneNumberUnlisted, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setPhoneNumberUnlisted(final Connection connection, final boolean value) throws SQLException {
+        if (keyValueStore.storeEntry(connection, phoneNumberUnlisted, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 
     public PhoneNumberSharingMode getPhoneNumberSharingMode() {
@@ -70,6 +119,32 @@ public class ConfigurationStore {
     }
 
     public void setPhoneNumberSharingMode(final PhoneNumberSharingMode value) {
-        keyValueStore.storeEntry(phoneNumberSharingMode, value);
+        if (keyValueStore.storeEntry(phoneNumberSharingMode, value)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setPhoneNumberSharingMode(
+            final Connection connection, final PhoneNumberSharingMode value
+    ) throws SQLException {
+        if (keyValueStore.storeEntry(connection, phoneNumberSharingMode, value)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
+    }
+
+    public String getUsernameLinkColor() {
+        return keyValueStore.getEntry(usernameLinkColor);
+    }
+
+    public void setUsernameLinkColor(final String color) {
+        if (keyValueStore.storeEntry(usernameLinkColor, color)) {
+            recipientStore.rotateSelfStorageId();
+        }
+    }
+
+    public void setUsernameLinkColor(final Connection connection, final String color) throws SQLException {
+        if (keyValueStore.storeEntry(connection, usernameLinkColor, color)) {
+            recipientStore.rotateSelfStorageId(connection);
+        }
     }
 }

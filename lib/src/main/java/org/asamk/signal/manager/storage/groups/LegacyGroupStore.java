@@ -59,7 +59,8 @@ public class LegacyGroupStore {
                         g1.color,
                         g1.messageExpirationTime,
                         g1.blocked,
-                        g1.archived);
+                        g1.archived,
+                        null);
             }
 
             final var g2 = (Storage.GroupV2) g;
@@ -77,6 +78,7 @@ public class LegacyGroupStore {
                     g2.distributionId == null ? DistributionId.create() : DistributionId.from(g2.distributionId),
                     g2.blocked,
                     g2.permissionDenied,
+                    null,
                     recipientResolver);
         }).toList();
 

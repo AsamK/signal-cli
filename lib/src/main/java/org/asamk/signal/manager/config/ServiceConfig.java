@@ -29,7 +29,7 @@ public class ServiceConfig {
         final var giftBadges = !isPrimaryDevice;
         final var pni = !isPrimaryDevice;
         final var paymentActivation = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(false, true, true, true, true, giftBadges, pni, paymentActivation);
+        return new AccountAttributes.Capabilities(true, true, true, true, true, giftBadges, pni, paymentActivation);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

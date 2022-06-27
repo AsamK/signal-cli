@@ -1,39 +1,47 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.api.Contact;
-import org.asamk.signal.manager.api.GroupId;
-import org.asamk.signal.manager.api.PhoneNumberSharingMode;
-import org.asamk.signal.manager.api.Profile;
-import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.api.GroupIdV1;
+import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.internal.SignalDependencies;
-import org.asamk.signal.manager.jobs.CheckWhoAmIJob;
-import org.asamk.signal.manager.jobs.DownloadProfileAvatarJob;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.signal.libsignal.protocol.IdentityKey;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.asamk.signal.manager.syncStorage.AccountRecordProcessor;
+import org.asamk.signal.manager.syncStorage.ContactRecordProcessor;
+import org.asamk.signal.manager.syncStorage.GroupV1RecordProcessor;
+import org.asamk.signal.manager.syncStorage.GroupV2RecordProcessor;
+import org.asamk.signal.manager.syncStorage.StorageSyncModels;
+import org.asamk.signal.manager.syncStorage.StorageSyncValidations;
+import org.asamk.signal.manager.syncStorage.WriteOperationResult;
+import org.asamk.signal.manager.util.KeyUtils;
+import org.signal.core.util.SetUtil;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.zkgroup.InvalidInputException;
-import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
-import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
+import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.internal.storage.protos.ManifestRecord;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class StorageHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(StorageHelper.class);
+    private static final List<Integer> KNOWN_TYPES = List.of(ManifestRecord.Identifier.Type.CONTACT.getValue(),
+            ManifestRecord.Identifier.Type.GROUPV1.getValue(),
+            ManifestRecord.Identifier.Type.GROUPV2.getValue(),
+            ManifestRecord.Identifier.Type.ACCOUNT.getValue());
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
@@ -45,275 +53,496 @@ public class StorageHelper {
         this.context = context;
     }
 
-    public void readDataFromStorage() throws IOException {
+    public void syncDataWithStorage() throws IOException {
         final var storageKey = account.getOrCreateStorageKey();
         if (storageKey == null) {
-            logger.debug("Storage key unknown, requesting from primary device.");
-            context.getSyncHelper().requestSyncKeys();
+            if (!account.isPrimaryDevice()) {
+                logger.debug("Storage key unknown, requesting from primary device.");
+                context.getSyncHelper().requestSyncKeys();
+            }
             return;
         }
 
-        logger.debug("Reading data from remote storage");
-        Optional<SignalStorageManifest> manifest;
+        logger.trace("Reading manifest from remote storage");
+        final var localManifestVersion = account.getStorageManifestVersion();
+        final var localManifest = account.getStorageManifest().orElse(SignalStorageManifest.EMPTY);
+        SignalStorageManifest remoteManifest;
         try {
-            manifest = dependencies.getAccountManager()
-                    .getStorageManifestIfDifferentVersion(storageKey, account.getStorageManifestVersion());
+            remoteManifest = dependencies.getAccountManager()
+                    .getStorageManifestIfDifferentVersion(storageKey, localManifestVersion)
+                    .orElse(localManifest);
         } catch (InvalidKeyException e) {
-            logger.warn("Manifest couldn't be decrypted, ignoring.");
-            return;
-        }
-
-        if (manifest.isEmpty()) {
-            logger.debug("Manifest is up to date, does not exist or couldn't be decrypted, ignoring.");
-            return;
-        }
-
-        logger.trace("Remote storage manifest has {} records", manifest.get().getStorageIds().size());
-        final var storageIds = manifest.get()
-                .getStorageIds()
-                .stream()
-                .filter(id -> !id.isUnknown())
-                .collect(Collectors.toSet());
-
-        Optional<SignalStorageManifest> localManifest = account.getStorageManifest();
-        localManifest.ifPresent(m -> m.getStorageIds().forEach(storageIds::remove));
-
-        logger.trace("Reading {} new records", manifest.get().getStorageIds().size());
-        for (final var record : getSignalStorageRecords(storageIds)) {
-            logger.debug("Reading record of type {}", record.getType());
-            if (record.getType() == ManifestRecord.Identifier.Type.ACCOUNT.getValue()) {
-                readAccountRecord(record);
-            } else if (record.getType() == ManifestRecord.Identifier.Type.GROUPV2.getValue()) {
-                readGroupV2Record(record);
-            } else if (record.getType() == ManifestRecord.Identifier.Type.GROUPV1.getValue()) {
-                readGroupV1Record(record);
-            } else if (record.getType() == ManifestRecord.Identifier.Type.CONTACT.getValue()) {
-                readContactRecord(record);
-            }
-        }
-        account.setStorageManifestVersion(manifest.get().getVersion());
-        account.setStorageManifest(manifest.get());
-        logger.debug("Done reading data from remote storage");
-    }
-
-    private void readContactRecord(final SignalStorageRecord record) {
-        if (record == null || record.getContact().isEmpty()) {
-            return;
-        }
-
-        final var contactRecord = record.getContact().get();
-        final var aci = contactRecord.getAci().orElse(null);
-        final var pni = contactRecord.getPni().orElse(null);
-        if (contactRecord.getNumber().isEmpty() && aci == null && pni == null) {
-            return;
-        }
-        final var address = new RecipientAddress(aci, pni, contactRecord.getNumber().orElse(null));
-        var recipientId = account.getRecipientResolver().resolveRecipient(address);
-        if (aci != null && contactRecord.getUsername().isPresent()) {
-            recipientId = account.getRecipientTrustedResolver()
-                    .resolveRecipientTrusted(aci, contactRecord.getUsername().get());
-        }
-
-        final var contact = account.getContactStore().getContact(recipientId);
-        final var blocked = contact != null && contact.isBlocked();
-        final var profileShared = contact != null && contact.isProfileSharingEnabled();
-        final var archived = contact != null && contact.isArchived();
-        final var hidden = contact != null && contact.isHidden();
-        final var contactGivenName = contact == null ? null : contact.givenName();
-        final var contactFamilyName = contact == null ? null : contact.familyName();
-        if (blocked != contactRecord.isBlocked()
-                || profileShared != contactRecord.isProfileSharingEnabled()
-                || archived != contactRecord.isArchived()
-                || hidden != contactRecord.isHidden()
-                || (
-                contactRecord.getSystemGivenName().isPresent() && !contactRecord.getSystemGivenName()
-                        .get()
-                        .equals(contactGivenName)
-        )
-                || (
-                contactRecord.getSystemFamilyName().isPresent() && !contactRecord.getSystemFamilyName()
-                        .get()
-                        .equals(contactFamilyName)
-        )) {
-            logger.debug("Storing new or updated contact {}", recipientId);
-            final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            final var newContact = contactBuilder.withIsBlocked(contactRecord.isBlocked())
-                    .withIsProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
-                    .withIsArchived(contactRecord.isArchived())
-                    .withIsHidden(contactRecord.isHidden());
-            if (contactRecord.getSystemGivenName().isPresent() || contactRecord.getSystemFamilyName().isPresent()) {
-                newContact.withGivenName(contactRecord.getSystemGivenName().orElse(null))
-                        .withFamilyName(contactRecord.getSystemFamilyName().orElse(null));
-            }
-            account.getContactStore().storeContact(recipientId, newContact.build());
-        }
-
-        final var profile = account.getProfileStore().getProfile(recipientId);
-        final var profileGivenName = profile == null ? null : profile.getGivenName();
-        final var profileFamilyName = profile == null ? null : profile.getFamilyName();
-        if ((
-                contactRecord.getProfileGivenName().isPresent() && !contactRecord.getProfileGivenName()
-                        .get()
-                        .equals(profileGivenName)
-        ) || (
-                contactRecord.getProfileFamilyName().isPresent() && !contactRecord.getProfileFamilyName()
-                        .get()
-                        .equals(profileFamilyName)
-        )) {
-            final var profileBuilder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
-            final var newProfile = profileBuilder.withGivenName(contactRecord.getProfileGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getProfileFamilyName().orElse(null))
-                    .build();
-            account.getProfileStore().storeProfile(recipientId, newProfile);
-        }
-        if (contactRecord.getProfileKey().isPresent()) {
-            try {
-                logger.trace("Storing profile key {}", recipientId);
-                final var profileKey = new ProfileKey(contactRecord.getProfileKey().get());
-                account.getProfileStore().storeProfileKey(recipientId, profileKey);
-            } catch (InvalidInputException e) {
-                logger.warn("Received invalid contact profile key from storage");
-            }
-        }
-        if (contactRecord.getIdentityKey().isPresent() && aci != null) {
-            try {
-                logger.trace("Storing identity key {}", recipientId);
-                final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());
-                account.getIdentityKeyStore().saveIdentity(aci, identityKey);
-
-                final var trustLevel = TrustLevel.fromIdentityState(contactRecord.getIdentityState());
-                if (trustLevel != null) {
-                    account.getIdentityKeyStore().setIdentityTrustLevel(aci, identityKey, trustLevel);
+            logger.warn("Manifest couldn't be decrypted.");
+            if (account.isPrimaryDevice()) {
+                try {
+                    forcePushToStorage(storageKey);
+                } catch (RetryLaterException rle) {
+                    // TODO retry later
+                    return;
                 }
-            } catch (InvalidKeyException e) {
-                logger.warn("Received invalid contact identity key from storage");
             }
-        }
-    }
-
-    private void readGroupV1Record(final SignalStorageRecord record) {
-        if (record == null || record.getGroupV1().isEmpty()) {
             return;
         }
 
-        final var groupV1Record = record.getGroupV1().get();
-        final var groupIdV1 = GroupId.v1(groupV1Record.getGroupId());
+        logger.trace("Manifest versions: local {}, remote {}", localManifestVersion, remoteManifest.getVersion());
 
-        var group = account.getGroupStore().getGroup(groupIdV1);
-        if (group == null) {
-            try {
-                context.getGroupHelper().sendGroupInfoRequest(groupIdV1, account.getSelfRecipientId());
-            } catch (Throwable e) {
-                logger.warn("Failed to send group request", e);
-            }
-            group = account.getGroupStore().getOrCreateGroupV1(groupIdV1);
+        var needsForcePush = false;
+        if (remoteManifest.getVersion() > localManifestVersion) {
+            logger.trace("Remote version was newer, reading records.");
+            needsForcePush = readDataFromStorage(storageKey, localManifest, remoteManifest);
+        } else if (remoteManifest.getVersion() < localManifest.getVersion()) {
+            logger.debug("Remote storage manifest version was older. User might have switched accounts.");
         }
-        if (group != null && group.isBlocked() != groupV1Record.isBlocked()) {
-            group.setBlocked(groupV1Record.isBlocked());
-            account.getGroupStore().updateGroup(group);
-        }
-    }
+        logger.trace("Done reading data from remote storage");
 
-    private void readGroupV2Record(final SignalStorageRecord record) {
-        if (record == null || record.getGroupV2().isEmpty()) {
-            return;
+        if (localManifest != remoteManifest) {
+            storeManifestLocally(remoteManifest);
         }
 
-        final var groupV2Record = record.getGroupV2().get();
-        if (groupV2Record.isArchived()) {
-            return;
-        }
+        readRecordsWithPreviouslyUnknownTypes(storageKey);
 
-        final GroupMasterKey groupMasterKey;
+        logger.trace("Adding missing storageIds to local data");
+        account.getRecipientStore().setMissingStorageIds();
+        account.getGroupStore().setMissingStorageIds();
+
+        var needsMultiDeviceSync = false;
         try {
-            groupMasterKey = new GroupMasterKey(groupV2Record.getMasterKeyBytes());
-        } catch (InvalidInputException e) {
-            logger.warn("Received invalid group master key from storage");
+            needsMultiDeviceSync = writeToStorage(storageKey, remoteManifest, needsForcePush);
+        } catch (RetryLaterException e) {
+            // TODO retry later
             return;
         }
 
-        final var group = context.getGroupHelper().getOrMigrateGroup(groupMasterKey, 0, null);
-        if (group.isBlocked() != groupV2Record.isBlocked()) {
-            group.setBlocked(groupV2Record.isBlocked());
-            account.getGroupStore().updateGroup(group);
-        }
-    }
-
-    private void readAccountRecord(final SignalStorageRecord record) throws IOException {
-        if (record == null) {
-            logger.warn("Could not find account record, even though we had an ID, ignoring.");
-            return;
-        }
-
-        SignalAccountRecord accountRecord = record.getAccount().orElse(null);
-        if (accountRecord == null) {
-            logger.warn("The storage record didn't actually have an account, ignoring.");
-            return;
-        }
-
-        if (!accountRecord.getE164().equals(account.getNumber())) {
-            context.getJobExecutor().enqueueJob(new CheckWhoAmIJob());
-        }
-
-        account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());
-        account.getConfigurationStore().setTypingIndicators(accountRecord.isTypingIndicatorsEnabled());
-        account.getConfigurationStore()
-                .setUnidentifiedDeliveryIndicators(accountRecord.isSealedSenderIndicatorsEnabled());
-        account.getConfigurationStore().setLinkPreviews(accountRecord.isLinkPreviewsEnabled());
-        account.getConfigurationStore().setPhoneNumberSharingMode(switch (accountRecord.getPhoneNumberSharingMode()) {
-            case EVERYBODY -> PhoneNumberSharingMode.EVERYBODY;
-            case NOBODY, UNKNOWN -> PhoneNumberSharingMode.NOBODY;
-        });
-        account.getConfigurationStore().setPhoneNumberUnlisted(accountRecord.isPhoneNumberUnlisted());
-        account.setUsername(accountRecord.getUsername());
-
-        if (accountRecord.getProfileKey().isPresent()) {
-            ProfileKey profileKey;
+        if (needsForcePush) {
+            logger.debug("Doing a force push.");
             try {
-                profileKey = new ProfileKey(accountRecord.getProfileKey().get());
-            } catch (InvalidInputException e) {
-                logger.warn("Received invalid profile key from storage");
-                profileKey = null;
-            }
-            if (profileKey != null) {
-                account.setProfileKey(profileKey);
-                final var avatarPath = accountRecord.getAvatarUrlPath().orElse(null);
-                context.getJobExecutor().enqueueJob(new DownloadProfileAvatarJob(avatarPath));
+                forcePushToStorage(storageKey);
+                needsMultiDeviceSync = true;
+            } catch (RetryLaterException e) {
+                // TODO retry later
+                return;
             }
         }
 
-        context.getProfileHelper()
-                .setProfile(false,
-                        false,
-                        accountRecord.getGivenName().orElse(null),
-                        accountRecord.getFamilyName().orElse(null),
-                        null,
-                        null,
-                        null,
-                        null);
+        if (needsMultiDeviceSync) {
+            context.getSyncHelper().sendSyncFetchStorageMessage();
+        }
+
+        logger.debug("Done syncing data with remote storage");
     }
 
-    private SignalStorageRecord getSignalStorageRecord(final StorageId accountId) throws IOException {
-        List<SignalStorageRecord> records;
+    private boolean readDataFromStorage(
+            final StorageKey storageKey,
+            final SignalStorageManifest localManifest,
+            final SignalStorageManifest remoteManifest
+    ) throws IOException {
+        var needsForcePush = false;
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+
+            var idDifference = findIdDifference(remoteManifest.getStorageIds(), localManifest.getStorageIds());
+
+            if (idDifference.hasTypeMismatches() && account.isPrimaryDevice()) {
+                logger.debug("Found type mismatches in the ID sets! Scheduling a force push after this sync completes.");
+                needsForcePush = true;
+            }
+
+            logger.debug("Pre-Merge ID Difference :: " + idDifference);
+
+            if (!idDifference.isEmpty()) {
+                final var remoteOnlyRecords = getSignalStorageRecords(storageKey, idDifference.remoteOnlyIds());
+
+                if (remoteOnlyRecords.size() != idDifference.remoteOnlyIds().size()) {
+                    logger.debug("Could not find all remote-only records! Requested: "
+                            + idDifference.remoteOnlyIds()
+                            .size()
+                            + ", Found: "
+                            + remoteOnlyRecords.size()
+                            + ". These stragglers should naturally get deleted during the sync.");
+                }
+
+                final var unknownInserts = processKnownRecords(connection, remoteOnlyRecords);
+                final var unknownDeletes = idDifference.localOnlyIds()
+                        .stream()
+                        .filter(id -> !KNOWN_TYPES.contains(id.getType()))
+                        .toList();
+
+                logger.debug("Storage ids with unknown type: {} inserts, {} deletes",
+                        unknownInserts.size(),
+                        unknownDeletes.size());
+
+                account.getUnknownStorageIdStore().addUnknownStorageIds(connection, unknownInserts);
+                account.getUnknownStorageIdStore().deleteUnknownStorageIds(connection, unknownDeletes);
+            } else {
+                logger.debug("Remote version was newer, but there were no remote-only IDs.");
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to sync remote storage", e);
+        }
+        return needsForcePush;
+    }
+
+    private void readRecordsWithPreviouslyUnknownTypes(final StorageKey storageKey) throws IOException {
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+            final var knownUnknownIds = account.getUnknownStorageIdStore()
+                    .getUnknownStorageIds(connection, KNOWN_TYPES);
+
+            if (!knownUnknownIds.isEmpty()) {
+                logger.debug("We have " + knownUnknownIds.size() + " unknown records that we can now process.");
+
+                final var remote = getSignalStorageRecords(storageKey, knownUnknownIds);
+
+                logger.debug("Found " + remote.size() + " of the known-unknowns remotely.");
+
+                processKnownRecords(connection, remote);
+                account.getUnknownStorageIdStore()
+                        .deleteUnknownStorageIds(connection, remote.stream().map(SignalStorageRecord::getId).toList());
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to sync remote storage", e);
+        }
+    }
+
+    private boolean writeToStorage(
+            final StorageKey storageKey, final SignalStorageManifest remoteManifest, final boolean needsForcePush
+    ) throws IOException, RetryLaterException {
+        final WriteOperationResult remoteWriteOperation;
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+
+            final var localStorageIds = getAllLocalStorageIds(connection);
+            final var idDifference = findIdDifference(remoteManifest.getStorageIds(), localStorageIds);
+            logger.debug("ID Difference :: " + idDifference);
+
+            final var remoteDeletes = idDifference.remoteOnlyIds().stream().map(StorageId::getRaw).toList();
+            final var remoteInserts = buildLocalStorageRecords(connection, idDifference.localOnlyIds());
+            // TODO check if local storage record proto matches remote, then reset to remote storage_id
+
+            remoteWriteOperation = new WriteOperationResult(new SignalStorageManifest(remoteManifest.getVersion() + 1,
+                    account.getDeviceId(),
+                    localStorageIds), remoteInserts, remoteDeletes);
+
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to sync remote storage", e);
+        }
+
+        if (remoteWriteOperation.isEmpty()) {
+            logger.debug("No remote writes needed. Still at version: " + remoteManifest.getVersion());
+            return false;
+        }
+
+        logger.debug("We have something to write remotely.");
+        logger.debug("WriteOperationResult :: " + remoteWriteOperation);
+
+        StorageSyncValidations.validate(remoteWriteOperation,
+                remoteManifest,
+                needsForcePush,
+                account.getSelfRecipientAddress());
+
+        final Optional<SignalStorageManifest> conflict;
         try {
-            records = dependencies.getAccountManager()
-                    .readStorageRecords(account.getStorageKey(), Collections.singletonList(accountId));
+            conflict = dependencies.getAccountManager()
+                    .writeStorageRecords(storageKey,
+                            remoteWriteOperation.manifest(),
+                            remoteWriteOperation.inserts(),
+                            remoteWriteOperation.deletes());
         } catch (InvalidKeyException e) {
-            logger.warn("Failed to read storage records, ignoring.");
-            return null;
+            logger.warn("Failed to decrypt conflicting storage manifest: {}", e.getMessage());
+            throw new IOException(e);
         }
-        return !records.isEmpty() ? records.getFirst() : null;
+
+        if (conflict.isPresent()) {
+            logger.debug("Hit a conflict when trying to resolve the conflict! Retrying.");
+            throw new RetryLaterException();
+        }
+
+        logger.debug("Saved new manifest. Now at version: " + remoteWriteOperation.manifest().getVersion());
+        storeManifestLocally(remoteWriteOperation.manifest());
+
+        return true;
     }
 
-    private List<SignalStorageRecord> getSignalStorageRecords(final Collection<StorageId> storageIds) throws IOException {
+    private void forcePushToStorage(
+            final StorageKey storageServiceKey
+    ) throws IOException, RetryLaterException {
+        logger.debug("Force pushing local state to remote storage");
+
+        final var currentVersion = dependencies.getAccountManager().getStorageManifestVersion();
+        final var newVersion = currentVersion + 1;
+        final var newStorageRecords = new ArrayList<SignalStorageRecord>();
+        final Map<RecipientId, StorageId> newContactStorageIds;
+        final Map<GroupIdV1, StorageId> newGroupV1StorageIds;
+        final Map<GroupIdV2, StorageId> newGroupV2StorageIds;
+
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+
+            final var recipientIds = account.getRecipientStore().getRecipientIds(connection);
+            newContactStorageIds = generateContactStorageIds(recipientIds);
+            for (final var recipientId : recipientIds) {
+                final var storageId = newContactStorageIds.get(recipientId);
+                if (storageId.getType() == ManifestRecord.Identifier.Type.ACCOUNT.getValue()) {
+                    final var recipient = account.getRecipientStore().getRecipient(connection, recipientId);
+                    final var accountRecord = StorageSyncModels.localToRemoteRecord(account.getConfigurationStore(),
+                            recipient,
+                            account.getUsernameLink(),
+                            storageId.getRaw());
+                    newStorageRecords.add(accountRecord);
+                } else {
+                    final var recipient = account.getRecipientStore().getRecipient(connection, recipientId);
+                    final var address = recipient.getAddress().getIdentifier();
+                    final var identity = account.getIdentityKeyStore().getIdentityInfo(connection, address);
+                    final var record = StorageSyncModels.localToRemoteRecord(recipient, identity, storageId.getRaw());
+                    newStorageRecords.add(record);
+                }
+            }
+
+            final var groupV1Ids = account.getGroupStore().getGroupV1Ids(connection);
+            newGroupV1StorageIds = generateGroupV1StorageIds(groupV1Ids);
+            for (final var groupId : groupV1Ids) {
+                final var storageId = newGroupV1StorageIds.get(groupId);
+                final var group = account.getGroupStore().getGroup(connection, groupId);
+                final var record = StorageSyncModels.localToRemoteRecord(group, storageId.getRaw());
+                newStorageRecords.add(record);
+            }
+
+            final var groupV2Ids = account.getGroupStore().getGroupV2Ids(connection);
+            newGroupV2StorageIds = generateGroupV2StorageIds(groupV2Ids);
+            for (final var groupId : groupV2Ids) {
+                final var storageId = newGroupV2StorageIds.get(groupId);
+                final var group = account.getGroupStore().getGroup(connection, groupId);
+                final var record = StorageSyncModels.localToRemoteRecord(group, storageId.getRaw());
+                newStorageRecords.add(record);
+            }
+
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to sync remote storage", e);
+        }
+        final var newStorageIds = newStorageRecords.stream().map(SignalStorageRecord::getId).toList();
+
+        final var manifest = new SignalStorageManifest(newVersion, account.getDeviceId(), newStorageIds);
+
+        StorageSyncValidations.validateForcePush(manifest, newStorageRecords, account.getSelfRecipientAddress());
+
+        final Optional<SignalStorageManifest> conflict;
+        try {
+            if (newVersion > 1) {
+                logger.trace("Force-pushing data. Inserting {} IDs.", newStorageRecords.size());
+                conflict = dependencies.getAccountManager()
+                        .resetStorageRecords(storageServiceKey, manifest, newStorageRecords);
+            } else {
+                logger.trace("First version, normal push. Inserting {} IDs.", newStorageRecords.size());
+                conflict = dependencies.getAccountManager()
+                        .writeStorageRecords(storageServiceKey, manifest, newStorageRecords, Collections.emptyList());
+            }
+        } catch (InvalidKeyException e) {
+            logger.debug("Hit an invalid key exception, which likely indicates a conflict.", e);
+            throw new RetryLaterException();
+        }
+
+        if (conflict.isPresent()) {
+            logger.debug("Hit a conflict. Trying again.");
+            throw new RetryLaterException();
+        }
+
+        logger.debug("Force push succeeded. Updating local manifest version to: " + manifest.getVersion());
+        storeManifestLocally(manifest);
+
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+            account.getRecipientStore().updateStorageIds(connection, newContactStorageIds);
+            account.getGroupStore().updateStorageIds(connection, newGroupV1StorageIds, newGroupV2StorageIds);
+
+            // delete all unknown storage ids
+            account.getUnknownStorageIdStore().deleteAllUnknownStorageIds(connection);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to sync remote storage", e);
+        }
+    }
+
+    private Map<RecipientId, StorageId> generateContactStorageIds(List<RecipientId> recipientIds) {
+        final var selfRecipientId = account.getSelfRecipientId();
+        return recipientIds.stream().collect(Collectors.toMap(recipientId -> recipientId, recipientId -> {
+            if (recipientId.equals(selfRecipientId)) {
+                return StorageId.forAccount(KeyUtils.createRawStorageId());
+            } else {
+                return StorageId.forContact(KeyUtils.createRawStorageId());
+            }
+        }));
+    }
+
+    private Map<GroupIdV1, StorageId> generateGroupV1StorageIds(List<GroupIdV1> groupIds) {
+        return groupIds.stream()
+                .collect(Collectors.toMap(recipientId -> recipientId,
+                        recipientId -> StorageId.forGroupV1(KeyUtils.createRawStorageId())));
+    }
+
+    private Map<GroupIdV2, StorageId> generateGroupV2StorageIds(List<GroupIdV2> groupIds) {
+        return groupIds.stream()
+                .collect(Collectors.toMap(recipientId -> recipientId,
+                        recipientId -> StorageId.forGroupV2(KeyUtils.createRawStorageId())));
+    }
+
+    private void storeManifestLocally(
+            final SignalStorageManifest remoteManifest
+    ) {
+        account.setStorageManifestVersion(remoteManifest.getVersion());
+        account.setStorageManifest(remoteManifest);
+    }
+
+    private List<SignalStorageRecord> getSignalStorageRecords(
+            final StorageKey storageKey, final List<StorageId> storageIds
+    ) throws IOException {
         List<SignalStorageRecord> records;
         try {
-            records = dependencies.getAccountManager()
-                    .readStorageRecords(account.getStorageKey(), new ArrayList<>(storageIds));
+            records = dependencies.getAccountManager().readStorageRecords(storageKey, storageIds);
         } catch (InvalidKeyException e) {
             logger.warn("Failed to read storage records, ignoring.");
             return List.of();
         }
         return records;
     }
+
+    private List<StorageId> getAllLocalStorageIds(final Connection connection) throws SQLException {
+        final var storageIds = new ArrayList<StorageId>();
+        storageIds.addAll(account.getUnknownStorageIdStore().getUnknownStorageIds(connection));
+        storageIds.addAll(account.getGroupStore().getStorageIds(connection));
+        storageIds.addAll(account.getRecipientStore().getStorageIds(connection));
+        storageIds.add(account.getRecipientStore().getSelfStorageId(connection));
+        return storageIds;
+    }
+
+    private List<SignalStorageRecord> buildLocalStorageRecords(
+            final Connection connection, final List<StorageId> storageIds
+    ) throws SQLException {
+        final var records = new ArrayList<SignalStorageRecord>();
+        for (final var storageId : storageIds) {
+            final var record = buildLocalStorageRecord(connection, storageId);
+            if (record != null) {
+                records.add(record);
+            }
+        }
+        return records;
+    }
+
+    private SignalStorageRecord buildLocalStorageRecord(
+            Connection connection, StorageId storageId
+    ) throws SQLException {
+        return switch (ManifestRecord.Identifier.Type.fromValue(storageId.getType())) {
+            case ManifestRecord.Identifier.Type.CONTACT -> {
+                final var recipient = account.getRecipientStore().getRecipient(connection, storageId);
+                final var address = recipient.getAddress().getIdentifier();
+                final var identity = account.getIdentityKeyStore().getIdentityInfo(connection, address);
+                yield StorageSyncModels.localToRemoteRecord(recipient, identity, storageId.getRaw());
+            }
+            case ManifestRecord.Identifier.Type.GROUPV1 -> {
+                final var groupV1 = account.getGroupStore().getGroupV1(connection, storageId);
+                yield StorageSyncModels.localToRemoteRecord(groupV1, storageId.getRaw());
+            }
+            case ManifestRecord.Identifier.Type.GROUPV2 -> {
+                final var groupV2 = account.getGroupStore().getGroupV2(connection, storageId);
+                yield StorageSyncModels.localToRemoteRecord(groupV2, storageId.getRaw());
+            }
+            case ManifestRecord.Identifier.Type.ACCOUNT -> {
+                final var selfRecipient = account.getRecipientStore()
+                        .getRecipient(connection, account.getSelfRecipientId());
+                yield StorageSyncModels.localToRemoteRecord(account.getConfigurationStore(),
+                        selfRecipient,
+                        account.getUsernameLink(),
+                        storageId.getRaw());
+            }
+            case null, default -> throw new AssertionError("Got unknown local storage record type: " + storageId);
+        };
+    }
+
+    /**
+     * Given a list of all the local and remote keys you know about, this will
+     * return a result telling
+     * you which keys are exclusively remote and which are exclusively local.
+     *
+     * @param remoteIds All remote keys available.
+     * @param localIds  All local keys available.
+     * @return An object describing which keys are exclusive to the remote data set
+     * and which keys are
+     * exclusive to the local data set.
+     */
+    private static IdDifferenceResult findIdDifference(
+            Collection<StorageId> remoteIds, Collection<StorageId> localIds
+    ) {
+        final var base64Encoder = Base64.getEncoder();
+        final var remoteByRawId = remoteIds.stream()
+                .collect(Collectors.toMap(id -> base64Encoder.encodeToString(id.getRaw()), id -> id));
+        final var localByRawId = localIds.stream()
+                .collect(Collectors.toMap(id -> base64Encoder.encodeToString(id.getRaw()), id -> id));
+
+        boolean hasTypeMismatch = remoteByRawId.size() != remoteIds.size() || localByRawId.size() != localIds.size();
+
+        final var remoteOnlyRawIds = SetUtil.difference(remoteByRawId.keySet(), localByRawId.keySet());
+        final var localOnlyRawIds = SetUtil.difference(localByRawId.keySet(), remoteByRawId.keySet());
+        final var sharedRawIds = SetUtil.intersection(localByRawId.keySet(), remoteByRawId.keySet());
+
+        for (String rawId : sharedRawIds) {
+            final var remote = remoteByRawId.get(rawId);
+            final var local = localByRawId.get(rawId);
+
+            if (remote.getType() != local.getType()) {
+                remoteOnlyRawIds.remove(rawId);
+                localOnlyRawIds.remove(rawId);
+                hasTypeMismatch = true;
+                logger.debug("Remote type {} did not match local type {} for {}!",
+                        remote.getType(),
+                        local.getType(),
+                        rawId);
+            }
+        }
+
+        final var remoteOnlyKeys = remoteOnlyRawIds.stream().map(remoteByRawId::get).toList();
+        final var localOnlyKeys = localOnlyRawIds.stream().map(localByRawId::get).toList();
+
+        return new IdDifferenceResult(remoteOnlyKeys, localOnlyKeys, hasTypeMismatch);
+    }
+
+    private List<StorageId> processKnownRecords(
+            final Connection connection, List<SignalStorageRecord> records
+    ) throws SQLException {
+        final var unknownRecords = new ArrayList<StorageId>();
+
+        final var accountRecordProcessor = new AccountRecordProcessor(account, connection, context.getJobExecutor());
+        final var contactRecordProcessor = new ContactRecordProcessor(account, connection, context.getJobExecutor());
+        final var groupV1RecordProcessor = new GroupV1RecordProcessor(account, connection);
+        final var groupV2RecordProcessor = new GroupV2RecordProcessor(account, connection);
+
+        for (final var record : records) {
+            logger.debug("Reading record of type {}", record.getType());
+            switch (ManifestRecord.Identifier.Type.fromValue(record.getType())) {
+                case ACCOUNT -> accountRecordProcessor.process(record.getAccount().get());
+                case GROUPV1 -> groupV1RecordProcessor.process(record.getGroupV1().get());
+                case GROUPV2 -> groupV2RecordProcessor.process(record.getGroupV2().get());
+                case CONTACT -> contactRecordProcessor.process(record.getContact().get());
+                case null, default -> unknownRecords.add(record.getId());
+            }
+        }
+
+        return unknownRecords;
+    }
+
+    /**
+     * hasTypeMismatches is True if there exist some keys that have matching raw ID's but different types, otherwise false.
+     */
+    private record IdDifferenceResult(
+            List<StorageId> remoteOnlyIds, List<StorageId> localOnlyIds, boolean hasTypeMismatches
+    ) {
+
+        public boolean isEmpty() {
+            return remoteOnlyIds.isEmpty() && localOnlyIds.isEmpty();
+        }
+    }
+
+    private static class RetryLaterException extends Throwable {}
 }

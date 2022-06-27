@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Objects;
 
 public class KeyValueStore {
 
@@ -43,9 +44,9 @@ public class KeyValueStore {
         }
     }
 
-    public <T> void storeEntry(KeyValueEntry<T> key, T value) {
+    public <T> boolean storeEntry(KeyValueEntry<T> key, T value) {
         try (final var connection = database.getConnection()) {
-            storeEntry(connection, key, value);
+            return storeEntry(connection, key, value);
         } catch (SQLException e) {
             throw new RuntimeException("Failed update key_value store", e);
         }
@@ -72,9 +73,14 @@ public class KeyValueStore {
         }
     }
 
-    private <T> void storeEntry(
+    public <T> boolean storeEntry(
             final Connection connection, final KeyValueEntry<T> key, final T value
     ) throws SQLException {
+        final var entry = getEntry(key);
+        if (Objects.equals(entry, value)) {
+            return false;
+        }
+
         final var sql = (
                 """
                 INSERT INTO %s (key, value)
@@ -87,6 +93,7 @@ public class KeyValueStore {
             setParameterValue(statement, 2, key.clazz(), value);
             statement.executeUpdate();
         }
+        return true;
     }
 
     @SuppressWarnings("unchecked")

@@ -25,6 +25,7 @@ public final class GroupInfoV1 extends GroupInfo {
     public int messageExpirationTime;
     public boolean blocked;
     public boolean archived;
+    private byte[] storageRecord;
 
     public GroupInfoV1(GroupIdV1 groupId) {
         this.groupId = groupId;
@@ -38,7 +39,8 @@ public final class GroupInfoV1 extends GroupInfo {
             final String color,
             final int messageExpirationTime,
             final boolean blocked,
-            final boolean archived
+            final boolean archived,
+            final byte[] storageRecord
     ) {
         this.groupId = groupId;
         this.expectedV2Id = expectedV2Id;
@@ -48,6 +50,7 @@ public final class GroupInfoV1 extends GroupInfo {
         this.messageExpirationTime = messageExpirationTime;
         this.blocked = blocked;
         this.archived = archived;
+        this.storageRecord = storageRecord;
     }
 
     @Override
@@ -122,5 +125,9 @@ public final class GroupInfoV1 extends GroupInfo {
 
     public void removeMember(RecipientId recipientId) {
         this.members.removeIf(member -> member.equals(recipientId));
+    }
+
+    public byte[] getStorageRecord() {
+        return storageRecord;
     }
 }

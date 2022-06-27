@@ -79,6 +79,11 @@ public class SyncHelper {
                 .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
     }
 
+    public void sendSyncFetchStorageMessage() {
+        context.getSendHelper()
+                .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.STORAGE_MANIFEST));
+    }
+
     public void sendGroups() throws IOException {
         var groupsFile = IOUtils.createTempFile();
 
@@ -222,7 +227,7 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendKeysMessage() {
-        var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()),
+        var keysMessage = new KeysMessage(Optional.ofNullable(account.getOrCreateStorageKey()),
                 Optional.ofNullable(account.getOrCreatePinMasterKey()));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }

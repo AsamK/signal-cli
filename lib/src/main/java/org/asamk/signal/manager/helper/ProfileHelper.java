@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -67,7 +68,8 @@ public final class ProfileHelper {
         account.setProfileKey(profileKey);
         context.getAccountHelper().updateAccountAttributes();
         setProfile(true, true, null, null, null, null, null, null);
-        // TODO update profile key in storage
+        account.getRecipientStore().rotateSelfStorageId();
+        context.getJobExecutor().enqueueJob(new SyncStorageJob());
 
         final var recipientIds = account.getRecipientStore().getRecipientIdsWithEnabledProfileSharing();
         for (final var recipientId : recipientIds) {

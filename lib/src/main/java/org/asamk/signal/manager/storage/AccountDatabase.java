@@ -32,7 +32,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 19;
+    private static final long DATABASE_VERSION = 20;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -57,6 +57,7 @@ public class AccountDatabase extends Database {
         SenderKeySharedStore.createSql(connection);
         KeyValueStore.createSql(connection);
         CdsiStore.createSql(connection);
+        UnknownStorageIdStore.createSql(connection);
     }
 
     @Override
@@ -536,6 +537,24 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD COLUMN hidden INTEGER NOT NULL DEFAULT FALSE;
+                                        """);
+            }
+        }
+        if (oldVersion < 20) {
+            logger.debug("Updating database: Creating storage id tables and columns");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE storage_id (
+                                          _id INTEGER PRIMARY KEY,
+                                          type INTEGER NOT NULL,
+                                          storage_id BLOB NOT NULL
+                                        ) STRICT;
+                                        ALTER TABLE group_v1 ADD COLUMN storage_id BLOB;
+                                        ALTER TABLE group_v1 ADD COLUMN storage_record BLOB;
+                                        ALTER TABLE group_v2 ADD COLUMN storage_id BLOB;
+                                        ALTER TABLE group_v2 ADD COLUMN storage_record BLOB;
+                                        ALTER TABLE recipient ADD COLUMN storage_id BLOB;
+                                        ALTER TABLE recipient ADD COLUMN storage_record BLOB;
                                         """);
             }
         }

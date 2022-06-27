@@ -169,7 +169,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
             m.refreshPreKeys();
             if (response.isStorageCapable()) {
-                m.retrieveRemoteStorage();
+                m.syncRemoteStorage();
             }
             // Set an initial empty profile so user can be added to groups
             try {
