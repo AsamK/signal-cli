@@ -308,6 +308,7 @@ public class SyncHelper {
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             if (c.getName().isPresent()) {
                 builder.withGivenName(c.getName().get());
+                builder.withFamilyName(null);
             }
             if (c.getColor().isPresent()) {
                 builder.withColor(c.getColor().get());
