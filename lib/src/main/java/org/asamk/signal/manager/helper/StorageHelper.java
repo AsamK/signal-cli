@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Contact;
+import org.asamk.signal.manager.storage.recipients.Profile;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.zkgroup.InvalidInputException;
@@ -100,26 +101,36 @@ public class StorageHelper {
 
         final var contactRecord = record.getContact().get();
         final var address = contactRecord.getAddress();
-
         final var recipientId = account.getRecipientResolver().resolveRecipient(address);
+
         final var contact = account.getContactStore().getContact(recipientId);
         final var blocked = contact != null && contact.isBlocked();
         final var profileShared = contact != null && contact.isProfileSharingEnabled();
-        final var givenName = contact == null ? null : contact.getGivenName();
-        final var familyName = contact == null ? null : contact.getFamilyName();
-        if ((contactRecord.getGivenName().isPresent() && !contactRecord.getGivenName().get().equals(givenName)) || (
-                contactRecord.getFamilyName().isPresent() && !contactRecord.getFamilyName().get().equals(familyName)
-        ) || blocked != contactRecord.isBlocked() || profileShared != contactRecord.isProfileSharingEnabled()) {
+        final var archived = contact != null && contact.isArchived();
+        if (blocked != contactRecord.isBlocked()
+                || profileShared != contactRecord.isProfileSharingEnabled()
+                || archived != contactRecord.isArchived()) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withBlocked(contactRecord.isBlocked())
-                    .withGivenName(contactRecord.getGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getFamilyName().orElse(null))
                     .withProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
+                    .withArchived(contactRecord.isArchived())
                     .build();
             account.getContactStore().storeContact(recipientId, newContact);
         }
 
+        final var profile = account.getProfileStore().getProfile(recipientId);
+        final var givenName = profile == null ? null : profile.getGivenName();
+        final var familyName = profile == null ? null : profile.getFamilyName();
+        if ((contactRecord.getGivenName().isPresent() && !contactRecord.getGivenName().get().equals(givenName)) || (
+                contactRecord.getFamilyName().isPresent() && !contactRecord.getFamilyName().get().equals(familyName)
+        )) {
+            final var profileBuilder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
+            final var newProfile = profileBuilder.withGivenName(contactRecord.getGivenName().orElse(null))
+                    .withFamilyName(contactRecord.getFamilyName().orElse(null))
+                    .build();
+            account.getProfileStore().storeProfile(recipientId, newProfile);
+        }
         if (contactRecord.getProfileKey().isPresent()) {
             try {
                 logger.trace("Storing profile key {}", recipientId);
