@@ -231,8 +231,8 @@ class ManagerImpl implements Manager {
         if (deviceName != null) {
             context.getAccountHelper().setDeviceName(deviceName);
         }
-        context.getAccountHelper().checkWhoAmiI();
         context.getAccountHelper().updateAccountAttributes();
+        context.getAccountHelper().checkWhoAmiI();
     }
 
     @Override
