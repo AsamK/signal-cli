@@ -51,7 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 public class SendHelper {
 
@@ -275,7 +274,7 @@ public class SendHelper {
                     .getDevices()
                     .stream()
                     .map(device -> new SignalProtocolAddress(address.getIdentifier(), device))
-                    .collect(Collectors.toList());
+                    .toList();
 
             account.getSenderKeyStore().markSenderKeySharedWith(group.getDistributionId(), addresses);
         }
@@ -536,14 +535,14 @@ public class SendHelper {
 
         List<SignalServiceAddress> addresses = recipientIdList.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
-                .collect(Collectors.toList());
+                .toList();
         List<UnidentifiedAccess> unidentifiedAccesses = context.getUnidentifiedAccessHelper()
                 .getAccessFor(recipientIdList)
                 .stream()
                 .map(Optional::get)
                 .map(UnidentifiedAccessPair::getTargetUnidentifiedAccess)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .toList();
 
         try {
             List<SendMessageResult> results = sender.send(distributionId,
