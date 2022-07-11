@@ -93,11 +93,17 @@ The password and cryptographic keys are created when registering and stored in t
 ## Building
 
 This project uses [Gradle](http://gradle.org) for building and maintaining dependencies. If you have a recent gradle
-version installed, you can replace `./gradlew` with `gradle` in the following steps.
+version installed, you can replace `./gradlew` with `gradle` in the following steps. Alternatively, you can install the prerequisites with:
+```
+yes | sudo apt-get install default-jre
+yes | sudo apt-get install openjdk-17-jdk
+export JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64
+```
 
-1. Checkout the source somewhere on your filesystem with
+1. Checkout the source somewhere on your filesystem with and open the repository:
 
         git clone https://github.com/AsamK/signal-cli.git
+        cd signal-cli
 
 2. Execute Gradle:
 
@@ -118,6 +124,16 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
    2d. Compile and run signal-cli:
 
         ./gradlew run --args="--help"
+3. Now you can copy the distribution that you just build, with:
+```   
+        cd build/distributions
+        # Unpack the compressed .tar file to the /opt directory.
+        sudo tar xf signal-cli-0.*.*.tar -C /opt
+        # Move the unpacked distribution into the /usr/local/bin/ directory
+        sudo ln -sf /opt/signal-cli-0.*.*/bin/signal-cli /usr/local/bin/
+```  
+4. You can verify `signal-cli` works, by typing: `signal-cli -v` which should return something like: `signal-cli 0.x.y`.
+5. Now you can choose to keep your phone registered and add this device using [these instructions](https://github.com/AsamK/signal-cli/wiki/Linking-other-devices-%28Provisioning%29). Or you can unregisters Signal on your phone, if you used Signal on your phone, and use this device as your main Signal device. The latter can be done either using the usage instructions above (`signal-cli -a ACCOUNT register` etc.), or, if you are prompted to fill in a captcha, using [these instructions](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha).
 
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
