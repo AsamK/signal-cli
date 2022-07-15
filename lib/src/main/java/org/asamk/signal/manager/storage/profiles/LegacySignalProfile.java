@@ -3,7 +3,7 @@ package org.asamk.signal.manager.storage.profiles;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SignalProfile {
+public class LegacySignalProfile {
 
     @JsonProperty
     @JsonIgnore
@@ -27,7 +27,7 @@ public class SignalProfile {
     @JsonProperty
     private final Capabilities capabilities;
 
-    public SignalProfile(
+    public LegacySignalProfile(
             @JsonProperty("name") final String name,
             @JsonProperty("about") final String about,
             @JsonProperty("aboutEmoji") final String aboutEmoji,
@@ -87,6 +87,9 @@ public class SignalProfile {
 
         @JsonIgnore
         public boolean uuid;
+
+        @JsonIgnore
+        public boolean gv2;
 
         @JsonProperty
         public boolean storage;

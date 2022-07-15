@@ -60,7 +60,7 @@ public class LegacyProfileStore {
                         }
                     }
                     var lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
-                    var profile = jsonProcessor.treeToValue(entry.get("profile"), SignalProfile.class);
+                    var profile = jsonProcessor.treeToValue(entry.get("profile"), LegacySignalProfile.class);
                     profileEntries.add(new LegacySignalProfileEntry(address,
                             profileKey,
                             lastUpdateTimestamp,

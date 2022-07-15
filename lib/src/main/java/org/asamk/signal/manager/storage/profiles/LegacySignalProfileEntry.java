@@ -12,7 +12,7 @@ public class LegacySignalProfileEntry {
 
     private final long lastUpdateTimestamp;
 
-    private final SignalProfile profile;
+    private final LegacySignalProfile profile;
 
     private final ProfileKeyCredential profileKeyCredential;
 
@@ -20,7 +20,7 @@ public class LegacySignalProfileEntry {
             final RecipientAddress address,
             final ProfileKey profileKey,
             final long lastUpdateTimestamp,
-            final SignalProfile profile,
+            final LegacySignalProfile profile,
             final ProfileKeyCredential profileKeyCredential
     ) {
         this.address = address;
@@ -42,7 +42,7 @@ public class LegacySignalProfileEntry {
         return lastUpdateTimestamp;
     }
 
-    public SignalProfile getProfile() {
+    public LegacySignalProfile getProfile() {
         return profile;
     }
 
