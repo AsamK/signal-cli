@@ -564,7 +564,8 @@ class ManagerImpl implements Manager {
             final var quote = message.quote().get();
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
                     context.getRecipientHelper()
-                            .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(quote.author())),
+                            .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(quote.author()))
+                            .getServiceId(),
                     quote.message(),
                     List.of(),
                     resolveMentions(quote.mentions()),
@@ -651,7 +652,7 @@ class ManagerImpl implements Manager {
         var targetAuthorRecipientId = context.getRecipientHelper().resolveRecipient(targetAuthor);
         var reaction = new SignalServiceDataMessage.Reaction(emoji,
                 remove,
-                context.getRecipientHelper().resolveSignalServiceAddress(targetAuthorRecipientId),
+                context.getRecipientHelper().resolveSignalServiceAddress(targetAuthorRecipientId).getServiceId(),
                 targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
         return sendMessage(messageBuilder, recipients);

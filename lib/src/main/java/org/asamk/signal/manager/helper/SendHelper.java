@@ -633,7 +633,7 @@ public class SendHelper {
                 message.getTimestamp(),
                 Optional.of(message),
                 message.getExpiresInSeconds(),
-                Map.of(address, true),
+                Map.of(address.getServiceId(), true),
                 false,
                 Optional.empty(),
                 Set.of());
