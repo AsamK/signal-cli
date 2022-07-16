@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.10.9] - 2022-07-16
+
+### Changed
+- updateAccount command checks self number and PNI after updating account attributes
+
+### Fixed
+- Fixed small issue with syncing contacts from storage
+- Fixed issue with opening older account files
+
 ## [0.10.8] - 2022-06-13
 
 ### Added
