@@ -1,7 +1,7 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential;
 
 import java.util.Objects;
 
@@ -15,7 +15,7 @@ public class Recipient {
 
     private final ProfileKey profileKey;
 
-    private final ProfileKeyCredential profileKeyCredential;
+    private final ExpiringProfileKeyCredential expiringProfileKeyCredential;
 
     private final Profile profile;
 
@@ -24,14 +24,14 @@ public class Recipient {
             final RecipientAddress address,
             final Contact contact,
             final ProfileKey profileKey,
-            final ProfileKeyCredential profileKeyCredential,
+            final ExpiringProfileKeyCredential expiringProfileKeyCredential,
             final Profile profile
     ) {
         this.recipientId = recipientId;
         this.address = address;
         this.contact = contact;
         this.profileKey = profileKey;
-        this.profileKeyCredential = profileKeyCredential;
+        this.expiringProfileKeyCredential = expiringProfileKeyCredential;
         this.profile = profile;
     }
 
@@ -40,7 +40,7 @@ public class Recipient {
         address = builder.address;
         contact = builder.contact;
         profileKey = builder.profileKey;
-        profileKeyCredential = builder.profileKeyCredential;
+        expiringProfileKeyCredential = builder.expiringProfileKeyCredential1;
         profile = builder.profile;
     }
 
@@ -54,7 +54,7 @@ public class Recipient {
         builder.address = copy.getAddress();
         builder.contact = copy.getContact();
         builder.profileKey = copy.getProfileKey();
-        builder.profileKeyCredential = copy.getProfileKeyCredential();
+        builder.expiringProfileKeyCredential1 = copy.getExpiringProfileKeyCredential();
         builder.profile = copy.getProfile();
         return builder;
     }
@@ -75,8 +75,8 @@ public class Recipient {
         return profileKey;
     }
 
-    public ProfileKeyCredential getProfileKeyCredential() {
-        return profileKeyCredential;
+    public ExpiringProfileKeyCredential getExpiringProfileKeyCredential() {
+        return expiringProfileKeyCredential;
     }
 
     public Profile getProfile() {
@@ -92,13 +92,13 @@ public class Recipient {
                 && Objects.equals(address, recipient.address)
                 && Objects.equals(contact, recipient.contact)
                 && Objects.equals(profileKey, recipient.profileKey)
-                && Objects.equals(profileKeyCredential, recipient.profileKeyCredential)
+                && Objects.equals(expiringProfileKeyCredential, recipient.expiringProfileKeyCredential)
                 && Objects.equals(profile, recipient.profile);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recipientId, address, contact, profileKey, profileKeyCredential, profile);
+        return Objects.hash(recipientId, address, contact, profileKey, expiringProfileKeyCredential, profile);
     }
 
     public static final class Builder {
@@ -107,7 +107,7 @@ public class Recipient {
         private RecipientAddress address;
         private Contact contact;
         private ProfileKey profileKey;
-        private ProfileKeyCredential profileKeyCredential;
+        private ExpiringProfileKeyCredential expiringProfileKeyCredential1;
         private Profile profile;
 
         private Builder() {
@@ -133,8 +133,8 @@ public class Recipient {
             return this;
         }
 
-        public Builder withProfileKeyCredential(final ProfileKeyCredential val) {
-            profileKeyCredential = val;
+        public Builder withExpiringProfileKeyCredential(final ExpiringProfileKeyCredential val) {
+            expiringProfileKeyCredential1 = val;
             return this;
         }
 

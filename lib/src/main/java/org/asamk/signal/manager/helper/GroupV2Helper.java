@@ -16,7 +16,7 @@ import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.VerificationFailedException;
-import org.signal.libsignal.zkgroup.auth.AuthCredentialResponse;
+import org.signal.libsignal.zkgroup.auth.AuthCredentialWithPniResponse;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.libsignal.zkgroup.groups.UuidCiphertext;
@@ -41,6 +41,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.groupsv2.InvalidGroupStateException;
 import org.whispersystems.signalservice.api.groupsv2.NotAbleToApplyGroupV2ChangeException;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
@@ -69,7 +70,7 @@ class GroupV2Helper {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private HashMap<Integer, AuthCredentialResponse> groupApiCredentials;
+    private HashMap<Long, AuthCredentialWithPniResponse> groupApiCredentials;
 
     GroupV2Helper(final Context context) {
         this.dependencies = context.getDependencies();
@@ -177,7 +178,7 @@ class GroupV2Helper {
             String name, Set<RecipientId> members, byte[] avatar
     ) {
         final var profileKeyCredential = context.getProfileHelper()
-                .getRecipientProfileKeyCredential(context.getAccount().getSelfRecipientId());
+                .getExpiringProfileKeyCredential(context.getAccount().getSelfRecipientId());
         if (profileKeyCredential == null) {
             logger.warn("Cannot create a V2 group as self does not have a versioned profile");
             return null;
@@ -185,7 +186,7 @@ class GroupV2Helper {
 
         final var self = new GroupCandidate(getSelfAci().uuid(), Optional.of(profileKeyCredential));
         final var memberList = new ArrayList<>(members);
-        final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
+        final var credentials = context.getProfileHelper().getExpiringProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
                 .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid());
         var candidates = Utils.zip(uuids,
@@ -234,7 +235,7 @@ class GroupV2Helper {
         GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         final var memberList = new ArrayList<>(newMembers);
-        final var credentials = context.getProfileHelper().getRecipientProfileKeyCredential(memberList).stream();
+        final var credentials = context.getProfileHelper().getExpiringProfileKeyCredential(memberList).stream();
         final var uuids = memberList.stream()
                 .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId().uuid());
         var candidates = Utils.zip(uuids,
@@ -396,7 +397,7 @@ class GroupV2Helper {
         logger.debug("Updating own profile key in group " + groupInfoV2.getGroupId().toBase64());
 
         final var selfRecipientId = context.getAccount().getSelfRecipientId();
-        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
+        final var profileKeyCredential = context.getProfileHelper().getExpiringProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             logger.trace("Cannot update profile key as self does not have a versioned profile");
             return null;
@@ -417,7 +418,7 @@ class GroupV2Helper {
         final var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
 
         final var selfRecipientId = context.getAccount().getSelfRecipientId();
-        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
+        final var profileKeyCredential = context.getProfileHelper().getExpiringProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }
@@ -439,7 +440,7 @@ class GroupV2Helper {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         final var selfRecipientId = context.getAccount().getSelfRecipientId();
-        final var profileKeyCredential = context.getProfileHelper().getRecipientProfileKeyCredential(selfRecipientId);
+        final var profileKeyCredential = context.getProfileHelper().getExpiringProfileKeyCredential(selfRecipientId);
         if (profileKeyCredential == null) {
             throw new IOException("Cannot join a V2 group as self does not have a versioned profile");
         }
@@ -609,31 +610,49 @@ class GroupV2Helper {
         return null;
     }
 
-    private static int currentTimeDays() {
-        return (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
+    private static long currentDaySeconds() {
+        return TimeUnit.DAYS.toSeconds(TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis()));
     }
 
     private GroupsV2AuthorizationString getGroupAuthForToday(
             final GroupSecretParams groupSecretParams
     ) throws IOException {
-        final var today = currentTimeDays();
-        if (groupApiCredentials == null || !groupApiCredentials.containsKey(today)) {
+        final var todaySeconds = currentDaySeconds();
+        if (groupApiCredentials == null || !groupApiCredentials.containsKey(todaySeconds)) {
             // Returns credentials for the next 7 days
-            final var isAci = true; // TODO enable group handling with PNI
-            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(today, isAci);
+            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(todaySeconds);
             // TODO cache credentials on disk until they expire
         }
-        var authCredentialResponse = groupApiCredentials.get(today);
-        final var aci = getSelfAci();
         try {
-            return dependencies.getGroupsV2Api()
-                    .getGroupsV2AuthorizationString(aci, today, groupSecretParams, authCredentialResponse);
+            return getAuthorizationString(groupSecretParams, todaySeconds);
+        } catch (VerificationFailedException e) {
+            logger.debug("Group api credentials invalid, renewing and trying again.");
+            groupApiCredentials.clear();
+        }
+
+        groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(todaySeconds);
+        try {
+            return getAuthorizationString(groupSecretParams, todaySeconds);
         } catch (VerificationFailedException e) {
             throw new IOException(e);
         }
     }
 
+    private GroupsV2AuthorizationString getAuthorizationString(
+            final GroupSecretParams groupSecretParams, final long todaySeconds
+    ) throws VerificationFailedException {
+        var authCredentialResponse = groupApiCredentials.get(todaySeconds);
+        final var aci = getSelfAci();
+        final var pni = getSelfPni();
+        return dependencies.getGroupsV2Api()
+                .getGroupsV2AuthorizationString(aci, pni, todaySeconds, groupSecretParams, authCredentialResponse);
+    }
+
     private ACI getSelfAci() {
         return context.getAccount().getAci();
+    }
+
+    private PNI getSelfPni() {
+        return context.getAccount().getPni();
     }
 }

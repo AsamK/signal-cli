@@ -2,7 +2,6 @@ package org.asamk.signal.manager.storage.profiles;
 
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential;
 
 public class LegacySignalProfileEntry {
 
@@ -14,20 +13,16 @@ public class LegacySignalProfileEntry {
 
     private final LegacySignalProfile profile;
 
-    private final ProfileKeyCredential profileKeyCredential;
-
     public LegacySignalProfileEntry(
             final RecipientAddress address,
             final ProfileKey profileKey,
             final long lastUpdateTimestamp,
-            final LegacySignalProfile profile,
-            final ProfileKeyCredential profileKeyCredential
+            final LegacySignalProfile profile
     ) {
         this.address = address;
         this.profileKey = profileKey;
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.profile = profile;
-        this.profileKeyCredential = profileKeyCredential;
     }
 
     public RecipientAddress getAddress() {
@@ -44,9 +39,5 @@ public class LegacySignalProfileEntry {
 
     public LegacySignalProfile getProfile() {
         return profile;
-    }
-
-    public ProfileKeyCredential getProfileKeyCredential() {
-        return profileKeyCredential;
     }
 }

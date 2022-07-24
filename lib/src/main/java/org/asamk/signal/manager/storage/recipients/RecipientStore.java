@@ -8,8 +8,8 @@ import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.signal.libsignal.zkgroup.InvalidInputException;
+import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -89,11 +89,11 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                     }
                 }
 
-                ProfileKeyCredential profileKeyCredential = null;
-                if (r.profileKeyCredential != null) {
+                ExpiringProfileKeyCredential expiringProfileKeyCredential = null;
+                if (r.expiringProfileKeyCredential != null) {
                     try {
-                        profileKeyCredential = new ProfileKeyCredential(Base64.getDecoder()
-                                .decode(r.profileKeyCredential));
+                        expiringProfileKeyCredential = new ExpiringProfileKeyCredential(Base64.getDecoder()
+                                .decode(r.expiringProfileKeyCredential));
                     } catch (Throwable ignored) {
                     }
                 }
@@ -116,7 +116,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                                     .collect(Collectors.toSet()));
                 }
 
-                return new Recipient(recipientId, address, contact, profileKey, profileKeyCredential, profile);
+                return new Recipient(recipientId, address, contact, profileKey, expiringProfileKeyCredential, profile);
             }).collect(Collectors.toMap(Recipient::getRecipientId, r -> r));
 
             recipientStore.addRecipients(recipients);
@@ -333,9 +333,9 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
     }
 
     @Override
-    public ProfileKeyCredential getProfileKeyCredential(final RecipientId recipientId) {
+    public ExpiringProfileKeyCredential getExpiringProfileKeyCredential(final RecipientId recipientId) {
         final var recipient = getRecipient(recipientId);
-        return recipient == null ? null : recipient.getProfileKeyCredential();
+        return recipient == null ? null : recipient.getExpiringProfileKeyCredential();
     }
 
     @Override
@@ -371,7 +371,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
 
             final var builder = Recipient.newBuilder(recipient)
                     .withProfileKey(profileKey)
-                    .withProfileKeyCredential(null);
+                    .withExpiringProfileKeyCredential(null);
             if (resetProfile) {
                 builder.withProfile(recipient.getProfile() == null
                         ? null
@@ -383,11 +383,15 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
     }
 
     @Override
-    public void storeProfileKeyCredential(RecipientId recipientId, final ProfileKeyCredential profileKeyCredential) {
+    public void storeExpiringProfileKeyCredential(
+            RecipientId recipientId, final ExpiringProfileKeyCredential expiringProfileKeyCredential
+    ) {
         synchronized (recipients) {
             final var recipient = recipients.get(recipientId);
             storeRecipientLocked(recipientId,
-                    Recipient.newBuilder(recipient).withProfileKeyCredential(profileKeyCredential).build());
+                    Recipient.newBuilder(recipient)
+                            .withExpiringProfileKeyCredential(expiringProfileKeyCredential)
+                            .build());
         }
     }
 
@@ -535,9 +539,9 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                         recipient.getProfileKey() != null
                                 ? recipient.getProfileKey()
                                 : toBeMergedRecipient.getProfileKey(),
-                        recipient.getProfileKeyCredential() != null
-                                ? recipient.getProfileKeyCredential()
-                                : toBeMergedRecipient.getProfileKeyCredential(),
+                        recipient.getExpiringProfileKeyCredential() != null
+                                ? recipient.getExpiringProfileKeyCredential()
+                                : toBeMergedRecipient.getExpiringProfileKeyCredential(),
                         recipient.getProfile() != null ? recipient.getProfile() : toBeMergedRecipient.getProfile()));
         recipients.remove(toBeMergedRecipientId);
         recipientsMerged.put(toBeMergedRecipientId.id(), recipientId.id());
@@ -607,9 +611,9 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                     recipient.getProfileKey() == null
                             ? null
                             : base64.encodeToString(recipient.getProfileKey().serialize()),
-                    recipient.getProfileKeyCredential() == null
+                    recipient.getExpiringProfileKeyCredential() == null
                             ? null
-                            : base64.encodeToString(recipient.getProfileKeyCredential().serialize()),
+                            : base64.encodeToString(recipient.getExpiringProfileKeyCredential().serialize()),
                     contact,
                     profile);
         }).toList(), lastId);
@@ -634,7 +638,7 @@ public class RecipientStore implements RecipientResolver, RecipientTrustedResolv
                 String number,
                 String uuid,
                 String profileKey,
-                String profileKeyCredential,
+                String expiringProfileKeyCredential,
                 Storage.Recipient.Contact contact,
                 Storage.Recipient.Profile profile
         ) {

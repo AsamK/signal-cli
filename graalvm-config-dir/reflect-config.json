@@ -761,7 +761,6 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"date","parameterTypes":[] }, 
     {"name":"description","parameterTypes":[] }, 
     {"name":"image","parameterTypes":[] }, 
     {"name":"title","parameterTypes":[] }, 
@@ -1037,18 +1036,6 @@
 },
 {
   "name":"org.asamk.signal.manager.storage.profiles.ProfileStore",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.profiles.SignalProfile",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"org.asamk.signal.manager.storage.profiles.SignalProfile$Capabilities",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -1634,13 +1621,13 @@
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"org.signal.libsignal.zkgroup.profiles.ProfileKey",
+  "name":"org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
 },
 {
-  "name":"org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential",
+  "name":"org.signal.libsignal.zkgroup.profiles.ProfileKey",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
@@ -1728,6 +1715,7 @@
     {"name":"modifyMemberRoles_"}, 
     {"name":"modifyTitle_"}, 
     {"name":"promotePendingMembers_"}, 
+    {"name":"promotePendingPniAciMembers_"}, 
     {"name":"promoteRequestingMembers_"}, 
     {"name":"revision_"}, 
     {"name":"sourceUuid_"}
@@ -1798,7 +1786,11 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberProfileKeyAction",
-  "fields":[{"name":"presentation_"}]
+  "fields":[
+    {"name":"presentation_"}, 
+    {"name":"profileKey_"}, 
+    {"name":"userId_"}
+  ]
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberRoleAction",
@@ -1817,7 +1809,20 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromotePendingMemberAction",
-  "fields":[{"name":"presentation_"}]
+  "fields":[
+    {"name":"presentation_"}, 
+    {"name":"profileKey_"}, 
+    {"name":"userId_"}
+  ]
+},
+{
+  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromotePendingPniAciMemberProfileKeyAction",
+  "fields":[
+    {"name":"pni_"}, 
+    {"name":"presentation_"}, 
+    {"name":"profileKey_"}, 
+    {"name":"userId_"}
+  ]
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromoteRequestingMemberAction",
@@ -1946,6 +1951,7 @@
     {"name":"newTimer_"}, 
     {"name":"newTitle_"}, 
     {"name":"promotePendingMembers_"}, 
+    {"name":"promotePendingPniAciMembers_"}, 
     {"name":"promoteRequestingMembers_"}, 
     {"name":"revision_"}
   ]
@@ -1967,6 +1973,7 @@
   "name":"org.signal.storageservice.protos.groups.local.DecryptedMember",
   "fields":[
     {"name":"joinedAtRevision_"}, 
+    {"name":"pni_"}, 
     {"name":"profileKey_"}, 
     {"name":"role_"}, 
     {"name":"uuid_"}
@@ -2142,7 +2149,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.storage.StorageAuthResponse",

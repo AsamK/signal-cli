@@ -756,7 +756,7 @@ public class SignalAccount implements Closeable {
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
                 var recipientId = getRecipientResolver().resolveRecipient(profileEntry.getAddress());
-                getProfileStore().storeProfileKeyCredential(recipientId, profileEntry.getProfileKeyCredential());
+                // Not migrating profile key credential here, it was changed to expiring profile key credentials
                 getProfileStore().storeProfileKey(recipientId, profileEntry.getProfileKey());
                 final var profile = profileEntry.getProfile();
                 if (profile != null) {

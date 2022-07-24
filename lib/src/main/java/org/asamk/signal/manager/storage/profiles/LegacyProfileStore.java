@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.libsignal.zkgroup.profiles.ProfileKeyCredential;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -51,21 +50,9 @@ public class LegacyProfileStore {
                         profileKey = new ProfileKey(Base64.getDecoder().decode(entry.get("profileKey").asText()));
                     } catch (InvalidInputException ignored) {
                     }
-                    ProfileKeyCredential profileKeyCredential = null;
-                    if (entry.hasNonNull("profileKeyCredential")) {
-                        try {
-                            profileKeyCredential = new ProfileKeyCredential(Base64.getDecoder()
-                                    .decode(entry.get("profileKeyCredential").asText()));
-                        } catch (Throwable ignored) {
-                        }
-                    }
                     var lastUpdateTimestamp = entry.get("lastUpdateTimestamp").asLong();
                     var profile = jsonProcessor.treeToValue(entry.get("profile"), LegacySignalProfile.class);
-                    profileEntries.add(new LegacySignalProfileEntry(address,
-                            profileKey,
-                            lastUpdateTimestamp,
-                            profile,
-                            profileKeyCredential));
+                    profileEntries.add(new LegacySignalProfileEntry(address, profileKey, lastUpdateTimestamp, profile));
                 }
             }
 
