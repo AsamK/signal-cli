@@ -125,7 +125,7 @@ public class IOUtils {
         UnixDomainPrincipal principal = null;
         try {
             principal = channel.getOption(ExtendedSocketOptions.SO_PEERCRED);
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException | NoClassDefFoundError ignored) {
         }
         return principal;
     }
