@@ -121,13 +121,13 @@ public class IOUtils {
         return socketAddress;
     }
 
-    public static UnixDomainPrincipal getUnixDomainPrincipal(final SocketChannel channel) throws IOException {
+    public static String getUnixDomainPrincipal(final SocketChannel channel) throws IOException {
         UnixDomainPrincipal principal = null;
         try {
             principal = channel.getOption(ExtendedSocketOptions.SO_PEERCRED);
         } catch (UnsupportedOperationException | NoClassDefFoundError ignored) {
         }
-        return principal;
+        return principal == null ? null : principal.toString();
     }
 
     public static ServerSocketChannel bindSocket(final SocketAddress address) throws IOErrorException {
