@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ## [0.10.10] - 2022-07-30
+**Attention**: Now requires native libsignal-client version 0.18.1
+
 ### Fixed
 - Fix setPin/removePin commands which broke due to server side changes
 - Workaround GraalVM 22.2.0 issue with daemon connection
