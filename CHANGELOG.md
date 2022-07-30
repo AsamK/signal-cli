@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.10] - 2022-07-30
+### Fixed
+- Fix setPin/removePin commands which broke due to server side changes
+- Workaround GraalVM 22.2.0 issue with daemon connection
+
 ## [0.10.9] - 2022-07-16
 
 ### Changed
