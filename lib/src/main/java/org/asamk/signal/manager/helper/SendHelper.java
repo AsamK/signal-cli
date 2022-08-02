@@ -123,7 +123,7 @@ public class SendHelper {
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendReceipt(address,
                         unidentifiedAccess,
                         receiptMessage));
-        messageSendLogStore.insertIfPossible(receiptMessage.getWhen(), result, ContentHint.IMPLICIT);
+        messageSendLogStore.insertIfPossible(receiptMessage.getWhen(), result, ContentHint.IMPLICIT, false);
         handleSendMessageResult(result);
         return result;
     }
@@ -140,7 +140,8 @@ public class SendHelper {
                         unidentifiedAccess,
                         ContentHint.IMPLICIT,
                         message,
-                        SignalServiceMessageSender.IndividualSendEvents.EMPTY));
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY,
+                        false));
     }
 
     public SendMessageResult sendRetryReceipt(
@@ -237,7 +238,8 @@ public class SendHelper {
                             timestamp,
                             messageSendLogEntry.content(),
                             messageSendLogEntry.contentHint(),
-                            Optional.empty()));
+                            Optional.empty(),
+                            messageSendLogEntry.urgent()));
         }
 
         final var groupId = messageSendLogEntry.groupId().get();
@@ -266,7 +268,8 @@ public class SendHelper {
                         timestamp,
                         contentToSend,
                         messageSendLogEntry.contentHint(),
-                        Optional.of(group.getGroupId().serialize())));
+                        Optional.of(group.getGroupId().serialize()),
+                        messageSendLogEntry.urgent()));
 
         if (result.isSuccess()) {
             final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
@@ -315,6 +318,7 @@ public class SendHelper {
         final var messageSendLogStore = account.getMessageSendLogStore();
         final AtomicLong entryId = new AtomicLong(-1);
 
+        final var urgent = true;
         final LegacySenderHandler legacySender = (recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendDataMessage(
                 recipients,
                 unidentifiedAccess,
@@ -328,14 +332,16 @@ public class SendHelper {
                         if (entryId.get() == -1) {
                             final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),
                                     sendResult,
-                                    contentHint);
+                                    contentHint,
+                                    urgent);
                             entryId.set(newId);
                         } else {
                             messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
                         }
                     }
                 },
-                () -> false);
+                () -> false,
+                urgent);
         final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> {
             final var res = messageSender.sendGroupDataMessage(distId,
                     recipients,
@@ -343,10 +349,14 @@ public class SendHelper {
                     isRecipientUpdate,
                     contentHint,
                     message,
-                    SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY);
+                    SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY,
+                    urgent);
             synchronized (entryId) {
                 if (entryId.get() == -1) {
-                    final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(), res, contentHint);
+                    final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),
+                            res,
+                            contentHint,
+                            urgent);
                     entryId.set(newId);
                 } else {
                     messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), res);
@@ -582,13 +592,15 @@ public class SendHelper {
             SignalServiceDataMessage message, RecipientId recipientId
     ) {
         final var messageSendLogStore = account.getMessageSendLogStore();
+        final var urgent = true;
         final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
                         unidentifiedAccess,
                         ContentHint.RESENDABLE,
                         message,
-                        SignalServiceMessageSender.IndividualSendEvents.EMPTY));
-        messageSendLogStore.insertIfPossible(message.getTimestamp(), result, ContentHint.RESENDABLE);
+                        SignalServiceMessageSender.IndividualSendEvents.EMPTY,
+                        urgent));
+        messageSendLogStore.insertIfPossible(message.getTimestamp(), result, ContentHint.RESENDABLE, urgent);
         handleSendMessageResult(result);
         return result;
     }

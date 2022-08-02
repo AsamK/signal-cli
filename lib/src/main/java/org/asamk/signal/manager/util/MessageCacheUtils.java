@@ -19,7 +19,8 @@ public class MessageCacheUtils {
         try (var f = new FileInputStream(file)) {
             var in = new DataInputStream(f);
             var version = in.readInt();
-            if (version > 5) {
+            if (version > 6) {
+                // Unsupported envelope version
                 return null;
             }
             var type = in.readInt();
@@ -63,6 +64,10 @@ public class MessageCacheUtils {
             if (version >= 4) {
                 serverDeliveredTimestamp = in.readLong();
             }
+            boolean isUrgent = true;
+            if (version >= 6) {
+                isUrgent = in.readBoolean();
+            }
             Optional<SignalServiceAddress> addressOptional = sourceServiceId == null
                     ? Optional.empty()
                     : Optional.of(new SignalServiceAddress(sourceServiceId, source));
@@ -75,14 +80,15 @@ public class MessageCacheUtils {
                     serverReceivedTimestamp,
                     serverDeliveredTimestamp,
                     uuid,
-                    destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid);
+                    destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid,
+                    isUrgent);
         }
     }
 
     public static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (var f = new FileOutputStream(file)) {
             try (var out = new DataOutputStream(f)) {
-                out.writeInt(5); // version
+                out.writeInt(6); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
@@ -105,6 +111,7 @@ public class MessageCacheUtils {
                 var uuid = envelope.getServerGuid();
                 out.writeUTF(uuid == null ? "" : uuid);
                 out.writeLong(envelope.getServerDeliveredTimestamp());
+                out.writeBoolean(envelope.isUrgent());
             }
         }
     }

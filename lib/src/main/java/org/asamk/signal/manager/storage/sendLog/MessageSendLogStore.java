@@ -117,7 +117,8 @@ public class MessageSendLogStore implements AutoCloseable {
                         return null;
                     }
                     final var contentHint = ContentHint.fromType(resultSet.getInt("content_hint"));
-                    return new MessageSendLogEntry(groupId, content, contentHint);
+                    final var urgent = true; // TODO
+                    return new MessageSendLogEntry(groupId, content, contentHint, urgent);
                 })) {
                     return result.filter(Objects::nonNull)
                             .filter(e -> !isSenderKey || e.groupId().isPresent())
@@ -131,7 +132,7 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public long insertIfPossible(
-            long sentTimestamp, SendMessageResult sendMessageResult, ContentHint contentHint
+            long sentTimestamp, SendMessageResult sendMessageResult, ContentHint contentHint, boolean urgent
     ) {
         final RecipientDevices recipientDevice = getRecipientDevices(sendMessageResult);
         if (recipientDevice == null) {
@@ -141,11 +142,12 @@ public class MessageSendLogStore implements AutoCloseable {
         return insert(List.of(recipientDevice),
                 sentTimestamp,
                 sendMessageResult.getSuccess().getContent().get(),
-                contentHint);
+                contentHint,
+                urgent);
     }
 
     public long insertIfPossible(
-            long sentTimestamp, List<SendMessageResult> sendMessageResults, ContentHint contentHint
+            long sentTimestamp, List<SendMessageResult> sendMessageResults, ContentHint contentHint, boolean urgent
     ) {
         final var recipientDevices = sendMessageResults.stream()
                 .map(this::getRecipientDevices)
@@ -161,7 +163,7 @@ public class MessageSendLogStore implements AutoCloseable {
                 .findFirst()
                 .get();
 
-        return insert(recipientDevices, sentTimestamp, content, contentHint);
+        return insert(recipientDevices, sentTimestamp, content, contentHint, urgent);
     }
 
     public void addRecipientToExistingEntryIfPossible(final long contentId, final SendMessageResult sendMessageResult) {
@@ -272,10 +274,12 @@ public class MessageSendLogStore implements AutoCloseable {
             final List<RecipientDevices> recipientDevices,
             final long sentTimestamp,
             final SignalServiceProtos.Content content,
-            final ContentHint contentHint
+            final ContentHint contentHint,
+            final boolean urgent
     ) {
         byte[] groupId = getGroupId(content);
 
+        // TODO store urgent
         final var sql = """
                         INSERT INTO %s (timestamp, group_id, content, content_hint)
                         VALUES (?,?,?,?)

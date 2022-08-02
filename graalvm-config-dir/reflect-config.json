@@ -2806,7 +2806,8 @@
     {"name":"sourceE164_"}, 
     {"name":"sourceUuid_"}, 
     {"name":"timestamp_"}, 
-    {"name":"type_"}
+    {"name":"type_"}, 
+    {"name":"urgent_"}
   ]
 },
 {
@@ -3052,6 +3053,7 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
   "fields":[
     {"name":"bitField0_"}, 
+    {"name":"destinationE164_"}, 
     {"name":"destinationUuid_"}, 
     {"name":"expirationStartTimestamp_"}, 
     {"name":"isRecipientUpdate_"}, 

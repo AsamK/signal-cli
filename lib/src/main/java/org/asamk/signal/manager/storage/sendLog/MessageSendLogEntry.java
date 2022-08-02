@@ -7,5 +7,5 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import java.util.Optional;
 
 public record MessageSendLogEntry(
-        Optional<GroupId> groupId, SignalServiceProtos.Content content, ContentHint contentHint
+        Optional<GroupId> groupId, SignalServiceProtos.Content content, ContentHint contentHint, boolean urgent
 ) {}
