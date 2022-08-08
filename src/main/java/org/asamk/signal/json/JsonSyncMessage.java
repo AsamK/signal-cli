@@ -16,29 +16,19 @@ enum JsonSyncMessageType {
 
 record JsonSyncMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncDataMessage sentMessage,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncStoryMessage sentStoryMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<String> blockedNumbers,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<String> blockedGroupIds,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSyncReadMessage> readMessages,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncMessageType type
 ) {
 
-    JsonSyncMessage(
-            final JsonSyncDataMessage sentMessage,
-            final List<String> blockedNumbers,
-            final List<String> blockedGroupIds,
-            final List<JsonSyncReadMessage> readMessages,
-            final JsonSyncMessageType type
-    ) {
-        this.sentMessage = sentMessage;
-        this.blockedNumbers = blockedNumbers;
-        this.blockedGroupIds = blockedGroupIds;
-        this.readMessages = readMessages;
-        this.type = type;
-    }
-
     static JsonSyncMessage from(MessageEnvelope.Sync syncMessage) {
-        final var sentMessage = syncMessage.sent().isPresent()
+        final var sentMessage = syncMessage.sent().isPresent() && syncMessage.sent().get().story().isEmpty()
                 ? JsonSyncDataMessage.from(syncMessage.sent().get())
+                : null;
+        final var sentStoryMessage = syncMessage.sent().isPresent() && syncMessage.sent().get().story().isPresent()
+                ? JsonSyncStoryMessage.from(syncMessage.sent().get())
                 : null;
         final List<String> blockedNumbers;
         final List<String> blockedGroupIds;
@@ -68,6 +58,6 @@ record JsonSyncMessage(
         } else {
             type = null;
         }
-        return new JsonSyncMessage(sentMessage, blockedNumbers, blockedGroupIds, readMessages, type);
+        return new JsonSyncMessage(sentMessage, sentStoryMessage, blockedNumbers, blockedGroupIds, readMessages, type);
     }
 }

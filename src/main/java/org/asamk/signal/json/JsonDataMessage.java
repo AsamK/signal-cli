@@ -20,13 +20,17 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSharedContact> contacts,
-        @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryContext storyContext
 ) {
 
     static JsonDataMessage from(MessageEnvelope.Data dataMessage) {
         final var timestamp = dataMessage.timestamp();
         final var groupInfo = dataMessage.groupContext().isPresent() ? JsonGroupInfo.from(dataMessage.groupContext()
                 .get()) : null;
+        final var storyContext = dataMessage.storyContext().isPresent()
+                ? JsonStoryContext.from(dataMessage.storyContext().get())
+                : null;
         final var message = dataMessage.body().orElse(null);
         final var expiresInSeconds = dataMessage.expiresInSeconds();
         final var viewOnce = dataMessage.isViewOnce();
@@ -67,6 +71,7 @@ record JsonDataMessage(
                 sticker,
                 remoteDelete,
                 contacts,
-                groupInfo);
+                groupInfo,
+                storyContext);
     }
 }

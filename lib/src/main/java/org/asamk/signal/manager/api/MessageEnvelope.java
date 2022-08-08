@@ -15,6 +15,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceTextAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
@@ -49,7 +51,8 @@ public record MessageEnvelope(
         Optional<Typing> typing,
         Optional<Data> data,
         Optional<Sync> sync,
-        Optional<Call> call
+        Optional<Call> call,
+        Optional<Story> story
 ) {
 
     public record Receipt(long when, Type type, List<Long> timestamps) {
@@ -94,6 +97,7 @@ public record MessageEnvelope(
     public record Data(
             long timestamp,
             Optional<GroupContext> groupContext,
+            Optional<StoryContext> storyContext,
             Optional<GroupCallUpdate> groupCallUpdate,
             Optional<String> body,
             int expiresInSeconds,
@@ -121,6 +125,10 @@ public record MessageEnvelope(
         ) {
             return new Data(dataMessage.getTimestamp(),
                     dataMessage.getGroupContext().map(GroupContext::from),
+                    dataMessage.getStoryContext()
+                            .map((SignalServiceDataMessage.StoryContext storyContext) -> StoryContext.from(storyContext,
+                                    recipientResolver,
+                                    addressResolver)),
                     dataMessage.getGroupCallUpdate().map(GroupCallUpdate::from),
                     dataMessage.getBody(),
                     dataMessage.getExpiresInSeconds(),
@@ -165,6 +173,18 @@ public record MessageEnvelope(
                 } else {
                     throw new RuntimeException("Invalid group context state");
                 }
+            }
+        }
+
+        public record StoryContext(RecipientAddress author, long sentTimestamp) {
+
+            static StoryContext from(
+                    SignalServiceDataMessage.StoryContext storyContext,
+                    RecipientResolver recipientResolver,
+                    RecipientAddressResolver addressResolver
+            ) {
+                return new StoryContext(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(
+                        storyContext.getAuthorServiceId())), storyContext.getSentTimestamp());
             }
         }
 
@@ -519,7 +539,8 @@ public record MessageEnvelope(
                 long expirationStartTimestamp,
                 Optional<RecipientAddress> destination,
                 Set<RecipientAddress> recipients,
-                Optional<Data> message
+                Optional<Data> message,
+                Optional<Story> story
         ) {
 
             static Sent from(
@@ -537,7 +558,8 @@ public record MessageEnvelope(
                                 .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d)))
                                 .collect(Collectors.toSet()),
                         sentMessage.getDataMessage()
-                                .map(message -> Data.from(message, recipientResolver, addressResolver, fileProvider)));
+                                .map(message -> Data.from(message, recipientResolver, addressResolver, fileProvider)),
+                        sentMessage.getStoryMessage().map(s -> Story.from(s, fileProvider)));
             }
         }
 
@@ -757,6 +779,75 @@ public record MessageEnvelope(
         }
     }
 
+    public record Story(
+            boolean allowsReplies,
+            Optional<GroupId> groupId,
+            Optional<Data.Attachment> fileAttachment,
+            Optional<TextAttachment> textAttachment
+    ) {
+
+        public static Story from(
+                SignalServiceStoryMessage storyMessage, final AttachmentFileProvider fileProvider
+        ) {
+            return new Story(storyMessage.getAllowsReplies().orElse(false),
+                    storyMessage.getGroupContext().map(c -> GroupUtils.getGroupIdV2(c.getMasterKey())),
+                    storyMessage.getFileAttachment().map(f -> Data.Attachment.from(f, fileProvider)),
+                    storyMessage.getTextAttachment().map(t -> TextAttachment.from(t, fileProvider)));
+        }
+
+        public record TextAttachment(
+                Optional<String> text,
+                Optional<Style> style,
+                Optional<Color> textForegroundColor,
+                Optional<Color> textBackgroundColor,
+                Optional<Data.Preview> preview,
+                Optional<Gradient> backgroundGradient,
+                Optional<Color> backgroundColor
+        ) {
+
+            static TextAttachment from(
+                    SignalServiceTextAttachment textAttachment, final AttachmentFileProvider fileProvider
+            ) {
+                return new TextAttachment(textAttachment.getText(),
+                        textAttachment.getStyle().map(Style::from),
+                        textAttachment.getTextForegroundColor().map(Color::new),
+                        textAttachment.getTextBackgroundColor().map(Color::new),
+                        textAttachment.getPreview().map(p -> Data.Preview.from(p, fileProvider)),
+                        textAttachment.getBackgroundGradient().map(Gradient::from),
+                        textAttachment.getBackgroundColor().map(Color::new));
+            }
+
+            public enum Style {
+                DEFAULT,
+                REGULAR,
+                BOLD,
+                SERIF,
+                SCRIPT,
+                CONDENSED;
+
+                static Style from(SignalServiceTextAttachment.Style style) {
+                    return switch (style) {
+                        case DEFAULT -> DEFAULT;
+                        case REGULAR -> REGULAR;
+                        case BOLD -> BOLD;
+                        case SERIF -> SERIF;
+                        case SCRIPT -> SCRIPT;
+                        case CONDENSED -> CONDENSED;
+                    };
+                }
+            }
+
+            public record Gradient(Optional<Color> startColor, Optional<Color> endColor, Optional<Integer> angle) {
+
+                static Gradient from(SignalServiceTextAttachment.Gradient gradient) {
+                    return new Gradient(gradient.getStartColor().map(Color::new),
+                            gradient.getEndColor().map(Color::new),
+                            gradient.getAngle());
+                }
+            }
+        }
+    }
+
     public static MessageEnvelope from(
             SignalServiceEnvelope envelope,
             SignalServiceContent content,
@@ -783,6 +874,7 @@ public record MessageEnvelope(
         Optional<Data> data;
         Optional<Sync> sync;
         Optional<Call> call;
+        Optional<Story> story;
         if (content != null) {
             receipt = content.getReceiptMessage().map(Receipt::from);
             typing = content.getTypingMessage().map(Typing::from);
@@ -790,6 +882,7 @@ public record MessageEnvelope(
                     .map(dataMessage -> Data.from(dataMessage, recipientResolver, addressResolver, fileProvider));
             sync = content.getSyncMessage().map(s -> Sync.from(s, recipientResolver, addressResolver, fileProvider));
             call = content.getCallMessage().map(Call::from);
+            story = content.getStoryMessage().map(s -> Story.from(s, fileProvider));
         } else {
             receipt = envelope.isReceipt() ? Optional.of(new Receipt(envelope.getServerReceivedTimestamp(),
                     Receipt.Type.DELIVERY,
@@ -798,6 +891,7 @@ public record MessageEnvelope(
             data = Optional.empty();
             sync = Optional.empty();
             call = Optional.empty();
+            story = Optional.empty();
         }
 
         return new MessageEnvelope(source == null
@@ -812,7 +906,8 @@ public record MessageEnvelope(
                 typing,
                 data,
                 sync,
-                call);
+                call,
+                story);
     }
 
     public interface AttachmentFileProvider {

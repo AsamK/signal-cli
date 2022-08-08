@@ -68,6 +68,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             var message = envelope.data().get();
             printDataMessage(writer, message);
         }
+        if (envelope.story().isPresent()) {
+            var message = envelope.story().get();
+            printStoryMessage(writer.indentedWriter(), message);
+        }
         if (envelope.sync().isPresent()) {
             writer.println("Received a sync message");
             var syncMessage = envelope.sync().get();
@@ -106,6 +110,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Group info:");
             final var groupContext = message.groupContext().get();
             printGroupContext(writer.indentedWriter(), groupContext);
+        }
+        if (message.storyContext().isPresent()) {
+            writer.println("Story reply:");
+            final var storyContext = message.storyContext().get();
+            printStoryContext(writer.indentedWriter(), storyContext);
         }
         if (message.groupCallUpdate().isPresent()) {
             writer.println("Group call update:");
@@ -173,6 +182,28 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 writer.println("- Attachment:");
                 printAttachment(writer.indentedWriter(), attachment);
             }
+        }
+    }
+
+    private void printStoryMessage(
+            PlainTextWriter writer, MessageEnvelope.Story message
+    ) {
+        writer.println("Story: with replies: {}", message.allowsReplies());
+        if (message.groupId().isPresent()) {
+            writer.println("Group info:");
+            printGroupInfo(writer.indentedWriter(), message.groupId().get());
+        }
+        if (message.textAttachment().isPresent()) {
+            writer.println("Body: {}", message.textAttachment().get().text().orElse(""));
+
+            if (message.textAttachment().get().preview().isPresent()) {
+                writer.println("Preview:");
+                printPreview(writer.indentedWriter(), message.textAttachment().get().preview().get());
+            }
+        }
+        if (message.fileAttachment().isPresent()) {
+            writer.println("Attachments:");
+            printAttachment(writer.indentedWriter(), message.fileAttachment().get());
         }
     }
 
@@ -304,6 +335,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             if (sentTranscriptMessage.message().isPresent()) {
                 var message = sentTranscriptMessage.message().get();
                 printDataMessage(writer.indentedWriter(), message);
+            }
+            if (sentTranscriptMessage.story().isPresent()) {
+                var message = sentTranscriptMessage.story().get();
+                printStoryMessage(writer.indentedWriter(), message);
             }
         }
         if (syncMessage.blocked().isPresent()) {
@@ -493,6 +528,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         printGroupInfo(writer, groupContext.groupId());
         writer.println("Revision: {}", groupContext.revision());
         writer.println("Type: {}", groupContext.isGroupUpdate() ? "UPDATE" : "DELIVER");
+    }
+
+    private void printStoryContext(
+            final PlainTextWriter writer, final MessageEnvelope.Data.StoryContext storyContext
+    ) {
+        writer.println("Sender: {}", formatContact(storyContext.author()));
+        writer.println("Sent timestamp: {}", storyContext.sentTimestamp());
     }
 
     private void printGroupInfo(final PlainTextWriter writer, final GroupId groupId) {

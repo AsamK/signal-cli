@@ -52,7 +52,9 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
@@ -276,6 +278,11 @@ public final class IncomingMessageHandler {
                     receiveConfig.ignoreAttachments()));
         }
 
+        if (content.getStoryMessage().isPresent()) {
+            final var message = content.getStoryMessage().get();
+            actions.addAll(handleSignalServiceStoryMessage(message, sender, receiveConfig.ignoreAttachments()));
+        }
+
         if (content.getSyncMessage().isPresent()) {
             var syncMessage = content.getSyncMessage().get();
             actions.addAll(handleSyncMessage(syncMessage, sender, receiveConfig.ignoreAttachments()));
@@ -345,6 +352,11 @@ public final class IncomingMessageHandler {
                         true,
                         sender,
                         destination == null ? null : context.getRecipientHelper().resolveRecipient(destination),
+                        ignoreAttachments));
+            }
+            if (message.getStoryMessage().isPresent()) {
+                actions.addAll(handleSignalServiceStoryMessage(message.getStoryMessage().get(),
+                        sender,
                         ignoreAttachments));
             }
         }
@@ -566,8 +578,9 @@ public final class IncomingMessageHandler {
     ) {
         var actions = new ArrayList<HandleAction>();
         if (message.getGroupContext().isPresent()) {
-            if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                var groupInfo = message.getGroupContext().get().getGroupV1().get();
+            final var groupContext = message.getGroupContext().get();
+            if (groupContext.getGroupV1().isPresent()) {
+                var groupInfo = groupContext.getGroupV1().get();
                 var groupId = GroupId.v1(groupInfo.getGroupId());
                 var group = context.getGroupHelper().getGroup(groupId);
                 if (group == null || group instanceof GroupInfoV1) {
@@ -620,14 +633,8 @@ public final class IncomingMessageHandler {
                     // Received a group v1 message for a v2 group
                 }
             }
-            if (message.getGroupContext().get().getGroupV2().isPresent()) {
-                final var groupContext = message.getGroupContext().get().getGroupV2().get();
-                final var groupMasterKey = groupContext.getMasterKey();
-
-                context.getGroupHelper()
-                        .getOrMigrateGroup(groupMasterKey,
-                                groupContext.getRevision(),
-                                groupContext.hasSignedGroupChange() ? groupContext.getSignedGroupChange() : null);
+            if (groupContext.getGroupV2().isPresent()) {
+                handleGroupV2Context(groupContext.getGroupV2().get());
             }
         }
 
@@ -637,8 +644,9 @@ public final class IncomingMessageHandler {
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
-                if (message.getGroupContext().get().getGroupV1().isPresent()) {
-                    var groupInfo = message.getGroupContext().get().getGroupV1().get();
+                final var groupContext = message.getGroupContext().get();
+                if (groupContext.getGroupV1().isPresent()) {
+                    var groupInfo = groupContext.getGroupV1().get();
                     var group = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(groupInfo.getGroupId()));
                     if (group != null) {
                         if (group.messageExpirationTime != message.getExpiresInSeconds()) {
@@ -646,7 +654,7 @@ public final class IncomingMessageHandler {
                             account.getGroupStore().updateGroup(group);
                         }
                     }
-                } else if (message.getGroupContext().get().getGroupV2().isPresent()) {
+                } else if (groupContext.getGroupV2().isPresent()) {
                     // disappearing message timer already stored in the DecryptedGroup
                 }
             } else if (conversationPartnerAddress != null) {
@@ -686,17 +694,8 @@ public final class IncomingMessageHandler {
                 }
             }
         }
-        if (message.getProfileKey().isPresent() && message.getProfileKey().get().length == 32) {
-            final ProfileKey profileKey;
-            try {
-                profileKey = new ProfileKey(message.getProfileKey().get());
-            } catch (InvalidInputException e) {
-                throw new AssertionError(e);
-            }
-            if (account.getSelfRecipientId().equals(source)) {
-                this.account.setProfileKey(profileKey);
-            }
-            this.account.getProfileStore().storeProfileKey(source, profileKey);
+        if (message.getProfileKey().isPresent()) {
+            handleIncomingProfileKey(message.getProfileKey().get(), source);
         }
         if (message.getSticker().isPresent()) {
             final var messageSticker = message.getSticker().get();
@@ -709,6 +708,62 @@ public final class IncomingMessageHandler {
             context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }
         return actions;
+    }
+
+    private List<HandleAction> handleSignalServiceStoryMessage(
+            SignalServiceStoryMessage message, RecipientId source, boolean ignoreAttachments
+    ) {
+        var actions = new ArrayList<HandleAction>();
+        if (message.getGroupContext().isPresent()) {
+            handleGroupV2Context(message.getGroupContext().get());
+        }
+
+        if (!ignoreAttachments) {
+            if (message.getFileAttachment().isPresent()) {
+                context.getAttachmentHelper().downloadAttachment(message.getFileAttachment().get());
+            }
+            if (message.getTextAttachment().isPresent()) {
+                final var textAttachment = message.getTextAttachment().get();
+                if (textAttachment.getPreview().isPresent()) {
+                    final var preview = textAttachment.getPreview().get();
+                    if (preview.getImage().isPresent()) {
+                        context.getAttachmentHelper().downloadAttachment(preview.getImage().get());
+                    }
+                }
+            }
+        }
+
+        if (message.getProfileKey().isPresent()) {
+            handleIncomingProfileKey(message.getProfileKey().get(), source);
+        }
+
+        return actions;
+    }
+
+    private void handleGroupV2Context(final SignalServiceGroupV2 groupContext) {
+        final var groupMasterKey = groupContext.getMasterKey();
+
+        context.getGroupHelper()
+                .getOrMigrateGroup(groupMasterKey,
+                        groupContext.getRevision(),
+                        groupContext.hasSignedGroupChange() ? groupContext.getSignedGroupChange() : null);
+    }
+
+    private void handleIncomingProfileKey(final byte[] profileKeyBytes, final RecipientId source) {
+        if (profileKeyBytes.length != 32) {
+            logger.debug("Received invalid profile key of length {}", profileKeyBytes.length);
+            return;
+        }
+        final ProfileKey profileKey;
+        try {
+            profileKey = new ProfileKey(profileKeyBytes);
+        } catch (InvalidInputException e) {
+            throw new AssertionError(e);
+        }
+        if (account.getSelfRecipientId().equals(source)) {
+            this.account.setProfileKey(profileKey);
+        }
+        this.account.getProfileStore().storeProfileKey(source, profileKey);
     }
 
     private Pair<RecipientId, Integer> getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {

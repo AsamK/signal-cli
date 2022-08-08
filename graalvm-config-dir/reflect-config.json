@@ -838,6 +838,55 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonStoryContext",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"authorNumber","parameterTypes":[] }, 
+    {"name":"authorUuid","parameterTypes":[] }, 
+    {"name":"sentTimestamp","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.json.JsonStoryMessage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"allowsReplies","parameterTypes":[] }, 
+    {"name":"fileAttachment","parameterTypes":[] }, 
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"textAttachment","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.json.JsonStoryMessage$TextAttachment",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"backgroundColor","parameterTypes":[] }, 
+    {"name":"backgroundGradient","parameterTypes":[] }, 
+    {"name":"preview","parameterTypes":[] }, 
+    {"name":"style","parameterTypes":[] }, 
+    {"name":"text","parameterTypes":[] }, 
+    {"name":"textBackgroundColor","parameterTypes":[] }, 
+    {"name":"textForegroundColor","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.json.JsonStoryMessage$TextAttachment$Gradient",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"angle","parameterTypes":[] }, 
+    {"name":"endColor","parameterTypes":[] }, 
+    {"name":"startColor","parameterTypes":[] }
+  ]
+},
+{
   "name":"org.asamk.signal.json.JsonSyncDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -859,6 +908,17 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.asamk.signal.json.JsonSyncStoryMessage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"dataMessage","parameterTypes":[] }, 
+    {"name":"destinationNumber","parameterTypes":[] }, 
+    {"name":"destinationUuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonTypingMessage",
@@ -3104,6 +3164,28 @@
     {"name":"bitField0_"}, 
     {"name":"senderUuid_"}, 
     {"name":"timestamp_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TextAttachment",
+  "fields":[
+    {"name":"backgroundCase_"}, 
+    {"name":"background_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"preview_"}, 
+    {"name":"textBackgroundColor_"}, 
+    {"name":"textForegroundColor_"}, 
+    {"name":"textStyle_"}, 
+    {"name":"text_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TextAttachment$Gradient",
+  "fields":[
+    {"name":"angle_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"endColor_"}, 
+    {"name":"startColor_"}
   ]
 },
 {
