@@ -187,7 +187,8 @@ class RegistrationManagerImpl implements RegistrationManager {
                     account.isUnrestrictedUnidentifiedAccess(),
                     capabilities,
                     account.isDiscoverableByPhoneNumber(),
-                    account.getEncryptedDeviceName());
+                    account.getEncryptedDeviceName(),
+                    account.getLocalPniRegistrationId());
             account.setRegistered(true);
             logger.info("Reactivated existing account, verify is not necessary.");
             if (newManagerListener != null) {
@@ -216,7 +217,8 @@ class RegistrationManagerImpl implements RegistrationManager {
                     account.getSelfUnidentifiedAccessKey(),
                     account.isUnrestrictedUnidentifiedAccess(),
                     ServiceConfig.capabilities,
-                    account.isDiscoverableByPhoneNumber());
+                    account.isDiscoverableByPhoneNumber(),
+                    account.getLocalPniRegistrationId());
         } else {
             return accountManager.verifyAccountWithRegistrationLockPin(verificationCode,
                     account.getLocalRegistrationId(),
@@ -225,7 +227,8 @@ class RegistrationManagerImpl implements RegistrationManager {
                     account.getSelfUnidentifiedAccessKey(),
                     account.isUnrestrictedUnidentifiedAccess(),
                     ServiceConfig.capabilities,
-                    account.isDiscoverableByPhoneNumber());
+                    account.isDiscoverableByPhoneNumber(),
+                    account.getLocalPniRegistrationId());
         }
     }
 

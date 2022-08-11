@@ -33,6 +33,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
+import org.whispersystems.signalservice.internal.push.ConfirmCodeMessage;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.IOException;
@@ -54,6 +55,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
     private final SignalServiceAccountManager accountManager;
     private final IdentityKeyPair tempIdentityKey;
     private final int registrationId;
+    private final int pniRegistrationId;
     private final String password;
 
     ProvisioningManagerImpl(
@@ -71,6 +73,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         registrationId = KeyHelper.generateRegistrationId(false);
+        pniRegistrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         GroupsV2Operations groupsV2Operations;
         try {
@@ -123,10 +126,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
         logger.debug("Finishing new device registration");
         var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
-                false,
-                true,
-                registrationId,
-                encryptedDeviceName);
+                new ConfirmCodeMessage(false, true, registrationId, pniRegistrationId, encryptedDeviceName, null));
 
         // Create new account with the synced identity
         var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();
@@ -145,6 +145,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                     ret.getAciIdentity(),
                     ret.getPniIdentity(),
                     registrationId,
+                    pniRegistrationId,
                     profileKey,
                     TrustNewIdentity.ON_FIRST_USE);
 

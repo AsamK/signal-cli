@@ -492,6 +492,7 @@ public final class IncomingMessageHandler {
                     pniIdentity.getPrivateKey().toByteArray()));
             actions.add(RefreshPreKeysAction.create());
         }
+        // TODO handle PniChangeNumber
         return actions;
     }
 

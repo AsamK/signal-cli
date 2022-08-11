@@ -13,12 +13,17 @@ import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
+import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
+import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -103,11 +108,21 @@ public class AccountHelper {
     public void finishChangeNumber(
             String newNumber, String verificationCode, String pin
     ) throws IncorrectPinException, PinLockedException, IOException {
+        // TODO create new PNI identity key
+        final List<OutgoingPushMessage> deviceMessages = null;
+        final Map<String, SignedPreKeyEntity> devicePniSignedPreKeys = null;
+        final Map<String, Integer> pniRegistrationIds = null;
         final var result = NumberVerificationUtils.verifyNumber(verificationCode,
                 pin,
                 context.getPinHelper(),
                 (verificationCode1, registrationLock) -> dependencies.getAccountManager()
-                        .changeNumber(verificationCode1, newNumber, registrationLock));
+                        .changeNumber(new ChangePhoneNumberRequest(newNumber,
+                                verificationCode1,
+                                registrationLock,
+                                account.getPniIdentityKeyPair().getPublicKey(),
+                                deviceMessages,
+                                devicePniSignedPreKeys,
+                                pniRegistrationIds)));
         // TODO handle response
         updateSelfIdentifiers(newNumber, account.getAci(), PNI.parseOrThrow(result.first().getPni()));
     }
@@ -129,7 +144,8 @@ public class AccountHelper {
                         account.isUnrestrictedUnidentifiedAccess(),
                         ServiceConfig.capabilities,
                         account.isDiscoverableByPhoneNumber(),
-                        account.getEncryptedDeviceName());
+                        account.getEncryptedDeviceName(),
+                        account.getLocalPniRegistrationId());
     }
 
     public void addDevice(DeviceLinkInfo deviceLinkInfo) throws IOException, InvalidDeviceLinkException {

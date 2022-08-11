@@ -149,6 +149,7 @@ public class SignalAccountFiles {
             var aciIdentityKey = KeyUtils.generateIdentityKeyPair();
             var pniIdentityKey = KeyUtils.generateIdentityKeyPair();
             var registrationId = KeyHelper.generateRegistrationId(false);
+            var pniRegistrationId = KeyHelper.generateRegistrationId(false);
 
             var profileKey = KeyUtils.createProfileKey();
             var account = SignalAccount.create(pathConfig.dataPath(),
@@ -158,6 +159,7 @@ public class SignalAccountFiles {
                     aciIdentityKey,
                     pniIdentityKey,
                     registrationId,
+                    pniRegistrationId,
                     profileKey,
                     trustNewIdentity);
 

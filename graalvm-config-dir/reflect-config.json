@@ -2995,6 +2995,7 @@
     {"name":"messageRequestResponse_"}, 
     {"name":"outgoingPayment_"}, 
     {"name":"padding_"}, 
+    {"name":"pniChangeNumber_"}, 
     {"name":"pniIdentity_"}, 
     {"name":"read_"}, 
     {"name":"request_"}, 

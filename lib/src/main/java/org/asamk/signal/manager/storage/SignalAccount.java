@@ -45,6 +45,7 @@ import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SessionRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
+import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.protocol.util.Medium;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
@@ -125,6 +126,7 @@ public class SignalAccount implements Closeable {
     private IdentityKeyPair aciIdentityKeyPair;
     private IdentityKeyPair pniIdentityKeyPair;
     private int localRegistrationId;
+    private int localPniRegistrationId;
     private TrustNewIdentity trustNewIdentity;
     private long lastReceiveTimestamp = 0;
 
@@ -186,6 +188,7 @@ public class SignalAccount implements Closeable {
             IdentityKeyPair aciIdentityKey,
             IdentityKeyPair pniIdentityKey,
             int registrationId,
+            int pniRegistrationId,
             ProfileKey profileKey,
             final TrustNewIdentity trustNewIdentity
     ) throws IOException {
@@ -207,6 +210,7 @@ public class SignalAccount implements Closeable {
         signalAccount.aciIdentityKeyPair = aciIdentityKey;
         signalAccount.pniIdentityKeyPair = pniIdentityKey;
         signalAccount.localRegistrationId = registrationId;
+        signalAccount.localPniRegistrationId = pniRegistrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.groupStore = new GroupStore(getGroupCachePath(dataPath, accountPath),
                 signalAccount.getRecipientResolver(),
@@ -236,6 +240,7 @@ public class SignalAccount implements Closeable {
             IdentityKeyPair aciIdentityKey,
             IdentityKeyPair pniIdentityKey,
             int registrationId,
+            int pniRegistrationId,
             ProfileKey profileKey,
             final TrustNewIdentity trustNewIdentity
     ) throws IOException {
@@ -254,6 +259,7 @@ public class SignalAccount implements Closeable {
                     aciIdentityKey,
                     pniIdentityKey,
                     registrationId,
+                    pniRegistrationId,
                     profileKey,
                     trustNewIdentity);
         }
@@ -305,6 +311,7 @@ public class SignalAccount implements Closeable {
             IdentityKeyPair aciIdentityKey,
             IdentityKeyPair pniIdentityKey,
             int registrationId,
+            int pniRegistrationId,
             ProfileKey profileKey,
             final TrustNewIdentity trustNewIdentity
     ) throws IOException {
@@ -318,6 +325,7 @@ public class SignalAccount implements Closeable {
         signalAccount.accountPath = accountPath;
         signalAccount.serviceEnvironment = serviceEnvironment;
         signalAccount.localRegistrationId = registrationId;
+        signalAccount.localPniRegistrationId = pniRegistrationId;
         signalAccount.trustNewIdentity = trustNewIdentity;
         signalAccount.setProvisioningData(number,
                 aci,
@@ -548,6 +556,11 @@ public class SignalAccount implements Closeable {
         int registrationId = 0;
         if (rootNode.hasNonNull("registrationId")) {
             registrationId = rootNode.get("registrationId").asInt();
+        }
+        if (rootNode.hasNonNull("pniRegistrationId")) {
+            localPniRegistrationId = rootNode.get("pniRegistrationId").asInt();
+        } else {
+            localPniRegistrationId = KeyHelper.generateRegistrationId(false);
         }
         IdentityKeyPair aciIdentityKeyPair = null;
         if (rootNode.hasNonNull("identityPrivateKey") && rootNode.hasNonNull("identityKey")) {
@@ -855,6 +868,7 @@ public class SignalAccount implements Closeable {
                     .put("lastReceiveTimestamp", lastReceiveTimestamp)
                     .put("password", password)
                     .put("registrationId", localRegistrationId)
+                    .put("pniRegistrationId", localPniRegistrationId)
                     .put("identityPrivateKey",
                             Base64.getEncoder().encodeToString(aciIdentityKeyPair.getPrivateKey().serialize()))
                     .put("identityKey",
@@ -1243,6 +1257,10 @@ public class SignalAccount implements Closeable {
 
     public int getLocalRegistrationId() {
         return localRegistrationId;
+    }
+
+    public int getLocalPniRegistrationId() {
+        return localPniRegistrationId;
     }
 
     public String getPassword() {
