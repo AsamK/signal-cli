@@ -26,7 +26,8 @@ class StagingConfig {
 
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BbqY1DzohE4NUZoVF+L18oUPrK3kILllLEJh2UnPSsEx");
-    private final static String CDS_MRENCLAVE = "c98e00a4e3ff977a56afefe7362a27e4961e4f19e211febfbb19b897e6b80b15";
+    private final static String CDS_MRENCLAVE = "74778bb0f93ae1f78c26e67152bab0bbeb693cd56d1bb9b4e9244157acc58081";
+    private final static String CDSI_MRENCLAVE = "7b75dd6e862decef9b37132d54be082441917a7790e82fe44f9cf653de03a75f";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "dd6f66d397d9e8cf6ec6db238e59a7be078dd50e9715427b9c89b409ffe53f99";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(

@@ -26,7 +26,8 @@ class LiveConfig {
 
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
-    private final static String CDS_MRENCLAVE = "c98e00a4e3ff977a56afefe7362a27e4961e4f19e211febfbb19b897e6b80b15";
+    private final static String CDS_MRENCLAVE = "74778bb0f93ae1f78c26e67152bab0bbeb693cd56d1bb9b4e9244157acc58081";
+    private final static String CDSI_MRENCLAVE = "7b75dd6e862decef9b37132d54be082441917a7790e82fe44f9cf653de03a75f";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "0cedba03535b41b67729ce9924185f831d7767928a1d1689acb689bc079c375f";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
@@ -39,7 +40,7 @@ class LiveConfig {
     private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api.directory.signal.org";
     private final static String SIGNAL_KEY_BACKUP_URL = "https://api.backup.signal.org";
     private final static String STORAGE_URL = "https://storage.signal.org";
-    private final static String SIGNAL_CDSI_URL = "";
+    private final static String SIGNAL_CDSI_URL = "https://cdsi.signal.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     private final static Optional<Dns> dns = Optional.empty();
