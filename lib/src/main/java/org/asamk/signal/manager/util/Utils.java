@@ -118,7 +118,7 @@ public class Utils {
             return fallback;
         }
 
-        logger.debug("Using default locale: {} ({})", locale, localeString);
+        logger.trace("Using default locale: {} ({})", locale, localeString);
         return locale;
     }
 
