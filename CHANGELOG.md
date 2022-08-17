@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.10.11] - 2022-08-17
+**Attention**: Now requires native libsignal-client version 0.19.3
+
+### Added
+- Output content of received story messages
+
 ## [0.10.10] - 2022-07-30
 **Attention**: Now requires native libsignal-client version 0.18.1
 
