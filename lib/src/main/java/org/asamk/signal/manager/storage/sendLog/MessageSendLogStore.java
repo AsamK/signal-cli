@@ -16,6 +16,7 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.List;
@@ -102,20 +103,7 @@ public class MessageSendLogStore implements AutoCloseable {
                 statement.setLong(1, recipientId.id());
                 statement.setInt(2, deviceId);
                 statement.setLong(3, timestamp);
-                try (var result = Utils.executeQueryForStream(statement, resultSet -> {
-                    final var groupId = Optional.ofNullable(resultSet.getBytes("group_id"))
-                            .map(GroupId::unknownVersion);
-                    final SignalServiceProtos.Content content;
-                    try {
-                        content = SignalServiceProtos.Content.parseFrom(resultSet.getBinaryStream("content"));
-                    } catch (IOException e) {
-                        logger.warn("Failed to parse content from message send log", e);
-                        return null;
-                    }
-                    final var contentHint = ContentHint.fromType(resultSet.getInt("content_hint"));
-                    final var urgent = resultSet.getBoolean("urgent");
-                    return new MessageSendLogEntry(groupId, content, contentHint, urgent);
-                })) {
+                try (var result = Utils.executeQueryForStream(statement, this::getMessageSendLogEntryFromResultSet)) {
                     return result.filter(Objects::nonNull)
                             .filter(e -> !isSenderKey || e.groupId().isPresent())
                             .toList();
@@ -383,6 +371,20 @@ public class MessageSendLogStore implements AutoCloseable {
         try (final var statement = connection.prepareStatement(sql)) {
             statement.executeUpdate();
         }
+    }
+
+    private MessageSendLogEntry getMessageSendLogEntryFromResultSet(ResultSet resultSet) throws SQLException {
+        final var groupId = Optional.ofNullable(resultSet.getBytes("group_id")).map(GroupId::unknownVersion);
+        final SignalServiceProtos.Content content;
+        try {
+            content = SignalServiceProtos.Content.parseFrom(resultSet.getBinaryStream("content"));
+        } catch (IOException e) {
+            logger.warn("Failed to parse content from message send log", e);
+            return null;
+        }
+        final var contentHint = ContentHint.fromType(resultSet.getInt("content_hint"));
+        final var urgent = resultSet.getBoolean("urgent");
+        return new MessageSendLogEntry(groupId, content, contentHint, urgent);
     }
 
     private record RecipientDevices(RecipientId recipientId, List<Integer> deviceIds) {}
