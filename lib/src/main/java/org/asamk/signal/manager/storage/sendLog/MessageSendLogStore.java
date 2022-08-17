@@ -76,7 +76,8 @@ public class MessageSendLogStore implements AutoCloseable {
                                       group_id BLOB,
                                       timestamp INTEGER NOT NULL,
                                       content BLOB NOT NULL,
-                                      content_hint INTEGER NOT NULL
+                                      content_hint INTEGER NOT NULL,
+                                      urgent BOOLEAN NOT NULL
                                     );
                                     CREATE INDEX mslc_timestamp_index ON message_send_log_content (timestamp);
                                     CREATE INDEX msl_recipient_index ON message_send_log (recipient_id, device_id, content_id);
@@ -112,7 +113,7 @@ public class MessageSendLogStore implements AutoCloseable {
                         return null;
                     }
                     final var contentHint = ContentHint.fromType(resultSet.getInt("content_hint"));
-                    final var urgent = true; // TODO
+                    final var urgent = resultSet.getBoolean("urgent");
                     return new MessageSendLogEntry(groupId, content, contentHint, urgent);
                 })) {
                     return result.filter(Objects::nonNull)
@@ -274,10 +275,9 @@ public class MessageSendLogStore implements AutoCloseable {
     ) {
         byte[] groupId = getGroupId(content);
 
-        // TODO store urgent
         final var sql = """
-                        INSERT INTO %s (timestamp, group_id, content, content_hint)
-                        VALUES (?,?,?,?)
+                        INSERT INTO %s (timestamp, group_id, content, content_hint, urgent)
+                        VALUES (?,?,?,?,?)
                         """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
@@ -287,6 +287,7 @@ public class MessageSendLogStore implements AutoCloseable {
                 statement.setBytes(2, groupId);
                 statement.setBytes(3, content.toByteArray());
                 statement.setInt(4, contentHint.getType());
+                statement.setBoolean(5, urgent);
                 statement.executeUpdate();
                 final var generatedKeys = statement.getGeneratedKeys();
                 if (generatedKeys.next()) {

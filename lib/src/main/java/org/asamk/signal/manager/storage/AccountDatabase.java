@@ -22,7 +22,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 8;
+    private static final long DATABASE_VERSION = 9;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -201,6 +201,14 @@ public class AccountDatabase extends Database {
                                           timestamp INTEGER NOT NULL,
                                           UNIQUE(recipient_id, device_id, distribution_id)
                                         );
+                                        """);
+            }
+        }
+        if (oldVersion < 9) {
+            logger.debug("Updating database: Adding urgent field");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE message_send_log_content ADD COLUMN urgent BOOLEAN NOT NULL DEFAULT TRUE;
                                         """);
             }
         }
