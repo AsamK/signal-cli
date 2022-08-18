@@ -27,7 +27,7 @@ class LiveConfig {
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
     private final static String CDS_MRENCLAVE = "74778bb0f93ae1f78c26e67152bab0bbeb693cd56d1bb9b4e9244157acc58081";
-    private final static String CDSI_MRENCLAVE = "7b75dd6e862decef9b37132d54be082441917a7790e82fe44f9cf653de03a75f";
+    private final static String CDSI_MRENCLAVE = "ef4787a56a154ac6d009138cac17155acd23cfe4329281252365dd7c252e7fbf";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "0cedba03535b41b67729ce9924185f831d7767928a1d1689acb689bc079c375f";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
