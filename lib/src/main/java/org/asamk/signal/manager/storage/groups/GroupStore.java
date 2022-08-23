@@ -52,9 +52,9 @@ public class GroupStore {
                                       master_key BLOB NOT NULL,
                                       group_data BLOB,
                                       distribution_id BLOB UNIQUE NOT NULL,
-                                      blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                      permission_denied BOOLEAN NOT NULL DEFAULT FALSE
-                                    );
+                                      blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      permission_denied INTEGER NOT NULL DEFAULT FALSE
+                                    ) STRICT;
                                     CREATE TABLE group_v1 (
                                       _id INTEGER PRIMARY KEY,
                                       group_id BLOB UNIQUE NOT NULL,
@@ -62,15 +62,15 @@ public class GroupStore {
                                       name TEXT,
                                       color TEXT,
                                       expiration_time INTEGER NOT NULL DEFAULT 0,
-                                      blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                      archived BOOLEAN NOT NULL DEFAULT FALSE
-                                    );
+                                      blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      archived INTEGER NOT NULL DEFAULT FALSE
+                                    ) STRICT;
                                     CREATE TABLE group_v1_member (
                                       _id INTEGER PRIMARY KEY,
                                       group_id INTEGER NOT NULL REFERENCES group_v1 (_id) ON DELETE CASCADE,
                                       recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
                                       UNIQUE(group_id, recipient_id)
-                                    );
+                                    ) STRICT;
                                     """);
         }
     }

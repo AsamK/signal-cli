@@ -35,7 +35,7 @@ public class PreKeyStore implements org.signal.libsignal.protocol.state.PreKeySt
                                       public_key BLOB NOT NULL,
                                       private_key BLOB NOT NULL,
                                       UNIQUE(account_id_type, key_id)
-                                    );
+                                    ) STRICT;
                                     """);
         }
     }

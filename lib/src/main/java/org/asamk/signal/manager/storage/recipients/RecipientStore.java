@@ -60,9 +60,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       color TEXT,
 
                                       expiration_time INTEGER NOT NULL DEFAULT 0,
-                                      blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                      archived BOOLEAN NOT NULL DEFAULT FALSE,
-                                      profile_sharing BOOLEAN NOT NULL DEFAULT FALSE,
+                                      blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      archived INTEGER NOT NULL DEFAULT FALSE,
+                                      profile_sharing INTEGER NOT NULL DEFAULT FALSE,
 
                                       profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                       profile_given_name TEXT,
@@ -73,7 +73,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       profile_mobile_coin_address BLOB,
                                       profile_unidentified_access_mode TEXT,
                                       profile_capabilities TEXT
-                                    );
+                                    ) STRICT;
                                     """);
         }
     }
@@ -711,7 +711,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
         final var profileKeyCredential = getExpiringProfileKeyCredential(connection, recipientId);
         if (profileKeyCredential == null) {
-            final var toBeMergedProfileKeyCredential = getExpiringProfileKeyCredential(connection, toBeMergedRecipientId);
+            final var toBeMergedProfileKeyCredential = getExpiringProfileKeyCredential(connection,
+                    toBeMergedRecipientId);
             storeExpiringProfileKeyCredential(connection, recipientId, toBeMergedProfileKeyCredential);
         }
 

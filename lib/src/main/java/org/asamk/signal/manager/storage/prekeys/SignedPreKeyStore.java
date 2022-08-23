@@ -32,14 +32,14 @@ public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.Si
             statement.executeUpdate("""
                                     CREATE TABLE signed_pre_key (
                                       _id INTEGER PRIMARY KEY,
-                                      account_id_type BLOB NOT NULL,
+                                      account_id_type INTEGER NOT NULL,
                                       key_id INTEGER NOT NULL,
                                       public_key BLOB NOT NULL,
                                       private_key BLOB NOT NULL,
                                       signature BLOB NOT NULL,
                                       timestamp INTEGER DEFAULT 0,
                                       UNIQUE(account_id_type, key_id)
-                                    );
+                                    ) STRICT;
                                     """);
         }
     }

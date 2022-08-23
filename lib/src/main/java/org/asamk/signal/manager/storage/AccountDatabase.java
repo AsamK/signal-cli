@@ -64,9 +64,9 @@ public class AccountDatabase extends Database {
                                           color TEXT,
 
                                           expiration_time INTEGER NOT NULL DEFAULT 0,
-                                          blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                          archived BOOLEAN NOT NULL DEFAULT FALSE,
-                                          profile_sharing BOOLEAN NOT NULL DEFAULT FALSE,
+                                          blocked INTEGER NOT NULL DEFAULT FALSE,
+                                          archived INTEGER NOT NULL DEFAULT FALSE,
+                                          profile_sharing INTEGER NOT NULL DEFAULT FALSE,
 
                                           profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                           profile_given_name TEXT,
@@ -77,7 +77,7 @@ public class AccountDatabase extends Database {
                                           profile_mobile_coin_address BLOB,
                                           profile_unidentified_access_mode TEXT,
                                           profile_capabilities TEXT
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -89,8 +89,8 @@ public class AccountDatabase extends Database {
                                           _id INTEGER PRIMARY KEY,
                                           pack_id BLOB UNIQUE NOT NULL,
                                           pack_key BLOB NOT NULL,
-                                          installed BOOLEAN NOT NULL DEFAULT FALSE
-                                        );
+                                          installed INTEGER NOT NULL DEFAULT FALSE
+                                        ) STRICT;
                                         """);
             }
         }
@@ -107,7 +107,7 @@ public class AccountDatabase extends Database {
                                           signature BLOB NOT NULL,
                                           timestamp INTEGER DEFAULT 0,
                                           UNIQUE(account_id_type, key_id)
-                                        );
+                                        ) STRICT;
                                         CREATE TABLE pre_key (
                                           _id INTEGER PRIMARY KEY,
                                           account_id_type INTEGER NOT NULL,
@@ -115,7 +115,7 @@ public class AccountDatabase extends Database {
                                           public_key BLOB NOT NULL,
                                           private_key BLOB NOT NULL,
                                           UNIQUE(account_id_type, key_id)
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -129,9 +129,9 @@ public class AccountDatabase extends Database {
                                           master_key BLOB NOT NULL,
                                           group_data BLOB,
                                           distribution_id BLOB UNIQUE NOT NULL,
-                                          blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                          permission_denied BOOLEAN NOT NULL DEFAULT FALSE
-                                        );
+                                          blocked INTEGER NOT NULL DEFAULT FALSE,
+                                          permission_denied INTEGER NOT NULL DEFAULT FALSE
+                                        ) STRICT;
                                         CREATE TABLE group_v1 (
                                           _id INTEGER PRIMARY KEY,
                                           group_id BLOB UNIQUE NOT NULL,
@@ -139,15 +139,15 @@ public class AccountDatabase extends Database {
                                           name TEXT,
                                           color TEXT,
                                           expiration_time INTEGER NOT NULL DEFAULT 0,
-                                          blocked BOOLEAN NOT NULL DEFAULT FALSE,
-                                          archived BOOLEAN NOT NULL DEFAULT FALSE
-                                        );
+                                          blocked INTEGER NOT NULL DEFAULT FALSE,
+                                          archived INTEGER NOT NULL DEFAULT FALSE
+                                        ) STRICT;
                                         CREATE TABLE group_v1_member (
                                           _id INTEGER PRIMARY KEY,
                                           group_id INTEGER NOT NULL REFERENCES group_v1 (_id) ON DELETE CASCADE,
                                           recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
                                           UNIQUE(group_id, recipient_id)
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -162,7 +162,7 @@ public class AccountDatabase extends Database {
                                           device_id INTEGER NOT NULL,
                                           record BLOB NOT NULL,
                                           UNIQUE(account_id_type, recipient_id, device_id)
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -176,7 +176,7 @@ public class AccountDatabase extends Database {
                                           identity_key BLOB NOT NULL,
                                           added_timestamp INTEGER NOT NULL,
                                           trust_level INTEGER NOT NULL
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -192,7 +192,7 @@ public class AccountDatabase extends Database {
                                           record BLOB NOT NULL,
                                           created_timestamp INTEGER NOT NULL,
                                           UNIQUE(recipient_id, device_id, distribution_id)
-                                        );
+                                        ) STRICT;
                                         CREATE TABLE sender_key_shared (
                                           _id INTEGER PRIMARY KEY,
                                           recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
@@ -200,7 +200,7 @@ public class AccountDatabase extends Database {
                                           distribution_id BLOB NOT NULL,
                                           timestamp INTEGER NOT NULL,
                                           UNIQUE(recipient_id, device_id, distribution_id)
-                                        );
+                                        ) STRICT;
                                         """);
             }
         }
@@ -208,7 +208,7 @@ public class AccountDatabase extends Database {
             logger.debug("Updating database: Adding urgent field");
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
-                                        ALTER TABLE message_send_log_content ADD COLUMN urgent BOOLEAN NOT NULL DEFAULT TRUE;
+                                        ALTER TABLE message_send_log_content ADD COLUMN urgent INTEGER NOT NULL DEFAULT TRUE;
                                         """);
             }
         }

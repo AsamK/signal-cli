@@ -26,8 +26,8 @@ public class StickerStore {
                                       _id INTEGER PRIMARY KEY,
                                       pack_id BLOB UNIQUE NOT NULL,
                                       pack_key BLOB NOT NULL,
-                                      installed BOOLEAN NOT NULL DEFAULT FALSE
-                                    );
+                                      installed INTEGER NOT NULL DEFAULT FALSE
+                                    ) STRICT;
                                     """);
         }
     }

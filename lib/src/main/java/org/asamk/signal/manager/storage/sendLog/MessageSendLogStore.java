@@ -73,8 +73,8 @@ public class MessageSendLogStore implements AutoCloseable {
                                       timestamp INTEGER NOT NULL,
                                       content BLOB NOT NULL,
                                       content_hint INTEGER NOT NULL,
-                                      urgent BOOLEAN NOT NULL
-                                    );
+                                      urgent INTEGER NOT NULL
+                                    ) STRICT;
                                     CREATE INDEX mslc_timestamp_index ON message_send_log_content (timestamp);
                                     CREATE INDEX msl_recipient_index ON message_send_log (uuid, device_id, content_id);
                                     CREATE INDEX msl_content_index ON message_send_log (content_id);
