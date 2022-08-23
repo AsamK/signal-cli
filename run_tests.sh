@@ -12,7 +12,7 @@ TEST_PIN_1=456test_pin_foo123
 NATIVE=0
 JSON_RPC=0
 
-PATH_TEST_CONFIG="$PWD/build/test-config"
+PATH_TEST_CONFIG="$PWD/test-config"
 PATH_MAIN="$PATH_TEST_CONFIG/main"
 PATH_LINK="$PATH_TEST_CONFIG/link"
 
