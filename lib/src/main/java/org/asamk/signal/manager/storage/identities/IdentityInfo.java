@@ -1,27 +1,27 @@
 package org.asamk.signal.manager.storage.identities;
 
 import org.asamk.signal.manager.api.TrustLevel;
-import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.protocol.IdentityKey;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 public class IdentityInfo {
 
-    private final RecipientId recipientId;
+    private final ServiceId serviceId;
     private final IdentityKey identityKey;
     private final TrustLevel trustLevel;
     private final long addedTimestamp;
 
     IdentityInfo(
-            final RecipientId recipientId, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp
+            final ServiceId serviceId, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp
     ) {
-        this.recipientId = recipientId;
+        this.serviceId = serviceId;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;
         this.addedTimestamp = addedTimestamp;
     }
 
-    public RecipientId getRecipientId() {
-        return recipientId;
+    public ServiceId getServiceId() {
+        return serviceId;
     }
 
     public IdentityKey getIdentityKey() {

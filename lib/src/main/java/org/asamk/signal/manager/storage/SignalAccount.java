@@ -383,6 +383,14 @@ public class SignalAccount implements Closeable {
         this.storageManifestVersion = -1;
         this.setStorageManifest(null);
         this.storageKey = null;
+        final var aciPublicKey = getAciIdentityKeyPair().getPublicKey();
+        getIdentityKeyStore().saveIdentity(getAci(), aciPublicKey);
+        getIdentityKeyStore().setIdentityTrustLevel(getAci(), aciPublicKey, TrustLevel.TRUSTED_VERIFIED);
+        if (getPniIdentityKeyPair() != null) {
+            final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
+            getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
+            getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
+        }
     }
 
     private void migrateLegacyConfigs() {
@@ -400,21 +408,21 @@ public class SignalAccount implements Closeable {
     }
 
     private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
-        getAciSessionStore().mergeRecipients(recipientId, toBeMergedRecipientId);
-        getPniSessionStore().mergeRecipients(recipientId, toBeMergedRecipientId);
-        getIdentityKeyStore().mergeRecipients(recipientId, toBeMergedRecipientId);
         getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
         getGroupStore().mergeRecipients(recipientId, toBeMergedRecipientId);
-        getSenderKeyStore().mergeRecipients(recipientId, toBeMergedRecipientId);
     }
 
     public void removeRecipient(final RecipientId recipientId) {
-        getAciSessionStore().deleteAllSessions(recipientId);
-        getPniSessionStore().deleteAllSessions(recipientId);
-        getIdentityKeyStore().deleteIdentity(recipientId);
-        getMessageCache().deleteMessages(recipientId);
-        getSenderKeyStore().deleteAll(recipientId);
         getRecipientStore().deleteRecipientData(recipientId);
+        getMessageCache().deleteMessages(recipientId);
+        final var recipientAddress = getRecipientStore().resolveRecipientAddress(recipientId);
+        if (recipientAddress.uuid().isPresent()) {
+            final var serviceId = ServiceId.from(recipientAddress.uuid().get());
+            getAciSessionStore().deleteAllSessions(serviceId);
+            getPniSessionStore().deleteAllSessions(serviceId);
+            getIdentityKeyStore().deleteIdentity(serviceId);
+            getSenderKeyStore().deleteAll(serviceId);
+        }
     }
 
     public static File getFileName(File dataPath, String account) {
@@ -646,12 +654,18 @@ public class SignalAccount implements Closeable {
         }
         final var legacySessionsPath = getSessionsPath(dataPath, accountPath);
         if (legacySessionsPath.exists()) {
-            LegacySessionStore.migrate(legacySessionsPath, getRecipientResolver(), getAciSessionStore());
+            LegacySessionStore.migrate(legacySessionsPath,
+                    getRecipientResolver(),
+                    getRecipientAddressResolver(),
+                    getAciSessionStore());
             migratedLegacyConfig = true;
         }
         final var legacyIdentitiesPath = getIdentitiesPath(dataPath, accountPath);
         if (legacyIdentitiesPath.exists()) {
-            LegacyIdentityKeyStore.migrate(legacyIdentitiesPath, getRecipientResolver(), getIdentityKeyStore());
+            LegacyIdentityKeyStore.migrate(legacyIdentitiesPath,
+                    getRecipientResolver(),
+                    getRecipientAddressResolver(),
+                    getIdentityKeyStore());
             migratedLegacyConfig = true;
         }
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
@@ -672,12 +686,18 @@ public class SignalAccount implements Closeable {
 
         final var legacySenderKeysPath = getSenderKeysPath(dataPath, accountPath);
         if (legacySenderKeysPath.exists()) {
-            LegacySenderKeyRecordStore.migrate(legacySenderKeysPath, getRecipientResolver(), getSenderKeyStore());
+            LegacySenderKeyRecordStore.migrate(legacySenderKeysPath,
+                    getRecipientResolver(),
+                    getRecipientAddressResolver(),
+                    getSenderKeyStore());
             migratedLegacyConfig = true;
         }
         final var legacySenderKeysSharedPath = getSharedSenderKeysFile(dataPath, accountPath);
         if (legacySenderKeysSharedPath.exists()) {
-            LegacySenderKeySharedStore.migrate(legacySenderKeysSharedPath, getRecipientResolver(), getSenderKeyStore());
+            LegacySenderKeySharedStore.migrate(legacySenderKeysSharedPath,
+                    getRecipientResolver(),
+                    getRecipientAddressResolver(),
+                    getSenderKeyStore());
             migratedLegacyConfig = true;
         }
         if (rootNode.hasNonNull("groupStore")) {
@@ -770,9 +790,12 @@ public class SignalAccount implements Closeable {
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyIdentityKeyStore() != null) {
             logger.debug("Migrating legacy identity session store.");
             for (var identity : legacySignalProtocolStore.getLegacyIdentityKeyStore().getIdentities()) {
-                RecipientId recipientId = getRecipientStore().resolveRecipientTrusted(identity.getAddress());
-                getIdentityKeyStore().saveIdentity(recipientId, identity.getIdentityKey());
-                getIdentityKeyStore().setIdentityTrustLevel(recipientId,
+                if (identity.getAddress().uuid().isEmpty()) {
+                    continue;
+                }
+                final var serviceId = identity.getAddress().getServiceId();
+                getIdentityKeyStore().saveIdentity(serviceId, identity.getIdentityKey());
+                getIdentityKeyStore().setIdentityTrustLevel(serviceId,
                         identity.getIdentityKey(),
                         identity.getTrustLevel());
             }
@@ -1107,25 +1130,17 @@ public class SignalAccount implements Closeable {
 
     public SessionStore getAciSessionStore() {
         return getOrCreate(() -> aciSessionStore,
-                () -> aciSessionStore = new SessionStore(getAccountDatabase(),
-                        ServiceIdType.ACI,
-                        getRecipientResolver(),
-                        getRecipientIdCreator()));
+                () -> aciSessionStore = new SessionStore(getAccountDatabase(), ServiceIdType.ACI));
     }
 
     public SessionStore getPniSessionStore() {
         return getOrCreate(() -> pniSessionStore,
-                () -> pniSessionStore = new SessionStore(getAccountDatabase(),
-                        ServiceIdType.PNI,
-                        getRecipientResolver(),
-                        getRecipientIdCreator()));
+                () -> pniSessionStore = new SessionStore(getAccountDatabase(), ServiceIdType.PNI));
     }
 
     public IdentityKeyStore getIdentityKeyStore() {
         return getOrCreate(() -> identityKeyStore,
-                () -> identityKeyStore = new IdentityKeyStore(getAccountDatabase(),
-                        getRecipientIdCreator(),
-                        trustNewIdentity));
+                () -> identityKeyStore = new IdentityKeyStore(getAccountDatabase(), trustNewIdentity));
     }
 
     public SignalIdentityKeyStore getAciIdentityKeyStore() {
@@ -1207,11 +1222,7 @@ public class SignalAccount implements Closeable {
     }
 
     public SenderKeyStore getSenderKeyStore() {
-        return getOrCreate(() -> senderKeyStore,
-                () -> senderKeyStore = new SenderKeyStore(getAccountDatabase(),
-                        getRecipientAddressResolver(),
-                        getRecipientResolver(),
-                        getRecipientIdCreator()));
+        return getOrCreate(() -> senderKeyStore, () -> senderKeyStore = new SenderKeyStore(getAccountDatabase()));
     }
 
     public ConfigurationStore getConfigurationStore() {
@@ -1235,7 +1246,7 @@ public class SignalAccount implements Closeable {
 
     public MessageSendLogStore getMessageSendLogStore() {
         return getOrCreate(() -> messageSendLogStore,
-                () -> messageSendLogStore = new MessageSendLogStore(getRecipientResolver(), getAccountDatabase()));
+                () -> messageSendLogStore = new MessageSendLogStore(getAccountDatabase()));
     }
 
     public CredentialsProvider getCredentialsProvider() {
@@ -1350,6 +1361,9 @@ public class SignalAccount implements Closeable {
 
     public void setPniIdentityKeyPair(final IdentityKeyPair identityKeyPair) {
         pniIdentityKeyPair = identityKeyPair;
+        final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
+        getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
+        getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
         save();
     }
 
@@ -1553,10 +1567,13 @@ public class SignalAccount implements Closeable {
         getAciSessionStore().archiveAllSessions();
         getPniSessionStore().archiveAllSessions();
         getSenderKeyStore().deleteAll();
-        final var recipientId = getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
-        final var publicKey = getAciIdentityKeyPair().getPublicKey();
-        getIdentityKeyStore().saveIdentity(recipientId, publicKey);
-        getIdentityKeyStore().setIdentityTrustLevel(recipientId, publicKey, TrustLevel.TRUSTED_VERIFIED);
+        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
+        final var aciPublicKey = getAciIdentityKeyPair().getPublicKey();
+        getIdentityKeyStore().saveIdentity(getAci(), aciPublicKey);
+        getIdentityKeyStore().setIdentityTrustLevel(getAci(), aciPublicKey, TrustLevel.TRUSTED_VERIFIED);
+        final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
+        getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
+        getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
     }
 
     public void deleteAccountData() throws IOException {

@@ -486,7 +486,10 @@ public class SendHelper {
                 continue;
             }
 
-            final var identity = account.getIdentityKeyStore().getIdentityInfo(recipientId);
+            final var serviceId = account.getRecipientAddressResolver()
+                    .resolveRecipientAddress(recipientId)
+                    .getServiceId();
+            final var identity = account.getIdentityKeyStore().getIdentityInfo(serviceId);
             if (identity == null || !identity.getTrustLevel().isTrusted()) {
                 continue;
             }
@@ -531,7 +534,7 @@ public class SendHelper {
         final var recipientIdList = new ArrayList<>(recipientIds);
 
         long keyCreateTime = account.getSenderKeyStore()
-                .getCreateTimeForOurKey(account.getSelfRecipientId(), account.getDeviceId(), distributionId);
+                .getCreateTimeForOurKey(account.getAci(), account.getDeviceId(), distributionId);
         long keyAge = System.currentTimeMillis() - keyCreateTime;
 
         if (keyCreateTime != -1 && keyAge > TimeUnit.DAYS.toMillis(14)) {
@@ -540,7 +543,7 @@ public class SendHelper {
                     keyCreateTime,
                     keyAge,
                     TimeUnit.MILLISECONDS.toDays(keyAge));
-            account.getSenderKeyStore().deleteOurKey(account.getSelfRecipientId(), distributionId);
+            account.getSenderKeyStore().deleteOurKey(account.getAci(), distributionId);
         }
 
         List<SignalServiceAddress> addresses = recipientIdList.stream()
@@ -573,11 +576,11 @@ public class SendHelper {
             return null;
         } catch (NoSessionException e) {
             logger.warn("No session. Falling back to legacy sends.", e);
-            account.getSenderKeyStore().deleteOurKey(account.getSelfRecipientId(), distributionId);
+            account.getSenderKeyStore().deleteOurKey(account.getAci(), distributionId);
             return null;
         } catch (InvalidKeyException e) {
             logger.warn("Invalid key. Falling back to legacy sends.", e);
-            account.getSenderKeyStore().deleteOurKey(account.getSelfRecipientId(), distributionId);
+            account.getSenderKeyStore().deleteOurKey(account.getAci(), distributionId);
             return null;
         } catch (InvalidRegistrationIdException e) {
             logger.warn("Invalid registrationId. Falling back to legacy sends.", e);
@@ -685,7 +688,8 @@ public class SendHelper {
         }
         if (r.getIdentityFailure() != null) {
             final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
-            context.getIdentityHelper().handleIdentityFailure(recipientId, r.getIdentityFailure());
+            context.getIdentityHelper()
+                    .handleIdentityFailure(recipientId, r.getAddress().getServiceId(), r.getIdentityFailure());
         }
     }
 

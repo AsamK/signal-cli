@@ -1,12 +1,14 @@
 package org.asamk.signal.manager.storage.sessions;
 
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.helper.RecipientAddressResolver;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
-import org.asamk.signal.manager.storage.sessions.SessionStore.Key;
 import org.asamk.signal.manager.util.IOUtils;
 import org.signal.libsignal.protocol.state.SessionRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,15 +26,19 @@ public class LegacySessionStore {
     private final static Logger logger = LoggerFactory.getLogger(LegacySessionStore.class);
 
     public static void migrate(
-            final File sessionsPath, final RecipientResolver resolver, final SessionStore sessionStore
+            final File sessionsPath,
+            final RecipientResolver resolver,
+            final RecipientAddressResolver addressResolver,
+            final SessionStore sessionStore
     ) {
         final var keys = getKeysLocked(sessionsPath, resolver);
         final var sessions = keys.stream().map(key -> {
             final var record = loadSessionLocked(key, sessionsPath);
-            if (record == null) {
+            final var uuid = addressResolver.resolveRecipientAddress(key.recipientId).uuid();
+            if (record == null || uuid.isEmpty()) {
                 return null;
             }
-            return new Pair<>(key, record);
+            return new Pair<>(new SessionStore.Key(ServiceId.from(uuid.get()), key.deviceId()), record);
         }).filter(Objects::nonNull).toList();
         sessionStore.addLegacySessions(sessions);
         deleteAllSessions(sessionsPath);
@@ -104,4 +110,6 @@ public class LegacySessionStore {
             return null;
         }
     }
+
+    record Key(RecipientId recipientId, int deviceId) {}
 }

@@ -1,11 +1,14 @@
 package org.asamk.signal.manager.storage.senderKeys;
 
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.helper.RecipientAddressResolver;
+import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,14 +21,15 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.asamk.signal.manager.storage.senderKeys.SenderKeyRecordStore.Key;
-
 public class LegacySenderKeyRecordStore {
 
     private final static Logger logger = LoggerFactory.getLogger(LegacySenderKeyRecordStore.class);
 
     public static void migrate(
-            final File senderKeysPath, final RecipientResolver resolver, SenderKeyStore senderKeyStore
+            final File senderKeysPath,
+            final RecipientResolver resolver,
+            final RecipientAddressResolver addressResolver,
+            final SenderKeyStore senderKeyStore
     ) {
         final var files = senderKeysPath.listFiles();
         if (files == null) {
@@ -34,10 +38,13 @@ public class LegacySenderKeyRecordStore {
 
         final var senderKeys = parseFileNames(files, resolver).stream().map(key -> {
             final var record = loadSenderKeyLocked(key, senderKeysPath);
-            if (record == null) {
+            final var uuid = addressResolver.resolveRecipientAddress(key.recipientId).uuid();
+            if (record == null || uuid.isEmpty()) {
                 return null;
             }
-            return new Pair<>(key, record);
+            return new Pair<>(new SenderKeyRecordStore.Key(ServiceId.from(uuid.get()),
+                    key.deviceId,
+                    key.distributionId), record);
         }).filter(Objects::nonNull).toList();
 
         senderKeyStore.addLegacySenderKeys(senderKeys);
@@ -98,4 +105,6 @@ public class LegacySenderKeyRecordStore {
             return null;
         }
     }
+
+    record Key(RecipientId recipientId, int deviceId, UUID distributionId) {}
 }

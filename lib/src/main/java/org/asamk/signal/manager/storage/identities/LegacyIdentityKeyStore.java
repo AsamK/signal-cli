@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.identities;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.IOUtils;
@@ -27,16 +28,21 @@ public class LegacyIdentityKeyStore {
     private static final ObjectMapper objectMapper = org.asamk.signal.manager.storage.Utils.createStorageObjectMapper();
 
     public static void migrate(
-            final File identitiesPath, final RecipientResolver resolver, final IdentityKeyStore identityKeyStore
+            final File identitiesPath,
+            final RecipientResolver resolver,
+            final RecipientAddressResolver addressResolver,
+            final IdentityKeyStore identityKeyStore
     ) {
-        final var identities = getIdentities(identitiesPath, resolver);
+        final var identities = getIdentities(identitiesPath, resolver, addressResolver);
         identityKeyStore.addLegacyIdentities(identities);
         removeIdentityFiles(identitiesPath);
     }
 
     static final Pattern identityFileNamePattern = Pattern.compile("(\\d+)");
 
-    private static List<IdentityInfo> getIdentities(final File identitiesPath, final RecipientResolver resolver) {
+    private static List<IdentityInfo> getIdentities(
+            final File identitiesPath, final RecipientResolver resolver, final RecipientAddressResolver addressResolver
+    ) {
         final var files = identitiesPath.listFiles();
         if (files == null) {
             return List.of();
@@ -45,7 +51,7 @@ public class LegacyIdentityKeyStore {
                 .filter(f -> identityFileNamePattern.matcher(f.getName()).matches())
                 .map(f -> resolver.resolveRecipient(Long.parseLong(f.getName())))
                 .filter(Objects::nonNull)
-                .map(recipientId -> loadIdentityLocked(recipientId, identitiesPath))
+                .map(recipientId -> loadIdentityLocked(recipientId, addressResolver, identitiesPath))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -59,7 +65,9 @@ public class LegacyIdentityKeyStore {
         return new File(identitiesPath, String.valueOf(recipientId.id()));
     }
 
-    private static IdentityInfo loadIdentityLocked(final RecipientId recipientId, final File identitiesPath) {
+    private static IdentityInfo loadIdentityLocked(
+            final RecipientId recipientId, RecipientAddressResolver addressResolver, final File identitiesPath
+    ) {
         final var file = getIdentityFile(recipientId, identitiesPath);
         if (!file.exists()) {
             return null;
@@ -71,7 +79,8 @@ public class LegacyIdentityKeyStore {
             var trustLevel = TrustLevel.fromInt(storage.trustLevel());
             var added = storage.addedTimestamp();
 
-            return new IdentityInfo(recipientId, id, trustLevel, added);
+            final var serviceId = addressResolver.resolveRecipientAddress(recipientId).getServiceId();
+            return new IdentityInfo(serviceId, id, trustLevel, added);
         } catch (IOException | InvalidKeyException e) {
             logger.warn("Failed to load identity key: {}", e.getMessage());
             return null;

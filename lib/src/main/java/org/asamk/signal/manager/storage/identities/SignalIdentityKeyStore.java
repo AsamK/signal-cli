@@ -1,16 +1,15 @@
 package org.asamk.signal.manager.storage.identities;
 
-import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.function.Supplier;
 
 public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.state.IdentityKeyStore {
 
-    private final RecipientResolver resolver;
     private final Supplier<IdentityKeyPair> identityKeyPairSupplier;
     private final int localRegistrationId;
     private final IdentityKeyStore identityKeyStore;
@@ -21,7 +20,6 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
             final int localRegistrationId,
             final IdentityKeyStore identityKeyStore
     ) {
-        this.resolver = resolver;
         this.identityKeyPairSupplier = identityKeyPairSupplier;
         this.localRegistrationId = localRegistrationId;
         this.identityKeyStore = identityKeyStore;
@@ -39,29 +37,22 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
 
     @Override
     public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        final var recipientId = resolveRecipient(address.getName());
+        final var serviceId = ServiceId.parseOrThrow(address.getName());
 
-        return identityKeyStore.saveIdentity(recipientId, identityKey);
+        return identityKeyStore.saveIdentity(serviceId, identityKey);
     }
 
     @Override
     public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
-        var recipientId = resolveRecipient(address.getName());
+        final var serviceId = ServiceId.parseOrThrow(address.getName());
 
-        return identityKeyStore.isTrustedIdentity(recipientId, identityKey, direction);
+        return identityKeyStore.isTrustedIdentity(serviceId, identityKey, direction);
     }
 
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
-        var recipientId = resolveRecipient(address.getName());
-        final var identityInfo = identityKeyStore.getIdentityInfo(recipientId);
+        final var serviceId = ServiceId.parseOrThrow(address.getName());
+        final var identityInfo = identityKeyStore.getIdentityInfo(serviceId);
         return identityInfo == null ? null : identityInfo.getIdentityKey();
-    }
-
-    /**
-     * @param identifier can be either a serialized uuid or an e164 phone number
-     */
-    private RecipientId resolveRecipient(String identifier) {
-        return resolver.resolveRecipient(identifier);
     }
 }

@@ -1,11 +1,13 @@
 package org.asamk.signal.manager.storage.senderKeys;
 
+import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore.SenderKeySharedEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,7 +23,10 @@ public class LegacySenderKeySharedStore {
     private final static Logger logger = LoggerFactory.getLogger(LegacySenderKeySharedStore.class);
 
     public static void migrate(
-            final File file, final RecipientResolver resolver, SenderKeyStore senderKeyStore
+            final File file,
+            final RecipientResolver resolver,
+            final RecipientAddressResolver addressResolver,
+            final SenderKeyStore senderKeyStore
     ) {
         final var objectMapper = Utils.createStorageObjectMapper();
         try (var inputStream = new FileInputStream(file)) {
@@ -32,7 +37,11 @@ public class LegacySenderKeySharedStore {
                 if (recipientId == null) {
                     continue;
                 }
-                final var entry = new SenderKeySharedEntry(recipientId, senderKey.deviceId);
+                final var uuid = addressResolver.resolveRecipientAddress(recipientId).uuid();
+                if (uuid.isEmpty()) {
+                    continue;
+                }
+                final var entry = new SenderKeySharedEntry(ServiceId.from(uuid.get()), senderKey.deviceId);
                 final var distributionId = DistributionId.from(senderKey.distributionId);
                 var entries = sharedSenderKeys.get(distributionId);
                 if (entries == null) {

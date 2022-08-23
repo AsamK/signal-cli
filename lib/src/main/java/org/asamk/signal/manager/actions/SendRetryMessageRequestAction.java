@@ -7,6 +7,7 @@ import org.signal.libsignal.metadata.ProtocolException;
 import org.signal.libsignal.protocol.message.CiphertextMessage;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 
 import java.util.Optional;
@@ -14,22 +15,25 @@ import java.util.Optional;
 public class SendRetryMessageRequestAction implements HandleAction {
 
     private final RecipientId recipientId;
+    private final ServiceId serviceId;
     private final ProtocolException protocolException;
     private final SignalServiceEnvelope envelope;
 
     public SendRetryMessageRequestAction(
             final RecipientId recipientId,
+            final ServiceId serviceId,
             final ProtocolException protocolException,
             final SignalServiceEnvelope envelope
     ) {
         this.recipientId = recipientId;
+        this.serviceId = serviceId;
         this.protocolException = protocolException;
         this.envelope = envelope;
     }
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getAccount().getAciSessionStore().archiveSessions(recipientId);
+        context.getAccount().getAciSessionStore().archiveSessions(serviceId);
 
         int senderDevice = protocolException.getSenderDevice();
         Optional<GroupId> groupId = protocolException.getGroupId().isPresent() ? Optional.of(GroupId.unknownVersion(

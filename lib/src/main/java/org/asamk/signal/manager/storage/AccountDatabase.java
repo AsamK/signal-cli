@@ -22,7 +22,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 9;
+    private static final long DATABASE_VERSION = 10;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -209,6 +209,82 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE message_send_log_content ADD COLUMN urgent BOOLEAN NOT NULL DEFAULT TRUE;
+                                        """);
+            }
+        }
+        if (oldVersion < 10) {
+            logger.debug("Updating database: Key tables on serviceId instead of recipientId");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE identity2 (
+                                          _id INTEGER PRIMARY KEY,
+                                          uuid BLOB UNIQUE NOT NULL,
+                                          identity_key BLOB NOT NULL,
+                                          added_timestamp INTEGER NOT NULL,
+                                          trust_level INTEGER NOT NULL
+                                        ) STRICT;
+                                        INSERT INTO identity2 (_id, uuid, identity_key, added_timestamp, trust_level)
+                                          SELECT i._id, r.uuid, i.identity_key, i.added_timestamp, i.trust_level
+                                          FROM identity i LEFT JOIN recipient r ON i.recipient_id = r._id
+                                          WHERE uuid IS NOT NULL;
+                                        DROP TABLE identity;
+                                        ALTER TABLE identity2 RENAME TO identity;
+
+                                        DROP INDEX msl_recipient_index;
+                                        ALTER TABLE message_send_log ADD COLUMN uuid BLOB;
+                                        UPDATE message_send_log
+                                          SET uuid = r.uuid
+                                          FROM message_send_log i, (SELECT _id, uuid FROM recipient) AS r
+                                          WHERE i.recipient_id = r._id;
+                                        DELETE FROM message_send_log WHERE uuid IS NULL;
+                                        ALTER TABLE message_send_log DROP COLUMN recipient_id;
+                                        CREATE INDEX msl_recipient_index ON message_send_log (uuid, device_id, content_id);
+
+                                        CREATE TABLE sender_key2 (
+                                          _id INTEGER PRIMARY KEY,
+                                          uuid BLOB NOT NULL,
+                                          device_id INTEGER NOT NULL,
+                                          distribution_id BLOB NOT NULL,
+                                          record BLOB NOT NULL,
+                                          created_timestamp INTEGER NOT NULL,
+                                          UNIQUE(uuid, device_id, distribution_id)
+                                        ) STRICT;
+                                        INSERT INTO sender_key2 (_id, uuid, device_id, distribution_id, record, created_timestamp)
+                                          SELECT s._id, r.uuid, s.device_id, s.distribution_id, s.record, s.created_timestamp
+                                          FROM sender_key s LEFT JOIN recipient r ON s.recipient_id = r._id
+                                          WHERE uuid IS NOT NULL;
+                                        DROP TABLE sender_key;
+                                        ALTER TABLE sender_key2 RENAME TO sender_key;
+
+                                        CREATE TABLE sender_key_shared2 (
+                                          _id INTEGER PRIMARY KEY,
+                                          uuid BLOB NOT NULL,
+                                          device_id INTEGER NOT NULL,
+                                          distribution_id BLOB NOT NULL,
+                                          timestamp INTEGER NOT NULL,
+                                          UNIQUE(uuid, device_id, distribution_id)
+                                        ) STRICT;
+                                        INSERT INTO sender_key_shared2 (_id, uuid, device_id, distribution_id, timestamp)
+                                          SELECT s._id, r.uuid, s.device_id, s.distribution_id, s.timestamp
+                                          FROM sender_key_shared s LEFT JOIN recipient r ON s.recipient_id = r._id
+                                          WHERE uuid IS NOT NULL;
+                                        DROP TABLE sender_key_shared;
+                                        ALTER TABLE sender_key_shared2 RENAME TO sender_key_shared;
+
+                                        CREATE TABLE session2 (
+                                          _id INTEGER PRIMARY KEY,
+                                          account_id_type INTEGER NOT NULL,
+                                          uuid BLOB NOT NULL,
+                                          device_id INTEGER NOT NULL,
+                                          record BLOB NOT NULL,
+                                          UNIQUE(account_id_type, uuid, device_id)
+                                        ) STRICT;
+                                        INSERT INTO session2 (_id, account_id_type, uuid, device_id, record)
+                                          SELECT s._id, s.account_id_type, r.uuid, s.device_id, s.record
+                                          FROM session s LEFT JOIN recipient r ON s.recipient_id = r._id
+                                          WHERE uuid IS NOT NULL;
+                                        DROP TABLE session;
+                                        ALTER TABLE session2 RENAME TO session;
                                         """);
             }
         }

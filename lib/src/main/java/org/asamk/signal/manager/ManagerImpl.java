@@ -69,6 +69,7 @@ import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -165,11 +166,12 @@ class ManagerImpl implements Manager {
                 this.notifyAll();
             }
         });
-        disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(recipientId -> {
-            logger.trace("Archiving old sessions for {}", recipientId);
-            account.getAciSessionStore().archiveSessions(recipientId);
-            account.getPniSessionStore().archiveSessions(recipientId);
-            account.getSenderKeyStore().deleteSharedWith(recipientId);
+        disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(serviceId -> {
+            logger.trace("Archiving old sessions for {}", serviceId);
+            account.getAciSessionStore().archiveSessions(serviceId);
+            account.getPniSessionStore().archiveSessions(serviceId);
+            account.getSenderKeyStore().deleteSharedWith(serviceId);
+            final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             final var profile = account.getProfileStore().getProfile(recipientId);
             if (profile != null) {
                 account.getProfileStore()
@@ -631,7 +633,11 @@ class ManagerImpl implements Manager {
             if (recipient instanceof RecipientIdentifier.Single r) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(r);
-                    account.getMessageSendLogStore().deleteEntryForRecipientNonGroup(targetSentTimestamp, recipientId);
+                    account.getMessageSendLogStore()
+                            .deleteEntryForRecipientNonGroup(targetSentTimestamp,
+                                    account.getRecipientAddressResolver()
+                                            .resolveRecipientAddress(recipientId)
+                                            .getServiceId());
                 } catch (UnregisteredRecipientException ignored) {
                 }
             } else if (recipient instanceof RecipientIdentifier.Group r) {
@@ -689,7 +695,11 @@ class ManagerImpl implements Manager {
                 } catch (UnregisteredRecipientException e) {
                     continue;
                 }
-                account.getAciSessionStore().deleteAllSessions(recipientId);
+                final var serviceId = context.getAccount()
+                        .getRecipientAddressResolver()
+                        .resolveRecipientAddress(recipientId)
+                        .getServiceId();
+                account.getAciSessionStore().deleteAllSessions(serviceId);
             }
         }
     }
@@ -1035,13 +1045,13 @@ class ManagerImpl implements Manager {
         }
 
         final var address = account.getRecipientAddressResolver()
-                .resolveRecipientAddress(identityInfo.getRecipientId());
+                .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(identityInfo.getServiceId()));
         final var scannableFingerprint = context.getIdentityHelper()
-                .computeSafetyNumberForScanning(identityInfo.getRecipientId(), identityInfo.getIdentityKey());
+                .computeSafetyNumberForScanning(identityInfo.getServiceId(), identityInfo.getIdentityKey());
         return new Identity(address,
                 identityInfo.getIdentityKey(),
                 context.getIdentityHelper()
-                        .computeSafetyNumber(identityInfo.getRecipientId(), identityInfo.getIdentityKey()),
+                        .computeSafetyNumber(identityInfo.getServiceId(), identityInfo.getIdentityKey()),
                 scannableFingerprint == null ? null : scannableFingerprint.getSerialized(),
                 identityInfo.getTrustLevel(),
                 identityInfo.getDateAddedTimestamp());
@@ -1049,13 +1059,15 @@ class ManagerImpl implements Manager {
 
     @Override
     public List<Identity> getIdentities(RecipientIdentifier.Single recipient) {
-        IdentityInfo identity;
+        ServiceId serviceId;
         try {
-            identity = account.getIdentityKeyStore()
-                    .getIdentityInfo(context.getRecipientHelper().resolveRecipient(recipient));
+            serviceId = account.getRecipientAddressResolver()
+                    .resolveRecipientAddress(context.getRecipientHelper().resolveRecipient(recipient))
+                    .getServiceId();
         } catch (UnregisteredRecipientException e) {
-            identity = null;
+            return List.of();
         }
+        final var identity = account.getIdentityKeyStore().getIdentityInfo(serviceId);
         return identity == null ? List.of() : List.of(toIdentity(identity));
     }
 

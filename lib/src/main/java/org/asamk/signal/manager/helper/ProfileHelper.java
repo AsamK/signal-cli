@@ -346,7 +346,7 @@ public final class ProfileHelper {
             try {
                 logger.trace("Storing identity");
                 final var identityKey = new IdentityKey(Base64.getDecoder().decode(encryptedProfile.getIdentityKey()));
-                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey);
+                account.getIdentityKeyStore().saveIdentity(p.getProfile().getServiceId(), identityKey);
             } catch (InvalidKeyException ignored) {
                 logger.warn("Got invalid identity key in profile for {}",
                         context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier());

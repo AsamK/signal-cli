@@ -144,11 +144,12 @@ public class StorageHelper {
             try {
                 logger.trace("Storing identity key {}", recipientId);
                 final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());
-                account.getIdentityKeyStore().saveIdentity(recipientId, identityKey);
+                account.getIdentityKeyStore().saveIdentity(address.getServiceId(), identityKey);
 
                 final var trustLevel = TrustLevel.fromIdentityState(contactRecord.getIdentityState());
                 if (trustLevel != null) {
-                    account.getIdentityKeyStore().setIdentityTrustLevel(recipientId, identityKey, trustLevel);
+                    account.getIdentityKeyStore()
+                            .setIdentityTrustLevel(address.getServiceId(), identityKey, trustLevel);
                 }
             } catch (InvalidKeyException e) {
                 logger.warn("Received invalid contact identity key from storage");

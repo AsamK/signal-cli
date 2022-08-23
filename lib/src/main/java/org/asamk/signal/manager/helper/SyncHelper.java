@@ -132,7 +132,7 @@ public class SyncHelper {
                     final var contact = contactPair.second();
                     final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
 
-                    var currentIdentity = account.getIdentityKeyStore().getIdentityInfo(recipientId);
+                    var currentIdentity = account.getIdentityKeyStore().getIdentityInfo(address.getServiceId());
                     VerifiedMessage verifiedMessage = null;
                     if (currentIdentity != null) {
                         verifiedMessage = new VerifiedMessage(address,
@@ -319,8 +319,7 @@ public class SyncHelper {
             if (c.getVerified().isPresent()) {
                 final var verifiedMessage = c.getVerified().get();
                 account.getIdentityKeyStore()
-                        .setIdentityTrustLevel(account.getRecipientTrustedResolver()
-                                        .resolveRecipientTrusted(verifiedMessage.getDestination()),
+                        .setIdentityTrustLevel(verifiedMessage.getDestination().getServiceId(),
                                 verifiedMessage.getIdentityKey(),
                                 TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
             }

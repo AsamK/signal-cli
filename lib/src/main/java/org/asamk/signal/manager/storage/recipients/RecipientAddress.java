@@ -35,6 +35,10 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
         this(Optional.of(uuid), Optional.empty());
     }
 
+    public ServiceId getServiceId() {
+        return ServiceId.from(uuid.orElse(UNKNOWN_UUID));
+    }
+
     public String getIdentifier() {
         if (uuid.isPresent()) {
             return uuid.get().toString();
@@ -62,6 +66,6 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(ServiceId.from(uuid.orElse(UNKNOWN_UUID)), number);
+        return new SignalServiceAddress(getServiceId(), number);
     }
 }

@@ -3,14 +3,13 @@ package org.asamk.signal.manager.storage.senderKeys;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
-import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.groups.state.SenderKeyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.sql.Connection;
@@ -25,7 +24,6 @@ public class SenderKeyRecordStore implements SenderKeyStore {
     private final static String TABLE_SENDER_KEY = "sender_key";
 
     private final Database database;
-    private final RecipientResolver resolver;
 
     public static void createSql(Connection connection) throws SQLException {
         // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
@@ -33,22 +31,19 @@ public class SenderKeyRecordStore implements SenderKeyStore {
             statement.executeUpdate("""
                                     CREATE TABLE sender_key (
                                       _id INTEGER PRIMARY KEY,
-                                      recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                      uuid BLOB NOT NULL,
                                       device_id INTEGER NOT NULL,
                                       distribution_id BLOB NOT NULL,
                                       record BLOB NOT NULL,
                                       created_timestamp INTEGER NOT NULL,
-                                      UNIQUE(recipient_id, device_id, distribution_id)
-                                    );
+                                      UNIQUE(uuid, device_id, distribution_id)
+                                    ) STRICT;
                                     """);
         }
     }
 
-    SenderKeyRecordStore(
-            final Database database, final RecipientResolver resolver
-    ) {
+    SenderKeyRecordStore(final Database database) {
         this.database = database;
-        this.resolver = resolver;
     }
 
     @Override
@@ -75,17 +70,17 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    long getCreateTimeForKey(final RecipientId selfRecipientId, final int selfDeviceId, final UUID distributionId) {
+    long getCreateTimeForKey(final ServiceId selfServiceId, final int selfDeviceId, final UUID distributionId) {
         final var sql = (
                 """
                 SELECT s.created_timestamp
                 FROM %s AS s
-                WHERE s.recipient_id = ? AND s.device_id = ? AND s.distribution_id = ?
+                WHERE s.uuid = ? AND s.device_id = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, selfRecipientId.id());
+                statement.setBytes(1, selfServiceId.toByteArray());
                 statement.setInt(2, selfDeviceId);
                 statement.setBytes(3, UuidUtil.toByteArray(distributionId));
                 return Utils.executeQueryForOptional(statement, res -> res.getLong("created_timestamp")).orElse(-1L);
@@ -95,16 +90,16 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    void deleteSenderKey(final RecipientId recipientId, final UUID distributionId) {
+    void deleteSenderKey(final ServiceId serviceId, final UUID distributionId) {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.recipient_id = ? AND s.distribution_id = ?
+                WHERE s.uuid = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, recipientId.id());
+                statement.setBytes(1, serviceId.toByteArray());
                 statement.setBytes(2, UuidUtil.toByteArray(distributionId));
                 statement.executeUpdate();
             }
@@ -126,33 +121,9 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    void deleteAllFor(final RecipientId recipientId) {
+    void deleteAllFor(final ServiceId serviceId) {
         try (final var connection = database.getConnection()) {
-            deleteAllFor(connection, recipientId);
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed update sender key store", e);
-        }
-    }
-
-    void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
-        try (final var connection = database.getConnection()) {
-            connection.setAutoCommit(false);
-            final var sql = """
-                            UPDATE OR IGNORE %s
-                            SET recipient_id = ?
-                            WHERE recipient_id = ?
-                            """.formatted(TABLE_SENDER_KEY);
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, recipientId.id());
-                statement.setLong(2, toBeMergedRecipientId.id());
-                final var rows = statement.executeUpdate();
-                if (rows > 0) {
-                    logger.debug("Reassigned {} sender keys of to be merged recipient.", rows);
-                }
-            }
-            // Delete all conflicting sender keys now
-            deleteAllFor(connection, toBeMergedRecipientId);
-            connection.commit();
+            deleteAllFor(connection, serviceId);
         } catch (SQLException e) {
             throw new RuntimeException("Failed update sender key store", e);
         }
@@ -173,16 +144,9 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         logger.debug("Complete sender keys migration took {}ms", (System.nanoTime() - start) / 1000000);
     }
 
-    /**
-     * @param identifier can be either a serialized uuid or an e164 phone number
-     */
-    private RecipientId resolveRecipient(String identifier) {
-        return resolver.resolveRecipient(identifier);
-    }
-
     private Key getKey(final SignalProtocolAddress address, final UUID distributionId) {
-        final var recipientId = resolveRecipient(address.getName());
-        return new Key(recipientId, address.getDeviceId(), distributionId);
+        final var serviceId = ServiceId.parseOrThrow(address.getName());
+        return new Key(serviceId, address.getDeviceId(), distributionId);
     }
 
     private SenderKeyRecord loadSenderKey(final Connection connection, final Key key) throws SQLException {
@@ -190,11 +154,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
                 """
                 SELECT s.record
                 FROM %s AS s
-                WHERE s.recipient_id = ? AND s.device_id = ? AND s.distribution_id = ?
+                WHERE s.uuid = ? AND s.device_id = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, key.recipientId().id());
+            statement.setBytes(1, key.serviceId().toByteArray());
             statement.setInt(2, key.deviceId());
             statement.setBytes(3, UuidUtil.toByteArray(key.distributionId()));
             return Utils.executeQueryForOptional(statement, this::getSenderKeyRecordFromResultSet).orElse(null);
@@ -207,11 +171,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         final var sqlUpdate = """
                               UPDATE %s
                               SET record = ?
-                              WHERE recipient_id = ? AND device_id = ? and distribution_id = ?
+                              WHERE uuid = ? AND device_id = ? and distribution_id = ?
                               """.formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlUpdate)) {
             statement.setBytes(1, senderKeyRecord.serialize());
-            statement.setLong(2, key.recipientId().id());
+            statement.setBytes(2, key.serviceId().toByteArray());
             statement.setLong(3, key.deviceId());
             statement.setBytes(4, UuidUtil.toByteArray(key.distributionId()));
             final var rows = statement.executeUpdate();
@@ -223,12 +187,12 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         // Record doesn't exist yet, creating a new one
         final var sqlInsert = (
                 """
-                INSERT OR REPLACE INTO %s (recipient_id, device_id, distribution_id, record, created_timestamp)
+                INSERT OR REPLACE INTO %s (uuid, device_id, distribution_id, record, created_timestamp)
                 VALUES (?, ?, ?, ?, ?)
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlInsert)) {
-            statement.setLong(1, key.recipientId().id());
+            statement.setBytes(1, key.serviceId().toByteArray());
             statement.setInt(2, key.deviceId());
             statement.setBytes(3, UuidUtil.toByteArray(key.distributionId()));
             statement.setBytes(4, senderKeyRecord.serialize());
@@ -237,15 +201,15 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    private void deleteAllFor(final Connection connection, final RecipientId recipientId) throws SQLException {
+    private void deleteAllFor(final Connection connection, final ServiceId serviceId) throws SQLException {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.recipient_id = ?
+                WHERE s.uuid = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, recipientId.id());
+            statement.setBytes(1, serviceId.toByteArray());
             statement.executeUpdate();
         }
     }
@@ -261,5 +225,5 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    record Key(RecipientId recipientId, int deviceId, UUID distributionId) {}
+    record Key(ServiceId serviceId, int deviceId, UUID distributionId) {}
 }
