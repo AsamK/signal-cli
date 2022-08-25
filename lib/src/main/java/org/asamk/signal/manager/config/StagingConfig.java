@@ -29,10 +29,10 @@ class StagingConfig {
     private final static String CDS_MRENCLAVE = "74778bb0f93ae1f78c26e67152bab0bbeb693cd56d1bb9b4e9244157acc58081";
     private final static String CDSI_MRENCLAVE = "ef4787a56a154ac6d009138cac17155acd23cfe4329281252365dd7c252e7fbf";
 
-    private final static String KEY_BACKUP_ENCLAVE_NAME = "dd6f66d397d9e8cf6ec6db238e59a7be078dd50e9715427b9c89b409ffe53f99";
+    private final static String KEY_BACKUP_ENCLAVE_NAME = "39963b736823d5780be96ab174869a9499d56d66497aa8f9b2244f777ebc366b";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
-            "4200003414528c151e2dccafbc87aa6d3d66a5eb8f8c05979a6e97cb33cd493a");
-    private final static String KEY_BACKUP_MRENCLAVE = "ee19f1965b1eefa3dc4204eb70c04f397755f771b8c1909d080c04dad2a6a9ba";
+            "9dbc6855c198e04f21b5cc35df839fdcd51b53658454dfa3f817afefaffc95ef");
+    private final static String KEY_BACKUP_MRENCLAVE = "45627094b2ea4a66f4cf0b182858a8dcf4b8479122c3820fe7fd0551a6d4cf5c";
 
     private final static String URL = "https://chat.staging.signal.org";
     private final static String CDN_URL = "https://cdn-staging.signal.org";
