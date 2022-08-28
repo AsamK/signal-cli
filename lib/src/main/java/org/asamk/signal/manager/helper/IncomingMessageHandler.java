@@ -171,7 +171,7 @@ public final class IncomingMessageHandler {
             final Manager.ReceiveMessageHandler handler,
             final Exception exception
     ) {
-        if (!envelope.hasSourceUuid() && content != null) {
+        if (content != null) {
             // Store uuid if we don't have it already
             // address/uuid is validated by unidentified sender certificate
             account.getRecipientTrustedResolver().resolveRecipientTrusted(content.getSender());
