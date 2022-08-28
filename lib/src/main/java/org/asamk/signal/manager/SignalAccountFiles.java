@@ -65,6 +65,9 @@ public class SignalAccountFiles {
             } catch (NotRegisteredException | IOException | AccountCheckException e) {
                 logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
                 return null;
+            } catch (Throwable e) {
+                logger.error("Failed to load {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
+                throw e;
             }
         }).filter(Objects::nonNull).toList();
 
