@@ -509,6 +509,8 @@ public class SignalAccount implements Closeable {
             rootNode = jsonProcessor.readTree(Channels.newInputStream(fileChannel));
         }
 
+        var migratedLegacyConfig = false;
+
         if (rootNode.hasNonNull("version")) {
             var accountVersion = rootNode.get("version").asInt(1);
             if (accountVersion > CURRENT_STORAGE_VERSION) {
@@ -517,6 +519,9 @@ public class SignalAccount implements Closeable {
                 throw new IOException("Config file was created by a no longer supported older version!");
             }
             previousStorageVersion = accountVersion;
+            if (accountVersion < CURRENT_STORAGE_VERSION) {
+                migratedLegacyConfig = true;
+            }
         }
 
         number = Utils.getNotNullNode(rootNode, "username").asText();
@@ -616,7 +621,6 @@ public class SignalAccount implements Closeable {
             }
         }
 
-        var migratedLegacyConfig = false;
         final var legacySignalProtocolStore = rootNode.hasNonNull("axolotlStore")
                 ? jsonProcessor.convertValue(Utils.getNotNullNode(rootNode, "axolotlStore"),
                 LegacyJsonSignalProtocolStore.class)
