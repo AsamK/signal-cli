@@ -15,6 +15,7 @@ import org.whispersystems.signalservice.internal.configuration.SignalServiceUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalStorageUrl;
 
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +34,10 @@ class StagingConfig {
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
             "9dbc6855c198e04f21b5cc35df839fdcd51b53658454dfa3f817afefaffc95ef");
     private final static String KEY_BACKUP_MRENCLAVE = "45627094b2ea4a66f4cf0b182858a8dcf4b8479122c3820fe7fd0551a6d4cf5c";
+    private final static String FALLBACK_KEY_BACKUP_ENCLAVE_NAME = "dd6f66d397d9e8cf6ec6db238e59a7be078dd50e9715427b9c89b409ffe53f99";
+    private final static byte[] FALLBACK_KEY_BACKUP_SERVICE_ID = Hex.decode(
+            "4200003414528c151e2dccafbc87aa6d3d66a5eb8f8c05979a6e97cb33cd493a");
+    private final static String FALLBACK_KEY_BACKUP_MRENCLAVE = "ee19f1965b1eefa3dc4204eb70c04f397755f771b8c1909d080c04dad2a6a9ba";
 
     private final static String URL = "https://chat.staging.signal.org";
     private final static String CDN_URL = "https://cdn-staging.signal.org";
@@ -78,6 +83,12 @@ class StagingConfig {
 
     static KeyBackupConfig createKeyBackupConfig() {
         return new KeyBackupConfig(KEY_BACKUP_ENCLAVE_NAME, KEY_BACKUP_SERVICE_ID, KEY_BACKUP_MRENCLAVE);
+    }
+
+    static Collection<KeyBackupConfig> createFallbackKeyBackupConfigs() {
+        return List.of(new KeyBackupConfig(FALLBACK_KEY_BACKUP_ENCLAVE_NAME,
+                FALLBACK_KEY_BACKUP_SERVICE_ID,
+                FALLBACK_KEY_BACKUP_MRENCLAVE));
     }
 
     static String getCdsMrenclave() {

@@ -93,7 +93,7 @@ public class SignalAccount implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 3;
+    private static final int CURRENT_STORAGE_VERSION = 4;
 
     private final Object LOCK = new Object();
 
@@ -997,6 +997,10 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public int getPreviousStorageVersion() {
+        return previousStorageVersion;
+    }
+
     public SignalServiceDataStore getSignalServiceDataStore() {
         return new SignalServiceDataStore() {
             @Override
@@ -1275,6 +1279,10 @@ public class SignalAccount implements Closeable {
     public void setRegistrationLockPin(final String registrationLockPin) {
         this.registrationLockPin = registrationLockPin;
         save();
+    }
+
+    public String getRegistrationLockPin() {
+        return registrationLockPin;
     }
 
     public String getRegistrationLock() {

@@ -79,11 +79,13 @@ public class ServiceConfig {
                     LiveConfig.createDefaultServiceConfiguration(interceptors),
                     LiveConfig.getUnidentifiedSenderTrustRoot(),
                     LiveConfig.createKeyBackupConfig(),
+                    LiveConfig.createFallbackKeyBackupConfigs(),
                     LiveConfig.getCdsMrenclave());
             case STAGING -> new ServiceEnvironmentConfig(serviceEnvironment,
                     StagingConfig.createDefaultServiceConfiguration(interceptors),
                     StagingConfig.getUnidentifiedSenderTrustRoot(),
                     StagingConfig.createKeyBackupConfig(),
+                    StagingConfig.createFallbackKeyBackupConfigs(),
                     StagingConfig.getCdsMrenclave());
         };
     }

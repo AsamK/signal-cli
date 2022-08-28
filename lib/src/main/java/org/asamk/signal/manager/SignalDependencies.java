@@ -22,6 +22,7 @@ import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -181,6 +182,17 @@ public class SignalDependencies {
                         serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
                         serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
                         10));
+    }
+
+    public Collection<KeyBackupService> getFallbackKeyBackupServices() {
+        return serviceEnvironmentConfig.getFallbackKeyBackupConfigs()
+                .stream()
+                .map(config -> getAccountManager().getKeyBackupService(ServiceConfig.getIasKeyStore(),
+                        config.getEnclaveName(),
+                        config.getServiceId(),
+                        config.getMrenclave(),
+                        10))
+                .toList();
     }
 
     public ProfileService getProfileService() {

@@ -114,7 +114,9 @@ public class Context {
     }
 
     PinHelper getPinHelper() {
-        return getOrCreate(() -> pinHelper, () -> pinHelper = new PinHelper(dependencies.getKeyBackupService()));
+        return getOrCreate(() -> pinHelper,
+                () -> pinHelper = new PinHelper(dependencies.getKeyBackupService(),
+                        dependencies.getFallbackKeyBackupServices()));
     }
 
     public PreKeyHelper getPreKeyHelper() {

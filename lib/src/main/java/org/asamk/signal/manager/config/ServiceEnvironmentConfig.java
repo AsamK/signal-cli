@@ -3,6 +3,8 @@ package org.asamk.signal.manager.config;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 
+import java.util.Collection;
+
 public class ServiceEnvironmentConfig {
 
     private final ServiceEnvironment type;
@@ -11,6 +13,7 @@ public class ServiceEnvironmentConfig {
     private final ECPublicKey unidentifiedSenderTrustRoot;
 
     private final KeyBackupConfig keyBackupConfig;
+    private final Collection<KeyBackupConfig> fallbackKeyBackupConfigs;
 
     private final String cdsMrenclave;
 
@@ -19,12 +22,14 @@ public class ServiceEnvironmentConfig {
             final SignalServiceConfiguration signalServiceConfiguration,
             final ECPublicKey unidentifiedSenderTrustRoot,
             final KeyBackupConfig keyBackupConfig,
+            final Collection<KeyBackupConfig> fallbackKeyBackupConfigs,
             final String cdsMrenclave
     ) {
         this.type = type;
         this.signalServiceConfiguration = signalServiceConfiguration;
         this.unidentifiedSenderTrustRoot = unidentifiedSenderTrustRoot;
         this.keyBackupConfig = keyBackupConfig;
+        this.fallbackKeyBackupConfigs = fallbackKeyBackupConfigs;
         this.cdsMrenclave = cdsMrenclave;
     }
 
@@ -42,6 +47,10 @@ public class ServiceEnvironmentConfig {
 
     public KeyBackupConfig getKeyBackupConfig() {
         return keyBackupConfig;
+    }
+
+    public Collection<KeyBackupConfig> getFallbackKeyBackupConfigs() {
+        return fallbackKeyBackupConfigs;
     }
 
     public String getCdsMrenclave() {

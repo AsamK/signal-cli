@@ -1,8 +1,11 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.IncorrectPinException;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.util.PinHashing;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
@@ -13,13 +16,21 @@ import org.whispersystems.signalservice.internal.contacts.entities.TokenResponse
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.stream.Stream;
 
 public class PinHelper {
 
-    private final KeyBackupService keyBackupService;
+    private final static Logger logger = LoggerFactory.getLogger(PinHelper.class);
 
-    public PinHelper(final KeyBackupService keyBackupService) {
+    private final KeyBackupService keyBackupService;
+    private final Collection<KeyBackupService> fallbackKeyBackupServices;
+
+    public PinHelper(
+            final KeyBackupService keyBackupService, final Collection<KeyBackupService> fallbackKeyBackupServices
+    ) {
         this.keyBackupService = keyBackupService;
+        this.fallbackKeyBackupServices = fallbackKeyBackupServices;
     }
 
     public void setRegistrationLockPin(
@@ -34,6 +45,19 @@ public class PinHelper {
             throw new IOException(e);
         }
         pinChangeSession.enableRegistrationLock(masterKey);
+    }
+
+    public void migrateRegistrationLockPin(String pin, MasterKey masterKey) throws IOException {
+        setRegistrationLockPin(pin, masterKey);
+
+        for (final var keyBackupService : fallbackKeyBackupServices) {
+            try {
+                final var pinChangeSession = keyBackupService.newPinChangeSession();
+                pinChangeSession.removePin();
+            } catch (Exception e) {
+                logger.warn("Failed to remove PIN from fallback KBS: {}", e.getMessage());
+            }
+        }
     }
 
     public void removeRegistrationLockPin() throws IOException {
@@ -66,20 +90,34 @@ public class PinHelper {
     private KbsPinData getRegistrationLockData(
             String pin, String basicStorageCredentials
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
-        var tokenResponse = keyBackupService.getToken(basicStorageCredentials);
-        if (tokenResponse == null || tokenResponse.getTries() == 0) {
-            throw new IOException("KBS Account locked, maximum pin attempts reached.");
-        }
+        var tokenResponsePair = getTokenResponse(basicStorageCredentials);
+        final var tokenResponse = tokenResponsePair.first();
+        final var keyBackupService = tokenResponsePair.second();
 
-        var registrationLockData = restoreMasterKey(pin, basicStorageCredentials, tokenResponse);
+        var registrationLockData = restoreMasterKey(pin, basicStorageCredentials, tokenResponse, keyBackupService);
         if (registrationLockData == null) {
             throw new AssertionError("Failed to restore master key");
         }
         return registrationLockData;
     }
 
+    private Pair<TokenResponse, KeyBackupService> getTokenResponse(String basicStorageCredentials) throws IOException {
+        final var keyBackupServices = Stream.concat(Stream.of(keyBackupService), fallbackKeyBackupServices.stream())
+                .toList();
+        for (final var keyBackupService : keyBackupServices) {
+            var tokenResponse = keyBackupService.getToken(basicStorageCredentials);
+            if (tokenResponse != null && tokenResponse.getTries() > 0) {
+                return new Pair<>(tokenResponse, keyBackupService);
+            }
+        }
+        throw new IOException("KBS Account locked, maximum pin attempts reached.");
+    }
+
     private KbsPinData restoreMasterKey(
-            String pin, String basicStorageCredentials, TokenResponse tokenResponse
+            String pin,
+            String basicStorageCredentials,
+            TokenResponse tokenResponse,
+            final KeyBackupService keyBackupService
     ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
         if (pin == null) return null;
 

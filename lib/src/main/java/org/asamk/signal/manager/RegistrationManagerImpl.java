@@ -92,7 +92,15 @@ class RegistrationManagerImpl implements RegistrationManager {
                 serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
                 serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
                 10);
-        this.pinHelper = new PinHelper(keyBackupService);
+        final var fallbackKeyBackupServices = serviceEnvironmentConfig.getFallbackKeyBackupConfigs()
+                .stream()
+                .map(config -> accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
+                        config.getEnclaveName(),
+                        config.getServiceId(),
+                        config.getMrenclave(),
+                        10))
+                .toList();
+        this.pinHelper = new PinHelper(keyBackupService, fallbackKeyBackupServices);
     }
 
     @Override

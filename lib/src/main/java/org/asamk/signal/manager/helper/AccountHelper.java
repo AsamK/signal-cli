@@ -60,6 +60,7 @@ public class AccountHelper {
             }
         }
         try {
+            updateAccountAttributes();
             context.getPreKeyHelper().refreshPreKeysIfNecessary();
             if (account.getAci() == null || account.getPni() == null) {
                 checkWhoAmiI();
@@ -67,7 +68,11 @@ public class AccountHelper {
             if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
                 context.getSyncHelper().requestSyncPniIdentity();
             }
-            updateAccountAttributes();
+            if (account.getPreviousStorageVersion() < 4
+                    && account.isPrimaryDevice()
+                    && account.getRegistrationLockPin() != null) {
+                migrateRegistrationPin();
+            }
         } catch (AuthorizationFailedException e) {
             account.setRegistered(false);
             throw e;
@@ -169,6 +174,12 @@ public class AccountHelper {
         dependencies.getAccountManager().removeDevice(deviceId);
         var devices = dependencies.getAccountManager().getDevices();
         account.setMultiDevice(devices.size() > 1);
+    }
+
+    public void migrateRegistrationPin() throws IOException {
+        var masterKey = account.getOrCreatePinMasterKey();
+
+        context.getPinHelper().migrateRegistrationLockPin(account.getRegistrationLockPin(), masterKey);
     }
 
     public void setRegistrationPin(String pin) throws IOException {
