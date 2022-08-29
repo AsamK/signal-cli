@@ -96,7 +96,7 @@ public class UnidentifiedAccessHelper {
 
     private byte[] getSenderCertificateFor(final RecipientId recipientId) {
         final var sharingMode = account.getConfigurationStore().getPhoneNumberSharingMode();
-        if (sharingMode == PhoneNumberSharingMode.EVERYBODY || (
+        if (sharingMode == null || sharingMode == PhoneNumberSharingMode.EVERYBODY || (
                 sharingMode == PhoneNumberSharingMode.CONTACTS
                         && account.getContactStore().getContact(recipientId) != null
         )) {

@@ -1545,7 +1545,8 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isDiscoverableByPhoneNumber() {
-        return configurationStore.getPhoneNumberUnlisted() == null || !configurationStore.getPhoneNumberUnlisted();
+        final var phoneNumberUnlisted = configurationStore.getPhoneNumberUnlisted();
+        return phoneNumberUnlisted == null || !phoneNumberUnlisted;
     }
 
     public void finishRegistration(final ACI aci, final PNI pni, final MasterKey masterKey, final String pin) {
