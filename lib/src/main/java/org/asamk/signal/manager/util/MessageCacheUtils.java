@@ -45,10 +45,9 @@ public class MessageCacheUtils {
                 content = new byte[contentLen];
                 in.readFully(content);
             }
-            byte[] legacyMessage = null;
             var legacyMessageLen = in.readInt();
             if (legacyMessageLen > 0) {
-                legacyMessage = new byte[legacyMessageLen];
+                byte[] legacyMessage = new byte[legacyMessageLen];
                 in.readFully(legacyMessage);
             }
             long serverReceivedTimestamp = 0;
@@ -75,7 +74,6 @@ public class MessageCacheUtils {
                     addressOptional,
                     sourceDevice,
                     timestamp,
-                    legacyMessage,
                     content,
                     serverReceivedTimestamp,
                     serverDeliveredTimestamp,
@@ -90,7 +88,7 @@ public class MessageCacheUtils {
             try (var out = new DataOutputStream(f)) {
                 out.writeInt(6); // version
                 out.writeInt(envelope.getType());
-                out.writeUTF(envelope.getSourceE164().isPresent() ? envelope.getSourceE164().get() : "");
+                out.writeUTF(""); // legacy number
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
                 out.writeInt(envelope.getSourceDevice());
                 out.writeUTF(envelope.getDestinationUuid() == null ? "" : envelope.getDestinationUuid());
@@ -101,12 +99,7 @@ public class MessageCacheUtils {
                 } else {
                     out.writeInt(0);
                 }
-                if (envelope.hasLegacyMessage()) {
-                    out.writeInt(envelope.getLegacyMessage().length);
-                    out.write(envelope.getLegacyMessage());
-                } else {
-                    out.writeInt(0);
-                }
+                out.writeInt(0); // legacy message
                 out.writeLong(envelope.getServerReceivedTimestamp());
                 var uuid = envelope.getServerGuid();
                 out.writeUTF(uuid == null ? "" : uuid);

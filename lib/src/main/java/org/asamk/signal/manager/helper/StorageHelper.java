@@ -7,6 +7,7 @@ import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.zkgroup.InvalidInputException;
@@ -100,7 +101,8 @@ public class StorageHelper {
         }
 
         final var contactRecord = record.getContact().get();
-        final var address = contactRecord.getAddress();
+        final var address = new RecipientAddress(contactRecord.getServiceId().uuid(),
+                contactRecord.getNumber().orElse(null));
         final var recipientId = account.getRecipientResolver().resolveRecipient(address);
 
         final var contact = account.getContactStore().getContact(recipientId);

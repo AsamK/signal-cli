@@ -29,7 +29,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         LogConfigurator.logFile = logFile;
     }
 
-    public void configure(LoggerContext lc) {
+    public ExecutionStatus configure(LoggerContext lc) {
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
 
         final var defaultLevel = verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO;
@@ -63,6 +63,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
             final var fileAppender = createLoggingFileAppender(lc, createLayoutWrappingEncoder(fileLayout));
             rootLogger.addAppender(fileAppender);
         }
+        return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
     }
 
     private ConsoleAppender<ILoggingEvent> createLoggingConsoleAppender(

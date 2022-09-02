@@ -36,9 +36,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.3")
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.1.0")
-    implementation("org.slf4j", "slf4j-api", "1.7.36")
-    implementation("ch.qos.logback", "logback-classic", "1.2.11")
-    implementation("org.slf4j", "jul-to-slf4j", "1.7.36")
+    implementation("org.slf4j", "slf4j-api", "2.0.0")
+    implementation("ch.qos.logback", "logback-classic", "1.4.0")
+    implementation("org.slf4j", "jul-to-slf4j", "2.0.0")
     implementation(project(":lib"))
 }
 

@@ -36,7 +36,10 @@
 },
 {
   "name":"java.lang.Throwable",
-  "methods":[{"name":"getMessage","parameterTypes":[] }]
+  "methods":[
+    {"name":"getMessage","parameterTypes":[] }, 
+    {"name":"toString","parameterTypes":[] }
+  ]
 },
 {
   "name":"java.lang.UnsatisfiedLinkError",
@@ -187,33 +190,59 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"org.sqlite.Collation"
+  "name":"org.sqlite.Collation",
+  "methods":[{"name":"xCompare","parameterTypes":["java.lang.String","java.lang.String"] }]
 },
 {
-  "name":"org.sqlite.Function"
+  "name":"org.sqlite.Function",
+  "fields":[
+    {"name":"args"}, 
+    {"name":"context"}, 
+    {"name":"value"}
+  ],
+  "methods":[{"name":"xFunc","parameterTypes":[] }]
 },
 {
-  "name":"org.sqlite.Function$Aggregate"
+  "name":"org.sqlite.Function$Aggregate",
+  "methods":[
+    {"name":"clone","parameterTypes":[] }, 
+    {"name":"xFinal","parameterTypes":[] }, 
+    {"name":"xStep","parameterTypes":[] }
+  ]
 },
 {
-  "name":"org.sqlite.Function$Window"
+  "name":"org.sqlite.Function$Window",
+  "methods":[
+    {"name":"xInverse","parameterTypes":[] }, 
+    {"name":"xValue","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.sqlite.ProgressHandler"
 },
 {
   "name":"org.sqlite.core.DB",
-  "methods":[{"name":"throwex","parameterTypes":["int"] }]
+  "methods":[
+    {"name":"throwex","parameterTypes":[] }, 
+    {"name":"throwex","parameterTypes":["int"] }
+  ]
 },
 {
-  "name":"org.sqlite.core.DB$ProgressObserver"
+  "name":"org.sqlite.core.DB$ProgressObserver",
+  "methods":[{"name":"progress","parameterTypes":["int","int"] }]
 },
 {
   "name":"org.sqlite.core.NativeDB",
   "fields":[
-    {"name":"colldatalist"}, 
+    {"name":"busyHandler"}, 
+    {"name":"commitListener"}, 
     {"name":"pointer"}, 
-    {"name":"udfdatalist"}
+    {"name":"progressHandler"}, 
+    {"name":"updateListener"}
+  ],
+  "methods":[
+    {"name":"stringToUtf8ByteArray","parameterTypes":["java.lang.String"] }, 
+    {"name":"throwex","parameterTypes":["java.lang.String"] }
   ]
 }
 ]

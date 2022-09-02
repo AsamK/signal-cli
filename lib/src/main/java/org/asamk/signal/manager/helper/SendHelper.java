@@ -122,7 +122,8 @@ public class SendHelper {
         final var result = handleSendMessage(recipientId,
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendReceipt(address,
                         unidentifiedAccess,
-                        receiptMessage));
+                        receiptMessage,
+                        false));
         messageSendLogStore.insertIfPossible(receiptMessage.getWhen(), result, ContentHint.IMPLICIT, false);
         handleSendMessageResult(result);
         return result;
@@ -141,6 +142,7 @@ public class SendHelper {
                         ContentHint.IMPLICIT,
                         message,
                         SignalServiceMessageSender.IndividualSendEvents.EMPTY,
+                        false,
                         false));
     }
 
@@ -602,7 +604,8 @@ public class SendHelper {
                         ContentHint.RESENDABLE,
                         message,
                         SignalServiceMessageSender.IndividualSendEvents.EMPTY,
-                        urgent));
+                        urgent,
+                        false));
         messageSendLogStore.insertIfPossible(message.getTimestamp(), result, ContentHint.RESENDABLE, urgent);
         handleSendMessageResult(result);
         return result;
