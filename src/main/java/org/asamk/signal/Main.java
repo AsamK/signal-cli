@@ -27,6 +27,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
+import org.asamk.signal.logging.LogConfigurator;
 import org.asamk.signal.manager.ManagerLogger;
 import org.asamk.signal.util.SecurityProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -47,7 +48,8 @@ public class Main {
         final var nsLog = parseArgs(args);
         final var verboseLevel = nsLog == null ? 0 : nsLog.getInt("verbose");
         final var logFile = nsLog == null ? null : nsLog.<File>get("log-file");
-        configureLogging(verboseLevel, logFile);
+        final var scrubLog = nsLog != null && nsLog.getBoolean("scrub-log");
+        configureLogging(verboseLevel, logFile, scrubLog);
 
         var parser = App.buildArgumentParser();
 
@@ -82,6 +84,7 @@ public class Main {
                 .defaultHelp(false);
         parser.addArgument("-v", "--verbose").action(Arguments.count());
         parser.addArgument("--log-file").type(File.class);
+        parser.addArgument("--scrub-log").action(Arguments.storeTrue());
 
         try {
             return parser.parseKnownArgs(args, null);
@@ -90,9 +93,10 @@ public class Main {
         }
     }
 
-    private static void configureLogging(final int verboseLevel, final File logFile) {
+    private static void configureLogging(final int verboseLevel, final File logFile, final boolean scrubLog) {
         LogConfigurator.setVerboseLevel(verboseLevel);
         LogConfigurator.setLogFile(logFile);
+        LogConfigurator.setScrubSensitiveInformation(scrubLog);
 
         if (verboseLevel > 0) {
             java.util.logging.Logger.getLogger("")

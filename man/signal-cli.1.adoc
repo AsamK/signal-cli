@@ -41,6 +41,9 @@ Raise log level and include lib signal logs.
 Write log output to the given file.
 If `--verbose` is also given, the detailed logs will only be written to the log file.
 
+*--scrub-log*::
+Scrub possibly sensitive information from the log, like phone numbers and UUIDs.
+
 *--config* CONFIG::
 Set the path, where to store the config.
 Make sure you have full read/write access to the given directory.
@@ -230,7 +233,8 @@ Read the message from standard input.
 
 *-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
 Add one or more files as attachment.
-Can be either a file path or a data URI. Data URI encoded attachments must follow the RFC 2397.
+Can be either a file path or a data URI.
+Data URI encoded attachments must follow the RFC 2397.
 Additionally a file name can be added:
 e.g.: `data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>`
 
@@ -257,8 +261,7 @@ Specify the mentions of the original message (same format as `--mention`).
 
 *--preview-url*::
 Specify the url for the link preview.
-The same url must also appear in the message body, otherwise the preview won't be
-displayed by the apps.
+The same url must also appear in the message body, otherwise the preview won't be displayed by the apps.
 
 *--preview-title*::
 Specify the title for the link preview (mandatory).
