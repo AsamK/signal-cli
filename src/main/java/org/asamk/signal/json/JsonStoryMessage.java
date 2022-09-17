@@ -6,6 +6,8 @@ import org.asamk.signal.manager.api.Color;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.groups.GroupId;
 
+import java.util.List;
+
 record JsonStoryMessage(
         boolean allowsReplies,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
@@ -40,11 +42,24 @@ record JsonStoryMessage(
                     textAttachment.backgroundColor().map(Color::toHexColor).orElse(null));
         }
 
-        public record Gradient(String startColor, String endColor, Integer angle) {
+        public record Gradient(
+                String startColor,
+                String endColor,
+                List<String> colors,
+                List<Float> positions,
+                Integer angle
+        ) {
 
             static Gradient from(MessageEnvelope.Story.TextAttachment.Gradient gradient) {
-                return new Gradient(gradient.startColor().map(Color::toHexColor).orElse(null),
-                        gradient.endColor().map(Color::toHexColor).orElse(null),
+                final var isLegacyGradient = gradient.colors().size() == 2
+                        && gradient.positions().size() == 2
+                        && gradient.positions().get(0) == 0f
+                        && gradient.positions().get(1) == 1f;
+
+                return new Gradient(isLegacyGradient ? gradient.colors().get(0).toHexColor() : null,
+                        isLegacyGradient ? gradient.colors().get(1).toHexColor() : null,
+                        gradient.colors().stream().map(Color::toHexColor).toList(),
+                        gradient.positions(),
                         gradient.angle().orElse(null));
             }
         }

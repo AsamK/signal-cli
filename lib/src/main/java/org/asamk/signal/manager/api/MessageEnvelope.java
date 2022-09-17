@@ -837,11 +837,13 @@ public record MessageEnvelope(
                 }
             }
 
-            public record Gradient(Optional<Color> startColor, Optional<Color> endColor, Optional<Integer> angle) {
+            public record Gradient(
+                    List<Color> colors, List<Float> positions, Optional<Integer> angle
+            ) {
 
                 static Gradient from(SignalServiceTextAttachment.Gradient gradient) {
-                    return new Gradient(gradient.getStartColor().map(Color::new),
-                            gradient.getEndColor().map(Color::new),
+                    return new Gradient(gradient.getColors().stream().map(Color::new).toList(),
+                            gradient.getPositions(),
                             gradient.getAngle());
                 }
             }

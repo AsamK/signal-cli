@@ -135,4 +135,8 @@ public class RecipientHelper {
         }
         return uuid;
     }
+
+    private ACI getRegisteredUserByUsername(String username) throws IOException {
+        return dependencies.getAccountManager().getAciByUsername(username);
+    }
 }

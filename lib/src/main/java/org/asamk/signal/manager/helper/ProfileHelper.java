@@ -262,11 +262,6 @@ public final class ProfileHelper {
         return now - profile.getLastUpdateTimestamp() >= 6 * 60 * 60 * 1000;
     }
 
-    private SignalServiceProfile retrieveProfileSync(String username) throws IOException {
-        final var locale = Utils.getDefaultLocale(Locale.US);
-        return dependencies.getMessageReceiver().retrieveProfileByUsername(username, Optional.empty(), locale);
-    }
-
     private Profile decryptProfileAndDownloadAvatar(
             final RecipientId recipientId, final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
     ) {

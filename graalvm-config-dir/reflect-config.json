@@ -234,6 +234,12 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"java.lang.Float",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"java.lang.Integer",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -273,6 +279,14 @@
     {"name":"addSuppressed","parameterTypes":["java.lang.Throwable"] }, 
     {"name":"getSuppressed","parameterTypes":[] }
   ]
+},
+{
+  "name":"java.lang.constant.Constable",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.lang.constant.ConstantDesc",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"java.lang.reflect.Method",
@@ -882,7 +896,9 @@
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"angle","parameterTypes":[] }, 
+    {"name":"colors","parameterTypes":[] }, 
     {"name":"endColor","parameterTypes":[] }, 
+    {"name":"positions","parameterTypes":[] }, 
     {"name":"startColor","parameterTypes":[] }
   ]
 },
@@ -3180,7 +3196,9 @@
   "fields":[
     {"name":"angle_"}, 
     {"name":"bitField0_"}, 
+    {"name":"colors_"}, 
     {"name":"endColor_"}, 
+    {"name":"positions_"}, 
     {"name":"startColor_"}
   ]
 },
