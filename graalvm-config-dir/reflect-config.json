@@ -1669,6 +1669,27 @@
   "allPublicConstructors":true
 },
 {
+  "name":"org.signal.cdsi.proto.ClientRequest",
+  "fields":[
+    {"name":"aciUakPairs_"}, 
+    {"name":"discardE164S_"}, 
+    {"name":"newE164S_"}, 
+    {"name":"prevE164S_"}, 
+    {"name":"returnAcisWithoutUaks_"}, 
+    {"name":"tokenAck_"}, 
+    {"name":"token_"}
+  ]
+},
+{
+  "name":"org.signal.cdsi.proto.ClientResponse",
+  "fields":[
+    {"name":"debugPermitsUsed_"}, 
+    {"name":"e164PniAciTriples_"}, 
+    {"name":"retryAfterSecs_"}, 
+    {"name":"token_"}
+  ]
+},
+{
   "name":"org.signal.libsignal.protocol.state.IdentityKeyStore",
   "allDeclaredMethods":true
 },
@@ -2378,6 +2399,13 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.CdsiAuthResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ConfirmCodeMessage",

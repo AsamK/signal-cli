@@ -95,6 +95,10 @@ class LiveConfig {
         return CDS_MRENCLAVE;
     }
 
+    static String getCdsiMrenclave() {
+        return CDSI_MRENCLAVE;
+    }
+
     private LiveConfig() {
     }
 }

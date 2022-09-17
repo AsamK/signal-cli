@@ -12,6 +12,7 @@ import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -268,6 +269,27 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                             r.getContact() != null && name.get().equals(r.getContact().getName())
                     ) || (r.getProfile() != null && name.get().equals(r.getProfile().getDisplayName()))).toList();
                 }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from recipient store", e);
+        }
+    }
+
+    public Map<ServiceId, ProfileKey> getServiceIdToProfileKeyMap() {
+        final var sql = (
+                """
+                SELECT r.uuid, r.profile_key
+                FROM %s r
+                WHERE r.uuid IS NOT NULL AND r.profile_key IS NOT NULL
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                return Utils.executeQueryForStream(statement, resultSet -> {
+                    final var serviceId = ServiceId.parseOrThrow(resultSet.getBytes("uuid"));
+                    final var profileKey = getProfileKeyFromResultSet(resultSet);
+                    return new Pair<>(serviceId, profileKey);
+                }).filter(Objects::nonNull).collect(Collectors.toMap(Pair::first, Pair::second));
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from recipient store", e);

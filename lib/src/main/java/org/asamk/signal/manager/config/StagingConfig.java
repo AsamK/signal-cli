@@ -95,6 +95,10 @@ class StagingConfig {
         return CDS_MRENCLAVE;
     }
 
+    static String getCdsiMrenclave() {
+        return CDSI_MRENCLAVE;
+    }
+
     private StagingConfig() {
     }
 }

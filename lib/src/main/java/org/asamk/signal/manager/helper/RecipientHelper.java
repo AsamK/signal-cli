@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.services.CdsiV2Service;
 import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
@@ -21,8 +22,10 @@ import org.whispersystems.signalservice.internal.contacts.crypto.Unauthenticated
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class RecipientHelper {
@@ -104,15 +107,12 @@ public class RecipientHelper {
     }
 
     public Map<String, ACI> getRegisteredUsers(final Set<String> numbers) throws IOException {
-        final Map<String, ACI> registeredUsers;
+        Map<String, ACI> registeredUsers;
         try {
-            registeredUsers = dependencies.getAccountManager()
-                    .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
-                            numbers,
-                            serviceEnvironmentConfig.getCdsMrenclave());
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException |
-                 UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
-            throw new IOException(e);
+            registeredUsers = getRegisteredUsersV2(numbers, true);
+        } catch (IOException e) {
+            logger.warn("CDSI request failed, trying fallback to CDS", e);
+            registeredUsers = getRegisteredUsersV1(numbers);
         }
 
         // Store numbers as recipients, so we have the number/uuid association
@@ -134,6 +134,48 @@ public class RecipientHelper {
             throw new UnregisteredRecipientException(new RecipientAddress(null, number));
         }
         return uuid;
+    }
+
+    private Map<String, ACI> getRegisteredUsersV1(final Set<String> numbers) throws IOException {
+        final Map<String, ACI> registeredUsers;
+        try {
+            registeredUsers = dependencies.getAccountManager()
+                    .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
+                            numbers,
+                            serviceEnvironmentConfig.getCdsMrenclave());
+        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException |
+                 UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
+            throw new IOException(e);
+        }
+        return registeredUsers;
+    }
+
+    private Map<String, ACI> getRegisteredUsersV2(final Set<String> numbers, boolean useCompat) throws IOException {
+        // Only partial refresh is implemented here
+        final CdsiV2Service.Response response;
+        try {
+            response = dependencies.getAccountManager()
+                    .getRegisteredUsersWithCdsi(Set.of(),
+                            numbers,
+                            account.getRecipientStore().getServiceIdToProfileKeyMap(),
+                            useCompat,
+                            Optional.empty(),
+                            serviceEnvironmentConfig.getCdsiMrenclave(),
+                            token -> {
+                                // Not storing for partial refresh
+                            });
+        } catch (NumberFormatException e) {
+            throw new IOException(e);
+        }
+        logger.debug("CDSI request successful, quota used by this request: {}", response.getQuotaUsedDebugOnly());
+
+        final var registeredUsers = new HashMap<String, ACI>();
+        response.getResults().forEach((key, value) -> {
+            if (value.getAci().isPresent()) {
+                registeredUsers.put(key, value.getAci().get());
+            }
+        });
+        return registeredUsers;
     }
 
     private ACI getRegisteredUserByUsername(String username) throws IOException {
