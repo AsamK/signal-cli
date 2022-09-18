@@ -388,7 +388,8 @@ public class DbusManagerImpl implements Manager {
     public SendMessageResults sendPaymentNotificationMessage(
             final byte[] receipt, final String note, final RecipientIdentifier.Single recipient
     ) throws IOException {
-        throw new UnsupportedOperationException();
+        final var timestamp = signal.sendPaymentNotification(receipt, note, recipient.getIdentifier());
+        return new SendMessageResults(timestamp, Map.of());
     }
 
     @Override

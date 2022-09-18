@@ -62,6 +62,8 @@ public interface Signal extends DBusInterface {
             String emoji, boolean remove, String targetAuthor, long targetSentTimestamp, List<String> recipients
     ) throws Error.InvalidNumber, Error.Failure;
 
+    long sendPaymentNotification(byte[] receipt, String note, String recipient) throws Error.Failure;
+
     void sendContacts() throws Error.Failure;
 
     void sendSyncRequest() throws Error.Failure;

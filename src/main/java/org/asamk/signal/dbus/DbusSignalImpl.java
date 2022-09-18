@@ -299,6 +299,21 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    public long sendPaymentNotification(
+            final byte[] receipt, final String note, final String recipient
+    ) throws Error.Failure {
+        try {
+            final var results = m.sendPaymentNotificationMessage(receipt,
+                    note,
+                    getSingleRecipientIdentifier(recipient, m.getSelfNumber()));
+            checkSendMessageResults(results);
+            return results.timestamp();
+        } catch (IOException e) {
+            throw new Error.Failure(e.getMessage());
+        }
+    }
+
+    @Override
     public void sendTyping(
             final String recipient, final boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {

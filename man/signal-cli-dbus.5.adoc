@@ -202,6 +202,15 @@ Depending on the type of the recipient(s) field this sends a reaction to one or 
 
 Exceptions: Failure, InvalidNumber
 
+sendPaymentNotification(receipt<ay>, note<s>, recipient<s>) -> timestamp<x>::
+* receipt : Byte array with the payment receipt blob
+* note : String with a note for the payment
+* recipient : String with the phone number of a single recipient
+
+* timestamp : Long, can be used to identify the corresponding Signal reply
+
+Exceptions: Failure
+
 sendNoteToSelfMessage(message<s>, attachments<as>) -> timestamp<x>::
 * message : Text to send (can be UTF8)
 * attachments : String array of filenames to send as attachments (passed as filename, so need to be readable by the user signal-cli is running under)
