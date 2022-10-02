@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2022-10-02
+**Attention**: Now requires native libsignal-client version 0.20.0
+
+### Breaking changes
+- Changed meaning of `-v` flag from `--version` to `--verbose`.
+  So now extended logging can be achieved with `-vv`.
+- Remove deprecated fallback to reading from stdin if no message body is given.
+  To read a message from stdin, use the `--message-from-stdin` flag.
+
+### Added
+- Migrate PIN to new KBS enclave when Signal updates it
+- Add `--scrub-log` flag to remove possibly sensitive information from the log
+- Add `sendPaymentNotification` dbus method
+
+### Fixed
+- Fix an issue where messages were sent without sender phone number
+
+### Changed
+- Store data except base account data in sqlite database
+- Use new CDSI for contact discovery in compat mode
+
 ## [0.10.11] - 2022-08-17
 **Attention**: Now requires native libsignal-client version 0.19.3
 
