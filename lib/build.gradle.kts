@@ -14,12 +14,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_57")
+    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_58")
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.3")
     implementation("com.google.protobuf", "protobuf-javalite", "3.11.4")
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
-    implementation("org.slf4j", "slf4j-api", "2.0.0")
-    implementation("org.xerial", "sqlite-jdbc", "3.39.2.1")
+    implementation("org.slf4j", "slf4j-api", "2.0.3")
+    implementation("org.xerial", "sqlite-jdbc", "3.39.3.0")
     implementation("com.zaxxer", "HikariCP", "5.0.1")
 }
 

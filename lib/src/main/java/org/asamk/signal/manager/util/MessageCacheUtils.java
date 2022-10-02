@@ -19,7 +19,7 @@ public class MessageCacheUtils {
         try (var f = new FileInputStream(file)) {
             var in = new DataInputStream(f);
             var version = in.readInt();
-            if (version > 6) {
+            if (version > 7) {
                 // Unsupported envelope version
                 return null;
             }
@@ -67,6 +67,10 @@ public class MessageCacheUtils {
             if (version >= 6) {
                 isUrgent = in.readBoolean();
             }
+            boolean isStory = true;
+            if (version >= 7) {
+                isStory = in.readBoolean();
+            }
             Optional<SignalServiceAddress> addressOptional = sourceServiceId == null
                     ? Optional.empty()
                     : Optional.of(new SignalServiceAddress(sourceServiceId, source));
@@ -79,14 +83,15 @@ public class MessageCacheUtils {
                     serverDeliveredTimestamp,
                     uuid,
                     destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid,
-                    isUrgent);
+                    isUrgent,
+                    isStory);
         }
     }
 
     public static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (var f = new FileOutputStream(file)) {
             try (var out = new DataOutputStream(f)) {
-                out.writeInt(6); // version
+                out.writeInt(7); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(""); // legacy number
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
@@ -105,6 +110,7 @@ public class MessageCacheUtils {
                 out.writeUTF(uuid == null ? "" : uuid);
                 out.writeLong(envelope.getServerDeliveredTimestamp());
                 out.writeBoolean(envelope.isUrgent());
+                out.writeBoolean(envelope.isStory());
             }
         }
     }

@@ -2904,6 +2904,7 @@
     {"name":"serverTimestamp_"}, 
     {"name":"sourceDevice_"}, 
     {"name":"sourceUuid_"}, 
+    {"name":"story_"}, 
     {"name":"timestamp_"}, 
     {"name":"type_"}, 
     {"name":"urgent_"}
