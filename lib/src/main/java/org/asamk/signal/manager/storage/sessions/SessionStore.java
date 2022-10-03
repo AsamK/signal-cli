@@ -9,6 +9,7 @@ import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.protocol.message.CiphertextMessage;
 import org.signal.libsignal.protocol.state.SessionRecord;
+import org.signal.libsignal.protocol.util.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
@@ -208,7 +209,8 @@ public class SessionStore implements SignalServiceSessionStore {
     public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
         final var serviceIdsCommaSeparated = addressNames.stream()
                 .map(ServiceId::parseOrThrow)
-                .map(ServiceId::toString)
+                .map(ServiceId::toByteArray)
+                .map(uuid -> "x'" + Hex.toStringCondensed(uuid) + "'")
                 .collect(Collectors.joining(","));
         final var sql = (
                 """
