@@ -52,6 +52,10 @@ public class LegacySenderKeySharedStore {
             }
 
             senderKeyStore.addLegacySenderKeysShared(sharedSenderKeys);
+        } catch (IOException e) {
+            logger.info("Failed to load shared sender key store, ignoring", e);
+        }
+        try {
             Files.delete(file.toPath());
         } catch (IOException e) {
             logger.info("Failed to load shared sender key store, ignoring", e);

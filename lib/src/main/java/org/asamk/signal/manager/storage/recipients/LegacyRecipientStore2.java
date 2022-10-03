@@ -84,9 +84,14 @@ public class LegacyRecipientStore2 {
             }).collect(Collectors.toMap(Recipient::getRecipientId, r -> r));
 
             recipientStore.addLegacyRecipients(recipients);
-            Files.delete(file.toPath());
         } catch (FileNotFoundException e) {
             // nothing to migrate
+        } catch (IOException e) {
+            logger.warn("Failed to load recipient store", e);
+            throw new RuntimeException(e);
+        }
+        try {
+            Files.delete(file.toPath());
         } catch (IOException e) {
             logger.warn("Failed to load recipient store", e);
             throw new RuntimeException(e);
