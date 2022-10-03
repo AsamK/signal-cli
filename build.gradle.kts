@@ -76,8 +76,10 @@ task("fatJar", type = Jar::class) {
         "META-INF/*.RSA",
         "META-INF/NOTICE",
         "META-INF/LICENSE",
+        "META-INF/INDEX.LIST",
         "**/module-info.class"
     )
+    duplicatesStrategy = DuplicatesStrategy.WARN
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get() as CopySpec)
+    with(tasks.jar.get())
 }
