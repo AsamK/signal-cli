@@ -74,8 +74,8 @@ task("fatJar", type = Jar::class) {
         "META-INF/*.SF",
         "META-INF/*.DSA",
         "META-INF/*.RSA",
-        "META-INF/NOTICE",
-        "META-INF/LICENSE",
+        "META-INF/NOTICE*",
+        "META-INF/LICENSE*",
         "META-INF/INDEX.LIST",
         "**/module-info.class"
     )
