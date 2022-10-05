@@ -33,11 +33,11 @@ repositories {
 
 dependencies {
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
-    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.3")
+    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.4")
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.2.1")
     implementation("org.slf4j", "slf4j-api", "2.0.3")
-    implementation("ch.qos.logback", "logback-classic", "1.4.1")
+    implementation("ch.qos.logback", "logback-classic", "1.4.3")
     implementation("org.slf4j", "jul-to-slf4j", "2.0.3")
     implementation(project(":lib"))
 }
