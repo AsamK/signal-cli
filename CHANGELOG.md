@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.11.1] - 2022-10-05
+
+### Fixed
+- Fix sending group messages
+- Fix store migration issue on Windows
+- Fix building fat jars
+
 ## [0.11.0] - 2022-10-02
 **Attention**: Now requires native libsignal-client version 0.20.0
 
