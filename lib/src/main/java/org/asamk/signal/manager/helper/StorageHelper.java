@@ -109,27 +109,48 @@ public class StorageHelper {
         final var blocked = contact != null && contact.isBlocked();
         final var profileShared = contact != null && contact.isProfileSharingEnabled();
         final var archived = contact != null && contact.isArchived();
+        final var contactGivenName = contact == null ? null : contact.getGivenName();
+        final var contactFamilyName = contact == null ? null : contact.getFamilyName();
         if (blocked != contactRecord.isBlocked()
                 || profileShared != contactRecord.isProfileSharingEnabled()
-                || archived != contactRecord.isArchived()) {
+                || archived != contactRecord.isArchived()
+                || (
+                contactRecord.getSystemGivenName().isPresent() && !contactRecord.getSystemGivenName()
+                        .get()
+                        .equals(contactGivenName)
+        )
+                || (
+                contactRecord.getSystemFamilyName().isPresent() && !contactRecord.getSystemFamilyName()
+                        .get()
+                        .equals(contactFamilyName)
+        )) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withBlocked(contactRecord.isBlocked())
                     .withProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
-                    .withArchived(contactRecord.isArchived())
-                    .build();
-            account.getContactStore().storeContact(recipientId, newContact);
+                    .withArchived(contactRecord.isArchived());
+            if (contactRecord.getSystemGivenName().isPresent() || contactRecord.getSystemFamilyName().isPresent()) {
+                newContact.withGivenName(contactRecord.getSystemGivenName().orElse(null))
+                        .withFamilyName(contactRecord.getSystemFamilyName().orElse(null));
+            }
+            account.getContactStore().storeContact(recipientId, newContact.build());
         }
 
         final var profile = account.getProfileStore().getProfile(recipientId);
-        final var givenName = profile == null ? null : profile.getGivenName();
-        final var familyName = profile == null ? null : profile.getFamilyName();
-        if ((contactRecord.getGivenName().isPresent() && !contactRecord.getGivenName().get().equals(givenName)) || (
-                contactRecord.getFamilyName().isPresent() && !contactRecord.getFamilyName().get().equals(familyName)
+        final var profileGivenName = profile == null ? null : profile.getGivenName();
+        final var profileFamilyName = profile == null ? null : profile.getFamilyName();
+        if ((
+                contactRecord.getProfileGivenName().isPresent() && !contactRecord.getProfileGivenName()
+                        .get()
+                        .equals(profileGivenName)
+        ) || (
+                contactRecord.getProfileFamilyName().isPresent() && !contactRecord.getProfileFamilyName()
+                        .get()
+                        .equals(profileFamilyName)
         )) {
             final var profileBuilder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
-            final var newProfile = profileBuilder.withGivenName(contactRecord.getGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getFamilyName().orElse(null))
+            final var newProfile = profileBuilder.withGivenName(contactRecord.getProfileGivenName().orElse(null))
+                    .withFamilyName(contactRecord.getProfileFamilyName().orElse(null))
                     .build();
             account.getProfileStore().storeProfile(recipientId, newProfile);
         }

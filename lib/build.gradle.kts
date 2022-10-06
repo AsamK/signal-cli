@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_58")
+    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_59")
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.13.4")
     implementation("com.google.protobuf", "protobuf-javalite", "3.11.4")
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")

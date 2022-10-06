@@ -134,7 +134,8 @@ public class SignalDependencies {
                             serviceEnvironmentConfig.getSignalServiceConfiguration(),
                             Optional.of(credentialsProvider),
                             userAgent,
-                            healthMonitor);
+                            healthMonitor,
+                            true);
                 }
 
                 @Override
@@ -143,7 +144,8 @@ public class SignalDependencies {
                             serviceEnvironmentConfig.getSignalServiceConfiguration(),
                             Optional.empty(),
                             userAgent,
-                            healthMonitor);
+                            healthMonitor,
+                            true);
                 }
             };
             signalWebSocket = new SignalWebSocket(webSocketFactory);
