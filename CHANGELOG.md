@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.11.2] - 2022-10-06
+
+### Fixed
+- Update user agent version to work with new Signal-Server check
+
 ## [0.11.1] - 2022-10-05
 
 ### Fixed
