@@ -12,6 +12,7 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.util.KeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,6 +115,9 @@ public class SignalAccountFiles {
 
         try {
             manager.checkAccountState();
+        } catch (DeprecatedVersionException e) {
+            manager.close();
+            throw new AccountCheckException("signal-cli version is too old for the Signal-Server, please update.");
         } catch (IOException e) {
             manager.close();
             throw new AccountCheckException("Error while checking account " + number + ": " + e.getMessage(), e);

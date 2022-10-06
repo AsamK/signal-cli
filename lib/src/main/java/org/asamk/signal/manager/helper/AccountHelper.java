@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 
@@ -73,6 +74,9 @@ public class AccountHelper {
                     && account.getRegistrationLockPin() != null) {
                 migrateRegistrationPin();
             }
+        } catch (DeprecatedVersionException e) {
+            logger.debug("Signal-Server returned deprecated version exception", e);
+            throw e;
         } catch (AuthorizationFailedException e) {
             account.setRegistered(false);
             throw e;
