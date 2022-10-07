@@ -513,6 +513,10 @@ public class GroupHelper {
         if (!g.isMember(account.getSelfRecipientId()) && !g.isPendingMember(account.getSelfRecipientId())) {
             throw new NotAGroupMemberException(groupId, g.getTitle());
         }
+        if (groupId instanceof GroupIdV2) {
+            // Refresh group before updating
+            return getGroup(groupId, true);
+        }
         return g;
     }
 
