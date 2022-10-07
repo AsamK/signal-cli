@@ -1055,21 +1055,38 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"groups","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","int","boolean","boolean","java.util.List"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","int","boolean","boolean","java.util.List"] },
+    {"name":"groupId","parameterTypes":[] },
+    {"name":"expectedV2Id","parameterTypes":[] },
+    {"name":"name","parameterTypes":[] },
+    {"name":"color","parameterTypes":[] },
+    {"name":"messageExpirationTime","parameterTypes":[] },
+    {"name":"blocked","parameterTypes":[] },
+    {"name":"archived","parameterTypes":[] },
+    {"name":"members","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1$JsonRecipientAddress",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] },
+    {"name":"uuid","parameterTypes":[] },
+    {"name":"number","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.groups.LegacyGroupStore$Storage$GroupV1$MembersDeserializer",
@@ -1080,14 +1097,26 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] },
+    {"name":"groupId","parameterTypes":[] },
+    {"name":"masterKey","parameterTypes":[] },
+    {"name":"distributionId","parameterTypes":[] },
+    {"name":"blocked","parameterTypes":[] },
+    {"name":"permissionDenied","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore$IdentityStorage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int","long"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","int","long"] },
+    {"name":"addedTimestamp","parameterTypes":[] },
+    {"name":"trustLevel","parameterTypes":[] },
+    {"name":"identityKey","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.profiles.LegacyProfileStore",
@@ -1150,28 +1179,60 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.util.List","long"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.util.List","long"] },
+    {"name":"lastId","parameterTypes":[] },
+    {"name":"recipients","parameterTypes":[] }
+    ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile"] },
+    {"name":"id","parameterTypes":[] },
+    {"name":"number","parameterTypes":[] },
+    {"name":"uuid","parameterTypes":[] },
+    {"name":"profileKey","parameterTypes":[] },
+    {"name":"expiringProfileKeyCredential","parameterTypes":[] },
+    {"name":"contact","parameterTypes":[] },
+    {"name":"profile","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","boolean","boolean","boolean"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","boolean","boolean","boolean"] },
+    {"name":"name","parameterTypes":[] },
+    {"name":"color","parameterTypes":[] },
+    {"name":"messageExpirationTime","parameterTypes":[] },
+    {"name":"blocked","parameterTypes":[] },
+    {"name":"archived","parameterTypes":[] },
+    {"name":"profileSharingEnabled","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.Set"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.Set"] },
+    {"name":"lastUpdateTimestamp","parameterTypes":[] },
+    {"name":"givenName","parameterTypes":[] },
+    {"name":"familyName","parameterTypes":[] },
+    {"name":"about","parameterTypes":[] },
+    {"name":"aboutEmoji","parameterTypes":[] },
+    {"name":"avatarUrlPath","parameterTypes":[] },
+    {"name":"mobileCoinAddress","parameterTypes":[] },
+    {"name":"unidentifiedAccessMode","parameterTypes":[] },
+    {"name":"capabilities","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.RecipientAddress",
@@ -1188,14 +1249,22 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"sharedSenderKeys","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.senderKeys.LegacySenderKeySharedStore$Storage$SharedSenderKey",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["long","int","java.lang.String"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["long","int","java.lang.String"] },
+    {"name":"recipientId","parameterTypes":[] },
+    {"name":"deviceId","parameterTypes":[] },
+    {"name":"distributionId","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack",
@@ -1228,14 +1297,22 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"stickers","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.stickers.LegacyStickerStore$Storage$Sticker",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] }]
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] },
+    {"name":"packId","parameterTypes":[] },
+    {"name":"packKey","parameterTypes":[] },
+    {"name":"installed","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.util.SecurityProvider$DefaultRandom",
