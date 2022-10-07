@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.11.3] - 2022-10-07
+
+### Fixed
+- Fix sending messages to groups (in non-daemon mode)
+- Fix updating from older signal-cli version
+- Fix issue with handling decryption error message
+- Fix graalvm native build (Thanks @bentolor)
+
 ## [0.11.2] - 2022-10-06
 
 ### Fixed
