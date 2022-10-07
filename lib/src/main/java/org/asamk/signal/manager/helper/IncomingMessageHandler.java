@@ -42,6 +42,7 @@ import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
@@ -51,6 +52,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
@@ -505,6 +507,32 @@ public final class IncomingMessageHandler {
         return actions;
     }
 
+    private SignalServiceGroupContext getGroupContext(SignalServiceContent content) {
+        if (content == null) {
+            return null;
+        }
+
+        if (content.getDataMessage().isPresent()) {
+            var message = content.getDataMessage().get();
+            if (message.getGroupContext().isPresent()) {
+                return message.getGroupContext().get();
+            }
+        }
+
+        if (content.getStoryMessage().isPresent()) {
+            var message = content.getStoryMessage().get();
+            if (message.getGroupContext().isPresent()) {
+                try {
+                    return SignalServiceGroupContext.create(null, message.getGroupContext().get());
+                } catch (InvalidMessageException e) {
+                    throw new AssertionError(e);
+                }
+            }
+        }
+
+        return null;
+    }
+
     private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
         SignalServiceAddress source;
         if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
@@ -519,12 +547,10 @@ public final class IncomingMessageHandler {
             return true;
         }
 
-        if (content != null && content.getDataMessage().isPresent()) {
-            var message = content.getDataMessage().get();
-            if (message.getGroupContext().isPresent()) {
-                var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
-                return context.getGroupHelper().isGroupBlocked(groupId);
-            }
+        final var groupContext = getGroupContext(content);
+        if (groupContext != null) {
+            var groupId = GroupUtils.getGroupId(groupContext);
+            return context.getGroupHelper().isGroupBlocked(groupId);
         }
 
         return false;
@@ -540,38 +566,38 @@ public final class IncomingMessageHandler {
             return false;
         }
 
-        if (content == null || content.getDataMessage().isEmpty()) {
+        final var groupContext = getGroupContext(content);
+        if (groupContext == null) {
             return false;
         }
 
-        var message = content.getDataMessage().get();
-        if (message.getGroupContext().isEmpty()) {
-            return false;
-        }
-
-        if (message.getGroupContext().get().getGroupV1().isPresent()) {
-            var groupInfo = message.getGroupContext().get().getGroupV1().get();
+        if (groupContext.getGroupV1().isPresent()) {
+            var groupInfo = groupContext.getGroupV1().get();
             if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
                 return false;
             }
         }
 
-        var groupId = GroupUtils.getGroupId(message.getGroupContext().get());
+        var groupId = GroupUtils.getGroupId(groupContext);
         var group = context.getGroupHelper().getGroup(groupId);
         if (group == null) {
             return false;
         }
 
+        final var message = content.getDataMessage().orElse(null);
+
         final var recipientId = context.getRecipientHelper().resolveRecipient(source);
-        if (!group.isMember(recipientId) && !(group.isPendingMember(recipientId) && message.isGroupV2Update())) {
+        if (!group.isMember(recipientId) && !(
+                group.isPendingMember(recipientId) && message != null && message.isGroupV2Update()
+        )) {
             return true;
         }
 
         if (group.isAnnouncementGroup() && !group.isAdmin(recipientId)) {
-            return message.getBody().isPresent()
+            return message == null
+                    || message.getBody().isPresent()
                     || message.getAttachments().isPresent()
-                    || message.getQuote()
-                    .isPresent()
+                    || message.getQuote().isPresent()
                     || message.getPreviews().isPresent()
                     || message.getMentions().isPresent()
                     || message.getSticker().isPresent();
