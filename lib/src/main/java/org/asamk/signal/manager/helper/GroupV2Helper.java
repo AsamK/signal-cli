@@ -287,6 +287,17 @@ class GroupV2Helper {
         return ejectMembers(groupInfoV2, memberUuids);
     }
 
+    Pair<DecryptedGroup, GroupChange> refuseJoinRequestMembers(
+            GroupInfoV2 groupInfoV2, Set<RecipientId> members
+    ) throws IOException {
+        final var memberUuids = members.stream()
+                .map(context.getRecipientHelper()::resolveSignalServiceAddress)
+                .map(SignalServiceAddress::getServiceId)
+                .map(ServiceId::uuid)
+                .collect(Collectors.toSet());
+        return refuseJoinRequest(groupInfoV2, memberUuids);
+    }
+
     Pair<DecryptedGroup, GroupChange> revokeInvitedMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
@@ -511,6 +522,13 @@ class GroupV2Helper {
             }
         }).collect(Collectors.toSet());
         return commitChange(groupInfoV2, groupOperations.createRemoveInvitationChange(uuidCipherTexts));
+    }
+
+    private Pair<DecryptedGroup, GroupChange> refuseJoinRequest(
+            GroupInfoV2 groupInfoV2, Set<UUID> uuids
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        return commitChange(groupInfoV2, groupOperations.createRefuseGroupJoinRequest(uuids, false, List.of()));
     }
 
     private Pair<DecryptedGroup, GroupChange> ejectMembers(

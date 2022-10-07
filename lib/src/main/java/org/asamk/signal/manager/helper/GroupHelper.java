@@ -618,6 +618,12 @@ public class GroupHelper {
                 var groupGroupChangePair = groupV2Helper.revokeInvitedMembers(group, pendingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
+            var requestingRemoveMembers = new HashSet<>(removeMembers);
+            requestingRemoveMembers.retainAll(group.getRequestingMembers());
+            if (requestingRemoveMembers.size() > 0) {
+                var groupGroupChangePair = groupV2Helper.refuseJoinRequestMembers(group, requestingRemoveMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
         }
 
         if (admins != null) {
