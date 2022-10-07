@@ -593,8 +593,15 @@ public class GroupHelper {
         }
 
         if (members != null) {
+            final var requestingMembers = new HashSet<>(members);
+            requestingMembers.retainAll(group.getRequestingMembers());
+            if (requestingMembers.size() > 0) {
+                var groupGroupChangePair = groupV2Helper.approveJoinRequestMembers(group, requestingMembers);
+                result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+            }
             final var newMembers = new HashSet<>(members);
             newMembers.removeAll(group.getMembers());
+            newMembers.removeAll(group.getRequestingMembers());
             if (newMembers.size() > 0) {
                 var groupGroupChangePair = groupV2Helper.addMembers(group, newMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
