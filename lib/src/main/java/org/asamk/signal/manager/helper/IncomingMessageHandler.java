@@ -139,17 +139,23 @@ public final class IncomingMessageHandler {
                 } else {
                     final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
                     final var selfProfile = context.getProfileHelper().getSelfProfile();
-                    final var serviceId = ServiceId.parseOrThrow(e.getSender());
-                    if ((!sender.equals(account.getSelfRecipientId()) || e.getSenderDevice() != account.getDeviceId())
-                            && senderProfile != null
-                            && senderProfile.getCapabilities().contains(Profile.Capability.senderKey)
-                            && selfProfile != null
-                            && selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
-                        logger.debug("Received invalid message, requesting message resend.");
-                        actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope));
+                    final var serviceId = ServiceId.parseOrNull(e.getSender());
+                    if (serviceId != null) {
+                        final var isSelf = sender.equals(account.getSelfRecipientId())
+                                && e.getSenderDevice() == account.getDeviceId();
+                        final var isSenderSenderKeyCapable = senderProfile != null && senderProfile.getCapabilities()
+                                .contains(Profile.Capability.senderKey);
+                        final var isSelfSenderKeyCapable = selfProfile != null && selfProfile.getCapabilities()
+                                .contains(Profile.Capability.senderKey);
+                        if (!isSelf && isSenderSenderKeyCapable && isSelfSenderKeyCapable) {
+                            logger.debug("Received invalid message, requesting message resend.");
+                            actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope));
+                        } else {
+                            logger.debug("Received invalid message, queuing renew session action.");
+                            actions.add(new RenewSessionAction(sender, serviceId));
+                        }
                     } else {
-                        logger.debug("Received invalid message, queuing renew session action.");
-                        actions.add(new RenewSessionAction(sender, serviceId));
+                        logger.debug("Received invalid message from invalid sender: {}", e.getSender());
                     }
                 }
                 exception = e;
