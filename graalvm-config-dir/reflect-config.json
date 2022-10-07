@@ -1056,7 +1056,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"<init>","parameterTypes":["java.util.List"] }, 
     {"name":"groups","parameterTypes":[] }
   ]
 },
@@ -1066,15 +1066,15 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","int","boolean","boolean","java.util.List"] },
-    {"name":"groupId","parameterTypes":[] },
-    {"name":"expectedV2Id","parameterTypes":[] },
-    {"name":"name","parameterTypes":[] },
-    {"name":"color","parameterTypes":[] },
-    {"name":"messageExpirationTime","parameterTypes":[] },
-    {"name":"blocked","parameterTypes":[] },
-    {"name":"archived","parameterTypes":[] },
-    {"name":"members","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","int","boolean","boolean","java.util.List"] }, 
+    {"name":"archived","parameterTypes":[] }, 
+    {"name":"blocked","parameterTypes":[] }, 
+    {"name":"color","parameterTypes":[] }, 
+    {"name":"expectedV2Id","parameterTypes":[] }, 
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"members","parameterTypes":[] }, 
+    {"name":"messageExpirationTime","parameterTypes":[] }, 
+    {"name":"name","parameterTypes":[] }
   ]
 },
 {
@@ -1083,9 +1083,9 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] },
-    {"name":"uuid","parameterTypes":[] },
-    {"name":"number","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
   ]
 },
 {
@@ -1098,11 +1098,11 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] },
-    {"name":"groupId","parameterTypes":[] },
-    {"name":"masterKey","parameterTypes":[] },
-    {"name":"distributionId","parameterTypes":[] },
-    {"name":"blocked","parameterTypes":[] },
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","boolean","boolean"] }, 
+    {"name":"blocked","parameterTypes":[] }, 
+    {"name":"distributionId","parameterTypes":[] }, 
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"masterKey","parameterTypes":[] }, 
     {"name":"permissionDenied","parameterTypes":[] }
   ]
 },
@@ -1112,10 +1112,10 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","int","long"] },
-    {"name":"addedTimestamp","parameterTypes":[] },
-    {"name":"trustLevel","parameterTypes":[] },
-    {"name":"identityKey","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["java.lang.String","int","long"] }, 
+    {"name":"addedTimestamp","parameterTypes":[] }, 
+    {"name":"identityKey","parameterTypes":[] }, 
+    {"name":"trustLevel","parameterTypes":[] }
   ]
 },
 {
@@ -1180,10 +1180,10 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.util.List","long"] },
-    {"name":"lastId","parameterTypes":[] },
+    {"name":"<init>","parameterTypes":["java.util.List","long"] }, 
+    {"name":"lastId","parameterTypes":[] }, 
     {"name":"recipients","parameterTypes":[] }
-    ]
+  ]
 },
 {
   "name":"org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient",
@@ -1191,14 +1191,14 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile"] },
-    {"name":"id","parameterTypes":[] },
-    {"name":"number","parameterTypes":[] },
-    {"name":"uuid","parameterTypes":[] },
-    {"name":"profileKey","parameterTypes":[] },
-    {"name":"expiringProfileKeyCredential","parameterTypes":[] },
-    {"name":"contact","parameterTypes":[] },
-    {"name":"profile","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Contact","org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2$Storage$Recipient$Profile"] }, 
+    {"name":"contact","parameterTypes":[] }, 
+    {"name":"expiringProfileKeyCredential","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"profile","parameterTypes":[] }, 
+    {"name":"profileKey","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
   ]
 },
 {
@@ -1207,12 +1207,12 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","boolean","boolean","boolean"] },
-    {"name":"name","parameterTypes":[] },
-    {"name":"color","parameterTypes":[] },
-    {"name":"messageExpirationTime","parameterTypes":[] },
-    {"name":"blocked","parameterTypes":[] },
-    {"name":"archived","parameterTypes":[] },
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","boolean","boolean","boolean"] }, 
+    {"name":"archived","parameterTypes":[] }, 
+    {"name":"blocked","parameterTypes":[] }, 
+    {"name":"color","parameterTypes":[] }, 
+    {"name":"messageExpirationTime","parameterTypes":[] }, 
+    {"name":"name","parameterTypes":[] }, 
     {"name":"profileSharingEnabled","parameterTypes":[] }
   ]
 },
@@ -1222,16 +1222,16 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.Set"] },
-    {"name":"lastUpdateTimestamp","parameterTypes":[] },
-    {"name":"givenName","parameterTypes":[] },
-    {"name":"familyName","parameterTypes":[] },
-    {"name":"about","parameterTypes":[] },
-    {"name":"aboutEmoji","parameterTypes":[] },
-    {"name":"avatarUrlPath","parameterTypes":[] },
-    {"name":"mobileCoinAddress","parameterTypes":[] },
-    {"name":"unidentifiedAccessMode","parameterTypes":[] },
-    {"name":"capabilities","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["long","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.util.Set"] }, 
+    {"name":"about","parameterTypes":[] }, 
+    {"name":"aboutEmoji","parameterTypes":[] }, 
+    {"name":"avatarUrlPath","parameterTypes":[] }, 
+    {"name":"capabilities","parameterTypes":[] }, 
+    {"name":"familyName","parameterTypes":[] }, 
+    {"name":"givenName","parameterTypes":[] }, 
+    {"name":"lastUpdateTimestamp","parameterTypes":[] }, 
+    {"name":"mobileCoinAddress","parameterTypes":[] }, 
+    {"name":"unidentifiedAccessMode","parameterTypes":[] }
   ]
 },
 {
@@ -1250,7 +1250,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"<init>","parameterTypes":["java.util.List"] }, 
     {"name":"sharedSenderKeys","parameterTypes":[] }
   ]
 },
@@ -1260,10 +1260,10 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["long","int","java.lang.String"] },
-    {"name":"recipientId","parameterTypes":[] },
-    {"name":"deviceId","parameterTypes":[] },
-    {"name":"distributionId","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["long","int","java.lang.String"] }, 
+    {"name":"deviceId","parameterTypes":[] }, 
+    {"name":"distributionId","parameterTypes":[] }, 
+    {"name":"recipientId","parameterTypes":[] }
   ]
 },
 {
@@ -1298,7 +1298,7 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.util.List"] },
+    {"name":"<init>","parameterTypes":["java.util.List"] }, 
     {"name":"stickers","parameterTypes":[] }
   ]
 },
@@ -1308,10 +1308,10 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[
-    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] },
-    {"name":"packId","parameterTypes":[] },
-    {"name":"packKey","parameterTypes":[] },
-    {"name":"installed","parameterTypes":[] }
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] }, 
+    {"name":"installed","parameterTypes":[] }, 
+    {"name":"packId","parameterTypes":[] }, 
+    {"name":"packKey","parameterTypes":[] }
   ]
 },
 {
