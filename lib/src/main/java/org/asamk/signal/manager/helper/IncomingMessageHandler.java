@@ -185,10 +185,18 @@ public final class IncomingMessageHandler {
             account.getMessageSendLogStore().deleteEntryForRecipient(envelope.getTimestamp(), sender, senderDeviceId);
         }
 
+        var notAllowedToSendToGroup = isNotAllowedToSendToGroup(envelope, content);
+        final var groupContext = getGroupContext(content);
+        if (groupContext != null && groupContext.getGroupV2().isPresent()) {
+            handleGroupV2Context(groupContext.getGroupV2().get());
+        }
+        // Check again in case the user just joined the group
+        notAllowedToSendToGroup = notAllowedToSendToGroup && isNotAllowedToSendToGroup(envelope, content);
+
         if (isMessageBlocked(envelope, content)) {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             return List.of();
-        } else if (isNotAllowedToSendToGroup(envelope, content)) {
+        } else if (notAllowedToSendToGroup) {
             logger.info("Ignoring a group message from an unauthorized sender (no member or admin): {} {}",
                     (envelope.hasSourceUuid() ? envelope.getSourceAddress() : content.getSender()).getIdentifier(),
                     envelope.getTimestamp());
