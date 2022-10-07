@@ -86,7 +86,7 @@ public class MessageSendLogStore implements AutoCloseable {
             final ServiceId serviceId, final int deviceId, final long timestamp, final boolean isSenderKey
     ) {
         final var sql = """
-                        SELECT group_id, content, content_hint
+                        SELECT group_id, content, content_hint, urgent
                         FROM %s l
                              INNER JOIN %s lc ON l.content_id = lc._id
                         WHERE l.uuid = ? AND l.device_id = ? AND lc.timestamp = ?
