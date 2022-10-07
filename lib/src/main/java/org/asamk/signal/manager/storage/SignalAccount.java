@@ -402,7 +402,7 @@ public class SignalAccount implements Closeable {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
         }
-        if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
+        if (isPrimaryDevice() && getPniIdentityKeyPair() == null && getPni() != null) {
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
     }
