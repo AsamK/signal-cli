@@ -402,6 +402,7 @@ public class SignalAccount implements Closeable {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
         }
+        getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
         if (isPrimaryDevice() && getPniIdentityKeyPair() == null && getPni() != null) {
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
