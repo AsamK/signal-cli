@@ -4,6 +4,7 @@ import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -290,13 +291,16 @@ public class GroupHelper {
 
     public Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, InactiveGroupLinkException {
+    ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException {
         final DecryptedGroupJoinInfo groupJoinInfo;
         try {
             groupJoinInfo = context.getGroupV2Helper()
                     .getDecryptedGroupJoinInfo(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword());
         } catch (GroupLinkNotActiveException e) {
             throw new InactiveGroupLinkException("Group link inactive (reason: " + e.getReason() + ")", e);
+        }
+        if (groupJoinInfo.getPendingAdminApproval()) {
+            throw new PendingAdminApprovalException("You have already requested to join the group.");
         }
         final var groupChange = context.getGroupV2Helper()
                 .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);

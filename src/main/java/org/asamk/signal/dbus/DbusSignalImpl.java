@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
@@ -778,6 +779,8 @@ public class DbusSignalImpl implements Signal {
             }
             final var result = m.joinGroup(linkUrl);
             return result.first().serialize();
+        } catch (PendingAdminApprovalException e) {
+            throw new Error.Failure("Pending admin approval: " + e.getMessage());
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException | InactiveGroupLinkException e) {
             throw new Error.Failure("Group link is invalid: " + e.getMessage());
         } catch (GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {

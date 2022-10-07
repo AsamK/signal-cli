@@ -12,6 +12,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -108,7 +109,7 @@ public interface Manager extends Closeable {
 
     Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, InactiveGroupLinkException;
+    ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException;
 
     SendMessageResults sendTypingMessage(
             TypingAction action, Set<RecipientIdentifier> recipients

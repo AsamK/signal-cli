@@ -27,6 +27,7 @@ import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
@@ -431,7 +432,7 @@ class ManagerImpl implements Manager {
     @Override
     public Pair<GroupId, SendGroupMessageResults> joinGroup(
             GroupInviteLinkUrl inviteLinkUrl
-    ) throws IOException, InactiveGroupLinkException {
+    ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException {
         return context.getGroupHelper().joinGroup(inviteLinkUrl);
     }
 

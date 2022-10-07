@@ -9,6 +9,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
+import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
@@ -94,6 +95,8 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                     .getSimpleName() + ")", e);
         } catch (InactiveGroupLinkException e) {
             throw new UserErrorException("Group link is not valid: " + e.getMessage());
+        } catch (PendingAdminApprovalException e) {
+            throw new UserErrorException("Pending admin approval: " + e.getMessage());
         }
     }
 }
