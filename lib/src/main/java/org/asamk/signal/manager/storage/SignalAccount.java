@@ -1200,6 +1200,13 @@ public class SignalAccount implements Closeable {
             public RecipientId resolveRecipientTrusted(final SignalServiceAddress address) {
                 return getRecipientStore().resolveRecipientTrusted(address);
             }
+
+            @Override
+            public RecipientId resolveRecipientTrusted(
+                    final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
+            ) {
+                return getRecipientStore().resolveRecipientTrusted(aci, pni, number);
+            }
         };
     }
 

@@ -217,13 +217,14 @@ class ManagerImpl implements Manager {
 
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);
-            final var aci = registeredUsers.get(number);
-            final var profile = aci == null
+            final var user = registeredUsers.get(number);
+            final var serviceId = user == null ? null : user.getServiceId();
+            final var profile = serviceId == null
                     ? null
                     : context.getProfileHelper()
-                            .getRecipientProfile(account.getRecipientResolver().resolveRecipient(aci));
+                            .getRecipientProfile(account.getRecipientResolver().resolveRecipient(serviceId));
             return new UserStatus(number.isEmpty() ? null : number,
-                    aci == null ? null : aci.uuid(),
+                    serviceId == null ? null : serviceId.uuid(),
                     profile != null
                             && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED);
         }));

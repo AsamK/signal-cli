@@ -11,6 +11,7 @@ import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
@@ -50,9 +51,9 @@ public class RecipientHelper {
         // Address in recipient store doesn't have a uuid, this shouldn't happen
         // Try to retrieve the uuid from the server
         final var number = address.number().get();
-        final ACI aci;
+        final ServiceId serviceId;
         try {
-            aci = getRegisteredUser(number);
+            serviceId = getRegisteredUser(number);
         } catch (UnregisteredRecipientException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number);
             // Return SignalServiceAddress with unknown UUID
@@ -63,7 +64,7 @@ public class RecipientHelper {
             return address.toSignalServiceAddress();
         }
         return account.getRecipientAddressResolver()
-                .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(aci))
+                .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(serviceId))
                 .toSignalServiceAddress();
     }
 
@@ -101,12 +102,13 @@ public class RecipientHelper {
             return recipientId;
         }
         final var number = address.getNumber().get();
-        final var uuid = getRegisteredUser(number);
-        return account.getRecipientTrustedResolver().resolveRecipientTrusted(new SignalServiceAddress(uuid, number));
+        final var serviceId = getRegisteredUser(number);
+        return account.getRecipientTrustedResolver()
+                .resolveRecipientTrusted(new SignalServiceAddress(serviceId, number));
     }
 
-    public Map<String, ACI> getRegisteredUsers(final Set<String> numbers) throws IOException {
-        Map<String, ACI> registeredUsers;
+    public Map<String, RegisteredUser> getRegisteredUsers(final Set<String> numbers) throws IOException {
+        Map<String, RegisteredUser> registeredUsers;
         try {
             registeredUsers = getRegisteredUsersV2(numbers, true);
         } catch (IOException e) {
@@ -115,30 +117,30 @@ public class RecipientHelper {
         }
 
         // Store numbers as recipients, so we have the number/uuid association
-        registeredUsers.forEach((number, aci) -> account.getRecipientTrustedResolver()
-                .resolveRecipientTrusted(new SignalServiceAddress(aci, number)));
+        registeredUsers.forEach((number, u) -> account.getRecipientTrustedResolver()
+                .resolveRecipientTrusted(u.aci, u.pni, Optional.of(number)));
 
         return registeredUsers;
     }
 
-    private ACI getRegisteredUser(final String number) throws IOException, UnregisteredRecipientException {
-        final Map<String, ACI> aciMap;
+    private ServiceId getRegisteredUser(final String number) throws IOException, UnregisteredRecipientException {
+        final Map<String, RegisteredUser> aciMap;
         try {
             aciMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
             throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
         }
-        final var uuid = aciMap.get(number);
-        if (uuid == null) {
+        final var user = aciMap.get(number);
+        if (user == null) {
             throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
         }
-        return uuid;
+        return user.getServiceId();
     }
 
-    private Map<String, ACI> getRegisteredUsersV1(final Set<String> numbers) throws IOException {
-        final Map<String, ACI> registeredUsers;
+    private Map<String, RegisteredUser> getRegisteredUsersV1(final Set<String> numbers) throws IOException {
+        final Map<String, ACI> response;
         try {
-            registeredUsers = dependencies.getAccountManager()
+            response = dependencies.getAccountManager()
                     .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
                             numbers,
                             serviceEnvironmentConfig.getCdsMrenclave());
@@ -146,10 +148,15 @@ public class RecipientHelper {
                  UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
             throw new IOException(e);
         }
+        final var registeredUsers = new HashMap<String, RegisteredUser>();
+        response.forEach((key, value) -> registeredUsers.put(key,
+                new RegisteredUser(Optional.of(value), Optional.empty())));
         return registeredUsers;
     }
 
-    private Map<String, ACI> getRegisteredUsersV2(final Set<String> numbers, boolean useCompat) throws IOException {
+    private Map<String, RegisteredUser> getRegisteredUsersV2(
+            final Set<String> numbers, boolean useCompat
+    ) throws IOException {
         // Only partial refresh is implemented here
         final CdsiV2Service.Response response;
         try {
@@ -168,16 +175,29 @@ public class RecipientHelper {
         }
         logger.debug("CDSI request successful, quota used by this request: {}", response.getQuotaUsedDebugOnly());
 
-        final var registeredUsers = new HashMap<String, ACI>();
-        response.getResults().forEach((key, value) -> {
-            if (value.getAci().isPresent()) {
-                registeredUsers.put(key, value.getAci().get());
-            }
-        });
+        final var registeredUsers = new HashMap<String, RegisteredUser>();
+        response.getResults()
+                .forEach((key, value) -> registeredUsers.put(key,
+                        new RegisteredUser(value.getAci(), Optional.of(value.getPni()))));
         return registeredUsers;
     }
 
     private ACI getRegisteredUserByUsername(String username) throws IOException {
         return dependencies.getAccountManager().getAciByUsername(username);
+    }
+
+    public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {
+
+        public RegisteredUser {
+            aci = aci.isPresent() && aci.get().equals(ServiceId.UNKNOWN) ? Optional.empty() : aci;
+            pni = pni.isPresent() && pni.get().equals(ServiceId.UNKNOWN) ? Optional.empty() : pni;
+            if (aci.isEmpty() && pni.isEmpty()) {
+                throw new AssertionError("Must have either a ACI or PNI!");
+            }
+        }
+
+        public ServiceId getServiceId() {
+            return aci.map(a -> (ServiceId) a).or(this::pni).orElse(null);
+        }
     }
 }

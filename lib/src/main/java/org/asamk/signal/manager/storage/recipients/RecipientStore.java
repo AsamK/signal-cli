@@ -12,6 +12,7 @@ import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
+import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -154,7 +155,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     public RecipientId resolveRecipient(
-            final String number, Supplier<ACI> aciSupplier
+            final String number, Supplier<ServiceId> serviceIdSupplier
     ) throws UnregisteredRecipientException {
         final Optional<RecipientWithAddress> byNumber;
         try (final var connection = database.getConnection()) {
@@ -163,12 +164,13 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             throw new RuntimeException("Failed read from recipient store", e);
         }
         if (byNumber.isEmpty() || byNumber.get().address().serviceId().isEmpty()) {
-            final var aci = aciSupplier.get();
-            if (aci == null) {
-                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
+            final var serviceId = serviceIdSupplier.get();
+            if (serviceId == null) {
+                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
+                        number));
             }
 
-            return resolveRecipient(new RecipientAddress(aci, number), false, false);
+            return resolveRecipient(new RecipientAddress(serviceId, number), false, false);
         }
         return byNumber.get().id();
     }
@@ -189,6 +191,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     @Override
     public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
         return resolveRecipient(new RecipientAddress(address), true, false);
+    }
+
+    @Override
+    public RecipientId resolveRecipientTrusted(
+            final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
+    ) {
+        final var serviceId = aci.map(a -> (ServiceId) a).or(() -> pni);
+        return resolveRecipient(new RecipientAddress(serviceId, number), true, false);
     }
 
     @Override
