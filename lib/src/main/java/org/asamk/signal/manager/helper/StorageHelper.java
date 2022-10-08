@@ -101,8 +101,7 @@ public class StorageHelper {
         }
 
         final var contactRecord = record.getContact().get();
-        final var address = new RecipientAddress(contactRecord.getServiceId().uuid(),
-                contactRecord.getNumber().orElse(null));
+        final var address = new RecipientAddress(contactRecord.getServiceId(), contactRecord.getNumber().orElse(null));
         final var recipientId = account.getRecipientResolver().resolveRecipient(address);
 
         final var contact = account.getContactStore().getContact(recipientId);

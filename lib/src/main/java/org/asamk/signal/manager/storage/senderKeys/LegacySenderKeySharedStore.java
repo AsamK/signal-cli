@@ -7,7 +7,6 @@ import org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore.SenderKe
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,11 +36,11 @@ public class LegacySenderKeySharedStore {
                 if (recipientId == null) {
                     continue;
                 }
-                final var uuid = addressResolver.resolveRecipientAddress(recipientId).uuid();
-                if (uuid.isEmpty()) {
+                final var serviceId = addressResolver.resolveRecipientAddress(recipientId).serviceId();
+                if (serviceId.isEmpty()) {
                     continue;
                 }
-                final var entry = new SenderKeySharedEntry(ServiceId.from(uuid.get()), senderKey.deviceId);
+                final var entry = new SenderKeySharedEntry(serviceId.get(), senderKey.deviceId);
                 final var distributionId = DistributionId.from(senderKey.distributionId);
                 var entries = sharedSenderKeys.get(distributionId);
                 if (entries == null) {

@@ -5,7 +5,6 @@ import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
 import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 import java.util.Set;
@@ -40,22 +39,27 @@ public record Group(
                 groupInfo.getMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
+                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getPendingMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
+                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getRequestingMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
+                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getAdminMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
+                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getBannedMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
+                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.isBlocked(),
                 groupInfo.getMessageExpirationTimer(),

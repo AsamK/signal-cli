@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-
 public class UnregisteredRecipientException extends Exception {
 
     private final RecipientAddress sender;

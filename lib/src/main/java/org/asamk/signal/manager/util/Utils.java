@@ -87,7 +87,7 @@ public class Utils {
             version = 1;
             ownId = ownAddress.number().get().getBytes();
             theirId = theirAddress.number().get().getBytes();
-        } else if (isUuidCapable && theirAddress.uuid().isPresent()) {
+        } else if (isUuidCapable && theirAddress.serviceId().isPresent()) {
             // Version 2: UUID user
             version = 2;
             ownId = ownAddress.getServiceId().toByteArray();

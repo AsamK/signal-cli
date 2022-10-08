@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
@@ -57,7 +58,7 @@ public class Utils {
 
     public static RecipientAddress getRecipientAddressFromIdentifier(final String identifier) {
         if (UuidUtil.isUuid(identifier)) {
-            return new RecipientAddress(UuidUtil.parseOrThrow(identifier));
+            return new RecipientAddress(ServiceId.parseOrThrow(identifier));
         } else {
             return new RecipientAddress(Optional.empty(), Optional.of(identifier));
         }

@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -163,13 +162,13 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from recipient store", e);
         }
-        if (byNumber.isEmpty() || byNumber.get().address().uuid().isEmpty()) {
+        if (byNumber.isEmpty() || byNumber.get().address().serviceId().isEmpty()) {
             final var aci = aciSupplier.get();
             if (aci == null) {
-                throw new UnregisteredRecipientException(new RecipientAddress(null, number));
+                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
             }
 
-            return resolveRecipient(new RecipientAddress(aci.uuid(), number), false, false);
+            return resolveRecipient(new RecipientAddress(aci, number), false, false);
         }
         return byNumber.get().id();
     }
@@ -399,7 +398,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 for (final var recipient : recipients.values()) {
                     statement.setLong(1, recipient.getRecipientId().id());
                     statement.setString(2, recipient.getAddress().number().orElse(null));
-                    statement.setBytes(3, recipient.getAddress().uuid().map(UuidUtil::toByteArray).orElse(null));
+                    statement.setBytes(3,
+                            recipient.getAddress()
+                                    .serviceId()
+                                    .map(ServiceId::uuid)
+                                    .map(UuidUtil::toByteArray)
+                                    .orElse(null));
                     statement.executeUpdate();
                 }
             }
@@ -576,22 +580,22 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var byNumber = address.number().isEmpty()
                 ? Optional.<RecipientWithAddress>empty()
                 : findByNumber(connection, address.number().get());
-        final var byUuid = address.uuid().isEmpty()
+        final var byUuid = address.serviceId().isEmpty()
                 ? Optional.<RecipientWithAddress>empty()
-                : findByUuid(connection, address.uuid().get());
+                : findByServiceId(connection, address.serviceId().get());
 
         if (byNumber.isEmpty() && byUuid.isEmpty()) {
             logger.debug("Got new recipient, both uuid and number are unknown");
 
-            if (isHighTrust || address.uuid().isEmpty() || address.number().isEmpty()) {
+            if (isHighTrust || address.serviceId().isEmpty() || address.number().isEmpty()) {
                 return new Pair<>(addNewRecipient(connection, address), Optional.empty());
             }
 
-            return new Pair<>(addNewRecipient(connection, new RecipientAddress(address.uuid().get())),
+            return new Pair<>(addNewRecipient(connection, new RecipientAddress(address.serviceId().get())),
                     Optional.empty());
         }
 
-        if (!isHighTrust || address.uuid().isEmpty() || address.number().isEmpty() || byNumber.equals(byUuid)) {
+        if (!isHighTrust || address.serviceId().isEmpty() || address.number().isEmpty() || byNumber.equals(byUuid)) {
             return new Pair<>(byUuid.or(() -> byNumber).map(RecipientWithAddress::id).get(), Optional.empty());
         }
 
@@ -604,14 +608,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var byNumberRecipient = byNumber.get();
 
         if (byUuid.isEmpty()) {
-            if (byNumberRecipient.address().uuid().isPresent()) {
+            if (byNumberRecipient.address().serviceId().isPresent()) {
                 logger.debug(
                         "Got recipient {} existing with number, but different uuid, so stripping its number and adding new recipient",
                         byNumberRecipient.id());
 
                 updateRecipientAddress(connection,
                         byNumberRecipient.id(),
-                        new RecipientAddress(byNumberRecipient.address().uuid().get()));
+                        new RecipientAddress(byNumberRecipient.address().serviceId().get()));
                 return new Pair<>(addNewRecipient(connection, address), Optional.empty());
             }
 
@@ -623,7 +627,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
         final var byUuidRecipient = byUuid.get();
 
-        if (byNumberRecipient.address().uuid().isPresent()) {
+        if (byNumberRecipient.address().serviceId().isPresent()) {
             logger.debug(
                     "Got separate recipients for high trust number {} and uuid {}, recipient for number has different uuid, so stripping its number",
                     byNumberRecipient.id(),
@@ -631,7 +635,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
             updateRecipientAddress(connection,
                     byNumberRecipient.id(),
-                    new RecipientAddress(byNumberRecipient.address().uuid().get()));
+                    new RecipientAddress(byNumberRecipient.address().serviceId().get()));
             updateRecipientAddress(connection, byUuidRecipient.id(), address);
             return new Pair<>(byUuidRecipient.id(), Optional.empty());
         }
@@ -658,7 +662,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setString(1, address.number().orElse(null));
-            statement.setBytes(2, address.uuid().map(UuidUtil::toByteArray).orElse(null));
+            statement.setBytes(2, address.serviceId().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
             statement.executeUpdate();
             final var generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
@@ -697,7 +701,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setString(1, address.number().orElse(null));
-            statement.setBytes(2, address.uuid().map(UuidUtil::toByteArray).orElse(null));
+            statement.setBytes(2, address.serviceId().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
             statement.setLong(3, recipientId.id());
             statement.executeUpdate();
         }
@@ -761,8 +765,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         }
     }
 
-    private Optional<RecipientWithAddress> findByUuid(
-            final Connection connection, final UUID uuid
+    private Optional<RecipientWithAddress> findByServiceId(
+            final Connection connection, final ServiceId serviceId
     ) throws SQLException {
         final var sql = """
                         SELECT r._id, r.number, r.uuid
@@ -770,7 +774,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                         WHERE r.uuid = ?
                         """.formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, UuidUtil.toByteArray(uuid));
+            statement.setBytes(1, UuidUtil.toByteArray(serviceId.uuid()));
             return Utils.executeQueryForOptional(statement, this::getRecipientWithAddressFromResultSet);
         }
     }
@@ -835,9 +839,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private RecipientAddress getRecipientAddressFromResultSet(ResultSet resultSet) throws SQLException {
-        final var uuid = Optional.ofNullable(resultSet.getBytes("uuid")).map(UuidUtil::parseOrNull);
+        final var serviceId = Optional.ofNullable(resultSet.getBytes("uuid")).map(ServiceId::parseOrNull);
         final var number = Optional.ofNullable(resultSet.getString("number"));
-        return new RecipientAddress(uuid, number);
+        return new RecipientAddress(serviceId, Optional.empty(), number);
     }
 
     private RecipientId getRecipientIdFromResultSet(ResultSet resultSet) throws SQLException {

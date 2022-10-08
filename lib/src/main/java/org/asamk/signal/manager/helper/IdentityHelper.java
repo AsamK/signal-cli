@@ -85,7 +85,7 @@ public class IdentityHelper {
                 account.getAciIdentityKeyPair().getPublicKey(),
                 address.getServiceId().equals(serviceId)
                         ? address
-                        : new RecipientAddress(serviceId.uuid(), address.number().orElse(null)),
+                        : new RecipientAddress(serviceId, address.number().orElse(null)),
                 theirIdentityKey);
     }
 

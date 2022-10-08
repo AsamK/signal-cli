@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,8 +43,8 @@ public class LegacyProfileStore {
             if (node.isArray()) {
                 for (var entry : node) {
                     var name = entry.hasNonNull("name") ? entry.get("name").asText() : null;
-                    var uuid = entry.hasNonNull("uuid") ? UuidUtil.parseOrNull(entry.get("uuid").asText()) : null;
-                    final var address = new RecipientAddress(uuid, name);
+                    var serviceId = entry.hasNonNull("uuid") ? ServiceId.parseOrNull(entry.get("uuid").asText()) : null;
+                    final var address = new RecipientAddress(serviceId, name);
                     ProfileKey profileKey = null;
                     try {
                         profileKey = new ProfileKey(Base64.getDecoder().decode(entry.get("profileKey").asText()));

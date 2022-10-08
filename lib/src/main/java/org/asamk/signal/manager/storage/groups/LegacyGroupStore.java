@@ -18,7 +18,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.File;
@@ -45,7 +45,7 @@ public class LegacyGroupStore {
             if (g instanceof Storage.GroupV1 g1) {
                 final var members = g1.members.stream().map(m -> {
                     if (m.recipientId == null) {
-                        return recipientResolver.resolveRecipient(new RecipientAddress(UuidUtil.parseOrNull(m.uuid),
+                        return recipientResolver.resolveRecipient(new RecipientAddress(ServiceId.parseOrNull(m.uuid),
                                 m.number));
                     }
 

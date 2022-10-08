@@ -212,7 +212,7 @@ public class ReceiveHelper {
                 if (exception instanceof UntrustedIdentityException) {
                     logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
-                    final var recipientId = account.getRecipientResolver().resolveRecipient(address);
+                    final var recipientId = account.getRecipientResolver().resolveRecipient(address.getServiceId());
                     if (!envelope.hasSourceUuid()) {
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
@@ -260,7 +260,7 @@ public class ReceiveHelper {
             }
             if (!envelope.hasSourceUuid()) {
                 final var identifier = ((UntrustedIdentityException) exception).getSender();
-                final var recipientId = account.getRecipientResolver().resolveRecipient(identifier);
+                final var recipientId = account.getRecipientResolver().resolveRecipient(identifier.getServiceId());
                 try {
                     account.getMessageCache().replaceSender(cachedMessage, recipientId);
                 } catch (IOException ioException) {

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,8 +36,8 @@ public class LegacyRecipientStore {
             if (node.isArray()) {
                 for (var recipient : node) {
                     var recipientName = recipient.get("name").asText();
-                    var uuid = UuidUtil.parseOrThrow(recipient.get("uuid").asText());
-                    addresses.add(new RecipientAddress(uuid, recipientName));
+                    var serviceId = ServiceId.parseOrThrow(recipient.get("uuid").asText());
+                    addresses.add(new RecipientAddress(serviceId, recipientName));
                 }
             }
 

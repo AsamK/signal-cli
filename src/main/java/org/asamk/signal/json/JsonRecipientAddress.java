@@ -1,6 +1,6 @@
 package org.asamk.signal.json;
 
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.manager.api.RecipientAddress;
 
 import java.util.UUID;
 

@@ -6,7 +6,7 @@ import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,7 +31,7 @@ public class LegacyRecipientStore2 {
 
             final var recipients = storage.recipients.stream().map(r -> {
                 final var recipientId = new RecipientId(r.id, recipientStore);
-                final var address = new RecipientAddress(Optional.ofNullable(r.uuid).map(UuidUtil::parseOrThrow),
+                final var address = new RecipientAddress(Optional.ofNullable(r.uuid).map(ServiceId::parseOrThrow),
                         Optional.ofNullable(r.number));
 
                 Contact contact = null;

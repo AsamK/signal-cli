@@ -6,7 +6,6 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ public class RecipientHelper {
 
     public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
-        if (address.number().isEmpty() || address.uuid().isPresent()) {
+        if (address.number().isEmpty() || address.serviceId().isPresent()) {
             return address.toSignalServiceAddress();
         }
 
@@ -127,11 +126,11 @@ public class RecipientHelper {
         try {
             aciMap = getRegisteredUsers(Set.of(number));
         } catch (NumberFormatException e) {
-            throw new UnregisteredRecipientException(new RecipientAddress(null, number));
+            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
         }
         final var uuid = aciMap.get(number);
         if (uuid == null) {
-            throw new UnregisteredRecipientException(new RecipientAddress(null, number));
+            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
         }
         return uuid;
     }

@@ -19,6 +19,6 @@ public interface RecipientResolver {
     }
 
     default RecipientId resolveRecipient(ServiceId serviceId) {
-        return resolveRecipient(new RecipientAddress(serviceId.uuid()));
+        return resolveRecipient(new RecipientAddress(serviceId));
     }
 }

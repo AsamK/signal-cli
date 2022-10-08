@@ -2,10 +2,10 @@ package org.asamk.signal;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.RecipientAddress;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.Hex;

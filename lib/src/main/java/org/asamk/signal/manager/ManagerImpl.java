@@ -29,6 +29,7 @@ import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.ReceiveConfig;
+import org.asamk.signal.manager.api.Recipient;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
@@ -54,7 +55,6 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.recipients.Profile;
-import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
@@ -707,13 +707,13 @@ class ManagerImpl implements Manager {
 
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) {
-        account.removeRecipient(account.getRecipientResolver().resolveRecipient(recipient.toPartialRecipientAddress()));
+        account.removeRecipient(account.getRecipientResolver().resolveRecipient(recipient.getIdentifier()));
     }
 
     @Override
     public void deleteContact(final RecipientIdentifier.Single recipient) {
         account.getContactStore()
-                .deleteContact(account.getRecipientResolver().resolveRecipient(recipient.toPartialRecipientAddress()));
+                .deleteContact(account.getRecipientResolver().resolveRecipient(recipient.getIdentifier()));
     }
 
     @Override
@@ -1005,7 +1005,16 @@ class ManagerImpl implements Manager {
         }
         // refresh profiles of explicitly given recipients
         context.getProfileHelper().refreshRecipientProfiles(recipientIds);
-        return account.getRecipientStore().getRecipients(onlyContacts, blocked, recipientIds, name);
+        return account.getRecipientStore()
+                .getRecipients(onlyContacts, blocked, recipientIds, name)
+                .stream()
+                .map(s -> new Recipient(s.getRecipientId(),
+                        s.getAddress().toApiRecipientAddress(),
+                        s.getContact(),
+                        s.getProfileKey(),
+                        s.getExpiringProfileKeyCredential(),
+                        s.getProfile()))
+                .toList();
     }
 
     @Override
@@ -1049,7 +1058,7 @@ class ManagerImpl implements Manager {
                 .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(identityInfo.getServiceId()));
         final var scannableFingerprint = context.getIdentityHelper()
                 .computeSafetyNumberForScanning(identityInfo.getServiceId(), identityInfo.getIdentityKey());
-        return new Identity(address,
+        return new Identity(address.toApiRecipientAddress(),
                 identityInfo.getIdentityKey(),
                 context.getIdentityHelper()
                         .computeSafetyNumber(identityInfo.getServiceId(), identityInfo.getIdentityKey()),

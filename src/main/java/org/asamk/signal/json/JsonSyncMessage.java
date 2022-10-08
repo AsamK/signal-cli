@@ -3,8 +3,8 @@ package org.asamk.signal.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.RecipientAddress;
 import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 import java.util.List;
 

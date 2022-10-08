@@ -97,7 +97,8 @@ public final class IncomingMessageHandler {
             } catch (ProtocolUntrustedIdentityException e) {
                 final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
                 final var exception = new UntrustedIdentityException(account.getRecipientAddressResolver()
-                        .resolveRecipientAddress(recipientId), e.getSenderDevice());
+                        .resolveRecipientAddress(recipientId)
+                        .toApiRecipientAddress(), e.getSenderDevice());
                 return new Pair<>(List.of(), exception);
             } catch (Exception e) {
                 return new Pair<>(List.of(), e);
@@ -129,7 +130,8 @@ public final class IncomingMessageHandler {
                 final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
                 actions.add(new RetrieveProfileAction(recipientId));
                 exception = new UntrustedIdentityException(account.getRecipientAddressResolver()
-                        .resolveRecipientAddress(recipientId), e.getSenderDevice());
+                        .resolveRecipientAddress(recipientId)
+                        .toApiRecipientAddress(), e.getSenderDevice());
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException |
                      ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.UUID;
 
@@ -43,6 +44,6 @@ public class LegacyContactInfo {
 
     @JsonIgnore
     public RecipientAddress getAddress() {
-        return new RecipientAddress(uuid, number);
+        return new RecipientAddress(uuid == null ? null : ServiceId.from(uuid), number);
     }
 }

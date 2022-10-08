@@ -8,7 +8,6 @@ import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,13 +37,11 @@ public class LegacySenderKeyRecordStore {
 
         final var senderKeys = parseFileNames(files, resolver).stream().map(key -> {
             final var record = loadSenderKeyLocked(key, senderKeysPath);
-            final var uuid = addressResolver.resolveRecipientAddress(key.recipientId).uuid();
-            if (record == null || uuid.isEmpty()) {
+            final var serviceId = addressResolver.resolveRecipientAddress(key.recipientId).serviceId();
+            if (record == null || serviceId.isEmpty()) {
                 return null;
             }
-            return new Pair<>(new SenderKeyRecordStore.Key(ServiceId.from(uuid.get()),
-                    key.deviceId,
-                    key.distributionId), record);
+            return new Pair<>(new SenderKeyRecordStore.Key(serviceId.get(), key.deviceId, key.distributionId), record);
         }).filter(Objects::nonNull).toList();
 
         senderKeyStore.addLegacySenderKeys(senderKeys);

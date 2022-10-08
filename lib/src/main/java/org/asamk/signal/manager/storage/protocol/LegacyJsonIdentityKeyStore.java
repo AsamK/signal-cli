@@ -13,6 +13,7 @@ import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
@@ -100,7 +101,7 @@ public class LegacyJsonIdentityKeyStore {
                             : null;
                     final var address = uuid == null
                             ? Utils.getRecipientAddressFromIdentifier(trustedKeyName)
-                            : new RecipientAddress(uuid, trustedKeyName);
+                            : new RecipientAddress(ServiceId.from(uuid), trustedKeyName);
                     try {
                         var id = new IdentityKey(Base64.getDecoder().decode(trustedKey.get("identityKey").asText()), 0);
                         var trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
