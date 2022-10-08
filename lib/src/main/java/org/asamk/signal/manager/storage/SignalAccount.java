@@ -88,6 +88,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.security.SecureRandom;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Comparator;
@@ -408,9 +409,11 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    private void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId) {
+    private void mergeRecipients(
+            final Connection connection, RecipientId recipientId, RecipientId toBeMergedRecipientId
+    ) throws SQLException {
         getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
-        getGroupStore().mergeRecipients(recipientId, toBeMergedRecipientId);
+        getGroupStore().mergeRecipients(connection, recipientId, toBeMergedRecipientId);
     }
 
     public void removeRecipient(final RecipientId recipientId) {

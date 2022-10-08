@@ -192,7 +192,9 @@ public class GroupStore {
         return Stream.concat(getGroupsV2().stream(), getGroupsV1().stream()).toList();
     }
 
-    public void mergeRecipients(final RecipientId recipientId, final RecipientId toBeMergedRecipientId) {
+    public void mergeRecipients(
+            final Connection connection, final RecipientId recipientId, final RecipientId toBeMergedRecipientId
+    ) throws SQLException {
         final var sql = (
                 """
                 UPDATE OR REPLACE %s
@@ -200,17 +202,13 @@ public class GroupStore {
                 WHERE recipient_id = ?
                 """
         ).formatted(TABLE_GROUP_V1_MEMBER);
-        try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, recipientId.id());
-                statement.setLong(2, toBeMergedRecipientId.id());
-                final var updatedRows = statement.executeUpdate();
-                if (updatedRows > 0) {
-                    logger.info("Updated {} group members when merging recipients", updatedRows);
-                }
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, recipientId.id());
+            statement.setLong(2, toBeMergedRecipientId.id());
+            final var updatedRows = statement.executeUpdate();
+            if (updatedRows > 0) {
+                logger.info("Updated {} group members when merging recipients", updatedRows);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed update group store", e);
         }
     }
 

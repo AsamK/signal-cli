@@ -569,8 +569,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         }
 
         if (pair.second().isPresent()) {
-            recipientMergeHandler.mergeRecipients(pair.first(), pair.second().get());
             try (final var connection = database.getConnection()) {
+                recipientMergeHandler.mergeRecipients(connection, pair.first(), pair.second().get());
                 deleteRecipient(connection, pair.second().get());
             } catch (SQLException e) {
                 throw new RuntimeException("Failed update recipient store", e);
@@ -931,7 +931,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     public interface RecipientMergeHandler {
 
-        void mergeRecipients(RecipientId recipientId, RecipientId toBeMergedRecipientId);
+        void mergeRecipients(
+                final Connection connection, RecipientId recipientId, RecipientId toBeMergedRecipientId
+        ) throws SQLException;
     }
 
     private record RecipientWithAddress(RecipientId id, RecipientAddress address) {}
