@@ -1179,38 +1179,11 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientResolver getRecipientResolver() {
-        return new RecipientResolver() {
-            @Override
-            public RecipientId resolveRecipient(final RecipientAddress address) {
-                return getRecipientStore().resolveRecipient(address);
-            }
-
-            @Override
-            public RecipientId resolveRecipient(final long recipientId) {
-                return getRecipientStore().resolveRecipient(recipientId);
-            }
-        };
+        return new RecipientResolver.RecipientResolverWrapper(this::getRecipientStore);
     }
 
     public RecipientTrustedResolver getRecipientTrustedResolver() {
-        return new RecipientTrustedResolver() {
-            @Override
-            public RecipientId resolveSelfRecipientTrusted(final RecipientAddress address) {
-                return getRecipientStore().resolveSelfRecipientTrusted(address);
-            }
-
-            @Override
-            public RecipientId resolveRecipientTrusted(final SignalServiceAddress address) {
-                return getRecipientStore().resolveRecipientTrusted(address);
-            }
-
-            @Override
-            public RecipientId resolveRecipientTrusted(
-                    final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
-            ) {
-                return getRecipientStore().resolveRecipientTrusted(aci, pni, number);
-            }
-        };
+        return new RecipientTrustedResolver.RecipientTrustedResolverWrapper(this::getRecipientStore);
     }
 
     public RecipientAddressResolver getRecipientAddressResolver() {
