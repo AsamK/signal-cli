@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "3", features = ["cargo", "derive"] }
+clap = { version = "4", features = ["cargo", "derive", "wrap_help"] }
 jsonrpc-core = "18"
 jsonrpc-core-client = "18"
 jsonrpc-client-transports = { version = "18", default-features = false, features = [

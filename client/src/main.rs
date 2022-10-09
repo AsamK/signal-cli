@@ -1,4 +1,4 @@
-use clap::StructOpt;
+use clap::Parser;
 use jsonrpc_client_transports::{RpcError, TypedSubscriptionStream};
 use jsonrpc_core::{futures_util::StreamExt, Value};
 use std::{path::PathBuf, time::Duration};
