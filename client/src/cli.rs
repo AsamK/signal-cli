@@ -69,7 +69,7 @@ pub enum CliCommands {
         recipient: Vec<String>,
         #[clap(short = 'a', long = "all-recipients")]
         all_recipients: bool,
-        #[clap(long, parse(try_from_str))]
+        #[clap(long)]
         blocked: Option<bool>,
         #[clap(long)]
         name: Option<String>,
@@ -245,16 +245,16 @@ pub enum CliCommands {
         device_name: Option<String>,
     },
     UpdateConfiguration {
-        #[clap(long = "read-receipts", parse(try_from_str))]
+        #[clap(long = "read-receipts")]
         read_receipts: Option<bool>,
 
-        #[clap(long = "unidentified-delivery-indicators", parse(try_from_str))]
+        #[clap(long = "unidentified-delivery-indicators")]
         unidentified_delivery_indicators: Option<bool>,
 
-        #[clap(long = "typing-indicators", parse(try_from_str))]
+        #[clap(long = "typing-indicators")]
         typing_indicators: Option<bool>,
 
-        #[clap(long = "link-previews", parse(try_from_str))]
+        #[clap(long = "link-previews")]
         link_previews: Option<bool>,
     },
     UpdateContact {
