@@ -1297,9 +1297,29 @@ public class SignalAccount implements Closeable {
         return pni;
     }
 
-    public void setPni(final PNI pni) {
-        this.pni = pni;
+    public void setPni(final PNI updatedPni) {
+        if (this.pni != null && !this.pni.equals(updatedPni)) {
+            // Clear data for old PNI
+            identityKeyStore.deleteIdentity(this.pni);
+            getPniPreKeyStore().removeAllPreKeys();
+            getPniSignedPreKeyStore().removeAllSignedPreKeys();
+        }
+
+        this.pni = updatedPni;
         save();
+    }
+
+    public void setPni(
+            final PNI updatedPni,
+            final IdentityKeyPair pniIdentityKeyPair,
+            final SignedPreKeyRecord pniSignedPreKey,
+            final int localPniRegistrationId
+    ) {
+        setPni(updatedPni);
+
+        setPniIdentityKeyPair(pniIdentityKeyPair);
+        addPniSignedPreKey(pniSignedPreKey);
+        setLocalPniRegistrationId(localPniRegistrationId);
     }
 
     public SignalServiceAddress getSelfAddress() {
@@ -1357,6 +1377,11 @@ public class SignalAccount implements Closeable {
 
     public int getLocalPniRegistrationId() {
         return localPniRegistrationId;
+    }
+
+    public void setLocalPniRegistrationId(final int localPniRegistrationId) {
+        this.localPniRegistrationId = localPniRegistrationId;
+        save();
     }
 
     public String getPassword() {

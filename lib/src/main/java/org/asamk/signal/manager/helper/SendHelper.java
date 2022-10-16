@@ -352,7 +352,8 @@ public class SendHelper {
                     contentHint,
                     message,
                     SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY,
-                    urgent);
+                    urgent,
+                    false);
             synchronized (entryId) {
                 if (entryId.get() == -1) {
                     final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),

@@ -42,8 +42,10 @@ import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
+import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
+import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -58,6 +60,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
+import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
@@ -304,7 +307,10 @@ public final class IncomingMessageHandler {
 
         if (content.getSyncMessage().isPresent()) {
             var syncMessage = content.getSyncMessage().get();
-            actions.addAll(handleSyncMessage(syncMessage, senderDeviceAddress, receiveConfig.ignoreAttachments()));
+            actions.addAll(handleSyncMessage(envelope,
+                    syncMessage,
+                    senderDeviceAddress,
+                    receiveConfig.ignoreAttachments()));
         }
 
         return actions;
@@ -364,7 +370,10 @@ public final class IncomingMessageHandler {
     }
 
     private List<HandleAction> handleSyncMessage(
-            final SignalServiceSyncMessage syncMessage, final DeviceAddress sender, final boolean ignoreAttachments
+            final SignalServiceEnvelope envelope,
+            final SignalServiceSyncMessage syncMessage,
+            final DeviceAddress sender,
+            final boolean ignoreAttachments
     ) {
         var actions = new ArrayList<HandleAction>();
         account.setMultiDevice(true);
@@ -519,7 +528,26 @@ public final class IncomingMessageHandler {
                     pniIdentity.getPrivateKey().toByteArray()));
             actions.add(RefreshPreKeysAction.create());
         }
-        // TODO handle PniChangeNumber
+        if (syncMessage.getPniChangeNumber().isPresent()) {
+            final var pniChangeNumber = syncMessage.getPniChangeNumber().get();
+            logger.debug("Received PNI change number sync message, applying.");
+            if (pniChangeNumber.hasIdentityKeyPair()
+                    && pniChangeNumber.hasRegistrationId()
+                    && pniChangeNumber.hasSignedPreKey()
+                    && !envelope.getUpdatedPni().isEmpty()) {
+                logger.debug("New PNI: {}", envelope.getUpdatedPni());
+                try {
+                    final var updatedPni = PNI.parseOrThrow(envelope.getUpdatedPni());
+                    context.getAccountHelper()
+                            .setPni(updatedPni,
+                                    new IdentityKeyPair(pniChangeNumber.getIdentityKeyPair().toByteArray()),
+                                    new SignedPreKeyRecord(pniChangeNumber.getSignedPreKey().toByteArray()),
+                                    pniChangeNumber.getRegistrationId());
+                } catch (Exception e) {
+                    logger.warn("Failed to handle change number message", e);
+                }
+            }
+        }
         return actions;
     }
 

@@ -11,12 +11,15 @@ import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
+import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
@@ -109,6 +112,19 @@ public class AccountHelper {
         dependencies.resetAfterAddressChange();
         dependencies.getSignalWebSocket().forceNewWebSockets();
         context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
+    }
+
+    public void setPni(
+            final PNI updatedPni,
+            final IdentityKeyPair pniIdentityKeyPair,
+            final SignedPreKeyRecord pniSignedPreKey,
+            final int localPniRegistrationId
+    ) throws IOException {
+        account.setPni(updatedPni, pniIdentityKeyPair, pniSignedPreKey, localPniRegistrationId);
+        context.getPreKeyHelper().refreshPreKeysIfNecessary(ServiceIdType.PNI);
+        if (account.getPni() == null || !account.getPni().equals(updatedPni)) {
+            context.getGroupV2Helper().clearAuthCredentialCache();
+        }
     }
 
     public void startChangeNumber(

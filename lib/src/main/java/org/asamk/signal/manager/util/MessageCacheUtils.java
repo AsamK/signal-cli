@@ -19,7 +19,7 @@ public class MessageCacheUtils {
         try (var f = new FileInputStream(file)) {
             var in = new DataInputStream(f);
             var version = in.readInt();
-            if (version > 7) {
+            if (version > 8) {
                 // Unsupported envelope version
                 return null;
             }
@@ -71,6 +71,10 @@ public class MessageCacheUtils {
             if (version >= 7) {
                 isStory = in.readBoolean();
             }
+            String updatedPni = null;
+            if (version >= 8) {
+                updatedPni = in.readUTF();
+            }
             Optional<SignalServiceAddress> addressOptional = sourceServiceId == null
                     ? Optional.empty()
                     : Optional.of(new SignalServiceAddress(sourceServiceId, source));
@@ -84,6 +88,7 @@ public class MessageCacheUtils {
                     uuid,
                     destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid,
                     isUrgent,
+                    updatedPni == null ? "" : updatedPni,
                     isStory);
         }
     }
@@ -91,7 +96,7 @@ public class MessageCacheUtils {
     public static void storeEnvelope(SignalServiceEnvelope envelope, File file) throws IOException {
         try (var f = new FileOutputStream(file)) {
             try (var out = new DataOutputStream(f)) {
-                out.writeInt(7); // version
+                out.writeInt(8); // version
                 out.writeInt(envelope.getType());
                 out.writeUTF(""); // legacy number
                 out.writeUTF(envelope.getSourceUuid().isPresent() ? envelope.getSourceUuid().get() : "");
@@ -111,6 +116,7 @@ public class MessageCacheUtils {
                 out.writeLong(envelope.getServerDeliveredTimestamp());
                 out.writeBoolean(envelope.isUrgent());
                 out.writeBoolean(envelope.isStory());
+                out.writeUTF(envelope.getUpdatedPni() == null ? "" : envelope.getUpdatedPni());
             }
         }
     }

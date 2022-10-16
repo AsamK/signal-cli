@@ -77,6 +77,10 @@ class GroupV2Helper {
         this.context = context;
     }
 
+    void clearAuthCredentialCache() {
+        groupApiCredentials = null;
+    }
+
     DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) throws NotAGroupMemberException {
         try {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
