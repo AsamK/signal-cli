@@ -56,16 +56,19 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
+import org.whispersystems.signalservice.api.messages.SignalServicePniSignatureMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
+import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class IncomingMessageHandler {
@@ -194,7 +197,18 @@ public final class IncomingMessageHandler {
         if (content != null) {
             // Store uuid if we don't have it already
             // address/uuid is validated by unidentified sender certificate
-            account.getRecipientTrustedResolver().resolveRecipientTrusted(content.getSender());
+
+            boolean handledPniSignature = false;
+            if (content.getPniSignatureMessage().isPresent()) {
+                final var message = content.getPniSignatureMessage().get();
+                final var senderAddress = getSenderAddress(envelope, content);
+                if (senderAddress != null) {
+                    handledPniSignature = handlePniSignatureMessage(message, senderAddress);
+                }
+            }
+            if (!handledPniSignature) {
+                account.getRecipientTrustedResolver().resolveRecipientTrusted(content.getSender());
+            }
         }
         if (envelope.isReceipt()) {
             final var senderDeviceAddress = getSender(envelope, content);
@@ -215,8 +229,9 @@ public final class IncomingMessageHandler {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             return List.of();
         } else if (notAllowedToSendToGroup) {
+            final var senderAddress = getSenderAddress(envelope, content);
             logger.info("Ignoring a group message from an unauthorized sender (no member or admin): {} {}",
-                    (envelope.hasSourceUuid() ? envelope.getSourceAddress() : content.getSender()).getIdentifier(),
+                    senderAddress == null ? null : senderAddress.getIdentifier(),
                     envelope.getTimestamp());
             return List.of();
         } else {
@@ -321,6 +336,32 @@ public final class IncomingMessageHandler {
         }
 
         return actions;
+    }
+
+    private boolean handlePniSignatureMessage(
+            final SignalServicePniSignatureMessage message, final SignalServiceAddress senderAddress
+    ) {
+        final var aci = ACI.from(senderAddress.getServiceId());
+        final var aciIdentity = account.getIdentityKeyStore().getIdentityInfo(aci);
+        final var pni = message.getPni();
+        final var pniIdentity = account.getIdentityKeyStore().getIdentityInfo(pni);
+
+        if (aciIdentity == null || pniIdentity == null || aci.equals(pni)) {
+            return false;
+        }
+
+        final var verified = pniIdentity.getIdentityKey()
+                .verifyAlternateIdentity(aciIdentity.getIdentityKey(), message.getSignature());
+
+        if (!verified) {
+            logger.debug("Invalid PNI signature of ACI {} with PNI {}", aci, pni);
+            return false;
+        }
+
+        logger.debug("Verified association of ACI {} with PNI {}", aci, pni);
+        account.getRecipientTrustedResolver()
+                .resolveRecipientTrusted(Optional.of(aci), Optional.of(pni), senderAddress.getNumber());
+        return true;
     }
 
     private void handleDecryptionErrorMessage(
@@ -585,12 +626,8 @@ public final class IncomingMessageHandler {
     }
 
     private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source;
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
-            source = envelope.getSourceAddress();
-        } else if (content != null) {
-            source = content.getSender();
-        } else {
+        SignalServiceAddress source = getSenderAddress(envelope, content);
+        if (source == null) {
             return false;
         }
         final var recipientId = context.getRecipientHelper().resolveRecipient(source);
@@ -608,12 +645,8 @@ public final class IncomingMessageHandler {
     }
 
     private boolean isNotAllowedToSendToGroup(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source;
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
-            source = envelope.getSourceAddress();
-        } else if (content != null) {
-            source = content.getSender();
-        } else {
+        SignalServiceAddress source = getSenderAddress(envelope, content);
+        if (source == null) {
             return false;
         }
 
@@ -851,6 +884,16 @@ public final class IncomingMessageHandler {
             this.account.setProfileKey(profileKey);
         }
         this.account.getProfileStore().storeProfileKey(source, profileKey);
+    }
+
+    private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
+        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
+            return envelope.getSourceAddress();
+        } else if (content != null) {
+            return content.getSender();
+        } else {
+            return null;
+        }
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {

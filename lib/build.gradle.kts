@@ -21,6 +21,12 @@ dependencies {
     implementation("org.slf4j", "slf4j-api", "2.0.3")
     implementation("org.xerial", "sqlite-jdbc", "3.39.3.0")
     implementation("com.zaxxer", "HikariCP", "5.0.1")
+
+    testImplementation("org.junit.jupiter", "junit-jupiter", "5.9.0")
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
 
 configurations {

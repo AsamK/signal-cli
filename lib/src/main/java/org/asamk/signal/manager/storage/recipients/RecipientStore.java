@@ -53,6 +53,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       _id INTEGER PRIMARY KEY AUTOINCREMENT,
                                       number TEXT UNIQUE,
                                       uuid BLOB UNIQUE,
+                                      pni BLOB UNIQUE,
                                       profile_key BLOB,
                                       profile_key_credential BLOB,
 
@@ -92,7 +93,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public RecipientAddress resolveRecipientAddress(RecipientId recipientId) {
         final var sql = (
                 """
-                SELECT r.number, r.uuid
+                SELECT r.number, r.uuid, r.pni
                 FROM %s r
                 WHERE r._id = ?
                 """
@@ -246,7 +247,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
     ) {
         final var serviceId = aci.map(a -> (ServiceId) a).or(() -> pni);
-        return resolveRecipientTrusted(new RecipientAddress(serviceId, number), false);
+        return resolveRecipientTrusted(new RecipientAddress(serviceId, pni, number), false);
     }
 
     @Override
@@ -308,7 +309,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 SELECT r._id,
-                       r.number, r.uuid,
+                       r.number, r.uuid, r.pni,
                        r.profile_key, r.profile_key_credential,
                        r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived,
                        r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities
@@ -601,102 +602,38 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private RecipientId resolveRecipientTrusted(RecipientAddress address, boolean isSelf) {
-        final Pair<RecipientId, Optional<RecipientId>> pair;
+        final Pair<RecipientId, List<RecipientId>> pair;
         synchronized (recipientsLock) {
             try (final var connection = database.getConnection()) {
                 connection.setAutoCommit(false);
-                pair = resolveRecipientTrustedLocked(connection, address, isSelf);
+                if (address.hasSingleIdentifier() || (
+                        !isSelf && selfAddressProvider.getSelfAddress().matches(address)
+                )) {
+                    pair = new Pair<>(resolveRecipientLocked(connection, address), List.of());
+                } else {
+                    pair = MergeRecipientHelper.resolveRecipientTrustedLocked(new HelperStore(connection), address);
+
+                    for (final var toBeMergedRecipientId : pair.second()) {
+                        mergeRecipientsLocked(connection, pair.first(), toBeMergedRecipientId);
+                    }
+                }
                 connection.commit();
             } catch (SQLException e) {
                 throw new RuntimeException("Failed update recipient store", e);
             }
         }
 
-        if (pair.second().isPresent()) {
+        if (pair.second().size() > 0) {
             try (final var connection = database.getConnection()) {
-                recipientMergeHandler.mergeRecipients(connection, pair.first(), pair.second().get());
-                deleteRecipient(connection, pair.second().get());
+                for (final var toBeMergedRecipientId : pair.second()) {
+                    recipientMergeHandler.mergeRecipients(connection, pair.first(), toBeMergedRecipientId);
+                    deleteRecipient(connection, toBeMergedRecipientId);
+                }
             } catch (SQLException e) {
                 throw new RuntimeException("Failed update recipient store", e);
             }
         }
         return pair.first();
-    }
-
-    private Pair<RecipientId, Optional<RecipientId>> resolveRecipientTrustedLocked(
-            Connection connection, RecipientAddress address, boolean isSelf
-    ) throws SQLException {
-        if (!isSelf) {
-            if (selfAddressProvider.getSelfAddress().matches(address)) {
-                return new Pair<>(resolveRecipientLocked(connection, address), Optional.empty());
-            }
-        }
-        final var byNumber = address.number().isEmpty()
-                ? Optional.<RecipientWithAddress>empty()
-                : findByNumber(connection, address.number().get());
-        final var byUuid = address.serviceId().isEmpty()
-                ? Optional.<RecipientWithAddress>empty()
-                : findByServiceId(connection, address.serviceId().get());
-
-        if (byNumber.isEmpty() && byUuid.isEmpty()) {
-            logger.debug("Got new recipient, both uuid and number are unknown");
-            return new Pair<>(addNewRecipient(connection, address), Optional.empty());
-        }
-
-        if (address.serviceId().isEmpty() || address.number().isEmpty() || byNumber.equals(byUuid)) {
-            return new Pair<>(byUuid.or(() -> byNumber).map(RecipientWithAddress::id).get(), Optional.empty());
-        }
-
-        if (byNumber.isEmpty()) {
-            logger.debug("Got recipient {} existing with uuid, updating with high trust number", byUuid.get().id());
-            updateRecipientAddress(connection, byUuid.get().id(), address);
-            return new Pair<>(byUuid.get().id(), Optional.empty());
-        }
-
-        final var byNumberRecipient = byNumber.get();
-
-        if (byUuid.isEmpty()) {
-            if (byNumberRecipient.address().serviceId().isPresent()) {
-                logger.debug(
-                        "Got recipient {} existing with number, but different uuid, so stripping its number and adding new recipient",
-                        byNumberRecipient.id());
-
-                updateRecipientAddress(connection,
-                        byNumberRecipient.id(),
-                        new RecipientAddress(byNumberRecipient.address().serviceId().get()));
-                return new Pair<>(addNewRecipient(connection, address), Optional.empty());
-            }
-
-            logger.debug("Got recipient {} existing with number and no uuid, updating with high trust uuid",
-                    byNumberRecipient.id());
-            updateRecipientAddress(connection, byNumberRecipient.id(), address);
-            return new Pair<>(byNumberRecipient.id(), Optional.empty());
-        }
-
-        final var byUuidRecipient = byUuid.get();
-
-        if (byNumberRecipient.address().serviceId().isPresent()) {
-            logger.debug(
-                    "Got separate recipients for high trust number {} and uuid {}, recipient for number has different uuid, so stripping its number",
-                    byNumberRecipient.id(),
-                    byUuidRecipient.id());
-
-            updateRecipientAddress(connection,
-                    byNumberRecipient.id(),
-                    new RecipientAddress(byNumberRecipient.address().serviceId().get()));
-            updateRecipientAddress(connection, byUuidRecipient.id(), address);
-            return new Pair<>(byUuidRecipient.id(), Optional.empty());
-        }
-
-        logger.debug("Got separate recipients for high trust number {} and uuid {}, need to merge them",
-                byNumberRecipient.id(),
-                byUuidRecipient.id());
-        // Create a fixed RecipientId that won't update its id after merge
-        final var toBeMergedRecipientId = new RecipientId(byNumberRecipient.id().id(), null);
-        mergeRecipientsLocked(connection, byUuidRecipient.id(), toBeMergedRecipientId);
-        removeRecipientAddress(connection, toBeMergedRecipientId);
-        updateRecipientAddress(connection, byUuidRecipient.id(), address);
-        return new Pair<>(byUuidRecipient.id(), Optional.of(toBeMergedRecipientId));
     }
 
     private RecipientId resolveRecipientLocked(
@@ -762,13 +699,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     ) throws SQLException {
         final var sql = (
                 """
-                INSERT INTO %s (number, uuid)
-                VALUES (?, ?)
+                INSERT INTO %s (number, uuid, pni)
+                VALUES (?, ?, ?)
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setString(1, address.number().orElse(null));
             statement.setBytes(2, address.serviceId().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
+            statement.setBytes(3, address.pni().map(PNI::uuid).map(UuidUtil::toByteArray).orElse(null));
             statement.executeUpdate();
             final var generatedKeys = statement.getGeneratedKeys();
             if (generatedKeys.next()) {
@@ -785,7 +723,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET number = NULL, uuid = NULL
+                SET number = NULL, uuid = NULL, pni = NULL
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -801,14 +739,15 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET number = ?, uuid = ?
+                SET number = ?, uuid = ?, pni = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setString(1, address.number().orElse(null));
             statement.setBytes(2, address.serviceId().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
-            statement.setLong(3, recipientId.id());
+            statement.setBytes(3, address.pni().map(PNI::uuid).map(UuidUtil::toByteArray).orElse(null));
+            statement.setLong(4, recipientId.id());
             statement.executeUpdate();
         }
     }
@@ -861,9 +800,10 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final Connection connection, final String number
     ) throws SQLException {
         final var sql = """
-                        SELECT r._id, r.number, r.uuid
+                        SELECT r._id, r.number, r.uuid, r.pni
                         FROM %s r
                         WHERE r.number = ?
+                        LIMIT 1
                         """.formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setString(1, number);
@@ -875,13 +815,33 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final Connection connection, final ServiceId serviceId
     ) throws SQLException {
         final var sql = """
-                        SELECT r._id, r.number, r.uuid
+                        SELECT r._id, r.number, r.uuid, r.pni
                         FROM %s r
-                        WHERE r.uuid = ?
+                        WHERE r.uuid = ? OR r.pni = ?
+                        LIMIT 1
                         """.formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setBytes(1, UuidUtil.toByteArray(serviceId.uuid()));
             return Utils.executeQueryForOptional(statement, this::getRecipientWithAddressFromResultSet);
+        }
+    }
+
+    private Set<RecipientWithAddress> findAllByAddress(
+            final Connection connection, final RecipientAddress address
+    ) throws SQLException {
+        final var sql = """
+                        SELECT r._id, r.number, r.uuid, r.pni
+                        FROM %s r
+                        WHERE r.uuid = ?1 OR r.pni = ?1 OR
+                              r.uuid = ?2 OR r.pni = ?2 OR
+                              r.number = ?3
+                        """.formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, address.serviceId().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
+            statement.setBytes(2, address.pni().map(ServiceId::uuid).map(UuidUtil::toByteArray).orElse(null));
+            statement.setString(3, address.number().orElse(null));
+            return Utils.executeQueryForStream(statement, this::getRecipientWithAddressFromResultSet)
+                    .collect(Collectors.toSet());
         }
     }
 
@@ -946,8 +906,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     private RecipientAddress getRecipientAddressFromResultSet(ResultSet resultSet) throws SQLException {
         final var serviceId = Optional.ofNullable(resultSet.getBytes("uuid")).map(ServiceId::parseOrNull);
+        final var pni = Optional.ofNullable(resultSet.getBytes("pni")).map(PNI::parseOrNull);
         final var number = Optional.ofNullable(resultSet.getString("number"));
-        return new RecipientAddress(serviceId, Optional.empty(), number);
+        return new RecipientAddress(serviceId, pni, number);
     }
 
     private RecipientId getRecipientIdFromResultSet(ResultSet resultSet) throws SQLException {
@@ -1032,5 +993,34 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         ) throws SQLException;
     }
 
-    private record RecipientWithAddress(RecipientId id, RecipientAddress address) {}
+    private class HelperStore implements MergeRecipientHelper.Store {
+
+        private final Connection connection;
+
+        public HelperStore(final Connection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public Set<RecipientWithAddress> findAllByAddress(final RecipientAddress address) throws SQLException {
+            return RecipientStore.this.findAllByAddress(connection, address);
+        }
+
+        @Override
+        public RecipientId addNewRecipient(final RecipientAddress address) throws SQLException {
+            return RecipientStore.this.addNewRecipient(connection, address);
+        }
+
+        @Override
+        public void updateRecipientAddress(
+                final RecipientId recipientId, final RecipientAddress address
+        ) throws SQLException {
+            RecipientStore.this.updateRecipientAddress(connection, recipientId, address);
+        }
+
+        @Override
+        public void removeRecipientAddress(final RecipientId recipientId) throws SQLException {
+            RecipientStore.this.removeRecipientAddress(connection, recipientId);
+        }
+    }
 }

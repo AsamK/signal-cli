@@ -102,7 +102,7 @@ public class SignalAccount implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 5;
+    private static final int CURRENT_STORAGE_VERSION = 6;
 
     private final Object LOCK = new Object();
 
@@ -633,6 +633,9 @@ public class SignalAccount implements Closeable {
                 getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
                 migratedLegacyConfig = true;
             }
+        }
+        if (previousStorageVersion < 6) {
+            getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         }
         final var legacyAciPreKeysPath = getAciPreKeysPath(dataPath, accountPath);
         if (legacyAciPreKeysPath.exists()) {
