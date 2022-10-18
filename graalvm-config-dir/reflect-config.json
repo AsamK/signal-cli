@@ -2984,6 +2984,7 @@
     {"name":"story_"}, 
     {"name":"timestamp_"}, 
     {"name":"type_"}, 
+    {"name":"updatedPni_"}, 
     {"name":"urgent_"}
   ]
 },
