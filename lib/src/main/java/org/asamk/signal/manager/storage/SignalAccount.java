@@ -294,10 +294,8 @@ public class SignalAccount implements Closeable {
     }
 
     private void clearAllPreKeys() {
-        this.aciPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
-        this.aciNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
-        this.pniPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
-        this.pniNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
+        resetPreKeyOffsets(ServiceIdType.ACI);
+        resetPreKeyOffsets(ServiceIdType.PNI);
         this.getAciPreKeyStore().removeAllPreKeys();
         this.getAciSignedPreKeyStore().removeAllSignedPreKeys();
         this.getPniPreKeyStore().removeAllPreKeys();
@@ -996,6 +994,17 @@ public class SignalAccount implements Closeable {
                 fileChannel.close();
             }
         }
+    }
+
+    public void resetPreKeyOffsets(final ServiceIdType serviceIdType) {
+        if (serviceIdType.equals(ServiceIdType.ACI)) {
+            this.aciPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
+            this.aciNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
+        } else {
+            this.pniPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
+            this.pniNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
+        }
+        save();
     }
 
     public void addPreKeys(ServiceIdType serviceIdType, List<PreKeyRecord> records) {

@@ -53,6 +53,18 @@ public class PreKeyHelper {
         if (accountId == null) {
             return;
         }
+        try {
+            refreshPreKeys(serviceIdType, identityKeyPair);
+        } catch (Exception e) {
+            logger.warn("Failed to store new pre keys, resetting preKey id offset", e);
+            account.resetPreKeyOffsets(serviceIdType);
+            refreshPreKeys(serviceIdType, identityKeyPair);
+        }
+    }
+
+    private void refreshPreKeys(
+            final ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
+    ) throws IOException {
         final var oneTimePreKeys = generatePreKeys(serviceIdType);
         final var signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
 
