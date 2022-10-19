@@ -27,7 +27,7 @@ public final class CachedMessage {
         try {
             return MessageCacheUtils.loadEnvelope(file);
         } catch (Exception e) {
-            logger.error("Failed to load cached message envelope “{}”: {}", file, e.getMessage());
+            logger.error("Failed to load cached message envelope “{}”: {}", file, e.getMessage(), e);
             return null;
         }
     }
