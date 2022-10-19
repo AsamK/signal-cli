@@ -144,7 +144,14 @@ public final class IncomingMessageHandler {
                 } else {
                     final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
                     final var selfProfile = context.getProfileHelper().getSelfProfile();
-                    final var serviceId = ServiceId.parseOrNull(e.getSender());
+                    var serviceId = ServiceId.parseOrNull(e.getSender());
+                    if (serviceId == null) {
+                        // Workaround for libsignal-client issue #492
+                        serviceId = account.getRecipientAddressResolver()
+                                .resolveRecipientAddress(sender)
+                                .serviceId()
+                                .orElse(null);
+                    }
                     if (serviceId != null) {
                         final var isSelf = sender.equals(account.getSelfRecipientId())
                                 && e.getSenderDevice() == account.getDeviceId();
