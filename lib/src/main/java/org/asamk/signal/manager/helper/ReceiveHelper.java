@@ -9,6 +9,7 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.SignalWebSocket;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
@@ -35,7 +36,7 @@ public class ReceiveHelper {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private ReceiveConfig receiveConfig = new ReceiveConfig(false, false);
+    private ReceiveConfig receiveConfig = new ReceiveConfig(false, false, false);
     private boolean needsToRetryFailedMessages = false;
     private boolean hasCaughtUpWithOldMessages = false;
     private boolean isWaitingForMessage = false;
@@ -51,6 +52,7 @@ public class ReceiveHelper {
 
     public void setReceiveConfig(final ReceiveConfig receiveConfig) {
         this.receiveConfig = receiveConfig;
+        dependencies.setAllowStories(!receiveConfig.ignoreStories());
     }
 
     public void setNeedsToRetryFailedMessages(final boolean needsToRetryFailedMessages) {
@@ -104,25 +106,24 @@ public class ReceiveHelper {
         signalWebSocket.connect();
 
         try {
-            receiveMessagesInternal(timeout, returnOnTimeout, handler, queuedActions);
+            receiveMessagesInternal(signalWebSocket, timeout, returnOnTimeout, handler, queuedActions);
         } finally {
             hasCaughtUpWithOldMessages = false;
             handleQueuedActions(queuedActions.keySet());
             queuedActions.clear();
-            dependencies.getSignalWebSocket().disconnect();
+            signalWebSocket.disconnect();
             webSocketStateDisposable.dispose();
             shouldStop = false;
         }
     }
 
     private void receiveMessagesInternal(
+            final SignalWebSocket signalWebSocket,
             Duration timeout,
             boolean returnOnTimeout,
             Manager.ReceiveMessageHandler handler,
             final Map<HandleAction, HandleAction> queuedActions
     ) throws IOException {
-        final var signalWebSocket = dependencies.getSignalWebSocket();
-
         var backOffCounter = 0;
         isWaitingForMessage = false;
 

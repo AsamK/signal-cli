@@ -110,7 +110,6 @@ public class AccountHelper {
         // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
         dependencies.resetAfterAddressChange();
-        dependencies.getSignalWebSocket().forceNewWebSockets();
         context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
     }
 

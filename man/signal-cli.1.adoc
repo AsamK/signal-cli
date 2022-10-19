@@ -359,8 +359,13 @@ In json mode this is outputted as one json object per line.
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
+
 *--ignore-attachments*::
 Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
+
 
 *--send-read-receipts*::
 Send read receipts for all incoming data messages (in addition to the default delivery receipts)
@@ -638,6 +643,9 @@ See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
 
 *--send-read-receipts*::
 Send read receipts for all incoming data messages (in addition to the default delivery receipts)
