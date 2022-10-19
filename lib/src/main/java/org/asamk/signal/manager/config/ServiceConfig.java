@@ -38,7 +38,7 @@ public class ServiceConfig {
                 true,
                 true,
                 true,
-                false,
+                true,
                 false,
                 false);
 
