@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.11.4] - 2022-10-19
+
+### Added
+- Approve/Refuse group join requests, using same interface as adding/removing members
+- Add --ignore-stories flag to prevent receiving story messages
+
+### Fixed
+- Fixed issue with receiving messages that can't be decrypted
+- Do not discard incoming group join messages
+
+### Improved
+- Add code to receive new PNI after change number
+
 ## [0.11.3] - 2022-10-07
 
 ### Fixed
