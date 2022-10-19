@@ -18,7 +18,7 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.java }}
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew --no-daemon build
       - name: Compress archive
         run: gzip -n -9 build/distributions/signal-cli-*.tar
       - name: Archive production artifacts
@@ -26,3 +26,22 @@ jobs:
         with:
           name: signal-cli-archive-${{ matrix.java }}
           path: build/distributions/signal-cli-*.tar.gz
+
+  build-graalvm:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          version: 'latest'
+          java-version: '17'
+          components: 'native-image'
+      - name: Build with Gradle
+        run: ./gradlew --no-daemon nativeCompile
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: signal-cli-archive-native
+          path: build/native/nativeCompile/signal-cli
