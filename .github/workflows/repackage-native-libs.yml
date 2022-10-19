@@ -10,7 +10,7 @@ jobs:
 
   ci_wf:
     uses: AsamK/signal-cli/.github/workflows/ci.yml@master
-    # ${{ github.repository }} not accpeted here
+    # ${{ github.repository }} not accepted here
 
 
   lib_to_jar:
@@ -31,7 +31,7 @@ jobs:
         run: |
           #echo ${GITHUB_REF#refs/tag/}
           tree .
-          mv ./$(ls */ -d | tail -n1)/*.tar.gz .
+          mv ./$(ls signal-cli-archive-*/ -d | tail -n1)/*.tar.gz .
           ver=$(ls ./*.tar.gz | xargs basename | sed -E 's/signal-cli-(.*).tar.gz/\1/')
           echo $ver
           echo "::set-output name=signal_cli_version::${ver}"
@@ -56,6 +56,12 @@ jobs:
             curl -sOL "${RELEASES_URL}/v${SIGNAL_CLIENT_VER}/${file_name}"  # note: added v
           done
           tree .
+
+      - name: Compress native app
+        env:
+          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.signal_cli_version }}
+        run: |
+          tar -czf signal-cli-${SIGNAL_CLI_VER}-Linux-native.tar.gz -C signal-cli-native signal-cli
 
       - name: Replace Windows lib
         env:
@@ -94,6 +100,16 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}.tar.gz
           asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Linux.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+
+      - name: Upload Linux native archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Linux-native.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.signal_cli_version }}-Linux-native.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
 
       - name: Upload windows archive
