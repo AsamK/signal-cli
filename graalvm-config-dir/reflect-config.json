@@ -1235,16 +1235,6 @@
   ]
 },
 {
-  "name":"org.asamk.signal.manager.storage.recipients.RecipientAddress",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"number","parameterTypes":[] }, 
-    {"name":"uuid","parameterTypes":[] }
-  ]
-},
-{
   "name":"org.asamk.signal.manager.storage.senderKeys.LegacySenderKeySharedStore$Storage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
