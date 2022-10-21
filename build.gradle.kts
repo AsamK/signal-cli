@@ -22,6 +22,13 @@ graalvmNative {
         this["main"].run {
             resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
+            if (System.getenv("GRAALVM_HOME") == null) {
+                javaLauncher.set(javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(17))
+                })
+            } else {
+                toolchainDetection.set(false)
+            }
         }
     }
 }
