@@ -289,7 +289,7 @@ public record MessageEnvelope(
                             a.getSize().map(Integer::longValue),
                             a.getPreview(),
                             Optional.empty(),
-                            a.getCaption(),
+                            a.getCaption().map(c -> c.isEmpty() ? null : c),
                             a.getWidth() == 0 ? Optional.empty() : Optional.of(a.getWidth()),
                             a.getHeight() == 0 ? Optional.empty() : Optional.of(a.getHeight()),
                             a.getVoiceNote(),
