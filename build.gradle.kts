@@ -20,8 +20,8 @@ application {
 graalvmNative {
     binaries {
         this["main"].run {
+            resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
-            buildArgs.add("--report-unsupported-elements-at-runtime")
         }
     }
 }
