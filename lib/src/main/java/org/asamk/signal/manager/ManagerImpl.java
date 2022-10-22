@@ -61,6 +61,7 @@ import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,12 +75,15 @@ import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -557,7 +561,15 @@ class ManagerImpl implements Manager {
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
-        messageBuilder.withBody(message.messageText());
+        if (message.messageText().length() > 2000) {
+            final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
+            final var textAttachment = AttachmentUtils.createAttachmentStream(new StreamDetails(new ByteArrayInputStream(
+                    messageBytes), MimeUtils.LONG_TEXT, messageBytes.length), Optional.empty());
+            messageBuilder.withBody(message.messageText().substring(0, 2000));
+            messageBuilder.withAttachment(textAttachment);
+        } else {
+            messageBuilder.withBody(message.messageText());
+        }
         if (message.attachments().size() > 0) {
             messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
         }
