@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
 
@@ -35,8 +34,8 @@ public class AttachmentHelper {
         this.attachmentStore = context.getAttachmentStore();
     }
 
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return attachmentStore.getAttachmentFile(attachmentId);
+    public File getAttachmentFile(SignalServiceAttachmentPointer pointer) {
+        return attachmentStore.getAttachmentFile(pointer);
     }
 
     public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
@@ -69,7 +68,7 @@ public class AttachmentHelper {
         if (pointer.getPreview().isPresent()) {
             final var preview = pointer.getPreview().get();
             try {
-                attachmentStore.storeAttachmentPreview(pointer.getRemoteId(),
+                attachmentStore.storeAttachmentPreview(pointer,
                         outputStream -> outputStream.write(preview, 0, preview.length));
             } catch (IOException e) {
                 logger.warn("Failed to download attachment preview, ignoring: {}", e.getMessage());
@@ -77,8 +76,7 @@ public class AttachmentHelper {
         }
 
         try {
-            attachmentStore.storeAttachment(pointer.getRemoteId(),
-                    outputStream -> this.retrieveAttachment(pointer, outputStream));
+            attachmentStore.storeAttachment(pointer, outputStream -> this.retrieveAttachment(pointer, outputStream));
         } catch (IOException e) {
             logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
         }

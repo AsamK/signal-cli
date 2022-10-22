@@ -1,12 +1,15 @@
 package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.MimeUtils;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Optional;
 
 public class AttachmentStore {
 
@@ -17,15 +20,23 @@ public class AttachmentStore {
     }
 
     public void storeAttachmentPreview(
-            final SignalServiceAttachmentRemoteId attachmentId, final AttachmentStorer storer
+            final SignalServiceAttachmentPointer pointer, final AttachmentStorer storer
     ) throws IOException {
-        storeAttachment(getAttachmentPreviewFile(attachmentId), storer);
+        storeAttachment(getAttachmentPreviewFile(pointer.getRemoteId(),
+                pointer.getFileName(),
+                Optional.ofNullable(pointer.getContentType())), storer);
     }
 
     public void storeAttachment(
-            final SignalServiceAttachmentRemoteId attachmentId, final AttachmentStorer storer
+            final SignalServiceAttachmentPointer pointer, final AttachmentStorer storer
     ) throws IOException {
-        storeAttachment(getAttachmentFile(attachmentId), storer);
+        storeAttachment(getAttachmentFile(pointer), storer);
+    }
+
+    public File getAttachmentFile(final SignalServiceAttachmentPointer pointer) {
+        return getAttachmentFile(pointer.getRemoteId(),
+                pointer.getFileName(),
+                Optional.ofNullable(pointer.getContentType()));
     }
 
     private void storeAttachment(final File attachmentFile, final AttachmentStorer storer) throws IOException {
@@ -35,12 +46,28 @@ public class AttachmentStore {
         }
     }
 
-    private File getAttachmentPreviewFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(attachmentsPath, attachmentId.toString() + ".preview");
+    private File getAttachmentPreviewFile(
+            SignalServiceAttachmentRemoteId attachmentId, Optional<String> filename, Optional<String> contentType
+    ) {
+        final var extension = getAttachmentExtension(filename, contentType);
+        return new File(attachmentsPath, attachmentId.toString() + extension + ".preview");
     }
 
-    public File getAttachmentFile(SignalServiceAttachmentRemoteId attachmentId) {
-        return new File(attachmentsPath, attachmentId.toString());
+    private File getAttachmentFile(
+            SignalServiceAttachmentRemoteId attachmentId, Optional<String> filename, Optional<String> contentType
+    ) {
+        final var extension = getAttachmentExtension(filename, contentType);
+        return new File(attachmentsPath, attachmentId.toString() + extension);
+    }
+
+    private static String getAttachmentExtension(
+            final Optional<String> filename, final Optional<String> contentType
+    ) {
+        return filename.filter(f -> f.contains("."))
+                .map(f -> f.substring(f.lastIndexOf(".") + 1))
+                .or(() -> contentType.flatMap(MimeUtils::guessExtensionFromMimeType))
+                .map(ext -> "." + ext)
+                .orElse("");
     }
 
     private void createAttachmentsDir() throws IOException {

@@ -6,7 +6,7 @@ import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.metadata.ProtocolException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -281,8 +281,9 @@ public record MessageEnvelope(
             static Attachment from(SignalServiceAttachment attachment, AttachmentFileProvider fileProvider) {
                 if (attachment.isPointer()) {
                     final var a = attachment.asPointer();
-                    return new Attachment(Optional.of(a.getRemoteId().toString()),
-                            Optional.of(fileProvider.getFile(a.getRemoteId())),
+                    final var attachmentFile = fileProvider.getFile(a);
+                    return new Attachment(Optional.of(attachmentFile.getName()),
+                            Optional.of(attachmentFile),
                             a.getFileName(),
                             a.getContentType(),
                             a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
@@ -918,6 +919,6 @@ public record MessageEnvelope(
 
     public interface AttachmentFileProvider {
 
-        File getFile(SignalServiceAttachmentRemoteId attachmentRemoteId);
+        File getFile(SignalServiceAttachmentPointer pointer);
     }
 }
