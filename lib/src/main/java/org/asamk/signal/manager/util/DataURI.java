@@ -17,7 +17,6 @@ public record DataURI(String mediaType, Map<String, String> parameter, byte[] da
             Pattern.CASE_INSENSITIVE);
     public static final Pattern PARAMETER_PATTERN = Pattern.compile("\\G;(?<key>.+)=(?<value>.+)",
             Pattern.CASE_INSENSITIVE);
-    public static final String DEFAULT_TYPE = "text/plain";
 
     /**
      * Generates a new {@link DataURI} object that follows
@@ -32,7 +31,7 @@ public record DataURI(String mediaType, Map<String, String> parameter, byte[] da
      * The {@code <mediatype>} is an Internet media type specification (with
      * optional parameters.) The appearance of ";base64" means that the data
      * is encoded as base64. Without ";base64", the data is represented using (ASCII) URL Escaped encoding.
-     * If {@code <mediatype>} is omitted, it defaults to {@link DataURI#DEFAULT_TYPE}.
+     * If {@code <mediatype>} is omitted, it defaults to {@link MimeUtils#PLAIN_TEXT}.
      * Parameter values should use the URL Escaped encoding.
      *
      * @param dataURI the data URI
@@ -65,6 +64,6 @@ public record DataURI(String mediaType, Map<String, String> parameter, byte[] da
             data = URLDecoder.decode(matcher.group("data"), StandardCharsets.UTF_8).getBytes(StandardCharsets.UTF_8);
         }
 
-        return new DataURI(Optional.ofNullable(matcher.group("type")).orElse(DEFAULT_TYPE), parameters, data);
+        return new DataURI(Optional.ofNullable(matcher.group("type")).orElse(MimeUtils.PLAIN_TEXT), parameters, data);
     }
 }

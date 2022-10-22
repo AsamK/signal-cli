@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.zip.ZipFile;
@@ -118,11 +117,11 @@ public class StickerUtils {
         if (zip != null) {
             final var entry = zip.getEntry(subfile);
             try (InputStream bufferedStream = new BufferedInputStream(zip.getInputStream(entry))) {
-                return URLConnection.guessContentTypeFromStream(bufferedStream);
+                return MimeUtils.getStreamMimeType(bufferedStream).orElse(null);
             }
         } else {
             final var file = new File(rootPath, subfile);
-            return Utils.getFileMimeType(file, null);
+            return MimeUtils.getFileMimeType(file).orElse(null);
         }
     }
 }

@@ -10,6 +10,7 @@ import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.MimeUtils;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +106,7 @@ public class SyncHelper {
                 try (var groupsFileStream = new FileInputStream(groupsFile)) {
                     var attachmentStream = SignalServiceAttachment.newStreamBuilder()
                             .withStream(groupsFileStream)
-                            .withContentType("application/octet-stream")
+                            .withContentType(MimeUtils.OCTET_STREAM)
                             .withLength(groupsFile.length())
                             .build();
 
@@ -173,7 +174,7 @@ public class SyncHelper {
                 try (var contactsFileStream = new FileInputStream(contactsFile)) {
                     var attachmentStream = SignalServiceAttachment.newStreamBuilder()
                             .withStream(contactsFileStream)
-                            .withContentType("application/octet-stream")
+                            .withContentType(MimeUtils.OCTET_STREAM)
                             .withLength(contactsFile.length())
                             .build();
 
