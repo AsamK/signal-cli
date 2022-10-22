@@ -3061,6 +3061,14 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PniSignatureMessage",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"pni_"}, 
+    {"name":"signature_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Preview",
   "fields":[
     {"name":"bitField0_"}, 
