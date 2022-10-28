@@ -53,6 +53,10 @@ public record RecipientAddress(Optional<ServiceId> serviceId, Optional<PNI> pni,
         this(Optional.of(address.getServiceId()), Optional.empty(), address.getNumber());
     }
 
+    public RecipientAddress(org.asamk.signal.manager.api.RecipientAddress address) {
+        this(address.uuid().map(ServiceId::from), Optional.empty(), address.number());
+    }
+
     public RecipientAddress(ServiceId serviceId) {
         this(Optional.of(serviceId), Optional.empty());
     }

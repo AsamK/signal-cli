@@ -7,6 +7,7 @@ import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.messageCache.CachedMessage;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalWebSocket;
@@ -261,7 +262,8 @@ public class ReceiveHelper {
             }
             if (!envelope.hasSourceUuid()) {
                 final var identifier = ((UntrustedIdentityException) exception).getSender();
-                final var recipientId = account.getRecipientResolver().resolveRecipient(identifier.getServiceId());
+                final var recipientId = account.getRecipientResolver()
+                        .resolveRecipient(new RecipientAddress(identifier));
                 try {
                     account.getMessageCache().replaceSender(cachedMessage, recipientId);
                 } catch (IOException ioException) {

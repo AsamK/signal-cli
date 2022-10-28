@@ -64,8 +64,4 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number) {
                 number.isPresent() && other.number.isPresent() && number.get().equals(other.number.get())
         );
     }
-
-    public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(getServiceId(), number);
-    }
 }
