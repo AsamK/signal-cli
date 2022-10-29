@@ -90,7 +90,7 @@ public abstract class Database implements AutoCloseable {
 
     private static HikariDataSource getHikariDataSource(final String databaseFile) {
         final var sqliteConfig = new SQLiteConfig();
-        sqliteConfig.setBusyTimeout(10_000);
+        sqliteConfig.setBusyTimeout(60_000);
         sqliteConfig.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
 
         HikariConfig config = new HikariConfig();
