@@ -287,7 +287,8 @@ public class DbusSignalImpl implements Signal {
                     targetSentTimestamp,
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
-                            .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet()),
+                    false);
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
@@ -485,7 +486,8 @@ public class DbusSignalImpl implements Signal {
                     remove,
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
-                    Set.of(getGroupRecipientIdentifier(groupId)));
+                    Set.of(getGroupRecipientIdentifier(groupId)),
+                    false);
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {

@@ -667,14 +667,19 @@ class ManagerImpl implements Manager {
             boolean remove,
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
-            Set<RecipientIdentifier> recipients
+            Set<RecipientIdentifier> recipients,
+            final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         var targetAuthorRecipientId = context.getRecipientHelper().resolveRecipient(targetAuthor);
-        var reaction = new SignalServiceDataMessage.Reaction(emoji,
-                remove,
-                context.getRecipientHelper().resolveSignalServiceAddress(targetAuthorRecipientId).getServiceId(),
-                targetSentTimestamp);
+        final var authorServiceId = context.getRecipientHelper()
+                .resolveSignalServiceAddress(targetAuthorRecipientId)
+                .getServiceId();
+        var reaction = new SignalServiceDataMessage.Reaction(emoji, remove, authorServiceId, targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
+        if (isStory) {
+            messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
+                    targetSentTimestamp));
+        }
         return sendMessage(messageBuilder, recipients);
     }
 

@@ -313,6 +313,9 @@ Specify the timestamp of the message to which to react.
 *-r*, *--remove*::
 Remove a reaction.
 
+*--story*::
+React to a story instead of a normal message
+
 === sendReceipt
 
 Send a read or viewed receipt to a previously received message.

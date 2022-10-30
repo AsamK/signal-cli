@@ -136,7 +136,8 @@ public interface Manager extends Closeable {
             boolean remove,
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
-            Set<RecipientIdentifier> recipients
+            Set<RecipientIdentifier> recipients,
+            final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     SendMessageResults sendPaymentNotificationMessage(

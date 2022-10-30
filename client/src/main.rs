@@ -164,6 +164,7 @@ async fn main() -> Result<(), anyhow::Error> {
             target_author,
             target_timestamp,
             remove,
+            story,
         } => {
             client
                 .send_reaction(
@@ -175,6 +176,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     target_author,
                     target_timestamp,
                     remove,
+                    story,
                 )
                 .await
         }

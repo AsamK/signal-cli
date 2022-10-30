@@ -155,6 +155,7 @@ pub trait Rpc {
         #[allow(non_snake_case)] targetAuthor: String,
         #[allow(non_snake_case)] targetTimestamp: u64,
         remove: bool,
+        story: bool,
     ) -> Result<Value>;
 
     #[rpc(name = "sendReceipt", params = "named")]

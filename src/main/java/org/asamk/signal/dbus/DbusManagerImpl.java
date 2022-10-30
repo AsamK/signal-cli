@@ -364,7 +364,8 @@ public class DbusManagerImpl implements Manager {
             final boolean remove,
             final RecipientIdentifier.Single targetAuthor,
             final long targetSentTimestamp,
-            final Set<RecipientIdentifier> recipients
+            final Set<RecipientIdentifier> recipients,
+            final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
                 numbers -> signal.sendMessageReaction(emoji,

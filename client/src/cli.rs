@@ -193,6 +193,9 @@ pub enum CliCommands {
 
         #[arg(short = 'r', long)]
         remove: bool,
+
+        #[arg(long)]
+        story: bool,
     },
     SendReceipt {
         recipient: String,
