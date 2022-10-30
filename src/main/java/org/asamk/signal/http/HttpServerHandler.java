@@ -9,6 +9,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.commands.JsonRpcNamespace;
 import org.asamk.signal.commands.LocalCommand;
+import org.asamk.signal.commands.MultiLocalCommand;
 import org.asamk.signal.commands.RegistrationCommand;
 import org.asamk.signal.jsonrpc.JsonRpcException;
 import org.asamk.signal.jsonrpc.JsonRpcRequest;
@@ -63,6 +64,8 @@ public class HttpServerHandler {
                     if (command instanceof LocalCommand) {
                         final var manager = getManagerFromParams(request.getParams(), m);
                         ((LocalCommand) command).handleCommand(ns, manager, new JsonWriterImpl(writer));
+                    } else if (command instanceof MultiLocalCommand) {
+                        ((MultiLocalCommand) command).handleCommand(ns, m, new JsonWriterImpl(writer));
                     } else if (command instanceof RegistrationCommand) {
                         final var registrationManager = getRegistrationManagerFromParams(request.getParams(), m);
                         if (registrationManager != null) {
