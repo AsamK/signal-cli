@@ -23,6 +23,7 @@ import org.asamk.signal.dbus.DbusProvisioningManagerImpl;
 import org.asamk.signal.dbus.DbusRegistrationManagerImpl;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.Settings;
 import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
@@ -101,6 +102,10 @@ public class App {
                 .type(Arguments.enumStringType(TrustNewIdentityCli.class))
                 .setDefault(TrustNewIdentityCli.ON_FIRST_USE);
 
+        parser.addArgument("--disable-send-log")
+                .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
+                .action(Arguments.storeTrue());
+
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
         Commands.getCommandSubparserAttachers().forEach((key, value) -> {
@@ -167,12 +172,14 @@ public class App {
                 ? TrustNewIdentity.ON_FIRST_USE
                 : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
 
+        final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
+
         final SignalAccountFiles signalAccountFiles;
         try {
             signalAccountFiles = new SignalAccountFiles(configPath,
                     serviceEnvironment,
                     BaseConfig.USER_AGENT,
-                    trustNewIdentity);
+                    new Settings(trustNewIdentity, disableSendLog));
         } catch (IOException e) {
             throw new IOErrorException("Failed to read local accounts list", e);
         }

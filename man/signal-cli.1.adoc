@@ -79,6 +79,9 @@ Choose when to trust new identities:
 - `always`: Trust any new identity key without verification
 - `never`: Don't trust any unknown identity key, every key must be verified manually
 
+*--disable-send-log*::
+Disable message send log (for resending messages that recipient couldn't decrypt).
+
 == Commands
 
 === register
