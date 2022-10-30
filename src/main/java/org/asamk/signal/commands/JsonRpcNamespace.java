@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Namespace implementation, that has plural handling for list arguments and converts camel case keys to dashed strings
  */
-final class JsonRpcNamespace extends Namespace {
+final public class JsonRpcNamespace extends Namespace {
 
     public JsonRpcNamespace(final Map<String, Object> attrs) {
         super(attrs);

@@ -16,6 +16,7 @@ public class Commands {
         addCommand(new DeleteLocalAccountDataCommand());
         addCommand(new FinishLinkCommand());
         addCommand(new GetUserStatusCommand());
+        addCommand(new HttpServerCommand());
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());
         addCommand(new LinkCommand());
