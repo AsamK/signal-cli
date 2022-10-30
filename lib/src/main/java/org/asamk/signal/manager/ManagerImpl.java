@@ -624,6 +624,14 @@ class ManagerImpl implements Manager {
             }
             messageBuilder.withPreviews(previews);
         }
+        if (message.storyReply().isPresent()) {
+            final var storyReply = message.storyReply().get();
+            final var authorServiceId = context.getRecipientHelper()
+                    .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(storyReply.author()))
+                    .getServiceId();
+            messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
+                    storyReply.timestamp()));
+        }
     }
 
     private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws UnregisteredRecipientException {

@@ -275,6 +275,12 @@ Specify the description for the link preview (optional).
 *--preview-image*::
 Specify the image file for the link preview (optional).
 
+*--story-timestamp*::
+Specify the timestamp of a story to reply to.
+
+*--story-author*::
+Specify the number of the author of the story.
+
 *-e*, *--end-session*::
 Clear session state and send end session message.
 

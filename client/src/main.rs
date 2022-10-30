@@ -127,6 +127,8 @@ async fn main() -> Result<(), anyhow::Error> {
             quote_message,
             quote_mention,
             sticker,
+            story_timestamp,
+            story_author,
         } => {
             client
                 .send(
@@ -143,6 +145,8 @@ async fn main() -> Result<(), anyhow::Error> {
                     quote_message,
                     quote_mention,
                     sticker,
+                    story_timestamp,
+                    story_author,
                 )
                 .await
         }

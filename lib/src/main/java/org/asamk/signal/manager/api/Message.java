@@ -9,7 +9,8 @@ public record Message(
         List<Mention> mentions,
         Optional<Quote> quote,
         Optional<Sticker> sticker,
-        List<Preview> previews
+        List<Preview> previews,
+        Optional<StoryReply> storyReply
 ) {
 
     public record Mention(RecipientIdentifier.Single recipient, int start, int length) {}
@@ -19,4 +20,6 @@ public record Message(
     public record Sticker(byte[] packId, int stickerId) {}
 
     public record Preview(String url, String title, String description, Optional<String> image) {}
+
+    public record StoryReply(long timestamp, RecipientIdentifier.Single author) {}
 }

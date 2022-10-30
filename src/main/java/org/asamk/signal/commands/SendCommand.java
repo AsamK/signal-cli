@@ -80,6 +80,10 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--preview-title").help("Specify the title for the link preview (mandatory).");
         subparser.addArgument("--preview-description").help("Specify the description for the link preview (optional).");
         subparser.addArgument("--preview-image").help("Specify the image file for the link preview (optional).");
+        subparser.addArgument("--story-timestamp")
+                .type(long.class)
+                .help("Specify the timestamp of a story to reply to.");
+        subparser.addArgument("--story-author").help("Specify the number of the author of the story.");
     }
 
     @Override
@@ -170,18 +174,30 @@ public class SendCommand implements JsonRpcLocalCommand {
             previews = List.of();
         }
 
+        final Message.StoryReply storyReply;
+        final var storyReplyTimestamp = ns.getLong("story-timestamp");
+        if (storyReplyTimestamp != null) {
+            final var storyAuthor = ns.getString("story-author");
+            storyReply = new Message.StoryReply(storyReplyTimestamp,
+                    CommandUtil.getSingleRecipientIdentifier(storyAuthor, m.getSelfNumber()));
+        } else {
+            storyReply = null;
+        }
+
         if (messageText.isEmpty() && attachments.isEmpty() && sticker == null && quote == null) {
             throw new UserErrorException(
                     "Sending empty message is not allowed, either a message, attachment or sticker must be given.");
         }
 
         try {
-            var results = m.sendMessage(new Message(messageText,
+            final var message = new Message(messageText,
                     attachments,
                     mentions,
                     Optional.ofNullable(quote),
                     Optional.ofNullable(sticker),
-                    previews), recipientIdentifiers);
+                    previews,
+                    Optional.ofNullable((storyReply)));
+            var results = m.sendMessage(message, recipientIdentifiers);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

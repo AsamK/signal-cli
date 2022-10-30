@@ -162,6 +162,12 @@ pub enum CliCommands {
 
         #[arg(long)]
         sticker: Option<String>,
+
+        #[arg(long)]
+        story_timestamp: Option<u64>,
+
+        #[arg(long)]
+        story_author: Option<String>,
     },
     SendContacts,
     SendPaymentNotification {
