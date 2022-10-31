@@ -179,7 +179,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ env.JAVA_VERSION }}
-          java-package: 'jre"
+          java-package: 'jre'
 
       - name: Run signal-cli
         run: |
