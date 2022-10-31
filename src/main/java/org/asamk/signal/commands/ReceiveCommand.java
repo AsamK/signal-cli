@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 public class ReceiveCommand implements LocalCommand {
 
@@ -37,6 +38,10 @@ public class ReceiveCommand implements LocalCommand {
                 .type(double.class)
                 .setDefault(3.0)
                 .help("Number of seconds to wait for new messages (negative values disable timeout)");
+        subparser.addArgument("--max-messages")
+                .type(int.class)
+                .setDefault(-1)
+                .help("Maximum number of messages to receive, before returning.");
         subparser.addArgument("--ignore-attachments")
                 .help("Don’t download attachments of received messages.")
                 .action(Arguments.storeTrue());
@@ -58,6 +63,7 @@ public class ReceiveCommand implements LocalCommand {
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
         final var timeout = ns.getDouble("timeout");
+        final var maxMessagesRaw = ns.getInt("max-messages");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
         final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
         final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
@@ -65,11 +71,9 @@ public class ReceiveCommand implements LocalCommand {
         try {
             final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
                     (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
-            if (timeout < 0) {
-                m.receiveMessages(handler);
-            } else {
-                m.receiveMessages(Duration.ofMillis((long) (timeout * 1000)), handler);
-            }
+            final var duration = timeout < 0 ? null : Duration.ofMillis((long) (timeout * 1000));
+            final var maxMessages = maxMessagesRaw < 0 ? null : maxMessagesRaw;
+            m.receiveMessages(Optional.ofNullable(duration), Optional.ofNullable(maxMessages), handler);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
         }

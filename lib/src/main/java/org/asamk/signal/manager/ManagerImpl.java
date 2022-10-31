@@ -961,17 +961,16 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void receiveMessages(Duration timeout, ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(timeout, true, handler);
-    }
-
-    @Override
-    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(Duration.ofMinutes(1), false, handler);
+    public void receiveMessages(
+            Optional<Duration> timeout,
+            Optional<Integer> maxMessages,
+            ReceiveMessageHandler handler
+    ) throws IOException {
+        receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
     }
 
     private void receiveMessages(
-            Duration timeout, boolean returnOnTimeout, ReceiveMessageHandler handler
+            Duration timeout, boolean returnOnTimeout, Integer maxMessages, ReceiveMessageHandler handler
     ) throws IOException {
         if (isReceiving()) {
             throw new IllegalStateException("Already receiving message.");
@@ -979,7 +978,7 @@ class ManagerImpl implements Manager {
         isReceivingSynchronous = true;
         receiveThread = Thread.currentThread();
         try {
-            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, handler);
+            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, maxMessages, handler);
         } finally {
             receiveThread = null;
             isReceivingSynchronous = false;

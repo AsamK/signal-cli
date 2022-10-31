@@ -372,6 +372,9 @@ In json mode this is outputted as one json object per line.
 Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
 
+*--max-messages*::
+Maximum number of messages to receive, before returning.
+
 *--ignore-attachments*::
 Don’t download attachments of received messages.
 
