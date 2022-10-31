@@ -272,6 +272,8 @@ public interface Manager extends Closeable {
 
     void addClosedListener(Runnable listener);
 
+    File getAttachmentFile(AttachmentPointer pointer);
+
     @Override
     void close() throws IOException;
 

@@ -11,6 +11,7 @@ public class Commands {
 
     static {
         addCommand(new AddDeviceCommand());
+        addCommand(new AttachmentCommand());
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
         addCommand(new DeleteLocalAccountDataCommand());

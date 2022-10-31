@@ -39,6 +39,12 @@ public class AttachmentStore {
                 Optional.ofNullable(pointer.getContentType()));
     }
 
+    public File getAttachmentFile(AttachmentPointer pointer) {
+        return getAttachmentFile(SignalServiceAttachmentRemoteId.from(pointer.id()),
+                Optional.ofNullable(pointer.fileName()),
+                Optional.ofNullable(pointer.contentType()));
+    }
+
     private void storeAttachment(final File attachmentFile, final AttachmentStorer storer) throws IOException {
         createAttachmentsDir();
         try (OutputStream output = new FileOutputStream(attachmentFile)) {

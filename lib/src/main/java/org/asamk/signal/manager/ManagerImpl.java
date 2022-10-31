@@ -1147,6 +1147,10 @@ class ManagerImpl implements Manager {
         }
     }
 
+    public File getAttachmentFile(AttachmentPointer pointer) {
+        return context.getAttachmentHelper().getAttachmentFile(pointer);
+    }
+
     @Override
     public void close() {
         Thread thread;

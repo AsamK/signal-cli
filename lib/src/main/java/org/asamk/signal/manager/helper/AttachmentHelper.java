@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.AttachmentPointer;
 import org.asamk.signal.manager.AttachmentStore;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
@@ -37,6 +38,11 @@ public class AttachmentHelper {
     public File getAttachmentFile(SignalServiceAttachmentPointer pointer) {
         return attachmentStore.getAttachmentFile(pointer);
     }
+
+    public File getAttachmentFile(AttachmentPointer pointer) {
+        return attachmentStore.getAttachmentFile(pointer);
+    }
+
 
     public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
         var attachmentStreams = AttachmentUtils.createAttachmentStreams(attachments);

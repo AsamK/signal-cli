@@ -2,6 +2,7 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.DbusConfig;
+import org.asamk.signal.manager.AttachmentPointer;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
@@ -905,6 +906,12 @@ public class DbusManagerImpl implements Manager {
                     getValue(a, "isGif"),
                     getValue(a, "isBorderless"));
         }).toList();
+    }
+
+    @Override
+    public File getAttachmentFile(final AttachmentPointer pointer) {
+        //TODO may need an implementation
+        return null;
     }
 
     @SuppressWarnings("unchecked")
