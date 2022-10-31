@@ -1,5 +1,7 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
@@ -19,10 +21,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class ReceiveCommand implements LocalCommand {
+public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<ReceiveCommand.ReceiveParams> {
 
     private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
@@ -78,4 +81,30 @@ public class ReceiveCommand implements LocalCommand {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public TypeReference<ReceiveParams> getRequestType() {
+        return new TypeReference<>() {};
+    }
+
+    @Override
+    public void handleCommand(
+            final ReceiveParams request, final Manager m, final JsonWriter jsonWriter
+    ) throws CommandException {
+        final var timeout = request.timeout() == null ? 3.0 : request.timeout();
+        final var maxMessagesRaw = request.maxMessages() == null ? -1 : request.maxMessages();
+
+        try {
+            final var messages = new ArrayList<>();
+            final var handler = new JsonReceiveMessageHandler(m, messages::add);
+            final var duration = timeout < 0 ? null : Duration.ofMillis((long) (timeout * 1000));
+            final var maxMessages = maxMessagesRaw < 0 ? null : maxMessagesRaw;
+            m.receiveMessages(Optional.ofNullable(duration), Optional.ofNullable(maxMessages), handler);
+            jsonWriter.write(messages);
+        } catch (IOException e) {
+            throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
+        }
+    }
+
+    record ReceiveParams(Double timeout, Integer maxMessages) {}
 }

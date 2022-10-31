@@ -606,6 +606,13 @@
   ]
 },
 {
+  "name":"org.asamk.signal.commands.ReceiveCommand$ReceiveParams",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Double","java.lang.Integer"] }]
+},
+{
   "name":"org.asamk.signal.commands.RegisterCommand$RegistrationParams",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
