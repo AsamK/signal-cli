@@ -13,6 +13,7 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusSignalControlImpl;
 import org.asamk.signal.dbus.DbusSignalImpl;
+import org.asamk.signal.http.HttpServerHandler;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
@@ -69,6 +70,10 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 .nargs("?")
                 .setConst("localhost:7583")
                 .help("Expose a JSON-RPC interface on a TCP socket (default localhost:7583).");
+        subparser.addArgument("--http")
+                .nargs("?")
+                .setConst("localhost:8080")
+                .help("Expose a JSON-RPC interface as http endpoint.");
         subparser.addArgument("--no-receive-stdout")
                 .help("Don’t print received messages to stdout.")
                 .action(Arguments.storeTrue());
@@ -127,6 +132,12 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             final var address = IOUtils.parseInetSocketAddress(tcpAddress);
             final var serverChannel = IOUtils.bindSocket(address);
             runSocketSingleAccount(m, serverChannel, receiveMode == ReceiveMode.MANUAL);
+        }
+        final var httpAddress = ns.getString("http");
+        if (httpAddress != null) {
+            final var address = IOUtils.parseInetSocketAddress(httpAddress);
+            final var handler = new HttpServerHandler(address.getPort(), m);
+            handler.init();
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (isDbusSystem) {
@@ -198,6 +209,12 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             final var address = IOUtils.parseInetSocketAddress(tcpAddress);
             final var serverChannel = IOUtils.bindSocket(address);
             runSocketMultiAccount(c, serverChannel, receiveMode == ReceiveMode.MANUAL);
+        }
+        final var httpAddress = ns.getString("http");
+        if (httpAddress != null) {
+            final var address = IOUtils.parseInetSocketAddress(httpAddress);
+            final var handler = new HttpServerHandler(address.getPort(), c);
+            handler.init();
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (isDbusSystem) {

@@ -38,7 +38,25 @@ public class HttpServerHandler {
 
     private final ObjectMapper objectMapper = Util.createJsonObjectMapper();
 
-    public void init(int port, MultiAccountManager m) {
+    private final int port;
+
+    private final Manager m;
+
+    private final MultiAccountManager c;
+
+    public HttpServerHandler(final int port, final Manager m) {
+        this.port = port;
+        this.m = m;
+        this.c = null;
+    }
+
+    public HttpServerHandler(final int port, final MultiAccountManager c) {
+        this.port = port;
+        this.m = null;
+        this.c = c;
+    }
+
+    public void init() {
 
         try {
 
@@ -63,7 +81,7 @@ public class HttpServerHandler {
 
                     final var ns = new JsonRpcNamespace(params);
 
-                    final var responseBody = processRequest(m, ns, request);
+                    final var responseBody = processRequest(ns, request);
 
                     sendResponse(200, responseBody, httpExchange);
 
@@ -88,15 +106,6 @@ public class HttpServerHandler {
 
             server.start();
 
-            // TODO there may be a better way to keep the main thread running.
-            try {
-                while (true) {
-                    Thread.sleep(1000);
-                }
-            } catch (InterruptedException ex) { }
-
-            logger.info("Server shut down");
-
         } catch (Throwable ex) {
             ex.printStackTrace();
         }
@@ -104,7 +113,6 @@ public class HttpServerHandler {
     }
 
     private JsonRpcResponse processRequest(
-            final MultiAccountManager m,
             final JsonRpcNamespace ns,
             final JsonRpcRequest request
     ) throws JsonRpcException, CommandException, IOException {
@@ -113,12 +121,27 @@ public class HttpServerHandler {
         final var command = Commands.getCommand(request.getMethod());
 
         if (command instanceof LocalCommand) {
-            final var manager = getManagerFromParams(request.getParams(), m);
+            final Manager manager;
+            if (c != null) {
+                manager = getManagerFromParams(request.getParams(), c);
+            } else {
+                manager = m;
+            }
             ((LocalCommand) command).handleCommand(ns, manager, new JsonWriterImpl(writer));
         } else if (command instanceof MultiLocalCommand) {
-            ((MultiLocalCommand) command).handleCommand(ns, m, new JsonWriterImpl(writer));
+            if (c == null) {
+                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                        "Cannot run multi command when running in single mode.",
+                        null));
+            }
+            ((MultiLocalCommand) command).handleCommand(ns, c, new JsonWriterImpl(writer));
         } else if (command instanceof RegistrationCommand) {
-            final var registrationManager = getRegistrationManagerFromParams(request.getParams(), m);
+            if (c == null) {
+                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                        "Cannot run multi command when running in single mode.",
+                        null));
+            }
+            final var registrationManager = getRegistrationManagerFromParams(request.getParams(), c);
             if (registrationManager != null) {
                 ((RegistrationCommand) command).handleCommand(ns, registrationManager);
             } else {
