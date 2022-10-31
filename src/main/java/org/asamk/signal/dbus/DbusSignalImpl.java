@@ -218,7 +218,8 @@ public class DbusSignalImpl implements Signal {
                             List.of(),
                             Optional.empty(),
                             Optional.empty(),
-                            List.of()),
+                            List.of(),
+                            Optional.empty()),
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()));
@@ -287,7 +288,8 @@ public class DbusSignalImpl implements Signal {
                     targetSentTimestamp,
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
-                            .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet()),
+                    false);
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {
@@ -385,7 +387,8 @@ public class DbusSignalImpl implements Signal {
                     List.of(),
                     Optional.empty(),
                     Optional.empty(),
-                    List.of()), Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
+                    List.of(),
+                    Optional.empty()), Set.of(RecipientIdentifier.NoteToSelf.INSTANCE));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (AttachmentInvalidException e) {
@@ -427,7 +430,8 @@ public class DbusSignalImpl implements Signal {
                     List.of(),
                     Optional.empty(),
                     Optional.empty(),
-                    List.of()), Set.of(getGroupRecipientIdentifier(groupId)));
+                    List.of(),
+                    Optional.empty()), Set.of(getGroupRecipientIdentifier(groupId)));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException | InvalidStickerException e) {
@@ -485,7 +489,8 @@ public class DbusSignalImpl implements Signal {
                     remove,
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
-                    Set.of(getGroupRecipientIdentifier(groupId)));
+                    Set.of(getGroupRecipientIdentifier(groupId)),
+                    false);
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException e) {

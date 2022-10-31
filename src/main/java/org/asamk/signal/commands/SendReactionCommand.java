@@ -45,6 +45,9 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
                 .type(long.class)
                 .help("Specify the timestamp of the message to which to react.");
         subparser.addArgument("-r", "--remove").help("Remove a reaction.").action(Arguments.storeTrue());
+        subparser.addArgument("--story")
+                .help("React to a story instead of a normal message")
+                .action(Arguments.storeTrue());
     }
 
     @Override
@@ -64,13 +67,15 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         final var isRemove = Boolean.TRUE.equals(ns.getBoolean("remove"));
         final var targetAuthor = ns.getString("target-author");
         final var targetTimestamp = ns.getLong("target-timestamp");
+        final var isStory = Boolean.TRUE.equals(ns.getBoolean("story"));
 
         try {
             final var results = m.sendMessageReaction(emoji,
                     isRemove,
                     CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetTimestamp,
-                    recipientIdentifiers);
+                    recipientIdentifiers,
+                    isStory);
             outputResult(outputWriter, results);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());

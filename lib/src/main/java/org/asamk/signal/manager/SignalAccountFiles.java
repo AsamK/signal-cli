@@ -7,7 +7,6 @@ import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.accounts.AccountsStore;
-import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.util.KeyHelper;
 import org.slf4j.Logger;
@@ -28,27 +27,27 @@ public class SignalAccountFiles {
     private final ServiceEnvironment serviceEnvironment;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
-    private final TrustNewIdentity trustNewIdentity;
+    private final Settings settings;
     private final AccountsStore accountsStore;
 
     public SignalAccountFiles(
             final File settingsPath,
             final ServiceEnvironment serviceEnvironment,
             final String userAgent,
-            final TrustNewIdentity trustNewIdentity
+            final Settings settings
     ) throws IOException {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceEnvironment = serviceEnvironment;
         this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment, userAgent);
         this.userAgent = userAgent;
-        this.trustNewIdentity = trustNewIdentity;
+        this.settings = settings;
         this.accountsStore = new AccountsStore(pathConfig.dataPath(), serviceEnvironment, accountPath -> {
             if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
                 return null;
             }
 
             try {
-                return SignalAccount.load(pathConfig.dataPath(), accountPath, false, trustNewIdentity);
+                return SignalAccount.load(pathConfig.dataPath(), accountPath, false, settings);
             } catch (Exception e) {
                 return null;
             }
@@ -90,7 +89,7 @@ public class SignalAccountFiles {
             throw new NotRegisteredException();
         }
 
-        var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, trustNewIdentity);
+        var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, settings);
         if (!number.equals(account.getNumber())) {
             account.close();
             throw new IOException("Number in account file doesn't match expected number: " + account.getNumber());
@@ -168,7 +167,7 @@ public class SignalAccountFiles {
                     registrationId,
                     pniRegistrationId,
                     profileKey,
-                    trustNewIdentity);
+                    settings);
 
             return new RegistrationManagerImpl(account,
                     pathConfig,
@@ -178,7 +177,7 @@ public class SignalAccountFiles {
                     new AccountFileUpdaterImpl(accountsStore, newAccountPath));
         }
 
-        var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, trustNewIdentity);
+        var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, settings);
         if (!number.equals(account.getNumber())) {
             account.close();
             throw new IOException("Number in account file doesn't match expected number: " + account.getNumber());

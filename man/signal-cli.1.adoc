@@ -79,6 +79,9 @@ Choose when to trust new identities:
 - `always`: Trust any new identity key without verification
 - `never`: Don't trust any unknown identity key, every key must be verified manually
 
+*--disable-send-log*::
+Disable message send log (for resending messages that recipient couldn't decrypt).
+
 == Commands
 
 === register
@@ -272,6 +275,12 @@ Specify the description for the link preview (optional).
 *--preview-image*::
 Specify the image file for the link preview (optional).
 
+*--story-timestamp*::
+Specify the timestamp of a story to reply to.
+
+*--story-author*::
+Specify the number of the author of the story.
+
 *-e*, *--end-session*::
 Clear session state and send end session message.
 
@@ -309,6 +318,9 @@ Specify the timestamp of the message to which to react.
 
 *-r*, *--remove*::
 Remove a reaction.
+
+*--story*::
+React to a story instead of a normal message
 
 === sendReceipt
 
@@ -359,6 +371,9 @@ In json mode this is outputted as one json object per line.
 *-t* TIMEOUT, *--timeout* TIMEOUT::
 Number of seconds to wait for new messages (negative values disable timeout).
 Default is 5 seconds.
+
+*--max-messages*::
+Maximum number of messages to receive, before returning.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.

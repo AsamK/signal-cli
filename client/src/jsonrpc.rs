@@ -130,6 +130,8 @@ pub trait Rpc {
         #[allow(non_snake_case)] quoteMessage: Option<String>,
         #[allow(non_snake_case)] quoteMention: Vec<String>,
         sticker: Option<String>,
+        #[allow(non_snake_case)] storyTimestamp: Option<u64>,
+        #[allow(non_snake_case)] storyAuthor: Option<String>,
     ) -> Result<Value>;
 
     #[rpc(name = "sendContacts", params = "named")]
@@ -155,6 +157,7 @@ pub trait Rpc {
         #[allow(non_snake_case)] targetAuthor: String,
         #[allow(non_snake_case)] targetTimestamp: u64,
         remove: bool,
+        story: bool,
     ) -> Result<Value>;
 
     #[rpc(name = "sendReceipt", params = "named")]

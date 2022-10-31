@@ -162,6 +162,12 @@ pub enum CliCommands {
 
         #[arg(long)]
         sticker: Option<String>,
+
+        #[arg(long)]
+        story_timestamp: Option<u64>,
+
+        #[arg(long)]
+        story_author: Option<String>,
     },
     SendContacts,
     SendPaymentNotification {
@@ -193,6 +199,9 @@ pub enum CliCommands {
 
         #[arg(short = 'r', long)]
         remove: bool,
+
+        #[arg(long)]
+        story: bool,
     },
     SendReceipt {
         recipient: String,

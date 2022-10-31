@@ -136,7 +136,8 @@ public interface Manager extends Closeable {
             boolean remove,
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
-            Set<RecipientIdentifier> recipients
+            Set<RecipientIdentifier> recipients,
+            final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     SendMessageResults sendPaymentNotificationMessage(
@@ -201,12 +202,9 @@ public interface Manager extends Closeable {
     /**
      * Receive new messages from server, returns if no new message arrive in a timespan of timeout.
      */
-    void receiveMessages(Duration timeout, ReceiveMessageHandler handler) throws IOException;
-
-    /**
-     * Receive new messages from server, returns only if the thread is interrupted.
-     */
-    void receiveMessages(ReceiveMessageHandler handler) throws IOException;
+    public void receiveMessages(
+            Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
+    ) throws IOException;
 
     void setReceiveConfig(ReceiveConfig receiveConfig);
 

@@ -624,6 +624,14 @@ class ManagerImpl implements Manager {
             }
             messageBuilder.withPreviews(previews);
         }
+        if (message.storyReply().isPresent()) {
+            final var storyReply = message.storyReply().get();
+            final var authorServiceId = context.getRecipientHelper()
+                    .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(storyReply.author()))
+                    .getServiceId();
+            messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
+                    storyReply.timestamp()));
+        }
     }
 
     private ArrayList<SignalServiceDataMessage.Mention> resolveMentions(final List<Message.Mention> mentionList) throws UnregisteredRecipientException {
@@ -667,14 +675,19 @@ class ManagerImpl implements Manager {
             boolean remove,
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
-            Set<RecipientIdentifier> recipients
+            Set<RecipientIdentifier> recipients,
+            final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         var targetAuthorRecipientId = context.getRecipientHelper().resolveRecipient(targetAuthor);
-        var reaction = new SignalServiceDataMessage.Reaction(emoji,
-                remove,
-                context.getRecipientHelper().resolveSignalServiceAddress(targetAuthorRecipientId).getServiceId(),
-                targetSentTimestamp);
+        final var authorServiceId = context.getRecipientHelper()
+                .resolveSignalServiceAddress(targetAuthorRecipientId)
+                .getServiceId();
+        var reaction = new SignalServiceDataMessage.Reaction(emoji, remove, authorServiceId, targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withReaction(reaction);
+        if (isStory) {
+            messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
+                    targetSentTimestamp));
+        }
         return sendMessage(messageBuilder, recipients);
     }
 
@@ -948,17 +961,16 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public void receiveMessages(Duration timeout, ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(timeout, true, handler);
-    }
-
-    @Override
-    public void receiveMessages(ReceiveMessageHandler handler) throws IOException {
-        receiveMessages(Duration.ofMinutes(1), false, handler);
+    public void receiveMessages(
+            Optional<Duration> timeout,
+            Optional<Integer> maxMessages,
+            ReceiveMessageHandler handler
+    ) throws IOException {
+        receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
     }
 
     private void receiveMessages(
-            Duration timeout, boolean returnOnTimeout, ReceiveMessageHandler handler
+            Duration timeout, boolean returnOnTimeout, Integer maxMessages, ReceiveMessageHandler handler
     ) throws IOException {
         if (isReceiving()) {
             throw new IllegalStateException("Already receiving message.");
@@ -966,7 +978,7 @@ class ManagerImpl implements Manager {
         isReceivingSynchronous = true;
         receiveThread = Thread.currentThread();
         try {
-            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, handler);
+            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, maxMessages, handler);
         } finally {
             receiveThread = null;
             isReceivingSynchronous = false;

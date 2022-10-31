@@ -33,9 +33,11 @@ public class MessageSendLogStore implements AutoCloseable {
 
     private final Database database;
     private final Thread cleanupThread;
+    private final boolean sendLogDisabled;
 
-    public MessageSendLogStore(final Database database) {
+    public MessageSendLogStore(final Database database, final boolean disableMessageSendLog) {
         this.database = database;
+        this.sendLogDisabled = disableMessageSendLog;
         this.cleanupThread = new Thread(() -> {
             try {
                 final var interval = Duration.ofHours(1).toMillis();
@@ -43,6 +45,7 @@ public class MessageSendLogStore implements AutoCloseable {
                     try (final var connection = database.getConnection()) {
                         deleteOutdatedEntries(connection);
                     } catch (SQLException e) {
+                        logger.debug("MSL", e);
                         logger.warn("Deleting outdated entries failed");
                         break;
                     }
@@ -113,6 +116,9 @@ public class MessageSendLogStore implements AutoCloseable {
     public long insertIfPossible(
             long sentTimestamp, SendMessageResult sendMessageResult, ContentHint contentHint, boolean urgent
     ) {
+        if (sendLogDisabled) {
+            return -1;
+        }
         final RecipientDevices recipientDevice = getRecipientDevices(sendMessageResult);
         if (recipientDevice == null) {
             return -1;
@@ -128,6 +134,9 @@ public class MessageSendLogStore implements AutoCloseable {
     public long insertIfPossible(
             long sentTimestamp, List<SendMessageResult> sendMessageResults, ContentHint contentHint, boolean urgent
     ) {
+        if (sendLogDisabled) {
+            return -1;
+        }
         final var recipientDevices = sendMessageResults.stream()
                 .map(this::getRecipientDevices)
                 .filter(Objects::nonNull)
@@ -146,6 +155,9 @@ public class MessageSendLogStore implements AutoCloseable {
     }
 
     public void addRecipientToExistingEntryIfPossible(final long contentId, final SendMessageResult sendMessageResult) {
+        if (sendLogDisabled) {
+            return;
+        }
         final RecipientDevices recipientDevice = getRecipientDevices(sendMessageResult);
         if (recipientDevice == null) {
             return;
@@ -157,6 +169,9 @@ public class MessageSendLogStore implements AutoCloseable {
     public void addRecipientToExistingEntryIfPossible(
             final long contentId, final List<SendMessageResult> sendMessageResults
     ) {
+        if (sendLogDisabled) {
+            return;
+        }
         final var recipientDevices = sendMessageResults.stream()
                 .map(this::getRecipientDevices)
                 .filter(Objects::nonNull)
