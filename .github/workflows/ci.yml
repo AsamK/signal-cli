@@ -17,6 +17,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java }}
+          cache: 'gradle'
       - name: Build with Gradle
         run: ./gradlew --no-daemon build
       - name: Compress archive
@@ -37,6 +38,7 @@ jobs:
         with:
           version: 'latest'
           java-version: '17'
+          cache: 'gradle'
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build with Gradle
