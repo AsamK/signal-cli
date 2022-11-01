@@ -2,8 +2,10 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.MimeUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +39,14 @@ public class AttachmentStore {
         return getAttachmentFile(pointer.getRemoteId(),
                 pointer.getFileName(),
                 Optional.ofNullable(pointer.getContentType()));
+    }
+
+    public StreamDetails retrieveAttachment(final String id) throws IOException {
+        final var attachmentFile = new File(attachmentsPath, id);
+        if (!attachmentFile.exists()) {
+            return null;
+        }
+        return Utils.createStreamDetailsFromFile(attachmentFile);
     }
 
     private void storeAttachment(final File attachmentFile, final AttachmentStorer storer) throws IOException {

@@ -84,6 +84,7 @@ import org.whispersystems.signalservice.internal.util.Util;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -1165,6 +1166,11 @@ class ManagerImpl implements Manager {
         synchronized (closedListeners) {
             closedListeners.add(listener);
         }
+    }
+
+    @Override
+    public InputStream retrieveAttachment(final String id) throws IOException {
+        return context.getAttachmentHelper().retrieveAttachment(id).getStream();
     }
 
     @Override

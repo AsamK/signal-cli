@@ -39,6 +39,7 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
@@ -270,6 +271,8 @@ public interface Manager extends Closeable {
     void addAddressChangedListener(Runnable listener);
 
     void addClosedListener(Runnable listener);
+
+    InputStream retrieveAttachment(final String id) throws IOException;
 
     @Override
     void close() throws IOException;

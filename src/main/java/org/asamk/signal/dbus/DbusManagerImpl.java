@@ -46,6 +46,7 @@ import org.freedesktop.dbus.types.Variant;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -914,6 +915,11 @@ public class DbusManagerImpl implements Manager {
                     getValue(a, "isGif"),
                     getValue(a, "isBorderless"));
         }).toList();
+    }
+
+    @Override
+    public InputStream retrieveAttachment(final String id) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("unchecked")
