@@ -10,8 +10,10 @@ import org.asamk.signal.OutputType;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
@@ -79,6 +81,8 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
             m.receiveMessages(Optional.ofNullable(duration), Optional.ofNullable(maxMessages), handler);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
+        } catch (AlreadyReceivingException e) {
+            throw new UserErrorException("Receive command cannot be used if messages are already being received.", e);
         }
     }
 
@@ -103,6 +107,8 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
             jsonWriter.write(messages);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);
+        } catch (AlreadyReceivingException e) {
+            throw new UserErrorException("Receive command cannot be used if messages are already being received.", e);
         }
     }
 
