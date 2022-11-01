@@ -4,20 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
+import org.asamk.signal.commands.Commands;
+import org.asamk.signal.jsonrpc.JsonRpcReader;
 import org.asamk.signal.jsonrpc.JsonRpcResponse;
-import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
+import org.asamk.signal.jsonrpc.JsonRpcSender;
+import org.asamk.signal.jsonrpc.SignalJsonRpcCommandHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
-import org.asamk.signal.output.JsonWriter;
-import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.concurrent.Executors;
 
 public class HttpServerHandler {
@@ -53,53 +52,40 @@ public class HttpServerHandler {
             final var server = HttpServer.create(new InetSocketAddress(port), 0);
             server.setExecutor(Executors.newFixedThreadPool(10));
 
-            server.createContext("/json-rpc", httpExchange -> {
+            server.createContext("/api/v1/rpc", httpExchange -> {
 
                 try {
                     if (!"POST".equals(httpExchange.getRequestMethod())) {
                         throw new HttpServerException(405, "Method not supported.");
                     }
 
-                    // Create a custom writer which receives our response
-                    final var valueHolder = new Object[] { null };
-                    final JsonWriter jsonWriter = (Object o) -> valueHolder[0] = o;
-
-                    // This queue is used to deliver our request and then deliver a null
-                    // value which terminates the reading process
-                    final var stringRequest = IOUtils.readAll(httpExchange.getRequestBody(), StandardCharsets.UTF_8);
-                    final var queue = new LinkedList<String>();
-                    queue.addLast(stringRequest);
-                    queue.addLast(null);
-
-                    // Create dispatcher and handle connection
-                    // Right now we are creating a new one for every request. This may not be
-                    // totally efficient, but it handles possible issues that would arise with
-                    // multithreading.
-                    final var dispatcher = new SignalJsonRpcDispatcherHandler(
-                            jsonWriter,
-                            queue::removeFirst,
-                            true
-                    );
+                    final SignalJsonRpcCommandHandler commandHandler;
 
                     if (c != null) {
-                        dispatcher.handleConnection(c);
+                        commandHandler = new SignalJsonRpcCommandHandler(c, Commands::getCommand);
                     } else {
-                        dispatcher.handleConnection(m);
+                        commandHandler = new SignalJsonRpcCommandHandler(m, Commands::getCommand);
                     }
 
-                    // Extract and process the response
-                    final var response = valueHolder[0] != null ? valueHolder[0] : JsonRpcResponse.forSuccess(null, null);
-
-                    if (response instanceof JsonRpcResponse jsonRpcResponse) {
-                        if (jsonRpcResponse.getError() == null) {
-                            sendResponse(200, jsonRpcResponse, httpExchange);
-                        } else {
-                            sendResponse(500, jsonRpcResponse, httpExchange);
+                    final Object[] result = {null};
+                    final var jsonRpcSender = new JsonRpcSender(s -> {
+                        if (result[0] != null) {
+                            throw new AssertionError("There should only be a single JSON-RPC response");
                         }
+
+                        result[0] = s;
+                    });
+
+                    final var jsonRpcReader = new JsonRpcReader(jsonRpcSender, httpExchange.getRequestBody());
+                    jsonRpcReader.readMessages((method, params) -> commandHandler.handleRequest(objectMapper, method, params),
+                            response -> logger.debug("Received unexpected response for id {}", response.getId()));
+
+                    if (result[0] !=null) {
+                        sendResponse(200, result[0], httpExchange);
                     } else {
-                        logger.error("Invalid response object was received." + response);
-                        throw new HttpServerException(500, "An internal server error has occurred.");
+                        sendResponse(201, null, httpExchange);
                     }
+
                 }
                 catch (HttpServerException aEx) {
                     logger.error("Failed to process request.", aEx);
@@ -109,7 +95,7 @@ public class HttpServerHandler {
                 }
                 catch (Throwable aEx) {
                     logger.error("Failed to process request.", aEx);
-                    sendResponse(500, JsonRpcResponse.forError(
+                    sendResponse(200, JsonRpcResponse.forError(
                             new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
                             "An internal server error has occurred.", null), null), httpExchange);
                 }
@@ -123,10 +109,15 @@ public class HttpServerHandler {
 
     }
 
-    private void sendResponse(int status, JsonRpcResponse response, HttpExchange httpExchange) throws IOException {
-        final var byteResponse = objectMapper.writeValueAsBytes(response);
-        httpExchange.sendResponseHeaders(status, byteResponse.length);
-        httpExchange.getResponseBody().write(byteResponse);
+    private void sendResponse(int status, Object response, HttpExchange httpExchange) throws IOException {
+        if (response != null) {
+            final var byteResponse = objectMapper.writeValueAsBytes(response);
+            httpExchange.sendResponseHeaders(status, byteResponse.length);
+            httpExchange.getResponseBody().write(byteResponse);
+        } else {
+            httpExchange.sendResponseHeaders(status, 0);
+        }
+
         httpExchange.getResponseBody().close();
     }
 
