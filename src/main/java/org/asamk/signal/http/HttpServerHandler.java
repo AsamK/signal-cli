@@ -54,10 +54,11 @@ public class HttpServerHandler {
 
             server.createContext("/api/v1/rpc", httpExchange -> {
 
+                if (!"POST".equals(httpExchange.getRequestMethod())) {
+                    sendResponse(405, null, httpExchange);
+                }
+
                 try {
-                    if (!"POST".equals(httpExchange.getRequestMethod())) {
-                        throw new HttpServerException(405, "Method not supported.");
-                    }
 
                     final SignalJsonRpcCommandHandler commandHandler;
 
@@ -87,12 +88,6 @@ public class HttpServerHandler {
                     }
 
                 }
-                catch (HttpServerException aEx) {
-                    logger.error("Failed to process request.", aEx);
-                    sendResponse(aEx.getHttpStatus(), JsonRpcResponse.forError(
-                            new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
-                                    aEx.getMessage(), null), null), httpExchange);
-                }
                 catch (Throwable aEx) {
                     logger.error("Failed to process request.", aEx);
                     sendResponse(200, JsonRpcResponse.forError(
@@ -112,7 +107,10 @@ public class HttpServerHandler {
     private void sendResponse(int status, Object response, HttpExchange httpExchange) throws IOException {
         if (response != null) {
             final var byteResponse = objectMapper.writeValueAsBytes(response);
+
+            httpExchange.getResponseHeaders().add("Content-Type", "application/json");
             httpExchange.sendResponseHeaders(status, byteResponse.length);
+
             httpExchange.getResponseBody().write(byteResponse);
         } else {
             httpExchange.sendResponseHeaders(status, 0);
