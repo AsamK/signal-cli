@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AttachmentPointer;
 import org.asamk.signal.manager.AttachmentStore;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
@@ -14,6 +13,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.push.exceptions.MissingConfigurationException;
+import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,8 +39,8 @@ public class AttachmentHelper {
         return attachmentStore.getAttachmentFile(pointer);
     }
 
-    public File getAttachmentFile(AttachmentPointer pointer) {
-        return attachmentStore.getAttachmentFile(pointer);
+    public StreamDetails retrieveAttachment(final String id) throws IOException {
+        return attachmentStore.retrieveAttachment(id);
     }
 
 

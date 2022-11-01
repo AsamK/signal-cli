@@ -2,7 +2,6 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.signal.DbusConfig;
-import org.asamk.signal.manager.AttachmentPointer;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
@@ -47,6 +46,7 @@ import org.freedesktop.dbus.types.Variant;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -909,9 +909,8 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public File getAttachmentFile(final AttachmentPointer pointer) {
-        //TODO may need an implementation
-        return null;
+    public InputStream retrieveAttachment(final String id) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("unchecked")
