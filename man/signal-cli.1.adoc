@@ -620,6 +620,20 @@ The required manifest.json has the following format:
 PATH::
 The path of the manifest.json or a zip file containing the sticker pack you wish to upload.
 
+=== getAttachment
+
+Gets teh raw data for a specified attachment. This is done using the ID of the attachment the recipient or group ID.
+The attachment data is returned as a Base64 String.
+
+*--id* [ID]::
+The ID of the attachment as given in the attachment list of the message.
+
+*--recipient* [RECIPIENT]::
+Specify the number which sent the attachment. Referred to generally as recipient.
+
+*-g* [GROUP], *--group-id* [GROUP]::
+Alternatively, specify the group IDs that for which to get the attachment.
+
 === daemon
 
 signal-cli can run in daemon mode and provides an experimental dbus or JSON-RPC interface.
