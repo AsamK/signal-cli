@@ -1,3 +1,9 @@
 package org.asamk.signal.json;
 
-public record JsonAttachmentData(String data) {}
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.InputStream;
+
+public record JsonAttachmentData(
+        @JsonSerialize(using=JsonStreamSerializer.class) InputStream data
+) {}

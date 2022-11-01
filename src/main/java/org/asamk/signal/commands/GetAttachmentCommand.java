@@ -47,17 +47,15 @@ public class GetAttachmentCommand implements JsonRpcLocalCommand {
         final var id = ns.getString("id");
 
         try(InputStream attachment = m.retrieveAttachment(id)) {
-
-            final var bytes = attachment.readAllBytes();
-            final var base64 = Base64.getEncoder().encodeToString(bytes);
-
             if (outputWriter instanceof PlainTextWriter writer) {
+                final var bytes = attachment.readAllBytes();
+                final var base64 = Base64.getEncoder().encodeToString(bytes);
                 writer.println(base64);
             } else if (outputWriter instanceof JsonWriter writer) {
-                writer.write(new JsonAttachmentData(base64));
+                writer.write(new JsonAttachmentData(attachment));
             }
         } catch (FileNotFoundException ex) {
-            throw new UserErrorException("Could not find attachment with ID: " + id);
+            throw new UserErrorException("Could not find attachment with ID: " + id, ex);
         } catch (IOException ex) {
             throw new UnexpectedErrorException("An error occurred reading attachment: " + id, ex);
         }
