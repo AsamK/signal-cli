@@ -25,20 +25,20 @@ public class HttpServerHandler {
 
     private final ObjectMapper objectMapper = Util.createJsonObjectMapper();
 
-    private final int port;
+    private final InetSocketAddress address;
 
     private final Manager m;
 
     private final MultiAccountManager c;
 
-    public HttpServerHandler(final int port, final Manager m) {
-        this.port = port;
+    public HttpServerHandler(final InetSocketAddress address, final Manager m) {
+        this.address = address;
         this.m = m;
         this.c = null;
     }
 
-    public HttpServerHandler(final int port, final MultiAccountManager c) {
-        this.port = port;
+    public HttpServerHandler(final InetSocketAddress address, final MultiAccountManager c) {
+        this.address = address;
         this.m = null;
         this.c = c;
     }
@@ -47,15 +47,16 @@ public class HttpServerHandler {
 
         try {
 
-            logger.info("Starting server on port " + port);
+            logger.info("Starting server on port " + address.toString());
 
-            final var server = HttpServer.create(new InetSocketAddress(port), 0);
+            final var server = HttpServer.create(new InetSocketAddress(address.getPort()), 0);
             server.setExecutor(Executors.newFixedThreadPool(10));
 
             server.createContext("/api/v1/rpc", httpExchange -> {
 
                 if (!"POST".equals(httpExchange.getRequestMethod())) {
                     sendResponse(405, null, httpExchange);
+                    return;
                 }
 
                 try {

@@ -136,7 +136,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var httpAddress = ns.getString("http");
         if (httpAddress != null) {
             final var address = IOUtils.parseInetSocketAddress(httpAddress);
-            final var handler = new HttpServerHandler(address.getPort(), m);
+            final var handler = new HttpServerHandler(address, m);
             handler.init();
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
@@ -213,7 +213,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var httpAddress = ns.getString("http");
         if (httpAddress != null) {
             final var address = IOUtils.parseInetSocketAddress(httpAddress);
-            final var handler = new HttpServerHandler(address.getPort(), c);
+            final var handler = new HttpServerHandler(address, c);
             handler.init();
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
