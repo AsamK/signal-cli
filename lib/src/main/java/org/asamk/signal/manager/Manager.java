@@ -1,5 +1,6 @@
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -204,7 +205,7 @@ public interface Manager extends Closeable {
      */
     public void receiveMessages(
             Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
-    ) throws IOException;
+    ) throws IOException, AlreadyReceivingException;
 
     void setReceiveConfig(ReceiveConfig receiveConfig);
 

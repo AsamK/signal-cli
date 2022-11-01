@@ -16,6 +16,7 @@
  */
 package org.asamk.signal.manager;
 
+import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -25,6 +26,7 @@ import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.Message;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
@@ -874,9 +876,6 @@ class ManagerImpl implements Manager {
 
     @Override
     public void addReceiveHandler(final ReceiveMessageHandler handler, final boolean isWeakListener) {
-        if (isReceivingSynchronous) {
-            throw new IllegalStateException("Already receiving message synchronously.");
-        }
         synchronized (messageHandlers) {
             if (isWeakListener) {
                 weakHandlers.add(handler);
@@ -890,23 +889,12 @@ class ManagerImpl implements Manager {
     private static final AtomicInteger threadNumber = new AtomicInteger(0);
 
     private void startReceiveThreadIfRequired() {
-        if (receiveThread != null) {
+        if (receiveThread != null || isReceivingSynchronous) {
             return;
         }
         receiveThread = new Thread(() -> {
             logger.debug("Starting receiving messages");
-            context.getReceiveHelper().receiveMessagesContinuously((envelope, e) -> {
-                synchronized (messageHandlers) {
-                    final var handlers = Stream.concat(messageHandlers.stream(), weakHandlers.stream()).toList();
-                    handlers.forEach(h -> {
-                        try {
-                            h.handleMessage(envelope, e);
-                        } catch (Throwable ex) {
-                            logger.warn("Message handler failed, ignoring", ex);
-                        }
-                    });
-                }
-            });
+            context.getReceiveHelper().receiveMessagesContinuously(this::passReceivedMessageToHandlers);
             logger.debug("Finished receiving messages");
             synchronized (messageHandlers) {
                 receiveThread = null;
@@ -921,6 +909,18 @@ class ManagerImpl implements Manager {
         receiveThread.setName("receive-" + threadNumber.getAndIncrement());
 
         receiveThread.start();
+    }
+
+    private void passReceivedMessageToHandlers(MessageEnvelope envelope, Throwable e) {
+        synchronized (messageHandlers) {
+            Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
+                try {
+                    h.handleMessage(envelope, e);
+                } catch (Throwable ex) {
+                    logger.warn("Message handler failed, ignoring", ex);
+                }
+            });
+        }
     }
 
     @Override
@@ -962,26 +962,34 @@ class ManagerImpl implements Manager {
 
     @Override
     public void receiveMessages(
-            Optional<Duration> timeout,
-            Optional<Integer> maxMessages,
-            ReceiveMessageHandler handler
-    ) throws IOException {
+            Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
+    ) throws IOException, AlreadyReceivingException {
         receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
     }
 
     private void receiveMessages(
             Duration timeout, boolean returnOnTimeout, Integer maxMessages, ReceiveMessageHandler handler
-    ) throws IOException {
-        if (isReceiving()) {
-            throw new IllegalStateException("Already receiving message.");
+    ) throws IOException, AlreadyReceivingException {
+        synchronized (messageHandlers) {
+            if (isReceiving()) {
+                throw new AlreadyReceivingException("Already receiving message.");
+            }
+            isReceivingSynchronous = true;
+            receiveThread = Thread.currentThread();
         }
-        isReceivingSynchronous = true;
-        receiveThread = Thread.currentThread();
         try {
-            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, maxMessages, handler);
+            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, maxMessages, (envelope, e) -> {
+                passReceivedMessageToHandlers(envelope, e);
+                handler.handleMessage(envelope, e);
+            });
         } finally {
-            receiveThread = null;
-            isReceivingSynchronous = false;
+            synchronized (messageHandlers) {
+                receiveThread = null;
+                isReceivingSynchronous = false;
+                if (messageHandlers.size() > 0) {
+                    startReceiveThreadIfRequired();
+                }
+            }
         }
     }
 
