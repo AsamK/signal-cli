@@ -1,35 +1,23 @@
 package org.asamk.signal.http;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ContainerNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.POJONode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
-import org.asamk.signal.commands.Commands;
-import org.asamk.signal.commands.JsonRpcNamespace;
-import org.asamk.signal.commands.LocalCommand;
-import org.asamk.signal.commands.MultiLocalCommand;
-import org.asamk.signal.commands.RegistrationCommand;
-import org.asamk.signal.commands.exceptions.CommandException;
-import org.asamk.signal.jsonrpc.JsonRpcException;
-import org.asamk.signal.jsonrpc.JsonRpcRequest;
 import org.asamk.signal.jsonrpc.JsonRpcResponse;
+import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
-import org.asamk.signal.manager.RegistrationManager;
-import org.asamk.signal.output.JsonWriterImpl;
+import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.util.IOUtils;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
-import java.nio.channels.OverlappingFileLockException;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.concurrent.Executors;
 
 public class HttpServerHandler {
@@ -65,30 +53,53 @@ public class HttpServerHandler {
             final var server = HttpServer.create(new InetSocketAddress(port), 0);
             server.setExecutor(Executors.newFixedThreadPool(10));
 
-            server.createContext("/api/v1", httpExchange -> {
-
-                JsonRpcRequest request = null;
+            server.createContext("/json-rpc", httpExchange -> {
 
                 try {
                     if (!"POST".equals(httpExchange.getRequestMethod())) {
                         throw new HttpServerException(405, "Method not supported.");
                     }
 
-                    request = objectMapper.readValue(httpExchange.getRequestBody(), JsonRpcRequest.class);
-                    final Map params = objectMapper.treeToValue(request.getParams(), Map.class);
+                    // Create a custom writer which receives our response
+                    final var valueHolder = new Object[] { null };
+                    final JsonWriter jsonWriter = (Object o) -> valueHolder[0] = o;
 
-                    logger.debug("Command called " + request.getMethod());
+                    // This queue is used to deliver our request and then deliver a null
+                    // value which terminates the reading process
+                    final var stringRequest = IOUtils.readAll(httpExchange.getRequestBody(), StandardCharsets.UTF_8);
+                    final var queue = new LinkedList<String>();
+                    queue.addLast(stringRequest);
+                    queue.addLast(null);
 
-                    final var ns = new JsonRpcNamespace(params);
+                    // Create dispatcher and handle connection
+                    // Right now we are creating a new one for every request. This may not be
+                    // totally efficient, but it handles possible issues that would arise with
+                    // multithreading.
+                    final var dispatcher = new SignalJsonRpcDispatcherHandler(
+                            jsonWriter,
+                            queue::removeFirst,
+                            true
+                    );
 
-                    final var responseBody = processRequest(ns, request);
+                    if (c != null) {
+                        dispatcher.handleConnection(c);
+                    } else {
+                        dispatcher.handleConnection(m);
+                    }
 
-                    sendResponse(200, responseBody, httpExchange);
+                    // Extract and process the response
+                    final var response = valueHolder[0] != null ? valueHolder[0] : JsonRpcResponse.forSuccess(null, null);
 
-                }
-                catch (JsonRpcException aEx) {
-                    logger.error("Failed to process request.", aEx);
-                    sendResponse(500, JsonRpcResponse.forError(aEx.getError(), request.getId()), httpExchange);
+                    if (response instanceof JsonRpcResponse jsonRpcResponse) {
+                        if (jsonRpcResponse.getError() == null) {
+                            sendResponse(200, jsonRpcResponse, httpExchange);
+                        } else {
+                            sendResponse(500, jsonRpcResponse, httpExchange);
+                        }
+                    } else {
+                        logger.error("Invalid response object was received." + response);
+                        throw new HttpServerException(500, "An internal server error has occurred.");
+                    }
                 }
                 catch (HttpServerException aEx) {
                     logger.error("Failed to process request.", aEx);
@@ -100,7 +111,7 @@ public class HttpServerHandler {
                     logger.error("Failed to process request.", aEx);
                     sendResponse(500, JsonRpcResponse.forError(
                             new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
-                            "An internal server error has occured.", null), null), httpExchange);
+                            "An internal server error has occurred.", null), null), httpExchange);
                 }
             });
 
@@ -112,98 +123,11 @@ public class HttpServerHandler {
 
     }
 
-    private JsonRpcResponse processRequest(
-            final JsonRpcNamespace ns,
-            final JsonRpcRequest request
-    ) throws JsonRpcException, CommandException, IOException {
-
-        final var writer = new StringWriter();
-        final var command = Commands.getCommand(request.getMethod());
-
-        if (command instanceof LocalCommand) {
-            final Manager manager;
-            if (c != null) {
-                manager = getManagerFromParams(request.getParams(), c);
-            } else {
-                manager = m;
-            }
-            ((LocalCommand) command).handleCommand(ns, manager, new JsonWriterImpl(writer));
-        } else if (command instanceof MultiLocalCommand) {
-            if (c == null) {
-                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
-                        "Cannot run multi command when running in single mode.",
-                        null));
-            }
-            ((MultiLocalCommand) command).handleCommand(ns, c, new JsonWriterImpl(writer));
-        } else if (command instanceof RegistrationCommand) {
-            if (c == null) {
-                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
-                        "Cannot run multi command when running in single mode.",
-                        null));
-            }
-            final var registrationManager = getRegistrationManagerFromParams(request.getParams(), c);
-            if (registrationManager != null) {
-                ((RegistrationCommand) command).handleCommand(ns, registrationManager);
-            } else {
-                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
-                        "Method requires valid account parameter",
-                        null));
-            }
-        }
-        else {
-            throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.METHOD_NOT_FOUND,
-                    "The specified method is not supported.",
-                    null));
-        }
-
-        final var rawJson = writer.toString();
-        final JsonNode dataNode;
-
-        if (rawJson.isEmpty()) {
-            dataNode = new POJONode(new HttpSimpleResponse("OK"));
-        } else {
-            dataNode = objectMapper.readTree(rawJson);
-        }
-
-        return JsonRpcResponse.forSuccess(dataNode, request.getId());
-    }
-
     private void sendResponse(int status, JsonRpcResponse response, HttpExchange httpExchange) throws IOException {
         final var byteResponse = objectMapper.writeValueAsBytes(response);
         httpExchange.sendResponseHeaders(status, byteResponse.length);
         httpExchange.getResponseBody().write(byteResponse);
         httpExchange.getResponseBody().close();
-    }
-
-    private Manager getManagerFromParams(final ContainerNode<?> params, MultiAccountManager c) throws JsonRpcException {
-        if (params != null && params.hasNonNull("account")) {
-            final var manager = c.getManager(params.get("account").asText());
-            ((ObjectNode) params).remove("account");
-            if (manager == null) {
-                throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
-                        "Specified account does not exist",
-                        null));
-            }
-            return manager;
-        }
-        return null;
-    }
-
-    private RegistrationManager getRegistrationManagerFromParams(final ContainerNode<?> params, MultiAccountManager c) {
-        if (params != null && params.has("account")) {
-            try {
-                final var registrationManager = c.getNewRegistrationManager(params.get("account").asText());
-                ((ObjectNode) params).remove("account");
-                return registrationManager;
-            } catch (OverlappingFileLockException e) {
-                logger.warn("Account is already in use");
-                return null;
-            } catch (IOException | IllegalStateException e) {
-                logger.warn("Failed to load registration manager", e);
-                return null;
-            }
-        }
-        return null;
     }
 
 }
