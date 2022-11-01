@@ -26,27 +26,20 @@ public class GetAttachmentCommand implements JsonRpcLocalCommand {
 
     @Override
     public void attachToSubparser(final Subparser subparser) {
-        subparser.addArgument("--id")
-                .required(true)
-                .help("The ID of the attachment file.");
-        var mut = subparser.addMutuallyExclusiveGroup()
-                .required(true);
-        mut.addArgument("--recipient")
-                .help("Sender of the attachment");
-        mut.addArgument("-g", "--group-id")
-                .help("Group in which the attachment was received");
+        subparser.addArgument("--id").required(true).help("The ID of the attachment file.");
+        var mut = subparser.addMutuallyExclusiveGroup().required(true);
+        mut.addArgument("--recipient").help("Sender of the attachment");
+        mut.addArgument("-g", "--group-id").help("Group in which the attachment was received");
     }
 
     @Override
     public void handleCommand(
-            final Namespace ns,
-            final Manager m,
-            final OutputWriter outputWriter
+            final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
 
         final var id = ns.getString("id");
 
-        try(InputStream attachment = m.retrieveAttachment(id)) {
+        try (InputStream attachment = m.retrieveAttachment(id)) {
             if (outputWriter instanceof PlainTextWriter writer) {
                 final var bytes = attachment.readAllBytes();
                 final var base64 = Base64.getEncoder().encodeToString(bytes);

@@ -43,11 +43,7 @@ record JsonStoryMessage(
         }
 
         public record Gradient(
-                String startColor,
-                String endColor,
-                List<String> colors,
-                List<Float> positions,
-                Integer angle
+                String startColor, String endColor, List<String> colors, List<Float> positions, Integer angle
         ) {
 
             static Gradient from(MessageEnvelope.Story.TextAttachment.Gradient gradient) {

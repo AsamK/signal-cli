@@ -62,8 +62,9 @@ class StagingConfig {
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
                         2,
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
-                new SignalContactDiscoveryUrl[]{new SignalContactDiscoveryUrl(SIGNAL_CONTACT_DISCOVERY_URL,
-                        TRUST_STORE)},
+                new SignalContactDiscoveryUrl[]{
+                        new SignalContactDiscoveryUrl(SIGNAL_CONTACT_DISCOVERY_URL, TRUST_STORE)
+                },
                 new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
                 new SignalCdsiUrl[]{new SignalCdsiUrl(SIGNAL_CDSI_URL, TRUST_STORE)},

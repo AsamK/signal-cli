@@ -43,7 +43,6 @@ public class AttachmentHelper {
         return attachmentStore.retrieveAttachment(id);
     }
 
-
     public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
         var attachmentStreams = AttachmentUtils.createAttachmentStreams(attachments);
 

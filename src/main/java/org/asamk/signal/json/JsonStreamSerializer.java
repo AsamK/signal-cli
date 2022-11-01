@@ -11,9 +11,7 @@ public class JsonStreamSerializer extends JsonSerializer<InputStream> {
 
     @Override
     public void serialize(
-            final InputStream value,
-            final JsonGenerator jsonGenerator,
-            final SerializerProvider serializers
+            final InputStream value, final JsonGenerator jsonGenerator, final SerializerProvider serializers
     ) throws IOException {
         jsonGenerator.writeBinary(value, -1);
     }

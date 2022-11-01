@@ -714,6 +714,13 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.asamk.signal.json.JsonAttachmentData",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"data","parameterTypes":[] }]
+},
+{
   "name":"org.asamk.signal.json.JsonCallMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -974,6 +981,10 @@
     {"name":"positions","parameterTypes":[] }, 
     {"name":"startColor","parameterTypes":[] }
   ]
+},
+{
+  "name":"org.asamk.signal.json.JsonStreamSerializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonSyncDataMessage",

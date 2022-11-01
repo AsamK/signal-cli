@@ -11,11 +11,11 @@ public class Commands {
 
     static {
         addCommand(new AddDeviceCommand());
-        addCommand(new GetAttachmentCommand());
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
         addCommand(new DeleteLocalAccountDataCommand());
         addCommand(new FinishLinkCommand());
+        addCommand(new GetAttachmentCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());

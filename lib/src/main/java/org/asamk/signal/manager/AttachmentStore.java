@@ -43,9 +43,6 @@ public class AttachmentStore {
 
     public StreamDetails retrieveAttachment(final String id) throws IOException {
         final var attachmentFile = new File(attachmentsPath, id);
-        if (!attachmentFile.exists()) {
-            return null;
-        }
         return Utils.createStreamDetailsFromFile(attachmentFile);
     }
 
