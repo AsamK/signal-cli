@@ -1,3 +1,3 @@
 package org.asamk.signal.json;
 
-public record JsonAttachmentData(String dataBase64) {}
+public record JsonAttachmentData(String data) {}
