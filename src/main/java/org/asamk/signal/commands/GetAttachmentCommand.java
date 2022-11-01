@@ -15,11 +15,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
-public class AttachmentCommand implements JsonRpcLocalCommand {
+public class GetAttachmentCommand implements JsonRpcLocalCommand {
 
     @Override
     public String getName() {
-        return "attachment";
+        return "getAttachment";
     }
 
     @Override
