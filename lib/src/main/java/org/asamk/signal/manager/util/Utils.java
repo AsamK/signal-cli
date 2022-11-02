@@ -123,7 +123,7 @@ public class Utils {
         for (var param : params) {
             final var paramParts = param.split("=");
             var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
-            var value = URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
+            var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
             map.put(name, value);
         }
         return map;
