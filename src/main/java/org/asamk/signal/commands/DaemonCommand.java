@@ -137,7 +137,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         if (httpAddress != null) {
             final var address = IOUtils.parseInetSocketAddress(httpAddress);
             final var handler = new HttpServerHandler(address, m);
-            handler.init();
+            try {
+                handler.init();
+            } catch (IOException ex) {
+                throw new IOErrorException("Failed to initialize HTTP Server", ex);
+            }
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (isDbusSystem) {
@@ -214,7 +218,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         if (httpAddress != null) {
             final var address = IOUtils.parseInetSocketAddress(httpAddress);
             final var handler = new HttpServerHandler(address, c);
-            handler.init();
+            try {
+                handler.init();
+            } catch (IOException ex) {
+                throw new IOErrorException("Failed to initialize HTTP Server", ex);
+            }
         }
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (isDbusSystem) {

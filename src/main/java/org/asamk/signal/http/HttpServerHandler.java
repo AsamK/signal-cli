@@ -27,29 +27,23 @@ public class HttpServerHandler {
 
     private final InetSocketAddress address;
 
-    private final Manager m;
-
-    private final MultiAccountManager c;
+    private final SignalJsonRpcCommandHandler commandHandler;
 
     public HttpServerHandler(final InetSocketAddress address, final Manager m) {
         this.address = address;
-        this.m = m;
-        this.c = null;
+        commandHandler = new SignalJsonRpcCommandHandler(m, Commands::getCommand);
     }
 
     public HttpServerHandler(final InetSocketAddress address, final MultiAccountManager c) {
         this.address = address;
-        this.m = null;
-        this.c = c;
+        commandHandler = new SignalJsonRpcCommandHandler(c, Commands::getCommand);
     }
 
-    public void init() {
+    public void init() throws IOException {
 
-        try {
+            logger.info("Starting server on " + address.toString());
 
-            logger.info("Starting server on port " + address.toString());
-
-            final var server = HttpServer.create(new InetSocketAddress(address.getPort()), 0);
+            final var server = HttpServer.create(address, 0);
             server.setExecutor(Executors.newFixedThreadPool(10));
 
             server.createContext("/api/v1/rpc", httpExchange -> {
@@ -59,15 +53,12 @@ public class HttpServerHandler {
                     return;
                 }
 
+                if (!"application/json".equals(httpExchange.getRequestHeaders().getFirst("Content-Type"))) {
+                    sendResponse(415, null, httpExchange);
+                    return;
+                }
+
                 try {
-
-                    final SignalJsonRpcCommandHandler commandHandler;
-
-                    if (c != null) {
-                        commandHandler = new SignalJsonRpcCommandHandler(c, Commands::getCommand);
-                    } else {
-                        commandHandler = new SignalJsonRpcCommandHandler(m, Commands::getCommand);
-                    }
 
                     final Object[] result = {null};
                     final var jsonRpcSender = new JsonRpcSender(s -> {
@@ -98,10 +89,6 @@ public class HttpServerHandler {
             });
 
             server.start();
-
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-        }
 
     }
 
