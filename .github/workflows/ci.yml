@@ -86,6 +86,4 @@ jobs:
         with:
           context: .
           push: true
-          tags:
-            - ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:latest
-            - ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:${{ env.APP_VERSION }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:latest ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:${{ env.APP_VERSION }}
