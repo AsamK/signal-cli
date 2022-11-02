@@ -5,6 +5,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 :quotes.~:
 
 = signal-cli-jsonrpc (5)
+:doctype: manpage
 
 == Name
 

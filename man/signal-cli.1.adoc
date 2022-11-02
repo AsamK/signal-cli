@@ -5,6 +5,7 @@ vim:set ts=4 sw=4 tw=82 noet:
 :quotes.~:
 
 = signal-cli (1)
+:doctype: manpage
 
 == Name
 
@@ -601,7 +602,7 @@ The primary device will respond with synchronization messages with full contact 
 
 === uploadStickerPack
 
-Upload a new sticker pack, consisting of a manifest file and the sticker images.
+Upload a new sticker pack, consisting of a manifest file and the sticker images. +
 Images must conform to the following specification: (see https://support.signal.org/hc/en-us/articles/360031836512-Stickers#sticker_reqs )
 
 - Static stickers in PNG or WebP format
@@ -657,20 +658,25 @@ signal-cli can run in daemon mode and provides an experimental dbus or JSON-RPC 
 If no `-a` account is given, all local accounts will be exported as separate dbus objects under the same bus name.
 
 *--dbus*::
-Export DBus interface on user bus.
-See signal-cli-dbus (5) for info on the dbus interface.
+Export DBus interface on user bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
 
 *--dbus-system*::
-Export DBus interface on system bus.
-See signal-cli-dbus (5) for info on the dbus interface.
+Export DBus interface on system bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
 
 *--socket [SOCKET]*::
-Export a JSON-RPC interface on a UNIX socket (default $XDG_RUNTIME_DIR/signal-cli/socket).
-See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
+Export a JSON-RPC interface on a UNIX socket (default $XDG_RUNTIME_DIR/signal-cli/socket). +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
 
 *--tcp [HOST:PORT]*::
-Export a JSON-RPC interface on a TCP socket (default localhost:7583).
-See signal-cli-jsonrpc (5) for info on the JSON-RPC interface.
+Export a JSON-RPC interface on a TCP socket (default localhost:7583). +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--http [HOST:PORT]*::
+Expose a JSON-RPC interface as http endpoint (default localhost:8080).
+The JSON-RPC endpoint is `/api/v1/rpc`. +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.
