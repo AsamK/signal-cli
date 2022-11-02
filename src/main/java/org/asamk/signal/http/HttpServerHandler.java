@@ -59,7 +59,7 @@ public class HttpServerHandler {
 
             httpExchange.getResponseBody().write(byteResponse);
         } else {
-            httpExchange.sendResponseHeaders(status, 0);
+            httpExchange.sendResponseHeaders(status, -1);
         }
 
         httpExchange.getResponseBody().close();
