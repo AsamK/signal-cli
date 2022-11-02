@@ -78,9 +78,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Get current version from gradle
+        run: APP_VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')
+
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:latest
+          tags:
+            - ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:latest
+            - ${{ secrets.DOCKERHUB_USERNAME }}/signal-cli:${{ env.APP_VERSION }}
