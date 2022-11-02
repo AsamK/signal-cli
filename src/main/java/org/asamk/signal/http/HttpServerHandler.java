@@ -40,58 +40,14 @@ public class HttpServerHandler {
     }
 
     public void init() throws IOException {
-
         logger.info("Starting server on " + address.toString());
 
         final var server = HttpServer.create(address, 0);
         server.setExecutor(Executors.newFixedThreadPool(10));
 
-        server.createContext("/api/v1/rpc", httpExchange -> {
-
-            if (!"POST".equals(httpExchange.getRequestMethod())) {
-                sendResponse(405, null, httpExchange);
-                return;
-            }
-
-            if (!"application/json".equals(httpExchange.getRequestHeaders().getFirst("Content-Type"))) {
-                sendResponse(415, null, httpExchange);
-                return;
-            }
-
-            try {
-
-                final Object[] result = {null};
-                final var jsonRpcSender = new JsonRpcSender(s -> {
-                    if (result[0] != null) {
-                        throw new AssertionError("There should only be a single JSON-RPC response");
-                    }
-
-                    result[0] = s;
-                });
-
-                final var jsonRpcReader = new JsonRpcReader(jsonRpcSender, httpExchange.getRequestBody());
-                jsonRpcReader.readMessages((method, params) -> commandHandler.handleRequest(objectMapper,
-                        method,
-                        params), response -> logger.debug("Received unexpected response for id {}", response.getId()));
-
-                if (result[0] != null) {
-                    sendResponse(200, result[0], httpExchange);
-                } else {
-                    sendResponse(201, null, httpExchange);
-                }
-
-            } catch (Throwable aEx) {
-                logger.error("Failed to process request.", aEx);
-                sendResponse(200,
-                        JsonRpcResponse.forError(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
-                                "An internal server error has occurred.",
-                                null), null),
-                        httpExchange);
-            }
-        });
+        server.createContext("/api/v1/rpc", this::handleRpcEndpoint);
 
         server.start();
-
     }
 
     private void sendResponse(int status, Object response, HttpExchange httpExchange) throws IOException {
@@ -109,4 +65,45 @@ public class HttpServerHandler {
         httpExchange.getResponseBody().close();
     }
 
+    private void handleRpcEndpoint(HttpExchange httpExchange) throws IOException {
+        if (!"POST".equals(httpExchange.getRequestMethod())) {
+            sendResponse(405, null, httpExchange);
+            return;
+        }
+
+        if (!"application/json".equals(httpExchange.getRequestHeaders().getFirst("Content-Type"))) {
+            sendResponse(415, null, httpExchange);
+            return;
+        }
+
+        try {
+
+            final Object[] result = {null};
+            final var jsonRpcSender = new JsonRpcSender(s -> {
+                if (result[0] != null) {
+                    throw new AssertionError("There should only be a single JSON-RPC response");
+                }
+
+                result[0] = s;
+            });
+
+            final var jsonRpcReader = new JsonRpcReader(jsonRpcSender, httpExchange.getRequestBody());
+            jsonRpcReader.readMessages((method, params) -> commandHandler.handleRequest(objectMapper, method, params),
+                    response -> logger.debug("Received unexpected response for id {}", response.getId()));
+
+            if (result[0] != null) {
+                sendResponse(200, result[0], httpExchange);
+            } else {
+                sendResponse(201, null, httpExchange);
+            }
+
+        } catch (Throwable aEx) {
+            logger.error("Failed to process request.", aEx);
+            sendResponse(200,
+                    JsonRpcResponse.forError(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
+                            "An internal server error has occurred.",
+                            null), null),
+                    httpExchange);
+        }
+    }
 }
