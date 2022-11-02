@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+- Add `--http` flag to `daemon` command to provide a JSON-RPC http endpoint. (Thanks @ced-b)
+- The `receive` command is now also available in daemon mode, for polling new messages.
+- Add `getAttachment` command to get attachment file base64 encoded. (Thanks @ced-b)
+- Add `--disable-send-log` to disable the message send log.
+- Add `--story` to `sendReaction` command, to react to stories.
+- Add `--story-timestamp` and `--story-author` to `send` command, to reply to stories.
+- Add `--max-messages` to `receive` command, to only receive a certain number of messages.
+
+### Changed
+- Send long text messages as attachment instead. This matches the behavior of the official clients.
+- Store attachments with a file extension, for common file types.
+
 ## [0.11.4] - 2022-10-19
 
 ### Added
