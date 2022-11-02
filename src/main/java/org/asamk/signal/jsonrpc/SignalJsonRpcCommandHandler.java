@@ -52,7 +52,7 @@ public class SignalJsonRpcCommandHandler {
         this.commandProvider = commandProvider;
     }
 
-    JsonNode handleRequest(
+    public JsonNode handleRequest(
             final ObjectMapper objectMapper, final String method, ContainerNode<?> params
     ) throws JsonRpcException {
         var command = getCommand(method);
