@@ -66,6 +66,10 @@ public class HttpServerHandler {
     }
 
     private void handleRpcEndpoint(HttpExchange httpExchange) throws IOException {
+        if (!"/api/v1/rpc".equals(httpExchange.getRequestURI().getPath())) {
+            sendResponse(404, null, httpExchange);
+            return;
+        }
         if (!"POST".equals(httpExchange.getRequestMethod())) {
             sendResponse(405, null, httpExchange);
             return;
