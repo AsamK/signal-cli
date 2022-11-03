@@ -5,6 +5,12 @@ on:
     tags:
       - v*
 
+env:
+  IMAGE_NAME: signal-cli
+  IMAGE_REGISTRY: ghcr.io/asamk
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ github.token }}
+
 jobs:
 
   ci_wf:
@@ -191,3 +197,95 @@ jobs:
             EXECUTABLE_SUFFIX=".bat"
           fi
           ./signal-cli${EXECUTABLE_SUFFIX} listAccounts
+
+  build-container:
+    needs: ci_wf
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download signal-cli build from CI workflow
+        uses: actions/download-artifact@v3
+
+      - name: Get signal-cli version
+        id: cli_ver
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          echo "version=${ver}" >> $GITHUB_OUTPUT
+
+      - name: Move archive file
+        run: |
+          ARCHIVE_DIR=$(ls signal-cli-archive-*/ -d | tail -n1)
+          tar xf ./"${ARCHIVE_DIR}"/*.tar.gz
+          rm -r signal-cli-archive-* signal-cli-native
+          mkdir -p build/install/
+          mv ./signal-cli-*/ build/install/signal-cli
+
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest ${{ github.sha }} ${{ steps.cli_ver.outputs.version }}
+          containerfiles:
+            ./Containerfile
+          oci: true
+
+      - name: Push To GHCR
+        uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Echo outputs
+        run: |
+          echo "${{ toJSON(steps.push.outputs) }}"
+
+  build-container-native:
+    needs: ci_wf
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download signal-cli build from CI workflow
+        uses: actions/download-artifact@v3
+
+      - name: Get signal-cli version
+        id: cli_ver
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          echo "version=${ver}" >> $GITHUB_OUTPUT
+
+      - name: Move archive file
+        run: |
+          mkdir -p build/native/nativeCompile/
+          chmod +x ./signal-cli-native/signal-cli
+          mv ./signal-cli-native/signal-cli build/native/nativeCompile/
+
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest-native ${{ github.sha }}-native ${{ steps.cli_ver.outputs.version }}-native
+          containerfiles:
+            ./native.Containerfile
+          oci: true
+
+      - name: Push To GHCR
+        uses: redhat-actions/push-to-registry@v2
+        id: push
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Echo outputs
+        run: |
+          echo "${{ toJSON(steps.push.outputs) }}"
