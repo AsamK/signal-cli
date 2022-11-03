@@ -1,6 +1,11 @@
 name: signal-cli CI
 
-on: [ push, pull_request, workflow_call ]
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_call:
 
 jobs:
   build:
