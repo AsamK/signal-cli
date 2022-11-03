@@ -3,7 +3,6 @@ package org.asamk.signal.manager.storage.sessions;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
-import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
@@ -339,7 +338,7 @@ public class SessionStore implements SignalServiceSessionStore {
         try {
             final var record = resultSet.getBytes("record");
             return new SessionRecord(record);
-        } catch (InvalidMessageException e) {
+        } catch (Exception e) {
             logger.warn("Failed to load session, resetting session: {}", e.getMessage());
             return null;
         }
