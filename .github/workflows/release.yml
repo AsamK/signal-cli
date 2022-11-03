@@ -62,6 +62,7 @@ jobs:
         env:
           SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
         run: |
+          chmod +x signal-cli-native/signal-cli
           tar -czf signal-cli-${SIGNAL_CLI_VER}-Linux-native.tar.gz -C signal-cli-native signal-cli
           rm -rf signal-cli-native/
 
