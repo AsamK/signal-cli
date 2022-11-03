@@ -152,6 +152,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 !isDbusSystem
                         && socketFile == null
                         && tcpAddress == null
+                        && httpAddress == null
                         && !(inheritedChannel instanceof ServerSocketChannel)
         )) {
             runDbusSingleAccount(m, false, receiveMode != ReceiveMode.ON_START);
@@ -233,6 +234,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 !isDbusSystem
                         && socketFile == null
                         && tcpAddress == null
+                        && httpAddress == null
                         && !(inheritedChannel instanceof ServerSocketChannel)
         )) {
             runDbusMultiAccount(c, receiveMode != ReceiveMode.ON_START, false);
