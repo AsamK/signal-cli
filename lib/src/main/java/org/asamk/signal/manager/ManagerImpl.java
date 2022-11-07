@@ -699,7 +699,7 @@ class ManagerImpl implements Manager {
             byte[] receipt, String note, RecipientIdentifier.Single recipient
     ) throws IOException {
         final var paymentNotification = new SignalServiceDataMessage.PaymentNotification(receipt, note);
-        final var payment = new SignalServiceDataMessage.Payment(paymentNotification);
+        final var payment = new SignalServiceDataMessage.Payment(paymentNotification, null);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withPayment(payment);
         try {
             return sendMessage(messageBuilder, Set.of(recipient));
