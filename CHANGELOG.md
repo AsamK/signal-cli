@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.5] - 2022-11-07
+**Attention**: Now requires native libsignal-client version 0.21.1
+
 ### Added
-- Add `--http` flag to `daemon` command to provide a JSON-RPC http endpoint. (Thanks @ced-b)
-- The `receive` command is now also available in daemon mode, for polling new messages.
+- Add `--http` flag to `daemon` command to provide a JSON-RPC http endpoint (`/api/v1/rpc`). (Thanks @ced-b)
+- The `receive` method is now also available in JSON-RPC daemon mode, for polling new messages.
 - Add `getAttachment` command to get attachment file base64 encoded. (Thanks @ced-b)
 - Add `--disable-send-log` to disable the message send log.
 - Add `--story` to `sendReaction` command, to react to stories.
