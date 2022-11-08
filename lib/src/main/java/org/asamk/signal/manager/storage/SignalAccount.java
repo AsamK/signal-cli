@@ -506,6 +506,7 @@ public class SignalAccount implements Closeable {
     ) throws IOException {
         this.dataPath = dataPath;
         this.accountPath = accountPath;
+        this.settings = settings;
         final JsonNode rootNode;
         synchronized (fileChannel) {
             fileChannel.position(0);
@@ -685,7 +686,6 @@ public class SignalAccount implements Closeable {
 
         this.aciIdentityKeyPair = aciIdentityKeyPair;
         this.localRegistrationId = registrationId;
-        this.settings = settings;
 
         migratedLegacyConfig = loadLegacyStores(rootNode, legacySignalProtocolStore) || migratedLegacyConfig;
 
