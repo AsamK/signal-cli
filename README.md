@@ -56,7 +56,7 @@ of all country codes.)
 
         signal-cli -a ACCOUNT register
 
-  You can register Signal using a land line number. In this case you can skip SMS verification process and jump directly
+  You can register Signal using a landline number. In this case you can skip SMS verification process and jump directly
   to the voice call verification by adding the `--voice` switch at the end of above register command.
 
   Registering may require solving a CAPTCHA
