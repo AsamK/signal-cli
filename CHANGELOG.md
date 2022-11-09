@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.11.5.1] - 2022-11-09
+
+### Fixed
+- Fix updating from older signal-cli version
+
 ## [0.11.5] - 2022-11-07
 **Attention**: Now requires native libsignal-client version 0.21.1
 
