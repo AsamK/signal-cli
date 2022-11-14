@@ -26,6 +26,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
@@ -47,7 +48,6 @@ import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -164,7 +164,7 @@ public class GroupHelper {
     }
 
     public Pair<GroupId, SendGroupMessageResults> createGroup(
-            String name, Set<RecipientId> members, File avatarFile
+            String name, Set<RecipientId> members, String avatarFile
     ) throws IOException, AttachmentInvalidException {
         final var selfRecipientId = account.getSelfRecipientId();
         if (members != null && members.contains(selfRecipientId)) {
@@ -172,14 +172,15 @@ public class GroupHelper {
             members.remove(selfRecipientId);
         }
 
+        final var avatarBytes = readAvatarBytes(avatarFile);
         var gv2Pair = context.getGroupV2Helper()
-                .createGroup(name == null ? "" : name, members == null ? Set.of() : members, avatarFile);
+                .createGroup(name == null ? "" : name, members == null ? Set.of() : members, avatarBytes);
 
         if (gv2Pair == null) {
             // Failed to create v2 group, creating v1 group instead
             var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
             gv1.addMembers(List.of(selfRecipientId));
-            final var result = updateGroupV1(gv1, name, members, avatarFile);
+            final var result = updateGroupV1(gv1, name, members, avatarBytes);
             return new Pair<>(gv1.getGroupId(), result);
         }
 
@@ -187,10 +188,9 @@ public class GroupHelper {
         final var decryptedGroup = gv2Pair.second();
 
         gv2.setGroup(decryptedGroup);
-        if (avatarFile != null) {
+        if (avatarBytes != null) {
             context.getAvatarStore()
-                    .storeGroupAvatar(gv2.getGroupId(),
-                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                    .storeGroupAvatar(gv2.getGroupId(), outputStream -> outputStream.write(avatarBytes));
         }
 
         account.getGroupStore().updateGroup(gv2);
@@ -217,11 +217,12 @@ public class GroupHelper {
             final GroupLinkState groupLinkState,
             final GroupPermission addMemberPermission,
             final GroupPermission editDetailsPermission,
-            final File avatarFile,
+            final String avatarFile,
             final Integer expirationTimer,
             final Boolean isAnnouncementGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         var group = getGroupForUpdating(groupId);
+        final var avatarBytes = readAvatarBytes(avatarFile);
 
         if (group instanceof GroupInfoV2) {
             try {
@@ -238,7 +239,7 @@ public class GroupHelper {
                         groupLinkState,
                         addMemberPermission,
                         editDetailsPermission,
-                        avatarFile,
+                        avatarBytes,
                         expirationTimer,
                         isAnnouncementGroup);
             } catch (ConflictException e) {
@@ -257,14 +258,14 @@ public class GroupHelper {
                         groupLinkState,
                         addMemberPermission,
                         editDetailsPermission,
-                        avatarFile,
+                        avatarBytes,
                         expirationTimer,
                         isAnnouncementGroup);
             }
         }
 
         final var gv1 = (GroupInfoV1) group;
-        final var result = updateGroupV1(gv1, name, members, avatarFile);
+        final var result = updateGroupV1(gv1, name, members, avatarBytes);
         if (expirationTimer != null) {
             setExpirationTimer(gv1, expirationTimer);
         }
@@ -521,7 +522,7 @@ public class GroupHelper {
     }
 
     private SendGroupMessageResults updateGroupV1(
-            final GroupInfoV1 gv1, final String name, final Set<RecipientId> members, final File avatarFile
+            final GroupInfoV1 gv1, final String name, final Set<RecipientId> members, final byte[] avatarFile
     ) throws IOException, AttachmentInvalidException {
         updateGroupV1Details(gv1, name, members, avatarFile);
 
@@ -534,7 +535,7 @@ public class GroupHelper {
     }
 
     private void updateGroupV1Details(
-            final GroupInfoV1 g, final String name, final Collection<RecipientId> members, final File avatarFile
+            final GroupInfoV1 g, final String name, final Collection<RecipientId> members, final byte[] avatarFile
     ) throws IOException {
         if (name != null) {
             g.name = name;
@@ -545,9 +546,7 @@ public class GroupHelper {
         }
 
         if (avatarFile != null) {
-            context.getAvatarStore()
-                    .storeGroupAvatar(g.getGroupId(),
-                            outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+            context.getAvatarStore().storeGroupAvatar(g.getGroupId(), outputStream -> outputStream.write(avatarFile));
         }
     }
 
@@ -581,7 +580,7 @@ public class GroupHelper {
             final GroupLinkState groupLinkState,
             final GroupPermission addMemberPermission,
             final GroupPermission editDetailsPermission,
-            final File avatarFile,
+            final byte[] avatarFile,
             final Integer expirationTimer,
             final Boolean isAnnouncementGroup
     ) throws IOException {
@@ -716,8 +715,7 @@ public class GroupHelper {
             var groupGroupChangePair = groupV2Helper.updateGroup(group, name, description, avatarFile);
             if (avatarFile != null) {
                 context.getAvatarStore()
-                        .storeGroupAvatar(group.getGroupId(),
-                                outputStream -> IOUtils.copyFileToStream(avatarFile, outputStream));
+                        .storeGroupAvatar(group.getGroupId(), outputStream -> outputStream.write(avatarFile));
             }
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
@@ -818,5 +816,14 @@ public class GroupHelper {
                                 account.getRecipientResolver(),
                                 account.getRecipientAddressResolver()))
                         .toList());
+    }
+
+    private byte[] readAvatarBytes(final String avatarFile) throws IOException {
+        if (avatarFile == null) {
+            return null;
+        }
+        try (final var avatar = Utils.createStreamDetails(avatarFile).first().getStream()) {
+            return IOUtils.readFully(avatar);
+        }
     }
 }

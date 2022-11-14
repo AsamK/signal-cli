@@ -618,7 +618,7 @@ public class DbusSignalImpl implements Signal {
             avatar = nullIfEmpty(avatar);
             final var memberIdentifiers = getSingleRecipientIdentifiers(members, m.getSelfNumber());
             if (groupId == null) {
-                final var results = m.createGroup(name, memberIdentifiers, avatar == null ? null : new File(avatar));
+                final var results = m.createGroup(name, memberIdentifiers, avatar);
                 updateGroups();
                 checkGroupSendMessageResults(results.second().timestamp(), results.second().results());
                 return results.first().serialize();
@@ -627,7 +627,7 @@ public class DbusSignalImpl implements Signal {
                         UpdateGroup.newBuilder()
                                 .withName(name)
                                 .withMembers(memberIdentifiers)
-                                .withAvatarFile(avatar == null ? null : new File(avatar))
+                                .withAvatarFile(avatar)
                                 .build());
                 if (results != null) {
                     checkGroupSendMessageResults(results.timestamp(), results.results());
@@ -687,7 +687,7 @@ public class DbusSignalImpl implements Signal {
             about = nullIfEmpty(about);
             aboutEmoji = nullIfEmpty(aboutEmoji);
             avatarPath = nullIfEmpty(avatarPath);
-            File avatarFile = removeAvatar || avatarPath == null ? null : new File(avatarPath);
+            final var avatarFile = removeAvatar || avatarPath == null ? null : avatarPath;
             m.updateProfile(UpdateProfile.newBuilder()
                     .withGivenName(givenName)
                     .withFamilyName(familyName)
@@ -1270,7 +1270,7 @@ public class DbusSignalImpl implements Signal {
         }
 
         private void setGroupAvatar(final String avatar) {
-            updateGroup(UpdateGroup.newBuilder().withAvatarFile(new File(avatar)).build());
+            updateGroup(UpdateGroup.newBuilder().withAvatarFile(avatar).build());
         }
 
         private void setMessageExpirationTime(final int expirationTime) {

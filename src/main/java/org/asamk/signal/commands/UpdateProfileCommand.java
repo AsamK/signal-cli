@@ -10,7 +10,6 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.output.OutputWriter;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
 
@@ -50,7 +49,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
         var avatarPath = ns.getString("avatar");
         boolean removeAvatar = Boolean.TRUE.equals(ns.getBoolean("remove-avatar"));
-        File avatarFile = removeAvatar || avatarPath == null ? null : new File(avatarPath);
+        String avatarFile = removeAvatar || avatarPath == null ? null : avatarPath;
 
         try {
             m.updateProfile(UpdateProfile.newBuilder()

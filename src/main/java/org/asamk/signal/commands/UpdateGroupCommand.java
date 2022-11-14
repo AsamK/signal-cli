@@ -26,7 +26,6 @@ import org.asamk.signal.util.SendMessageResultUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.stream.Stream;
@@ -131,9 +130,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
             SendGroupMessageResults groupMessageResults = null;
             if (groupId == null) {
                 isNewGroup = true;
-                var results = m.createGroup(groupName,
-                        groupMembers,
-                        groupAvatar == null ? null : new File(groupAvatar));
+                var results = m.createGroup(groupName, groupMembers, groupAvatar);
                 groupMessageResults = results.second();
                 groupId = results.first();
                 groupName = null;
@@ -155,7 +152,7 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                             .withGroupLinkState(groupLinkState)
                             .withAddMemberPermission(groupAddMemberPermission)
                             .withEditDetailsPermission(groupEditDetailsPermission)
-                            .withAvatarFile(groupAvatar == null ? null : new File(groupAvatar))
+                            .withAvatarFile(groupAvatar)
                             .withExpirationTimer(groupExpiration)
                             .withIsAnnouncementGroup(groupSendMessagesPermission == null
                                     ? null

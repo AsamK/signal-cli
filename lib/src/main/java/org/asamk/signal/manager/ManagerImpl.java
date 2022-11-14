@@ -394,7 +394,7 @@ class ManagerImpl implements Manager {
 
     @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
-            String name, Set<RecipientIdentifier.Single> members, File avatarFile
+            String name, Set<RecipientIdentifier.Single> members, String avatarFile
     ) throws IOException, AttachmentInvalidException, UnregisteredRecipientException {
         return context.getGroupHelper()
                 .createGroup(name,

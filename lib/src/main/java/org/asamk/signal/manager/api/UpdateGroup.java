@@ -3,7 +3,6 @@ package org.asamk.signal.manager.api;
 import org.asamk.signal.manager.groups.GroupLinkState;
 import org.asamk.signal.manager.groups.GroupPermission;
 
-import java.io.File;
 import java.util.Set;
 
 public class UpdateGroup {
@@ -20,7 +19,7 @@ public class UpdateGroup {
     private final GroupLinkState groupLinkState;
     private final GroupPermission addMemberPermission;
     private final GroupPermission editDetailsPermission;
-    private final File avatarFile;
+    private final String avatarFile;
     private final Integer expirationTimer;
     private final Boolean isAnnouncementGroup;
 
@@ -77,7 +76,7 @@ public class UpdateGroup {
             final GroupLinkState groupLinkState,
             final GroupPermission addMemberPermission,
             final GroupPermission editDetailsPermission,
-            final File avatarFile,
+            final String avatarFile,
             final Integer expirationTimer,
             final Boolean isAnnouncementGroup
     ) {
@@ -146,7 +145,7 @@ public class UpdateGroup {
         return editDetailsPermission;
     }
 
-    public File getAvatarFile() {
+    public String getAvatarFile() {
         return avatarFile;
     }
 
@@ -172,7 +171,7 @@ public class UpdateGroup {
         private GroupLinkState groupLinkState;
         private GroupPermission addMemberPermission;
         private GroupPermission editDetailsPermission;
-        private File avatarFile;
+        private String avatarFile;
         private Integer expirationTimer;
         private Boolean isAnnouncementGroup;
 
@@ -192,7 +191,7 @@ public class UpdateGroup {
                 final GroupLinkState groupLinkState,
                 final GroupPermission addMemberPermission,
                 final GroupPermission editDetailsPermission,
-                final File avatarFile,
+                final String avatarFile,
                 final Integer expirationTimer,
                 final Boolean isAnnouncementGroup
         ) {
@@ -273,7 +272,7 @@ public class UpdateGroup {
             return this;
         }
 
-        public Builder withAvatarFile(final File val) {
+        public Builder withAvatarFile(final String val) {
             avatarFile = val;
             return this;
         }

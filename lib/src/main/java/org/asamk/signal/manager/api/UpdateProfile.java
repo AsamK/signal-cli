@@ -1,14 +1,12 @@
 package org.asamk.signal.manager.api;
 
-import java.io.File;
-
 public class UpdateProfile {
 
     private final String givenName;
     private final String familyName;
     private final String about;
     private final String aboutEmoji;
-    private final File avatar;
+    private final String avatar;
     private final boolean deleteAvatar;
     private final byte[] mobileCoinAddress;
 
@@ -54,7 +52,7 @@ public class UpdateProfile {
         return aboutEmoji;
     }
 
-    public File getAvatar() {
+    public String getAvatar() {
         return avatar;
     }
 
@@ -72,7 +70,7 @@ public class UpdateProfile {
         private String familyName;
         private String about;
         private String aboutEmoji;
-        private File avatar;
+        private String avatar;
         private boolean deleteAvatar;
         private byte[] mobileCoinAddress;
 
@@ -99,7 +97,7 @@ public class UpdateProfile {
             return this;
         }
 
-        public Builder withAvatar(final File val) {
+        public Builder withAvatar(final String val) {
             avatar = val;
             return this;
         }

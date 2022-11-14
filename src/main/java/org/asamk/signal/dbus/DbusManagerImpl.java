@@ -147,7 +147,7 @@ public class DbusManagerImpl implements Manager {
                 emptyIfNull(updateProfile.getFamilyName()),
                 emptyIfNull(updateProfile.getAbout()),
                 emptyIfNull(updateProfile.getAboutEmoji()),
-                updateProfile.getAvatar() == null ? "" : updateProfile.getAvatar().getPath(),
+                updateProfile.getAvatar() == null ? "" : updateProfile.getAvatar(),
                 updateProfile.isDeleteAvatar());
     }
 
@@ -231,11 +231,11 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
-            final String name, final Set<RecipientIdentifier.Single> members, final File avatarFile
+            final String name, final Set<RecipientIdentifier.Single> members, final String avatarFile
     ) throws IOException, AttachmentInvalidException {
         final var newGroupId = signal.createGroup(emptyIfNull(name),
                 members.stream().map(RecipientIdentifier.Single::getIdentifier).toList(),
-                avatarFile == null ? "" : avatarFile.getPath());
+                avatarFile == null ? "" : avatarFile);
         return new Pair<>(GroupId.unknownVersion(newGroupId), new SendGroupMessageResults(0, List.of()));
     }
 
@@ -253,7 +253,7 @@ public class DbusManagerImpl implements Manager {
         if (updateGroup.getAvatarFile() != null) {
             group.Set("org.asamk.Signal.Group",
                     "Avatar",
-                    updateGroup.getAvatarFile() == null ? "" : updateGroup.getAvatarFile().getPath());
+                    updateGroup.getAvatarFile() == null ? "" : updateGroup.getAvatarFile());
         }
         if (updateGroup.getExpirationTimer() != null) {
             group.Set("org.asamk.Signal.Group", "MessageExpirationTimer", updateGroup.getExpirationTimer());
