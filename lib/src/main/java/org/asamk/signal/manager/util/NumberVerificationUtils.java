@@ -15,6 +15,7 @@ import org.whispersystems.signalservice.internal.push.RequestVerificationCodeRes
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Optional;
 
 public class NumberVerificationUtils {
@@ -23,10 +24,9 @@ public class NumberVerificationUtils {
             SignalServiceAccountManager accountManager, String captcha, boolean voiceVerification
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
-
         final ServiceResponse<RequestVerificationCodeResponse> response;
         if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(null),
+            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(Locale.US),
                     Optional.ofNullable(captcha),
                     Optional.empty(),
                     Optional.empty());
