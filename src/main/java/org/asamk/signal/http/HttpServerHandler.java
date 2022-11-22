@@ -59,6 +59,7 @@ public class HttpServerHandler {
 
         server.createContext("/api/v1/rpc", this::handleRpcEndpoint);
         server.createContext("/api/v1/events", this::handleEventsEndpoint);
+        server.createContext("/api/v1/check", this::handleCheckEndpoint);
 
         server.start();
     }
@@ -184,6 +185,19 @@ public class HttpServerHandler {
             logger.error("Failed to process request.", aEx);
             sendResponse(500, null, httpExchange);
         }
+    }
+
+    private void handleCheckEndpoint(HttpExchange httpExchange) throws IOException {
+        if (!"/api/v1/check".equals(httpExchange.getRequestURI().getPath())) {
+            sendResponse(404, null, httpExchange);
+            return;
+        }
+        if (!"GET".equals(httpExchange.getRequestMethod())) {
+            sendResponse(405, null, httpExchange);
+            return;
+        }
+
+        sendResponse(200, null, httpExchange);
     }
 
     private List<Manager> getManagerFromQuery(final Map<String, String> query) {
