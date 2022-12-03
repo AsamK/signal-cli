@@ -5,6 +5,9 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 env:
   IMAGE_NAME: signal-cli
   IMAGE_REGISTRY: ghcr.io/asamk
@@ -20,6 +23,8 @@ jobs:
   lib_to_jar:
     needs: ci_wf
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     outputs:
       signal_cli_version: ${{ steps.cli_ver.outputs.version }}
@@ -141,66 +146,12 @@ jobs:
           asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
 
-
-  run_repackaged:
-
-    needs:
-      - lib_to_jar
-
-    strategy:
-      matrix:
-        runner:
-          - windows-latest
-          - macos-latest
-
-    runs-on: ${{ matrix.runner }}
-
-    defaults:
-      run:
-        shell: bash   # Explicit for windows
-
-    env:
-      JAVA_VERSION: 19
-
-    steps:
-
-      - name: Download the release file
-        env:
-          SIGNAL_CLI_VER: ${{ needs.lib_to_jar.outputs.signal_cli_version }}
-          RELEASE_ID: ${{ needs.lib_to_jar.outputs.release_id }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          file_name=signal-cli-${SIGNAL_CLI_VER}-${RUNNER_OS}.tar.gz
-          echo "$file_name"
-          assets_json=$(curl -s \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets")
-          asset_dl_url=$(echo "$assets_json" | jq -r ".[] | select (.name == \"$file_name\") | .url")
-          echo "$asset_dl_url"
-          curl -sLOJ \
-            -H 'Accept: application/octet-stream' \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "$asset_dl_url"
-          tar -xzf "$file_name"
-
-      - name: Set up JDK for running signal-cli executable
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: ${{ env.JAVA_VERSION }}
-          java-package: 'jre'
-
-      - name: Run signal-cli
-        run: |
-          cd signal-cli-*/bin
-          if [[ "$RUNNER_OS" == 'Windows' ]]; then
-            EXECUTABLE_SUFFIX=".bat"
-          fi
-          ./signal-cli${EXECUTABLE_SUFFIX} listAccounts
-
   build-container:
     needs: ci_wf
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v3
@@ -248,6 +199,9 @@ jobs:
   build-container-native:
     needs: ci_wf
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v3

@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '0 7 * * 4'
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+  security-events: write
+
 jobs:
   analyse:
     name: Analyse
