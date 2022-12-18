@@ -3,7 +3,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.9.18"
+    id("org.graalvm.buildtools.native") version "0.9.19"
 }
 
 version = "0.11.5.1"
@@ -43,9 +43,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.14.1")
     implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
     implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.2.1")
-    implementation("org.slf4j", "slf4j-api", "2.0.4")
+    implementation("org.slf4j", "slf4j-api", "2.0.6")
     implementation("ch.qos.logback", "logback-classic", "1.4.5")
-    implementation("org.slf4j", "jul-to-slf4j", "2.0.4")
+    implementation("org.slf4j", "jul-to-slf4j", "2.0.6")
     implementation(project(":lib"))
 }
 
