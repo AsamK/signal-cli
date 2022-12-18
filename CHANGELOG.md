@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.11.6] - 2022-12-18
+
+### Added
+- Allow using data URIs for updateGroup/updateProfile
+- New alive check endpoint for http daemon (Thanks @ced-b)
+
+### Fixed
+- Registration with voice verification now works if no system locale is set
+- Fixed retrieving attachments in JSON RPC mode (Thanks @ced-b)
+
 ## [0.11.5.1] - 2022-11-09
 
 ### Fixed
