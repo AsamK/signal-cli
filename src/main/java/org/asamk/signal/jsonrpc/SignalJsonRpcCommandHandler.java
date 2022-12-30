@@ -87,7 +87,13 @@ public class SignalJsonRpcCommandHandler {
                 return runCommand(objectMapper, params, new CommandRunnerImpl<>(m, jsonRpcCommand));
             }
 
-            final var manager = getManagerFromParams(params);
+            var manager = getManagerFromParams(params);
+            if (manager == null) {
+                final var managers = c.getManagers();
+                if (managers.size() == 1) {
+                    manager = managers.get(0);
+                }
+            }
             if (manager != null) {
                 return runCommand(objectMapper, params, new CommandRunnerImpl<>(manager, jsonRpcCommand));
             } else {
