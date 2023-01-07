@@ -89,7 +89,8 @@ public class HttpServerHandler {
             return;
         }
 
-        if (!"application/json".equals(httpExchange.getRequestHeaders().getFirst("Content-Type"))) {
+        final var contentType = httpExchange.getRequestHeaders().getFirst("Content-Type");
+        if (contentType == null || !contentType.startsWith("application/json")) {
             sendResponse(415, null, httpExchange);
             return;
         }
