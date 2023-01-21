@@ -693,6 +693,18 @@ Don’t print received messages to stdout.
 *--receive-mode*::
 Specify when to start receiving messages (on-start, on-connection, manual)
 
+=== submitRateLimitChallenge
+
+When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA.
+To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html
+For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
+
+*--challenge* CHALLENGE_TOKEN::
+The challenge token from the failed send attempt.
+
+*--captcha* CAPTCHA::
+The captcha result, starting with signalcaptcha://
+
 == Examples
 
 Register a number (with SMS verification)::
