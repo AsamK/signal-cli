@@ -25,13 +25,15 @@ public class NumberVerificationUtils {
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
         final ServiceResponse<RequestVerificationCodeResponse> response;
+        final var locale = Utils.getDefaultLocale(Locale.US);
         if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(Utils.getDefaultLocale(Locale.US),
+            response = accountManager.requestVoiceVerificationCode(locale,
                     Optional.ofNullable(captcha),
                     Optional.empty(),
                     Optional.empty());
         } else {
-            response = accountManager.requestSmsVerificationCode(false,
+            response = accountManager.requestSmsVerificationCode(locale,
+                    false,
                     Optional.ofNullable(captcha),
                     Optional.empty(),
                     Optional.empty());

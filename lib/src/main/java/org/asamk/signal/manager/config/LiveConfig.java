@@ -71,7 +71,8 @@ class LiveConfig {
                 interceptors,
                 dns,
                 proxy,
-                zkGroupServerPublicParams);
+                zkGroupServerPublicParams,
+                true);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {

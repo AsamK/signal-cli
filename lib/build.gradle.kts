@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_65")
+    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_66")
     implementation("com.fasterxml.jackson.core", "jackson-databind", "2.14.1")
     implementation("com.google.protobuf", "protobuf-javalite", "3.21.12")
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
@@ -22,7 +22,7 @@ dependencies {
     implementation("org.xerial", "sqlite-jdbc", "3.40.0.0")
     implementation("com.zaxxer", "HikariCP", "5.0.1")
 
-    testImplementation("org.junit.jupiter", "junit-jupiter", "5.9.1")
+    testImplementation("org.junit.jupiter", "junit-jupiter", "5.9.2")
 }
 
 tasks.named<Test>("test") {

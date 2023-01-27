@@ -2757,6 +2757,16 @@
   ]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$BodyRange",
+  "fields":[
+    {"name":"associatedValueCase_"}, 
+    {"name":"associatedValue_"}, 
+    {"name":"bitField0_"}, 
+    {"name":"length_"}, 
+    {"name":"start_"}
+  ]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage",
   "fields":[
     {"name":"answer_"}, 
@@ -3190,6 +3200,7 @@
   "fields":[
     {"name":"bitField0_"}, 
     {"name":"blocked_"}, 
+    {"name":"callEvent_"}, 
     {"name":"configuration_"}, 
     {"name":"contacts_"}, 
     {"name":"fetchLatest_"}, 

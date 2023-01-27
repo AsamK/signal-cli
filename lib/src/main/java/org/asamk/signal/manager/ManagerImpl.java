@@ -588,7 +588,8 @@ class ManagerImpl implements Manager {
                     quote.message(),
                     List.of(),
                     resolveMentions(quote.mentions()),
-                    SignalServiceDataMessage.Quote.Type.NORMAL));
+                    SignalServiceDataMessage.Quote.Type.NORMAL,
+                    List.of()));
         }
         if (message.sticker().isPresent()) {
             final var sticker = message.sticker().get();

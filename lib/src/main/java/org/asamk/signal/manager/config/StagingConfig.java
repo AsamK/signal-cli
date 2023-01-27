@@ -71,7 +71,8 @@ class StagingConfig {
                 interceptors,
                 dns,
                 proxy,
-                zkGroupServerPublicParams);
+                zkGroupServerPublicParams,
+                true);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {
