@@ -39,6 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.whispersystems.signalservice.internal.push.SignalServiceProtos.BodyRange;
+
 public record MessageEnvelope(
         Optional<RecipientAddress> sourceAddress,
         int sourceDevice,
@@ -113,7 +115,8 @@ public record MessageEnvelope(
             Optional<Sticker> sticker,
             List<SharedContact> sharedContacts,
             List<Mention> mentions,
-            List<Preview> previews
+            List<Preview> previews,
+            List<TextStyle> textStyles
     ) {
 
         static Data from(
@@ -154,6 +157,9 @@ public record MessageEnvelope(
                             .orElse(List.of()),
                     dataMessage.getPreviews()
                             .map(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
+                            .orElse(List.of()),
+                    dataMessage.getBodyRanges()
+                            .map(a -> a.stream().filter(BodyRange::hasStyle).map(TextStyle::from).toList())
                             .orElse(List.of()));
         }
 
@@ -216,7 +222,8 @@ public record MessageEnvelope(
                 RecipientAddress author,
                 Optional<String> text,
                 List<Mention> mentions,
-                List<Attachment> attachments
+                List<Attachment> attachments,
+                List<TextStyle> textStyles
         ) {
 
             static Quote from(
@@ -237,7 +244,14 @@ public record MessageEnvelope(
                                         .toList(),
                         quote.getAttachments() == null
                                 ? List.of()
-                                : quote.getAttachments().stream().map(a -> Attachment.from(a, fileProvider)).toList());
+                                : quote.getAttachments().stream().map(a -> Attachment.from(a, fileProvider)).toList(),
+                        quote.getBodyRanges() == null
+                                ? List.of()
+                                : quote.getBodyRanges()
+                                        .stream()
+                                        .filter(BodyRange::hasStyle)
+                                        .map(TextStyle::from)
+                                        .toList());
             }
         }
 
@@ -496,6 +510,33 @@ public record MessageEnvelope(
                         preview.getDate(),
                         preview.getUrl(),
                         preview.getImage().map(as -> Attachment.from(as, fileProvider)));
+            }
+        }
+
+        public record TextStyle(Style style, int start, int length) {
+
+            public enum Style {
+                NONE,
+                BOLD,
+                ITALIC,
+                SPOILER,
+                STRIKETHROUGH,
+                MONOSPACE;
+
+                static Style from(BodyRange.Style style) {
+                    return switch (style) {
+                        case NONE -> NONE;
+                        case BOLD -> BOLD;
+                        case ITALIC -> ITALIC;
+                        case SPOILER -> SPOILER;
+                        case STRIKETHROUGH -> STRIKETHROUGH;
+                        case MONOSPACE -> MONOSPACE;
+                    };
+                }
+            }
+
+            static TextStyle from(BodyRange bodyRange) {
+                return new TextStyle(Style.from(bodyRange.getStyle()), bodyRange.getStart(), bodyRange.getLength());
             }
         }
     }

@@ -177,6 +177,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 printMention(writer, mention);
             }
         }
+        if (message.textStyles().size() > 0) {
+            writer.println("Text styles:");
+            for (var textStyle : message.textStyles()) {
+                printTextStyle(writer, textStyle);
+            }
+        }
         if (message.attachments().size() > 0) {
             writer.println("Attachments:");
             for (var attachment : message.attachments()) {
@@ -553,6 +559,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             PlainTextWriter writer, MessageEnvelope.Data.Mention mention
     ) {
         writer.println("- {}: {} (length: {})", formatContact(mention.recipient()), mention.start(), mention.length());
+    }
+
+    private void printTextStyle(
+            PlainTextWriter writer, MessageEnvelope.Data.TextStyle textStyle
+    ) {
+        writer.println("- {}: {} (length: {})", textStyle.style().name(), textStyle.start(), textStyle.length());
     }
 
     private void printAttachment(PlainTextWriter writer, MessageEnvelope.Data.Attachment attachment) {
