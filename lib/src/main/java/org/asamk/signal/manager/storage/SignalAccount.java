@@ -1378,7 +1378,7 @@ public class SignalAccount implements Closeable {
 
     public void setPniIdentityKeyPair(final IdentityKeyPair identityKeyPair) {
         pniIdentityKeyPair = identityKeyPair;
-        final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
+        final var pniPublicKey = identityKeyPair.getPublicKey();
         getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
         getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
         save();
@@ -1594,9 +1594,13 @@ public class SignalAccount implements Closeable {
         final var aciPublicKey = getAciIdentityKeyPair().getPublicKey();
         getIdentityKeyStore().saveIdentity(getAci(), aciPublicKey);
         getIdentityKeyStore().setIdentityTrustLevel(getAci(), aciPublicKey, TrustLevel.TRUSTED_VERIFIED);
-        final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
-        getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
-        getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
+        if (getPniIdentityKeyPair() == null) {
+            setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
+        } else {
+            final var pniPublicKey = getPniIdentityKeyPair().getPublicKey();
+            getIdentityKeyStore().saveIdentity(getPni(), pniPublicKey);
+            getIdentityKeyStore().setIdentityTrustLevel(getPni(), pniPublicKey, TrustLevel.TRUSTED_VERIFIED);
+        }
     }
 
     public void deleteAccountData() throws IOException {
