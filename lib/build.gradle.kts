@@ -19,7 +19,7 @@ dependencies {
     implementation("com.google.protobuf", "protobuf-javalite", "3.21.12")
     implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
     implementation("org.slf4j", "slf4j-api", "2.0.6")
-    implementation("org.xerial", "sqlite-jdbc", "3.40.0.0")
+    implementation("org.xerial", "sqlite-jdbc", "3.40.1.0")
     implementation("com.zaxxer", "HikariCP", "5.0.1")
 
     testImplementation("org.junit.jupiter", "junit-jupiter", "5.9.2")
