@@ -37,7 +37,7 @@ public final class Scrubber {
      * Supposedly, the shortest international phone numbers in use contain seven digits.
      * Handles URL encoded +, %2B
      */
-    private static final Pattern E164_PATTERN = Pattern.compile("(\\+|%2B)(\\d{5,13})(\\d{2})");
+    private static final Pattern E164_PATTERN = Pattern.compile("(\\+|%2B|/org/asamk/Signal/_)(\\d{5,13})(\\d{2})");
     private static final String E164_CENSOR = "*************";
 
     /**
