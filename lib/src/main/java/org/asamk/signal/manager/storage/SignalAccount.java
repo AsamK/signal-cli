@@ -415,9 +415,9 @@ public class SignalAccount implements Closeable {
     }
 
     public void removeRecipient(final RecipientId recipientId) {
+        final var recipientAddress = getRecipientStore().resolveRecipientAddress(recipientId);
         getRecipientStore().deleteRecipientData(recipientId);
         getMessageCache().deleteMessages(recipientId);
-        final var recipientAddress = getRecipientStore().resolveRecipientAddress(recipientId);
         if (recipientAddress.serviceId().isPresent()) {
             final var serviceId = recipientAddress.serviceId().get();
             getAciSessionStore().deleteAllSessions(serviceId);
