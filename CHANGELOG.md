@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ## [0.11.7] - 2023-02-19
+**Attention**: Now requires native libsignal-client version 0.22.0
 
 ### Fixed
 - Fix issue with missing pni identity key
