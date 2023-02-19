@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.11.7] - 2023-02-19
+
+### Fixed
+- Fix issue with missing pni identity key
+- Fix graalvm sqlite issue (Thanks @Marvin A. Ruder)
+- Fix issue with forgetting recipient
+
+### Changed
+- Allow JSON-RPC commands without account param if only one account exists
+
 ## [0.11.6] - 2022-12-18
 
 ### Added
