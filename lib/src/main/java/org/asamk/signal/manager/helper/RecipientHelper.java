@@ -3,11 +3,9 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.SignalDependencies;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
-import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
-import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -15,12 +13,8 @@ import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
-import org.whispersystems.signalservice.internal.contacts.crypto.Quote;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedQuoteException;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 
 import java.io.IOException;
-import java.security.SignatureException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,13 +102,7 @@ public class RecipientHelper {
     }
 
     public Map<String, RegisteredUser> getRegisteredUsers(final Set<String> numbers) throws IOException {
-        Map<String, RegisteredUser> registeredUsers;
-        try {
-            registeredUsers = getRegisteredUsersV2(numbers, true);
-        } catch (IOException e) {
-            logger.warn("CDSI request failed, trying fallback to CDS", e);
-            registeredUsers = getRegisteredUsersV1(numbers);
-        }
+        Map<String, RegisteredUser> registeredUsers = getRegisteredUsersV2(numbers, true);
 
         // Store numbers as recipients, so we have the number/uuid association
         registeredUsers.forEach((number, u) -> account.getRecipientTrustedResolver()
@@ -135,23 +123,6 @@ public class RecipientHelper {
             throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
         }
         return user.getServiceId();
-    }
-
-    private Map<String, RegisteredUser> getRegisteredUsersV1(final Set<String> numbers) throws IOException {
-        final Map<String, ACI> response;
-        try {
-            response = dependencies.getAccountManager()
-                    .getRegisteredUsers(ServiceConfig.getIasKeyStore(),
-                            numbers,
-                            serviceEnvironmentConfig.getCdsMrenclave());
-        } catch (Quote.InvalidQuoteFormatException | UnauthenticatedQuoteException | SignatureException |
-                 UnauthenticatedResponseException | InvalidKeyException | NumberFormatException e) {
-            throw new IOException(e);
-        }
-        final var registeredUsers = new HashMap<String, RegisteredUser>();
-        response.forEach((key, value) -> registeredUsers.put(key,
-                new RegisteredUser(Optional.of(value), Optional.empty())));
-        return registeredUsers;
     }
 
     private Map<String, RegisteredUser> getRegisteredUsersV2(
@@ -183,7 +154,7 @@ public class RecipientHelper {
     }
 
     private ACI getRegisteredUserByUsername(String username) throws IOException {
-        return dependencies.getAccountManager().getAciByUsername(username);
+        return dependencies.getAccountManager().getAciByUsernameHash(username);
     }
 
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {

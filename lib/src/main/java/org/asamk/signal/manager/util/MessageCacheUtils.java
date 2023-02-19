@@ -96,8 +96,9 @@ public class MessageCacheUtils {
                     uuid,
                     destinationUuid == null ? UuidUtil.UNKNOWN_UUID.toString() : destinationUuid,
                     isUrgent,
-                    updatedPni == null ? "" : updatedPni,
-                    isStory);
+                    isStory,
+                    null,
+                    updatedPni == null ? "" : updatedPni);
         }
     }
 

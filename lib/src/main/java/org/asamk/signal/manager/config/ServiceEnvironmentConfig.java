@@ -15,7 +15,6 @@ public class ServiceEnvironmentConfig {
     private final KeyBackupConfig keyBackupConfig;
     private final Collection<KeyBackupConfig> fallbackKeyBackupConfigs;
 
-    private final String cdsMrenclave;
     private final String cdsiMrenclave;
 
     public ServiceEnvironmentConfig(
@@ -24,7 +23,6 @@ public class ServiceEnvironmentConfig {
             final ECPublicKey unidentifiedSenderTrustRoot,
             final KeyBackupConfig keyBackupConfig,
             final Collection<KeyBackupConfig> fallbackKeyBackupConfigs,
-            final String cdsMrenclave,
             final String cdsiMrenclave
     ) {
         this.type = type;
@@ -32,7 +30,6 @@ public class ServiceEnvironmentConfig {
         this.unidentifiedSenderTrustRoot = unidentifiedSenderTrustRoot;
         this.keyBackupConfig = keyBackupConfig;
         this.fallbackKeyBackupConfigs = fallbackKeyBackupConfigs;
-        this.cdsMrenclave = cdsMrenclave;
         this.cdsiMrenclave = cdsiMrenclave;
     }
 
@@ -54,10 +51,6 @@ public class ServiceEnvironmentConfig {
 
     public Collection<KeyBackupConfig> getFallbackKeyBackupConfigs() {
         return fallbackKeyBackupConfigs;
-    }
-
-    public String getCdsMrenclave() {
-        return cdsMrenclave;
     }
 
     public String getCdsiMrenclave() {

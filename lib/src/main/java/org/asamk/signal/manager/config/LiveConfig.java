@@ -7,7 +7,6 @@ import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalCdsiUrl;
-import org.whispersystems.signalservice.internal.configuration.SignalContactDiscoveryUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalKeyBackupServiceUrl;
 import org.whispersystems.signalservice.internal.configuration.SignalProxy;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
@@ -27,8 +26,7 @@ class LiveConfig {
 
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
-    private final static String CDS_MRENCLAVE = "74778bb0f93ae1f78c26e67152bab0bbeb693cd56d1bb9b4e9244157acc58081";
-    private final static String CDSI_MRENCLAVE = "ef4787a56a154ac6d009138cac17155acd23cfe4329281252365dd7c252e7fbf";
+    private final static String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "e18376436159cda3ad7a45d9320e382e4a497f26b0dca34d8eab0bd0139483b5";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
@@ -42,7 +40,6 @@ class LiveConfig {
     private final static String URL = "https://chat.signal.org";
     private final static String CDN_URL = "https://cdn.signal.org";
     private final static String CDN2_URL = "https://cdn2.signal.org";
-    private final static String SIGNAL_CONTACT_DISCOVERY_URL = "https://api.directory.signal.org";
     private final static String SIGNAL_KEY_BACKUP_URL = "https://api.backup.signal.org";
     private final static String STORAGE_URL = "https://storage.signal.org";
     private final static String SIGNAL_CDSI_URL = "https://cdsi.signal.org";
@@ -62,17 +59,13 @@ class LiveConfig {
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
                         2,
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
-                new SignalContactDiscoveryUrl[]{
-                        new SignalContactDiscoveryUrl(SIGNAL_CONTACT_DISCOVERY_URL, TRUST_STORE)
-                },
                 new SignalKeyBackupServiceUrl[]{new SignalKeyBackupServiceUrl(SIGNAL_KEY_BACKUP_URL, TRUST_STORE)},
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
                 new SignalCdsiUrl[]{new SignalCdsiUrl(SIGNAL_CDSI_URL, TRUST_STORE)},
                 interceptors,
                 dns,
                 proxy,
-                zkGroupServerPublicParams,
-                true);
+                zkGroupServerPublicParams);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {
@@ -91,10 +84,6 @@ class LiveConfig {
         return List.of(new KeyBackupConfig(FALLBACK_KEY_BACKUP_ENCLAVE_NAME,
                 FALLBACK_KEY_BACKUP_SERVICE_ID,
                 FALLBACK_KEY_BACKUP_MRENCLAVE));
-    }
-
-    static String getCdsMrenclave() {
-        return CDS_MRENCLAVE;
     }
 
     static String getCdsiMrenclave() {
