@@ -33,19 +33,14 @@ graalvmNative {
     }
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
-
 dependencies {
-    implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
-    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.14.2")
-    implementation("net.sourceforge.argparse4j", "argparse4j", "0.9.0")
-    implementation("com.github.hypfvieh", "dbus-java-transport-native-unixsocket", "4.2.1")
-    implementation("org.slf4j", "slf4j-api", "2.0.6")
-    implementation("ch.qos.logback", "logback-classic", "1.4.5")
-    implementation("org.slf4j", "jul-to-slf4j", "2.0.6")
+    implementation(libs.bouncycastle)
+    implementation(libs.jackson.databind)
+    implementation(libs.argparse4j)
+    implementation(libs.dbusjava)
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.jul)
+    implementation(libs.logback)
     implementation(project(":lib"))
 }
 

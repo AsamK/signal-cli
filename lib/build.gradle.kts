@@ -8,21 +8,16 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
-
 dependencies {
-    implementation("com.github.turasa", "signal-service-java", "2.15.3_unofficial_66")
-    implementation("com.fasterxml.jackson.core", "jackson-databind", "2.14.1")
-    implementation("com.google.protobuf", "protobuf-javalite", "3.21.12")
-    implementation("org.bouncycastle", "bcprov-jdk15on", "1.70")
-    implementation("org.slf4j", "slf4j-api", "2.0.6")
-    implementation("org.xerial", "sqlite-jdbc", "3.40.1.0")
-    implementation("com.zaxxer", "HikariCP", "5.0.1")
+    implementation(libs.signalservice)
+    implementation(libs.jackson.databind)
+    implementation(libs.protobuf)
+    implementation(libs.bouncycastle)
+    implementation(libs.slf4j.api)
+    implementation(libs.sqlite)
+    implementation(libs.hikari)
 
-    testImplementation("org.junit.jupiter", "junit-jupiter", "5.9.2")
+    testImplementation(libs.junit)
 }
 
 tasks.named<Test>("test") {
