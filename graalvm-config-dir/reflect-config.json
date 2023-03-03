@@ -3192,6 +3192,7 @@
     {"name":"attachmentCase_"}, 
     {"name":"attachment_"}, 
     {"name":"bitField0_"}, 
+    {"name":"bodyRanges_"}, 
     {"name":"group_"}, 
     {"name":"profileKey_"}
   ]
