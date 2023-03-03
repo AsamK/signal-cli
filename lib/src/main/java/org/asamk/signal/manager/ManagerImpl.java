@@ -569,7 +569,7 @@ class ManagerImpl implements Manager {
             final var textAttachment = AttachmentUtils.createAttachmentStream(new StreamDetails(new ByteArrayInputStream(
                     messageBytes), MimeUtils.LONG_TEXT, messageBytes.length), Optional.empty());
             messageBuilder.withBody(message.messageText().substring(0, 2000));
-            messageBuilder.withAttachment(textAttachment);
+            messageBuilder.withAttachment(context.getAttachmentHelper().uploadAttachment(textAttachment));
         } else {
             messageBuilder.withBody(message.messageText());
         }
