@@ -74,17 +74,19 @@ public class AvatarStore {
     }
 
     private File getGroupAvatarFile(GroupId groupId) {
-        return new File(avatarsPath, "group-" + groupId.toBase64().replace("/", "_"));
+    	final var now = System.currentTimeMillis() / 1000L;
+        return new File(avatarsPath, "group-" + groupId.toBase64().replace("/", "_") + "-" + now);
     }
 
     private File getContactAvatarFile(RecipientAddress address) {
-        return new File(avatarsPath, "contact-" + address.getLegacyIdentifier());
+    	final var now = System.currentTimeMillis() / 1000L;
+        return new File(avatarsPath, "contact-" + address.getLegacyIdentifier() + "-" + now);
     }
 
     private File getProfileAvatarFile(RecipientAddress address) {
-        return new File(avatarsPath, "profile-" + address.getLegacyIdentifier());
+    	final var now = System.currentTimeMillis() / 1000L;
+        return new File(avatarsPath, "profile-" + address.getLegacyIdentifier() + "-" + now);
     }
-
     private void createAvatarsDir() throws IOException {
         IOUtils.createPrivateDirectories(avatarsPath);
     }
