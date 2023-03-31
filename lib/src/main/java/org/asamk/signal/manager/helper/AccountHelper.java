@@ -7,10 +7,11 @@ import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
-import org.asamk.signal.manager.config.ServiceConfig;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
@@ -21,6 +22,7 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
+import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -128,9 +130,14 @@ public class AccountHelper {
 
     public void startChangeNumber(
             String newNumber, String captcha, boolean voiceVerification
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
-        NumberVerificationUtils.requestVerificationCode(accountManager, captcha, voiceVerification);
+        String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
+                account.getSessionId(newNumber),
+                id -> account.setSessionId(newNumber, id),
+                voiceVerification,
+                captcha);
+        NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
     }
 
     public void finishChangeNumber(
@@ -140,17 +147,28 @@ public class AccountHelper {
         final List<OutgoingPushMessage> deviceMessages = null;
         final Map<String, SignedPreKeyEntity> devicePniSignedPreKeys = null;
         final Map<String, Integer> pniRegistrationIds = null;
-        final var result = NumberVerificationUtils.verifyNumber(verificationCode,
+        var sessionId = account.getSessionId(account.getNumber());
+        final var result = NumberVerificationUtils.verifyNumber(sessionId,
+                verificationCode,
                 pin,
                 context.getPinHelper(),
-                (verificationCode1, registrationLock) -> dependencies.getAccountManager()
-                        .changeNumber(new ChangePhoneNumberRequest(newNumber,
-                                verificationCode1,
-                                registrationLock,
-                                account.getPniIdentityKeyPair().getPublicKey(),
-                                deviceMessages,
-                                devicePniSignedPreKeys,
-                                pniRegistrationIds)));
+                (sessionId1, verificationCode1, registrationLock) -> {
+                    final var accountManager = dependencies.getAccountManager();
+                    try {
+                        Utils.handleResponseException(accountManager.verifyAccount(verificationCode, sessionId1));
+                    } catch (AlreadyVerifiedException e) {
+                        // Already verified so can continue changing number
+                    }
+                    return Utils.handleResponseException(accountManager.changeNumber(new ChangePhoneNumberRequest(
+                            sessionId1,
+                            null,
+                            newNumber,
+                            registrationLock,
+                            account.getPniIdentityKeyPair().getPublicKey(),
+                            deviceMessages,
+                            devicePniSignedPreKeys,
+                            pniRegistrationIds)));
+                });
         // TODO handle response
         updateSelfIdentifiers(newNumber, account.getAci(), PNI.parseOrThrow(result.first().getPni()));
     }
@@ -162,18 +180,7 @@ public class AccountHelper {
     }
 
     public void updateAccountAttributes() throws IOException {
-        dependencies.getAccountManager()
-                .setAccountAttributes(null,
-                        account.getLocalRegistrationId(),
-                        true,
-                        null,
-                        account.getRegistrationLock(),
-                        account.getSelfUnidentifiedAccessKey(),
-                        account.isUnrestrictedUnidentifiedAccess(),
-                        ServiceConfig.capabilities,
-                        account.isDiscoverableByPhoneNumber(),
-                        account.getEncryptedDeviceName(),
-                        account.getLocalPniRegistrationId());
+        dependencies.getAccountManager().setAccountAttributes(account.getAccountAttributes(null));
     }
 
     public void addDevice(DeviceLinkInfo deviceLinkInfo) throws IOException, InvalidDeviceLinkException {

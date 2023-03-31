@@ -11,6 +11,7 @@ import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.freedesktop.dbus.DBusPath;
 
@@ -59,6 +60,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         }
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.register(voiceVerification, captcha);
+        } catch (RateLimitException e) {
+            String message = "Rate limit reached";
+            throw new SignalControl.Error.Failure(message);
         } catch (CaptchaRequiredException e) {
             String message = captcha == null ? "Captcha required for verification." : "Invalid captcha given.";
             throw new SignalControl.Error.RequiresCaptcha(message);

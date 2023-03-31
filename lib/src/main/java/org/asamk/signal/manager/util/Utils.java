@@ -8,6 +8,7 @@ import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.StreamDetails;
+import org.whispersystems.signalservice.internal.ServiceResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -127,5 +128,17 @@ public class Utils {
             map.put(name, value);
         }
         return map;
+    }
+
+    public static <T> T handleResponseException(final ServiceResponse<T> response) throws IOException {
+        final var throwableOptional = response.getExecutionError().or(response::getApplicationError);
+        if (throwableOptional.isPresent()) {
+            if (throwableOptional.get() instanceof IOException) {
+                throw (IOException) throwableOptional.get();
+            } else {
+                throw new IOException(throwableOptional.get());
+            }
+        }
+        return response.getResult().orElse(null);
     }
 }

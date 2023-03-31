@@ -62,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
+import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -97,6 +98,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
+
 public class SignalAccount implements Closeable {
 
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
@@ -119,6 +122,8 @@ public class SignalAccount implements Closeable {
     private String number;
     private ACI aci;
     private PNI pni;
+    private String sessionId;
+    private String sessionNumber;
     private String encryptedDeviceName;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private boolean isMultiDevice = false;
@@ -551,6 +556,12 @@ public class SignalAccount implements Closeable {
                 throw new IOException("Config file contains an invalid pni, needs to be a valid UUID", e);
             }
         }
+        if (rootNode.hasNonNull("sessionId")) {
+            sessionId = rootNode.get("sessionId").asText();
+        }
+        if (rootNode.hasNonNull("sessionNumber")) {
+            sessionNumber = rootNode.get("sessionNumber").asText();
+        }
         if (rootNode.hasNonNull("deviceName")) {
             encryptedDeviceName = rootNode.get("deviceName").asText();
         }
@@ -926,6 +937,8 @@ public class SignalAccount implements Closeable {
                     .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
                     .put("uuid", aci == null ? null : aci.toString())
                     .put("pni", pni == null ? null : pni.toString())
+                    .put("sessionId", sessionId)
+                    .put("sessionNumber", sessionNumber)
                     .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
@@ -1293,6 +1306,21 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public AccountAttributes getAccountAttributes(String registrationLock) {
+        return new AccountAttributes(null,
+                getLocalRegistrationId(),
+                true,
+                null,
+                registrationLock != null ? registrationLock : getRegistrationLock(),
+                getSelfUnidentifiedAccessKey(),
+                isUnrestrictedUnidentifiedAccess(),
+                capabilities,
+                isDiscoverableByPhoneNumber(),
+                encryptedDeviceName,
+                getLocalPniRegistrationId(),
+                null); // TODO recoveryPassword?
+    }
+
     public ServiceId getAccountId(ServiceIdType serviceIdType) {
         return serviceIdType.equals(ServiceIdType.ACI) ? aci : pni;
     }
@@ -1345,6 +1373,19 @@ public class SignalAccount implements Closeable {
 
     public RecipientId getSelfRecipientId() {
         return getRecipientResolver().resolveRecipient(getSelfRecipientAddress());
+    }
+
+    public String getSessionId(final String forNumber) {
+        if (!forNumber.equals(sessionNumber)) {
+            return null;
+        }
+        return sessionId;
+    }
+
+    public void setSessionId(final String sessionNumber, final String sessionId) {
+        this.sessionNumber = sessionNumber;
+        this.sessionId = sessionId;
+        save();
     }
 
     public byte[] getEncryptedDeviceName() {

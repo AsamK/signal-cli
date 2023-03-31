@@ -15,8 +15,15 @@ public final class CachedMessage {
 
     private final File file;
 
+    private SignalServiceEnvelope envelope;
+
     CachedMessage(final File file) {
         this.file = file;
+    }
+
+    CachedMessage(final File file, SignalServiceEnvelope envelope) {
+        this.file = file;
+        this.envelope = envelope;
     }
 
     File getFile() {
@@ -24,12 +31,14 @@ public final class CachedMessage {
     }
 
     public SignalServiceEnvelope loadEnvelope() {
-        try {
-            return MessageCacheUtils.loadEnvelope(file);
-        } catch (Exception e) {
-            logger.error("Failed to load cached message envelope “{}”: {}", file, e.getMessage(), e);
-            return null;
+        if (envelope == null) {
+            try {
+                envelope = MessageCacheUtils.loadEnvelope(file);
+            } catch (Exception e) {
+                logger.error("Failed to load cached message envelope “{}”: {}", file, e.getMessage(), e);
+            }
         }
+        return envelope;
     }
 
     public void delete() {

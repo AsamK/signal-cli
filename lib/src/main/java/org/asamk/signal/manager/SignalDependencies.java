@@ -88,6 +88,10 @@ public class SignalDependencies {
         return serviceEnvironmentConfig;
     }
 
+    public SignalSessionLock getSessionLock() {
+        return sessionLock;
+    }
+
     public SignalServiceAccountManager getAccountManager() {
         return getOrCreate(() -> accountManager,
                 () -> accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
@@ -115,7 +119,7 @@ public class SignalDependencies {
 
     public GroupsV2Operations getGroupsV2Operations() {
         return getOrCreate(() -> groupsV2Operations,
-                () -> groupsV2Operations = capabilities.isGv2()
+                () -> groupsV2Operations = capabilities.getGv2()
                         ? new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
                         ServiceConfig.GROUP_MAX_SIZE)
                         : null);
@@ -123,7 +127,7 @@ public class SignalDependencies {
 
     private ClientZkOperations getClientZkOperations() {
         return getOrCreate(() -> clientZkOperations,
-                () -> clientZkOperations = capabilities.isGv2()
+                () -> clientZkOperations = capabilities.getGv2()
                         ? ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration())
                         : null);
     }

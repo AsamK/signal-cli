@@ -5,41 +5,94 @@ import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
+import org.whispersystems.signalservice.api.push.exceptions.NoSuchSessionException;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
+import org.whispersystems.signalservice.api.push.exceptions.PushChallengeRequiredException;
+import org.whispersystems.signalservice.api.push.exceptions.TokenNotAcceptedException;
 import org.whispersystems.signalservice.internal.ServiceResponse;
 import org.whispersystems.signalservice.internal.push.LockedException;
-import org.whispersystems.signalservice.internal.push.RequestVerificationCodeResponse;
+import org.whispersystems.signalservice.internal.push.RegistrationSessionMetadataResponse;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
 import java.io.IOException;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 public class NumberVerificationUtils {
 
+    public static String handleVerificationSession(
+            SignalServiceAccountManager accountManager,
+            String sessionId,
+            Consumer<String> sessionIdSaver,
+            boolean voiceVerification,
+            String captcha
+    ) throws CaptchaRequiredException, IOException, RateLimitException {
+        RegistrationSessionMetadataResponse sessionResponse;
+        try {
+            sessionResponse = getValidSession(accountManager, sessionId);
+        } catch (PushChallengeRequiredException |
+                 org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
+            if (captcha != null) {
+                sessionResponse = submitCaptcha(accountManager, sessionId, captcha);
+            } else {
+                throw new CaptchaRequiredException("Captcha Required");
+            }
+        }
+
+        sessionId = sessionResponse.getBody().getId();
+        sessionIdSaver.accept(sessionId);
+
+        if (sessionResponse.getBody().getVerified()) {
+            return sessionId;
+        }
+
+        if (sessionResponse.getBody().getAllowedToRequestCode()) {
+            return sessionId;
+        }
+
+        final var nextAttempt = voiceVerification
+                ? sessionResponse.getBody().getNextCall()
+                : sessionResponse.getBody().getNextSms();
+        if (nextAttempt != null && nextAttempt > 0) {
+            final var timestamp = sessionResponse.getHeaders().getTimestamp() + nextAttempt * 1000;
+            throw new RateLimitException(timestamp);
+        }
+
+        final var nextVerificationAttempt = sessionResponse.getBody().getNextVerificationAttempt();
+        if (nextVerificationAttempt != null && nextVerificationAttempt > 0) {
+            final var timestamp = sessionResponse.getHeaders().getTimestamp() + nextVerificationAttempt * 1000;
+            throw new CaptchaRequiredException(timestamp);
+        }
+
+        if (sessionResponse.getBody().getRequestedInformation().contains("captcha")) {
+            if (captcha != null) {
+                sessionResponse = submitCaptcha(accountManager, sessionId, captcha);
+            }
+            if (!sessionResponse.getBody().getAllowedToRequestCode()) {
+                throw new CaptchaRequiredException("Captcha Required");
+            }
+        }
+
+        return sessionId;
+    }
+
     public static void requestVerificationCode(
-            SignalServiceAccountManager accountManager, String captcha, boolean voiceVerification
+            SignalServiceAccountManager accountManager, String sessionId, boolean voiceVerification
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
-        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
-        final ServiceResponse<RequestVerificationCodeResponse> response;
+        final ServiceResponse<RegistrationSessionMetadataResponse> response;
         final var locale = Utils.getDefaultLocale(Locale.US);
         if (voiceVerification) {
-            response = accountManager.requestVoiceVerificationCode(locale,
-                    Optional.ofNullable(captcha),
-                    Optional.empty(),
-                    Optional.empty());
+            response = accountManager.requestVoiceVerificationCode(sessionId, locale, false);
         } else {
-            response = accountManager.requestSmsVerificationCode(locale,
-                    false,
-                    Optional.ofNullable(captcha),
-                    Optional.empty(),
-                    Optional.empty());
+            response = accountManager.requestSmsVerificationCode(sessionId, locale, false);
         }
         try {
-            handleResponseException(response);
+            Utils.handleResponseException(response);
         } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
             throw new CaptchaRequiredException(e.getMessage(), e);
         } catch (org.whispersystems.signalservice.api.push.exceptions.NonNormalizedPhoneNumberException e) {
@@ -51,11 +104,11 @@ public class NumberVerificationUtils {
     }
 
     public static Pair<VerifyAccountResponse, MasterKey> verifyNumber(
-            String verificationCode, String pin, PinHelper pinHelper, Verifier verifier
+            String sessionId, String verificationCode, String pin, PinHelper pinHelper, Verifier verifier
     ) throws IOException, PinLockedException, IncorrectPinException {
         verificationCode = verificationCode.replace("-", "");
         try {
-            final var response = verifyAccountWithCode(verificationCode, null, verifier);
+            final var response = verifier.verify(sessionId, verificationCode, null);
 
             return new Pair<>(response, null);
         } catch (LockedException e) {
@@ -72,7 +125,7 @@ public class NumberVerificationUtils {
             var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();
             VerifyAccountResponse response;
             try {
-                response = verifyAccountWithCode(verificationCode, registrationLock, verifier);
+                response = verifier.verify(sessionId, verificationCode, registrationLock);
             } catch (LockedException _e) {
                 throw new AssertionError("KBS Pin appeared to matched but reg lock still failed!");
             }
@@ -81,29 +134,53 @@ public class NumberVerificationUtils {
         }
     }
 
-    private static VerifyAccountResponse verifyAccountWithCode(
-            final String verificationCode, final String registrationLock, final Verifier verifier
+    private static RegistrationSessionMetadataResponse validateSession(
+            final SignalServiceAccountManager accountManager, final String sessionId
     ) throws IOException {
-        final var response = verifier.verify(verificationCode, registrationLock);
-        handleResponseException(response);
-        return response.getResult().get();
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new NoSuchSessionException();
+        }
+        return Utils.handleResponseException(accountManager.getRegistrationSession(sessionId));
     }
 
-    private static void handleResponseException(final ServiceResponse<?> response) throws IOException {
-        final var throwableOptional = response.getExecutionError().or(response::getApplicationError);
-        if (throwableOptional.isPresent()) {
-            if (throwableOptional.get() instanceof IOException) {
-                throw (IOException) throwableOptional.get();
-            } else {
-                throw new IOException(throwableOptional.get());
+    private static RegistrationSessionMetadataResponse requestValidSession(
+            final SignalServiceAccountManager accountManager
+    ) throws NoSuchSessionException, IOException {
+        return Utils.handleResponseException(accountManager.createRegistrationSession(null, "", ""));
+    }
+
+    private static RegistrationSessionMetadataResponse getValidSession(
+            final SignalServiceAccountManager accountManager, final String sessionId
+    ) throws IOException {
+        try {
+            return validateSession(accountManager, sessionId);
+        } catch (NoSuchSessionException e) {
+            return requestValidSession(accountManager);
+        }
+    }
+
+    private static RegistrationSessionMetadataResponse submitCaptcha(
+            SignalServiceAccountManager accountManager, String sessionId, String captcha
+    ) throws IOException, CaptchaRequiredException {
+        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
+        try {
+            return Utils.handleResponseException(accountManager.submitCaptchaToken(sessionId, captcha));
+        } catch (PushChallengeRequiredException |
+                 org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException |
+                 TokenNotAcceptedException _e) {
+            throw new CaptchaRequiredException("Captcha not accepted");
+        } catch (NonSuccessfulResponseCodeException e) {
+            if (e.getCode() == 400) {
+                throw new CaptchaRequiredException("Captcha has invalid format");
             }
+            throw e;
         }
     }
 
     public interface Verifier {
 
-        ServiceResponse<VerifyAccountResponse> verify(
-                String verificationCode, String registrationLock
-        );
+        VerifyAccountResponse verify(
+                String sessionId, String verificationCode, String registrationLock
+        ) throws IOException;
     }
 }

@@ -13,7 +13,9 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.util.DateUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -65,6 +67,12 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
     ) throws UserErrorException, IOErrorException {
         try {
             m.register(voiceVerification, captcha);
+        } catch (RateLimitException e) {
+            String message = "Rate limit reached";
+            if (e.getNextAttemptTimestamp() > 0) {
+                message += "\nNext attempt may be tried at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
+            }
+            throw new UserErrorException(message);
         } catch (CaptchaRequiredException e) {
             String message;
             if (captcha == null) {
@@ -75,6 +83,10 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
                           Everything after signalcaptcha:// is the captcha token.""";
             } else {
                 message = "Invalid captcha given.";
+            }
+            if (e.getNextAttemptTimestamp() > 0) {
+                message += "\nNext Captcha may be provided at "
+                        + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
             }
             throw new UserErrorException(message);
         } catch (NonNormalizedPhoneNumberException e) {

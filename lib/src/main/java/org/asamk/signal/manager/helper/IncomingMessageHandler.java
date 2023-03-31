@@ -44,12 +44,14 @@ import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.groups.GroupSessionBuilder;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.crypto.SignalGroupSessionBuilder;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
@@ -275,7 +277,8 @@ public final class IncomingMessageHandler {
             logger.debug("Received a sender key distribution message for distributionId {} from {}",
                     message.getDistributionId(),
                     protocolAddress);
-            dependencies.getMessageSender().processSenderKeyDistributionMessage(protocolAddress, message);
+            new SignalGroupSessionBuilder(dependencies.getSessionLock(),
+                    new GroupSessionBuilder(account.getSenderKeyStore())).process(protocolAddress, message);
         }
 
         if (content.getDecryptionErrorMessage().isPresent()) {

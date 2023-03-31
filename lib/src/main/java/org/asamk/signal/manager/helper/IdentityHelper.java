@@ -80,7 +80,7 @@ public class IdentityHelper {
         final var address = account.getRecipientAddressResolver()
                 .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(serviceId));
 
-        return Utils.computeSafetyNumber(capabilities.isUuid(),
+        return Utils.computeSafetyNumber(capabilities.getUuid(),
                 account.getSelfRecipientAddress(),
                 account.getAciIdentityKeyPair().getPublicKey(),
                 address.getServiceId().equals(serviceId)

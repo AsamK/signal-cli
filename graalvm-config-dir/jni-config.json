@@ -77,6 +77,13 @@
   ]
 },
 {
+  "name":"org.asamk.signal.manager.storage.senderKeys.SenderKeyStore",
+  "methods":[
+    {"name":"loadSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID"] }, 
+    {"name":"storeSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID","org.signal.libsignal.protocol.groups.state.SenderKeyRecord"] }
+  ]
+},
+{
   "name":"org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
   "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]
 },
