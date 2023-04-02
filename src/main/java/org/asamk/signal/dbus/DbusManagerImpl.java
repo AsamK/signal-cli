@@ -219,7 +219,15 @@ public class DbusManagerImpl implements Manager {
             throw new UnsupportedOperationException();
         }
         final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
-        group.quitGroup();
+        try {
+            group.quitGroup();
+        } catch (Signal.Error.GroupNotFound e) {
+            throw new GroupNotFoundException(groupId);
+        } catch (Signal.Error.NotAGroupMember e) {
+            throw new NotAGroupMemberException(groupId, group.Get("org.asamk.Signal.Group", "Name"));
+        } catch (Signal.Error.LastGroupAdmin e) {
+            throw new LastGroupAdminException(groupId, group.Get("org.asamk.Signal.Group", "Name"));
+        }
         return new SendGroupMessageResults(0, List.of());
     }
 

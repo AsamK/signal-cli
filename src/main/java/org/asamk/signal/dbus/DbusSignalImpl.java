@@ -1193,8 +1193,10 @@ public class DbusSignalImpl implements Signal {
         public void quitGroup() throws Error.Failure {
             try {
                 m.quitGroup(groupId, Set.of());
-            } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            } catch (GroupNotFoundException e) {
                 throw new Error.GroupNotFound(e.getMessage());
+            } catch (NotAGroupMemberException e) {
+                throw new Error.NotAGroupMember(e.getMessage());
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
             } catch (LastGroupAdminException e) {

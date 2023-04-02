@@ -592,6 +592,13 @@ public interface Signal extends DBusInterface {
             }
         }
 
+        class NotAGroupMember extends DBusExecutionException {
+
+            public NotAGroupMember(final String message) {
+                super("Not a group member: " + message);
+            }
+        }
+
         class InvalidGroupId extends DBusExecutionException {
 
             public InvalidGroupId(final String message) {
