@@ -463,6 +463,7 @@ addMembers(recipients<as>) -> <>::
 * recipients : String array of phone numbers
 
 Add recipients to group if they are pending members; otherwise add recipients to list of requesting members.
+This command is also used to accept group invitations by adding yourself to a group.
 
 Exceptions: Failure
 
