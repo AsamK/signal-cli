@@ -41,6 +41,8 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
+
 class ProvisioningManagerImpl implements ProvisioningManager {
 
     private final static Logger logger = LoggerFactory.getLogger(ProvisioningManagerImpl.class);
@@ -125,7 +127,12 @@ class ProvisioningManagerImpl implements ProvisioningManager {
 
         logger.debug("Finishing new device registration");
         var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
-                new ConfirmCodeMessage(false, true, registrationId, pniRegistrationId, encryptedDeviceName, null));
+                new ConfirmCodeMessage(false,
+                        true,
+                        registrationId,
+                        pniRegistrationId,
+                        encryptedDeviceName,
+                        capabilities));
 
         // Create new account with the synced identity
         var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();
@@ -147,6 +154,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                     pniRegistrationId,
                     profileKey,
                     Settings.DEFAULT);
+            account.getConfigurationStore().setReadReceipts(ret.isReadReceipts());
 
             ManagerImpl m = null;
             try {
