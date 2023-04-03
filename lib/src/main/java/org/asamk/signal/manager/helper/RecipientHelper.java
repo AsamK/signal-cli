@@ -6,6 +6,8 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.signal.libsignal.usernames.BaseUsernameException;
+import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -13,6 +15,7 @@ import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
+import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -47,7 +50,7 @@ public class RecipientHelper {
         final var number = address.number().get();
         final ServiceId serviceId;
         try {
-            serviceId = getRegisteredUser(number);
+            serviceId = getRegisteredUserByNumber(number);
         } catch (UnregisteredRecipientException e) {
             logger.warn("Failed to get uuid for e164 number: {}", number);
             // Return SignalServiceAddress with unknown UUID
@@ -78,15 +81,33 @@ public class RecipientHelper {
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
             return account.getRecipientResolver().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
-        } else {
-            final var number = ((RecipientIdentifier.Number) recipient).number();
-            return account.getRecipientStore().resolveRecipient(number, () -> {
+        } else if (recipient instanceof RecipientIdentifier.Number numberRecipient) {
+            final var number = numberRecipient.number();
+            return account.getRecipientStore().resolveRecipientByNumber(number, () -> {
                 try {
-                    return getRegisteredUser(number);
+                    return getRegisteredUserByNumber(number);
                 } catch (Exception e) {
                     return null;
                 }
             });
+        } else if (recipient instanceof RecipientIdentifier.Username usernameRecipient) {
+            final var username = usernameRecipient.username();
+            return account.getRecipientStore().resolveRecipientByUsername(username, () -> {
+                try {
+                    return getRegisteredUserByUsername(username);
+                } catch (Exception e) {
+                    return null;
+                }
+            });
+        }
+        throw new AssertionError("Unexpected RecipientIdentifier: " + recipient);
+    }
+
+    public Optional<RecipientId> resolveRecipientOptional(final RecipientIdentifier.Single recipient) {
+        try {
+            return Optional.of(resolveRecipient(recipient));
+        } catch (UnregisteredRecipientException e) {
+            return Optional.empty();
         }
     }
 
@@ -96,7 +117,7 @@ public class RecipientHelper {
             return recipientId;
         }
         final var number = address.getNumber().get();
-        final var serviceId = getRegisteredUser(number);
+        final var serviceId = getRegisteredUserByNumber(number);
         return account.getRecipientTrustedResolver()
                 .resolveRecipientTrusted(new SignalServiceAddress(serviceId, number));
     }
@@ -111,7 +132,7 @@ public class RecipientHelper {
         return registeredUsers;
     }
 
-    private ServiceId getRegisteredUser(final String number) throws IOException, UnregisteredRecipientException {
+    private ServiceId getRegisteredUserByNumber(final String number) throws IOException, UnregisteredRecipientException {
         final Map<String, RegisteredUser> aciMap;
         try {
             aciMap = getRegisteredUsers(Set.of(number));
@@ -153,8 +174,9 @@ public class RecipientHelper {
         return registeredUsers;
     }
 
-    private ACI getRegisteredUserByUsername(String username) throws IOException {
-        return dependencies.getAccountManager().getAciByUsernameHash(username);
+    private ACI getRegisteredUserByUsername(String username) throws IOException, BaseUsernameException {
+        return dependencies.getAccountManager()
+                .getAciByUsernameHash(Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(username)));
     }
 
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {

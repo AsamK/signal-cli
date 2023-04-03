@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
@@ -149,6 +150,16 @@ public class DbusManagerImpl implements Manager {
                 emptyIfNull(updateProfile.getAboutEmoji()),
                 updateProfile.getAvatar() == null ? "" : updateProfile.getAvatar(),
                 updateProfile.isDeleteAvatar());
+    }
+
+    @Override
+    public String setUsername(final String username) throws IOException, InvalidUsernameException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteUsername() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -120,6 +120,7 @@ public class SignalAccount implements Closeable {
     private String accountPath;
     private ServiceEnvironment serviceEnvironment;
     private String number;
+    private String username;
     private ACI aci;
     private PNI pni;
     private String sessionId;
@@ -542,6 +543,9 @@ public class SignalAccount implements Closeable {
             serviceEnvironment = ServiceEnvironment.valueOf(rootNode.get("serviceEnvironment").asText());
         }
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
+        if (rootNode.hasNonNull("usernameIdentifier")) {
+            username = rootNode.get("usernameIdentifier").asText();
+        }
         if (rootNode.hasNonNull("uuid")) {
             try {
                 aci = ACI.parseOrThrow(rootNode.get("uuid").asText());
@@ -935,6 +939,7 @@ public class SignalAccount implements Closeable {
             rootNode.put("version", CURRENT_STORAGE_VERSION)
                     .put("username", number)
                     .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
+                    .put("usernameIdentifier", username)
                     .put("uuid", aci == null ? null : aci.toString())
                     .put("pni", pni == null ? null : pni.toString())
                     .put("sessionId", sessionId)
@@ -1297,6 +1302,15 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(final String username) {
+        this.username = username;
+        save();
+    }
+
     public ServiceEnvironment getServiceEnvironment() {
         return serviceEnvironment;
     }
@@ -1368,7 +1382,7 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientAddress getSelfRecipientAddress() {
-        return new RecipientAddress(aci, pni, number);
+        return new RecipientAddress(aci, pni, number, username);
     }
 
     public RecipientId getSelfRecipientId() {

@@ -196,6 +196,22 @@
   "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore"
 },
 {
+  "name":"org.signal.libsignal.usernames.BadNicknameCharacterException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.usernames.CannotBeEmptyException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.usernames.NicknameTooLongException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.usernames.NicknameTooShortException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.zkgroup.InvalidInputException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },

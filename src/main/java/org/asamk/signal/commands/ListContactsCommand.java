@@ -55,10 +55,12 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
             for (var r : recipients) {
                 final var contact = r.getContact() == null ? Contact.newBuilder().build() : r.getContact();
                 final var profile = r.getProfile() == null ? Profile.newBuilder().build() : r.getProfile();
-                writer.println("Number: {} Name: {} Profile name: {} Color: {} Blocked: {} Message expiration: {}",
+                writer.println(
+                        "Number: {} Name: {} Profile name: {} Username: {} Color: {} Blocked: {} Message expiration: {}",
                         r.getAddress().getLegacyIdentifier(),
                         contact.getName(),
                         profile.getDisplayName(),
+                        r.getAddress().username().orElse(""),
                         contact.getColor(),
                         contact.isBlocked(),
                         contact.getMessageExpirationTime() == 0
@@ -72,6 +74,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                 final var contact = r.getContact() == null ? Contact.newBuilder().build() : r.getContact();
                 return new JsonContact(address.number().orElse(null),
                         address.uuid().map(UUID::toString).orElse(null),
+                        address.username().orElse(null),
                         contact.getName(),
                         contact.getColor(),
                         contact.isBlocked(),
@@ -96,6 +99,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
     private record JsonContact(
             String number,
             String uuid,
+            String username,
             String name,
             String color,
             boolean isBlocked,

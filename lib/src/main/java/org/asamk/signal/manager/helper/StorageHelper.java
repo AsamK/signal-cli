@@ -102,7 +102,11 @@ public class StorageHelper {
 
         final var contactRecord = record.getContact().get();
         final var address = new RecipientAddress(contactRecord.getServiceId(), contactRecord.getNumber().orElse(null));
-        final var recipientId = account.getRecipientResolver().resolveRecipient(address);
+        var recipientId = account.getRecipientResolver().resolveRecipient(address);
+        if (contactRecord.getUsername().isPresent()) {
+            recipientId = account.getRecipientTrustedResolver()
+                    .resolveRecipientTrusted(contactRecord.getServiceId(), contactRecord.getUsername().get());
+        }
 
         final var contact = account.getContactStore().getContact(recipientId);
         final var blocked = contact != null && contact.isBlocked();
@@ -257,6 +261,7 @@ public class StorageHelper {
                     });
         }
         account.getConfigurationStore().setPhoneNumberUnlisted(accountRecord.isPhoneNumberUnlisted());
+        account.setUsername(accountRecord.getUsername());
 
         if (accountRecord.getProfileKey().isPresent()) {
             ProfileKey profileKey;

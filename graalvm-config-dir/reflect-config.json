@@ -673,6 +673,13 @@
   "methods":[{"name":"deviceLinkUri","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.commands.UpdateAccountCommand$JsonAccountResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"username","parameterTypes":[] }]
+},
+{
   "name":"org.asamk.signal.commands.VerifyCommand$VerifyParams",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -2536,6 +2543,12 @@
   "allDeclaredConstructors":true
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.ConfirmUsernameRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.DeviceCode",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2552,6 +2565,13 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.GetAciByUsernameResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.GroupMismatchedDevices",
@@ -2698,6 +2718,19 @@
     {"name":"getSessionId","parameterTypes":[] }, 
     {"name":"getSkipDeviceTransfer","parameterTypes":[] }
   ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.ReserveUsernameRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.ReserveUsernameResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SendGroupMessageResponse",

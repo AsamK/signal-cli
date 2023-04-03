@@ -9,6 +9,7 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
+import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
@@ -76,6 +77,18 @@ public interface Manager extends Closeable {
      * If a field is null, the previous value will be kept.
      */
     void updateProfile(UpdateProfile updateProfile) throws IOException;
+
+    /**
+     * Set a username for the account.
+     * If the username is null, it will be deleted.
+     */
+    String setUsername(String username) throws IOException, InvalidUsernameException;
+
+    /**
+     * Set a username for the account.
+     * If the username is null, it will be deleted.
+     */
+    void deleteUsername() throws IOException;
 
     void unregister() throws IOException;
 

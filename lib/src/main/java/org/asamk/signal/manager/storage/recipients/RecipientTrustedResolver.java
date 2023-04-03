@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage.recipients;
 
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Optional;
@@ -14,6 +15,8 @@ public interface RecipientTrustedResolver {
     RecipientId resolveRecipientTrusted(SignalServiceAddress address);
 
     RecipientId resolveRecipientTrusted(Optional<ACI> aci, Optional<PNI> pni, Optional<String> number);
+
+    RecipientId resolveRecipientTrusted(ServiceId serviceId, String username);
 
     class RecipientTrustedResolverWrapper implements RecipientTrustedResolver {
 
@@ -38,6 +41,11 @@ public interface RecipientTrustedResolver {
                 final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
         ) {
             return recipientTrustedResolverSupplier.get().resolveRecipientTrusted(aci, pni, number);
+        }
+
+        @Override
+        public RecipientId resolveRecipientTrusted(final ServiceId serviceId, final String username) {
+            return recipientTrustedResolverSupplier.get().resolveRecipientTrusted(serviceId, username);
         }
     }
 }

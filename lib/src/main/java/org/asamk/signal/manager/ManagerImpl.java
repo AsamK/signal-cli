@@ -25,6 +25,7 @@ import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
+import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
@@ -65,6 +66,7 @@ import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.StickerUtils;
+import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
@@ -288,6 +290,20 @@ class ManagerImpl implements Manager {
                                 : updateProfile.getAvatar() == null ? null : Optional.of(updateProfile.getAvatar()),
                         updateProfile.getMobileCoinAddress());
         context.getSyncHelper().sendSyncFetchProfileMessage();
+    }
+
+    @Override
+    public String setUsername(final String username) throws IOException, InvalidUsernameException {
+        try {
+            return context.getAccountHelper().reserveUsername(username);
+        } catch (BaseUsernameException e) {
+            throw new InvalidUsernameException(e.getMessage() + " (" + e.getClass().getSimpleName() + ")", e);
+        }
+    }
+
+    @Override
+    public void deleteUsername() throws IOException {
+        context.getAccountHelper().deleteUsername();
     }
 
     @Override
@@ -737,13 +753,18 @@ class ManagerImpl implements Manager {
 
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) {
-        account.removeRecipient(account.getRecipientResolver().resolveRecipient(recipient.getIdentifier()));
+        final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
+        if (recipientIdOptional.isPresent()) {
+            account.removeRecipient(recipientIdOptional.get());
+        }
     }
 
     @Override
     public void deleteContact(final RecipientIdentifier.Single recipient) {
-        account.getContactStore()
-                .deleteContact(account.getRecipientResolver().resolveRecipient(recipient.getIdentifier()));
+        final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
+        if (recipientIdOptional.isPresent()) {
+            account.getContactStore().deleteContact(recipientIdOptional.get());
+        }
     }
 
     @Override

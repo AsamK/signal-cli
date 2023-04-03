@@ -15,6 +15,8 @@ import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
+import org.signal.libsignal.usernames.BaseUsernameException;
+import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest;
@@ -27,12 +29,17 @@ import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedE
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
+import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
+import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public class AccountHelper {
 
@@ -171,6 +178,83 @@ public class AccountHelper {
                 });
         // TODO handle response
         updateSelfIdentifiers(newNumber, account.getAci(), PNI.parseOrThrow(result.first().getPni()));
+    }
+
+    public static final int USERNAME_MIN_LENGTH = 3;
+    public static final int USERNAME_MAX_LENGTH = 32;
+
+    public String reserveUsername(String nickname) throws IOException, BaseUsernameException {
+        final var currentUsername = account.getUsername();
+        if (currentUsername != null) {
+            final var currentNickname = currentUsername.substring(0, currentUsername.indexOf('.'));
+            if (currentNickname.equals(nickname)) {
+                refreshCurrentUsername();
+                return currentUsername;
+            }
+        }
+
+        final var candidates = Username.generateCandidates(nickname, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        final var candidateHashes = new ArrayList<String>();
+        for (final var candidate : candidates) {
+            candidateHashes.add(Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(candidate)));
+        }
+
+        final var response = dependencies.getAccountManager().reserveUsername(candidateHashes);
+        final var hashIndex = candidateHashes.indexOf(response.getUsernameHash());
+        if (hashIndex == -1) {
+            logger.warn("[reserveUsername] The response hash could not be found in our set of candidateHashes.");
+            throw new IOException("Unexpected username response");
+        }
+
+        logger.debug("[reserveUsername] Successfully reserved username.");
+        final var username = candidates.get(hashIndex);
+
+        dependencies.getAccountManager().confirmUsername(username, response);
+        account.setUsername(username);
+        account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
+        logger.debug("[confirmUsername] Successfully confirmed username.");
+
+        return username;
+    }
+
+    public void refreshCurrentUsername() throws IOException, BaseUsernameException {
+        final var localUsername = account.getUsername();
+        if (localUsername == null) {
+            return;
+        }
+
+        final var whoAmIResponse = dependencies.getAccountManager().getWhoAmI();
+        final var serverUsernameHash = whoAmIResponse.getUsernameHash();
+        final var hasServerUsername = !isEmpty(serverUsernameHash);
+        final var localUsernameHash = Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(localUsername));
+
+        if (!hasServerUsername) {
+            logger.debug("No remote username is set.");
+        }
+
+        if (!Objects.equals(localUsernameHash, serverUsernameHash)) {
+            logger.debug("Local username hash does not match server username hash.");
+        }
+
+        if (!hasServerUsername || !Objects.equals(localUsernameHash, serverUsernameHash)) {
+            logger.debug("Attempting to resynchronize username.");
+            tryReserveConfirmUsername(localUsername, localUsernameHash);
+        } else {
+            logger.debug("Username already set, not refreshing.");
+        }
+    }
+
+    private void tryReserveConfirmUsername(final String username, String localUsernameHash) throws IOException {
+        final var response = dependencies.getAccountManager().reserveUsername(List.of(localUsernameHash));
+        logger.debug("[reserveUsername] Successfully reserved existing username.");
+        dependencies.getAccountManager().confirmUsername(username, response);
+        logger.debug("[confirmUsername] Successfully confirmed existing username.");
+    }
+
+    public void deleteUsername() throws IOException {
+        dependencies.getAccountManager().deleteUsername();
+        account.setUsername(null);
+        logger.debug("[deleteUsername] Successfully deleted the username.");
     }
 
     public void setDeviceName(String deviceName) {
