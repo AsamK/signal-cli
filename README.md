@@ -1,15 +1,14 @@
 # signal-cli
 
-signal-cli is a commandline interface
-for [libsignal-service-java](https://github.com/WhisperSystems/libsignal-service-java). It supports registering,
-verifying, sending and receiving messages. To be able to link to an existing Signal-Android/signal-cli instance,
-signal-cli uses a [patched libsignal-service-java](https://github.com/AsamK/libsignal-service-java), because
-libsignal-service-java does not yet
-support [provisioning as a linked device](https://github.com/WhisperSystems/libsignal-service-java/pull/21). For
-registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli is a commandline interface for the [Signal messenger](https://signal.org/).
+It supports registering, verifying, sending and receiving messages.
+signal-cli uses a [patched libsignal-service-java](https://github.com/Turasa/libsignal-service-java),
+extracted from the [Signal-Android source code](https://github.com/signalapp/Signal-Android/tree/main/libsignal/service).
+For registering you need a phone number where you can receive SMS or incoming calls.
 
 signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a daemon mode with D-BUS
-interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-RPC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)). For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
+interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-RPC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)).
+For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
 ## Installation
 
