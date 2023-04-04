@@ -29,6 +29,7 @@ import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.asamk.signal.manager.util.Utils;
+import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -161,6 +162,12 @@ class RegistrationManagerImpl implements RegistrationManager {
                 m.updateProfile(UpdateProfile.newBuilder().build());
             } catch (NoClassDefFoundError e) {
                 logger.warn("Failed to set default profile: {}", e.getMessage());
+            }
+
+            try {
+                m.refreshCurrentUsername();
+            } catch (IOException | BaseUsernameException e) {
+                logger.warn("Failed to refresh current username", e);
             }
 
             if (newManagerListener != null) {

@@ -292,6 +292,10 @@ class ManagerImpl implements Manager {
         context.getSyncHelper().sendSyncFetchProfileMessage();
     }
 
+    void refreshCurrentUsername() throws IOException, BaseUsernameException {
+        context.getAccountHelper().refreshCurrentUsername();
+    }
+
     @Override
     public String setUsername(final String username) throws IOException, InvalidUsernameException {
         try {
