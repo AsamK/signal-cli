@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.11.8] - 2023-04-05
+
+### Added
+- Added file attachment attributes to JSON output (Thanks @signals-from-outer-space)
+
+### Fixed
+- Scrub E164 number from dbus paths
+- Fix sending large text messages to multiple recipient
+- Fix deleting old group in dbus mode
+- Fix issue with unknown identity serviceId
+
+### Improved
+- Relaxed Content-Type check in http daemon mode (Thanks @cedb)
+
 ## [0.11.7] - 2023-02-19
 **Attention**: Now requires native libsignal-client version 0.22.0
 
