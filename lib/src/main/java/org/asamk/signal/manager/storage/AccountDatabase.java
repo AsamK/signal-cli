@@ -14,6 +14,7 @@ import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.sql.Connection;
@@ -22,7 +23,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 12;
+    private static final long DATABASE_VERSION = 13;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -302,6 +303,29 @@ public class AccountDatabase extends Database {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD COLUMN username TEXT;
                                         """);
+            }
+        }
+        if (oldVersion < 13) {
+            logger.debug("Updating database: Cleanup unknown service ids");
+            {
+                final var sql = """
+                                DELETE FROM identity AS i
+                                WHERE i.uuid = ?
+                                """;
+                try (final var statement = connection.prepareStatement(sql)) {
+                    statement.setBytes(1, ServiceId.UNKNOWN.toByteArray());
+                    statement.executeUpdate();
+                }
+            }
+            {
+                final var sql = """
+                                DELETE FROM sender_key_shared AS i
+                                WHERE i.uuid = ?
+                                """;
+                try (final var statement = connection.prepareStatement(sql)) {
+                    statement.setBytes(1, ServiceId.UNKNOWN.toByteArray());
+                    statement.executeUpdate();
+                }
             }
         }
     }
