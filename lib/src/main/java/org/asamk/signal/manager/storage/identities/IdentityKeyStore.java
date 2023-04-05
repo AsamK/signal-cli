@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
@@ -153,7 +154,9 @@ public class IdentityKeyStore {
                     """
             ).formatted(TABLE_IDENTITY);
             try (final var statement = connection.prepareStatement(sql)) {
-                return Utils.executeQueryForStream(statement, this::getIdentityInfoFromResultSet).toList();
+                return Utils.executeQueryForStream(statement, this::getIdentityInfoFromResultSet)
+                        .filter(Objects::nonNull)
+                        .toList();
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from identity store", e);

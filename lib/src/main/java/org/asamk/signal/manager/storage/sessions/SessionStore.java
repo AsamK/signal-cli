@@ -247,7 +247,9 @@ public class SessionStore implements SignalServiceSessionStore {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
                 records = Utils.executeQueryForStream(statement,
-                        res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res))).toList();
+                                res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res)))
+                        .filter(Objects::nonNull)
+                        .toList();
             }
             for (final var record : records) {
                 record.second().archiveCurrentState();
@@ -274,7 +276,9 @@ public class SessionStore implements SignalServiceSessionStore {
                 statement.setInt(1, accountIdType);
                 statement.setBytes(2, serviceId.toByteArray());
                 records = Utils.executeQueryForStream(statement,
-                        res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res))).toList();
+                                res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res)))
+                        .filter(Objects::nonNull)
+                        .toList();
             }
             for (final var record : records) {
                 record.second().archiveCurrentState();
