@@ -182,8 +182,8 @@ public class RecipientHelper {
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {
 
         public RegisteredUser {
-            aci = aci.isPresent() && aci.get().equals(ServiceId.UNKNOWN) ? Optional.empty() : aci;
-            pni = pni.isPresent() && pni.get().equals(ServiceId.UNKNOWN) ? Optional.empty() : pni;
+            aci = aci.isPresent() && aci.get().isUnknown() ? Optional.empty() : aci;
+            pni = pni.isPresent() && pni.get().isUnknown() ? Optional.empty() : pni;
             if (aci.isEmpty() && pni.isEmpty()) {
                 throw new AssertionError("Must have either a ACI or PNI!");
             }

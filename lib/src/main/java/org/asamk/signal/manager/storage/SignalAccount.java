@@ -813,7 +813,7 @@ public class SignalAccount implements Closeable {
                 if (identity.getAddress().serviceId().isEmpty()) {
                     continue;
                 }
-                final var serviceId = identity.getAddress().getServiceId();
+                final var serviceId = identity.getAddress().serviceId().get();
                 getIdentityKeyStore().saveIdentity(serviceId, identity.getIdentityKey());
                 getIdentityKeyStore().setIdentityTrustLevel(serviceId,
                         identity.getIdentityKey(),

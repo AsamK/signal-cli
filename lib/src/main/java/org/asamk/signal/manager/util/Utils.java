@@ -1,12 +1,12 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.ServiceResponse;
 
@@ -56,31 +56,35 @@ public class Utils {
         }
     }
 
-    public static Fingerprint computeSafetyNumber(
-            boolean isUuidCapable,
-            RecipientAddress ownAddress,
-            IdentityKey ownIdentityKey,
-            RecipientAddress theirAddress,
-            IdentityKey theirIdentityKey
+    public static Fingerprint computeSafetyNumberForNumber(
+            String ownNumber, IdentityKey ownIdentityKey, String theirNumber, IdentityKey theirIdentityKey
     ) {
-        int version;
-        byte[] ownId;
-        byte[] theirId;
+        // Version 1: E164 user
+        final var version = 1;
+        final var ownId = ownNumber.getBytes(StandardCharsets.UTF_8);
+        final var theirId = theirNumber.getBytes(StandardCharsets.UTF_8);
 
-        if (!isUuidCapable && ownAddress.number().isPresent() && theirAddress.number().isPresent()) {
-            // Version 1: E164 user
-            version = 1;
-            ownId = ownAddress.number().get().getBytes();
-            theirId = theirAddress.number().get().getBytes();
-        } else if (isUuidCapable && theirAddress.serviceId().isPresent()) {
-            // Version 2: UUID user
-            version = 2;
-            ownId = ownAddress.getServiceId().toByteArray();
-            theirId = theirAddress.getServiceId().toByteArray();
-        } else {
-            return null;
-        }
+        return getFingerprint(version, ownId, ownIdentityKey, theirId, theirIdentityKey);
+    }
 
+    public static Fingerprint computeSafetyNumberForUuid(
+            ServiceId ownServiceId, IdentityKey ownIdentityKey, ServiceId theirServiceId, IdentityKey theirIdentityKey
+    ) {
+        // Version 2: UUID user
+        final var version = 2;
+        final var ownId = ownServiceId.toByteArray();
+        final var theirId = theirServiceId.toByteArray();
+
+        return getFingerprint(version, ownId, ownIdentityKey, theirId, theirIdentityKey);
+    }
+
+    private static Fingerprint getFingerprint(
+            final int version,
+            final byte[] ownId,
+            final IdentityKey ownIdentityKey,
+            final byte[] theirId,
+            final IdentityKey theirIdentityKey
+    ) {
         return new NumericFingerprintGenerator(5200).createFor(version,
                 ownId,
                 ownIdentityKey,

@@ -676,14 +676,17 @@ class ManagerImpl implements Manager {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
         for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single r) {
+            if (recipient instanceof RecipientIdentifier.Uuid u) {
+                account.getMessageSendLogStore()
+                        .deleteEntryForRecipientNonGroup(targetSentTimestamp, ServiceId.from(u.uuid()));
+            } else if (recipient instanceof RecipientIdentifier.Single r) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(r);
-                    account.getMessageSendLogStore()
-                            .deleteEntryForRecipientNonGroup(targetSentTimestamp,
-                                    account.getRecipientAddressResolver()
-                                            .resolveRecipientAddress(recipientId)
-                                            .getServiceId());
+                    final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
+                    if (address.serviceId().isPresent()) {
+                        account.getMessageSendLogStore()
+                                .deleteEntryForRecipientNonGroup(targetSentTimestamp, address.serviceId().get());
+                    }
                 } catch (UnregisteredRecipientException ignored) {
                 }
             } else if (recipient instanceof RecipientIdentifier.Group r) {
@@ -749,8 +752,10 @@ class ManagerImpl implements Manager {
                 final var serviceId = context.getAccount()
                         .getRecipientAddressResolver()
                         .resolveRecipientAddress(recipientId)
-                        .getServiceId();
-                account.getAciSessionStore().deleteAllSessions(serviceId);
+                        .serviceId();
+                if (serviceId.isPresent()) {
+                    account.getAciSessionStore().deleteAllSessions(serviceId.get());
+                }
             }
         }
     }
@@ -1131,9 +1136,12 @@ class ManagerImpl implements Manager {
     public List<Identity> getIdentities(RecipientIdentifier.Single recipient) {
         ServiceId serviceId;
         try {
-            serviceId = account.getRecipientAddressResolver()
-                    .resolveRecipientAddress(context.getRecipientHelper().resolveRecipient(recipient))
-                    .getServiceId();
+            final var address = account.getRecipientAddressResolver()
+                    .resolveRecipientAddress(context.getRecipientHelper().resolveRecipient(recipient));
+            if (address.serviceId().isEmpty()) {
+                return List.of();
+            }
+            serviceId = address.serviceId().get();
         } catch (UnregisteredRecipientException e) {
             return List.of();
         }

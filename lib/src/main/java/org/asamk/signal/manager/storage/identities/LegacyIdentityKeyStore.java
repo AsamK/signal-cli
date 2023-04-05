@@ -72,6 +72,10 @@ public class LegacyIdentityKeyStore {
         if (!file.exists()) {
             return null;
         }
+        final var address = addressResolver.resolveRecipientAddress(recipientId);
+        if (address.serviceId().isEmpty()) {
+            return null;
+        }
         try (var inputStream = new FileInputStream(file)) {
             var storage = objectMapper.readValue(inputStream, IdentityStorage.class);
 
@@ -79,7 +83,7 @@ public class LegacyIdentityKeyStore {
             var trustLevel = TrustLevel.fromInt(storage.trustLevel());
             var added = storage.addedTimestamp();
 
-            final var serviceId = addressResolver.resolveRecipientAddress(recipientId).getServiceId();
+            final var serviceId = address.serviceId().get();
             return new IdentityInfo(serviceId, id, trustLevel, added);
         } catch (IOException | InvalidKeyException e) {
             logger.warn("Failed to load identity key: {}", e.getMessage());

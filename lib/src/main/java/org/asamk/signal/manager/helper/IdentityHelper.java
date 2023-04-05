@@ -2,7 +2,6 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -17,7 +16,7 @@ import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
 
@@ -34,22 +33,19 @@ public class IdentityHelper {
     }
 
     public boolean trustIdentityVerified(RecipientId recipientId, byte[] fingerprint) {
-        final var serviceId = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).getServiceId();
-        return trustIdentity(serviceId,
-                identityKey -> Arrays.equals(identityKey.serialize(), fingerprint),
+        return trustIdentity(recipientId,
+                (serviceId, identityKey) -> Arrays.equals(identityKey.serialize(), fingerprint),
                 TrustLevel.TRUSTED_VERIFIED);
     }
 
     public boolean trustIdentityVerifiedSafetyNumber(RecipientId recipientId, String safetyNumber) {
-        final var serviceId = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).getServiceId();
-        return trustIdentity(serviceId,
-                identityKey -> safetyNumber.equals(computeSafetyNumber(serviceId, identityKey)),
+        return trustIdentity(recipientId,
+                (serviceId, identityKey) -> safetyNumber.equals(computeSafetyNumber(serviceId, identityKey)),
                 TrustLevel.TRUSTED_VERIFIED);
     }
 
     public boolean trustIdentityVerifiedSafetyNumber(RecipientId recipientId, byte[] safetyNumber) {
-        final var serviceId = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).getServiceId();
-        return trustIdentity(serviceId, identityKey -> {
+        return trustIdentity(recipientId, (serviceId, identityKey) -> {
             final var fingerprint = computeSafetyNumberForScanning(serviceId, identityKey);
             try {
                 return fingerprint != null && fingerprint.compareTo(safetyNumber);
@@ -60,8 +56,7 @@ public class IdentityHelper {
     }
 
     public boolean trustIdentityAllKeys(RecipientId recipientId) {
-        final var serviceId = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).getServiceId();
-        return trustIdentity(serviceId, identityKey -> true, TrustLevel.TRUSTED_UNVERIFIED);
+        return trustIdentity(recipientId, (serviceId, identityKey) -> true, TrustLevel.TRUSTED_UNVERIFIED);
     }
 
     public String computeSafetyNumber(ServiceId serviceId, IdentityKey theirIdentityKey) {
@@ -77,35 +72,50 @@ public class IdentityHelper {
     private Fingerprint computeSafetyNumberFingerprint(
             final ServiceId serviceId, final IdentityKey theirIdentityKey
     ) {
-        final var address = account.getRecipientAddressResolver()
-                .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(serviceId));
+        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
+        final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
 
-        return Utils.computeSafetyNumber(capabilities.getUuid(),
-                account.getSelfRecipientAddress(),
+        if (capabilities.getUuid()) {
+            if (serviceId.isUnknown()) {
+                return null;
+            }
+            return Utils.computeSafetyNumberForUuid(account.getAci(),
+                    account.getAciIdentityKeyPair().getPublicKey(),
+                    serviceId,
+                    theirIdentityKey);
+        }
+        if (address.number().isEmpty()) {
+            return null;
+        }
+        return Utils.computeSafetyNumberForNumber(account.getNumber(),
                 account.getAciIdentityKeyPair().getPublicKey(),
-                address.getServiceId().equals(serviceId)
-                        ? address
-                        : new RecipientAddress(serviceId, address.number().orElse(null)),
+                address.number().get(),
                 theirIdentityKey);
     }
 
     private boolean trustIdentity(
-            ServiceId serviceId, Function<IdentityKey, Boolean> verifier, TrustLevel trustLevel
+            RecipientId recipientId, BiFunction<ServiceId, IdentityKey, Boolean> verifier, TrustLevel trustLevel
     ) {
+        final var serviceId = account.getRecipientAddressResolver()
+                .resolveRecipientAddress(recipientId)
+                .serviceId()
+                .orElse(null);
+        if (serviceId == null) {
+            return false;
+        }
         var identity = account.getIdentityKeyStore().getIdentityInfo(serviceId);
         if (identity == null) {
             return false;
         }
 
-        if (!verifier.apply(identity.getIdentityKey())) {
+        if (!verifier.apply(serviceId, identity.getIdentityKey())) {
             return false;
         }
 
         account.getIdentityKeyStore().setIdentityTrustLevel(serviceId, identity.getIdentityKey(), trustLevel);
         try {
-            final var address = account.getRecipientAddressResolver()
-                    .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(serviceId))
-                    .toSignalServiceAddress();
+            final var address = context.getRecipientHelper()
+                    .resolveSignalServiceAddress(account.getRecipientResolver().resolveRecipient(serviceId));
             context.getSyncHelper().sendVerifiedMessage(address, identity.getIdentityKey(), trustLevel);
         } catch (IOException e) {
             logger.warn("Failed to send verification sync message: {}", e.getMessage());

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalWebSocket;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
 
@@ -225,8 +226,9 @@ public class ReceiveHelper {
                 if (exception instanceof UntrustedIdentityException) {
                     logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
-                    final var recipientId = account.getRecipientResolver().resolveRecipient(address.getServiceId());
-                    if (!envelope.hasSourceUuid()) {
+                    if (!envelope.hasSourceUuid() && address.uuid().isPresent()) {
+                        final var recipientId = account.getRecipientResolver()
+                                .resolveRecipient(ServiceId.from(address.uuid().get()));
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
                         } catch (IOException ioException) {

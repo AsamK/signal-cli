@@ -492,7 +492,11 @@ public class SendHelper {
 
             final var serviceId = account.getRecipientAddressResolver()
                     .resolveRecipientAddress(recipientId)
-                    .getServiceId();
+                    .serviceId()
+                    .orElse(null);
+            if (serviceId == null) {
+                continue;
+            }
             final var identity = account.getIdentityKeyStore().getIdentityInfo(serviceId);
             if (identity == null || !identity.getTrustLevel().isTrusted()) {
                 continue;

@@ -17,10 +17,10 @@ public record RecipientAddress(
      * @param number    The phone number of the user, if available.
      */
     public RecipientAddress {
-        if (serviceId.isPresent() && serviceId.get().equals(ServiceId.UNKNOWN)) {
+        if (serviceId.isPresent() && serviceId.get().isUnknown()) {
             serviceId = Optional.empty();
         }
-        if (pni.isPresent() && pni.get().equals(ServiceId.UNKNOWN)) {
+        if (pni.isPresent() && pni.get().isUnknown()) {
             pni = Optional.empty();
         }
         if (serviceId.isEmpty() && pni.isPresent()) {
@@ -86,10 +86,6 @@ public record RecipientAddress(
                 address.pni.equals(this.pni) || address.serviceId.equals(this.pni) ? Optional.empty() : this.pni,
                 address.number.equals(this.number) ? Optional.empty() : this.number,
                 address.username.equals(this.username) ? Optional.empty() : this.username);
-    }
-
-    public ServiceId getServiceId() {
-        return serviceId.orElse(ServiceId.UNKNOWN);
     }
 
     public String getIdentifier() {
@@ -173,7 +169,7 @@ public record RecipientAddress(
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(getServiceId(), number);
+        return new SignalServiceAddress(serviceId.orElse(ServiceId.UNKNOWN), number);
     }
 
     public org.asamk.signal.manager.api.RecipientAddress toApiRecipientAddress() {
