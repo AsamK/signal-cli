@@ -3,7 +3,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.9.20"
+    id("org.graalvm.buildtools.native") version "0.9.21"
 }
 
 version = "0.11.8"
@@ -23,6 +23,7 @@ graalvmNative {
             resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
             if (System.getenv("GRAALVM_HOME") == null) {
+                toolchainDetection.set(true)
                 javaLauncher.set(javaToolchains.launcherFor {
                     languageVersion.set(JavaLanguageVersion.of(17))
                 })
