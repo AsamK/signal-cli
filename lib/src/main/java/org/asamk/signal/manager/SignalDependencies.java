@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
-
 public class SignalDependencies {
 
     private final Object LOCK = new Object();
@@ -119,17 +117,13 @@ public class SignalDependencies {
 
     public GroupsV2Operations getGroupsV2Operations() {
         return getOrCreate(() -> groupsV2Operations,
-                () -> groupsV2Operations = capabilities.getGv2()
-                        ? new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
-                        ServiceConfig.GROUP_MAX_SIZE)
-                        : null);
+                () -> groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
+                        ServiceConfig.GROUP_MAX_SIZE));
     }
 
     private ClientZkOperations getClientZkOperations() {
         return getOrCreate(() -> clientZkOperations,
-                () -> clientZkOperations = capabilities.getGv2()
-                        ? ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration())
-                        : null);
+                () -> clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()));
     }
 
     private ClientZkProfileOperations getClientZkProfileOperations() {
