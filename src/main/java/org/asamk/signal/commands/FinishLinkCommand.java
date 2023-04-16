@@ -55,7 +55,11 @@ public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
-            throw new IOErrorException("Link request error: " + e.getMessage(), e);
+            throw new IOErrorException("Link request error: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")", e);
         } catch (UserAlreadyExistsException e) {
             throw new UserErrorException("The user "
                     + e.getNumber()
