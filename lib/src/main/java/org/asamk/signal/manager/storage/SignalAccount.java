@@ -98,7 +98,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
+import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
 
 public class SignalAccount implements Closeable {
 
@@ -1328,11 +1328,15 @@ public class SignalAccount implements Closeable {
                 registrationLock != null ? registrationLock : getRegistrationLock(),
                 getSelfUnidentifiedAccessKey(),
                 isUnrestrictedUnidentifiedAccess(),
-                capabilities,
+                getAccountCapabilities(),
                 isDiscoverableByPhoneNumber(),
                 encryptedDeviceName,
                 getLocalPniRegistrationId(),
                 null); // TODO recoveryPassword?
+    }
+
+    public AccountAttributes.Capabilities getAccountCapabilities() {
+        return getCapabilities(isPrimaryDevice());
     }
 
     public ServiceId getAccountId(ServiceIdType serviceIdType) {

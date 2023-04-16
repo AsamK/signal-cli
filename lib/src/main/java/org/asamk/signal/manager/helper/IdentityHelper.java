@@ -18,8 +18,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
-
 public class IdentityHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(IdentityHelper.class);
@@ -75,7 +73,7 @@ public class IdentityHelper {
         final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
 
-        if (capabilities.getUuid()) {
+        if (account.getAccountCapabilities().getUuid()) {
             if (serviceId.isUnknown()) {
                 return null;
             }

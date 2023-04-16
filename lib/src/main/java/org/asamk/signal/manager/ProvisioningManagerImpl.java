@@ -41,7 +41,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import static org.asamk.signal.manager.config.ServiceConfig.capabilities;
+import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
 
 class ProvisioningManagerImpl implements ProvisioningManager {
 
@@ -132,7 +132,7 @@ class ProvisioningManagerImpl implements ProvisioningManager {
                         registrationId,
                         pniRegistrationId,
                         encryptedDeviceName,
-                        capabilities));
+                        getCapabilities(false)));
 
         // Create new account with the synced identity
         var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();

@@ -817,6 +817,9 @@ public final class IncomingMessageHandler {
                 }
             }
         }
+        if (message.getGiftBadge().isPresent()) {
+            handleIncomingGiftBadge(message.getGiftBadge().get());
+        }
         if (message.getProfileKey().isPresent()) {
             handleIncomingProfileKey(message.getProfileKey().get(), source.recipientId());
         }
@@ -831,6 +834,10 @@ public final class IncomingMessageHandler {
             context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
         }
         return actions;
+    }
+
+    private void handleIncomingGiftBadge(final SignalServiceDataMessage.GiftBadge giftBadge) {
+        // TODO
     }
 
     private List<HandleAction> handleSignalServiceStoryMessage(
