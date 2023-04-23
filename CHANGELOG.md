@@ -2,10 +2,14 @@
 
 ## [Unreleased]
 
-## [0.11.9] - 2023-04-22
+## [0.11.9.1] - 2023-04-23
 
 ### Fixed
 - Fix build with Java 20
+
+## [0.11.9] - 2023-04-22
+
+### Fixed
 - Workaround issue with linking to newer app versions
 
 ## [0.11.8] - 2023-04-05
