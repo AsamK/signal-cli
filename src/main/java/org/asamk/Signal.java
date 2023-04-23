@@ -551,6 +551,48 @@ public interface Signal extends DBusInterface {
         void enableLink(boolean requiresApproval) throws Error.Failure;
     }
 
+    class StructIdentity extends Struct {
+
+        @Position(0)
+        DBusPath objectPath;
+
+        @Position(1)
+        String id;
+
+        @Position(2)
+        String name;
+
+        public StructIdentity(final DBusPath objectPath, final String id, final String name) {
+            this.objectPath = objectPath;
+            this.id = id;
+            this.name = name;
+        }
+
+        public DBusPath getObjectPath() {
+            return objectPath;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    @DBusProperty(name = "id", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "safetyNumber", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "trustLevel", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "addedDate", type = Integer.class, access = DBusProperty.Access.READ)
+    interface Identity extends DBusInterface, Properties {
+
+        void trust(String number) throws Error.Failure;
+
+        void trustWithKey(String number,String safetyNumber) throws Error.Failure;
+    }
+
     interface Error {
 
         class AttachmentInvalid extends DBusExecutionException {

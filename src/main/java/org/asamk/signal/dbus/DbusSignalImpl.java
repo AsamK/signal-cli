@@ -11,6 +11,7 @@ import org.asamk.signal.manager.api.GroupLinkState;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
+import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidNumberException;
@@ -50,6 +51,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,6 +59,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
+
+import org.asamk.signal.util.CommandUtil;
+import org.asamk.signal.util.Hex;
 
 public class DbusSignalImpl implements Signal {
 
@@ -68,6 +73,7 @@ public class DbusSignalImpl implements Signal {
     private DBusPath thisDevice;
     private final List<StructDevice> devices = new ArrayList<>();
     private final List<StructGroup> groups = new ArrayList<>();
+    private final List<StructIdentity> identities = new ArrayList<>();
     private DbusReceiveMessageHandler dbusMessageHandler;
     private int subscriberCount;
 
@@ -100,6 +106,7 @@ public class DbusSignalImpl implements Signal {
         updateDevices();
         updateGroups();
         updateConfiguration();
+        updateIdentities();
     }
 
     public void close() {
@@ -114,6 +121,7 @@ public class DbusSignalImpl implements Signal {
         unExportDevices();
         unExportGroups();
         unExportConfiguration();
+        unExportIdentities();
         connection.unExportObject(this.objectPath);
     }
 
@@ -1026,6 +1034,130 @@ public class DbusSignalImpl implements Signal {
             logger.debug("Exported dbus object: " + object.getObjectPath());
         } catch (DBusException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateIdentities() {
+        List<org.asamk.signal.manager.api.Identity> identities;
+        identities = m.getIdentities();
+
+        unExportIdentities();
+
+        identities.forEach(i -> {
+            final var object = new DbusSignalIdentityImpl(i);
+            exportObject(object);
+            this.identities.add(new StructIdentity(new DBusPath(object.getObjectPath()),
+                    i.recipient().getLegacyIdentifier(),
+                    emptyIfNull(i.recipient().getIdentifier())));
+        });
+    }
+
+    private static String getIdentityObjectPath(String basePath, String id) {
+        return basePath + "/Identities/" + 
+                id
+                .replace("+", "_")
+                .replace("/", "_")
+                .replace("=", "_");
+    }
+
+    private void unExportIdentities() {
+        this.identities.stream().map(StructIdentity::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
+        this.identities.clear();
+    }
+
+    public class DbusSignalIdentityImpl extends DbusProperties implements Signal.Identity {
+
+        private final org.asamk.signal.manager.api.Identity identity;
+        //private final org.asamk.signal.manager.api.Recipient recipient;
+        //private final org.asamk.signal.manager.storage.recipients.Contact contact;
+        //private final List<org.asamk.signal.manager.api.Recipient> rlist;
+
+        public DbusSignalIdentityImpl(final org.asamk.signal.manager.api.Identity identity) {
+            this.identity=identity;
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Identity",
+                    List.of(new DbusProperty<>("id", () -> identity.recipient().getLegacyIdentifier()),
+                            new DbusProperty<>("fingerprint", () -> identity.getFingerprint()),
+                            new DbusProperty<>("safetyNumber", identity::safetyNumber),
+                            new DbusProperty<>("trustLevel", identity::trustLevel),
+                            new DbusProperty<>("addedDate", identity::dateAddedTimestamp)
+                            )));
+        }
+
+        @Override
+        public String getObjectPath() {
+            return getIdentityObjectPath(objectPath, identity.recipient().getLegacyIdentifier());
+        }
+
+        @Override
+        public void trust(String number) throws Error.Failure { 
+            trustWithKey(number,null);
+        };
+
+        @Override
+        public void trustWithKey(String number,String safetyNumber) throws Error.Failure {
+            try {
+                var recipient = CommandUtil.getSingleRecipientIdentifier(number, m.getSelfNumber());
+                if (safetyNumber != null) {
+                    safetyNumber = safetyNumber.replaceAll(" ", "");
+                    if (safetyNumber.length() == 66) {
+                        byte[] fingerprintBytes;
+                        try {
+                            fingerprintBytes = Hex.toByteArray(safetyNumber.toLowerCase(Locale.ROOT));
+                        } catch (Exception e) {
+                            throw new Error.Failure(
+                                    "Failed to parse the fingerprint, make sure the fingerprint is a correctly encoded hex string without additional characters.");
+                        }
+                        boolean res;
+                        try {
+                            res = m.trustIdentityVerified(recipient, fingerprintBytes);
+                        } catch (UnregisteredRecipientException e) {
+                                throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
+                        }
+                        if (!res) {
+                            throw new Error.Failure(
+                                    "Failed to set the trust for the fingerprint of this number, make sure the number and the fingerprint are correct.");
+                        }
+                    } else if (safetyNumber.length() == 60) {
+                        boolean res;
+                        try {
+                            res = m.trustIdentityVerifiedSafetyNumber(recipient, safetyNumber);
+                        } catch (UnregisteredRecipientException e) {
+                            throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
+                        }
+                        if (!res) {
+                            throw new Error.Failure(
+                                    "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                        }
+                    } else {
+                        final byte[] scannableSafetyNumber;
+                        try {
+                            scannableSafetyNumber = Base64.getDecoder().decode(safetyNumber);
+                        } catch (IllegalArgumentException e) {
+                            throw new Error.Failure(
+                                    "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
+                        }
+                        boolean res;
+                        try {
+                            res = m.trustIdentityVerifiedSafetyNumber(recipient, scannableSafetyNumber);
+                        } catch (UnregisteredRecipientException e) {
+                            throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
+                        }
+                        if (!res) {
+                            throw new Error.Failure(
+                                    "Failed to set the trust for the safety number of this phone number, make sure the phone number and the safety number are correct.");
+                        }
+                    }
+                } else {
+                    try {
+                        m.trustIdentityAllKeys(recipient);
+                    } catch (Exception e) {
+                        throw new Error.Failure(
+                            "Unregistered recipient");
+                    }
+                }
+            } catch (Exception e) {
+                throw new Error.Failure(e.getMessage());
+            }
         }
     }
 
