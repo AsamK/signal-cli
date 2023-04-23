@@ -166,18 +166,11 @@ public class UnidentifiedAccessHelper {
     private static byte[] getTargetUnidentifiedAccessKey(
             final Profile targetProfile, final ProfileKey theirProfileKey
     ) {
-        switch (targetProfile.getUnidentifiedAccessMode()) {
-            case ENABLED:
-                if (theirProfileKey == null) {
-                    return null;
-                }
-
-                return UnidentifiedAccess.deriveAccessKeyFrom(theirProfileKey);
-            case UNRESTRICTED:
-                return createUnrestrictedUnidentifiedAccess();
-            default:
-                return null;
-        }
+        return switch (targetProfile.getUnidentifiedAccessMode()) {
+            case ENABLED -> theirProfileKey == null ? null : UnidentifiedAccess.deriveAccessKeyFrom(theirProfileKey);
+            case UNRESTRICTED -> createUnrestrictedUnidentifiedAccess();
+            default -> null;
+        };
     }
 
     private static byte[] createUnrestrictedUnidentifiedAccess() {

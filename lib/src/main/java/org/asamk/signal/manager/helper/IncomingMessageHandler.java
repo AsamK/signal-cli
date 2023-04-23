@@ -542,10 +542,8 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getFetchType().isPresent()) {
             switch (syncMessage.getFetchType().get()) {
-                case LOCAL_PROFILE:
-                    actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
-                case STORAGE_MANIFEST:
-                    actions.add(RetrieveStorageDataAction.create());
+                case LOCAL_PROFILE -> actions.add(new RetrieveProfileAction(account.getSelfRecipientId()));
+                case STORAGE_MANIFEST -> actions.add(RetrieveStorageDataAction.create());
             }
         }
         if (syncMessage.getKeys().isPresent()) {
@@ -709,7 +707,7 @@ public final class IncomingMessageHandler {
                 if (group == null || group instanceof GroupInfoV1) {
                     var groupV1 = (GroupInfoV1) group;
                     switch (groupInfo.getType()) {
-                        case UPDATE: {
+                        case UPDATE -> {
                             if (groupV1 == null) {
                                 groupV1 = new GroupInfoV1(groupId);
                             }
@@ -732,25 +730,23 @@ public final class IncomingMessageHandler {
                             }
 
                             account.getGroupStore().updateGroup(groupV1);
-                            break;
                         }
-                        case DELIVER:
+                        case DELIVER -> {
                             if (groupV1 == null && !isSync) {
                                 actions.add(new SendGroupInfoRequestAction(source.recipientId(), groupId));
                             }
-                            break;
-                        case QUIT: {
+                        }
+                        case QUIT -> {
                             if (groupV1 != null) {
                                 groupV1.removeMember(source.recipientId());
                                 account.getGroupStore().updateGroup(groupV1);
                             }
-                            break;
                         }
-                        case REQUEST_INFO:
+                        case REQUEST_INFO -> {
                             if (groupV1 != null && !isSync) {
                                 actions.add(new SendGroupInfoAction(source.recipientId(), groupV1.getGroupId()));
                             }
-                            break;
+                        }
                     }
                 } else {
                     // Received a group v1 message for a v2 group
