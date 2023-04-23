@@ -51,13 +51,17 @@ import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.InvalidMessageStructureException;
 import org.whispersystems.signalservice.api.crypto.SignalGroupSessionBuilder;
+import org.whispersystems.signalservice.api.crypto.SignalServiceCipherResult;
+import org.whispersystems.signalservice.api.messages.EnvelopeContentValidator;
 import org.whispersystems.signalservice.api.messages.SignalServiceContent;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
+import org.whispersystems.signalservice.api.messages.SignalServiceMetadata;
 import org.whispersystems.signalservice.api.messages.SignalServicePniSignatureMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
@@ -67,6 +71,11 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
+import org.whispersystems.signalservice.internal.serialize.SignalServiceAddressProtobufSerializer;
+import org.whispersystems.signalservice.internal.serialize.SignalServiceMetadataProtobufSerializer;
+import org.whispersystems.signalservice.internal.serialize.protos.SignalServiceContentProto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +110,12 @@ public final class IncomingMessageHandler {
         if (!envelope.isReceipt()) {
             account.getIdentityKeyStore().setRetryingDecryption(true);
             try {
-                content = dependencies.getCipher().decrypt(envelope);
+                final var cipherResult = dependencies.getCipher()
+                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
+                if (content == null) {
+                    return new Pair<>(List.of(), null);
+                }
             } catch (ProtocolUntrustedIdentityException e) {
                 final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
                 final var exception = new UntrustedIdentityException(account.getRecipientAddressResolver()
@@ -133,7 +147,12 @@ public final class IncomingMessageHandler {
         Exception exception = null;
         if (!envelope.isReceipt()) {
             try {
-                content = dependencies.getCipher().decrypt(envelope);
+                final var cipherResult = dependencies.getCipher()
+                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
+                if (content == null) {
+                    return new Pair<>(List.of(), null);
+                }
             } catch (ProtocolUntrustedIdentityException e) {
                 final var recipientId = account.getRecipientResolver().resolveRecipient(e.getSender());
                 actions.add(new RetrieveProfileAction(recipientId));
@@ -187,6 +206,47 @@ public final class IncomingMessageHandler {
 
         actions.addAll(checkAndHandleMessage(envelope, content, receiveConfig, handler, exception));
         return new Pair<>(actions, exception);
+    }
+
+    private SignalServiceContent validate(
+            SignalServiceProtos.Envelope envelope, SignalServiceCipherResult cipherResult, long serverDeliveredTimestamp
+    ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
+        final var content = cipherResult.getContent();
+        final var envelopeMetadata = cipherResult.getMetadata();
+        final var validationResult = EnvelopeContentValidator.INSTANCE.validate(envelope, content);
+
+        if (validationResult instanceof EnvelopeContentValidator.Result.Invalid v) {
+            logger.warn("Invalid content! {}", v.getReason(), v.getThrowable());
+            return null;
+        }
+
+        if (validationResult instanceof EnvelopeContentValidator.Result.UnsupportedDataMessage v) {
+            logger.warn("Unsupported DataMessage! Our version: {}, their version: {}",
+                    v.getOurVersion(),
+                    v.getTheirVersion());
+            return null;
+        }
+
+        final var localAddress = new SignalServiceAddress(envelopeMetadata.getDestinationServiceId(),
+                Optional.ofNullable(account.getNumber()));
+        final var metadata = new SignalServiceMetadata(new SignalServiceAddress(envelopeMetadata.getSourceServiceId(),
+                Optional.ofNullable(envelopeMetadata.getSourceE164())),
+                envelopeMetadata.getSourceDeviceId(),
+                envelope.getTimestamp(),
+                envelope.getServerTimestamp(),
+                serverDeliveredTimestamp,
+                envelopeMetadata.getSealedSender(),
+                envelope.getServerGuid(),
+                Optional.ofNullable(envelopeMetadata.getGroupId()),
+                envelopeMetadata.getDestinationServiceId().toString());
+
+        final var contentProto = SignalServiceContentProto.newBuilder()
+                .setLocalAddress(SignalServiceAddressProtobufSerializer.toProtobuf(localAddress))
+                .setMetadata(SignalServiceMetadataProtobufSerializer.toProtobuf(metadata))
+                .setContent(content)
+                .build();
+
+        return SignalServiceContent.createFromProto(contentProto);
     }
 
     private List<HandleAction> checkAndHandleMessage(
