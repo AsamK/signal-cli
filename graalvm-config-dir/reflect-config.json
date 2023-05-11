@@ -564,7 +564,13 @@
   "name":"org.asamk.signal.commands.GetUserStatusCommand$JsonUserStatus",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"isRegistered","parameterTypes":[] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"recipient","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.commands.ListAccountsCommand$JsonAccount",
@@ -694,7 +700,17 @@
   "name":"org.asamk.signal.json.JsonAttachment",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"caption","parameterTypes":[] }, 
+    {"name":"contentType","parameterTypes":[] }, 
+    {"name":"filename","parameterTypes":[] }, 
+    {"name":"height","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"size","parameterTypes":[] }, 
+    {"name":"uploadTimestamp","parameterTypes":[] }, 
+    {"name":"width","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonAttachmentData",
@@ -707,7 +723,14 @@
   "name":"org.asamk.signal.json.JsonCallMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"answerMessage","parameterTypes":[] }, 
+    {"name":"busyMessage","parameterTypes":[] }, 
+    {"name":"hangupMessage","parameterTypes":[] }, 
+    {"name":"iceUpdateMessages","parameterTypes":[] }, 
+    {"name":"offerMessage","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonCallMessage$Answer",
@@ -796,7 +819,24 @@
   "name":"org.asamk.signal.json.JsonDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"attachments","parameterTypes":[] }, 
+    {"name":"contacts","parameterTypes":[] }, 
+    {"name":"expiresInSeconds","parameterTypes":[] }, 
+    {"name":"groupInfo","parameterTypes":[] }, 
+    {"name":"mentions","parameterTypes":[] }, 
+    {"name":"message","parameterTypes":[] }, 
+    {"name":"payment","parameterTypes":[] }, 
+    {"name":"previews","parameterTypes":[] }, 
+    {"name":"quote","parameterTypes":[] }, 
+    {"name":"reaction","parameterTypes":[] }, 
+    {"name":"remoteDelete","parameterTypes":[] }, 
+    {"name":"sticker","parameterTypes":[] }, 
+    {"name":"storyContext","parameterTypes":[] }, 
+    {"name":"timestamp","parameterTypes":[] }, 
+    {"name":"viewOnce","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonError",
@@ -808,19 +848,44 @@
   "name":"org.asamk.signal.json.JsonGroupInfo",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonMention",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"length","parameterTypes":[] }, 
+    {"name":"name","parameterTypes":[] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"start","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonMessageEnvelope",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"callMessage","parameterTypes":[] }, 
+    {"name":"dataMessage","parameterTypes":[] }, 
+    {"name":"receiptMessage","parameterTypes":[] }, 
+    {"name":"source","parameterTypes":[] }, 
+    {"name":"sourceDevice","parameterTypes":[] }, 
+    {"name":"sourceName","parameterTypes":[] }, 
+    {"name":"sourceNumber","parameterTypes":[] }, 
+    {"name":"sourceUuid","parameterTypes":[] }, 
+    {"name":"storyMessage","parameterTypes":[] }, 
+    {"name":"syncMessage","parameterTypes":[] }, 
+    {"name":"timestamp","parameterTypes":[] }, 
+    {"name":"typingMessage","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonPayment",
@@ -848,25 +913,54 @@
   "name":"org.asamk.signal.json.JsonQuote",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"attachments","parameterTypes":[] }, 
+    {"name":"author","parameterTypes":[] }, 
+    {"name":"authorNumber","parameterTypes":[] }, 
+    {"name":"authorUuid","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"mentions","parameterTypes":[] }, 
+    {"name":"text","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonQuotedAttachment",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"contentType","parameterTypes":[] }, 
+    {"name":"filename","parameterTypes":[] }, 
+    {"name":"thumbnail","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonReaction",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"emoji","parameterTypes":[] }, 
+    {"name":"isRemove","parameterTypes":[] }, 
+    {"name":"targetAuthor","parameterTypes":[] }, 
+    {"name":"targetAuthorNumber","parameterTypes":[] }, 
+    {"name":"targetAuthorUuid","parameterTypes":[] }, 
+    {"name":"targetSentTimestamp","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonReceiptMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"isDelivery","parameterTypes":[] }, 
+    {"name":"isRead","parameterTypes":[] }, 
+    {"name":"isViewed","parameterTypes":[] }, 
+    {"name":"timestamps","parameterTypes":[] }, 
+    {"name":"when","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonRecipientAddress",
@@ -882,7 +976,8 @@
   "name":"org.asamk.signal.json.JsonRemoteDelete",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"timestamp","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonSendMessageResult",
@@ -969,13 +1064,27 @@
   "name":"org.asamk.signal.json.JsonSyncDataMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"dataMessage","parameterTypes":[] }, 
+    {"name":"destination","parameterTypes":[] }, 
+    {"name":"destinationNumber","parameterTypes":[] }, 
+    {"name":"destinationUuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonSyncMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"blockedGroupIds","parameterTypes":[] }, 
+    {"name":"blockedNumbers","parameterTypes":[] }, 
+    {"name":"readMessages","parameterTypes":[] }, 
+    {"name":"sentMessage","parameterTypes":[] }, 
+    {"name":"sentStoryMessage","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonSyncMessageType",
@@ -986,7 +1095,13 @@
   "name":"org.asamk.signal.json.JsonSyncReadMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"sender","parameterTypes":[] }, 
+    {"name":"senderNumber","parameterTypes":[] }, 
+    {"name":"senderUuid","parameterTypes":[] }, 
+    {"name":"timestamp","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonSyncStoryMessage",
@@ -1777,7 +1892,8 @@
 },
 {
   "name":"org.freedesktop.dbus.interfaces.DBus$NameAcquired",
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
 },
 {
   "name":"org.freedesktop.dbus.interfaces.Introspectable",
@@ -2250,13 +2366,42 @@
   "name":"org.whispersystems.signalservice.api.account.AccountAttributes",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"getCapabilities","parameterTypes":[] }, 
+    {"name":"getDiscoverableByPhoneNumber","parameterTypes":[] }, 
+    {"name":"getFetchesMessages","parameterTypes":[] }, 
+    {"name":"getName","parameterTypes":[] }, 
+    {"name":"getPin","parameterTypes":[] }, 
+    {"name":"getPniRegistrationId","parameterTypes":[] }, 
+    {"name":"getRecoveryPassword","parameterTypes":[] }, 
+    {"name":"getRegistrationId","parameterTypes":[] }, 
+    {"name":"getRegistrationLock","parameterTypes":[] }, 
+    {"name":"getSignalingKey","parameterTypes":[] }, 
+    {"name":"getUnidentifiedAccessKey","parameterTypes":[] }, 
+    {"name":"getUnrestrictedUnidentifiedAccess","parameterTypes":[] }, 
+    {"name":"getVideo","parameterTypes":[] }, 
+    {"name":"getVoice","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.AccountAttributes$Capabilities",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"getAnnouncementGroup","parameterTypes":[] }, 
+    {"name":"getChangeNumber","parameterTypes":[] }, 
+    {"name":"getGiftBadges","parameterTypes":[] }, 
+    {"name":"getGv1Migration","parameterTypes":[] }, 
+    {"name":"getGv2","parameterTypes":[] }, 
+    {"name":"getPaymentActivation","parameterTypes":[] }, 
+    {"name":"getPni","parameterTypes":[] }, 
+    {"name":"getSenderKey","parameterTypes":[] }, 
+    {"name":"getStorage","parameterTypes":[] }, 
+    {"name":"getStories","parameterTypes":[] }, 
+    {"name":"getUuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
@@ -2315,25 +2460,29 @@
   "name":"org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfile",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfile$Badge",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfile$Capabilities",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfileWrite",
@@ -2357,7 +2506,8 @@
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity$ByteArrayDeserializer",
@@ -2378,7 +2528,8 @@
   "name":"org.whispersystems.signalservice.api.storage.StorageAuthResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.crypto.SignatureBodyEntity",
@@ -2564,7 +2715,8 @@
   "name":"org.whispersystems.signalservice.internal.push.DeviceInfoList",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.GetAciByUsernameResponse",
@@ -2591,25 +2743,35 @@
   "name":"org.whispersystems.signalservice.internal.push.MismatchedDevices",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.OutgoingPushMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getDestinationDeviceId","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.OutgoingPushMessageList",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"getDestination","parameterTypes":[] }, 
+    {"name":"getMessages","parameterTypes":[] }, 
+    {"name":"getTimestamp","parameterTypes":[] }, 
+    {"name":"isOnline","parameterTypes":[] }, 
+    {"name":"isUrgent","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyEntity$ECPublicKeyDeserializer",
@@ -2623,13 +2785,15 @@
   "name":"org.whispersystems.signalservice.internal.push.PreKeyResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyResponseItem",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyState",
@@ -2641,7 +2805,8 @@
   "name":"org.whispersystems.signalservice.internal.push.PreKeyStatus",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ProfileAvatarUploadAttributes",
@@ -2743,13 +2908,15 @@
   "name":"org.whispersystems.signalservice.internal.push.SendMessageResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SenderCertificate",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SenderCertificate$ByteArrayDesieralizer",
@@ -2880,6 +3047,7 @@
     {"name":"callMessage_"}, 
     {"name":"dataMessage_"}, 
     {"name":"decryptionErrorMessage_"}, 
+    {"name":"editMessage_"}, 
     {"name":"nullMessage_"}, 
     {"name":"pniSignatureMessage_"}, 
     {"name":"receiptMessage_"}, 
@@ -3244,10 +3412,10 @@
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$CallEvent",
   "fields":[
     {"name":"bitField0_"}, 
+    {"name":"conversationId_"}, 
     {"name":"direction_"}, 
     {"name":"event_"}, 
     {"name":"id_"}, 
-    {"name":"peerUuid_"}, 
     {"name":"timestamp_"}, 
     {"name":"type_"}
   ]
@@ -3354,6 +3522,7 @@
     {"name":"bitField0_"}, 
     {"name":"destinationE164_"}, 
     {"name":"destinationUuid_"}, 
+    {"name":"editMessage_"}, 
     {"name":"expirationStartTimestamp_"}, 
     {"name":"isRecipientUpdate_"}, 
     {"name":"message_"}, 

@@ -355,6 +355,7 @@ public class SendHelper {
                 SignalServiceMessageSender.SenderKeyGroupEvents.EMPTY,
                 urgent,
                 false,
+                null,
                 sendResult -> {
                     logger.trace("Partial message send results: {}", sendResult.size());
                     synchronized (entryId) {
@@ -673,7 +674,8 @@ public class SendHelper {
                 Map.of(address.getServiceId(), true),
                 false,
                 Optional.empty(),
-                Set.of());
+                Set.of(),
+                Optional.empty());
         var syncMessage = SignalServiceSyncMessage.forSentTranscript(transcript);
 
         return sendSyncMessage(syncMessage);
