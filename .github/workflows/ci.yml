@@ -23,7 +23,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'gradle'
       - name: Build with Gradle
