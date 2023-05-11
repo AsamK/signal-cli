@@ -18,6 +18,7 @@ public record JsonMessageEnvelope(
         Integer sourceDevice,
         long timestamp,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonDataMessage dataMessage,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryMessage storyMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncMessage syncMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonCallMessage callMessage,
@@ -61,6 +62,7 @@ public record JsonMessageEnvelope(
         final var typingMessage = envelope.typing().map(JsonTypingMessage::from).orElse(null);
 
         final var dataMessage = envelope.data().map(JsonDataMessage::from).orElse(null);
+        final var editMessage = envelope.edit().map(JsonEditMessage::from).orElse(null);
         final var storyMessage = envelope.story().map(JsonStoryMessage::from).orElse(null);
         final var syncMessage = envelope.sync().map(JsonSyncMessage::from).orElse(null);
         final var callMessage = envelope.call().map(JsonCallMessage::from).orElse(null);
@@ -72,6 +74,7 @@ public record JsonMessageEnvelope(
                 sourceDevice,
                 timestamp,
                 dataMessage,
+                editMessage,
                 storyMessage,
                 syncMessage,
                 callMessage,

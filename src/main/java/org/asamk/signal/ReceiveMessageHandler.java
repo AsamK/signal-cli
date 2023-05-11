@@ -69,6 +69,10 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             var message = envelope.data().get();
             printDataMessage(writer, message);
         }
+        if (envelope.edit().isPresent()) {
+            var message = envelope.edit().get();
+            printEditMessage(writer, message);
+        }
         if (envelope.story().isPresent()) {
             var message = envelope.story().get();
             printStoryMessage(writer.indentedWriter(), message);
@@ -190,6 +194,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 printAttachment(writer.indentedWriter(), attachment);
             }
         }
+    }
+
+    private void printEditMessage(
+            PlainTextWriter writer, MessageEnvelope.Edit message
+    ) {
+        writer.println("Edit: Target message timestamp: {}", DateUtils.formatTimestamp(message.targetSentTimestamp()));
+        printDataMessage(writer.indentedWriter(), message.dataMessage());
     }
 
     private void printStoryMessage(

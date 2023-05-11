@@ -142,6 +142,10 @@ public interface Manager extends Closeable {
             Message message, Set<RecipientIdentifier> recipients
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
+    SendMessageResults sendEditMessage(
+            Message message, Set<RecipientIdentifier> recipients, long editTargetTimestamp
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
+
     SendMessageResults sendRemoteDeleteMessage(
             long targetSentTimestamp, Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;

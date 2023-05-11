@@ -84,6 +84,9 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .type(long.class)
                 .help("Specify the timestamp of a story to reply to.");
         subparser.addArgument("--story-author").help("Specify the number of the author of the story.");
+        subparser.addArgument("--edit-timestamp")
+                .type(long.class)
+                .help("Specify the timestamp of a previous message with the recipient or group to send an edited message.");
     }
 
     @Override
@@ -189,6 +192,8 @@ public class SendCommand implements JsonRpcLocalCommand {
                     "Sending empty message is not allowed, either a message, attachment or sticker must be given.");
         }
 
+        final var editTimestamp = ns.getLong("edit-timestamp");
+
         try {
             final var message = new Message(messageText,
                     attachments,
@@ -197,7 +202,9 @@ public class SendCommand implements JsonRpcLocalCommand {
                     Optional.ofNullable(sticker),
                     previews,
                     Optional.ofNullable((storyReply)));
-            var results = m.sendMessage(message, recipientIdentifiers);
+            var results = editTimestamp != null
+                    ? m.sendEditMessage(message, recipientIdentifiers, editTimestamp)
+                    : m.sendMessage(message, recipientIdentifiers);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

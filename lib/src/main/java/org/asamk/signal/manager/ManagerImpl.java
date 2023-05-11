@@ -467,6 +467,14 @@ class ManagerImpl implements Manager {
     private SendMessageResults sendMessage(
             SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        return sendMessage(messageBuilder, recipients, Optional.empty());
+    }
+
+    private SendMessageResults sendMessage(
+            SignalServiceDataMessage.Builder messageBuilder,
+            Set<RecipientIdentifier> recipients,
+            Optional<Long> editTargetTimestamp
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         long timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
@@ -474,17 +482,19 @@ class ManagerImpl implements Manager {
             if (recipient instanceof RecipientIdentifier.Single single) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(single);
-                    final var result = context.getSendHelper().sendMessage(messageBuilder, recipientId);
+                    final var result = context.getSendHelper()
+                            .sendMessage(messageBuilder, recipientId, editTargetTimestamp);
                     results.put(recipient, List.of(toSendMessageResult(result)));
                 } catch (UnregisteredRecipientException e) {
                     results.put(recipient,
                             List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
                 }
             } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
-                final var result = context.getSendHelper().sendSelfMessage(messageBuilder);
+                final var result = context.getSendHelper().sendSelfMessage(messageBuilder, editTargetTimestamp);
                 results.put(recipient, List.of(toSendMessageResult(result)));
             } else if (recipient instanceof RecipientIdentifier.Group group) {
-                final var result = context.getSendHelper().sendAsGroupMessage(messageBuilder, group.groupId());
+                final var result = context.getSendHelper()
+                        .sendAsGroupMessage(messageBuilder, group.groupId(), editTargetTimestamp);
                 results.put(recipient, result.stream().map(this::toSendMessageResult).toList());
             }
         }
@@ -579,6 +589,15 @@ class ManagerImpl implements Manager {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients);
+    }
+
+    @Override
+    public SendMessageResults sendEditMessage(
+            Message message, Set<RecipientIdentifier> recipients, long editTargetTimestamp
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
+        final var messageBuilder = SignalServiceDataMessage.newBuilder();
+        applyMessage(messageBuilder, message);
+        return sendMessage(messageBuilder, recipients, Optional.of(editTargetTimestamp));
     }
 
     private void applyMessage(

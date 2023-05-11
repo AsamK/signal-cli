@@ -288,7 +288,8 @@
   "name":"java.lang.Long",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.Number",
@@ -839,10 +840,24 @@
   ]
 },
 {
+  "name":"org.asamk.signal.json.JsonEditMessage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"dataMessage","parameterTypes":[] }, 
+    {"name":"targetSentTimestamp","parameterTypes":[] }
+  ]
+},
+{
   "name":"org.asamk.signal.json.JsonError",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"message","parameterTypes":[] }, 
+    {"name":"type","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonGroupInfo",
@@ -875,6 +890,7 @@
   "methods":[
     {"name":"callMessage","parameterTypes":[] }, 
     {"name":"dataMessage","parameterTypes":[] }, 
+    {"name":"editMessage","parameterTypes":[] }, 
     {"name":"receiptMessage","parameterTypes":[] }, 
     {"name":"source","parameterTypes":[] }, 
     {"name":"sourceDevice","parameterTypes":[] }, 
@@ -1007,7 +1023,11 @@
   "name":"org.asamk.signal.json.JsonSticker",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"packId","parameterTypes":[] }, 
+    {"name":"stickerId","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.json.JsonStoryContext",
@@ -1069,7 +1089,8 @@
     {"name":"dataMessage","parameterTypes":[] }, 
     {"name":"destination","parameterTypes":[] }, 
     {"name":"destinationNumber","parameterTypes":[] }, 
-    {"name":"destinationUuid","parameterTypes":[] }
+    {"name":"destinationUuid","parameterTypes":[] }, 
+    {"name":"editMessage","parameterTypes":[] }
   ]
 },
 {
@@ -2417,13 +2438,15 @@
   "name":"org.whispersystems.signalservice.api.groupsv2.CredentialResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.TemporalCredential",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.TemporalCredential[]"
@@ -3234,6 +3257,14 @@
     {"name":"authorUuid_"}, 
     {"name":"bitField0_"}, 
     {"name":"sentTimestamp_"}
+  ]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$EditMessage",
+  "fields":[
+    {"name":"bitField0_"}, 
+    {"name":"dataMessage_"}, 
+    {"name":"targetSentTimestamp_"}
   ]
 },
 {

@@ -10,6 +10,7 @@ import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
@@ -25,6 +26,7 @@ import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
+import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
@@ -367,6 +369,13 @@ public class DbusManagerImpl implements Manager {
                 numbers -> signal.sendMessage(message.messageText(), message.attachments(), numbers),
                 () -> signal.sendNoteToSelfMessage(message.messageText(), message.attachments()),
                 groupId -> signal.sendGroupMessage(message.messageText(), message.attachments(), groupId));
+    }
+
+    @Override
+    public SendMessageResults sendEditMessage(
+            final Message message, final Set<RecipientIdentifier> recipients, final long editTargetTimestamp
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -801,6 +810,7 @@ public class DbusManagerImpl implements Manager {
                                 List.of())),
                         Optional.empty(),
                         Optional.empty(),
+                        Optional.empty(),
                         Optional.empty());
                 notifyMessageHandlers(envelope);
             };
@@ -827,6 +837,7 @@ public class DbusManagerImpl implements Manager {
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
+                        Optional.empty(),
                         Optional.empty());
                 notifyMessageHandlers(envelope);
             };
@@ -841,6 +852,7 @@ public class DbusManagerImpl implements Manager {
                         0,
                         0,
                         false,
+                        Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
@@ -874,6 +886,7 @@ public class DbusManagerImpl implements Manager {
                                         List.of(),
                                         List.of(),
                                         List.of())),
+                                Optional.empty(),
                                 Optional.empty())),
                                 Optional.empty(),
                                 List.of(),
