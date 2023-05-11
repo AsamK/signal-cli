@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.10] - 2023-05-11
+**Attention**: Now requires native libsignal-client version 0.23.1
+
+### Added
+- Support for receiving and sending edit messages with `--edit-timestamp`
+
 ## [0.11.9.1] - 2023-04-23
 
 ### Fixed
