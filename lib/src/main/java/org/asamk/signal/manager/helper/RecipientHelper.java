@@ -107,7 +107,11 @@ public class RecipientHelper {
         try {
             return Optional.of(resolveRecipient(recipient));
         } catch (UnregisteredRecipientException e) {
-            return Optional.empty();
+            if (recipient instanceof RecipientIdentifier.Number r) {
+                return account.getRecipientStore().resolveRecipientByNumberOptional(r.number());
+            } else {
+                return Optional.empty();
+            }
         }
     }
 

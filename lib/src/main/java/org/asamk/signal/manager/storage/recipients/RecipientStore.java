@@ -215,6 +215,16 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         return byNumber.get().id();
     }
 
+    public Optional<RecipientId> resolveRecipientByNumberOptional(final String number) {
+        final Optional<RecipientWithAddress> byNumber;
+        try (final var connection = database.getConnection()) {
+            byNumber = findByNumber(connection, number);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from recipient store", e);
+        }
+        return byNumber.map(RecipientWithAddress::id);
+    }
+
     public RecipientId resolveRecipientByUsername(
             final String username, Supplier<ServiceId> serviceIdSupplier
     ) throws UnregisteredRecipientException {
