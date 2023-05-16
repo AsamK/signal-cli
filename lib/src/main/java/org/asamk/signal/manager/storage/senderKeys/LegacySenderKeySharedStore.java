@@ -61,8 +61,8 @@ public class LegacySenderKeySharedStore {
         }
     }
 
-    private record Storage(List<SharedSenderKey> sharedSenderKeys) {
+    public record Storage(List<SharedSenderKey> sharedSenderKeys) {
 
-        private record SharedSenderKey(long recipientId, int deviceId, String distributionId) {}
+        public record SharedSenderKey(long recipientId, int deviceId, String distributionId) {}
     }
 }
