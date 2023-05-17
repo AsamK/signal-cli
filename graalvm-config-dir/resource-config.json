@@ -215,6 +215,12 @@
       "pattern":"\\Qlibsignal_jni.so\\E"
     }, 
     {
+      "pattern":"\\Qlibsignal_jni.dylib\\E"
+    }, 
+    {
+      "pattern":"\\Qsignal_jni.dll\\E"
+    }, 
+    {
       "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"
     }, 
     {
