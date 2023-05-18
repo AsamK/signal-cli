@@ -171,6 +171,9 @@
   ]
 },
 {
+  "name":"org.signal.libsignal.protocol.state.KyberPreKeyStore"
+},
+{
   "name":"org.signal.libsignal.protocol.state.PreKeyRecord",
   "fields":[{"name":"unsafeHandle"}]
 },

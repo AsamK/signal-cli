@@ -44,17 +44,7 @@ public class ServiceConfig {
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var giftBadges = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(false,
-                true,
-                false,
-                true,
-                true,
-                true,
-                true,
-                true,
-                giftBadges,
-                false,
-                false);
+        return new AccountAttributes.Capabilities(false, true, true, true, true, giftBadges, false, false);
     }
 
     public static boolean isSignalClientAvailable() {

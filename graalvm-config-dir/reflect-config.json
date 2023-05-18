@@ -1142,7 +1142,12 @@
   "name":"org.asamk.signal.json.JsonTypingMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"action","parameterTypes":[] }, 
+    {"name":"groupId","parameterTypes":[] }, 
+    {"name":"timestamp","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcBatchMessage",

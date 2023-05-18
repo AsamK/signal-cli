@@ -2,7 +2,6 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.util.PinHashing;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +10,7 @@ import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
 import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
+import org.whispersystems.signalservice.api.kbs.PinHashUtil;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.contacts.entities.TokenResponse;
 import org.whispersystems.signalservice.internal.push.LockedException;
@@ -37,7 +37,7 @@ public class PinHelper {
             String pin, MasterKey masterKey
     ) throws IOException {
         final var pinChangeSession = keyBackupService.newPinChangeSession();
-        final var hashedPin = PinHashing.hashPin(pin, pinChangeSession);
+        final var hashedPin = PinHashUtil.hashPin(pin, pinChangeSession.hashSalt());
 
         try {
             pinChangeSession.setPin(hashedPin, masterKey);
@@ -128,7 +128,7 @@ public class PinHelper {
         var session = keyBackupService.newRegistrationSession(basicStorageCredentials, tokenResponse);
 
         try {
-            var hashedPin = PinHashing.hashPin(pin, session);
+            var hashedPin = PinHashUtil.hashPin(pin, session.hashSalt());
             var kbsData = session.restorePin(hashedPin);
             if (kbsData == null) {
                 throw new AssertionError("Null not expected");

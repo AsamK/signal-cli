@@ -71,7 +71,8 @@ public class UnidentifiedAccessHelper {
 
         try {
             return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
-                    senderCertificate), new UnidentifiedAccess(selfUnidentifiedAccessKey, senderCertificate)));
+                    senderCertificate,
+                    false), new UnidentifiedAccess(selfUnidentifiedAccessKey, senderCertificate, false)));
         } catch (InvalidCertificateException e) {
             return Optional.empty();
         }
@@ -87,8 +88,9 @@ public class UnidentifiedAccessHelper {
 
         try {
             return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(selfUnidentifiedAccessKey,
-                    selfUnidentifiedAccessCertificate),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate)));
+                    selfUnidentifiedAccessCertificate,
+                    false),
+                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate, false)));
         } catch (InvalidCertificateException e) {
             return Optional.empty();
         }

@@ -212,13 +212,10 @@
       "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
     }, 
     {
-      "pattern":"\\Qlibsignal_jni.so\\E"
-    }, 
-    {
       "pattern":"\\Qlibsignal_jni.dylib\\E"
     }, 
     {
-      "pattern":"\\Qsignal_jni.dll\\E"
+      "pattern":"\\Qlibsignal_jni.so\\E"
     }, 
     {
       "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"
@@ -231,6 +228,9 @@
     }, 
     {
       "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
+    }, 
+    {
+      "pattern":"\\Qsignal_jni.dll\\E"
     }, 
     {
       "pattern":"\\Qsqlite-jdbc.properties\\E"

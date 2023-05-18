@@ -73,7 +73,7 @@ public class IdentityHelper {
         final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
 
-        if (account.getAccountCapabilities().getUuid()) {
+        if (false) {
             if (serviceId.isUnknown()) {
                 return null;
             }

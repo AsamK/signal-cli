@@ -7,6 +7,7 @@ import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.state.IdentityKeyStore;
+import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.PreKeyStore;
 import org.signal.libsignal.protocol.state.SessionRecord;
@@ -196,5 +197,33 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     @Override
     public boolean isMultiDevice() {
         return isMultiDevice.get();
+    }
+
+    @Override
+    public KyberPreKeyRecord loadKyberPreKey(final int kyberPreKeyId) throws InvalidKeyIdException {
+        // TODO
+        throw new InvalidKeyIdException("Missing kyber prekey with ID: $kyberPreKeyId");
+    }
+
+    @Override
+    public List<KyberPreKeyRecord> loadKyberPreKeys() {
+        // TODO
+        return List.of();
+    }
+
+    @Override
+    public void storeKyberPreKey(final int kyberPreKeyId, final KyberPreKeyRecord record) {
+        // TODO
+    }
+
+    @Override
+    public boolean containsKyberPreKey(final int kyberPreKeyId) {
+        // TODO
+        return false;
+    }
+
+    @Override
+    public void markKyberPreKeyUsed(final int kyberPreKeyId) {
+        // TODO
     }
 }
