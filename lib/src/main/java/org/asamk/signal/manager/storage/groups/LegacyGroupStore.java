@@ -129,7 +129,7 @@ public class LegacyGroupStore {
 
     public record Storage(@JsonDeserialize(using = GroupsDeserializer.class) List<Record> groups) {
 
-        private record GroupV1(
+        public record GroupV1(
                 String groupId,
                 String expectedV2Id,
                 String name,
@@ -140,9 +140,9 @@ public class LegacyGroupStore {
                 @JsonDeserialize(using = MembersDeserializer.class) List<Member> members
         ) {
 
-            private record Member(Long recipientId, String uuid, String number) {}
+            public record Member(Long recipientId, String uuid, String number) {}
 
-            private record JsonRecipientAddress(String uuid, String number) {}
+            public record JsonRecipientAddress(String uuid, String number) {}
 
             private static class MembersDeserializer extends JsonDeserializer<List<Member>> {
 
@@ -168,7 +168,7 @@ public class LegacyGroupStore {
             }
         }
 
-        private record GroupV2(
+        public record GroupV2(
                 String groupId,
                 String masterKey,
                 String distributionId,

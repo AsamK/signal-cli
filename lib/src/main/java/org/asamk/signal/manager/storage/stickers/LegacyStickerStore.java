@@ -28,7 +28,7 @@ public class LegacyStickerStore {
 
     public record Storage(List<Sticker> stickers) {
 
-        private record Sticker(String packId, String packKey, boolean installed) {
+        public record Sticker(String packId, String packKey, boolean installed) {
 
         }
     }

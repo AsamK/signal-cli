@@ -111,5 +111,5 @@ public class LegacyIdentityKeyStore {
         }
     }
 
-    private record IdentityStorage(String identityKey, int trustLevel, long addedTimestamp) {}
+    public record IdentityStorage(String identityKey, int trustLevel, long addedTimestamp) {}
 }
