@@ -150,8 +150,12 @@ public class SendCommand implements JsonRpcLocalCommand {
             attachments = List.of();
         }
 
+        final var selfNumber = m.getSelfNumber();
+
         List<String> mentionStrings = ns.getList("mention");
-        final var mentions = mentionStrings == null ? List.<Message.Mention>of() : parseMentions(m, mentionStrings);
+        final var mentions = mentionStrings == null
+                ? List.<Message.Mention>of()
+                : parseMentions(selfNumber, mentionStrings);
 
         List<String> textStyleStrings = ns.getList("text-style");
         final var textStyles = textStyleStrings == null ? List.<TextStyle>of() : parseTextStyles(textStyleStrings);
@@ -164,13 +168,13 @@ public class SendCommand implements JsonRpcLocalCommand {
             List<String> quoteMentionStrings = ns.getList("quote-mention");
             final var quoteMentions = quoteMentionStrings == null
                     ? List.<Message.Mention>of()
-                    : parseMentions(m, quoteMentionStrings);
+                    : parseMentions(selfNumber, quoteMentionStrings);
             List<String> quoteTextStyleStrings = ns.getList("quote-text-style");
             final var quoteTextStyles = quoteTextStyleStrings == null
                     ? List.<TextStyle>of()
                     : parseTextStyles(quoteTextStyleStrings);
             quote = new Message.Quote(quoteTimestamp,
-                    CommandUtil.getSingleRecipientIdentifier(quoteAuthor, m.getSelfNumber()),
+                    CommandUtil.getSingleRecipientIdentifier(quoteAuthor, selfNumber),
                     quoteMessage == null ? "" : quoteMessage,
                     quoteMentions,
                     quoteTextStyles);
@@ -197,7 +201,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (storyReplyTimestamp != null) {
             final var storyAuthor = ns.getString("story-author");
             storyReply = new Message.StoryReply(storyReplyTimestamp,
-                    CommandUtil.getSingleRecipientIdentifier(storyAuthor, m.getSelfNumber()));
+                    CommandUtil.getSingleRecipientIdentifier(storyAuthor, selfNumber));
         } else {
             storyReply = null;
         }
@@ -235,7 +239,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private List<Message.Mention> parseMentions(
-            final Manager m, final List<String> mentionStrings
+            final String selfNumber, final List<String> mentionStrings
     ) throws UserErrorException {
         List<Message.Mention> mentions;
         final Pattern mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
@@ -245,10 +249,11 @@ public class SendCommand implements JsonRpcLocalCommand {
             if (!matcher.matches()) {
                 throw new UserErrorException("Invalid mention syntax ("
                         + mention
-                        + ") expected 'start:end:recipientNumber'");
+                        + ") expected 'start:length:recipientNumber'");
             }
-            mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3),
-                    m.getSelfNumber()), Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2))));
+            mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3), selfNumber),
+                    Integer.parseInt(matcher.group(1)),
+                    Integer.parseInt(matcher.group(2))));
         }
         return mentions;
     }
