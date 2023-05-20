@@ -10,12 +10,19 @@ public record Message(
         Optional<Quote> quote,
         Optional<Sticker> sticker,
         List<Preview> previews,
-        Optional<StoryReply> storyReply
+        Optional<StoryReply> storyReply,
+        List<TextStyle> textStyles
 ) {
 
     public record Mention(RecipientIdentifier.Single recipient, int start, int length) {}
 
-    public record Quote(long timestamp, RecipientIdentifier.Single author, String message, List<Mention> mentions) {}
+    public record Quote(
+            long timestamp,
+            RecipientIdentifier.Single author,
+            String message,
+            List<Mention> mentions,
+            List<TextStyle> textStyles
+    ) {}
 
     public record Sticker(byte[] packId, int stickerId) {}
 

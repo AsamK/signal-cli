@@ -251,6 +251,12 @@ e.g.: `--sticker 00abac3bc18d7f599bff2325dc306d43:2`
 Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
 e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 
+*--text-style*::
+Style parts of the message text (syntax: start:length:STYLE).
+Where STYLE is one of: BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE
+
+e.g.: `-m "Something BIG!" --mention "10:3:BOLD"`
+
 *--quote-timestamp*::
 Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.
 
@@ -262,6 +268,9 @@ Specify the message of the original message.
 
 *--quote-mention*::
 Specify the mentions of the original message (same format as `--mention`).
+
+*--quote-text-style*::
+Style parts of the original message text (same format as `--text-style`).
 
 *--preview-url*::
 Specify the url for the link preview.

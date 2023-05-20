@@ -838,6 +838,7 @@
     {"name":"remoteDelete","parameterTypes":[] }, 
     {"name":"sticker","parameterTypes":[] }, 
     {"name":"storyContext","parameterTypes":[] }, 
+    {"name":"textStyles","parameterTypes":[] }, 
     {"name":"timestamp","parameterTypes":[] }, 
     {"name":"viewOnce","parameterTypes":[] }
   ]
@@ -940,7 +941,8 @@
     {"name":"authorUuid","parameterTypes":[] }, 
     {"name":"id","parameterTypes":[] }, 
     {"name":"mentions","parameterTypes":[] }, 
-    {"name":"text","parameterTypes":[] }
+    {"name":"text","parameterTypes":[] }, 
+    {"name":"textStyles","parameterTypes":[] }
   ]
 },
 {
@@ -1136,6 +1138,17 @@
     {"name":"dataMessage","parameterTypes":[] }, 
     {"name":"destinationNumber","parameterTypes":[] }, 
     {"name":"destinationUuid","parameterTypes":[] }
+  ]
+},
+{
+  "name":"org.asamk.signal.json.JsonTextStyle",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"length","parameterTypes":[] }, 
+    {"name":"start","parameterTypes":[] }, 
+    {"name":"style","parameterTypes":[] }
   ]
 },
 {

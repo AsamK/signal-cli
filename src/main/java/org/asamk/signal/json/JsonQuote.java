@@ -14,7 +14,8 @@ public record JsonQuote(
         String authorUuid,
         String text,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
-        List<JsonQuotedAttachment> attachments
+        List<JsonQuotedAttachment> attachments,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles
 ) {
 
     static JsonQuote from(MessageEnvelope.Data.Quote quote) {
@@ -34,6 +35,11 @@ public record JsonQuote(
                 .map(JsonQuotedAttachment::from)
                 .toList() : List.<JsonQuotedAttachment>of();
 
-        return new JsonQuote(id, author, authorNumber, authorUuid, text, mentions, attachments);
+        final var textStyles = quote.textStyles().size() > 0 ? quote.textStyles()
+                .stream()
+                .map(JsonTextStyle::from)
+                .toList() : null;
+
+        return new JsonQuote(id, author, authorNumber, authorUuid, text, mentions, attachments, textStyles);
     }
 }

@@ -4,6 +4,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientAddress;
 import org.asamk.signal.manager.api.RecipientIdentifier;
+import org.asamk.signal.manager.api.TextStyle;
 import org.asamk.signal.manager.api.UntrustedIdentityException;
 import org.asamk.signal.manager.groups.GroupId;
 import org.asamk.signal.output.PlainTextWriter;
@@ -573,7 +574,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
     }
 
     private void printTextStyle(
-            PlainTextWriter writer, MessageEnvelope.Data.TextStyle textStyle
+            PlainTextWriter writer, TextStyle textStyle
     ) {
         writer.println("- {}: {} (length: {})", textStyle.style().name(), textStyle.start(), textStyle.length());
     }

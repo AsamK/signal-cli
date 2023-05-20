@@ -40,6 +40,7 @@ import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
+import org.asamk.signal.manager.api.TextStyle;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -618,6 +619,9 @@ class ManagerImpl implements Manager {
         if (message.mentions().size() > 0) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));
         }
+        if (message.textStyles().size() > 0) {
+            messageBuilder.withBodyRanges(message.textStyles().stream().map(TextStyle::toBodyRange).toList());
+        }
         if (message.quote().isPresent()) {
             final var quote = message.quote().get();
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
@@ -628,7 +632,7 @@ class ManagerImpl implements Manager {
                     List.of(),
                     resolveMentions(quote.mentions()),
                     SignalServiceDataMessage.Quote.Type.NORMAL,
-                    List.of()));
+                    quote.textStyles().stream().map(TextStyle::toBodyRange).toList()));
         }
         if (message.sticker().isPresent()) {
             final var sticker = message.sticker().get();

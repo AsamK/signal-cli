@@ -20,6 +20,7 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSharedContact> contacts,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryContext storyContext
 ) {
@@ -53,11 +54,15 @@ record JsonDataMessage(
                 .map(JsonAttachment::from)
                 .toList() : null;
         final var sticker = dataMessage.sticker().isPresent() ? JsonSticker.from(dataMessage.sticker().get()) : null;
-
         final var contacts = dataMessage.sharedContacts().size() > 0 ? dataMessage.sharedContacts()
                 .stream()
                 .map(JsonSharedContact::from)
                 .toList() : null;
+        final var textStyles = dataMessage.textStyles().size() > 0 ? dataMessage.textStyles()
+                .stream()
+                .map(JsonTextStyle::from)
+                .toList() : null;
+
         return new JsonDataMessage(timestamp,
                 message,
                 expiresInSeconds,
@@ -71,6 +76,7 @@ record JsonDataMessage(
                 sticker,
                 remoteDelete,
                 contacts,
+                textStyles,
                 groupInfo,
                 storyContext);
     }
