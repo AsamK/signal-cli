@@ -37,7 +37,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     public ExecutionStatus configure(LoggerContext lc) {
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
 
-        final var defaultLevel = verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO;
+        final var defaultLevel = verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.INFO : Level.WARN;
         rootLogger.setLevel(defaultLevel);
 
         final var consoleLayout = verboseLevel == 0 || logFile != null
@@ -46,18 +46,15 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         final var consoleAppender = createLoggingConsoleAppender(lc, createLayoutWrappingEncoder(consoleLayout));
         rootLogger.addAppender(consoleAppender);
 
-        lc.getLogger("com.zaxxer.hikari")
-                .setLevel(verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.INFO : Level.WARN);
+        lc.getLogger("org.asamk").setLevel(verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO);
 
         if (logFile != null) {
             consoleAppender.addFilter(new Filter<>() {
                 @Override
                 public FilterReply decide(final ILoggingEvent event) {
-                    return event.getLevel().isGreaterOrEqual(Level.INFO)
-                            && !"LibSignal".equals(event.getLoggerName())
-                            && (
-                            event.getLevel().isGreaterOrEqual(Level.WARN) || !event.getLoggerName()
-                                    .startsWith("com.zaxxer.hikari")
+                    return event.getLevel().isGreaterOrEqual(Level.WARN) || (
+                            event.getLevel().isGreaterOrEqual(Level.INFO) && event.getLoggerName()
+                                    .startsWith("org.asamk")
                     )
 
                             ? FilterReply.NEUTRAL : FilterReply.DENY;
