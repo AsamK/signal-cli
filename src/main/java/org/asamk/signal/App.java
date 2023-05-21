@@ -27,9 +27,8 @@ import org.asamk.signal.manager.Settings;
 import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
-import org.asamk.signal.manager.config.ServiceConfig;
-import org.asamk.signal.manager.config.ServiceEnvironment;
-import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
+import org.asamk.signal.manager.api.ServiceEnvironment;
+import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.output.JsonWriterImpl;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriterImpl;
@@ -150,7 +149,7 @@ public class App {
             return;
         }
 
-        if (!ServiceConfig.isSignalClientAvailable()) {
+        if (!Manager.isSignalClientAvailable()) {
             throw new UserErrorException("Missing required native library dependency: libsignal-client");
         }
 

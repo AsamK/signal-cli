@@ -2,10 +2,10 @@ package org.asamk.signal.util;
 
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.GroupId;
+import org.asamk.signal.manager.api.GroupIdFormatException;
 import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
-import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.groups.GroupIdFormatException;
 
 import java.util.Collection;
 import java.util.HashSet;

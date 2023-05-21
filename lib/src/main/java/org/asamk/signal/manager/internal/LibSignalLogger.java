@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.internal;
 
 import org.signal.libsignal.protocol.logging.SignalProtocolLogger;
 import org.signal.libsignal.protocol.logging.SignalProtocolLoggerProvider;
@@ -9,7 +9,7 @@ public class LibSignalLogger implements SignalProtocolLogger {
 
     private final static Logger logger = LoggerFactory.getLogger("LibSignal");
 
-    static void initLogger() {
+    public static void initLogger() {
         SignalProtocolLoggerProvider.setProvider(new LibSignalLogger());
     }
 

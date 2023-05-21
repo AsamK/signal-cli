@@ -1,5 +1,10 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.internal;
 
+import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
+import org.asamk.signal.manager.ProvisioningManager;
+import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.SignalAccountFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-class MultiAccountManagerImpl implements MultiAccountManager {
+public class MultiAccountManagerImpl implements MultiAccountManager {
 
     private final static Logger logger = LoggerFactory.getLogger(MultiAccountManagerImpl.class);
 

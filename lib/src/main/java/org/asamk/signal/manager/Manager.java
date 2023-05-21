@@ -5,13 +5,19 @@ import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.Group;
+import org.asamk.signal.manager.api.GroupId;
+import org.asamk.signal.manager.api.GroupInviteLinkUrl;
+import org.asamk.signal.manager.api.GroupNotFoundException;
+import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.InvalidUsernameException;
+import org.asamk.signal.manager.api.LastGroupAdminException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
@@ -28,12 +34,8 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
-import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupNotFoundException;
-import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
-import org.asamk.signal.manager.groups.LastGroupAdminException;
-import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.Closeable;
@@ -52,6 +54,21 @@ public interface Manager extends Closeable {
 
     static boolean isValidNumber(final String e164Number, final String countryCode) {
         return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);
+    }
+
+    static boolean isSignalClientAvailable() {
+        final Logger logger = LoggerFactory.getLogger(Manager.class);
+        try {
+            try {
+                org.signal.libsignal.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
+            } catch (Exception e) {
+                logger.trace("Expected exception when checking libsignal-client: {}", e.getMessage());
+            }
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            logger.warn("Failed to call libsignal-client: {}", e.getMessage());
+            return false;
+        }
     }
 
     String getSelfNumber();

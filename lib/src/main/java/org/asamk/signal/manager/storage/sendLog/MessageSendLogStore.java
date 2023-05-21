@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.storage.sendLog;
 
-import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;

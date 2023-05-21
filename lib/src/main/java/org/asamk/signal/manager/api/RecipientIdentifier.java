@@ -1,6 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.groups.GroupId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;

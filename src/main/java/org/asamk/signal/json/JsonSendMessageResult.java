@@ -2,8 +2,8 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.SendMessageResult;
-import org.asamk.signal.manager.groups.GroupId;
 
 public record JsonSendMessageResult(
         JsonRecipientAddress recipientAddress,

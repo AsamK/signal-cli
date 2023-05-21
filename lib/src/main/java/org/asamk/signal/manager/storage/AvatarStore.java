@@ -1,6 +1,6 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.storage;
 
-import org.asamk.signal.manager.groups.GroupId;
+import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;

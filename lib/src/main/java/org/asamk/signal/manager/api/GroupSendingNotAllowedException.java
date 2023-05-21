@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.groups;
+package org.asamk.signal.manager.api;
 
 public class GroupSendingNotAllowedException extends Exception {
 

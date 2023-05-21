@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.groups;
+package org.asamk.signal.manager.api;
 
 public enum GroupPermission {
     EVERY_MEMBER,

@@ -13,7 +13,6 @@ import org.asamk.signal.jsonrpc.SignalJsonRpcCommandHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.util.Utils;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,7 +137,7 @@ public class HttpServerHandler {
 
         try {
             final var queryString = httpExchange.getRequestURI().getQuery();
-            final var query = queryString == null ? Map.<String, String>of() : Utils.getQueryMap(queryString);
+            final var query = queryString == null ? Map.<String, String>of() : Util.getQueryMap(queryString);
 
             List<Manager> managers = getManagerFromQuery(query);
             if (managers == null) {

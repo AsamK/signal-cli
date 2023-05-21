@@ -3,7 +3,7 @@ package org.asamk.signal.manager.storage.accounts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.config.ServiceEnvironment;
+import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.util.IOUtils;

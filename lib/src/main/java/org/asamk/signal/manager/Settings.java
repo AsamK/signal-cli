@@ -1,6 +1,6 @@
 package org.asamk.signal.manager;
 
-import org.asamk.signal.manager.storage.identities.TrustNewIdentity;
+import org.asamk.signal.manager.api.TrustNewIdentity;
 
 public record Settings(TrustNewIdentity trustNewIdentity, boolean disableMessageSendLog) {
 

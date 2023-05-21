@@ -1,8 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.groups.GroupLinkState;
-import org.asamk.signal.manager.groups.GroupPermission;
-
 import java.util.Set;
 
 public class UpdateGroup {

@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.groups;
 
-import org.asamk.signal.manager.groups.GroupId;
-import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupPermission;
+import org.asamk.signal.manager.api.GroupId;
+import org.asamk.signal.manager.api.GroupInviteLinkUrl;
+import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.whispersystems.signalservice.api.push.DistributionId;
 

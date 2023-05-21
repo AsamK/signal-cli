@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.actions;
 
-import org.asamk.signal.manager.groups.GroupIdV1;
+import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 

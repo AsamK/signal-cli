@@ -1,7 +1,6 @@
 package org.asamk.signal.manager.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.push.TrustStore;
 
@@ -15,8 +14,6 @@ import java.util.List;
 import okhttp3.Interceptor;
 
 public class ServiceConfig {
-
-    private final static Logger logger = LoggerFactory.getLogger(ServiceConfig.class);
 
     public final static int PREKEY_MINIMUM_COUNT = 20;
     public final static int PREKEY_BATCH_SIZE = 100;
@@ -45,20 +42,6 @@ public class ServiceConfig {
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var giftBadges = !isPrimaryDevice;
         return new AccountAttributes.Capabilities(false, true, true, true, true, giftBadges, false, false);
-    }
-
-    public static boolean isSignalClientAvailable() {
-        try {
-            try {
-                org.signal.libsignal.internal.Native.UuidCiphertext_CheckValidContents(new byte[0]);
-            } catch (Exception e) {
-                logger.trace("Expected exception when checking libsignal-client: {}", e.getMessage());
-            }
-            return true;
-        } catch (UnsatisfiedLinkError e) {
-            logger.warn("Failed to call libsignal-client: {}", e.getMessage());
-            return false;
-        }
     }
 
     public static KeyStore getIasKeyStore() {

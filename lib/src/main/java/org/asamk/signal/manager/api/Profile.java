@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.storage.recipients;
+package org.asamk.signal.manager.api;
 
 import org.whispersystems.signalservice.internal.util.Util;
 
@@ -142,7 +142,7 @@ public class Profile {
         ENABLED,
         UNRESTRICTED;
 
-        static UnidentifiedAccessMode valueOfOrUnknown(String value) {
+        public static UnidentifiedAccessMode valueOfOrUnknown(String value) {
             try {
                 return valueOf(value);
             } catch (IllegalArgumentException ignored) {
@@ -157,7 +157,7 @@ public class Profile {
         senderKey,
         announcementGroup;
 
-        static Capability valueOfOrNull(String value) {
+        public static Capability valueOfOrNull(String value) {
             try {
                 return valueOf(value);
             } catch (IllegalArgumentException ignored) {

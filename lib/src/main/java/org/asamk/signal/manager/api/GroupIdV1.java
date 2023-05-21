@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.groups;
+package org.asamk.signal.manager.api;
 
 import java.util.Base64;
 

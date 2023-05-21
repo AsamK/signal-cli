@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.storage.recipients;
+package org.asamk.signal.manager.api;
 
 import org.whispersystems.signalservice.internal.util.Util;
 

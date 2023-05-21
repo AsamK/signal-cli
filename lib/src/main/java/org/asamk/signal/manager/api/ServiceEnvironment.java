@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.config;
+package org.asamk.signal.manager.api;
 
 public enum ServiceEnvironment {
     LIVE,

@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.groups;
 
-import org.asamk.signal.manager.groups.GroupIdV2;
-import org.asamk.signal.manager.groups.GroupInviteLinkUrl;
-import org.asamk.signal.manager.groups.GroupPermission;
+import org.asamk.signal.manager.api.GroupIdV2;
+import org.asamk.signal.manager.api.GroupInviteLinkUrl;
+import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;

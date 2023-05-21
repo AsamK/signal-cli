@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import org.asamk.signal.manager.api.Contact;
+import org.asamk.signal.manager.api.Profile;
 import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 

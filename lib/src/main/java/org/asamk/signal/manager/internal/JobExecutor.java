@@ -1,4 +1,4 @@
-package org.asamk.signal.manager;
+package org.asamk.signal.manager.internal;
 
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.jobs.Job;

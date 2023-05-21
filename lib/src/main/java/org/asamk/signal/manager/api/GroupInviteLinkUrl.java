@@ -1,7 +1,8 @@
-package org.asamk.signal.manager.groups;
+package org.asamk.signal.manager.api;
 
 import com.google.protobuf.ByteString;
 
+import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.protos.groups.GroupInviteLink;

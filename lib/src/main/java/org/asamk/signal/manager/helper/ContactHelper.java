@@ -1,7 +1,7 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.storage.SignalAccount;
-import org.asamk.signal.manager.storage.recipients.Contact;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 
 public class ContactHelper {

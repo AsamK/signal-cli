@@ -1,6 +1,8 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;

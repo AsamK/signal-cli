@@ -2,9 +2,15 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
+import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceConfig;
-import org.asamk.signal.manager.config.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
+import org.asamk.signal.manager.internal.AccountFileUpdaterImpl;
+import org.asamk.signal.manager.internal.ManagerImpl;
+import org.asamk.signal.manager.internal.MultiAccountManagerImpl;
+import org.asamk.signal.manager.internal.PathConfig;
+import org.asamk.signal.manager.internal.ProvisioningManagerImpl;
+import org.asamk.signal.manager.internal.RegistrationManagerImpl;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.accounts.AccountsStore;
 import org.asamk.signal.manager.util.KeyUtils;

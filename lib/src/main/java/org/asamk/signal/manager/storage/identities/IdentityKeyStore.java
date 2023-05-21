@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.storage.identities;
 
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
 import org.signal.libsignal.protocol.IdentityKey;

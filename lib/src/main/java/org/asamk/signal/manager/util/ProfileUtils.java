@@ -3,7 +3,7 @@ package org.asamk.signal.manager.util;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.storage.recipients.Profile;
+import org.asamk.signal.manager.api.Profile;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;

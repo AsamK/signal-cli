@@ -1,9 +1,9 @@
 package org.asamk.signal.manager.helper;
 
-import org.asamk.signal.manager.AttachmentStore;
-import org.asamk.signal.manager.AvatarStore;
-import org.asamk.signal.manager.JobExecutor;
-import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.internal.JobExecutor;
+import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.storage.AttachmentStore;
+import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 

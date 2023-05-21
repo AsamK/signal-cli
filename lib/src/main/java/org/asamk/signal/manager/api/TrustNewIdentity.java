@@ -1,4 +1,4 @@
-package org.asamk.signal.manager.storage.identities;
+package org.asamk.signal.manager.api;
 
 public enum TrustNewIdentity {
     ALWAYS,

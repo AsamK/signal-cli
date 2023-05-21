@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,4 +67,17 @@ public class Util {
         objectMapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         return objectMapper;
     }
+
+    public static Map<String, String> getQueryMap(String query) {
+        var params = query.split("&");
+        var map = new HashMap<String, String>();
+        for (var param : params) {
+            final var paramParts = param.split("=");
+            var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
+            var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
+            map.put(name, value);
+        }
+        return map;
+    }
+
 }

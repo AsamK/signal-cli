@@ -3,13 +3,13 @@ package org.asamk.signal.manager.helper;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import org.asamk.signal.manager.SignalDependencies;
+import org.asamk.signal.manager.api.GroupLinkState;
+import org.asamk.signal.manager.api.GroupPermission;
+import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.groups.GroupLinkPassword;
-import org.asamk.signal.manager.groups.GroupLinkState;
-import org.asamk.signal.manager.groups.GroupPermission;
 import org.asamk.signal.manager.groups.GroupUtils;
-import org.asamk.signal.manager.groups.NotAGroupMemberException;
+import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.util.Utils;
