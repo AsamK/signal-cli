@@ -38,7 +38,6 @@ import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
 import org.asamk.signal.manager.storage.recipients.Contact;
-import org.asamk.signal.manager.storage.recipients.Profile;
 import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -211,11 +210,6 @@ public class DbusManagerImpl implements Manager {
         } else {
             signal.removePin();
         }
-    }
-
-    @Override
-    public Profile getRecipientProfile(final RecipientIdentifier.Single recipient) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -572,11 +566,6 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public void setReceiveConfig(final ReceiveConfig receiveConfig) {
-    }
-
-    @Override
-    public boolean hasCaughtUpWithOldMessages() {
-        return true;
     }
 
     @Override

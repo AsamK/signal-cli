@@ -378,11 +378,6 @@ class ManagerImpl implements Manager {
     }
 
     @Override
-    public Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
-        return context.getProfileHelper().getRecipientProfile(context.getRecipientHelper().resolveRecipient(recipient));
-    }
-
-    @Override
     public List<Group> getGroups() {
         return account.getGroupStore().getGroups().stream().map(this::toGroup).toList();
     }
@@ -1051,11 +1046,6 @@ class ManagerImpl implements Manager {
     @Override
     public void setReceiveConfig(final ReceiveConfig receiveConfig) {
         context.getReceiveHelper().setReceiveConfig(receiveConfig);
-    }
-
-    @Override
-    public boolean hasCaughtUpWithOldMessages() {
-        return context.getReceiveHelper().hasCaughtUpWithOldMessages();
     }
 
     @Override

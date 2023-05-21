@@ -34,7 +34,6 @@ import org.asamk.signal.manager.groups.GroupNotFoundException;
 import org.asamk.signal.manager.groups.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.groups.LastGroupAdminException;
 import org.asamk.signal.manager.groups.NotAGroupMemberException;
-import org.asamk.signal.manager.storage.recipients.Profile;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.Closeable;
@@ -103,8 +102,6 @@ public interface Manager extends Closeable {
     void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException;
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException;
-
-    Profile getRecipientProfile(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
 
     List<Group> getGroups();
 
@@ -221,13 +218,11 @@ public interface Manager extends Closeable {
     /**
      * Receive new messages from server, returns if no new message arrive in a timespan of timeout.
      */
-    public void receiveMessages(
+    void receiveMessages(
             Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException;
 
     void setReceiveConfig(ReceiveConfig receiveConfig);
-
-    boolean hasCaughtUpWithOldMessages();
 
     boolean isContactBlocked(RecipientIdentifier.Single recipient);
 

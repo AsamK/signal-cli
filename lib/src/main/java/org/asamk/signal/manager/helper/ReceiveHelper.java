@@ -61,10 +61,6 @@ public class ReceiveHelper {
         this.needsToRetryFailedMessages = needsToRetryFailedMessages;
     }
 
-    public boolean hasCaughtUpWithOldMessages() {
-        return hasCaughtUpWithOldMessages;
-    }
-
     public void setAuthenticationFailureListener(final Callable authenticationFailureListener) {
         this.authenticationFailureListener = authenticationFailureListener;
     }
