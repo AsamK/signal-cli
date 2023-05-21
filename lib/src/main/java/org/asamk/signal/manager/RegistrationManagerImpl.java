@@ -39,6 +39,7 @@ import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
+import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -114,16 +115,21 @@ class RegistrationManagerImpl implements RegistrationManager {
             throw new IOException("Account is registered in another environment: " + account.getServiceEnvironment());
         }
 
-        if (account.getAci() != null && attemptReactivateAccount()) {
-            return;
-        }
+        try {
+            if (account.getAci() != null && attemptReactivateAccount()) {
+                return;
+            }
 
-        String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
-                account.getSessionId(account.getNumber()),
-                id -> account.setSessionId(account.getNumber(), id),
-                voiceVerification,
-                captcha);
-        NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
+            String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
+                    account.getSessionId(account.getNumber()),
+                    id -> account.setSessionId(account.getNumber(), id),
+                    voiceVerification,
+                    captcha);
+            NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
+        } catch (DeprecatedVersionException e) {
+            logger.debug("Signal-Server returned deprecated version exception", e);
+            throw e;
+        }
     }
 
     @Override
