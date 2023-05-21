@@ -19,6 +19,7 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.Settings;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -97,7 +98,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         var deviceUuid = accountManager.getNewDeviceUuid();
 
-        return new DeviceLinkInfo(deviceUuid, tempIdentityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
+        return new DeviceLinkUrl(deviceUuid, tempIdentityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     @Override

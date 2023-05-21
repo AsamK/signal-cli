@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -42,7 +43,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -116,7 +116,7 @@ public interface Manager extends Closeable {
 
     void removeLinkedDevices(int deviceId) throws IOException;
 
-    void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException;
+    void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException;
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException;
 

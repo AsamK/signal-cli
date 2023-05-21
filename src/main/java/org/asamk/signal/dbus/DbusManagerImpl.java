@@ -7,6 +7,7 @@ import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -199,8 +200,8 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(final URI linkUri) throws IOException, InvalidDeviceLinkException {
-        signal.addDevice(linkUri.toString());
+    public void addDeviceLink(final DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException {
+        signal.addDevice(linkUri.createDeviceLinkUri().toString());
     }
 
     @Override

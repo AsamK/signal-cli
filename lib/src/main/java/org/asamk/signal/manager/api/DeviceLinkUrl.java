@@ -1,6 +1,5 @@
-package org.asamk.signal.manager.internal;
+package org.asamk.signal.manager.api;
 
-import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.ecc.Curve;
@@ -14,9 +13,9 @@ import java.util.Base64;
 
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
-public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
+public record DeviceLinkUrl(String deviceIdentifier, ECPublicKey deviceKey) {
 
-    public static DeviceLinkInfo parseDeviceLinkUri(URI linkUri) throws InvalidDeviceLinkException {
+    public static DeviceLinkUrl parseDeviceLinkUri(URI linkUri) throws InvalidDeviceLinkException {
         final var rawQuery = linkUri.getRawQuery();
         if (isEmpty(rawQuery)) {
             throw new RuntimeException("Invalid device link uri");
@@ -43,7 +42,7 @@ public record DeviceLinkInfo(String deviceIdentifier, ECPublicKey deviceKey) {
             throw new InvalidDeviceLinkException("Invalid device link", e);
         }
 
-        return new DeviceLinkInfo(deviceIdentifier, deviceKey);
+        return new DeviceLinkUrl(deviceIdentifier, deviceKey);
     }
 
     public URI createDeviceLinkUri() {

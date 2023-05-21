@@ -21,6 +21,7 @@ import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -91,7 +92,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -359,9 +359,8 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(URI linkUri) throws IOException, InvalidDeviceLinkException {
-        var deviceLinkInfo = DeviceLinkInfo.parseDeviceLinkUri(linkUri);
-        context.getAccountHelper().addDevice(deviceLinkInfo);
+    public void addDeviceLink(DeviceLinkUrl linkUrl) throws IOException, InvalidDeviceLinkException {
+        context.getAccountHelper().addDevice(linkUrl);
     }
 
     @Override

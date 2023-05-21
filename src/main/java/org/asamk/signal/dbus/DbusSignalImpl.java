@@ -4,6 +4,7 @@ import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupLinkState;
@@ -173,7 +174,8 @@ public class DbusSignalImpl implements Signal {
     @Override
     public void addDevice(String uri) {
         try {
-            m.addDeviceLink(new URI(uri));
+            var deviceLinkUrl = DeviceLinkUrl.parseDeviceLinkUri(new URI(uri));
+            m.addDeviceLink(deviceLinkUrl);
         } catch (IOException | InvalidDeviceLinkException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
         } catch (URISyntaxException e) {

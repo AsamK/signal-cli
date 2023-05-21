@@ -1,12 +1,12 @@
 package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.CaptchaRequiredException;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
-import org.asamk.signal.manager.internal.DeviceLinkInfo;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -267,7 +267,7 @@ public class AccountHelper {
         dependencies.getAccountManager().setAccountAttributes(account.getAccountAttributes(null));
     }
 
-    public void addDevice(DeviceLinkInfo deviceLinkInfo) throws IOException, InvalidDeviceLinkException {
+    public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, InvalidDeviceLinkException {
         var verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
 
         try {

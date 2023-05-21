@@ -7,6 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.output.OutputWriter;
 import org.slf4j.Logger;
@@ -45,7 +46,8 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
         }
 
         try {
-            m.addDeviceLink(linkUri);
+            var deviceLinkUrl = DeviceLinkUrl.parseDeviceLinkUri(linkUri);
+            m.addDeviceLink(deviceLinkUrl);
         } catch (IOException e) {
             logger.error("Add device link failed", e);
             throw new IOErrorException("Add device link failed", e);
