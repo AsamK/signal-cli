@@ -120,6 +120,7 @@ public class App {
     }
 
     public void init() throws CommandException {
+        logger.debug("Starting {}", BaseConfig.PROJECT_NAME + " " + BaseConfig.PROJECT_VERSION);
         var commandKey = ns.getString("command");
         var command = Commands.getCommand(commandKey);
         if (command == null) {
