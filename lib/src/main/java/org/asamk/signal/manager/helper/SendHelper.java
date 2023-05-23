@@ -617,6 +617,13 @@ public class SendHelper {
         } catch (NotFoundException e) {
             logger.warn("Someone was unregistered. Falling back to legacy sends.", e);
             return null;
+        } catch (IOException e) {
+            if (e.getCause() instanceof InvalidKeyException) {
+                logger.warn("Invalid key. Falling back to legacy sends.", e);
+                return null;
+            } else {
+                throw e;
+            }
         }
     }
 
