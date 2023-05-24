@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.11.11] - 2023-05-24
 **Attention**: Now requires native libsignal-client version 0.25.0
 
 ### Added
@@ -8,6 +10,7 @@
 
 ### Fixed
 - Fixed migration of older account files
+- Fix deleting old unregistered recipient
 
 ## [0.11.10] - 2023-05-11
 **Attention**: Now requires native libsignal-client version 0.23.1
