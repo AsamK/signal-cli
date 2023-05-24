@@ -49,8 +49,8 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -66,7 +66,7 @@ class GroupV2Helper {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private HashMap<Long, AuthCredentialWithPniResponse> groupApiCredentials;
+    private Map<Long, AuthCredentialWithPniResponse> groupApiCredentials;
 
     GroupV2Helper(final Context context) {
         this.dependencies = context.getDependencies();
@@ -646,7 +646,9 @@ class GroupV2Helper {
         final var todaySeconds = currentDaySeconds();
         if (groupApiCredentials == null || !groupApiCredentials.containsKey(todaySeconds)) {
             // Returns credentials for the next 7 days
-            groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(todaySeconds);
+            groupApiCredentials = dependencies.getGroupsV2Api()
+                    .getCredentials(todaySeconds)
+                    .getAuthCredentialWithPniResponseHashMap();
             // TODO cache credentials on disk until they expire
         }
         try {
@@ -656,7 +658,9 @@ class GroupV2Helper {
             groupApiCredentials.clear();
         }
 
-        groupApiCredentials = dependencies.getGroupsV2Api().getCredentials(todaySeconds);
+        groupApiCredentials = dependencies.getGroupsV2Api()
+                .getCredentials(todaySeconds)
+                .getAuthCredentialWithPniResponseHashMap();
         try {
             return getAuthorizationString(groupSecretParams, todaySeconds);
         } catch (VerificationFailedException e) {

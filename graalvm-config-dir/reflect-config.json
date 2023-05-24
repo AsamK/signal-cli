@@ -3434,6 +3434,7 @@
     {"name":"bitField0_"}, 
     {"name":"blocked_"}, 
     {"name":"callEvent_"}, 
+    {"name":"callLinkUpdate_"}, 
     {"name":"configuration_"}, 
     {"name":"contacts_"}, 
     {"name":"fetchLatest_"}, 

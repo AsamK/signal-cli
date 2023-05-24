@@ -1,7 +1,7 @@
 # Changelog
 
 ## [Unreleased]
-**Attention**: Now requires native libsignal-client version 0.24.0
+**Attention**: Now requires native libsignal-client version 0.25.0
 
 ### Added
 - New `--text-style` and `--quote-text-style` flags for `send` command
