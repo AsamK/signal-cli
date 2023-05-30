@@ -2435,14 +2435,11 @@
     {"name":"getAnnouncementGroup","parameterTypes":[] }, 
     {"name":"getChangeNumber","parameterTypes":[] }, 
     {"name":"getGiftBadges","parameterTypes":[] }, 
-    {"name":"getGv1Migration","parameterTypes":[] }, 
-    {"name":"getGv2","parameterTypes":[] }, 
     {"name":"getPaymentActivation","parameterTypes":[] }, 
     {"name":"getPni","parameterTypes":[] }, 
     {"name":"getSenderKey","parameterTypes":[] }, 
     {"name":"getStorage","parameterTypes":[] }, 
-    {"name":"getStories","parameterTypes":[] }, 
-    {"name":"getUuid","parameterTypes":[] }
+    {"name":"getStories","parameterTypes":[] }
   ]
 },
 {
@@ -3444,7 +3441,6 @@
     {"name":"outgoingPayment_"}, 
     {"name":"padding_"}, 
     {"name":"pniChangeNumber_"}, 
-    {"name":"pniIdentity_"}, 
     {"name":"read_"}, 
     {"name":"request_"}, 
     {"name":"sent_"}, 
@@ -3545,14 +3541,6 @@
     {"name":"receipt_"}, 
     {"name":"recipientAddress_"}, 
     {"name":"spentKeyImages_"}
-  ]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$PniIdentity",
-  "fields":[
-    {"name":"bitField0_"}, 
-    {"name":"privateKey_"}, 
-    {"name":"publicKey_"}
   ]
 },
 {
