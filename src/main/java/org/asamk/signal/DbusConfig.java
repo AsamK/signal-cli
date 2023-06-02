@@ -1,5 +1,7 @@
 package org.asamk.signal;
 
+import org.asamk.signal.dbus.DbusUtils;
+
 public class DbusConfig {
 
     private static final String SIGNAL_BUSNAME = "org.asamk.Signal";
@@ -18,6 +20,6 @@ public class DbusConfig {
             return SIGNAL_OBJECT_BASE_PATH;
         }
 
-        return SIGNAL_OBJECT_BASE_PATH + "/" + account.replace('+', '_');
+        return SIGNAL_OBJECT_BASE_PATH + "/" + DbusUtils.makeValidObjectPathElement(account);
     }
 }

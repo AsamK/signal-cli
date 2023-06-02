@@ -56,6 +56,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
+
 public class DbusSignalImpl implements Signal {
 
     private final Manager m;
@@ -980,11 +982,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     private static String getGroupObjectPath(String basePath, byte[] groupId) {
-        return basePath + "/Groups/" + Base64.getEncoder()
-                .encodeToString(groupId)
-                .replace("+", "_")
-                .replace("/", "_")
-                .replace("=", "_");
+        return basePath + "/Groups/" + makeValidObjectPathElement(Base64.getEncoder().encodeToString(groupId));
     }
 
     private void updateGroups() {
