@@ -26,6 +26,7 @@ import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.output.JsonWriterImpl;
+import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriterImpl;
 import org.asamk.signal.util.IOUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -121,19 +122,7 @@ public class App {
             throw new UserErrorException("Command not implemented!");
         }
 
-        var outputTypeInput = ns.<OutputType>get("output");
-        var outputType = outputTypeInput == null
-                ? command.getSupportedOutputTypes().stream().findFirst().orElse(null)
-                : outputTypeInput;
-        var writer = new BufferedWriter(new OutputStreamWriter(System.out, IOUtils.getConsoleCharset()));
-        var outputWriter = outputType == null
-                ? null
-                : outputType == OutputType.JSON ? new JsonWriterImpl(writer) : new PlainTextWriterImpl(writer);
-
-        if (outputWriter != null && !command.getSupportedOutputTypes().contains(outputType)) {
-            throw new UserErrorException("Command doesn't support output type " + outputType);
-        }
-
+        final var outputWriter = getOutputWriter(command);
         final var commandHandler = new CommandHandler(ns, outputWriter);
 
         var account = ns.getString("account");
@@ -150,36 +139,17 @@ public class App {
             throw new UserErrorException("Missing required native library dependency: libsignal-client");
         }
 
-        final File configPath;
-        var config = ns.getString("config");
-        if (config != null) {
-            configPath = new File(config);
-        } else {
-            configPath = getDefaultConfigPath();
-        }
+        final var signalAccountFiles = loadSignalAccountFiles();
 
-        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
-        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
-                ? ServiceEnvironment.LIVE
-                : ServiceEnvironment.STAGING;
+        handleCommand(command, commandHandler, account, signalAccountFiles);
+    }
 
-        final var trustNewIdentityCli = ns.<TrustNewIdentityCli>get("trust-new-identities");
-        final var trustNewIdentity = trustNewIdentityCli == TrustNewIdentityCli.ON_FIRST_USE
-                ? TrustNewIdentity.ON_FIRST_USE
-                : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
-
-        final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
-
-        final SignalAccountFiles signalAccountFiles;
-        try {
-            signalAccountFiles = new SignalAccountFiles(configPath,
-                    serviceEnvironment,
-                    BaseConfig.USER_AGENT,
-                    new Settings(trustNewIdentity, disableSendLog));
-        } catch (IOException e) {
-            throw new IOErrorException("Failed to read local accounts list", e);
-        }
-
+    private void handleCommand(
+            final Command command,
+            final CommandHandler commandHandler,
+            String account,
+            final SignalAccountFiles signalAccountFiles
+    ) throws CommandException {
         if (command instanceof ProvisioningCommand provisioningCommand) {
             if (account != null) {
                 throw new UserErrorException("You cannot specify a account (phone number) when linking");
@@ -218,11 +188,59 @@ public class App {
             return;
         }
 
-        if (!(command instanceof LocalCommand)) {
-            throw new UserErrorException("Command only works in multi-account mode");
+        if (command instanceof LocalCommand localCommand) {
+            handleLocalCommand(localCommand, account, signalAccountFiles, commandHandler);
         }
 
-        handleLocalCommand((LocalCommand) command, account, signalAccountFiles, commandHandler);
+        throw new UserErrorException("Command only works in multi-account mode");
+    }
+
+    private OutputWriter getOutputWriter(final Command command) throws UserErrorException {
+        final var outputTypeInput = ns.<OutputType>get("output");
+        final var outputType = outputTypeInput == null ? command.getSupportedOutputTypes()
+                .stream()
+                .findFirst()
+                .orElse(null) : outputTypeInput;
+        final var writer = new BufferedWriter(new OutputStreamWriter(System.out, IOUtils.getConsoleCharset()));
+        final var outputWriter = outputType == null
+                ? null
+                : outputType == OutputType.JSON ? new JsonWriterImpl(writer) : new PlainTextWriterImpl(writer);
+
+        if (outputWriter != null && !command.getSupportedOutputTypes().contains(outputType)) {
+            throw new UserErrorException("Command doesn't support output type " + outputType);
+        }
+        return outputWriter;
+    }
+
+    private SignalAccountFiles loadSignalAccountFiles() throws IOErrorException {
+        final File configPath;
+        final var config = ns.getString("config");
+        if (config != null) {
+            configPath = new File(config);
+        } else {
+            configPath = getDefaultConfigPath();
+        }
+
+        final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
+        final var serviceEnvironment = serviceEnvironmentCli == ServiceEnvironmentCli.LIVE
+                ? ServiceEnvironment.LIVE
+                : ServiceEnvironment.STAGING;
+
+        final var trustNewIdentityCli = ns.<TrustNewIdentityCli>get("trust-new-identities");
+        final var trustNewIdentity = trustNewIdentityCli == TrustNewIdentityCli.ON_FIRST_USE
+                ? TrustNewIdentity.ON_FIRST_USE
+                : trustNewIdentityCli == TrustNewIdentityCli.ALWAYS ? TrustNewIdentity.ALWAYS : TrustNewIdentity.NEVER;
+
+        final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
+
+        try {
+            return new SignalAccountFiles(configPath,
+                    serviceEnvironment,
+                    BaseConfig.USER_AGENT,
+                    new Settings(trustNewIdentity, disableSendLog));
+        } catch (IOException e) {
+            throw new IOErrorException("Failed to read local accounts list", e);
+        }
     }
 
     private void handleProvisioningCommand(
