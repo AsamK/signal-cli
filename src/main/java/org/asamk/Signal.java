@@ -138,6 +138,10 @@ public interface Signal extends DBusInterface {
 
     DBusPath getDevice(long deviceId);
 
+    public DBusPath getIdentity(String number);
+    
+    public List<StructIdentity> listIdentities();
+
     List<StructDevice> listDevices() throws Error.Failure;
 
     DBusPath getThisDevice();
@@ -581,16 +585,18 @@ public interface Signal extends DBusInterface {
         }
     }
 
-    @DBusProperty(name = "id", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "number", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "uuid", type = String.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "safetyNumber", type = String.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "trustLevel", type = String.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "addedDate", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "scannableSafetyNumber", type = Byte[].class, access = DBusProperty.Access.READ)
     interface Identity extends DBusInterface, Properties {
 
-        void trust(String number) throws Error.Failure;
+        void trust() throws Error.Failure;
 
-        void trustWithKey(String number,String safetyNumber) throws Error.Failure;
+        void trustVerified(String safetyNumber) throws Error.Failure;
     }
 
     interface Error {
