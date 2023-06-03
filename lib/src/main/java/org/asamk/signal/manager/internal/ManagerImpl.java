@@ -28,6 +28,7 @@ import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
@@ -1166,25 +1167,20 @@ public class ManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityVerified(
-            RecipientIdentifier.Single recipient, byte[] fingerprint
+            RecipientIdentifier.Single recipient, IdentityVerificationCode verificationCode
     ) throws UnregisteredRecipientException {
-        return trustIdentity(recipient, r -> context.getIdentityHelper().trustIdentityVerified(r, fingerprint));
-    }
-
-    @Override
-    public boolean trustIdentityVerifiedSafetyNumber(
-            RecipientIdentifier.Single recipient, String safetyNumber
-    ) throws UnregisteredRecipientException {
-        return trustIdentity(recipient,
-                r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber));
-    }
-
-    @Override
-    public boolean trustIdentityVerifiedSafetyNumber(
-            RecipientIdentifier.Single recipient, byte[] safetyNumber
-    ) throws UnregisteredRecipientException {
-        return trustIdentity(recipient,
-                r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber));
+        if (verificationCode instanceof IdentityVerificationCode.Fingerprint fingerprint) {
+            return trustIdentity(recipient,
+                    r -> context.getIdentityHelper().trustIdentityVerified(r, fingerprint.fingerprint()));
+        } else if (verificationCode instanceof IdentityVerificationCode.SafetyNumber safetyNumber) {
+            return trustIdentity(recipient,
+                    r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber.safetyNumber()));
+        } else if (verificationCode instanceof IdentityVerificationCode.ScannableSafetyNumber safetyNumber) {
+            return trustIdentity(recipient,
+                    r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber.safetyNumber()));
+        } else {
+            throw new AssertionError("Invalid verification code type");
+        }
     }
 
     @Override

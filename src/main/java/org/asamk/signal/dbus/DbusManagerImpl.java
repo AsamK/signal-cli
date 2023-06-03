@@ -15,6 +15,7 @@ import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
@@ -667,20 +668,9 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public boolean trustIdentityVerified(final RecipientIdentifier.Single recipient, final byte[] fingerprint) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean trustIdentityVerifiedSafetyNumber(
-            final RecipientIdentifier.Single recipient, final String safetyNumber
-    ) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean trustIdentityVerifiedSafetyNumber(
-            final RecipientIdentifier.Single recipient, final byte[] safetyNumber
+    public boolean trustIdentityVerified(
+            final RecipientIdentifier.Single recipient,
+            final IdentityVerificationCode verificationCode
     ) {
         throw new UnsupportedOperationException();
     }

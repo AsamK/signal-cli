@@ -11,6 +11,7 @@ import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
+import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
@@ -261,33 +262,12 @@ public interface Manager extends Closeable {
     List<Identity> getIdentities(RecipientIdentifier.Single recipient);
 
     /**
-     * Trust this the identity with this fingerprint
+     * Trust this the identity with this fingerprint/safetyNumber
      *
-     * @param recipient   account of the identity
-     * @param fingerprint Fingerprint
+     * @param recipient account of the identity
      */
     boolean trustIdentityVerified(
-            RecipientIdentifier.Single recipient, byte[] fingerprint
-    ) throws UnregisteredRecipientException;
-
-    /**
-     * Trust this the identity with this safety number
-     *
-     * @param recipient    account of the identity
-     * @param safetyNumber Safety number
-     */
-    boolean trustIdentityVerifiedSafetyNumber(
-            RecipientIdentifier.Single recipient, String safetyNumber
-    ) throws UnregisteredRecipientException;
-
-    /**
-     * Trust this the identity with this scannable safety number
-     *
-     * @param recipient    account of the identity
-     * @param safetyNumber Scannable safety number
-     */
-    boolean trustIdentityVerifiedSafetyNumber(
-            RecipientIdentifier.Single recipient, byte[] safetyNumber
+            RecipientIdentifier.Single recipient, IdentityVerificationCode verificationCode
     ) throws UnregisteredRecipientException;
 
     /**
