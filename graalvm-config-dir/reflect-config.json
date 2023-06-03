@@ -625,7 +625,16 @@
   "name":"org.asamk.signal.commands.ListIdentitiesCommand$JsonIdentity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[
+    {"name":"addedTimestamp","parameterTypes":[] }, 
+    {"name":"fingerprint","parameterTypes":[] }, 
+    {"name":"number","parameterTypes":[] }, 
+    {"name":"safetyNumber","parameterTypes":[] }, 
+    {"name":"scannableSafetyNumber","parameterTypes":[] }, 
+    {"name":"trustLevel","parameterTypes":[] }, 
+    {"name":"uuid","parameterTypes":[] }
+  ]
 },
 {
   "name":"org.asamk.signal.commands.ListStickerPacksCommand$JsonStickerPack",
