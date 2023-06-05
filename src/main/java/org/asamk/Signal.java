@@ -585,13 +585,13 @@ public interface Signal extends DBusInterface {
         }
     }
 
-    @DBusProperty(name = "number", type = String.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "uuid", type = String.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "safetyNumber", type = String.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "trustLevel", type = String.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "addedDate", type = Integer.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "scannableSafetyNumber", type = Byte[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Number", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Uuid", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "SafetyNumber", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "TrustLevel", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "AddedDate", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "ScannableSafetyNumber", type = Byte[].class, access = DBusProperty.Access.READ)
     interface Identity extends DBusInterface, Properties {
 
         void trust() throws Error.Failure;

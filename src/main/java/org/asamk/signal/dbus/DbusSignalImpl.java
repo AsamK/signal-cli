@@ -1045,7 +1045,7 @@ public class DbusSignalImpl implements Signal {
             exportObject(object);
             this.identities.add(new StructIdentity(new DBusPath(object.getObjectPath()),
                 emptyIfNull(i.recipient().getIdentifier()),
-                    i.recipient().getLegacyIdentifier()));
+                i.recipient().getLegacyIdentifier()));
         });
     }
 
@@ -1084,13 +1084,13 @@ public class DbusSignalImpl implements Signal {
         public DbusSignalIdentityImpl(final org.asamk.signal.manager.api.Identity identity) {
             this.identity=identity;
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Identity",
-                    List.of(new DbusProperty<>("number", () -> identity.recipient().number().orElse("")),
-                            new DbusProperty<>("uuid", () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
-                            new DbusProperty<>("fingerprint", () -> identity.getFingerprint()),
-                            new DbusProperty<>("safetyNumber", identity::safetyNumber),
-                            new DbusProperty<>("scannableSafetyNumber", identity::scannableSafetyNumber),
-                            new DbusProperty<>("trustLevel", identity::trustLevel),
-                            new DbusProperty<>("addedDate", identity::dateAddedTimestamp)
+                    List.of(new DbusProperty<>("Number", () -> identity.recipient().number().orElse("")),
+                            new DbusProperty<>("Uuid", () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
+                            new DbusProperty<>("Fingerprint", () -> identity.getFingerprint()),
+                            new DbusProperty<>("SafetyNumber", identity::safetyNumber),
+                            new DbusProperty<>("ScannableSafetyNumber", identity::scannableSafetyNumber),
+                            new DbusProperty<>("TrustLevel", identity::trustLevel),
+                            new DbusProperty<>("AddedDate", identity::dateAddedTimestamp)
                             )));
         }
 
