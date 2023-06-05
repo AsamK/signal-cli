@@ -30,6 +30,7 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -55,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
 
@@ -68,6 +70,7 @@ public class DbusSignalImpl implements Signal {
     private DBusPath thisDevice;
     private final List<StructDevice> devices = new ArrayList<>();
     private final List<StructGroup> groups = new ArrayList<>();
+    private final List<StructIdentity> identities = new ArrayList<>();
     private DbusReceiveMessageHandler dbusMessageHandler;
     private int subscriberCount;
 
@@ -100,6 +103,7 @@ public class DbusSignalImpl implements Signal {
         updateDevices();
         updateGroups();
         updateConfiguration();
+        updateIdentities();
     }
 
     public void close() {
@@ -114,6 +118,7 @@ public class DbusSignalImpl implements Signal {
         unExportDevices();
         unExportGroups();
         unExportConfiguration();
+        unExportIdentities();
         connection.unExportObject(this.objectPath);
     }
 
@@ -1026,6 +1031,109 @@ public class DbusSignalImpl implements Signal {
             logger.debug("Exported dbus object: " + object.getObjectPath());
         } catch (DBusException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateIdentities() {
+        List<org.asamk.signal.manager.api.Identity> identities;
+        identities = m.getIdentities();
+
+        unExportIdentities();
+
+        identities.forEach(i -> {
+            final var object = new DbusSignalIdentityImpl(i);
+            exportObject(object);
+            this.identities.add(new StructIdentity(new DBusPath(object.getObjectPath()),
+                emptyIfNull(i.recipient().getIdentifier()),
+                i.recipient().getLegacyIdentifier()));
+        });
+    }
+
+    private static String getIdentityObjectPath(String basePath, String id) {
+        return basePath + "/Identities/" + makeValidObjectPathElement(id);
+    }
+
+    private void unExportIdentities() {
+        this.identities.stream().map(StructIdentity::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
+        this.identities.clear();
+    }
+
+    @Override
+    public DBusPath getIdentity(String number) throws Error.Failure {
+
+        final var found = identities.stream()
+                            .filter(identity -> identity.getName().equals(number))
+                            .findFirst();
+        
+        if (found.isEmpty()) {
+            throw new Error.Failure("Identity for " + number + " unkown");
+        }
+        return found.get().getObjectPath();
+    }
+
+    @Override
+    public List<StructIdentity> listIdentities() {
+        updateIdentities();
+        return this.identities;
+    }
+
+    public class DbusSignalIdentityImpl extends DbusProperties implements Signal.Identity {
+
+        private final org.asamk.signal.manager.api.Identity identity;
+
+        public DbusSignalIdentityImpl(final org.asamk.signal.manager.api.Identity identity) {
+            this.identity=identity;
+            super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Identity",
+                    List.of(new DbusProperty<>("Number", () -> identity.recipient().number().orElse("")),
+                            new DbusProperty<>("Uuid", () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
+                            new DbusProperty<>("Fingerprint", () -> identity.getFingerprint()),
+                            new DbusProperty<>("SafetyNumber", identity::safetyNumber),
+                            new DbusProperty<>("ScannableSafetyNumber", identity::scannableSafetyNumber),
+                            new DbusProperty<>("TrustLevel", identity::trustLevel),
+                            new DbusProperty<>("AddedDate", identity::dateAddedTimestamp)
+                            )));
+        }
+
+        @Override
+        public String getObjectPath() {
+            return getIdentityObjectPath(objectPath, identity.recipient().getLegacyIdentifier());
+        }
+
+        @Override
+        public void trust() throws Error.Failure  {
+            var recipient=RecipientIdentifier.Single.fromAddress(identity.recipient());
+            try {
+                m.trustIdentityAllKeys(recipient);
+            } catch (UnregisteredRecipientException e) {
+                throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
+            }
+        };
+
+        @Override
+        public void trustVerified(String safetyNumber) throws Error.Failure {
+             var recipient = RecipientIdentifier.Single.fromAddress(identity.recipient());
+ 
+            if (safetyNumber == null) {
+                throw new Error.Failure(
+                    "You need to specify a fingerprint/safety number");
+            }
+            final IdentityVerificationCode verificationCode;
+            try {
+                verificationCode = IdentityVerificationCode.parse(safetyNumber);
+            } catch (Exception e) {
+                throw new Error.Failure(
+                        "Safety number has invalid format, either specify the old hex fingerprint or the new safety number");
+            }
+
+            try {
+                final var res = m.trustIdentityVerified(recipient, verificationCode);
+                if (!res) {
+                    throw new Error.Failure(
+                            "Failed to set the trust for this number, make sure the number and the fingerprint/safety number are correct.");
+                }
+            } catch (UnregisteredRecipientException e) {
+                throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
+            }
         }
     }
 

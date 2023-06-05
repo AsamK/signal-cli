@@ -138,6 +138,10 @@ public interface Signal extends DBusInterface {
 
     DBusPath getDevice(long deviceId);
 
+    public DBusPath getIdentity(String number);
+    
+    public List<StructIdentity> listIdentities();
+
     List<StructDevice> listDevices() throws Error.Failure;
 
     DBusPath getThisDevice();
@@ -549,6 +553,50 @@ public interface Signal extends DBusInterface {
         void disableLink() throws Error.Failure;
 
         void enableLink(boolean requiresApproval) throws Error.Failure;
+    }
+
+    class StructIdentity extends Struct {
+
+        @Position(0)
+        DBusPath objectPath;
+
+        @Position(1)
+        String uuid;
+
+        @Position(2)
+        String name;
+
+        public StructIdentity(final DBusPath objectPath, final String uuid, final String name) {
+            this.objectPath = objectPath;
+            this.uuid = uuid;
+            this.name = name;
+        }
+
+        public DBusPath getObjectPath() {
+            return objectPath;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    @DBusProperty(name = "Number", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Uuid", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "Fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "SafetyNumber", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "TrustLevel", type = String.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "AddedDate", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "ScannableSafetyNumber", type = Byte[].class, access = DBusProperty.Access.READ)
+    interface Identity extends DBusInterface, Properties {
+
+        void trust() throws Error.Failure;
+
+        void trustVerified(String safetyNumber) throws Error.Failure;
     }
 
     interface Error {

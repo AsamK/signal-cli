@@ -416,6 +416,24 @@ Only works if sent from a secondary device.
 
 Exceptions: Failure
 
+==== Identity related methods
+
+listIdentities() -> identities<a(oss)>::
+* identities : Array of structs (objectPath, id, name)
+** objectPath : DBusPath representing the identity object path
+** uuid : Internal uuid of the identity
+** number : Phone number of the identity (or uuid if not known)
+
+Lists all know identities
+
+getIdentity(Number<s>) -> identityPath<o>::
+* Number : Phone number 
+* identityPath : DBusPath object for the identity
+
+Gets the identity Dbus path for a given phone number
+
+Exceptions: Failure
+
 === Signal.Group interface
 
 The following methods listen to the group's object path, which can be obtained from the listGroups() method and is constructed as follows:
@@ -528,6 +546,42 @@ To get all properties, use:
 `dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Device`
 
 removeDevice() -> <>::
+
+Exceptions: Failure
+
+=== Signal.Identity interface
+
+The following methods listen to the Identities object path, which is constructed as follows:
+
+<ACCOUNT_PATH> + "/Identities/" + identity
+
+identity : Either the phone number of a contact with underscore (_) replacing plus (+) , or if not known its uuid
+
+Identities have the following (case-sensitive) properties:
+
+* Number<s> (read-only) : Phone number of the contact
+* Uuid<x> (read-only) : Internal uuid representing the contact
+* Fingerprint<x> (read-only) : Byte array representing the fingerprint
+* SafetyNumber<s> (read-only) : String representation of the safety number used to verify trust
+* TrustLevel<s> (read-only) : Current trust level (UNSTRUSTED, TRUSTED_UNVERIFIED, TRUSTED_VERIFIED)
+* AddedDate<x> (read-only) : Long representing the number of milliseconds since the Unix epoch
+* ScannableSafetyNumber<x> (read-only) : Byte array representation of the safety number
+
+To get a property, use (replacing `--session` with `--system` if needed):
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.Get string:org.asamk.Signal.Identity string:$PROPERTY_NAME`
+
+To get all properties, use:
+`dbus-send --session --dest=org.asamk.Signal --print-reply $OBJECT_PATH org.freedesktop.DBus.Properties.GetAll string:org.asamk.Signal.Identity`
+
+trust() -> <>::
+
+Establish trust with the given identity. TrustLevel will become TRUSTED_UNVERFIED
+
+Exceptions: Failure
+
+trustVerified(SafetyNumber<s>) -> <>::
+
+Establish trust with the given identity using their safety number. TrustLevel will become TRUSTED_VERIFIED
 
 Exceptions: Failure
 
