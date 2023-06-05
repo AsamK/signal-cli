@@ -561,14 +561,14 @@ public interface Signal extends DBusInterface {
         DBusPath objectPath;
 
         @Position(1)
-        String id;
+        String uuid;
 
         @Position(2)
         String name;
 
-        public StructIdentity(final DBusPath objectPath, final String id, final String name) {
+        public StructIdentity(final DBusPath objectPath, final String uuid, final String name) {
             this.objectPath = objectPath;
-            this.id = id;
+            this.uuid = uuid;
             this.name = name;
         }
 
@@ -576,8 +576,8 @@ public interface Signal extends DBusInterface {
             return objectPath;
         }
 
-        public String getId() {
-            return id;
+        public String getUuid() {
+            return uuid;
         }
 
         public String getName() {

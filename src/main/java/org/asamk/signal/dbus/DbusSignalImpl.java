@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
 
