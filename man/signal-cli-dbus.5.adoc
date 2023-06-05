@@ -416,6 +416,24 @@ Only works if sent from a secondary device.
 
 Exceptions: Failure
 
+==== Identity related methods
+
+listIdentities() -> identities<a(oss)>::
+* identities : Array of structs (objectPath, id, name)
+** objectPath : DBusPath representing the identity object path
+** uuid : Internal uuid of the identity
+** number : Phone number of the identity (or uuid if not known)
+
+Lists all know identities
+
+getIdentity(Number<s>) -> identityPath<o>::
+* Number : Phone number 
+* identityPath : DBusPath object for the identity
+
+Gets the identity Dbus path for a given phone number
+
+Exceptions: Failure
+
 === Signal.Group interface
 
 The following methods listen to the group's object path, which can be obtained from the listGroups() method and is constructed as follows:
