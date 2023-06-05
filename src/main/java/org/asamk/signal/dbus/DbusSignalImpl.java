@@ -11,6 +11,7 @@ import org.asamk.signal.manager.api.GroupLinkState;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
+import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidNumberException;
@@ -30,7 +31,6 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
-import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -55,8 +55,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
 
@@ -1044,8 +1044,8 @@ public class DbusSignalImpl implements Signal {
             final var object = new DbusSignalIdentityImpl(i);
             exportObject(object);
             this.identities.add(new StructIdentity(new DBusPath(object.getObjectPath()),
-                emptyIfNull(i.recipient().getIdentifier()),
-                i.recipient().getLegacyIdentifier()));
+                    emptyIfNull(i.recipient().getIdentifier()),
+                    i.recipient().getLegacyIdentifier()));
         });
     }
 
@@ -1054,17 +1054,18 @@ public class DbusSignalImpl implements Signal {
     }
 
     private void unExportIdentities() {
-        this.identities.stream().map(StructIdentity::getObjectPath).map(DBusPath::getPath).forEach(connection::unExportObject);
+        this.identities.stream()
+                .map(StructIdentity::getObjectPath)
+                .map(DBusPath::getPath)
+                .forEach(connection::unExportObject);
         this.identities.clear();
     }
 
     @Override
     public DBusPath getIdentity(String number) throws Error.Failure {
 
-        final var found = identities.stream()
-                            .filter(identity -> identity.getName().equals(number))
-                            .findFirst();
-        
+        final var found = identities.stream().filter(identity -> identity.getName().equals(number)).findFirst();
+
         if (found.isEmpty()) {
             throw new Error.Failure("Identity for " + number + " unkown");
         }
@@ -1082,16 +1083,16 @@ public class DbusSignalImpl implements Signal {
         private final org.asamk.signal.manager.api.Identity identity;
 
         public DbusSignalIdentityImpl(final org.asamk.signal.manager.api.Identity identity) {
-            this.identity=identity;
+            this.identity = identity;
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Identity",
                     List.of(new DbusProperty<>("Number", () -> identity.recipient().number().orElse("")),
-                            new DbusProperty<>("Uuid", () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
+                            new DbusProperty<>("Uuid",
+                                    () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
                             new DbusProperty<>("Fingerprint", () -> identity.getFingerprint()),
                             new DbusProperty<>("SafetyNumber", identity::safetyNumber),
                             new DbusProperty<>("ScannableSafetyNumber", identity::scannableSafetyNumber),
                             new DbusProperty<>("TrustLevel", identity::trustLevel),
-                            new DbusProperty<>("AddedDate", identity::dateAddedTimestamp)
-                            )));
+                            new DbusProperty<>("AddedDate", identity::dateAddedTimestamp))));
         }
 
         @Override
@@ -1100,22 +1101,21 @@ public class DbusSignalImpl implements Signal {
         }
 
         @Override
-        public void trust() throws Error.Failure  {
-            var recipient=RecipientIdentifier.Single.fromAddress(identity.recipient());
+        public void trust() throws Error.Failure {
+            var recipient = RecipientIdentifier.Single.fromAddress(identity.recipient());
             try {
                 m.trustIdentityAllKeys(recipient);
             } catch (UnregisteredRecipientException e) {
                 throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
             }
-        };
+        }
 
         @Override
         public void trustVerified(String safetyNumber) throws Error.Failure {
-             var recipient = RecipientIdentifier.Single.fromAddress(identity.recipient());
- 
+            var recipient = RecipientIdentifier.Single.fromAddress(identity.recipient());
+
             if (safetyNumber == null) {
-                throw new Error.Failure(
-                    "You need to specify a fingerprint/safety number");
+                throw new Error.Failure("You need to specify a fingerprint/safety number");
             }
             final IdentityVerificationCode verificationCode;
             try {

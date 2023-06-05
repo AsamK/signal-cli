@@ -38,14 +38,14 @@ public class TrustCommand implements JsonRpcLocalCommand {
         var recipentString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getSelfNumber());
         if (Boolean.TRUE.equals(ns.getBoolean("trust-all-known-keys"))) {
-            boolean res;
             try {
-                res = m.trustIdentityAllKeys(recipient);
+                final var res = m.trustIdentityAllKeys(recipient);
+                if (!res) {
+                    throw new UserErrorException(
+                            "Failed to set the trust for this number, make sure the number is correct.");
+                }
             } catch (UnregisteredRecipientException e) {
                 throw new UserErrorException("The user " + e.getSender().getIdentifier() + " is not registered.");
-            }
-            if (!res) {
-                throw new UserErrorException("Failed to set the trust for this number, make sure the number is correct.");
             }
         } else {
             var safetyNumber = ns.getString("verified-safety-number");

@@ -139,7 +139,7 @@ public interface Signal extends DBusInterface {
     DBusPath getDevice(long deviceId);
 
     public DBusPath getIdentity(String number);
-    
+
     public List<StructIdentity> listIdentities();
 
     List<StructDevice> listDevices() throws Error.Failure;

@@ -669,8 +669,7 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityVerified(
-            final RecipientIdentifier.Single recipient,
-            final IdentityVerificationCode verificationCode
+            final RecipientIdentifier.Single recipient, final IdentityVerificationCode verificationCode
     ) {
         throw new UnsupportedOperationException();
     }
