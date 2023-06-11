@@ -422,12 +422,12 @@ listIdentities() -> identities<a(oss)>::
 * identities : Array of structs (objectPath, id, name)
 ** objectPath : DBusPath representing the identity object path
 ** uuid : Internal uuid of the identity
-** number : Phone number of the identity (or uuid if not known)
+** number : Phone number of the identity
 
 Lists all know identities
 
 getIdentity(Number<s>) -> identityPath<o>::
-* Number : Phone number 
+* Number : Phone number
 * identityPath : DBusPath object for the identity
 
 Gets the identity Dbus path for a given phone number
@@ -575,13 +575,15 @@ To get all properties, use:
 
 trust() -> <>::
 
-Establish trust with the given identity. TrustLevel will become TRUSTED_UNVERFIED
+Establish trust with the given identity.
+TrustLevel will become TRUSTED_UNVERFIED
 
 Exceptions: Failure
 
 trustVerified(SafetyNumber<s>) -> <>::
 
-Establish trust with the given identity using their safety number. TrustLevel will become TRUSTED_VERIFIED
+Establish trust with the given identity using their safety number.
+TrustLevel will become TRUSTED_VERIFIED
 
 Exceptions: Failure
 

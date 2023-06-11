@@ -1044,8 +1044,8 @@ public class DbusSignalImpl implements Signal {
             final var object = new DbusSignalIdentityImpl(i);
             exportObject(object);
             this.identities.add(new StructIdentity(new DBusPath(object.getObjectPath()),
-                    emptyIfNull(i.recipient().getIdentifier()),
-                    i.recipient().getLegacyIdentifier()));
+                    i.recipient().uuid().map(UUID::toString).orElse(""),
+                    i.recipient().number().orElse("")));
         });
     }
 
@@ -1063,11 +1063,12 @@ public class DbusSignalImpl implements Signal {
 
     @Override
     public DBusPath getIdentity(String number) throws Error.Failure {
-
-        final var found = identities.stream().filter(identity -> identity.getName().equals(number)).findFirst();
+        final var found = identities.stream()
+                .filter(identity -> identity.getNumber().equals(number) || identity.getUuid().equals(number))
+                .findFirst();
 
         if (found.isEmpty()) {
-            throw new Error.Failure("Identity for " + number + " unkown");
+            throw new Error.Failure("Identity for " + number + " unknown");
         }
         return found.get().getObjectPath();
     }
@@ -1088,7 +1089,7 @@ public class DbusSignalImpl implements Signal {
                     List.of(new DbusProperty<>("Number", () -> identity.recipient().number().orElse("")),
                             new DbusProperty<>("Uuid",
                                     () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
-                            new DbusProperty<>("Fingerprint", () -> identity.getFingerprint()),
+                            new DbusProperty<>("Fingerprint", identity::getFingerprint),
                             new DbusProperty<>("SafetyNumber", identity::safetyNumber),
                             new DbusProperty<>("ScannableSafetyNumber", identity::scannableSafetyNumber),
                             new DbusProperty<>("TrustLevel", identity::trustLevel),
@@ -1181,8 +1182,7 @@ public class DbusSignalImpl implements Signal {
 
     public class DbusSignalConfigurationImpl extends DbusProperties implements Signal.Configuration {
 
-        public DbusSignalConfigurationImpl(
-        ) {
+        public DbusSignalConfigurationImpl() {
             super.addPropertiesHandler(new DbusInterfacePropertiesHandler("org.asamk.Signal.Configuration",
                     List.of(new DbusProperty<>("ReadReceipts", this::getReadReceipts, this::setReadReceipts),
                             new DbusProperty<>("UnidentifiedDeliveryIndicators",
