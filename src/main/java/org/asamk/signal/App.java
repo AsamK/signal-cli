@@ -190,6 +190,7 @@ public class App {
 
         if (command instanceof LocalCommand localCommand) {
             handleLocalCommand(localCommand, account, signalAccountFiles, commandHandler);
+            return;
         }
 
         throw new UserErrorException("Command only works in multi-account mode");
