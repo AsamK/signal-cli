@@ -180,7 +180,7 @@ public class RecipientHelper {
 
     private ACI getRegisteredUserByUsername(String username) throws IOException, BaseUsernameException {
         return dependencies.getAccountManager()
-                .getAciByUsernameHash(Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(username)));
+                .getAciByUsernameHash(Base64UrlSafe.encodeBytesWithoutPadding(new Username(username).getHash()));
     }
 
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {

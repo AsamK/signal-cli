@@ -493,6 +493,11 @@
   "allDeclaredClasses":true
 },
 {
+  "name":"org.asamk.Signal$Identity",
+  "allDeclaredClasses":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"org.asamk.Signal$MessageReceived",
   "allDeclaredConstructors":true,
   "allPublicConstructors":true
@@ -525,6 +530,10 @@
   "allDeclaredFields":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["org.freedesktop.dbus.DBusPath","byte[]","java.lang.String"] }]
+},
+{
+  "name":"org.asamk.Signal$StructIdentity",
+  "allDeclaredFields":true
 },
 {
   "name":"org.asamk.Signal$SyncMessageReceived",
@@ -2791,10 +2800,31 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$ByteArrayDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$KEMPublicKeyDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.MismatchedDevices",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {

@@ -152,8 +152,12 @@ public class ReceiveHelper {
                         logger.trace("Storing new message from {}", recipientId);
                         // store message on disk, before acknowledging receipt to the server
                         cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
+                        try {
+                            signalWebSocket.sendAck(it);
+                        } catch (IOException e) {
+                            logger.warn("Failed to ack envelope to server after storing it: {}", e.getMessage());
+                        }
                     }
-                    return true;
                 });
                 isWaitingForMessage = false;
                 backOffCounter = 0;

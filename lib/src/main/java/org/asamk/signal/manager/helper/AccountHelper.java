@@ -28,6 +28,7 @@ import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedExcep
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
+import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.util.Base64UrlSafe;
 
@@ -153,6 +154,7 @@ public class AccountHelper {
         // TODO create new PNI identity key
         final List<OutgoingPushMessage> deviceMessages = null;
         final Map<String, SignedPreKeyEntity> devicePniSignedPreKeys = null;
+        final Map<String, KyberPreKeyEntity> devicePniLastResortKyberPrekeys = null;
         final Map<String, Integer> pniRegistrationIds = null;
         var sessionId = account.getSessionId(account.getNumber());
         final var result = NumberVerificationUtils.verifyNumber(sessionId,
@@ -174,6 +176,7 @@ public class AccountHelper {
                             account.getPniIdentityKeyPair().getPublicKey(),
                             deviceMessages,
                             devicePniSignedPreKeys,
+                            devicePniLastResortKyberPrekeys,
                             pniRegistrationIds)));
                 });
         // TODO handle response
@@ -193,10 +196,10 @@ public class AccountHelper {
             }
         }
 
-        final var candidates = Username.generateCandidates(nickname, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        final var candidates = Username.candidatesFrom(nickname, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
         final var candidateHashes = new ArrayList<String>();
         for (final var candidate : candidates) {
-            candidateHashes.add(Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(candidate)));
+            candidateHashes.add(Base64UrlSafe.encodeBytesWithoutPadding(candidate.getHash()));
         }
 
         final var response = dependencies.getAccountManager().reserveUsername(candidateHashes);
@@ -207,7 +210,7 @@ public class AccountHelper {
         }
 
         logger.debug("[reserveUsername] Successfully reserved username.");
-        final var username = candidates.get(hashIndex);
+        final var username = candidates.get(hashIndex).getUsername();
 
         dependencies.getAccountManager().confirmUsername(username, response);
         account.setUsername(username);
@@ -226,7 +229,7 @@ public class AccountHelper {
         final var whoAmIResponse = dependencies.getAccountManager().getWhoAmI();
         final var serverUsernameHash = whoAmIResponse.getUsernameHash();
         final var hasServerUsername = !isEmpty(serverUsernameHash);
-        final var localUsernameHash = Base64UrlSafe.encodeBytesWithoutPadding(Username.hash(localUsername));
+        final var localUsernameHash = Base64UrlSafe.encodeBytesWithoutPadding(new Username(localUsername).getHash());
 
         if (!hasServerUsername) {
             logger.debug("No remote username is set.");

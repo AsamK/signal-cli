@@ -9,6 +9,7 @@ import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.account.PreKeyUpload;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 
 import java.io.IOException;
@@ -34,9 +35,11 @@ public class PreKeyHelper {
     }
 
     public void refreshPreKeysIfNecessary(ServiceIdType serviceIdType) throws IOException {
-        if (dependencies.getAccountManager().getPreKeysCount(serviceIdType) < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        final var preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
+        if (preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             refreshPreKeys(serviceIdType);
         }
+        // TODO kyber pre keys
     }
 
     public void refreshPreKeys() throws IOException {
@@ -68,8 +71,13 @@ public class PreKeyHelper {
         final var oneTimePreKeys = generatePreKeys(serviceIdType);
         final var signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
 
-        dependencies.getAccountManager()
-                .setPreKeys(serviceIdType, identityKeyPair.getPublicKey(), signedPreKeyRecord, oneTimePreKeys);
+        final var preKeyUpload = new PreKeyUpload(serviceIdType,
+                identityKeyPair.getPublicKey(),
+                signedPreKeyRecord,
+                oneTimePreKeys,
+                null,
+                null);
+        dependencies.getAccountManager().setPreKeys(preKeyUpload);
     }
 
     private List<PreKeyRecord> generatePreKeys(ServiceIdType serviceIdType) {
