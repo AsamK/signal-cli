@@ -28,7 +28,9 @@ public record JsonSendMessageResult(
                                         ? Type.NETWORK_FAILURE
                                         : result.isUnregisteredFailure()
                                                 ? Type.UNREGISTERED_FAILURE
-                                                : Type.IDENTITY_FAILURE,
+                                                : result.isInvalidPreKeyFailure()
+                                                        ? Type.INVALID_PRE_KEY_FAILURE
+                                                        : Type.IDENTITY_FAILURE,
                 result.proofRequiredFailure() != null ? result.proofRequiredFailure().getToken() : null,
                 result.proofRequiredFailure() != null ? result.proofRequiredFailure().getRetryAfterSeconds() : null);
     }
@@ -39,5 +41,6 @@ public record JsonSendMessageResult(
         UNREGISTERED_FAILURE,
         IDENTITY_FAILURE,
         RATE_LIMIT_FAILURE,
+        INVALID_PRE_KEY_FAILURE,
     }
 }
