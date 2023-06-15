@@ -1,250 +1,168 @@
 {
   "resources":{
-  "includes":[
-    {
-      "pattern":"\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/ch.qos.logback.classic.spi.Configurator\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AG\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AI\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AS\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AT\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AU\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AZ\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BB\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BD\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BE\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BM\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BO\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BS\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CA\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CH\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CI\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CL\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CN\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CO\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CZ\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DE\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DK\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EC\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EE\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_ES\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_FI\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_FR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_GB\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_GR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HK\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HU\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_ID\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IL\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IN\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IT\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_JP\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_LV\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MM\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MO\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MX\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MY\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NG\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NL\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NZ\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PA\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PE\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PH\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PL\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RO\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RU\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SA\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SI\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SK\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TH\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TR\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_UA\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_UG\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_US\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_VE\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_XK\\E"
-    }, 
-    {
-      "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
-    }, 
-    {
-      "pattern":"\\Qlibsignal_jni.dylib\\E"
-    }, 
-    {
-      "pattern":"\\Qlibsignal_jni.so\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/asamk/signal/manager/config/whisper.store\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
-    }, 
-    {
-      "pattern":"\\Qsignal_jni.dll\\E"
-    }, 
-    {
-      "pattern":"\\Qsqlite-jdbc.properties\\E"
-    }, 
-    {
-      "pattern":"com/google/i18n/phonenumbers/data/.*"
-    }
-  ]},
+  "includes":[{
+    "pattern":"\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/ch.qos.logback.classic.spi.Configurator\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AG\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AI\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AS\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AT\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AU\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_AZ\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BB\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BD\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BE\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BM\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BO\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_BS\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CA\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CH\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CI\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CL\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CN\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CO\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_CZ\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DE\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DK\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EC\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_EE\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_ES\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_FI\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_FR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_GB\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_GR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HK\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_HU\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_ID\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IL\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IN\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_IT\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_JP\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_LV\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MM\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MO\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MX\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_MY\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NG\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NL\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_NZ\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PA\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PE\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PH\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_PL\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RO\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_RU\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SA\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SI\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_SK\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TH\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_TR\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_UA\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_UG\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_US\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_VE\\E"
+  }, {
+    "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_XK\\E"
+  }, {
+    "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
+  }, {
+    "pattern":"\\Qlibsignal_jni.dylib\\E"
+  }, {
+    "pattern":"\\Qlibsignal_jni.so\\E"
+  }, {
+    "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"
+  }, {
+    "pattern":"\\Qorg/asamk/signal/manager/config/whisper.store\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
+  }, {
+    "pattern":"\\Qsignal_jni.dll\\E"
+  }, {
+    "pattern":"\\Qsqlite-jdbc.properties\\E"
+  }, {
+    "pattern":"com/google/i18n/phonenumbers/data/.*"
+  }, {
+    "pattern":"java.base:\\Qsun/text/resources/LineBreakIteratorData\\E"
+  }]},
   "bundles":[{
-      "name":"net.sourceforge.argparse4j.internal.ArgumentParserImpl",
-      "locales":[
-        "", 
-        "en", 
-        "und"
-      ]
-    }]
+    "name":"net.sourceforge.argparse4j.internal.ArgumentParserImpl",
+    "locales":["", "en", "und"]
+  }]
 }
