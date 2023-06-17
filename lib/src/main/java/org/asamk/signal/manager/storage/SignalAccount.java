@@ -21,6 +21,7 @@ import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
+import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.LegacyPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.LegacySignedPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
@@ -51,11 +52,11 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SessionRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.protocol.util.KeyHelper;
-import org.signal.libsignal.protocol.util.Medium;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -98,6 +99,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_MAXIMUM_ID;
 import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
 
 public class SignalAccount implements Closeable {
@@ -105,7 +107,7 @@ public class SignalAccount implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 6;
+    private static final int CURRENT_STORAGE_VERSION = 7;
 
     private final Object LOCK = new Object();
 
@@ -138,6 +140,10 @@ public class SignalAccount implements Closeable {
     private int aciNextSignedPreKeyId = 1;
     private int pniPreKeyIdOffset = 1;
     private int pniNextSignedPreKeyId = 1;
+    private int aciKyberPreKeyIdOffset = 1;
+    private int aciActiveLastResortKyberPreKeyId = -1;
+    private int pniKyberPreKeyIdOffset = 1;
+    private int pniActiveLastResortKyberPreKeyId = -1;
     private IdentityKeyPair aciIdentityKeyPair;
     private IdentityKeyPair pniIdentityKeyPair;
     private int localRegistrationId;
@@ -151,8 +157,10 @@ public class SignalAccount implements Closeable {
     private SignalProtocolStore pniSignalProtocolStore;
     private PreKeyStore aciPreKeyStore;
     private SignedPreKeyStore aciSignedPreKeyStore;
+    private KyberPreKeyStore aciKyberPreKeyStore;
     private PreKeyStore pniPreKeyStore;
     private SignedPreKeyStore pniSignedPreKeyStore;
+    private KyberPreKeyStore pniKyberPreKeyStore;
     private SessionStore aciSessionStore;
     private SessionStore pniSessionStore;
     private IdentityKeyStore identityKeyStore;
@@ -302,10 +310,14 @@ public class SignalAccount implements Closeable {
     private void clearAllPreKeys() {
         resetPreKeyOffsets(ServiceIdType.ACI);
         resetPreKeyOffsets(ServiceIdType.PNI);
+        resetKyberPreKeyOffsets(ServiceIdType.ACI);
+        resetKyberPreKeyOffsets(ServiceIdType.PNI);
         this.getAciPreKeyStore().removeAllPreKeys();
         this.getAciSignedPreKeyStore().removeAllSignedPreKeys();
+        this.getAciKyberPreKeyStore().removeAllKyberPreKeys();
         this.getPniPreKeyStore().removeAllPreKeys();
         this.getPniSignedPreKeyStore().removeAllSignedPreKeys();
+        this.getPniKyberPreKeyStore().removeAllKyberPreKeys();
         save();
     }
 
@@ -614,22 +626,42 @@ public class SignalAccount implements Closeable {
         if (rootNode.hasNonNull("preKeyIdOffset")) {
             aciPreKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(1);
         } else {
-            aciPreKeyIdOffset = 1;
+            aciPreKeyIdOffset = getRandomPreKeyIdOffset();
         }
         if (rootNode.hasNonNull("nextSignedPreKeyId")) {
             aciNextSignedPreKeyId = rootNode.get("nextSignedPreKeyId").asInt(1);
         } else {
-            aciNextSignedPreKeyId = 1;
+            aciNextSignedPreKeyId = getRandomPreKeyIdOffset();
         }
         if (rootNode.hasNonNull("pniPreKeyIdOffset")) {
             pniPreKeyIdOffset = rootNode.get("pniPreKeyIdOffset").asInt(1);
         } else {
-            pniPreKeyIdOffset = 1;
+            pniPreKeyIdOffset = getRandomPreKeyIdOffset();
         }
         if (rootNode.hasNonNull("pniNextSignedPreKeyId")) {
             pniNextSignedPreKeyId = rootNode.get("pniNextSignedPreKeyId").asInt(1);
         } else {
-            pniNextSignedPreKeyId = 1;
+            pniNextSignedPreKeyId = getRandomPreKeyIdOffset();
+        }
+        if (rootNode.hasNonNull("kyberPreKeyIdOffset")) {
+            aciKyberPreKeyIdOffset = rootNode.get("kyberPreKeyIdOffset").asInt(1);
+        } else {
+            aciKyberPreKeyIdOffset = getRandomPreKeyIdOffset();
+        }
+        if (rootNode.hasNonNull("activeLastResortKyberPreKeyId")) {
+            aciActiveLastResortKyberPreKeyId = rootNode.get("activeLastResortKyberPreKeyId").asInt(-1);
+        } else {
+            aciActiveLastResortKyberPreKeyId = -1;
+        }
+        if (rootNode.hasNonNull("pniKyberPreKeyIdOffset")) {
+            pniKyberPreKeyIdOffset = rootNode.get("pniKyberPreKeyIdOffset").asInt(1);
+        } else {
+            pniKyberPreKeyIdOffset = getRandomPreKeyIdOffset();
+        }
+        if (rootNode.hasNonNull("pniActiveLastResortKyberPreKeyId")) {
+            pniActiveLastResortKyberPreKeyId = rootNode.get("pniActiveLastResortKyberPreKeyId").asInt(-1);
+        } else {
+            pniActiveLastResortKyberPreKeyId = -1;
         }
         if (rootNode.hasNonNull("profileKey")) {
             try {
@@ -974,6 +1006,10 @@ public class SignalAccount implements Closeable {
                     .put("nextSignedPreKeyId", aciNextSignedPreKeyId)
                     .put("pniPreKeyIdOffset", pniPreKeyIdOffset)
                     .put("pniNextSignedPreKeyId", pniNextSignedPreKeyId)
+                    .put("kyberPreKeyIdOffset", aciKyberPreKeyIdOffset)
+                    .put("activeLastResortKyberPreKeyId", aciActiveLastResortKyberPreKeyId)
+                    .put("pniKyberPreKeyIdOffset", pniKyberPreKeyIdOffset)
+                    .put("pniActiveLastResortKyberPreKeyId", pniActiveLastResortKyberPreKeyId)
                     .put("profileKey",
                             profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
                     .put("registered", registered)
@@ -1019,13 +1055,17 @@ public class SignalAccount implements Closeable {
 
     public void resetPreKeyOffsets(final ServiceIdType serviceIdType) {
         if (serviceIdType.equals(ServiceIdType.ACI)) {
-            this.aciPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
-            this.aciNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
+            this.aciPreKeyIdOffset = getRandomPreKeyIdOffset();
+            this.aciNextSignedPreKeyId = getRandomPreKeyIdOffset();
         } else {
-            this.pniPreKeyIdOffset = new SecureRandom().nextInt(Medium.MAX_VALUE);
-            this.pniNextSignedPreKeyId = new SecureRandom().nextInt(Medium.MAX_VALUE);
+            this.pniPreKeyIdOffset = getRandomPreKeyIdOffset();
+            this.pniNextSignedPreKeyId = getRandomPreKeyIdOffset();
         }
         save();
+    }
+
+    private static int getRandomPreKeyIdOffset() {
+        return new SecureRandom().nextInt(PREKEY_MAXIMUM_ID);
     }
 
     public void addPreKeys(ServiceIdType serviceIdType, List<PreKeyRecord> records) {
@@ -1036,26 +1076,26 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    public void addAciPreKeys(List<PreKeyRecord> records) {
+    private void addAciPreKeys(List<PreKeyRecord> records) {
         for (var record : records) {
             if (aciPreKeyIdOffset != record.getId()) {
                 logger.error("Invalid pre key id {}, expected {}", record.getId(), aciPreKeyIdOffset);
                 throw new AssertionError("Invalid pre key id");
             }
             getAciPreKeyStore().storePreKey(record.getId(), record);
-            aciPreKeyIdOffset = (aciPreKeyIdOffset + 1) % Medium.MAX_VALUE;
+            aciPreKeyIdOffset = (aciPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
         }
         save();
     }
 
-    public void addPniPreKeys(List<PreKeyRecord> records) {
+    private void addPniPreKeys(List<PreKeyRecord> records) {
         for (var record : records) {
             if (pniPreKeyIdOffset != record.getId()) {
                 logger.error("Invalid pre key id {}, expected {}", record.getId(), pniPreKeyIdOffset);
                 throw new AssertionError("Invalid pre key id");
             }
             getPniPreKeyStore().storePreKey(record.getId(), record);
-            pniPreKeyIdOffset = (pniPreKeyIdOffset + 1) % Medium.MAX_VALUE;
+            pniPreKeyIdOffset = (pniPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
         }
         save();
     }
@@ -1074,7 +1114,7 @@ public class SignalAccount implements Closeable {
             throw new AssertionError("Invalid signed pre key id");
         }
         getAciSignedPreKeyStore().storeSignedPreKey(record.getId(), record);
-        aciNextSignedPreKeyId = (aciNextSignedPreKeyId + 1) % Medium.MAX_VALUE;
+        aciNextSignedPreKeyId = (aciNextSignedPreKeyId + 1) % PREKEY_MAXIMUM_ID;
         save();
     }
 
@@ -1084,7 +1124,84 @@ public class SignalAccount implements Closeable {
             throw new AssertionError("Invalid signed pre key id");
         }
         getPniSignedPreKeyStore().storeSignedPreKey(record.getId(), record);
-        pniNextSignedPreKeyId = (pniNextSignedPreKeyId + 1) % Medium.MAX_VALUE;
+        pniNextSignedPreKeyId = (pniNextSignedPreKeyId + 1) % PREKEY_MAXIMUM_ID;
+        save();
+    }
+
+    public void resetKyberPreKeyOffsets(final ServiceIdType serviceIdType) {
+        if (serviceIdType.equals(ServiceIdType.ACI)) {
+            this.aciKyberPreKeyIdOffset = getRandomPreKeyIdOffset();
+            this.aciActiveLastResortKyberPreKeyId = -1;
+        } else {
+            this.pniKyberPreKeyIdOffset = getRandomPreKeyIdOffset();
+            this.pniActiveLastResortKyberPreKeyId = -1;
+        }
+        save();
+    }
+
+    public void addKyberPreKeys(ServiceIdType serviceIdType, List<KyberPreKeyRecord> records) {
+        if (serviceIdType.equals(ServiceIdType.ACI)) {
+            addAciKyberPreKeys(records);
+        } else {
+            addPniKyberPreKeys(records);
+        }
+    }
+
+    private void addAciKyberPreKeys(List<KyberPreKeyRecord> records) {
+        for (var record : records) {
+            if (aciKyberPreKeyIdOffset != record.getId()) {
+                logger.error("Invalid kyber pre key id {}, expected {}", record.getId(), aciKyberPreKeyIdOffset);
+                throw new AssertionError("Invalid kyber pre key id");
+            }
+            getAciKyberPreKeyStore().storeKyberPreKey(record.getId(), record);
+            aciKyberPreKeyIdOffset = (aciKyberPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
+        }
+        save();
+    }
+
+    private void addPniKyberPreKeys(List<KyberPreKeyRecord> records) {
+        for (var record : records) {
+            if (pniKyberPreKeyIdOffset != record.getId()) {
+                logger.error("Invalid kyber pre key id {}, expected {}", record.getId(), pniKyberPreKeyIdOffset);
+                throw new AssertionError("Invalid kyber pre key id");
+            }
+            getPniKyberPreKeyStore().storeKyberPreKey(record.getId(), record);
+            pniKyberPreKeyIdOffset = (pniKyberPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
+        }
+        save();
+    }
+
+    public void addLastResortKyberPreKey(ServiceIdType serviceIdType, KyberPreKeyRecord record) {
+        if (serviceIdType.equals(ServiceIdType.ACI)) {
+            addAciLastResortKyberPreKey(record);
+        } else {
+            addPniLastResortKyberPreKey(record);
+        }
+    }
+
+    public void addAciLastResortKyberPreKey(KyberPreKeyRecord record) {
+        if (aciKyberPreKeyIdOffset != record.getId()) {
+            logger.error("Invalid last resort kyber pre key id {}, expected {}",
+                    record.getId(),
+                    aciKyberPreKeyIdOffset);
+            throw new AssertionError("Invalid last resort kyber pre key id");
+        }
+        getAciKyberPreKeyStore().storeLastResortKyberPreKey(record.getId(), record);
+        aciActiveLastResortKyberPreKeyId = record.getId();
+        aciKyberPreKeyIdOffset = (aciKyberPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
+        save();
+    }
+
+    public void addPniLastResortKyberPreKey(KyberPreKeyRecord record) {
+        if (pniKyberPreKeyIdOffset != record.getId()) {
+            logger.error("Invalid last resort kyber pre key id {}, expected {}",
+                    record.getId(),
+                    pniKyberPreKeyIdOffset);
+            throw new AssertionError("Invalid last resort kyber pre key id");
+        }
+        getPniKyberPreKeyStore().storeLastResortKyberPreKey(record.getId(), record);
+        pniActiveLastResortKyberPreKeyId = record.getId();
+        pniKyberPreKeyIdOffset = (pniKyberPreKeyIdOffset + 1) % PREKEY_MAXIMUM_ID;
         save();
     }
 
@@ -1126,6 +1243,7 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> aciSignalProtocolStore,
                 () -> aciSignalProtocolStore = new SignalProtocolStore(getAciPreKeyStore(),
                         getAciSignedPreKeyStore(),
+                        getAciKyberPreKeyStore(),
                         getAciSessionStore(),
                         getAciIdentityKeyStore(),
                         getSenderKeyStore(),
@@ -1136,6 +1254,7 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> pniSignalProtocolStore,
                 () -> pniSignalProtocolStore = new SignalProtocolStore(getPniPreKeyStore(),
                         getPniSignedPreKeyStore(),
+                        getPniKyberPreKeyStore(),
                         getPniSessionStore(),
                         getPniIdentityKeyStore(),
                         getSenderKeyStore(),
@@ -1152,6 +1271,11 @@ public class SignalAccount implements Closeable {
                 () -> aciSignedPreKeyStore = new SignedPreKeyStore(getAccountDatabase(), ServiceIdType.ACI));
     }
 
+    private KyberPreKeyStore getAciKyberPreKeyStore() {
+        return getOrCreate(() -> aciKyberPreKeyStore,
+                () -> aciKyberPreKeyStore = new KyberPreKeyStore(getAccountDatabase(), ServiceIdType.ACI));
+    }
+
     private PreKeyStore getPniPreKeyStore() {
         return getOrCreate(() -> pniPreKeyStore,
                 () -> pniPreKeyStore = new PreKeyStore(getAccountDatabase(), ServiceIdType.PNI));
@@ -1160,6 +1284,11 @@ public class SignalAccount implements Closeable {
     private SignedPreKeyStore getPniSignedPreKeyStore() {
         return getOrCreate(() -> pniSignedPreKeyStore,
                 () -> pniSignedPreKeyStore = new SignedPreKeyStore(getAccountDatabase(), ServiceIdType.PNI));
+    }
+
+    private KyberPreKeyStore getPniKyberPreKeyStore() {
+        return getOrCreate(() -> pniKyberPreKeyStore,
+                () -> pniKyberPreKeyStore = new KyberPreKeyStore(getAccountDatabase(), ServiceIdType.PNI));
     }
 
     public SessionStore getAciSessionStore() {
@@ -1362,6 +1491,9 @@ public class SignalAccount implements Closeable {
             identityKeyStore.deleteIdentity(this.pni);
             getPniPreKeyStore().removeAllPreKeys();
             getPniSignedPreKeyStore().removeAllSignedPreKeys();
+            getPniKyberPreKeyStore().removeAllKyberPreKeys();
+            aciActiveLastResortKyberPreKeyId = -1;
+            pniActiveLastResortKyberPreKeyId = -1;
         }
 
         this.pni = updatedPni;
@@ -1404,10 +1536,6 @@ public class SignalAccount implements Closeable {
         this.sessionNumber = sessionNumber;
         this.sessionId = sessionId;
         save();
-    }
-
-    public byte[] getEncryptedDeviceName() {
-        return encryptedDeviceName == null ? null : Base64.getDecoder().decode(encryptedDeviceName);
     }
 
     public void setEncryptedDeviceName(final String encryptedDeviceName) {
@@ -1588,6 +1716,10 @@ public class SignalAccount implements Closeable {
 
     public int getNextSignedPreKeyId(ServiceIdType serviceIdType) {
         return serviceIdType.equals(ServiceIdType.ACI) ? aciNextSignedPreKeyId : pniNextSignedPreKeyId;
+    }
+
+    public int getKyberPreKeyIdOffset(ServiceIdType serviceIdType) {
+        return serviceIdType.equals(ServiceIdType.ACI) ? aciKyberPreKeyIdOffset : pniKyberPreKeyIdOffset;
     }
 
     public boolean isRegistered() {

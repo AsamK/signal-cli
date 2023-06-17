@@ -2179,14 +2179,23 @@
   "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getKeyId","parameterTypes":[] }, {"name":"getPublicKey","parameterTypes":[] }, {"name":"getSignature","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$ByteArrayDeserializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$ByteArraySerializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$KEMPublicKeyDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$KEMPublicKeySerializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -2250,7 +2259,8 @@
   "name":"org.whispersystems.signalservice.internal.push.PreKeyState",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getIdentityKey","parameterTypes":[] }, {"name":"getPreKeys","parameterTypes":[] }, {"name":"getSignedPreKey","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyStatus",

@@ -406,9 +406,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private static boolean isActive(SessionRecord record) {
-        return record != null
-                && record.hasSenderChain()
-                && record.getSessionVersion() == CiphertextMessage.CURRENT_VERSION;
+        return record != null && record.hasSenderChain();
     }
 
     record Key(ServiceId serviceId, int deviceId) {}

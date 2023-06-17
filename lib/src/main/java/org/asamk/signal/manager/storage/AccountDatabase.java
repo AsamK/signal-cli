@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
+import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
@@ -23,7 +24,7 @@ import java.sql.SQLException;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 13;
+    private static final long DATABASE_VERSION = 14;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -40,6 +41,7 @@ public class AccountDatabase extends Database {
         StickerStore.createSql(connection);
         PreKeyStore.createSql(connection);
         SignedPreKeyStore.createSql(connection);
+        KyberPreKeyStore.createSql(connection);
         GroupStore.createSql(connection);
         SessionStore.createSql(connection);
         IdentityKeyStore.createSql(connection);
@@ -327,6 +329,24 @@ public class AccountDatabase extends Database {
                     statement.executeUpdate();
                 }
             }
+        }
+        if (oldVersion < 14) {
+            logger.debug("Updating database: Creating kyber_pre_key table");
+            {
+                try (final var statement = connection.createStatement()) {
+                    statement.executeUpdate("""
+                                            CREATE TABLE kyber_pre_key (
+                                                    _id INTEGER PRIMARY KEY,
+                                                    account_id_type INTEGER NOT NULL,
+                                                    key_id INTEGER NOT NULL,
+                                                    serialized BLOB NOT NULL,
+                                                    is_last_resort INTEGER NOT NULL,
+                                                    UNIQUE(account_id_type, key_id)
+                                            ) STRICT;
+                                            """);
+                }
+            }
+
         }
     }
 }

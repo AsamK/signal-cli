@@ -49,7 +49,7 @@ public class PreKeyStore implements org.signal.libsignal.protocol.state.PreKeySt
     public PreKeyRecord loadPreKey(int preKeyId) throws InvalidKeyIdException {
         final var preKey = getPreKey(preKeyId);
         if (preKey == null) {
-            throw new InvalidKeyIdException("No such signed pre key record: " + preKeyId);
+            throw new InvalidKeyIdException("No such pre key record: " + preKeyId);
         }
         return preKey;
     }
