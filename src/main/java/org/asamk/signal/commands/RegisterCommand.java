@@ -97,5 +97,5 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         }
     }
 
-    record RegistrationParams(Boolean voice, String captcha) {}
+    public record RegistrationParams(Boolean voice, String captcha) {}
 }

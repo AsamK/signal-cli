@@ -77,5 +77,5 @@ public class VerifyCommand implements RegistrationCommand, JsonRpcRegistrationCo
         }
     }
 
-    record VerifyParams(String verificationCode, String pin) {}
+    public record VerifyParams(String verificationCode, String pin) {}
 }

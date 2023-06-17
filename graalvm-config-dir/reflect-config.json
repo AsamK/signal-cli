@@ -406,6 +406,10 @@
   "fields":[{"name":"value"}]
 },
 {
+  "name":"java.util.concurrent.atomic.AtomicMarkableReference",
+  "fields":[{"name":"pair"}]
+},
+{
   "name":"java.util.concurrent.atomic.AtomicReference",
   "fields":[{"name":"value"}]
 },
@@ -951,19 +955,22 @@
   "name":"org.asamk.signal.jsonrpc.JsonRpcRequest",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getError","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getJsonrpc","parameterTypes":[] }, {"name":"getResult","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcResponse$Error",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getCode","parameterTypes":[] }, {"name":"getData","parameterTypes":[] }, {"name":"getMessage","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.api.PhoneNumberSharingMode",
@@ -2797,7 +2804,7 @@
 },
 {
   "name":"sun.security.provider.SecureRandom",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
 },
 {
   "name":"sun.security.provider.certpath.PKIXCertPathValidator",

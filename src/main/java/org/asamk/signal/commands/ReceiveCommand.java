@@ -112,5 +112,5 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
         }
     }
 
-    record ReceiveParams(Double timeout, Integer maxMessages) {}
+    public record ReceiveParams(Double timeout, Integer maxMessages) {}
 }
