@@ -1109,6 +1109,7 @@ public class DbusSignalImpl implements Signal {
             } catch (UnregisteredRecipientException e) {
                 throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
             }
+            updateIdentities();
         }
 
         @Override
@@ -1135,6 +1136,7 @@ public class DbusSignalImpl implements Signal {
             } catch (UnregisteredRecipientException e) {
                 throw new Error.Failure("The user " + e.getSender().getIdentifier() + " is not registered.");
             }
+            updateIdentities();
         }
     }
 
