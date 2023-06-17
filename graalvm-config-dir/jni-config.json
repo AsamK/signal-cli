@@ -92,6 +92,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.signal.libsignal.protocol.fingerprint.FingerprintParsingException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.protocol.groups.state.SenderKeyRecord",
   "fields":[{"name":"unsafeHandle"}],
   "methods":[{"name":"<init>","parameterTypes":["long"] }]
