@@ -18,22 +18,25 @@ public class SendRetryMessageRequestAction implements HandleAction {
     private final ServiceId serviceId;
     private final ProtocolException protocolException;
     private final SignalServiceEnvelope envelope;
+    private final ServiceId accountId;
 
     public SendRetryMessageRequestAction(
             final RecipientId recipientId,
             final ServiceId serviceId,
             final ProtocolException protocolException,
-            final SignalServiceEnvelope envelope
+            final SignalServiceEnvelope envelope,
+            final ServiceId accountId
     ) {
         this.recipientId = recipientId;
         this.serviceId = serviceId;
         this.protocolException = protocolException;
         this.envelope = envelope;
+        this.accountId = accountId;
     }
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getAccount().getAciSessionStore().archiveSessions(serviceId);
+        context.getAccount().getAccountData(accountId).getSessionStore().archiveSessions(serviceId);
 
         int senderDevice = protocolException.getSenderDevice();
         Optional<GroupId> groupId = protocolException.getGroupId().isPresent() ? Optional.of(GroupId.unknownVersion(

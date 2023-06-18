@@ -8,15 +8,17 @@ public class RenewSessionAction implements HandleAction {
 
     private final RecipientId recipientId;
     private final ServiceId serviceId;
+    private final ServiceId accountId;
 
-    public RenewSessionAction(final RecipientId recipientId, final ServiceId serviceId) {
+    public RenewSessionAction(final RecipientId recipientId, final ServiceId serviceId, final ServiceId accountId) {
         this.recipientId = recipientId;
         this.serviceId = serviceId;
+        this.accountId = accountId;
     }
 
     @Override
     public void execute(Context context) throws Throwable {
-        context.getAccount().getAciSessionStore().archiveSessions(serviceId);
+        context.getAccount().getAccountData(accountId).getSessionStore().archiveSessions(serviceId);
         if (!recipientId.equals(context.getAccount().getSelfRecipientId())) {
             context.getSendHelper().sendNullMessage(recipientId);
         }

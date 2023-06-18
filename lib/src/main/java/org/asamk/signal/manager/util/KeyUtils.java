@@ -120,4 +120,8 @@ public class KeyUtils {
         secureRandom.nextBytes(secret);
         return secret;
     }
+
+    public static int getRandomInt(int bound) {
+        return secureRandom.nextInt(bound);
+    }
 }

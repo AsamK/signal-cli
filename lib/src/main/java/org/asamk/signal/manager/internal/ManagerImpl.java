@@ -82,6 +82,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -183,8 +184,8 @@ public class ManagerImpl implements Manager {
         });
         disposable.add(account.getIdentityKeyStore().getIdentityChanges().subscribe(serviceId -> {
             logger.trace("Archiving old sessions for {}", serviceId);
-            account.getAciSessionStore().archiveSessions(serviceId);
-            account.getPniSessionStore().archiveSessions(serviceId);
+            account.getAccountData(ServiceIdType.ACI).getSessionStore().archiveSessions(serviceId);
+            account.getAccountData(ServiceIdType.PNI).getSessionStore().archiveSessions(serviceId);
             account.getSenderKeyStore().deleteSharedWith(serviceId);
             final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             final var profile = account.getProfileStore().getProfile(recipientId);
@@ -775,7 +776,7 @@ public class ManagerImpl implements Manager {
                         .resolveRecipientAddress(recipientId)
                         .serviceId();
                 if (serviceId.isPresent()) {
-                    account.getAciSessionStore().deleteAllSessions(serviceId.get());
+                    account.getAccountData(ServiceIdType.ACI).getSessionStore().deleteAllSessions(serviceId.get());
                 }
             }
         }

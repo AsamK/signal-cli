@@ -181,12 +181,13 @@ public final class IncomingMessageHandler {
                                 .contains(Profile.Capability.senderKey);
                         final var isSelfSenderKeyCapable = selfProfile != null && selfProfile.getCapabilities()
                                 .contains(Profile.Capability.senderKey);
+                        final var destination = getDestination(envelope).serviceId();
                         if (!isSelf && isSenderSenderKeyCapable && isSelfSenderKeyCapable) {
                             logger.debug("Received invalid message, requesting message resend.");
-                            actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope));
+                            actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope, destination));
                         } else {
                             logger.debug("Received invalid message, queuing renew session action.");
-                            actions.add(new RenewSessionAction(sender, serviceId));
+                            actions.add(new RenewSessionAction(sender, serviceId, destination));
                         }
                     } else {
                         logger.debug("Received invalid message from invalid sender: {}", e.getSender());
@@ -346,7 +347,12 @@ public final class IncomingMessageHandler {
                     senderDeviceId,
                     message.getTimestamp());
             if (message.getDeviceId() == account.getDeviceId()) {
-                handleDecryptionErrorMessage(actions, sender, senderServiceId, senderDeviceId, message);
+                handleDecryptionErrorMessage(actions,
+                        sender,
+                        senderServiceId,
+                        senderDeviceId,
+                        message,
+                        destination.serviceId());
             } else {
                 logger.debug("Request is for another one of our devices");
             }
@@ -430,7 +436,8 @@ public final class IncomingMessageHandler {
             final RecipientId sender,
             final ServiceId senderServiceId,
             final int senderDeviceId,
-            final DecryptionErrorMessage message
+            final DecryptionErrorMessage message,
+            final ServiceId destination
     ) {
         final var logEntries = account.getMessageSendLogStore()
                 .findMessages(senderServiceId,
@@ -443,14 +450,14 @@ public final class IncomingMessageHandler {
         }
 
         if (message.getRatchetKey().isPresent()) {
-            if (account.getAciSessionStore()
-                    .isCurrentRatchetKey(senderServiceId, senderDeviceId, message.getRatchetKey().get())) {
+            final var sessionStore = account.getAccountData(destination).getSessionStore();
+            if (sessionStore.isCurrentRatchetKey(senderServiceId, senderDeviceId, message.getRatchetKey().get())) {
                 if (logEntries.isEmpty()) {
                     logger.debug("Renewing the session with sender");
-                    actions.add(new RenewSessionAction(sender, senderServiceId));
+                    actions.add(new RenewSessionAction(sender, senderServiceId, destination));
                 } else {
                     logger.trace("Archiving the session with sender, a resend message has already been queued");
-                    context.getAccount().getAciSessionStore().archiveSessions(senderServiceId);
+                    sessionStore.archiveSessions(senderServiceId);
                 }
             }
             return;
@@ -806,9 +813,12 @@ public final class IncomingMessageHandler {
             }
         }
 
+        final var selfAddress = isSync ? source : destination;
         final var conversationPartnerAddress = isSync ? destination : source;
         if (conversationPartnerAddress != null && message.isEndSession()) {
-            account.getAciSessionStore().deleteAllSessions(conversationPartnerAddress.serviceId());
+            account.getAccountData(selfAddress.serviceId())
+                    .getSessionStore()
+                    .deleteAllSessions(conversationPartnerAddress.serviceId());
         }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
@@ -854,10 +864,12 @@ public final class IncomingMessageHandler {
             if (message.getQuote().isPresent()) {
                 final var quote = message.getQuote().get();
 
-                for (var quotedAttachment : quote.getAttachments()) {
-                    final var thumbnail = quotedAttachment.getThumbnail();
-                    if (thumbnail != null) {
-                        context.getAttachmentHelper().downloadAttachment(thumbnail);
+                if (quote.getAttachments() != null) {
+                    for (var quotedAttachment : quote.getAttachments()) {
+                        final var thumbnail = quotedAttachment.getThumbnail();
+                        if (thumbnail != null) {
+                            context.getAttachmentHelper().downloadAttachment(thumbnail);
+                        }
                     }
                 }
             }
@@ -972,7 +984,9 @@ public final class IncomingMessageHandler {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
         final var address = addressOptional.get();
-        return new DeviceAddress(context.getRecipientHelper().resolveRecipient(address), address.getServiceId(), 0);
+        return new DeviceAddress(context.getRecipientHelper().resolveRecipient(address),
+                address.getServiceId(),
+                account.getDeviceId());
     }
 
     private record DeviceAddress(RecipientId recipientId, ServiceId serviceId, int deviceId) {}
