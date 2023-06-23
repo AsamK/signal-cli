@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_BATCH_SIZE;
 import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_MAXIMUM_ID;
 
 public class KeyUtils {
@@ -47,9 +48,9 @@ public class KeyUtils {
         return new IdentityKeyPair(djbIdentityKey, djbPrivateKey);
     }
 
-    public static List<PreKeyRecord> generatePreKeyRecords(final int offset, final int batchSize) {
-        var records = new ArrayList<PreKeyRecord>(batchSize);
-        for (var i = 0; i < batchSize; i++) {
+    public static List<PreKeyRecord> generatePreKeyRecords(final int offset) {
+        var records = new ArrayList<PreKeyRecord>(PREKEY_BATCH_SIZE);
+        for (var i = 0; i < PREKEY_BATCH_SIZE; i++) {
             var preKeyId = (offset + i) % PREKEY_MAXIMUM_ID;
             var keyPair = Curve.generateKeyPair();
             var record = new PreKeyRecord(preKeyId, keyPair);
@@ -60,7 +61,7 @@ public class KeyUtils {
     }
 
     public static SignedPreKeyRecord generateSignedPreKeyRecord(
-            final IdentityKeyPair identityKeyPair, final int signedPreKeyId
+            final int signedPreKeyId, final IdentityKeyPair identityKeyPair
     ) {
         var keyPair = Curve.generateKeyPair();
         byte[] signature;
@@ -73,10 +74,10 @@ public class KeyUtils {
     }
 
     public static List<KyberPreKeyRecord> generateKyberPreKeyRecords(
-            final int offset, final int batchSize, final ECPrivateKey privateKey
+            final int offset, final ECPrivateKey privateKey
     ) {
-        var records = new ArrayList<KyberPreKeyRecord>(batchSize);
-        for (var i = 0; i < batchSize; i++) {
+        var records = new ArrayList<KyberPreKeyRecord>(PREKEY_BATCH_SIZE);
+        for (var i = 0; i < PREKEY_BATCH_SIZE; i++) {
             var preKeyId = (offset + i) % PREKEY_MAXIMUM_ID;
             records.add(generateKyberPreKeyRecord(preKeyId, privateKey));
         }

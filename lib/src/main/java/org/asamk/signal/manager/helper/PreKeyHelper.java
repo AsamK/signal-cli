@@ -38,16 +38,19 @@ public class PreKeyHelper {
     public void refreshPreKeysIfNecessary(ServiceIdType serviceIdType) throws IOException {
         final var preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
         if (preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+            logger.debug("Refreshing {} ec pre keys, because only {} of {} pre keys remain",
+                    serviceIdType,
+                    preKeyCounts.getEcCount(),
+                    ServiceConfig.PREKEY_MINIMUM_COUNT);
             refreshPreKeys(serviceIdType);
         }
         if (preKeyCounts.getKyberCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+            logger.debug("Refreshing {} kyber pre keys, because only {} of {} pre keys remain",
+                    serviceIdType,
+                    preKeyCounts.getEcCount(),
+                    ServiceConfig.PREKEY_MINIMUM_COUNT);
             refreshKyberPreKeys(serviceIdType);
         }
-    }
-
-    public void refreshPreKeys() throws IOException {
-        refreshPreKeys(ServiceIdType.ACI);
-        refreshPreKeys(ServiceIdType.PNI);
     }
 
     private void refreshPreKeys(ServiceIdType serviceIdType) throws IOException {
@@ -86,7 +89,7 @@ public class PreKeyHelper {
     private List<PreKeyRecord> generatePreKeys(ServiceIdType serviceIdType) {
         final var offset = account.getPreKeyIdOffset(serviceIdType);
 
-        var records = KeyUtils.generatePreKeyRecords(offset, ServiceConfig.PREKEY_BATCH_SIZE);
+        var records = KeyUtils.generatePreKeyRecords(offset);
         account.addPreKeys(serviceIdType, records);
 
         return records;
@@ -95,7 +98,7 @@ public class PreKeyHelper {
     private SignedPreKeyRecord generateSignedPreKey(ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair) {
         final var signedPreKeyId = account.getNextSignedPreKeyId(serviceIdType);
 
-        var record = KeyUtils.generateSignedPreKeyRecord(identityKeyPair, signedPreKeyId);
+        var record = KeyUtils.generateSignedPreKeyRecord(signedPreKeyId, identityKeyPair);
         account.addSignedPreKey(serviceIdType, record);
 
         return record;
@@ -139,9 +142,7 @@ public class PreKeyHelper {
     ) {
         final var offset = account.getKyberPreKeyIdOffset(serviceIdType);
 
-        var records = KeyUtils.generateKyberPreKeyRecords(offset,
-                ServiceConfig.PREKEY_BATCH_SIZE,
-                identityKeyPair.getPrivateKey());
+        var records = KeyUtils.generateKyberPreKeyRecords(offset, identityKeyPair.getPrivateKey());
         account.addKyberPreKeys(serviceIdType, records);
 
         return records;

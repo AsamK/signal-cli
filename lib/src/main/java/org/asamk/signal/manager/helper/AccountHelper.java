@@ -113,7 +113,7 @@ public class AccountHelper {
         account.setNumber(number);
         account.setAci(aci);
         account.setPni(pni);
-        if (account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null && account.getPni() != null) {
+        if (account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
         account.getRecipientTrustedResolver().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());

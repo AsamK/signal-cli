@@ -956,7 +956,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getJsonrpc","parameterTypes":[] }, {"name":"getMethod","parameterTypes":[] }, {"name":"getParams","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcResponse",
@@ -1987,7 +1987,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getSignature","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity$ByteArrayDeserializer",
@@ -2015,7 +2015,8 @@
   "name":"org.whispersystems.signalservice.internal.contacts.crypto.SignatureBodyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.entities.DiscoveryRequest",
@@ -2033,13 +2034,15 @@
   "name":"org.whispersystems.signalservice.internal.contacts.entities.KeyBackupRequest",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getData","parameterTypes":[] }, {"name":"getIv","parameterTypes":[] }, {"name":"getMac","parameterTypes":[] }, {"name":"getRequestId","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.entities.KeyBackupResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.entities.MultiRemoteAttestationResponse",
@@ -2057,19 +2060,22 @@
   "name":"org.whispersystems.signalservice.internal.contacts.entities.RemoteAttestationRequest",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"getClientPublic","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.entities.RemoteAttestationResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.contacts.entities.TokenResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.devices.DeviceNameProtos$DeviceName",
@@ -2113,7 +2119,8 @@
   "name":"org.whispersystems.signalservice.internal.push.AuthCredentials",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.CdsiAuthResponse",
@@ -2153,6 +2160,12 @@
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.GcmRegistrationId",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.GetAciByUsernameResponse",
@@ -2231,7 +2244,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getKeyId","parameterTypes":[] }, {"name":"getPublicKey","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PreKeyEntity$ECPublicKeyDeserializer",
@@ -2317,7 +2330,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"getAccountAttributes","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getSessionId","parameterTypes":[] }, {"name":"getSkipDeviceTransfer","parameterTypes":[] }]
+  "methods":[{"name":"getAccountAttributes","parameterTypes":[] }, {"name":"getAciIdentityKey","parameterTypes":[] }, {"name":"getAciPqLastResortPreKey","parameterTypes":[] }, {"name":"getAciSignedPreKey","parameterTypes":[] }, {"name":"getGcmToken","parameterTypes":[] }, {"name":"getPniIdentityKey","parameterTypes":[] }, {"name":"getPniPqLastResortPreKey","parameterTypes":[] }, {"name":"getPniSignedPreKey","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getSessionId","parameterTypes":[] }, {"name":"getSkipDeviceTransfer","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ReserveUsernameRequest",
@@ -2646,7 +2659,8 @@
   "name":"org.whispersystems.signalservice.internal.push.VerifyAccountResponse",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse",

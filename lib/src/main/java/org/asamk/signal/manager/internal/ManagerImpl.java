@@ -378,7 +378,7 @@ public class ManagerImpl implements Manager {
     }
 
     void refreshPreKeys() throws IOException {
-        context.getPreKeyHelper().refreshPreKeys();
+        context.getPreKeyHelper().refreshPreKeysIfNecessary();
     }
 
     @Override

@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
+import org.whispersystems.signalservice.api.account.PreKeyCollection;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ACI;
@@ -299,6 +300,26 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    private void setPreKeys(ServiceIdType serviceIdType, PreKeyCollection preKeyCollection) {
+        final var accountData = getAccountData(serviceIdType);
+        final var preKeyMetadata = accountData.getPreKeyMetadata();
+        preKeyMetadata.nextSignedPreKeyId = preKeyCollection.getNextSignedPreKeyId();
+        preKeyMetadata.preKeyIdOffset = preKeyCollection.getEcOneTimePreKeyIdOffset();
+        preKeyMetadata.kyberPreKeyIdOffset = preKeyCollection.getOneTimeKyberPreKeyIdOffset();
+        preKeyMetadata.activeLastResortKyberPreKeyId = preKeyCollection.getLastResortKyberPreKeyId();
+
+        accountData.getPreKeyStore().removeAllPreKeys();
+        accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
+        accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
+
+        addPreKeys(serviceIdType, preKeyCollection.getOneTimeEcPreKeys());
+        addSignedPreKey(serviceIdType, preKeyCollection.getSignedPreKey());
+        addKyberPreKeys(serviceIdType, preKeyCollection.getOneTimeKyberPreKeys());
+        addLastResortKyberPreKey(serviceIdType, preKeyCollection.getLastResortKyberPreKey());
+
+        save();
+    }
+
     private static SignalAccount createLinkedAccount(
             File dataPath,
             String accountPath,
@@ -394,7 +415,7 @@ public class SignalAccount implements Closeable {
             setProfileKey(KeyUtils.createProfileKey());
         }
         getProfileStore().storeProfileKey(getSelfRecipientId(), getProfileKey());
-        if (isPrimaryDevice() && getPniIdentityKeyPair() == null && getPni() != null) {
+        if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
     }
@@ -1053,6 +1074,10 @@ public class SignalAccount implements Closeable {
     public void addPreKeys(ServiceIdType serviceIdType, List<PreKeyRecord> records) {
         final var accountData = getAccountData(serviceIdType);
         final var preKeyMetadata = accountData.getPreKeyMetadata();
+        logger.debug("Adding {} {} pre keys with offset {}",
+                records.size(),
+                serviceIdType,
+                preKeyMetadata.preKeyIdOffset);
         for (var record : records) {
             if (preKeyMetadata.preKeyIdOffset != record.getId()) {
                 logger.error("Invalid pre key id {}, expected {}", record.getId(), preKeyMetadata.preKeyIdOffset);
@@ -1067,6 +1092,7 @@ public class SignalAccount implements Closeable {
     public void addSignedPreKey(ServiceIdType serviceIdType, SignedPreKeyRecord record) {
         final var accountData = getAccountData(serviceIdType);
         final var preKeyMetadata = accountData.getPreKeyMetadata();
+        logger.debug("Adding {} signed pre key with offset {}", serviceIdType, preKeyMetadata.nextSignedPreKeyId);
         if (preKeyMetadata.nextSignedPreKeyId != record.getId()) {
             logger.error("Invalid signed pre key id {}, expected {}",
                     record.getId(),
@@ -1088,6 +1114,10 @@ public class SignalAccount implements Closeable {
     public void addKyberPreKeys(ServiceIdType serviceIdType, List<KyberPreKeyRecord> records) {
         final var accountData = getAccountData(serviceIdType);
         final var preKeyMetadata = accountData.getPreKeyMetadata();
+        logger.debug("Adding {} {} kyber pre keys with offset {}",
+                records.size(),
+                serviceIdType,
+                preKeyMetadata.kyberPreKeyIdOffset);
         for (var record : records) {
             if (preKeyMetadata.kyberPreKeyIdOffset != record.getId()) {
                 logger.error("Invalid kyber pre key id {}, expected {}",
@@ -1104,6 +1134,9 @@ public class SignalAccount implements Closeable {
     public void addLastResortKyberPreKey(ServiceIdType serviceIdType, KyberPreKeyRecord record) {
         final var accountData = getAccountData(serviceIdType);
         final var preKeyMetadata = accountData.getPreKeyMetadata();
+        logger.debug("Adding {} last resort kyber pre key with offset {}",
+                serviceIdType,
+                preKeyMetadata.kyberPreKeyIdOffset);
         if (preKeyMetadata.kyberPreKeyIdOffset != record.getId()) {
             logger.error("Invalid last resort kyber pre key id {}, expected {}",
                     record.getId(),
@@ -1606,7 +1639,14 @@ public class SignalAccount implements Closeable {
         return phoneNumberUnlisted == null || !phoneNumberUnlisted;
     }
 
-    public void finishRegistration(final ACI aci, final PNI pni, final MasterKey masterKey, final String pin) {
+    public void finishRegistration(
+            final ACI aci,
+            final PNI pni,
+            final MasterKey masterKey,
+            final String pin,
+            final PreKeyCollection aciPreKeys,
+            final PreKeyCollection pniPreKeys
+    ) {
         this.pinMasterKey = masterKey;
         this.storageManifestVersion = -1;
         this.setStorageManifest(null);
@@ -1621,17 +1661,14 @@ public class SignalAccount implements Closeable {
         this.lastReceiveTimestamp = 0;
         save();
 
-        clearAllPreKeys();
+        setPreKeys(ServiceIdType.ACI, aciPreKeys);
+        setPreKeys(ServiceIdType.PNI, pniPreKeys);
         aciAccountData.getSessionStore().archiveAllSessions();
         pniAccountData.getSessionStore().archiveAllSessions();
         getSenderKeyStore().deleteAll();
         getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         trustSelfIdentity(ServiceIdType.ACI);
-        if (getPniIdentityKeyPair() == null) {
-            setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
-        } else {
-            trustSelfIdentity(ServiceIdType.PNI);
-        }
+        trustSelfIdentity(ServiceIdType.PNI);
     }
 
     private void trustSelfIdentity(ServiceIdType serviceIdType) {
@@ -1699,12 +1736,28 @@ public class SignalAccount implements Closeable {
         void call();
     }
 
-    private static class PreKeyMetadata {
+    public static class PreKeyMetadata {
 
         private int preKeyIdOffset = 1;
         private int nextSignedPreKeyId = 1;
         private int kyberPreKeyIdOffset = 1;
         private int activeLastResortKyberPreKeyId = -1;
+
+        public int getPreKeyIdOffset() {
+            return preKeyIdOffset;
+        }
+
+        public int getNextSignedPreKeyId() {
+            return nextSignedPreKeyId;
+        }
+
+        public int getKyberPreKeyIdOffset() {
+            return kyberPreKeyIdOffset;
+        }
+
+        public int getActiveLastResortKyberPreKeyId() {
+            return activeLastResortKyberPreKeyId;
+        }
     }
 
     public class AccountData {
