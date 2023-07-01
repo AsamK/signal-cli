@@ -44,6 +44,7 @@ import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.groups.GroupSessionBuilder;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
+import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
@@ -646,8 +647,13 @@ public final class IncomingMessageHandler {
                     context.getAccountHelper()
                             .setPni(updatedPni,
                                     new IdentityKeyPair(pniChangeNumber.getIdentityKeyPair().toByteArray()),
+                                    pniChangeNumber.hasNewE164() ? pniChangeNumber.getNewE164() : null,
+                                    pniChangeNumber.getRegistrationId(),
                                     new SignedPreKeyRecord(pniChangeNumber.getSignedPreKey().toByteArray()),
-                                    pniChangeNumber.getRegistrationId());
+                                    pniChangeNumber.hasLastResortKyberPreKey()
+                                            ? new KyberPreKeyRecord(pniChangeNumber.getLastResortKyberPreKey()
+                                            .toByteArray())
+                                            : null);
                 } catch (Exception e) {
                     logger.warn("Failed to handle change number message", e);
                 }

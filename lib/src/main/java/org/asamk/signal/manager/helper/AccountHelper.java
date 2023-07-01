@@ -14,6 +14,7 @@ import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
@@ -120,20 +121,21 @@ public class AccountHelper {
         // TODO check and update remote storage
         context.getUnidentifiedAccessHelper().rotateSenderCertificates();
         dependencies.resetAfterAddressChange();
+        context.getGroupV2Helper().clearAuthCredentialCache();
         context.getAccountFileUpdater().updateAccountIdentifiers(account.getNumber(), account.getAci());
     }
 
     public void setPni(
             final PNI updatedPni,
             final IdentityKeyPair pniIdentityKeyPair,
+            final String number,
+            final int localPniRegistrationId,
             final SignedPreKeyRecord pniSignedPreKey,
-            final int localPniRegistrationId
+            final KyberPreKeyRecord lastResortKyberPreKey
     ) throws IOException {
-        account.setPni(updatedPni, pniIdentityKeyPair, pniSignedPreKey, localPniRegistrationId);
+        updateSelfIdentifiers(number != null ? number : account.getNumber(), account.getAci(), updatedPni);
+        account.setNewPniIdentity(pniIdentityKeyPair, pniSignedPreKey, lastResortKyberPreKey, localPniRegistrationId);
         context.getPreKeyHelper().refreshPreKeysIfNecessary(ServiceIdType.PNI);
-        if (account.getPni() == null || !account.getPni().equals(updatedPni)) {
-            context.getGroupV2Helper().clearAuthCredentialCache();
-        }
     }
 
     public void startChangeNumber(

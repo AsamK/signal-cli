@@ -1379,17 +1379,22 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public void setPni(
-            final PNI updatedPni,
+    public void setNewPniIdentity(
             final IdentityKeyPair pniIdentityKeyPair,
             final SignedPreKeyRecord pniSignedPreKey,
+            final KyberPreKeyRecord lastResortKyberPreKey,
             final int localPniRegistrationId
     ) {
-        setPni(updatedPni);
-
         setPniIdentityKeyPair(pniIdentityKeyPair);
-        addSignedPreKey(ServiceIdType.PNI, pniSignedPreKey);
         setLocalPniRegistrationId(localPniRegistrationId);
+
+        final var preKeyMetadata = getAccountData(ServiceIdType.PNI).getPreKeyMetadata();
+        preKeyMetadata.nextSignedPreKeyId = pniSignedPreKey.getId();
+        addSignedPreKey(ServiceIdType.PNI, pniSignedPreKey);
+        if (lastResortKyberPreKey != null) {
+            preKeyMetadata.kyberPreKeyIdOffset = lastResortKyberPreKey.getId();
+            addLastResortKyberPreKey(ServiceIdType.PNI, lastResortKyberPreKey);
+        }
     }
 
     public SignalServiceAddress getSelfAddress() {
