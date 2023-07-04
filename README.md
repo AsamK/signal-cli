@@ -53,7 +53,7 @@ of all country codes.)
 
 * Register a number (with SMS verification)
 
-        signal-cli -a ACCOUNT register
+      signal-cli -a ACCOUNT register
 
   You can register Signal using a landline number. In this case you can skip SMS verification process and jump directly
   to the voice call verification by adding the `--voice` switch at the end of above register command.
@@ -64,19 +64,21 @@ of all country codes.)
 * Verify the number using the code received via SMS or voice, optionally add `--pin PIN_CODE` if you've added a pin code
   to your account
 
-        signal-cli -a ACCOUNT verify CODE
+      signal-cli -a ACCOUNT verify CODE
 
 * Send a message
 
-        signal-cli -a ACCOUNT send -m "This is a message" RECIPIENT
+     ```sh
+     signal-cli -a ACCOUNT send -m "This is a message" RECIPIENT
+     ```
 
 * Pipe the message content from another process.
 
-        uname -a | signal-cli -a ACCOUNT send --message-from-stdin RECIPIENT
+      uname -a | signal-cli -a ACCOUNT send --message-from-stdin RECIPIENT
 
 * Receive messages
 
-        signal-cli -a ACCOUNT receive
+      signal-cli -a ACCOUNT receive
 
 **Hint**: The Signal protocol expects that incoming messages are regularly received (using `daemon` or `receive`
 command). This is required for the encryption to work efficiently and for getting updates to groups, expiration timer
@@ -86,8 +88,8 @@ and other features.
 
 The password and cryptographic keys are created when registering and stored in the current users home directory:
 
-        $XDG_DATA_HOME/signal-cli/data/
-        $HOME/.local/share/signal-cli/data/
+    $XDG_DATA_HOME/signal-cli/data/
+    $HOME/.local/share/signal-cli/data/
 
 ## Building
 
@@ -96,27 +98,29 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
 
 1. Checkout the source somewhere on your filesystem with
 
-        git clone https://github.com/AsamK/signal-cli.git
+       git clone https://github.com/AsamK/signal-cli.git
 
 2. Execute Gradle:
 
-        ./gradlew build
+       ./gradlew build
 
    2a. Create shell wrapper in *build/install/signal-cli/bin*:
 
-        ./gradlew installDist
+       ./gradlew installDist
 
    2b. Create tar file in *build/distributions*:
 
-        ./gradlew distTar
+       ./gradlew distTar
 
    2c. Create a fat tar file in *build/libs/signal-cli-fat*:
 
-        ./gradlew fatJar
+       ./gradlew fatJar
 
    2d. Compile and run signal-cli:
 
-        ./gradlew run --args="--help"
+      ```sh
+      ./gradlew run --args="--help"
+      ```
 
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
@@ -127,13 +131,13 @@ work in all situations.
 2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
 3. Execute Gradle:
 
-        ./gradlew nativeCompile
+       ./gradlew nativeCompile
 
    The binary is available at *build/native/nativeCompile/signal-cli*
 
 ## FAQ and Troubleshooting
 
-For frequently asked questions and issues have a look at the [wiki](https://github.com/AsamK/signal-cli/wiki/FAQ)
+For frequently asked questions and issues have a look at the [wiki](https://github.com/AsamK/signal-cli/wiki/FAQ).
 
 ## License
 
