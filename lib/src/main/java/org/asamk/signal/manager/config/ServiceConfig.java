@@ -66,13 +66,15 @@ public class ServiceConfig {
                     LiveConfig.getUnidentifiedSenderTrustRoot(),
                     LiveConfig.createKeyBackupConfig(),
                     LiveConfig.createFallbackKeyBackupConfigs(),
-                    LiveConfig.getCdsiMrenclave());
+                    LiveConfig.getCdsiMrenclave(),
+                    LiveConfig.getSvr2Mrenclave());
             case STAGING -> new ServiceEnvironmentConfig(serviceEnvironment,
                     StagingConfig.createDefaultServiceConfiguration(interceptors),
                     StagingConfig.getUnidentifiedSenderTrustRoot(),
                     StagingConfig.createKeyBackupConfig(),
                     StagingConfig.createFallbackKeyBackupConfigs(),
-                    StagingConfig.getCdsiMrenclave());
+                    StagingConfig.getCdsiMrenclave(),
+                    StagingConfig.getSvr2Mrenclave());
         };
     }
 }

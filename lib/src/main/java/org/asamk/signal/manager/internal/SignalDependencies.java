@@ -17,6 +17,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.ProfileService;
+import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
@@ -50,6 +51,7 @@ public class SignalDependencies {
     private SignalServiceMessageSender messageSender;
 
     private KeyBackupService keyBackupService;
+    private SecureValueRecoveryV2 secureValueRecoveryV2;
     private ProfileService profileService;
     private SignalServiceCipher cipher;
 
@@ -192,6 +194,11 @@ public class SignalDependencies {
                         serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
                         serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
                         10));
+    }
+
+    public SecureValueRecoveryV2 getSecureValueRecoveryV2() {
+        return getOrCreate(() -> secureValueRecoveryV2,
+                () -> secureValueRecoveryV2 = getAccountManager().getSecureValueRecoveryV2(serviceEnvironmentConfig.getSvr2Mrenclave()));
     }
 
     public Collection<KeyBackupService> getFallbackKeyBackupServices() {

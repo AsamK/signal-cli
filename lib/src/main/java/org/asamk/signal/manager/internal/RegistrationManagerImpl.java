@@ -107,7 +107,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
                         config.getMrenclave(),
                         10))
                 .toList();
-        this.pinHelper = new PinHelper(keyBackupService, fallbackKeyBackupServices);
+        final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.getSvr2Mrenclave());
+        this.pinHelper = new PinHelper(keyBackupService, fallbackKeyBackupServices, secureValueRecoveryV2);
     }
 
     @Override

@@ -460,13 +460,43 @@
   "name":"kotlin.Boolean"
 },
 {
+  "name":"kotlin.BooleanArray"
+},
+{
+  "name":"kotlin.Byte"
+},
+{
   "name":"kotlin.ByteArray"
+},
+{
+  "name":"kotlin.Char"
+},
+{
+  "name":"kotlin.CharArray"
+},
+{
+  "name":"kotlin.Double"
+},
+{
+  "name":"kotlin.DoubleArray"
+},
+{
+  "name":"kotlin.Float"
+},
+{
+  "name":"kotlin.FloatArray"
 },
 {
   "name":"kotlin.Int"
 },
 {
+  "name":"kotlin.IntArray"
+},
+{
   "name":"kotlin.Long"
+},
+{
+  "name":"kotlin.LongArray"
 },
 {
   "name":"kotlin.Metadata",
@@ -476,6 +506,12 @@
 {
   "name":"kotlin.SafePublicationLazyImpl",
   "fields":[{"name":"_value"}]
+},
+{
+  "name":"kotlin.Short"
+},
+{
+  "name":"kotlin.ShortArray"
 },
 {
   "name":"kotlin.String"
@@ -2108,6 +2144,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"getData","parameterTypes":[] }, {"name":"getIv","parameterTypes":[] }, {"name":"getMac","parameterTypes":[] }, {"name":"getRequestId","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
 },
 {
@@ -2134,6 +2171,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"getClientPublic","parameterTypes":[] }]
 },
 {

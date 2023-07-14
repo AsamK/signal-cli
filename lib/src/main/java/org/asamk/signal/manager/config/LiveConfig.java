@@ -28,6 +28,7 @@ class LiveConfig {
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
     private final static String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
+    private final static String SVR2_MRENCLAVE = "6ee1042f9e20f880326686dd4ba50c25359f01e9f733eeba4382bca001d45094";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "e18376436159cda3ad7a45d9320e382e4a497f26b0dca34d8eab0bd0139483b5";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
@@ -44,7 +45,7 @@ class LiveConfig {
     private final static String SIGNAL_KEY_BACKUP_URL = "https://api.backup.signal.org";
     private final static String STORAGE_URL = "https://storage.signal.org";
     private final static String SIGNAL_CDSI_URL = "https://cdsi.signal.org";
-    private final static String SIGNAL_SVR2_URL = "https://svr2.staging.signal.org";
+    private final static String SIGNAL_SVR2_URL = "https://svr2.signal.org";
     private final static TrustStore TRUST_STORE = new WhisperTrustStore();
 
     private final static Optional<Dns> dns = Optional.empty();
@@ -94,6 +95,10 @@ class LiveConfig {
 
     static String getCdsiMrenclave() {
         return CDSI_MRENCLAVE;
+    }
+
+    static String getSvr2Mrenclave() {
+        return SVR2_MRENCLAVE;
     }
 
     private LiveConfig() {

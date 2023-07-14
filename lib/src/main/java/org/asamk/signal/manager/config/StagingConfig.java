@@ -28,6 +28,7 @@ class StagingConfig {
     private final static byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BbqY1DzohE4NUZoVF+L18oUPrK3kILllLEJh2UnPSsEx");
     private final static String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
+    private final static String SVR2_MRENCLAVE = "a8a261420a6bb9b61aa25bf8a79e8bd20d7652531feb3381cbffd446d270be95";
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "39963b736823d5780be96ab174869a9499d56d66497aa8f9b2244f777ebc366b";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
@@ -94,6 +95,10 @@ class StagingConfig {
 
     static String getCdsiMrenclave() {
         return CDSI_MRENCLAVE;
+    }
+
+    static String getSvr2Mrenclave() {
+        return SVR2_MRENCLAVE;
     }
 
     private StagingConfig() {
