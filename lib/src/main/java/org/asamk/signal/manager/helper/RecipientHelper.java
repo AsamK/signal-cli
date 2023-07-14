@@ -163,6 +163,7 @@ public class RecipientHelper {
                             useCompat,
                             Optional.empty(),
                             serviceEnvironmentConfig.getCdsiMrenclave(),
+                            null,
                             token -> {
                                 // Not storing for partial refresh
                             });

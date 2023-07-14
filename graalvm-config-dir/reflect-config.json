@@ -16,6 +16,18 @@
   "name":"[J"
 },
 {
+  "name":"[Lcom.fasterxml.jackson.databind.deser.Deserializers;"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.deser.KeyDeserializers;"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.deser.ValueInstantiators;"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.ser.Serializers;"
+},
+{
   "name":"[Lcom.zaxxer.hikari.util.ConcurrentBag$IConcurrentBagEntry;"
 },
 {
@@ -67,6 +79,12 @@
 },
 {
   "name":"char[]"
+},
+{
+  "name":"com.fasterxml.jackson.annotation.JsonIgnore"
+},
+{
+  "name":"com.fasterxml.jackson.annotation.JsonProperty"
 },
 {
   "name":"com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
@@ -258,6 +276,9 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"java.lang.Object"
+},
+{
   "name":"java.lang.Record",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -287,8 +308,16 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"java.lang.reflect.Executable",
+  "methods":[{"name":"getParameters","parameterTypes":[] }]
+},
+{
   "name":"java.lang.reflect.Method",
   "methods":[{"name":"isDefault","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.reflect.Parameter",
+  "methods":[{"name":"getName","parameterTypes":[] }]
 },
 {
   "name":"java.lang.reflect.RecordComponent",
@@ -423,6 +452,50 @@
 },
 {
   "name":"javax.smartcardio.CardPermission"
+},
+{
+  "name":"kotlin.Any"
+},
+{
+  "name":"kotlin.Boolean"
+},
+{
+  "name":"kotlin.ByteArray"
+},
+{
+  "name":"kotlin.Int"
+},
+{
+  "name":"kotlin.Long"
+},
+{
+  "name":"kotlin.Metadata",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"bv","parameterTypes":[] }, {"name":"d1","parameterTypes":[] }, {"name":"d2","parameterTypes":[] }, {"name":"k","parameterTypes":[] }, {"name":"mv","parameterTypes":[] }, {"name":"pn","parameterTypes":[] }, {"name":"xi","parameterTypes":[] }, {"name":"xs","parameterTypes":[] }]
+},
+{
+  "name":"kotlin.SafePublicationLazyImpl",
+  "fields":[{"name":"_value"}]
+},
+{
+  "name":"kotlin.String"
+},
+{
+  "name":"kotlin.collections.List"
+},
+{
+  "name":"kotlin.collections.MutableList"
+},
+{
+  "name":"kotlin.jvm.internal.DefaultConstructorMarker"
+},
+{
+  "name":"kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
+  "allPublicFields":true
 },
 {
   "name":"libcore.io.Memory"
@@ -2230,6 +2303,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"getDestinationDeviceId","parameterTypes":[] }]
 },
 {
@@ -2237,6 +2311,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"getDestination","parameterTypes":[] }, {"name":"getMessages","parameterTypes":[] }, {"name":"getTimestamp","parameterTypes":[] }, {"name":"isOnline","parameterTypes":[] }, {"name":"isUrgent","parameterTypes":[] }]
 },
 {
@@ -2372,7 +2447,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$AttachmentPointer",
-  "fields":[{"name":"attachmentIdentifierCase_"}, {"name":"attachmentIdentifier_"}, {"name":"bitField0_"}, {"name":"blurHash_"}, {"name":"caption_"}, {"name":"cdnNumber_"}, {"name":"contentType_"}, {"name":"digest_"}, {"name":"fileName_"}, {"name":"flags_"}, {"name":"height_"}, {"name":"key_"}, {"name":"size_"}, {"name":"thumbnail_"}, {"name":"uploadTimestamp_"}, {"name":"width_"}]
+  "fields":[{"name":"attachmentIdentifierCase_"}, {"name":"attachmentIdentifier_"}, {"name":"bitField0_"}, {"name":"blurHash_"}, {"name":"caption_"}, {"name":"cdnNumber_"}, {"name":"contentType_"}, {"name":"digest_"}, {"name":"fileName_"}, {"name":"flags_"}, {"name":"height_"}, {"name":"incrementalDigest_"}, {"name":"key_"}, {"name":"size_"}, {"name":"thumbnail_"}, {"name":"uploadTimestamp_"}, {"name":"width_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$BodyRange",

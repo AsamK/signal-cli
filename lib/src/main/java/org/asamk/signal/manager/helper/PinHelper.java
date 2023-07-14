@@ -5,14 +5,15 @@ import org.asamk.signal.manager.api.Pair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.KeyBackupServicePinException;
-import org.whispersystems.signalservice.api.KeyBackupSystemNoDataException;
+import org.whispersystems.signalservice.api.SvrNoDataException;
+import org.whispersystems.signalservice.api.SvrPinData;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.kbs.PinHashUtil;
 import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.contacts.entities.TokenResponse;
+import org.whispersystems.signalservice.internal.push.AuthCredentials;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
@@ -70,26 +71,27 @@ public class PinHelper {
         }
     }
 
-    public KbsPinData getRegistrationLockData(
+    public SvrPinData getRegistrationLockData(
             String pin, LockedException e
     ) throws IOException, IncorrectPinException {
-        var basicStorageCredentials = e.getBasicStorageCredentials();
+        var basicStorageCredentials = e.getSvr1Credentials();
         if (basicStorageCredentials == null) {
             return null;
         }
 
         try {
             return getRegistrationLockData(pin, basicStorageCredentials);
-        } catch (KeyBackupSystemNoDataException ex) {
+        } catch (SvrNoDataException ex) {
             throw new IOException(e);
         } catch (KeyBackupServicePinException ex) {
             throw new IncorrectPinException(ex.getTriesRemaining());
         }
     }
 
-    private KbsPinData getRegistrationLockData(
-            String pin, String basicStorageCredentials
-    ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
+    private SvrPinData getRegistrationLockData(
+            String pin, AuthCredentials authCredentials
+    ) throws IOException, SvrNoDataException, KeyBackupServicePinException {
+        final var basicStorageCredentials = authCredentials.asBasic();
         var tokenResponsePair = getTokenResponse(basicStorageCredentials);
         final var tokenResponse = tokenResponsePair.first();
         final var keyBackupService = tokenResponsePair.second();
@@ -113,12 +115,12 @@ public class PinHelper {
         throw new IOException("KBS Account locked, maximum pin attempts reached.");
     }
 
-    private KbsPinData restoreMasterKey(
+    private SvrPinData restoreMasterKey(
             String pin,
             String basicStorageCredentials,
             TokenResponse tokenResponse,
             final KeyBackupService keyBackupService
-    ) throws IOException, KeyBackupSystemNoDataException, KeyBackupServicePinException {
+    ) throws IOException, SvrNoDataException, KeyBackupServicePinException {
         if (pin == null) return null;
 
         if (basicStorageCredentials == null) {

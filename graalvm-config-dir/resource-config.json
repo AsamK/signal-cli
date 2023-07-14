@@ -7,6 +7,10 @@
   }, {
     "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
   }, {
+    "pattern":"\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition\\E"
+  }, {
     "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
   }, {
     "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
@@ -140,6 +144,20 @@
     "pattern":"\\Qcom/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_XK\\E"
   }, {
     "pattern":"\\Qjni/x86_64-Linux/libjffi-1.2.so\\E"
+  }, {
+    "pattern":"\\Qkotlin/annotation/annotation.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/collections/collections.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/coroutines/coroutines.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/internal/internal.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/kotlin.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/ranges/ranges.kotlin_builtins\\E"
+  }, {
+    "pattern":"\\Qkotlin/reflect/reflect.kotlin_builtins\\E"
   }, {
     "pattern":"\\Qlibsignal_jni.dylib\\E"
   }, {

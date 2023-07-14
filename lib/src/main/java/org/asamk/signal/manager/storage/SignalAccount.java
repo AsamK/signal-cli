@@ -303,18 +303,14 @@ public class SignalAccount implements Closeable {
     private void setPreKeys(ServiceIdType serviceIdType, PreKeyCollection preKeyCollection) {
         final var accountData = getAccountData(serviceIdType);
         final var preKeyMetadata = accountData.getPreKeyMetadata();
-        preKeyMetadata.nextSignedPreKeyId = preKeyCollection.getNextSignedPreKeyId();
-        preKeyMetadata.preKeyIdOffset = preKeyCollection.getEcOneTimePreKeyIdOffset();
-        preKeyMetadata.kyberPreKeyIdOffset = preKeyCollection.getOneTimeKyberPreKeyIdOffset();
-        preKeyMetadata.activeLastResortKyberPreKeyId = preKeyCollection.getLastResortKyberPreKeyId();
+        preKeyMetadata.nextSignedPreKeyId = preKeyCollection.getSignedPreKey().getId();
+        preKeyMetadata.kyberPreKeyIdOffset = preKeyCollection.getLastResortKyberPreKey().getId();
 
         accountData.getPreKeyStore().removeAllPreKeys();
         accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
         accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
 
-        addPreKeys(serviceIdType, preKeyCollection.getOneTimeEcPreKeys());
         addSignedPreKey(serviceIdType, preKeyCollection.getSignedPreKey());
-        addKyberPreKeys(serviceIdType, preKeyCollection.getOneTimeKyberPreKeys());
         addLastResortKyberPreKey(serviceIdType, preKeyCollection.getLastResortKyberPreKey());
 
         save();
@@ -1335,13 +1331,14 @@ public class SignalAccount implements Closeable {
     public AccountAttributes getAccountAttributes(String registrationLock) {
         return new AccountAttributes(null,
                 getLocalRegistrationId(),
+                false,
+                false,
                 true,
-                null,
                 registrationLock != null ? registrationLock : getRegistrationLock(),
                 getSelfUnidentifiedAccessKey(),
                 isUnrestrictedUnidentifiedAccess(),
-                getAccountCapabilities(),
                 isDiscoverableByPhoneNumber(),
+                getAccountCapabilities(),
                 encryptedDeviceName,
                 getLocalPniRegistrationId(),
                 null); // TODO recoveryPassword?

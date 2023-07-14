@@ -7,7 +7,6 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.helper.PinHelper;
-import org.whispersystems.signalservice.api.KbsPinData;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.exceptions.NoSuchSessionException;
@@ -116,8 +115,7 @@ public class NumberVerificationUtils {
                 throw new PinLockedException(e.getTimeRemaining());
             }
 
-            KbsPinData registrationLockData;
-            registrationLockData = pinHelper.getRegistrationLockData(pin, e);
+            final var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
             if (registrationLockData == null) {
                 throw e;
             }

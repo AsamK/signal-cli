@@ -51,8 +51,6 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import java.io.IOException;
 import java.util.function.Consumer;
 
-import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_MAXIMUM_ID;
-
 public class RegistrationManagerImpl implements RegistrationManager {
 
     private final static Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
@@ -267,28 +265,14 @@ public class RegistrationManagerImpl implements RegistrationManager {
         final var keyPair = accountData.getIdentityKeyPair();
         final var preKeyMetadata = accountData.getPreKeyMetadata();
 
-        final var preKeyIdOffset = preKeyMetadata.getPreKeyIdOffset();
-        final var oneTimeEcPreKeys = KeyUtils.generatePreKeyRecords(preKeyIdOffset);
         final var nextSignedPreKeyId = preKeyMetadata.getNextSignedPreKeyId();
         final var signedPreKey = KeyUtils.generateSignedPreKeyRecord(nextSignedPreKeyId, keyPair);
 
         final var privateKey = keyPair.getPrivateKey();
         final var kyberPreKeyIdOffset = preKeyMetadata.getKyberPreKeyIdOffset();
-        final var oneTimeKyberPreKeys = KeyUtils.generateKyberPreKeyRecords(kyberPreKeyIdOffset, privateKey);
-        final var lastResortKyberPreKeyId = (kyberPreKeyIdOffset + oneTimeKyberPreKeys.size()) % PREKEY_MAXIMUM_ID;
-        final var lastResortKyberPreKey = KeyUtils.generateKyberPreKeyRecord(lastResortKyberPreKeyId, privateKey);
+        final var lastResortKyberPreKey = KeyUtils.generateKyberPreKeyRecord(kyberPreKeyIdOffset, privateKey);
 
-        return new PreKeyCollection(keyPair,
-                nextSignedPreKeyId,
-                preKeyIdOffset,
-                lastResortKyberPreKeyId,
-                kyberPreKeyIdOffset,
-                serviceIdType,
-                keyPair.getPublicKey(),
-                signedPreKey,
-                oneTimeEcPreKeys,
-                lastResortKyberPreKey,
-                oneTimeKyberPreKeys);
+        return new PreKeyCollection(keyPair.getPublicKey(), signedPreKey, lastResortKyberPreKey);
     }
 
     @Override
