@@ -25,7 +25,7 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private final static Logger logger = LoggerFactory.getLogger(SignalWebSocketHealthMonitor.class);
 
-    private static final long KEEP_ALIVE_SEND_CADENCE = TimeUnit.SECONDS.toMillis(WebSocketConnection.KEEPALIVE_TIMEOUT_SECONDS);
+    private static final long KEEP_ALIVE_SEND_CADENCE = TimeUnit.SECONDS.toMillis(WebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS);
     private static final long MAX_TIME_SINCE_SUCCESSFUL_KEEP_ALIVE = KEEP_ALIVE_SEND_CADENCE * 3;
 
     private SignalWebSocket signalWebSocket;

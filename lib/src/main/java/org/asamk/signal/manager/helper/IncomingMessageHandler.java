@@ -137,7 +137,7 @@ public final class IncomingMessageHandler {
             final Manager.ReceiveMessageHandler handler
     ) {
         final var actions = new ArrayList<HandleAction>();
-        if (envelope.hasSourceUuid()) {
+        if (envelope.hasSourceServiceId()) {
             // Store uuid if we don't have it already
             // address/uuid in envelope is sent by server
             account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
@@ -960,7 +960,7 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
+        if (!envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()) {
             return envelope.getSourceAddress();
         } else if (content != null) {
             return content.getSender();
@@ -970,7 +970,7 @@ public final class IncomingMessageHandler {
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceUuid()) {
+        if (!envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()) {
             return new DeviceAddress(context.getRecipientHelper().resolveRecipient(envelope.getSourceAddress()),
                     envelope.getSourceAddress().getServiceId(),
                     envelope.getSourceDevice());
@@ -985,7 +985,7 @@ public final class IncomingMessageHandler {
         if (!envelope.hasDestinationUuid()) {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
-        final var addressOptional = SignalServiceAddress.fromRaw(envelope.getDestinationUuid(), null);
+        final var addressOptional = SignalServiceAddress.fromRaw(envelope.getDestinationServiceId(), null);
         if (addressOptional.isEmpty()) {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }

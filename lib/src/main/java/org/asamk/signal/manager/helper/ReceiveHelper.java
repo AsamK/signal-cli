@@ -147,7 +147,7 @@ public class ReceiveHelper {
                     for (final var it : batch) {
                         SignalServiceEnvelope envelope1 = new SignalServiceEnvelope(it.getEnvelope(),
                                 it.getServerDeliveredTimestamp());
-                        final var recipientId = envelope1.hasSourceUuid() ? account.getRecipientResolver()
+                        final var recipientId = envelope1.hasSourceServiceId() ? account.getRecipientResolver()
                                 .resolveRecipient(envelope1.getSourceAddress()) : null;
                         logger.trace("Storing new message from {}", recipientId);
                         // store message on disk, before acknowledging receipt to the server
@@ -226,7 +226,7 @@ public class ReceiveHelper {
                 if (exception instanceof UntrustedIdentityException) {
                     logger.debug("Keeping message with untrusted identity in message cache");
                     final var address = ((UntrustedIdentityException) exception).getSender();
-                    if (!envelope.hasSourceUuid() && address.uuid().isPresent()) {
+                    if (!envelope.hasSourceServiceId() && address.uuid().isPresent()) {
                         final var recipientId = account.getRecipientResolver()
                                 .resolveRecipient(ServiceId.from(address.uuid().get()));
                         try {
@@ -273,7 +273,7 @@ public class ReceiveHelper {
                 cachedMessage.delete();
                 return null;
             }
-            if (!envelope.hasSourceUuid()) {
+            if (!envelope.hasSourceServiceId()) {
                 final var identifier = ((UntrustedIdentityException) exception).getSender();
                 final var recipientId = account.getRecipientResolver()
                         .resolveRecipient(new RecipientAddress(identifier));

@@ -708,7 +708,9 @@ public record MessageEnvelope(
             Optional<Hangup> hangup,
             Optional<Busy> busy,
             List<IceUpdate> iceUpdate,
-            Optional<Opaque> opaque
+            Optional<Opaque> opaque,
+            boolean isMultiRing,
+            boolean isUrgent
     ) {
 
         public static Call from(final SignalServiceCallMessage callMessage) {
@@ -722,7 +724,9 @@ public record MessageEnvelope(
                     callMessage.getIceUpdateMessages()
                             .map(m -> m.stream().map(IceUpdate::from).toList())
                             .orElse(List.of()),
-                    callMessage.getOpaqueMessage().map(Opaque::from));
+                    callMessage.getOpaqueMessage().map(Opaque::from),
+                    callMessage.isMultiRing(),
+                    callMessage.isUrgent());
         }
 
         public record Offer(long id, String sdp, Type type, byte[] opaque) {
@@ -895,7 +899,7 @@ public record MessageEnvelope(
             final AttachmentFileProvider fileProvider,
             Exception exception
     ) {
-        final var source = !envelope.isUnidentifiedSender() && envelope.hasSourceUuid()
+        final var source = !envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()
                 ? recipientResolver.resolveRecipient(envelope.getSourceAddress())
                 : envelope.isUnidentifiedSender() && content != null
                         ? recipientResolver.resolveRecipient(content.getSender())

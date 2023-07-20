@@ -2577,7 +2577,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote",
-  "fields":[{"name":"attachments_"}, {"name":"authorUuid_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"id_"}, {"name":"text_"}, {"name":"type_"}]
+  "fields":[{"name":"attachments_"}, {"name":"authorAci_"}, {"name":"authorUuid_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"id_"}, {"name":"text_"}, {"name":"type_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote$QuotedAttachment",
@@ -2585,7 +2585,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Reaction",
-  "fields":[{"name":"bitField0_"}, {"name":"emoji_"}, {"name":"remove_"}, {"name":"targetAuthorUuid_"}, {"name":"targetSentTimestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"emoji_"}, {"name":"remove_"}, {"name":"targetAuthorAci_"}, {"name":"targetAuthorUuid_"}, {"name":"targetSentTimestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Sticker",
@@ -2601,7 +2601,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Envelope",
-  "fields":[{"name":"bitField0_"}, {"name":"content_"}, {"name":"destinationUuid_"}, {"name":"reportingToken_"}, {"name":"serverGuid_"}, {"name":"serverTimestamp_"}, {"name":"sourceDevice_"}, {"name":"sourceUuid_"}, {"name":"story_"}, {"name":"timestamp_"}, {"name":"type_"}, {"name":"updatedPni_"}, {"name":"urgent_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"content_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"reportingToken_"}, {"name":"serverGuid_"}, {"name":"serverTimestamp_"}, {"name":"sourceDevice_"}, {"name":"sourceServiceId_"}, {"name":"sourceUuid_"}, {"name":"story_"}, {"name":"timestamp_"}, {"name":"type_"}, {"name":"updatedPni_"}, {"name":"urgent_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext",
@@ -2657,7 +2657,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"blocked_"}, {"name":"callEvent_"}, {"name":"callLinkUpdate_"}, {"name":"configuration_"}, {"name":"contacts_"}, {"name":"fetchLatest_"}, {"name":"groups_"}, {"name":"keys_"}, {"name":"messageRequestResponse_"}, {"name":"outgoingPayment_"}, {"name":"padding_"}, {"name":"pniChangeNumber_"}, {"name":"read_"}, {"name":"request_"}, {"name":"sent_"}, {"name":"stickerPackOperation_"}, {"name":"verified_"}, {"name":"viewOnceOpen_"}, {"name":"viewed_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"blocked_"}, {"name":"callEvent_"}, {"name":"callLinkUpdate_"}, {"name":"callLogEvent_"}, {"name":"configuration_"}, {"name":"contacts_"}, {"name":"fetchLatest_"}, {"name":"groups_"}, {"name":"keys_"}, {"name":"messageRequestResponse_"}, {"name":"outgoingPayment_"}, {"name":"padding_"}, {"name":"pniChangeNumber_"}, {"name":"read_"}, {"name":"request_"}, {"name":"sent_"}, {"name":"stickerPackOperation_"}, {"name":"verified_"}, {"name":"viewOnceOpen_"}, {"name":"viewed_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Blocked",
@@ -2701,7 +2701,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
-  "fields":[{"name":"bitField0_"}, {"name":"senderUuid_"}, {"name":"timestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"senderUuid_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Request",
@@ -2709,7 +2709,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationE164_"}, {"name":"destinationUuid_"}, {"name":"editMessage_"}, {"name":"expirationStartTimestamp_"}, {"name":"isRecipientUpdate_"}, {"name":"message_"}, {"name":"storyMessageRecipients_"}, {"name":"storyMessage_"}, {"name":"timestamp_"}, {"name":"unidentifiedStatus_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationE164_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"editMessage_"}, {"name":"expirationStartTimestamp_"}, {"name":"isRecipientUpdate_"}, {"name":"message_"}, {"name":"storyMessageRecipients_"}, {"name":"storyMessage_"}, {"name":"timestamp_"}, {"name":"unidentifiedStatus_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$StoryMessageRecipient",
@@ -2717,7 +2717,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$UnidentifiedDeliveryStatus",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationUuid_"}, {"name":"unidentified_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"unidentified_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$StickerPackOperation",
