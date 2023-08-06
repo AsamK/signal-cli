@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalWebSocket;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
 
@@ -228,7 +228,7 @@ public class ReceiveHelper {
                     final var address = ((UntrustedIdentityException) exception).getSender();
                     if (!envelope.hasSourceServiceId() && address.uuid().isPresent()) {
                         final var recipientId = account.getRecipientResolver()
-                                .resolveRecipient(ServiceId.from(address.uuid().get()));
+                                .resolveRecipient(ACI.from(address.uuid().get()));
                         try {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
                         } catch (IOException ioException) {

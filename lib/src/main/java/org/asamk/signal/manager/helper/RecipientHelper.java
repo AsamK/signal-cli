@@ -10,9 +10,9 @@ import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ACI;
-import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
 import org.whispersystems.util.Base64UrlSafe;
@@ -80,7 +80,7 @@ public class RecipientHelper {
 
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
-            return account.getRecipientResolver().resolveRecipient(ServiceId.from(uuidRecipient.uuid()));
+            return account.getRecipientResolver().resolveRecipient(ACI.from(uuidRecipient.uuid()));
         } else if (recipient instanceof RecipientIdentifier.Number numberRecipient) {
             final var number = numberRecipient.number();
             return account.getRecipientStore().resolveRecipientByNumber(number, () -> {

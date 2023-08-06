@@ -1934,7 +1934,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
-  "fields":[{"name":"timestamp_"}, {"name":"uuid_"}]
+  "fields":[{"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuid_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
@@ -1958,7 +1958,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMember",
-  "fields":[{"name":"addedByUuid_"}, {"name":"role_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}, {"name":"uuid_"}]
+  "fields":[{"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}, {"name":"uuid_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval",
@@ -2517,7 +2517,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails",
-  "fields":[{"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"inboxPosition_"}, {"name":"name_"}, {"name":"number_"}, {"name":"profileKey_"}, {"name":"uuid_"}, {"name":"verified_"}]
+  "fields":[{"name":"aci_"}, {"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"inboxPosition_"}, {"name":"name_"}, {"name":"number_"}, {"name":"profileKey_"}, {"name":"uuid_"}, {"name":"verified_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails$Avatar",
@@ -2661,7 +2661,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Blocked",
-  "fields":[{"name":"groupIds_"}, {"name":"numbers_"}, {"name":"uuids_"}]
+  "fields":[{"name":"acis_"}, {"name":"groupIds_"}, {"name":"numbers_"}, {"name":"uuids_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$CallEvent",
@@ -2745,7 +2745,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Verified",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationUuid_"}, {"name":"identityKey_"}, {"name":"nullMessage_"}, {"name":"state_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationAci_"}, {"name":"destinationUuid_"}, {"name":"identityKey_"}, {"name":"nullMessage_"}, {"name":"state_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.StaleDevices",
@@ -2812,7 +2812,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PinnedConversation$Contact",
-  "fields":[{"name":"e164_"}, {"name":"uuid_"}]
+  "fields":[{"name":"e164_"}, {"name":"serviceId_"}, {"name":"uuid_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",

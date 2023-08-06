@@ -1,7 +1,8 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Optional;
@@ -63,7 +64,7 @@ public record RecipientAddress(
     }
 
     public RecipientAddress(org.asamk.signal.manager.api.RecipientAddress address) {
-        this(address.uuid().map(ServiceId::from), Optional.empty(), address.number(), address.username());
+        this(address.uuid().map(ACI::from), Optional.empty(), address.number(), address.username());
     }
 
     public RecipientAddress(ServiceId serviceId) {
@@ -169,11 +170,11 @@ public record RecipientAddress(
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(serviceId.orElse(ServiceId.UNKNOWN), number);
+        return new SignalServiceAddress(serviceId.orElse(ACI.UNKNOWN), number);
     }
 
     public org.asamk.signal.manager.api.RecipientAddress toApiRecipientAddress() {
-        return new org.asamk.signal.manager.api.RecipientAddress(serviceId().map(ServiceId::uuid),
+        return new org.asamk.signal.manager.api.RecipientAddress(serviceId().map(ServiceId::getRawUuid),
                 number(),
                 username());
     }

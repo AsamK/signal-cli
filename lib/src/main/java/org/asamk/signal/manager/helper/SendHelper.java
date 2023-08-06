@@ -41,6 +41,7 @@ import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredExcepti
 import org.whispersystems.signalservice.api.push.exceptions.RateLimitException;
 import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserException;
 import org.whispersystems.signalservice.internal.push.exceptions.InvalidUnidentifiedAccessHeaderException;
+import org.whispersystems.signalservice.internal.push.http.PartialSendCompleteListener;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -330,29 +331,41 @@ public class SendHelper {
         final AtomicLong entryId = new AtomicLong(-1);
 
         final var urgent = true;
-        final LegacySenderHandler legacySender = (recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendDataMessage(
-                recipients,
-                unidentifiedAccess,
-                isRecipientUpdate,
-                contentHint,
-                message,
-                SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
-                sendResult -> {
-                    logger.trace("Partial message send result: {}", sendResult.isSuccess());
-                    synchronized (entryId) {
-                        if (entryId.get() == -1) {
-                            final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),
-                                    sendResult,
-                                    contentHint,
-                                    urgent);
-                            entryId.set(newId);
-                        } else {
-                            messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
-                        }
-                    }
-                },
-                () -> false,
-                urgent);
+        final PartialSendCompleteListener partialSendCompleteListener = sendResult -> {
+            logger.trace("Partial message send result: {}", sendResult.isSuccess());
+            synchronized (entryId) {
+                if (entryId.get() == -1) {
+                    final var newId = messageSendLogStore.insertIfPossible(message.getTimestamp(),
+                            sendResult,
+                            contentHint,
+                            urgent);
+                    entryId.set(newId);
+                } else {
+                    messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
+                }
+            }
+        };
+        final LegacySenderHandler legacySender = (recipients, unidentifiedAccess, isRecipientUpdate) ->
+                editTargetTimestamp.isEmpty()
+                        ? messageSender.sendDataMessage(recipients,
+                        unidentifiedAccess,
+                        isRecipientUpdate,
+                        contentHint,
+                        message,
+                        SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
+                        partialSendCompleteListener,
+                        () -> false,
+                        urgent)
+                        : messageSender.sendEditMessage(recipients,
+                                unidentifiedAccess,
+                                isRecipientUpdate,
+                                contentHint,
+                                message,
+                                SignalServiceMessageSender.LegacyGroupEvents.EMPTY,
+                                partialSendCompleteListener,
+                                () -> false,
+                                urgent,
+                                editTargetTimestamp.get());
         final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendGroupDataMessage(
                 distId,
                 recipients,

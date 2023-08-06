@@ -1,14 +1,14 @@
 package org.asamk.signal.manager.api;
 
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public record RecipientAddress(Optional<UUID> uuid, Optional<String> number, Optional<String> username) {
 
-    public static final UUID UNKNOWN_UUID = ServiceId.UNKNOWN.uuid();
+    public static final UUID UNKNOWN_UUID = UuidUtil.UNKNOWN_UUID;
 
     /**
      * Construct a RecipientAddress.
@@ -32,7 +32,7 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number, Opt
     }
 
     public RecipientAddress(SignalServiceAddress address) {
-        this(Optional.of(address.getServiceId().uuid()), address.getNumber(), Optional.empty());
+        this(Optional.of(address.getServiceId().getRawUuid()), address.getNumber(), Optional.empty());
     }
 
     public RecipientAddress(UUID uuid) {

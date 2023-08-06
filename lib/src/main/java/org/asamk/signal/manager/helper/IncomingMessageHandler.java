@@ -66,9 +66,9 @@ import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
-import org.whispersystems.signalservice.api.push.ACI;
-import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
@@ -139,7 +139,7 @@ public final class IncomingMessageHandler {
         final var actions = new ArrayList<HandleAction>();
         if (envelope.hasSourceServiceId()) {
             // Store uuid if we don't have it already
-            // address/uuid in envelope is sent by server
+            // uuid in envelope is sent by server
             account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
         }
         SignalServiceContent content = null;
@@ -409,7 +409,7 @@ public final class IncomingMessageHandler {
     private boolean handlePniSignatureMessage(
             final SignalServicePniSignatureMessage message, final SignalServiceAddress senderAddress
     ) {
-        final var aci = ACI.from(senderAddress.getServiceId());
+        final var aci = senderAddress.getServiceId();
         final var aciIdentity = account.getIdentityKeyStore().getIdentityInfo(aci);
         final var pni = message.getPni();
         final var pniIdentity = account.getIdentityKeyStore().getIdentityInfo(pni);
@@ -428,7 +428,9 @@ public final class IncomingMessageHandler {
 
         logger.debug("Verified association of ACI {} with PNI {}", aci, pni);
         account.getRecipientTrustedResolver()
-                .resolveRecipientTrusted(Optional.of(aci), Optional.of(pni), senderAddress.getNumber());
+                .resolveRecipientTrusted(Optional.of(ACI.from(aci.getRawUuid())),
+                        Optional.of(pni),
+                        senderAddress.getNumber());
         return true;
     }
 

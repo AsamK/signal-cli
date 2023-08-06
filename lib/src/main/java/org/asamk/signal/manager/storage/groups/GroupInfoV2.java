@@ -114,7 +114,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getMembersList()
                 .stream()
-                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -126,7 +126,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getBannedMembersList()
                 .stream()
-                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBinary()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -138,7 +138,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getPendingMembersList()
                 .stream()
-                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBinary()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -150,7 +150,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getRequestingMembersList()
                 .stream()
-                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -163,7 +163,7 @@ public final class GroupInfoV2 extends GroupInfo {
         return group.getMembersList()
                 .stream()
                 .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
-                .map(m -> ServiceId.fromByteString(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }

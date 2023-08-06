@@ -67,9 +67,9 @@ import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.account.PreKeyCollection;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
-import org.whispersystems.signalservice.api.push.ACI;
-import org.whispersystems.signalservice.api.push.PNI;
 import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
@@ -558,7 +558,7 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("pni")) {
             try {
-                pni = PNI.parseOrThrow(rootNode.get("pni").asText());
+                pni = PNI.from(UuidUtil.parseOrThrow(rootNode.get("pni").asText()));
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid pni, needs to be a valid UUID", e);
             }
@@ -967,7 +967,7 @@ public class SignalAccount implements Closeable {
                     .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
                     .put("usernameIdentifier", username)
                     .put("uuid", aci == null ? null : aci.toString())
-                    .put("pni", pni == null ? null : pni.toString())
+                    .put("pni", pni == null ? null : pni.getRawUuid().toString())
                     .put("sessionId", sessionId)
                     .put("sessionNumber", sessionNumber)
                     .put("deviceName", encryptedDeviceName)

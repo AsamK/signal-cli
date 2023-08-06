@@ -15,7 +15,7 @@ import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 
 import java.io.File;
 import java.sql.Connection;
@@ -315,7 +315,7 @@ public class AccountDatabase extends Database {
                                 WHERE i.uuid = ?
                                 """;
                 try (final var statement = connection.prepareStatement(sql)) {
-                    statement.setBytes(1, ServiceId.UNKNOWN.toByteArray());
+                    statement.setBytes(1, ACI.UNKNOWN.toByteArray());
                     statement.executeUpdate();
                 }
             }
@@ -325,7 +325,7 @@ public class AccountDatabase extends Database {
                                 WHERE i.uuid = ?
                                 """;
                 try (final var statement = connection.prepareStatement(sql)) {
-                    statement.setBytes(1, ServiceId.UNKNOWN.toByteArray());
+                    statement.setBytes(1, ACI.UNKNOWN.toByteArray());
                     statement.executeUpdate();
                 }
             }
