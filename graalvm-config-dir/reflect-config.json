@@ -87,6 +87,12 @@
   "name":"com.fasterxml.jackson.annotation.JsonProperty"
 },
 {
+  "name":"com.fasterxml.jackson.databind.annotation.JsonDeserialize"
+},
+{
+  "name":"com.fasterxml.jackson.databind.annotation.JsonSerialize"
+},
+{
   "name":"com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -229,7 +235,8 @@
   "name":"java.lang.Boolean",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.Class",
@@ -257,7 +264,8 @@
   "name":"java.lang.Integer",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.Iterable",
@@ -675,7 +683,8 @@
   "name":"org.asamk.signal.commands.ListContactsCommand$JsonContact",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"color","parameterTypes":[] }, {"name":"isBlocked","parameterTypes":[] }, {"name":"messageExpirationTime","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"profile","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.ListContactsCommand$JsonContact$JsonProfile",
@@ -688,19 +697,22 @@
   "name":"org.asamk.signal.commands.ListDevicesCommand$JsonDevice",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"createdTimestamp","parameterTypes":[] }, {"name":"id","parameterTypes":[] }, {"name":"lastSeenTimestamp","parameterTypes":[] }, {"name":"name","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.ListGroupsCommand$JsonGroup",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"admins","parameterTypes":[] }, {"name":"banned","parameterTypes":[] }, {"name":"description","parameterTypes":[] }, {"name":"groupInviteLink","parameterTypes":[] }, {"name":"id","parameterTypes":[] }, {"name":"isBlocked","parameterTypes":[] }, {"name":"isMember","parameterTypes":[] }, {"name":"members","parameterTypes":[] }, {"name":"messageExpirationTime","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"pendingMembers","parameterTypes":[] }, {"name":"permissionAddMember","parameterTypes":[] }, {"name":"permissionEditDetails","parameterTypes":[] }, {"name":"permissionSendMessage","parameterTypes":[] }, {"name":"requestingMembers","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.ListGroupsCommand$JsonGroupMember",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"number","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.ListIdentitiesCommand$JsonIdentity",
@@ -1744,6 +1756,15 @@
   "fields":[{"name":"debugPermitsUsed_"}, {"name":"e164PniAciTriples_"}, {"name":"retryAfterSecs_"}, {"name":"token_"}]
 },
 {
+  "name":"org.signal.libsignal.protocol.IdentityKey"
+},
+{
+  "name":"org.signal.libsignal.protocol.ecc.ECPublicKey"
+},
+{
+  "name":"org.signal.libsignal.protocol.kem.KEMPublicKey"
+},
+{
   "name":"org.signal.libsignal.protocol.state.IdentityKeyStore",
   "allDeclaredMethods":true
 },
@@ -1934,7 +1955,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
-  "fields":[{"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuid_"}]
+  "fields":[{"name":"serviceIdBinary_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
@@ -1958,11 +1979,11 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMember",
-  "fields":[{"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}, {"name":"uuid_"}]
+  "fields":[{"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval",
-  "fields":[{"name":"uuidCipherText_"}, {"name":"uuid_"}]
+  "fields":[{"name":"uuidCipherText_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedRequestingMember",
@@ -1984,7 +2005,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getCapabilities","parameterTypes":[] }, {"name":"getDiscoverableByPhoneNumber","parameterTypes":[] }, {"name":"getFetchesMessages","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getPin","parameterTypes":[] }, {"name":"getPniRegistrationId","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getRegistrationId","parameterTypes":[] }, {"name":"getRegistrationLock","parameterTypes":[] }, {"name":"getSignalingKey","parameterTypes":[] }, {"name":"getUnidentifiedAccessKey","parameterTypes":[] }, {"name":"getUnrestrictedUnidentifiedAccess","parameterTypes":[] }, {"name":"getVideo","parameterTypes":[] }, {"name":"getVoice","parameterTypes":[] }]
+  "methods":[{"name":"getCapabilities","parameterTypes":[] }, {"name":"getDiscoverableByPhoneNumber","parameterTypes":[] }, {"name":"getFetchesMessages","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getPniRegistrationId","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getRegistrationId","parameterTypes":[] }, {"name":"getRegistrationLock","parameterTypes":[] }, {"name":"getSignalingKey","parameterTypes":[] }, {"name":"getUnidentifiedAccessKey","parameterTypes":[] }, {"name":"getUnrestrictedUnidentifiedAccess","parameterTypes":[] }, {"name":"getVideo","parameterTypes":[] }, {"name":"getVoice","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.AccountAttributes$Capabilities",
@@ -2080,12 +2101,6 @@
   "allDeclaredConstructors":true
 },
 {
-  "name":"org.whispersystems.signalservice.api.push.ACI",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
-},
-{
   "name":"org.whispersystems.signalservice.api.push.ServiceId",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -2096,6 +2111,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getSignature","parameterTypes":[] }]
 },
 {
@@ -2224,7 +2240,8 @@
   "name":"org.whispersystems.signalservice.internal.push.AttachmentV2UploadAttributes",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.AuthCredentials",
@@ -2263,7 +2280,8 @@
   "name":"org.whispersystems.signalservice.internal.push.DeviceId",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.DeviceInfoList",
@@ -2276,7 +2294,8 @@
   "name":"org.whispersystems.signalservice.internal.push.GcmRegistrationId",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","boolean"] }, {"name":"getGcmRegistrationId","parameterTypes":[] }, {"name":"getWebSocketChannel","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.GetAciByUsernameResponse",
@@ -2302,6 +2321,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity",
   "allDeclaredFields":true,
+  "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getKeyId","parameterTypes":[] }, {"name":"getPublicKey","parameterTypes":[] }, {"name":"getSignature","parameterTypes":[] }]
@@ -2357,6 +2377,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getKeyId","parameterTypes":[] }, {"name":"getPublicKey","parameterTypes":[] }]
 },
 {
@@ -2386,20 +2407,15 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "allDeclaredClasses":true,
   "methods":[{"name":"getIdentityKey","parameterTypes":[] }, {"name":"getPreKeys","parameterTypes":[] }, {"name":"getSignedPreKey","parameterTypes":[] }]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.PreKeyStatus",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ProfileAvatarUploadAttributes",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ProvisioningMessage",
@@ -2423,7 +2439,8 @@
   "name":"org.whispersystems.signalservice.internal.push.PushServiceSocket$RegistrationLockFailure",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.PushServiceSocket$RegistrationLockV2",
@@ -2436,14 +2453,14 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.Integer","java.lang.Integer","java.lang.Integer","boolean","java.util.List","boolean"] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.Integer","java.lang.Integer","java.lang.Integer","boolean","java.util.List","boolean"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.Integer","java.lang.Integer","java.lang.Integer","boolean","java.util.List","boolean","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.RegistrationSessionRequestBody",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"getAccountAttributes","parameterTypes":[] }, {"name":"getAciIdentityKey","parameterTypes":[] }, {"name":"getAciPqLastResortPreKey","parameterTypes":[] }, {"name":"getAciSignedPreKey","parameterTypes":[] }, {"name":"getGcmToken","parameterTypes":[] }, {"name":"getPniIdentityKey","parameterTypes":[] }, {"name":"getPniPqLastResortPreKey","parameterTypes":[] }, {"name":"getPniSignedPreKey","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getSessionId","parameterTypes":[] }, {"name":"getSkipDeviceTransfer","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","org.whispersystems.signalservice.api.account.AccountAttributes","java.lang.String","java.lang.String","org.whispersystems.signalservice.api.push.SignedPreKeyEntity","org.whispersystems.signalservice.api.push.SignedPreKeyEntity","org.whispersystems.signalservice.internal.push.KyberPreKeyEntity","org.whispersystems.signalservice.internal.push.KyberPreKeyEntity","org.whispersystems.signalservice.internal.push.GcmRegistrationId","boolean","boolean"] }, {"name":"getAccountAttributes","parameterTypes":[] }, {"name":"getAciIdentityKey","parameterTypes":[] }, {"name":"getAciPqLastResortPreKey","parameterTypes":[] }, {"name":"getAciSignedPreKey","parameterTypes":[] }, {"name":"getGcmToken","parameterTypes":[] }, {"name":"getPniIdentityKey","parameterTypes":[] }, {"name":"getPniPqLastResortPreKey","parameterTypes":[] }, {"name":"getPniSignedPreKey","parameterTypes":[] }, {"name":"getRecoveryPassword","parameterTypes":[] }, {"name":"getRequireAtomic","parameterTypes":[] }, {"name":"getSessionId","parameterTypes":[] }, {"name":"getSkipDeviceTransfer","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.ReserveUsernameRequest",
@@ -2517,7 +2534,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails",
-  "fields":[{"name":"aci_"}, {"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"inboxPosition_"}, {"name":"name_"}, {"name":"number_"}, {"name":"profileKey_"}, {"name":"uuid_"}, {"name":"verified_"}]
+  "fields":[{"name":"aci_"}, {"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"inboxPosition_"}, {"name":"name_"}, {"name":"number_"}, {"name":"profileKey_"}, {"name":"verified_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails$Avatar",
@@ -2577,7 +2594,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote",
-  "fields":[{"name":"attachments_"}, {"name":"authorAci_"}, {"name":"authorUuid_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"id_"}, {"name":"text_"}, {"name":"type_"}]
+  "fields":[{"name":"attachments_"}, {"name":"authorAci_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"id_"}, {"name":"text_"}, {"name":"type_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote$QuotedAttachment",
@@ -2585,7 +2602,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Reaction",
-  "fields":[{"name":"bitField0_"}, {"name":"emoji_"}, {"name":"remove_"}, {"name":"targetAuthorAci_"}, {"name":"targetAuthorUuid_"}, {"name":"targetSentTimestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"emoji_"}, {"name":"remove_"}, {"name":"targetAuthorAci_"}, {"name":"targetSentTimestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Sticker",
@@ -2593,7 +2610,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$StoryContext",
-  "fields":[{"name":"authorUuid_"}, {"name":"bitField0_"}, {"name":"sentTimestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"sentTimestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$EditMessage",
@@ -2601,7 +2618,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Envelope",
-  "fields":[{"name":"bitField0_"}, {"name":"content_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"reportingToken_"}, {"name":"serverGuid_"}, {"name":"serverTimestamp_"}, {"name":"sourceDevice_"}, {"name":"sourceServiceId_"}, {"name":"sourceUuid_"}, {"name":"story_"}, {"name":"timestamp_"}, {"name":"type_"}, {"name":"updatedPni_"}, {"name":"urgent_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"content_"}, {"name":"destinationServiceId_"}, {"name":"reportingToken_"}, {"name":"serverGuid_"}, {"name":"serverTimestamp_"}, {"name":"sourceDevice_"}, {"name":"sourceServiceId_"}, {"name":"story_"}, {"name":"timestamp_"}, {"name":"type_"}, {"name":"updatedPni_"}, {"name":"urgent_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext",
@@ -2689,11 +2706,11 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$MessageRequestResponse",
-  "fields":[{"name":"bitField0_"}, {"name":"groupId_"}, {"name":"threadUuid_"}, {"name":"type_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"groupId_"}, {"name":"type_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment",
-  "fields":[{"name":"bitField0_"}, {"name":"note_"}, {"name":"paymentDetailCase_"}, {"name":"paymentDetail_"}, {"name":"recipientUuid_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"note_"}, {"name":"paymentDetailCase_"}, {"name":"paymentDetail_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment$MobileCoin",
@@ -2701,7 +2718,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
-  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"senderUuid_"}, {"name":"timestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Request",
@@ -2709,15 +2726,15 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationE164_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"editMessage_"}, {"name":"expirationStartTimestamp_"}, {"name":"isRecipientUpdate_"}, {"name":"message_"}, {"name":"storyMessageRecipients_"}, {"name":"storyMessage_"}, {"name":"timestamp_"}, {"name":"unidentifiedStatus_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationE164_"}, {"name":"destinationServiceId_"}, {"name":"editMessage_"}, {"name":"expirationStartTimestamp_"}, {"name":"isRecipientUpdate_"}, {"name":"message_"}, {"name":"storyMessageRecipients_"}, {"name":"storyMessage_"}, {"name":"timestamp_"}, {"name":"unidentifiedStatus_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$StoryMessageRecipient",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationUuid_"}, {"name":"distributionListIds_"}, {"name":"isAllowedToReply_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"distributionListIds_"}, {"name":"isAllowedToReply_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$UnidentifiedDeliveryStatus",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"destinationUuid_"}, {"name":"unidentified_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"unidentified_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$StickerPackOperation",
@@ -2725,11 +2742,11 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$ViewOnceOpen",
-  "fields":[{"name":"bitField0_"}, {"name":"senderUuid_"}, {"name":"timestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Viewed",
-  "fields":[{"name":"bitField0_"}, {"name":"senderUuid_"}, {"name":"timestamp_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TextAttachment",
@@ -2745,7 +2762,7 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Verified",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationAci_"}, {"name":"destinationUuid_"}, {"name":"identityKey_"}, {"name":"nullMessage_"}, {"name":"state_"}]
+  "fields":[{"name":"bitField0_"}, {"name":"destinationAci_"}, {"name":"identityKey_"}, {"name":"nullMessage_"}, {"name":"state_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.StaleDevices",
@@ -2759,14 +2776,14 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"getCaptcha","parameterTypes":[] }, {"name":"getMcc","parameterTypes":[] }, {"name":"getMnc","parameterTypes":[] }, {"name":"getPushChallenge","parameterTypes":[] }, {"name":"getPushToken","parameterTypes":[] }, {"name":"getPushTokenType","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"getCaptcha","parameterTypes":[] }, {"name":"getMcc","parameterTypes":[] }, {"name":"getMnc","parameterTypes":[] }, {"name":"getPushChallenge","parameterTypes":[] }, {"name":"getPushToken","parameterTypes":[] }, {"name":"getPushTokenType","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.VerificationSessionMetadataRequestBody",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"getMcc","parameterTypes":[] }, {"name":"getMnc","parameterTypes":[] }, {"name":"getNumber","parameterTypes":[] }, {"name":"getPushToken","parameterTypes":[] }, {"name":"getPushTokenType","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"getMcc","parameterTypes":[] }, {"name":"getMnc","parameterTypes":[] }, {"name":"getNumber","parameterTypes":[] }, {"name":"getPushToken","parameterTypes":[] }, {"name":"getPushTokenType","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.VerifyAccountResponse",

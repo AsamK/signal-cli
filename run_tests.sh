@@ -11,6 +11,7 @@ NUMBER_2="$2"
 TEST_PIN_1=456test_pin_foo123
 NATIVE=0
 JSON_RPC=0
+TEST_REGISTER=0
 
 PATH_TEST_CONFIG="$PWD/test-config"
 PATH_MAIN="$PATH_TEST_CONFIG/main"
@@ -100,8 +101,10 @@ run_main --version
 run_main --help
 
 ## Register
-register "$NUMBER_1" "$TEST_PIN_1"
-register "$NUMBER_2"
+if [ "$TEST_REGISTER" -eq 1 ]; then
+	register "$NUMBER_1" "$TEST_PIN_1"
+	register "$NUMBER_2"
+fi
 
 sleep 5
 
@@ -230,8 +233,10 @@ done
 run_main -a "$NUMBER_1" removeDevice -d 2
 
 ## Unregister
-run_main -a "$NUMBER_1" unregister
-run_main -a "$NUMBER_2" unregister --delete-account
+if [ "$TEST_REGISTER" -eq 1 ]; then
+	run_main -a "$NUMBER_1" unregister
+	run_main -a "$NUMBER_2" unregister --delete-account
+fi
 
 if [ ! -z "$GRAALVM_HOME" ]; then
   "$GRAALVM_HOME"/lib/svm/bin/native-image-configure generate --input-dir=graalvm-config-dir/ --input-dir=graalvm-config-dir-linked/ --input-dir=graalvm-config-dir-main/ --output-dir=graalvm-config-dir//

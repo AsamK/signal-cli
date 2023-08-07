@@ -975,8 +975,10 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private RecipientAddress getRecipientAddressFromResultSet(ResultSet resultSet) throws SQLException {
-        final var serviceId = Optional.ofNullable(resultSet.getBytes("uuid")).map(ServiceId::parseOrNull);
-        final var pni = Optional.ofNullable(resultSet.getBytes("pni")).map(PNI::parseOrNull);
+        final var pni = Optional.ofNullable(resultSet.getBytes("pni")).map(UuidUtil::parseOrNull).map(PNI::from);
+        final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid")).map(UuidUtil::parseOrNull);
+        final var serviceId = serviceIdUuid.isPresent() && pni.isPresent() && serviceIdUuid.get()
+                .equals(pni.get().getRawUuid()) ? pni.<ServiceId>map(p -> p) : serviceIdUuid.<ServiceId>map(ACI::from);
         final var number = Optional.ofNullable(resultSet.getString("number"));
         final var username = Optional.ofNullable(resultSet.getString("username"));
         return new RecipientAddress(serviceId, pni, number, username);

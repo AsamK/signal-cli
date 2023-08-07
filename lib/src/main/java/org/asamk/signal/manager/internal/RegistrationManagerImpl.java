@@ -45,6 +45,7 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -164,8 +165,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
         }
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
-        final var aci = ACI.parseOrNull(response.getUuid());
-        final var pni = PNI.parseOrNull(response.getPni());
+        final var aci = ACI.parseOrThrow(response.getUuid());
+        final var pni = PNI.from(UuidUtil.parseOrThrow(response.getPni()));
         account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
         accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 

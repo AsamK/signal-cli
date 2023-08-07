@@ -183,6 +183,8 @@
   }, {
     "pattern":"java.base:\\Qsun/net/idn/uidna.spp\\E"
   }, {
+    "pattern":"java.base:\\Qsun/net/www/content-types.properties\\E"
+  }, {
     "pattern":"java.base:\\Qsun/text/resources/LineBreakIteratorData\\E"
   }]},
   "bundles":[{
