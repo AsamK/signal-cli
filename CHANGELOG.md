@@ -3,6 +3,14 @@
 ## [Unreleased]
 **Attention**: Now requires native libsignal-client version 0.30.0
 
+### Added
+- Manage identities via DBus (Thanks @bublath)
+- Added support for SVR2 PINs
+
+### Fixed
+- Fixed finishLink/receive/register/verify commands for JSON-RPC
+- Update to the latest libsignal to fix various issues
+
 ## [0.11.11] - 2023-05-24
 **Attention**: Now requires native libsignal-client version 0.25.0
 
