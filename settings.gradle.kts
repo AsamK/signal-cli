@@ -13,14 +13,14 @@ dependencyResolutionManagement {
             version("slf4j", "2.0.7")
             library("slf4j.api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j.jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
-            library("logback", "ch.qos.logback", "logback-classic").version("1.4.8")
+            library("logback", "ch.qos.logback", "logback-classic").version("1.4.10")
 
 
             library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_78")
-            library("protobuf", "com.google.protobuf", "protobuf-javalite").version("3.23.0")
+            library("protobuf", "com.google.protobuf", "protobuf-javalite").version("3.24.0")
             library("sqlite", "org.xerial", "sqlite-jdbc").version("3.42.0.0")
             library("hikari", "com.zaxxer", "HikariCP").version("5.0.1")
-            library("junit", "org.junit.jupiter", "junit-jupiter").version("5.9.3")
+            library("junit", "org.junit.jupiter", "junit-jupiter").version("5.10.0")
         }
     }
 }
