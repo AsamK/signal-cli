@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.PreKeyUpload;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
+import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,7 +38,13 @@ public class PreKeyHelper {
     }
 
     public void refreshPreKeysIfNecessary(ServiceIdType serviceIdType) throws IOException {
-        final var preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
+        OneTimePreKeyCounts preKeyCounts;
+        try {
+            preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
+        } catch (AuthorizationFailedException e) {
+            logger.debug("Failed to get pre key count, ignoring: " + e.getClass().getSimpleName());
+            preKeyCounts = new OneTimePreKeyCounts(0, 0);
+        }
         if (preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             logger.debug("Refreshing {} ec pre keys, because only {} of {} pre keys remain",
                     serviceIdType,
