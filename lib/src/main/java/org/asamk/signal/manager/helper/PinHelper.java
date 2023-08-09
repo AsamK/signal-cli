@@ -108,7 +108,10 @@ public class PinHelper {
     ) throws IOException, IncorrectPinException {
         var svr1Credentials = e.getSvr1Credentials();
         if (svr1Credentials != null) {
-            return getRegistrationLockData(secureValueRecoveryV1, svr1Credentials, pin);
+            final var registrationLockData = getRegistrationLockData(secureValueRecoveryV1, svr1Credentials, pin);
+            if (registrationLockData != null) {
+                return registrationLockData;
+            }
         }
 
         var svr2Credentials = e.getSvr2Credentials();
@@ -132,8 +135,11 @@ public class PinHelper {
             throw new IOException(error.getException());
         } else if (restoreResponse instanceof SecureValueRecovery.RestoreResponse.NetworkError error) {
             throw error.getException();
+        } else if (restoreResponse instanceof SecureValueRecovery.RestoreResponse.Missing) {
+            logger.debug("No SVR data stored for the given credentials.");
+            return null;
         } else {
-            throw new AssertionError("Unexpected response");
+            throw new AssertionError("Unexpected response: " + restoreResponse.getClass().getSimpleName());
         }
     }
 }
