@@ -98,6 +98,7 @@ link() {
 }
 
 run_main --version
+run_main version
 run_main --help
 
 ## Register
@@ -110,6 +111,7 @@ sleep 5
 
 run_main listAccounts
 run_main --output=json listAccounts
+run_main --scrub-log listAccounts
 
 if [ "$JSON_RPC" -eq 0 ]; then
 ## DBus
@@ -189,14 +191,6 @@ run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" block -g "$GROUP_ID"
 run_main -a "$NUMBER_1" unblock -g "$GROUP_ID"
 
-## Configuration
-run_main -a "$NUMBER_1" updateConfiguration --read-receipts=true
-
-## Identities
-run_main -a "$NUMBER_1" listIdentities
-run_main -a "$NUMBER_2" listIdentities
-run_main -a "$NUMBER_2" trust "$NUMBER_1" -a
-
 ## Basic send/receive
 for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_1" --output="$OUTPUT" getUserStatus "$NUMBER_1" "$NUMBER_2" "+111111111"
@@ -213,7 +207,7 @@ for OUTPUT in "plain-text" "json"; do
 done
 
 ## Profile
-run_main -a "$NUMBER_1" updateProfile --given-name=GIVEN --family-name=FAMILY --about=ABOUT --about-emoji=EMOJI --avatar=LICENSE
+run_main -a "$NUMBER_1" updateProfile --given-name=GIVEN --family-name=FAMILY --about=ABOUT --about-emoji=EMOJI --avatar=LICENSE --mobile-coin-address="YWJjCg=="
 
 ## Provisioning
 link "$NUMBER_1"
@@ -222,9 +216,19 @@ run_main -a "$NUMBER_1" listDevices
 run_linked -a "$NUMBER_1" sendSyncRequest
 run_main -a "$NUMBER_1" sendContacts
 
+## Configuration
+run_main -a "$NUMBER_1" updateConfiguration --read-receipts=true
+
+## Identities
+run_main -a "$NUMBER_1" listIdentities
+run_main -a "$NUMBER_2" listIdentities
+run_main -a "$NUMBER_2" trust "$NUMBER_1" -a
+
 for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m hi
-  run_main -a "$NUMBER_2" --output="$OUTPUT" send "$NUMBER_1" -m hi
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m hi --edit-timestamp 123456677
+  run_main -a "$NUMBER_2" --output="$OUTPUT" send "$NUMBER_1" -m hi --text-style "1:1:BOLD" --quote-timestamp 12345 --quote-author "$NUMBER_1" --quote-message hitest --quote-text-style "1:1:BOLD" --preview-url "https://example.com" --preview-title preview --preview-description foo --preview-image LICENSE --story-timestamp 1234567 --story-author "$NUMBER_1"
+  run_main -a "$NUMBER_1" --output="$OUTPUT" sendPaymentNotification --receipt "YWJjCg==" --note notefoo "$NUMBER_2"
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
   run_main -a "$NUMBER_1" --output="$OUTPUT" receive
   run_linked -a "$NUMBER_1" --output="$OUTPUT" receive
@@ -237,6 +241,7 @@ if [ "$TEST_REGISTER" -eq 1 ]; then
 	run_main -a "$NUMBER_1" unregister
 	run_main -a "$NUMBER_2" unregister --delete-account
 fi
+run_main -a "$NUMBER_2" deleteLocalAccountData || true
 
 if [ ! -z "$GRAALVM_HOME" ]; then
   "$GRAALVM_HOME"/lib/svm/bin/native-image-configure generate --input-dir=graalvm-config-dir/ --input-dir=graalvm-config-dir-linked/ --input-dir=graalvm-config-dir-main/ --output-dir=graalvm-config-dir//
