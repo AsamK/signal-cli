@@ -32,7 +32,7 @@ class StagingConfig {
 
     private final static String KEY_BACKUP_ENCLAVE_NAME = "39963b736823d5780be96ab174869a9499d56d66497aa8f9b2244f777ebc366b";
     private final static byte[] KEY_BACKUP_SERVICE_ID = Hex.decode(
-            "9dbc6855c198e04f21b5cc35df839fdcd51b53658454dfa3f817afefaffc95ef");
+            "ee1d0d972b7ea903615670de43ab1b6e7a825e811c70a29bb5fe0f819e0975fa");
     private final static String KEY_BACKUP_MRENCLAVE = "45627094b2ea4a66f4cf0b182858a8dcf4b8479122c3820fe7fd0551a6d4cf5c";
     private final static String FALLBACK_KEY_BACKUP_ENCLAVE_NAME = "dd6f66d397d9e8cf6ec6db238e59a7be078dd50e9715427b9c89b409ffe53f99";
     private final static byte[] FALLBACK_KEY_BACKUP_SERVICE_ID = Hex.decode(
