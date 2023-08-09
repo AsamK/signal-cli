@@ -558,7 +558,7 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("pni")) {
             try {
-                pni = PNI.from(UuidUtil.parseOrThrow(rootNode.get("pni").asText()));
+                pni = PNI.parseUnPrefixedOrThrow(rootNode.get("pni").asText());
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid pni, needs to be a valid UUID", e);
             }
@@ -967,7 +967,7 @@ public class SignalAccount implements Closeable {
                     .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
                     .put("usernameIdentifier", username)
                     .put("uuid", aci == null ? null : aci.toString())
-                    .put("pni", pni == null ? null : pni.getRawUuid().toString())
+                    .put("pni", pni == null ? null : pni.toStringWithoutPrefix())
                     .put("sessionId", sessionId)
                     .put("sessionNumber", sessionNumber)
                     .put("deviceName", encryptedDeviceName)

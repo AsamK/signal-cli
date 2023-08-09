@@ -29,7 +29,6 @@ import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedExcep
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.util.Base64UrlSafe;
@@ -103,7 +102,7 @@ public class AccountHelper {
         final var whoAmI = dependencies.getAccountManager().getWhoAmI();
         final var number = whoAmI.getNumber();
         final var aci = ACI.parseOrThrow(whoAmI.getAci());
-        final var pni = PNI.from(UuidUtil.parseOrThrow(whoAmI.getPni()));
+        final var pni = PNI.parseUnPrefixedOrThrow(whoAmI.getPni());
         if (number.equals(account.getNumber()) && aci.equals(account.getAci()) && pni.equals(account.getPni())) {
             return;
         }
