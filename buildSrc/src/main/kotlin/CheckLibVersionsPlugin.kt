@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 import groovy.util.XmlSlurper
 import groovy.util.slurpersupport.GPathResult
 import org.codehaus.groovy.runtime.ResourceGroovyMethods
