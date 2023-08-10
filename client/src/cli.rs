@@ -10,12 +10,16 @@ pub struct Cli {
     pub account: Option<String>,
 
     /// TCP host and port of signal-cli daemon
-    #[arg(long)]
+    #[arg(long, conflicts_with = "json_rpc_http")]
     pub json_rpc_tcp: Option<Option<SocketAddr>>,
 
     /// UNIX socket address and port of signal-cli daemon
-    #[arg(long)]
+    #[arg(long, conflicts_with = "json_rpc_tcp")]
     pub json_rpc_socket: Option<Option<OsString>>,
+
+    /// HTTP URL of signal-cli daemon
+    #[arg(long, conflicts_with = "json_rpc_socket")]
+    pub json_rpc_http: Option<Option<String>>,
 
     #[arg(value_enum, long, default_value_t = OutputTypes::Json)]
     pub output: OutputTypes,

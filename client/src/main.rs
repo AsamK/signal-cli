@@ -1,40 +1,53 @@
-use clap::Parser;
-use jsonrpc_client_transports::{RpcError, TypedSubscriptionStream};
-use jsonrpc_core::{futures_util::StreamExt, Value};
 use std::{path::PathBuf, time::Duration};
+
+use clap::Parser;
+use cli::Cli;
+use jsonrpsee::core::client::{Subscription, SubscriptionClientT};
+use jsonrpsee::core::Error as RpcError;
+use serde_json::Value;
 use tokio::{select, time::sleep};
 
 use crate::cli::{GroupPermission, LinkState};
+use crate::jsonrpc::RpcClient;
 
 mod cli;
-#[allow(clippy::too_many_arguments)]
+#[allow(non_snake_case, clippy::too_many_arguments)]
 mod jsonrpc;
-mod tcp;
+mod transports;
 
 const DEFAULT_TCP: &str = "127.0.0.1:7583";
 const DEFAULT_SOCKET_SUFFIX: &str = "signal-cli/socket";
+const DEFAULT_HTTP: &str = "http://localhost:8080/api/v1/rpc";
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let cli = cli::Cli::parse();
 
-    let client = connect(&cli)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to connect to socket: {e}"))?;
+    let result = connect(cli).await;
 
-    let result = match cli.command {
+    match result {
+        Ok(Value::Null) => {}
+        Ok(v) => println!("{v}"),
+        Err(e) => return Err(anyhow::anyhow!("JSON-RPC command failed: {e:?}")),
+    }
+    Ok(())
+}
+
+async fn handle_command(
+    cli: Cli,
+    client: impl SubscriptionClientT + Sync,
+) -> Result<Value, RpcError> {
+    match cli.command {
         cli::CliCommands::Receive { timeout } => {
-            let mut stream = client
-                .subscribe_receive(cli.account)
-                .map_err(|e| anyhow::anyhow!("JSON-RPC command failed: {:?}", e))?;
+            let mut stream = client.subscribe_receive(cli.account).await?;
 
             {
                 while let Some(v) = stream_next(timeout, &mut stream).await {
-                    let v = v.map_err(|e| anyhow::anyhow!("JSON-RPC command failed: {:?}", e))?;
+                    let v = v?;
                     println!("{v}");
                 }
             }
-            return Ok(());
+            Ok(Value::Null)
         }
         cli::CliCommands::AddDevice { uri } => client.add_device(cli.account, uri).await,
         cli::CliCommands::Block {
@@ -54,7 +67,7 @@ async fn main() -> Result<(), anyhow::Error> {
             let url = client
                 .start_link(cli.account)
                 .await
-                .map_err(|e| anyhow::anyhow!("JSON-RPC command startLink failed: {e:?}",))?
+                .map_err(|e| RpcError::Custom(format!("JSON-RPC command startLink failed: {e:?}")))?
                 .device_link_uri;
             println!("{}", url);
             client.finish_link(url, name).await
@@ -349,18 +362,28 @@ async fn main() -> Result<(), anyhow::Error> {
             pin,
         } => client.verify(cli.account, verification_code, pin).await,
         cli::CliCommands::Version => client.version().await,
-    };
-
-    result
-        .map(|v| println!("{v}"))
-        .map_err(|e| anyhow::anyhow!("JSON-RPC command failed: {e:?}",))?;
-    Ok(())
+    }
 }
 
-async fn connect(cli: &cli::Cli) -> Result<jsonrpc::SignalCliClient, RpcError> {
-    if let Some(tcp) = cli.json_rpc_tcp {
+async fn connect(cli: Cli) -> Result<Value, RpcError> {
+    if let Some(http) = &cli.json_rpc_http {
+        let uri = if let Some(uri) = http {
+            uri
+        } else {
+            DEFAULT_HTTP
+        };
+        let client = jsonrpc::connect_http(uri)
+            .await
+            .map_err(|e| RpcError::Custom(format!("Failed to connect to socket: {e}")))?;
+
+        handle_command(cli, client).await
+    } else if let Some(tcp) = cli.json_rpc_tcp {
         let socket_addr = tcp.unwrap_or_else(|| DEFAULT_TCP.parse().unwrap());
-        jsonrpc::connect_tcp(socket_addr).await
+        let client = jsonrpc::connect_tcp(socket_addr)
+            .await
+            .map_err(|e| RpcError::Custom(format!("Failed to connect to socket: {e}")))?;
+
+        handle_command(cli, client).await
     } else {
         let socket_path = cli
             .json_rpc_socket
@@ -374,13 +397,17 @@ async fn connect(cli: &cli::Cli) -> Result<jsonrpc::SignalCliClient, RpcError> {
                 })
             })
             .unwrap_or_else(|| ("/run".to_owned() + DEFAULT_SOCKET_SUFFIX).into());
-        jsonrpc::connect_unix(socket_path).await
+        let client = jsonrpc::connect_unix(socket_path)
+            .await
+            .map_err(|e| RpcError::Custom(format!("Failed to connect to socket: {e}")))?;
+
+        handle_command(cli, client).await
     }
 }
 
 async fn stream_next(
     timeout: f64,
-    stream: &mut TypedSubscriptionStream<Value>,
+    stream: &mut Subscription<Value>,
 ) -> Option<Result<Value, RpcError>> {
     if timeout < 0.0 {
         stream.next().await

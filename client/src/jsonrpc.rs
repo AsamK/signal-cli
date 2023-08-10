@@ -1,49 +1,59 @@
 use std::path::Path;
 
-use jsonrpc_client_transports::{transports::ipc, RpcError};
-use jsonrpc_core::serde::Deserialize;
-use jsonrpc_derive::rpc;
+use jsonrpsee::async_client::ClientBuilder;
+use jsonrpsee::core::client::SubscriptionClientT;
+use jsonrpsee::core::Error;
+use jsonrpsee::http_client::HttpClientBuilder;
+use jsonrpsee::proc_macros::rpc;
+use serde::Deserialize;
+use serde_json::Value;
 use tokio::net::ToSocketAddrs;
 
-pub type SignalCliClient = gen_client::Client;
-
-#[rpc(client, params = "named")]
+#[rpc(client)]
 pub trait Rpc {
-    #[rpc(name = "addDevice", params = "named")]
-    fn add_device(&self, account: Option<String>, uri: String) -> Result<Value>;
+    #[method(name = "addDevice", param_kind = map)]
+    async fn add_device(
+        &self,
+        account: Option<String>,
+        uri: String,
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "block", params = "named")]
+    #[method(name = "block", param_kind = map)]
     fn block(
         &self,
         account: Option<String>,
         recipients: Vec<String>,
         #[allow(non_snake_case)] groupIds: Vec<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "deleteLocalAccountData", params = "named")]
+    #[method(name = "deleteLocalAccountData", param_kind = map)]
     fn delete_local_account_data(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] ignoreRegistered: Option<bool>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "getUserStatus", params = "named")]
-    fn get_user_status(&self, account: Option<String>, recipients: Vec<String>) -> Result<Value>;
+    #[method(name = "getUserStatus", param_kind = map)]
+    fn get_user_status(
+        &self,
+        account: Option<String>,
+        recipients: Vec<String>,
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "joinGroup", params = "named")]
-    fn join_group(&self, account: Option<String>, uri: String) -> Result<Value>;
+    #[method(name = "joinGroup", param_kind = map)]
+    fn join_group(&self, account: Option<String>, uri: String) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "finishLink", params = "named")]
+    #[method(name = "finishLink", param_kind = map)]
     fn finish_link(
         &self,
         #[allow(non_snake_case)] deviceLinkUri: String,
         #[allow(non_snake_case)] deviceName: String,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listAccounts", params = "named")]
-    fn list_accounts(&self) -> Result<Value>;
+    #[method(name = "listAccounts", param_kind = map)]
+    fn list_accounts(&self) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listContacts", params = "named")]
+    #[method(name = "listContacts", param_kind = map)]
     fn list_contacts(
         &self,
         account: Option<String>,
@@ -51,60 +61,64 @@ pub trait Rpc {
         #[allow(non_snake_case)] allRecipients: bool,
         blocked: Option<bool>,
         name: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listDevices", params = "named")]
-    fn list_devices(&self, account: Option<String>) -> Result<Value>;
+    #[method(name = "listDevices", param_kind = map)]
+    fn list_devices(&self, account: Option<String>) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listGroups", params = "named")]
+    #[method(name = "listGroups", param_kind = map)]
     fn list_groups(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] groupIds: Vec<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listIdentities", params = "named")]
-    fn list_identities(&self, account: Option<String>, number: Option<String>) -> Result<Value>;
+    #[method(name = "listIdentities", param_kind = map)]
+    fn list_identities(
+        &self,
+        account: Option<String>,
+        number: Option<String>,
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "listStickerPacks", params = "named")]
-    fn list_sticker_packs(&self, account: Option<String>) -> Result<Value>;
+    #[method(name = "listStickerPacks", param_kind = map)]
+    fn list_sticker_packs(&self, account: Option<String>) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "quitGroup", params = "named")]
+    #[method(name = "quitGroup", param_kind = map)]
     fn quit_group(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] groupId: String,
         delete: bool,
         admins: Vec<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "register", params = "named")]
+    #[method(name = "register", param_kind = map)]
     fn register(
         &self,
         account: Option<String>,
         voice: bool,
         captcha: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "removeContact", params = "named")]
+    #[method(name = "removeContact", param_kind = map)]
     fn remove_contact(
         &self,
         account: Option<String>,
         recipient: String,
         forget: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "removeDevice", params = "named")]
+    #[method(name = "removeDevice", param_kind = map)]
     fn remove_device(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] deviceId: u32,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "removePin", params = "named")]
-    fn remove_pin(&self, account: Option<String>) -> Result<Value>;
+    #[method(name = "removePin", param_kind = map)]
+    fn remove_pin(&self, account: Option<String>) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "remoteDelete", params = "named")]
+    #[method(name = "remoteDelete", param_kind = map)]
     fn remote_delete(
         &self,
         account: Option<String>,
@@ -112,9 +126,9 @@ pub trait Rpc {
         recipients: Vec<String>,
         #[allow(non_snake_case)] groupIds: Vec<String>,
         #[allow(non_snake_case)] noteToSelf: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "send", params = "named")]
+    #[method(name = "send", param_kind = map)]
     fn send(
         &self,
         account: Option<String>,
@@ -132,21 +146,21 @@ pub trait Rpc {
         sticker: Option<String>,
         #[allow(non_snake_case)] storyTimestamp: Option<u64>,
         #[allow(non_snake_case)] storyAuthor: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendContacts", params = "named")]
-    fn send_contacts(&self, account: Option<String>) -> Result<Value>;
+    #[method(name = "sendContacts", param_kind = map)]
+    fn send_contacts(&self, account: Option<String>) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendPaymentNotification", params = "named")]
+    #[method(name = "sendPaymentNotification", param_kind = map)]
     fn send_payment_notification(
         &self,
         account: Option<String>,
         recipient: String,
         receipt: String,
         note: String,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendReaction", params = "named")]
+    #[method(name = "sendReaction", param_kind = map)]
     fn send_reaction(
         &self,
         account: Option<String>,
@@ -158,75 +172,75 @@ pub trait Rpc {
         #[allow(non_snake_case)] targetTimestamp: u64,
         remove: bool,
         story: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendReceipt", params = "named")]
+    #[method(name = "sendReceipt", param_kind = map)]
     fn send_receipt(
         &self,
         account: Option<String>,
         recipient: String,
         #[allow(non_snake_case)] targetTimestamps: Vec<u64>,
         r#type: String,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendSyncRequest", params = "named")]
-    fn send_sync_request(&self, account: Option<String>) -> Result<Value>;
+    #[method(name = "sendSyncRequest", param_kind = map)]
+    fn send_sync_request(&self, account: Option<String>) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "sendTyping", params = "named")]
+    #[method(name = "sendTyping", param_kind = map)]
     fn send_typing(
         &self,
         account: Option<String>,
         recipients: Vec<String>,
         #[allow(non_snake_case)] groupIds: Vec<String>,
         stop: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "setPin", params = "named")]
-    fn set_pin(&self, account: Option<String>, pin: String) -> Result<Value>;
+    #[method(name = "setPin", param_kind = map)]
+    fn set_pin(&self, account: Option<String>, pin: String) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "submitRateLimitChallenge", params = "named")]
+    #[method(name = "submitRateLimitChallenge", param_kind = map)]
     fn submit_rate_limit_challenge(
         &self,
         account: Option<String>,
         challenge: String,
         captcha: String,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "startLink", params = "named")]
-    fn start_link(&self, account: Option<String>) -> Result<JsonLink>;
+    #[method(name = "startLink", param_kind = map)]
+    fn start_link(&self, account: Option<String>) -> Result<JsonLink, ErrorObjectOwned>;
 
-    #[rpc(name = "trust", params = "named")]
+    #[method(name = "trust", param_kind = map)]
     fn trust(
         &self,
         account: Option<String>,
         recipient: String,
         #[allow(non_snake_case)] trustAllKnownKeys: bool,
         #[allow(non_snake_case)] verifiedSafetyNumber: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "unblock", params = "named")]
+    #[method(name = "unblock", param_kind = map)]
     fn unblock(
         &self,
         account: Option<String>,
         recipients: Vec<String>,
         #[allow(non_snake_case)] groupIds: Vec<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "unregister", params = "named")]
+    #[method(name = "unregister", param_kind = map)]
     fn unregister(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] deleteAccount: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "updateAccount", params = "named")]
+    #[method(name = "updateAccount", param_kind = map)]
     fn update_account(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] deviceName: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "updateConfiguration", params = "named")]
+    #[method(name = "updateConfiguration", param_kind = map)]
     fn update_configuration(
         &self,
         account: Option<String>,
@@ -234,18 +248,18 @@ pub trait Rpc {
         #[allow(non_snake_case)] unidentifiedDeliveryIndicators: Option<bool>,
         #[allow(non_snake_case)] typingIndicators: Option<bool>,
         #[allow(non_snake_case)] linkPreviews: Option<bool>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "updateContact", params = "named")]
+    #[method(name = "updateContact", param_kind = map)]
     fn update_contact(
         &self,
         account: Option<String>,
         recipient: String,
         name: Option<String>,
         expiration: Option<u32>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "updateGroup", params = "named")]
+    #[method(name = "updateGroup", param_kind = map)]
     fn update_group(
         &self,
         account: Option<String>,
@@ -265,9 +279,9 @@ pub trait Rpc {
         #[allow(non_snake_case)] setPermissionEditDetails: Option<String>,
         #[allow(non_snake_case)] setPermissionSendMessages: Option<String>,
         expiration: Option<u32>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "updateProfile", params = "named")]
+    #[method(name = "updateProfile", param_kind = map)]
     fn update_profile(
         &self,
         account: Option<String>,
@@ -278,32 +292,33 @@ pub trait Rpc {
         #[allow(non_snake_case)] mobileCoinAddress: Option<String>,
         avatar: Option<String>,
         #[allow(non_snake_case)] removeAvatar: bool,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "uploadStickerPack", params = "named")]
-    fn upload_sticker_pack(&self, account: Option<String>, path: String) -> Result<Value>;
+    #[method(name = "uploadStickerPack", param_kind = map)]
+    fn upload_sticker_pack(
+        &self,
+        account: Option<String>,
+        path: String,
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[rpc(name = "verify", params = "named")]
+    #[method(name = "verify", param_kind = map)]
     fn verify(
         &self,
         account: Option<String>,
         #[allow(non_snake_case)] verificationCode: String,
         pin: Option<String>,
-    ) -> Result<Value>;
+    ) -> Result<Value, ErrorObjectOwned>;
 
-    #[pubsub(
-        subscription = "receive",
-        subscribe,
-        name = "subscribeReceive",
-        params = "named"
+    #[subscription(
+        name = "subscribeReceive" => "receive",
+        unsubscribe = "unsubscribeReceive",
+        item = Value,
+        param_kind = map
     )]
-    fn subscribe_receive(&self, _: Self::Metadata, _: Subscriber<Value>, account: Option<String>);
+    async fn subscribe_receive(&self, account: Option<String>) -> SubscriptionResult;
 
-    #[pubsub(subscription = "receive", unsubscribe, name = "unsubscribeReceive")]
-    fn unsubscribe_receive(&self, _: Option<Self::Metadata>, _: SubscriptionId) -> Result<bool>;
-
-    #[rpc(name = "version")]
-    fn version(&self) -> Result<Value>;
+    #[method(name = "version")]
+    fn version(&self) -> Result<Value, ErrorObjectOwned>;
 }
 
 #[derive(Deserialize)]
@@ -312,10 +327,20 @@ pub struct JsonLink {
     pub device_link_uri: String,
 }
 
-pub async fn connect_tcp(tcp: impl ToSocketAddrs) -> Result<SignalCliClient, RpcError> {
-    super::tcp::connect::<_, SignalCliClient>(tcp).await
+pub async fn connect_tcp(tcp: impl ToSocketAddrs) -> Result<impl SubscriptionClientT, Error> {
+    let (sender, receiver) = super::transports::tcp::connect(tcp).await?;
+
+    Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
 }
 
-pub async fn connect_unix(socket_path: impl AsRef<Path>) -> Result<SignalCliClient, RpcError> {
-    ipc::connect::<_, SignalCliClient>(socket_path).await
+pub async fn connect_unix(
+    socket_path: impl AsRef<Path>,
+) -> Result<impl SubscriptionClientT, Error> {
+    let (sender, receiver) = super::transports::ipc::connect(socket_path).await?;
+
+    Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
+}
+
+pub async fn connect_http(uri: &str) -> Result<impl SubscriptionClientT, Error> {
+    HttpClientBuilder::default().build(uri)
 }
