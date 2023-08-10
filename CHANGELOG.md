@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.12.0] - 2023-08-11
 **Attention**: Now requires native libsignal-client version 0.30.0
 
 ### Breaking changes
