@@ -9,7 +9,6 @@ import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.Context;
 import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
@@ -36,8 +35,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     }
 
     @Override
-    public ExecutionStatus configure(final Context context) {
-        LoggerContext lc = (LoggerContext) context;
+    public ExecutionStatus configure(LoggerContext lc) {
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
 
         final var defaultLevel = verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.INFO : Level.WARN;
