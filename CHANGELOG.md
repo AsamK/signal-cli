@@ -3,6 +3,11 @@
 ## [Unreleased]
 **Attention**: Now requires native libsignal-client version 0.30.0
 
+### Breaking changes
+- Adapt receive subscription notification in JSON-RPC to have payload in result field
+  - Before: `{"jsonrpc":"2.0","method":"receive","params":{"envelope":{ ... },"account":"+XXX","subscription":0}}`
+  - After: `{"jsonrpc":"2.0","method":"receive","params":{"subscription":0,"result":{"envelope":{ ... },"account":"+XXX"}}}`
+
 ### Added
 - Manage identities via DBus (Thanks @bublath)
 - Added support for SVR2 PINs
@@ -597,7 +602,7 @@ Bug fixes and small improvements
 * new listGroups command
 * Support for attachments with file names
 * Support for complete contacts sync
-* Support for contact verification sync 
+* Support for contact verification sync
 * DBus interface:
  * Get/Set group info
  * Get/Set contact info

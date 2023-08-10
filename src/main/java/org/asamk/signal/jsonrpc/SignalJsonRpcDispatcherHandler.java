@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -86,8 +85,9 @@ public class SignalJsonRpcDispatcherHandler {
         final var subscriptionId = nextSubscriptionId.getAndIncrement();
         final var handlers = managers.stream().map(m -> {
             final var receiveMessageHandler = new JsonReceiveMessageHandler(m, s -> {
-                final ContainerNode<?> params = objectMapper.valueToTree(s);
-                ((ObjectNode) params).set("subscription", IntNode.valueOf(subscriptionId));
+                final var params = new ObjectNode(objectMapper.getNodeFactory());
+                params.set("subscription", IntNode.valueOf(subscriptionId));
+                params.set("result", objectMapper.valueToTree(s));
                 final var jsonRpcRequest = JsonRpcRequest.forNotification("receive", params, null);
                 try {
                     jsonRpcSender.sendRequest(jsonRpcRequest);
