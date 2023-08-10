@@ -106,6 +106,9 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"com.google.protobuf.ByteString"
+},
+{
   "name":"com.google.protobuf.DescriptorMessageInfoFactory"
 },
 {
@@ -529,6 +532,10 @@
 },
 {
   "name":"kotlin.collections.MutableList"
+},
+{
+  "name":"kotlin.jvm.JvmStatic",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"kotlin.jvm.internal.DefaultConstructorMarker"
@@ -1759,6 +1766,12 @@
   "name":"org.signal.libsignal.protocol.IdentityKey"
 },
 {
+  "name":"org.signal.libsignal.protocol.ServiceId"
+},
+{
+  "name":"org.signal.libsignal.protocol.SignalProtocolAddress"
+},
+{
   "name":"org.signal.libsignal.protocol.ecc.ECPublicKey"
 },
 {
@@ -2104,7 +2117,21 @@
   "name":"org.whispersystems.signalservice.api.push.ServiceId",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.push.ServiceId$ACI"
+},
+{
+  "name":"org.whispersystems.signalservice.api.push.ServiceId$Companion",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"fromLibSignal","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"parseOrNull","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"parseOrNull","parameterTypes":["java.lang.String"] }, {"name":"parseOrNull","parameterTypes":["byte[]"] }, {"name":"parseOrThrow","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"parseOrThrow","parameterTypes":["java.lang.String"] }, {"name":"parseOrThrow","parameterTypes":["byte[]"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.push.ServiceId$PNI"
 },
 {
   "name":"org.whispersystems.signalservice.api.push.SignedPreKeyEntity",
