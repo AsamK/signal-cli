@@ -47,6 +47,7 @@ async fn handle_command(
                     println!("{v}");
                 }
             }
+            stream.unsubscribe().await?;
             Ok(Value::Null)
         }
         cli::CliCommands::AddDevice { uri } => client.add_device(cli.account, uri).await,
