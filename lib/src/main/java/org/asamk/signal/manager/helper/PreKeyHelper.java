@@ -46,16 +46,16 @@ public class PreKeyHelper {
             preKeyCounts = new OneTimePreKeyCounts(0, 0);
         }
         if (preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-            logger.debug("Refreshing {} ec pre keys, because only {} of {} pre keys remain",
+            logger.debug("Refreshing {} ec pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
                     preKeyCounts.getEcCount(),
                     ServiceConfig.PREKEY_MINIMUM_COUNT);
             refreshPreKeys(serviceIdType);
         }
         if (preKeyCounts.getKyberCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
-            logger.debug("Refreshing {} kyber pre keys, because only {} of {} pre keys remain",
+            logger.debug("Refreshing {} kyber pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
-                    preKeyCounts.getEcCount(),
+                    preKeyCounts.getKyberCount(),
                     ServiceConfig.PREKEY_MINIMUM_COUNT);
             refreshKyberPreKeys(serviceIdType);
         }
