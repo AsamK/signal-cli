@@ -367,6 +367,9 @@
   "name":"java.security.SecurityPermission"
 },
 {
+  "name":"java.security.cert.CertStoreParameters"
+},
+{
   "name":"java.security.cert.PKIXRevocationChecker"
 },
 {
@@ -380,6 +383,10 @@
 },
 {
   "name":"java.security.interfaces.RSAPublicKey"
+},
+{
+  "name":"java.sql.SQLException",
+  "fields":[{"name":"next"}]
 },
 {
   "name":"java.util.AbstractCollection",
@@ -2988,7 +2995,15 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
 },
 {
+  "name":"sun.security.provider.certpath.CollectionCertStore",
+  "methods":[{"name":"<init>","parameterTypes":["java.security.cert.CertStoreParameters"] }]
+},
+{
   "name":"sun.security.provider.certpath.PKIXCertPathValidator",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.certpath.SunCertPathBuilder",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
