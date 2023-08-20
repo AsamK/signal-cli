@@ -648,6 +648,10 @@ The required manifest.json has the following format:
 PATH::
 The path of the manifest.json or a zip file containing the sticker pack you wish to upload.
 
+=== listStickerPacks
+
+Show a list of known sticker packs.
+
 === getAttachment
 
 Gets the raw data for a specified attachment.
