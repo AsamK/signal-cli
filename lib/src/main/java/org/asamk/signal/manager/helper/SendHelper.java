@@ -186,6 +186,10 @@ public class SendHelper {
 
     public SendMessageResult sendSyncMessage(SignalServiceSyncMessage message) {
         var messageSender = dependencies.getMessageSender();
+        if (!account.isMultiDevice()) {
+            logger.trace("Not sending sync message because there are no linked devices.");
+            return SendMessageResult.success(account.getSelfAddress(), List.of(), false, false, 0, Optional.empty());
+        }
         try {
             return messageSender.sendSyncMessage(message, context.getUnidentifiedAccessHelper().getAccessForSync());
         } catch (UnregisteredUserException e) {

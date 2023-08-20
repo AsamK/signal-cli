@@ -23,10 +23,6 @@ public class RetrieveStickerPackJob implements Job {
 
     @Override
     public void run(Context context) {
-        if (context.getStickerPackStore().existsStickerPack(packId)) {
-            logger.debug("Sticker pack {} already downloaded.", Hex.toStringCondensed(packId.serialize()));
-            return;
-        }
         try {
             context.getStickerHelper().retrieveStickerPack(packId, packKey);
         } catch (IOException e) {

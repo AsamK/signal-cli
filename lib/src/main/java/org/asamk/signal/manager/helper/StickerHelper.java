@@ -5,6 +5,7 @@ import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
+import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.IOUtils;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.slf4j.Logger;
@@ -28,15 +29,33 @@ public class StickerHelper {
         this.context = context;
     }
 
+    public StickerPack addOrUpdateStickerPack(
+            final StickerPackId stickerPackId, final byte[] stickerPackKey, final boolean installed
+    ) {
+        final var sticker = account.getStickerStore().getStickerPack(stickerPackId);
+        if (sticker != null) {
+            if (sticker.isInstalled() != installed) {
+                account.getStickerStore().updateStickerPackInstalled(sticker.packId(), installed);
+            }
+            return sticker;
+        }
+
+        if (stickerPackKey == null) {
+            return null;
+        }
+
+        final var newSticker = new StickerPack(-1, stickerPackId, stickerPackKey, installed);
+        account.getStickerStore().addStickerPack(newSticker);
+        return newSticker;
+    }
+
     public JsonStickerPack getOrRetrieveStickerPack(
             StickerPackId packId, byte[] packKey
     ) throws InvalidStickerException {
-        if (!context.getStickerPackStore().existsStickerPack(packId)) {
-            try {
-                retrieveStickerPack(packId, packKey);
-            } catch (InvalidMessageException | IOException e) {
-                throw new InvalidStickerException("Failed to retrieve sticker pack");
-            }
+        try {
+            retrieveStickerPack(packId, packKey);
+        } catch (InvalidMessageException | IOException e) {
+            throw new InvalidStickerException("Failed to retrieve sticker pack");
         }
         final JsonStickerPack manifest;
         try {
@@ -48,6 +67,10 @@ public class StickerHelper {
     }
 
     public void retrieveStickerPack(StickerPackId packId, byte[] packKey) throws InvalidMessageException, IOException {
+        if (context.getStickerPackStore().existsStickerPack(packId)) {
+            logger.debug("Sticker pack {} already downloaded.", Hex.toStringCondensed(packId.serialize()));
+            return;
+        }
         logger.debug("Retrieving sticker pack {}.", Hex.toStringCondensed(packId.serialize()));
         final var messageReceiver = dependencies.getMessageReceiver();
         final var manifest = messageReceiver.retrieveStickerManifest(packId.serialize(), packKey);

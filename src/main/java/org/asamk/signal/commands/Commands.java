@@ -17,6 +17,7 @@ public class Commands {
         addCommand(new FinishLinkCommand());
         addCommand(new GetAttachmentCommand());
         addCommand(new GetUserStatusCommand());
+        addCommand(new AddStickerPackCommand());
         addCommand(new JoinGroupCommand());
         addCommand(new JsonRpcDispatcherCommand());
         addCommand(new LinkCommand());

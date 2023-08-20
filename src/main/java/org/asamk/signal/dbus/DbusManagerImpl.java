@@ -482,6 +482,11 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void installStickerPack(final StickerPackUrl url) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public List<StickerPack> getStickerPacks() {
         throw new UnsupportedOperationException();
     }

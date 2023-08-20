@@ -72,6 +72,7 @@ import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.StickerUtils;
+import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -891,8 +892,23 @@ public class ManagerImpl implements Manager {
 
         var sticker = new StickerPack(packId, packKey);
         account.getStickerStore().addStickerPack(sticker);
+        context.getSyncHelper().sendStickerOperationsMessage(List.of(sticker), List.of());
 
         return new StickerPackUrl(packId, packKey);
+    }
+
+    @Override
+    public void installStickerPack(StickerPackUrl url) throws IOException {
+        final var packId = url.getPackId();
+        final var packKey = url.getPackKey();
+        try {
+            context.getStickerHelper().retrieveStickerPack(packId, packKey);
+        } catch (InvalidMessageException e) {
+            throw new IOException(e);
+        }
+
+        final var sticker = context.getStickerHelper().addOrUpdateStickerPack(packId, packKey, true);
+        context.getSyncHelper().sendStickerOperationsMessage(List.of(sticker), List.of());
     }
 
     @Override

@@ -22,7 +22,7 @@ public final class StickerPackUrl {
     public static StickerPackUrl fromUri(URI uri) throws InvalidStickerPackLinkException {
         final var rawQuery = uri.getRawFragment();
         if (isEmpty(rawQuery)) {
-            throw new RuntimeException("Invalid sticker pack uri");
+            throw new InvalidStickerPackLinkException("Invalid sticker pack uri");
         }
 
         var query = Utils.getQueryMap(rawQuery);

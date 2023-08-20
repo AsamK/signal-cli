@@ -585,23 +585,15 @@ public final class IncomingMessageHandler {
                     continue;
                 }
                 final var stickerPackId = StickerPackId.deserialize(m.getPackId().get());
+                final var stickerPackKey = m.getPackKey().orElse(null);
                 final var installed = m.getType().isEmpty()
                         || m.getType().get() == StickerPackOperationMessage.Type.INSTALL;
 
-                var sticker = account.getStickerStore().getStickerPack(stickerPackId);
-                if (m.getPackKey().isPresent()) {
-                    if (sticker == null) {
-                        sticker = new StickerPack(-1, stickerPackId, m.getPackKey().get(), installed);
-                        account.getStickerStore().addStickerPack(sticker);
-                    }
-                    if (installed) {
-                        context.getJobExecutor()
-                                .enqueueJob(new RetrieveStickerPackJob(stickerPackId, m.getPackKey().get()));
-                    }
-                }
+                final var sticker = context.getStickerHelper()
+                        .addOrUpdateStickerPack(stickerPackId, stickerPackKey, installed);
 
-                if (sticker != null && sticker.isInstalled() != installed) {
-                    account.getStickerStore().updateStickerPackInstalled(sticker.packId(), installed);
+                if (sticker != null && installed) {
+                    context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, sticker.packKey()));
                 }
             }
         }

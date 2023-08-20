@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 public class StickerStore {
 
@@ -36,7 +37,7 @@ public class StickerStore {
         this.database = database;
     }
 
-    public Collection<StickerPack> getStickerPacks() {
+    public List<StickerPack> getStickerPacks() {
         final var sql = (
                 """
                 SELECT s._id, s.pack_id, s.pack_key, s.installed

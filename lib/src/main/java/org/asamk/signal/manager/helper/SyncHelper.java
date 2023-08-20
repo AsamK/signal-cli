@@ -6,9 +6,11 @@ import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
+import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.MimeUtils;
+import org.jetbrains.annotations.NotNull;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOut
 import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SyncHelper {
 
@@ -220,6 +224,22 @@ public class SyncHelper {
     public void sendKeysMessage() {
         var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()));
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
+    }
+
+    public void sendStickerOperationsMessage(List<StickerPack> installStickers, List<StickerPack> removeStickers) {
+        var installStickerMessages = installStickers.stream().map(s -> getStickerPackOperationMessage(s, true));
+        var removeStickerMessages = removeStickers.stream().map(s -> getStickerPackOperationMessage(s, false));
+        var stickerMessages = Stream.concat(installStickerMessages, removeStickerMessages).toList();
+        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forStickerPackOperations(stickerMessages));
+    }
+
+    @NotNull
+    private static StickerPackOperationMessage getStickerPackOperationMessage(
+            final StickerPack s, final boolean installed
+    ) {
+        return new StickerPackOperationMessage(s.packId().serialize(),
+                s.packKey(),
+                installed ? StickerPackOperationMessage.Type.INSTALL : StickerPackOperationMessage.Type.REMOVE);
     }
 
     public void sendConfigurationMessage() {

@@ -211,6 +211,8 @@ public interface Manager extends Closeable {
      */
     StickerPackUrl uploadStickerPack(File path) throws IOException, StickerPackInvalidException;
 
+    void installStickerPack(StickerPackUrl url) throws IOException;
+
     List<StickerPack> getStickerPacks();
 
     void requestAllSyncData() throws IOException;
