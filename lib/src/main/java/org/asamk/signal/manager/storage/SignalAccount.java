@@ -396,9 +396,7 @@ public class SignalAccount implements Closeable {
         this.setStorageManifest(null);
         this.storageKey = null;
         trustSelfIdentity(ServiceIdType.ACI);
-        if (getPniIdentityKeyPair() != null) {
-            trustSelfIdentity(ServiceIdType.PNI);
-        }
+        trustSelfIdentity(ServiceIdType.PNI);
     }
 
     private void migrateLegacyConfigs() {
@@ -1373,6 +1371,7 @@ public class SignalAccount implements Closeable {
         }
 
         this.pni = updatedPni;
+        trustSelfIdentity(ServiceIdType.PNI);
         save();
     }
 
@@ -1676,7 +1675,11 @@ public class SignalAccount implements Closeable {
     private void trustSelfIdentity(ServiceIdType serviceIdType) {
         final var accountData = getAccountData(serviceIdType);
         final var serviceId = accountData.getServiceId();
-        final var publicKey = accountData.getIdentityKeyPair().getPublicKey();
+        final var identityKeyPair = accountData.getIdentityKeyPair();
+        if (serviceId == null || identityKeyPair == null) {
+            return;
+        }
+        final var publicKey = identityKeyPair.getPublicKey();
         getIdentityKeyStore().saveIdentity(serviceId, publicKey);
         getIdentityKeyStore().setIdentityTrustLevel(serviceId, publicKey, TrustLevel.TRUSTED_VERIFIED);
     }
