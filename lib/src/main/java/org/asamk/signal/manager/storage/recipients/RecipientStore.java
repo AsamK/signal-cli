@@ -884,7 +884,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = """
                         SELECT r._id, r.number, r.uuid, r.pni, r.username
                         FROM %s r
-                        WHERE r.uuid = ? OR r.pni = ?
+                        WHERE r.uuid = ?1 OR r.pni = ?1
                         LIMIT 1
                         """.formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
