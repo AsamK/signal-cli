@@ -185,6 +185,8 @@ public class DbusSignalImpl implements Signal {
             m.addDeviceLink(deviceLinkUrl);
         } catch (IOException | InvalidDeviceLinkException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
+        } catch (NotPrimaryDeviceException e) {
+            throw new Error.Failure("This command doesn't work on linked devices.");
         } catch (URISyntaxException e) {
             throw new Error.InvalidUri(e.getClass().getSimpleName()
                     + " Device link uri has invalid format: "
