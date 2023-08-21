@@ -117,7 +117,7 @@ public interface Manager extends Closeable {
 
     void removeLinkedDevices(int deviceId) throws IOException;
 
-    void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException;
+    void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException;
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException;
 

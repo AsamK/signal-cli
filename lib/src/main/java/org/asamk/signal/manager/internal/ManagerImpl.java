@@ -362,7 +362,10 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(DeviceLinkUrl linkUrl) throws IOException, InvalidDeviceLinkException {
+    public void addDeviceLink(DeviceLinkUrl linkUrl) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
+        }
         context.getAccountHelper().addDevice(linkUrl);
     }
 

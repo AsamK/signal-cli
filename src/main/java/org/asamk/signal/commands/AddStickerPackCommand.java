@@ -51,10 +51,10 @@ public class AddStickerPackCommand implements JsonRpcLocalCommand {
                 var stickerPackUrl = StickerPackUrl.fromUri(stickerUri);
                 m.installStickerPack(stickerPackUrl);
             } catch (IOException e) {
-                logger.error("Install sticker pack failed", e);
+                logger.error("Install sticker pack failed: {}", e.getMessage());
                 throw new IOErrorException("Install sticker pack failed", e);
             } catch (StickerPackUrl.InvalidStickerPackLinkException e) {
-                logger.error("Invalid sticker pack link", e);
+                logger.error("Invalid sticker pack link");
                 throw new UserErrorException("Invalid sticker pack link", e);
             }
         }
