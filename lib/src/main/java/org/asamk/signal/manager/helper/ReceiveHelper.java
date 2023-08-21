@@ -233,7 +233,8 @@ public class ReceiveHelper {
                             cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
                         } catch (IOException ioException) {
                             logger.warn("Failed to move cached message to recipient folder: {}",
-                                    ioException.getMessage());
+                                    ioException.getMessage(),
+                                    ioException);
                         }
                     }
                 } else {
@@ -280,7 +281,9 @@ public class ReceiveHelper {
                 try {
                     account.getMessageCache().replaceSender(cachedMessage, recipientId);
                 } catch (IOException ioException) {
-                    logger.warn("Failed to move cached message to recipient folder: {}", ioException.getMessage());
+                    logger.warn("Failed to move cached message to recipient folder: {}",
+                            ioException.getMessage(),
+                            ioException);
                 }
             }
             return null;

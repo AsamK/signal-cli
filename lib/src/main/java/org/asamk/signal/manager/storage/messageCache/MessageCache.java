@@ -125,7 +125,7 @@ public class MessageCache {
                 final var cacheFile = getMessageCacheFile(recipientId, file.getName());
                 Files.move(file.toPath(), cacheFile.toPath());
             } catch (IOException e) {
-                logger.warn("Failed to move cache file “{}”, ignoring: {}", file, e.getMessage());
+                logger.warn("Failed to move cache file “{}”, ignoring: {}", file, e.getMessage(), e);
             }
         }
     }
