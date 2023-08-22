@@ -66,6 +66,7 @@ public class MessageCache {
         if (cacheFile.equals(cachedMessage.getFile())) {
             return cachedMessage;
         }
+        logger.debug("Moving cached message {} to {}", cachedMessage.getFile().toPath(), cacheFile.toPath());
         Files.move(cachedMessage.getFile().toPath(), cacheFile.toPath());
         return new CachedMessage(cacheFile);
     }
