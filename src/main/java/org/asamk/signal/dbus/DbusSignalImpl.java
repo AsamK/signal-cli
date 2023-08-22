@@ -1100,7 +1100,8 @@ public class DbusSignalImpl implements Signal {
 
         @Override
         public String getObjectPath() {
-            return getIdentityObjectPath(objectPath, identity.recipient().getLegacyIdentifier());
+            return getIdentityObjectPath(objectPath,
+                    identity.recipient().getLegacyIdentifier() + "_" + identity.recipient().getIdentifier());
         }
 
         @Override
