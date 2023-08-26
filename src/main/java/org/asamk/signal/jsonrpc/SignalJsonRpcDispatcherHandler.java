@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -54,8 +55,8 @@ public class SignalJsonRpcDispatcherHandler {
         this.commandHandler = new SignalJsonRpcCommandHandler(c, this::getCommand);
 
         if (!noReceiveOnStart) {
-            this.subscribeReceive(c.getManagers());
-            c.addOnManagerAddedHandler(this::subscribeReceive);
+            this.subscribeReceive(c.getManagers(), true);
+            c.addOnManagerAddedHandler(m -> subscribeReceive(m, true));
             c.addOnManagerRemovedHandler(this::unsubscribeReceive);
         }
 
@@ -66,7 +67,7 @@ public class SignalJsonRpcDispatcherHandler {
         this.commandHandler = new SignalJsonRpcCommandHandler(m, this::getCommand);
 
         if (!noReceiveOnStart) {
-            subscribeReceive(m);
+            subscribeReceive(m, true);
         }
 
         final var currentThread = Thread.currentThread();
@@ -77,17 +78,23 @@ public class SignalJsonRpcDispatcherHandler {
 
     private static final AtomicInteger nextSubscriptionId = new AtomicInteger(0);
 
-    private int subscribeReceive(final Manager manager) {
-        return subscribeReceive(List.of(manager));
+    private int subscribeReceive(final Manager manager, boolean internalSubscription) {
+        return subscribeReceive(List.of(manager), internalSubscription);
     }
 
-    private int subscribeReceive(final List<Manager> managers) {
+    private int subscribeReceive(final List<Manager> managers, boolean internalSubscription) {
         final var subscriptionId = nextSubscriptionId.getAndIncrement();
         final var handlers = managers.stream().map(m -> {
             final var receiveMessageHandler = new JsonReceiveMessageHandler(m, s -> {
-                final var params = new ObjectNode(objectMapper.getNodeFactory());
-                params.set("subscription", IntNode.valueOf(subscriptionId));
-                params.set("result", objectMapper.valueToTree(s));
+                ContainerNode<?> params;
+                if (internalSubscription) {
+                    params = objectMapper.valueToTree(s);
+                } else {
+                    final var paramsNode = new ObjectNode(objectMapper.getNodeFactory());
+                    paramsNode.set("subscription", IntNode.valueOf(subscriptionId));
+                    paramsNode.set("result", objectMapper.valueToTree(s));
+                    params = paramsNode;
+                }
                 final var jsonRpcRequest = JsonRpcRequest.forNotification("receive", params, null);
                 try {
                     jsonRpcSender.sendRequest(jsonRpcRequest);
@@ -162,7 +169,7 @@ public class SignalJsonRpcDispatcherHandler {
         public void handleCommand(
                 final Void request, final Manager m, final JsonWriter jsonWriter
         ) throws CommandException {
-            final var subscriptionId = subscribeReceive(m);
+            final var subscriptionId = subscribeReceive(m, false);
             jsonWriter.write(subscriptionId);
         }
 
@@ -170,7 +177,7 @@ public class SignalJsonRpcDispatcherHandler {
         public void handleCommand(
                 final Void request, final MultiAccountManager c, final JsonWriter jsonWriter
         ) throws CommandException {
-            final var subscriptionId = subscribeReceive(c.getManagers());
+            final var subscriptionId = subscribeReceive(c.getManagers(), false);
             jsonWriter.write(subscriptionId);
         }
     }
