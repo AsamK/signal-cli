@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+## [0.12.1] - 2023-08-26
+
 ### Added
 
 - New `addStickerPack` command
+
+### Fixed
+- Fixed some issues with upgrading from older accounts
+
+### Changed
+- Reverted receive notification in JSON-RPC to old format, only explicit subscriptions should use the new format
 
 ## [0.12.0] - 2023-08-11
 **Attention**: Now requires native libsignal-client version 0.30.0
