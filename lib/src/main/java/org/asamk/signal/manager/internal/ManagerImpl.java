@@ -1147,7 +1147,12 @@ public class ManagerImpl implements Manager {
 
     @Override
     public List<Identity> getIdentities() {
-        return account.getIdentityKeyStore().getIdentities().stream().map(this::toIdentity).toList();
+        return account.getIdentityKeyStore()
+                .getIdentities()
+                .stream()
+                .map(this::toIdentity)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private Identity toIdentity(final IdentityInfo identityInfo) {
@@ -1157,6 +1162,10 @@ public class ManagerImpl implements Manager {
 
         final var address = account.getRecipientAddressResolver()
                 .resolveRecipientAddress(account.getRecipientResolver().resolveRecipient(identityInfo.getServiceId()));
+        if (address.serviceId().isPresent() && !Objects.equals(address.serviceId().get(),
+                identityInfo.getServiceId())) {
+            return null;
+        }
         final var scannableFingerprint = context.getIdentityHelper()
                 .computeSafetyNumberForScanning(identityInfo.getServiceId(), identityInfo.getIdentityKey());
         return new Identity(address.toApiRecipientAddress(),

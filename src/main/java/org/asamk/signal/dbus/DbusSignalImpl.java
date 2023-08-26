@@ -1032,7 +1032,7 @@ public class DbusSignalImpl implements Signal {
             connection.exportObject(object);
             logger.debug("Exported dbus object: " + object.getObjectPath());
         } catch (DBusException e) {
-            e.printStackTrace();
+            logger.warn("Failed to export dbus object (" + object.getObjectPath() + "): " + e.getMessage());
         }
     }
 
