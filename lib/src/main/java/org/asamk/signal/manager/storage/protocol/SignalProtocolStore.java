@@ -242,4 +242,24 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     public void storeLastResortKyberPreKey(final int i, final KyberPreKeyRecord kyberPreKeyRecord) {
         kyberPreKeyStore.storeLastResortKyberPreKey(i, kyberPreKeyRecord);
     }
+
+    @Override
+    public void deleteAllStaleOneTimeKyberPreKeys(final long threshold, final int minCount) {
+        kyberPreKeyStore.deleteAllStaleOneTimeKyberPreKeys(threshold, minCount);
+    }
+
+    @Override
+    public void markAllOneTimeKyberPreKeysStaleIfNecessary(final long staleTime) {
+        kyberPreKeyStore.markAllOneTimeKyberPreKeysStaleIfNecessary(staleTime);
+    }
+
+    @Override
+    public void deleteAllStaleOneTimeEcPreKeys(final long l, final int i) {
+        // TODO
+    }
+
+    @Override
+    public void markAllOneTimeEcPreKeysStaleIfNecessary(final long l) {
+        // TODO
+    }
 }

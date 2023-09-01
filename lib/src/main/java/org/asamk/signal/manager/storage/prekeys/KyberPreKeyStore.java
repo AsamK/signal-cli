@@ -208,4 +208,14 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
             return null;
         }
     }
+
+    @Override
+    public void deleteAllStaleOneTimeKyberPreKeys(final long threshold, final int minCount) {
+        //TODO
+    }
+
+    @Override
+    public void markAllOneTimeKyberPreKeysStaleIfNecessary(final long staleTime) {
+        //TODO
+    }
 }

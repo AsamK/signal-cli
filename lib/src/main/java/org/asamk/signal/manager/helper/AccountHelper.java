@@ -102,7 +102,7 @@ public class AccountHelper {
         final var whoAmI = dependencies.getAccountManager().getWhoAmI();
         final var number = whoAmI.getNumber();
         final var aci = ACI.parseOrThrow(whoAmI.getAci());
-        final var pni = PNI.parseUnPrefixedOrThrow(whoAmI.getPni());
+        final var pni = PNI.parseOrThrow(whoAmI.getPni());
         if (number.equals(account.getNumber()) && aci.equals(account.getAci()) && pni.equals(account.getPni())) {
             return;
         }

@@ -57,7 +57,6 @@ public class AttachmentUtils {
                 blurHash,
                 null,
                 null,
-                resumableUploadSpec,
-                false);
+                resumableUploadSpec);
     }
 }

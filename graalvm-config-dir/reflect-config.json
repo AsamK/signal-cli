@@ -1975,7 +1975,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
-  "fields":[{"name":"serviceIdBinary_"}, {"name":"timestamp_"}]
+  "fields":[{"name":"serviceIdBinary_"}, {"name":"serviceIdBytes_"}, {"name":"timestamp_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
@@ -1991,7 +1991,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedMember",
-  "fields":[{"name":"joinedAtRevision_"}, {"name":"pni_"}, {"name":"profileKey_"}, {"name":"role_"}, {"name":"uuid_"}]
+  "fields":[{"name":"aciBytes_"}, {"name":"joinedAtRevision_"}, {"name":"pniBytes_"}, {"name":"pni_"}, {"name":"profileKey_"}, {"name":"role_"}, {"name":"uuid_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedModifyMemberRole",
@@ -1999,7 +1999,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMember",
-  "fields":[{"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}]
+  "fields":[{"name":"addedByAci_"}, {"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"serviceIdBytes_"}, {"name":"serviceIdCipherText_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval",
@@ -2007,7 +2007,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedRequestingMember",
-  "fields":[{"name":"profileKey_"}, {"name":"timestamp_"}, {"name":"uuid_"}]
+  "fields":[{"name":"aciBytes_"}, {"name":"profileKey_"}, {"name":"timestamp_"}, {"name":"uuid_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedString",

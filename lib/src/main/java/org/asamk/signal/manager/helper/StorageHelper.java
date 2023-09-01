@@ -101,14 +101,14 @@ public class StorageHelper {
         }
 
         final var contactRecord = record.getContact().get();
-        final var aci = contactRecord.getAci();
+        final var aci = contactRecord.getAci().orElse(null);
         final var pni = contactRecord.getPni().orElse(null);
-        if (contactRecord.getNumber().isEmpty() && aci.isUnknown()) {
+        if (contactRecord.getNumber().isEmpty() && aci == null && pni == null) {
             return;
         }
         final var address = new RecipientAddress(aci, pni, contactRecord.getNumber().orElse(null));
         var recipientId = account.getRecipientResolver().resolveRecipient(address);
-        if (aci.isValid() && contactRecord.getUsername().isPresent()) {
+        if (aci != null && contactRecord.getUsername().isPresent()) {
             recipientId = account.getRecipientTrustedResolver()
                     .resolveRecipientTrusted(aci, contactRecord.getUsername().get());
         }
@@ -171,7 +171,7 @@ public class StorageHelper {
                 logger.warn("Received invalid contact profile key from storage");
             }
         }
-        if (contactRecord.getIdentityKey().isPresent() && aci.isValid()) {
+        if (contactRecord.getIdentityKey().isPresent() && aci != null) {
             try {
                 logger.trace("Storing identity key {}", recipientId);
                 final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());

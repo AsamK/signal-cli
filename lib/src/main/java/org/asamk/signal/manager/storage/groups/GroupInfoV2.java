@@ -3,6 +3,7 @@ package org.asamk.signal.manager.storage.groups;
 import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupPermission;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
@@ -114,7 +115,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getMembersList()
                 .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getAciBytes()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -126,7 +127,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getBannedMembersList()
                 .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBinary()))
+                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBytes()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -138,7 +139,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getPendingMembersList()
                 .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBinary()))
+                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBytes()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -150,7 +151,7 @@ public final class GroupInfoV2 extends GroupInfo {
         }
         return group.getRequestingMembersList()
                 .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
+                .map(m -> ServiceId.parseOrThrow(m.getAciBytes()))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -163,7 +164,9 @@ public final class GroupInfoV2 extends GroupInfo {
         return group.getMembersList()
                 .stream()
                 .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
-                .map(m -> ServiceId.parseOrThrow(m.getUuid()))
+                .map(m -> new RecipientAddress(ServiceId.ACI.parseOrNull(m.getAciBytes()),
+                        ServiceId.PNI.parseOrNull(m.getPniBytes()),
+                        null))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }

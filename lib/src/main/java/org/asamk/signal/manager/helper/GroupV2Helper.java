@@ -124,9 +124,10 @@ class GroupV2Helper {
     }
 
     int findRevisionWeWereAdded(DecryptedGroup partialDecryptedGroup) {
-        ByteString bytes = getSelfAci().toByteString();
+        ByteString aciBytes = getSelfAci().toByteString();
+        ByteString pniBytes = getSelfPni().toByteString();
         for (DecryptedMember decryptedMember : partialDecryptedGroup.getMembersList()) {
-            if (decryptedMember.getUuid().equals(bytes)) {
+            if (decryptedMember.getAciBytes().equals(aciBytes) || decryptedMember.getPniBytes().equals(pniBytes)) {
                 return decryptedMember.getJoinedAtRevision();
             }
         }
@@ -214,7 +215,7 @@ class GroupV2Helper {
             change.setModifyAvatar(GroupChange.Actions.ModifyAvatarAction.newBuilder().setAvatar(avatarCdnKey));
         }
 
-        change.setSourceUuid(getSelfAci().toByteString());
+        change.setSourceServiceId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -240,7 +241,7 @@ class GroupV2Helper {
         final var aci = getSelfAci();
         final var change = groupOperations.createModifyGroupMembershipChange(candidates, bannedUuids, aci);
 
-        change.setSourceUuid(getSelfAci().toByteString());
+        change.setSourceServiceId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -262,8 +263,7 @@ class GroupV2Helper {
                 .map(ServiceId::getRawUuid)
                 .toList();
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
-        return commitChange(groupInfoV2,
-                groupOperations.createLeaveAndPromoteMembersToAdmin(selfAci.getRawUuid(), adminUuids));
+        return commitChange(groupInfoV2, groupOperations.createLeaveAndPromoteMembersToAdmin(selfAci, adminUuids));
     }
 
     Pair<DecryptedGroup, GroupChange> removeMembers(
@@ -272,7 +272,8 @@ class GroupV2Helper {
         final var memberUuids = members.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getServiceId)
-                .map(ServiceId::getRawUuid)
+                .filter(m -> m instanceof ACI)
+                .map(m -> (ACI) m)
                 .collect(Collectors.toSet());
         return ejectMembers(groupInfoV2, memberUuids);
     }
@@ -294,7 +295,6 @@ class GroupV2Helper {
         final var memberUuids = members.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .map(SignalServiceAddress::getServiceId)
-                .map(ServiceId::getRawUuid)
                 .collect(Collectors.toSet());
         return refuseJoinRequest(groupInfoV2, memberUuids);
     }
@@ -318,18 +318,15 @@ class GroupV2Helper {
     ) throws IOException {
         GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
-        final var uuids = block.stream()
-                .map(member -> context.getRecipientHelper()
-                        .resolveSignalServiceAddress(member)
-                        .getServiceId()
-                        .getRawUuid())
+        final var serviceIds = block.stream()
+                .map(member -> context.getRecipientHelper().resolveSignalServiceAddress(member).getServiceId())
                 .collect(Collectors.toSet());
 
-        final var change = groupOperations.createBanUuidsChange(uuids,
+        final var change = groupOperations.createBanServiceIdsChange(serviceIds,
                 false,
                 groupInfoV2.getGroup().getBannedMembersList());
 
-        change.setSourceUuid(getSelfAci().toByteString());
+        change.setSourceServiceId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -345,7 +342,7 @@ class GroupV2Helper {
 
         final var change = groupOperations.createUnbanServiceIdsChange(serviceIds);
 
-        change.setSourceUuid(getSelfAci().toByteString());
+        change.setSourceServiceId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -396,8 +393,7 @@ class GroupV2Helper {
     Pair<DecryptedGroup, GroupChange> updateSelfProfileKey(GroupInfoV2 groupInfoV2) throws IOException {
         Optional<DecryptedMember> selfInGroup = groupInfoV2.getGroup() == null
                 ? Optional.empty()
-                : DecryptedGroupUtil.findMemberByUuid(groupInfoV2.getGroup().getMembersList(),
-                        getSelfAci().getRawUuid());
+                : DecryptedGroupUtil.findMemberByAci(groupInfoV2.getGroup().getMembersList(), getSelfAci());
         if (selfInGroup.isEmpty()) {
             logger.trace("Not updating group, self not in group " + groupInfoV2.getGroupId().toBase64());
             return null;
@@ -420,7 +416,7 @@ class GroupV2Helper {
 
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var change = groupOperations.createUpdateProfileKeyCredentialChange(profileKeyCredential);
-        change.setSourceUuid(getSelfAci().toByteString());
+        change.setSourceServiceId(getSelfAci().toByteString());
         return commitChange(groupInfoV2, change);
     }
 
@@ -443,7 +439,7 @@ class GroupV2Helper {
                 ? groupOperations.createGroupJoinRequest(profileKeyCredential)
                 : groupOperations.createGroupJoinDirect(profileKeyCredential);
 
-        change.setSourceUuid(context.getRecipientHelper()
+        change.setSourceServiceId(context.getRecipientHelper()
                 .resolveSignalServiceAddress(selfRecipientId)
                 .getServiceId()
                 .toByteString());
@@ -463,7 +459,7 @@ class GroupV2Helper {
         final var change = groupOperations.createAcceptInviteChange(profileKeyCredential);
 
         final var aci = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId).getServiceId();
-        change.setSourceUuid(aci.toByteString());
+        change.setSourceServiceId(aci.toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -524,7 +520,7 @@ class GroupV2Helper {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var uuidCipherTexts = pendingMembers.stream().map(member -> {
             try {
-                return new UuidCiphertext(member.getUuidCipherText().toByteArray());
+                return new UuidCiphertext(member.getServiceIdCipherText().toByteArray());
             } catch (InvalidInputException e) {
                 throw new AssertionError(e);
             }
@@ -540,17 +536,17 @@ class GroupV2Helper {
     }
 
     private Pair<DecryptedGroup, GroupChange> refuseJoinRequest(
-            GroupInfoV2 groupInfoV2, Set<UUID> uuids
+            GroupInfoV2 groupInfoV2, Set<ServiceId> serviceIds
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
-        return commitChange(groupInfoV2, groupOperations.createRefuseGroupJoinRequest(uuids, false, List.of()));
+        return commitChange(groupInfoV2, groupOperations.createRefuseGroupJoinRequest(serviceIds, false, List.of()));
     }
 
     private Pair<DecryptedGroup, GroupChange> ejectMembers(
-            GroupInfoV2 groupInfoV2, Set<UUID> uuids
+            GroupInfoV2 groupInfoV2, Set<ACI> members
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
-        return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(uuids, false, List.of()));
+        return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(members, false, List.of()));
     }
 
     private Pair<DecryptedGroup, GroupChange> commitChange(
@@ -593,16 +589,16 @@ class GroupV2Helper {
     }
 
     Pair<ServiceId, ProfileKey> getAuthoritativeProfileKeyFromChange(final DecryptedGroupChange change) {
-        UUID editor = UuidUtil.fromByteStringOrNull(change.getEditor());
+        UUID editor = UuidUtil.fromByteStringOrNull(change.getEditorServiceIdBytes());
         final var editorProfileKeyBytes = Stream.concat(Stream.of(change.getNewMembersList().stream(),
                                 change.getPromotePendingMembersList().stream(),
                                 change.getModifiedProfileKeysList().stream())
                         .flatMap(Function.identity())
-                        .filter(m -> UuidUtil.fromByteString(m.getUuid()).equals(editor))
+                        .filter(m -> UuidUtil.fromByteString(m.getAciBytes()).equals(editor))
                         .map(DecryptedMember::getProfileKey),
                 change.getNewRequestingMembersList()
                         .stream()
-                        .filter(m -> UuidUtil.fromByteString(m.getUuid()).equals(editor))
+                        .filter(m -> UuidUtil.fromByteString(m.getAciBytes()).equals(editor))
                         .map(DecryptedRequestingMember::getProfileKey)).findFirst();
 
         if (editorProfileKeyBytes.isEmpty()) {

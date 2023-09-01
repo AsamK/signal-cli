@@ -447,7 +447,7 @@ public class GroupHelper {
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.getMembersList()) {
-            final var serviceId = ServiceId.parseOrThrow(member.getUuid());
+            final var serviceId = ServiceId.parseOrThrow(member.getAciBytes());
             final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             final var profileStore = account.getProfileStore();
             if (profileStore.getProfileKey(recipientId) != null) {

@@ -556,7 +556,7 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("pni")) {
             try {
-                pni = PNI.parseUnPrefixedOrThrow(rootNode.get("pni").asText());
+                pni = PNI.parseOrThrow(rootNode.get("pni").asText());
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid pni, needs to be a valid UUID", e);
             }

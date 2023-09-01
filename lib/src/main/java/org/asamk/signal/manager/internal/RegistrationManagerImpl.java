@@ -165,7 +165,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
         //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
         final var aci = ACI.parseOrThrow(response.getUuid());
-        final var pni = PNI.parseUnPrefixedOrThrow(response.getPni());
+        final var pni = PNI.parseOrThrow(response.getPni());
         account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
         accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 
