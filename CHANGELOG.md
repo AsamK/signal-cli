@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added `--receive-mode` parameter for `jsonRpc` command
+
 ## [0.12.1] - 2023-08-26
 
 ### Added

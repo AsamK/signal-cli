@@ -40,6 +40,10 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
         subparser.addArgument("--send-read-receipts")
                 .help("Send read receipts for all incoming data messages (in addition to the default delivery receipts)")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--receive-mode")
+                .help("Specify when to start receiving messages.")
+                .type(Arguments.enumStringType(ReceiveMode.class))
+                .setDefault(ReceiveMode.ON_START);
     }
 
     @Override
@@ -51,16 +55,27 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        final var receiveMode = ns.<ReceiveMode>get("receive-mode");
+        final var receiveConfig = getReceiveConfig(ns);
+        m.setReceiveConfig(receiveConfig);
+
+        final var jsonOutputWriter = (JsonWriter) outputWriter;
+        final var lineSupplier = getLineSupplier();
+
+        final var handler = new SignalJsonRpcDispatcherHandler(jsonOutputWriter,
+                lineSupplier,
+                receiveMode == ReceiveMode.MANUAL);
+        handler.handleConnection(m);
+    }
+
+    private static ReceiveConfig getReceiveConfig(final Namespace ns) {
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
         final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
         final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
-        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts));
+        return new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts);
+    }
 
-        final var jsonOutputWriter = (JsonWriter) outputWriter;
-        final Supplier<String> lineSupplier = IOUtils.getLineSupplier(new InputStreamReader(System.in,
-                IOUtils.getConsoleCharset()));
-
-        final var handler = new SignalJsonRpcDispatcherHandler(jsonOutputWriter, lineSupplier, false);
-        handler.handleConnection(m);
+    private static Supplier<String> getLineSupplier() {
+        return IOUtils.getLineSupplier(new InputStreamReader(System.in, IOUtils.getConsoleCharset()));
     }
 }

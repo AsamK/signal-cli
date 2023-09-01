@@ -717,6 +717,24 @@ Don’t print received messages to stdout.
 *--receive-mode*::
 Specify when to start receiving messages (on-start, on-connection, manual)
 
+=== jsonRpc
+
+Run in signal-cli in JSON-RPC mode.
+Reads JSON-RPC requests on stdin and responds on stdout.
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--ignore-attachments*::
+Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
+
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
+
+*--receive-mode*::
+Specify when to start receiving messages (on-start, manual)
+
 === submitRateLimitChallenge
 
 When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA.

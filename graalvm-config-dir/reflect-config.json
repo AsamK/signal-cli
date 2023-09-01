@@ -1098,7 +1098,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getError","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getJsonrpc","parameterTypes":[] }, {"name":"getResult","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getError","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getJsonrpc","parameterTypes":[] }, {"name":"getResult","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.jsonrpc.JsonRpcResponse$Error",
