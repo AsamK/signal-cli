@@ -13,7 +13,7 @@ signal-cli-jsonrpc - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket] [--tcp]
+*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket] [--tcp] [--http]
 
 *signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] jsonRpc
 
@@ -26,16 +26,16 @@ signal-cli provides a JSON-RPC based API with the `jsonRpc` and `daemon` command
 - `jsonRpc` command accepts input on STDIN and responds on STDOUT.
 This is intended to make it easier to embed signal-cli in other applications.
 
-  `signal-cli -a _ACCOUNT_ jsonRpc`
+  `signal-cli -a _ACCOUNT_ jsonRpc` or for multi-account mode `signal-cli jsonRpc`
 
-- `daemon` command provides a UNIX or TCP socket and can handle requests from multiple clients.
+- `daemon` command provides a UNIX, TCP socket or HTTP endpoint and can handle requests from multiple clients.
 
   `signal-cli -a _ACCOUNT_ daemon --socket` or for multi-account mode `signal-cli daemon --socket`
 
 == Basic usage
 
 In JSON-RPC mode, signal-cli will read requests from stdin.
-Every requests must be a JSON object in a single line.
+Every request must be a JSON object in a single line.
 Requests must have a unique "id" value to be able to match the response to the corresponding request.
 
 Example:
@@ -48,15 +48,26 @@ From the command line:
 
 `echo '{"jsonrpc":"2.0","method":"listGroups","id":"my special mark"}' | signal-cli -u +33123456789 jsonRpc`
 
-Like in dbus daemon mode, messages are automatically received in jsonRpc mode.
+Like in dbus daemon mode, messages are automatically received in jsonRpc mode (`--receive-mode=on-start`).
 Incoming messages are sent as JSON-RPC notifications.
 
 Example:
 
 `{"jsonrpc":"2.0","method":"receive","params":{"envelope":{"source":"+33123456789","sourceNumber":"+33123456789","sourceUuid":"uuid","sourceName":"name","sourceDevice":1,"timestamp":1631458508784,"dataMessage":{"timestamp":1631458508784,"message":"foobar","expiresInSeconds":0,"viewOnce":false,"mentions":[],"attachments":[],"contacts":[]}}}}`
 
-=== Multi-account daemon mode
-When the daemon command is started without an account parameter (-a), signal-cli will provide all local accounts and additional commands to register and link new accounts.
+In order to not miss messages, automatic receiving of messages can be disabled with the `--receive-mode=manual` parameter.
+
+REQUEST: `{"jsonrpc":"2.0","id":"id","method":"subscribeReceive"}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":0,"id":"id"}`
+
+Messages are then sent similar to the automatic mode, but wrapped in a subscription response object:
+
+`{"jsonrpc":"2.0","method":"receive","params":{"subscription":0,"result":{"envelope":{"source":"+33123456789","sourceNumber":"+33123456789","sourceUuid":"uuid","sourceName":"name","sourceDevice":2,"timestamp":1693064367769,"syncMessage":{"sentMessage":{"destination":"+33123456789","destinationNumber":"+33123456789","destinationUuid":"uuid","timestamp":1693064367769,"message":"j","expiresInSeconds":0,"viewOnce":false}}},"account":"+33123456789"}}}`
+
+=== Multi-account mode
+
+When the daemon/jsonRpc command is started without an account parameter (-a), signal-cli will provide all local accounts and additional commands to register (`register`) and link (`startLink`, `finishLink`) new accounts.
 
 In multi-account mode, requests for a single account require an additional `account` param.
 
@@ -79,9 +90,9 @@ The `method` field is the command name and the parameters can be sent as the `pa
 
 === Additional JSON-RPC commands
 
-For receiving message additional commands are provided in JSON-RPC mode with `--receive-mode=manual`.
-
 ==== subscribeReceive
+
+For receiving message with `--receive-mode=manual` parameter.
 
 Tells the daemon to start receiving messages, returns the subscription id as a single integer value in the result.
 
@@ -93,17 +104,51 @@ Params:
 
 - `subscription`: the subscription id returned by `subscribeReceive`
 
+==== startLink
+
+Starts the provisioning for a new linked account.
+Responds with a URI that can be used with the `addDevice` signal-cli command or encoded as a QR-code and scanned with a mobile phone.
+The URI is only valid for a short amount of time.
+
+REQUEST: `{"jsonrpc":"2.0","method":"startLink","id":"5"}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":{"deviceLinkUri":"sgnl://linkdevice?uuid=X&pub_key=X"},"id":"5"}`
+
+==== finishLink
+
+Finish provisioning of a new linked account.
+Can be called immediately after `startLink`, it will wait for a response from the primary device.
+
+Params:
+
+- `deviceLinkUri`: the URI returned by `startLink`
+- `deviceName`: (optional) the name for the new linked device
+
+REQUEST: `{"jsonrpc":"2.0","method":"finishLink","id":"6","params":{"deviceLinkUri":"sgnl://linkdevice?uuid=X&pub_key=X","deviceName":"new-name"}}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":{"deviceLinkUri":"sgnl://linkdevice?uuid=X&pub_key=X"},"id":"6"}`
+
 == Examples
 
-REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"5"}` RESPONSE: `{"jsonrpc":"2.0","result":[...],"id":"5"}`
+REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"5"}`
 
-REQUEST: `{"jsonrpc":"2.0","method":"send","params":{"recipient":["+YYY"],"message":"MESSAGE"},"id":4}` RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":999},"id":4}`
+RESPONSE: `{"jsonrpc":"2.0","result":[...],"id":"5"}`
 
-REQUEST: `{"jsonrpc":"2.0","method":"updateGroup","params":{"groupId":"GROUP_ID=","name":"new group name","members":["+ZZZ"],"link":"enabledWithApproval","setPermissionEditDetails":"only-admins"},"id":"someId"}` RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":9999},"id":"someId"}`
+REQUEST: `{"jsonrpc":"2.0","method":"send","params":{"recipient":["+YYY"],"message":"MESSAGE"},"id":4}`
 
-REQUEST: `{"jsonrpc":"2.0","method":"sendSyncRequest","id":9}` RESPONSE: `{"jsonrpc":"2.0","result":{},"id":9}`
+RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":999},"id":4}`
 
-REQUEST: `{"jsonrpc":"2.0"}` RESPONSE: `{"jsonrpc":"2.0","error":{"code":-32600,"message":"method field must be set","data":null},"id":null}`
+REQUEST: `{"jsonrpc":"2.0","method":"updateGroup","params":{"groupId":"GROUP_ID=","name":"new group name","members":["+ZZZ"],"link":"enabledWithApproval","setPermissionEditDetails":"only-admins"},"id":"someId"}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":{"timestamp":9999},"id":"someId"}`
+
+REQUEST: `{"jsonrpc":"2.0","method":"sendSyncRequest","id":9}`
+
+RESPONSE: `{"jsonrpc":"2.0","result":{},"id":9}`
+
+REQUEST: `{"jsonrpc":"2.0"}`
+
+RESPONSE: `{"jsonrpc":"2.0","error":{"code":-32600,"message":"method field must be set","data":null},"id":null}`
 
 == Authors
 

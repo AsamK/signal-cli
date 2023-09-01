@@ -8,6 +8,7 @@ import org.asamk.signal.OutputType;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
@@ -19,7 +20,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class JsonRpcDispatcherCommand implements LocalCommand {
+public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand {
 
     private final static Logger logger = LoggerFactory.getLogger(JsonRpcDispatcherCommand.class);
 
@@ -66,6 +67,24 @@ public class JsonRpcDispatcherCommand implements LocalCommand {
                 lineSupplier,
                 receiveMode == ReceiveMode.MANUAL);
         handler.handleConnection(m);
+    }
+
+    @Override
+    public void handleCommand(
+            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+    ) throws CommandException {
+        final var receiveMode = ns.<ReceiveMode>get("receive-mode");
+        final var receiveConfig = getReceiveConfig(ns);
+        c.getManagers().forEach(m -> m.setReceiveConfig(receiveConfig));
+        c.addOnManagerAddedHandler(m -> m.setReceiveConfig(receiveConfig));
+
+        final var jsonOutputWriter = (JsonWriter) outputWriter;
+        final var lineSupplier = getLineSupplier();
+
+        final var handler = new SignalJsonRpcDispatcherHandler(jsonOutputWriter,
+                lineSupplier,
+                receiveMode == ReceiveMode.MANUAL);
+        handler.handleConnection(c);
     }
 
     private static ReceiveConfig getReceiveConfig(final Namespace ns) {
