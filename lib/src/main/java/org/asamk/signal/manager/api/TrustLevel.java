@@ -22,7 +22,6 @@ public enum TrustLevel {
             case DEFAULT -> TRUSTED_UNVERIFIED;
             case UNVERIFIED -> UNTRUSTED;
             case VERIFIED -> TRUSTED_VERIFIED;
-            case UNRECOGNIZED -> null;
         };
     }
 

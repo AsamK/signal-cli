@@ -1847,7 +1847,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions",
-  "fields":[{"name":"addBannedMembers_"}, {"name":"addMembers_"}, {"name":"addPendingMembers_"}, {"name":"addRequestingMembers_"}, {"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"modifyAddFromInviteLinkAccess_"}, {"name":"modifyAnnouncementsOnly_"}, {"name":"modifyAttributesAccess_"}, {"name":"modifyAvatar_"}, {"name":"modifyDescription_"}, {"name":"modifyDisappearingMessagesTimer_"}, {"name":"modifyInviteLinkPassword_"}, {"name":"modifyMemberAccess_"}, {"name":"modifyMemberProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"modifyTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}, {"name":"sourceUuid_"}]
+  "fields":[{"name":"addBannedMembers_"}, {"name":"addMembers_"}, {"name":"addPendingMembers_"}, {"name":"addRequestingMembers_"}, {"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"modifyAddFromInviteLinkAccess_"}, {"name":"modifyAnnouncementsOnly_"}, {"name":"modifyAttributesAccess_"}, {"name":"modifyAvatar_"}, {"name":"modifyDescription_"}, {"name":"modifyDisappearingMessagesTimer_"}, {"name":"modifyInviteLinkPassword_"}, {"name":"modifyMemberAccess_"}, {"name":"modifyMemberProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"modifyTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}, {"name":"sourceServiceId_"}, {"name":"sourceUuid_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddBannedMemberAction",
@@ -1983,7 +1983,7 @@
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupChange",
-  "fields":[{"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"editor_"}, {"name":"modifiedProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"newAttributeAccess_"}, {"name":"newAvatar_"}, {"name":"newBannedMembers_"}, {"name":"newDescription_"}, {"name":"newInviteLinkAccess_"}, {"name":"newInviteLinkPassword_"}, {"name":"newIsAnnouncementGroup_"}, {"name":"newMemberAccess_"}, {"name":"newMembers_"}, {"name":"newPendingMembers_"}, {"name":"newRequestingMembers_"}, {"name":"newTimer_"}, {"name":"newTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}]
+  "fields":[{"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"editorServiceIdBytes_"}, {"name":"editor_"}, {"name":"modifiedProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"newAttributeAccess_"}, {"name":"newAvatar_"}, {"name":"newBannedMembers_"}, {"name":"newDescription_"}, {"name":"newInviteLinkAccess_"}, {"name":"newInviteLinkPassword_"}, {"name":"newIsAnnouncementGroup_"}, {"name":"newMemberAccess_"}, {"name":"newMembers_"}, {"name":"newPendingMembers_"}, {"name":"newRequestingMembers_"}, {"name":"newTimer_"}, {"name":"newTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}]
 },
 {
   "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo",
