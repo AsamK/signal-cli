@@ -750,6 +750,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 INSERT INTO %s (number, uuid, pni)
                 VALUES (?, ?, ?)
+                RETURNING _id
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
@@ -757,10 +758,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.setBytes(2,
                     address.serviceId().map(ServiceId::getRawUuid).map(UuidUtil::toByteArray).orElse(null));
             statement.setBytes(3, address.pni().map(PNI::getRawUuid).map(UuidUtil::toByteArray).orElse(null));
-            statement.executeUpdate();
-            final var generatedKeys = statement.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                final var recipientId = new RecipientId(generatedKeys.getLong(1), this);
+            final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
+            if (generatedKey.isPresent()) {
+                final var recipientId = new RecipientId(generatedKey.get(), this);
                 logger.debug("Added new recipient {} with address {}", recipientId, address);
                 return recipientId;
             } else {

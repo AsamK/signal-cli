@@ -113,6 +113,10 @@ public class Utils {
         }, false);
     }
 
+    public static Long getIdMapper(ResultSet resultSet) throws SQLException {
+        return resultSet.getLong("_id");
+    }
+
     public interface ResultSetMapper<T> {
 
         T apply(ResultSet resultSet) throws SQLException;

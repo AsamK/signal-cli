@@ -241,6 +241,7 @@ public class GroupStore {
             final var sql = """
                             INSERT OR REPLACE INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            RETURNING _id
                             """.formatted(TABLE_GROUP_V1);
             try (final var statement = connection.prepareStatement(sql)) {
                 if (internalId == null) {
@@ -255,14 +256,13 @@ public class GroupStore {
                 statement.setLong(6, groupV1.getMessageExpirationTimer());
                 statement.setBoolean(7, groupV1.isBlocked());
                 statement.setBoolean(8, groupV1.archived);
-                statement.executeUpdate();
+                final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
 
                 if (internalId == null) {
-                    final var generatedKeys = statement.getGeneratedKeys();
-                    if (generatedKeys.next()) {
-                        internalId = generatedKeys.getLong(1);
+                    if (generatedKey.isPresent()) {
+                        internalId = generatedKey.get();
                     } else {
-                        throw new RuntimeException("Failed to add new recipient to database");
+                        throw new RuntimeException("Failed to add new group to database");
                     }
                 }
             }

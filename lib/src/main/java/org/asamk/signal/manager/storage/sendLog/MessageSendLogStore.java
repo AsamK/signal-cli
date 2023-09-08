@@ -276,6 +276,7 @@ public class MessageSendLogStore implements AutoCloseable {
         final var sql = """
                         INSERT INTO %s (timestamp, group_id, content, content_hint, urgent)
                         VALUES (?,?,?,?,?)
+                        RETURNING _id
                         """.formatted(TABLE_MESSAGE_SEND_LOG_CONTENT);
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
@@ -286,10 +287,9 @@ public class MessageSendLogStore implements AutoCloseable {
                 statement.setBytes(3, content.toByteArray());
                 statement.setInt(4, contentHint.getType());
                 statement.setBoolean(5, urgent);
-                statement.executeUpdate();
-                final var generatedKeys = statement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    contentId = generatedKeys.getLong(1);
+                final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
+                if (generatedKey.isPresent()) {
+                    contentId = generatedKey.get();
                 } else {
                     contentId = -1;
                 }
