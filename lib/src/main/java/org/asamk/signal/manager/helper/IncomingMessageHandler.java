@@ -137,13 +137,17 @@ public final class IncomingMessageHandler {
             final Manager.ReceiveMessageHandler handler
     ) {
         final var actions = new ArrayList<HandleAction>();
-        if (envelope.hasSourceServiceId()) {
-            // Store uuid if we don't have it already
-            // uuid in envelope is sent by server
-            account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
-        }
         SignalServiceContent content = null;
         Exception exception = null;
+        try {
+            if (envelope.hasSourceServiceId()) {
+                // Store uuid if we don't have it already
+                // uuid in envelope is sent by server
+                account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
+            }
+        } catch (Exception e) {
+            exception = e;
+        }
         if (!envelope.isReceipt()) {
             try {
                 final var cipherResult = dependencies.getCipher()

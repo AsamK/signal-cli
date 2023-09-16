@@ -205,41 +205,49 @@ public class ReceiveHelper {
                 backOffCounter = 0;
                 if (returnOnTimeout) return;
                 continue;
+            } catch (Exception e) {
+                logger.error("Unknown error when receiving messages", e);
+                continue;
             }
 
-            final var result = context.getIncomingMessageHandler().handleEnvelope(envelope, receiveConfig, handler);
-            for (final var h : result.first()) {
-                final var existingAction = queuedActions.get(h);
-                if (existingAction == null) {
-                    queuedActions.put(h, h);
-                } else {
-                    existingAction.mergeOther(h);
-                }
-            }
-            final var exception = result.second();
-
-            if (hasCaughtUpWithOldMessages) {
-                handleQueuedActions(queuedActions.keySet());
-                queuedActions.clear();
-            }
-            if (cachedMessage[0] != null) {
-                if (exception instanceof UntrustedIdentityException) {
-                    logger.debug("Keeping message with untrusted identity in message cache");
-                    final var address = ((UntrustedIdentityException) exception).getSender();
-                    if (!envelope.hasSourceServiceId() && address.uuid().isPresent()) {
-                        final var recipientId = account.getRecipientResolver()
-                                .resolveRecipient(ACI.from(address.uuid().get()));
-                        try {
-                            cachedMessage[0] = account.getMessageCache().replaceSender(cachedMessage[0], recipientId);
-                        } catch (IOException ioException) {
-                            logger.warn("Failed to move cached message to recipient folder: {}",
-                                    ioException.getMessage(),
-                                    ioException);
-                        }
+            try {
+                final var result = context.getIncomingMessageHandler().handleEnvelope(envelope, receiveConfig, handler);
+                for (final var h : result.first()) {
+                    final var existingAction = queuedActions.get(h);
+                    if (existingAction == null) {
+                        queuedActions.put(h, h);
+                    } else {
+                        existingAction.mergeOther(h);
                     }
-                } else {
-                    cachedMessage[0].delete();
                 }
+                final var exception = result.second();
+
+                if (hasCaughtUpWithOldMessages) {
+                    handleQueuedActions(queuedActions.keySet());
+                    queuedActions.clear();
+                }
+                if (cachedMessage[0] != null) {
+                    if (exception instanceof UntrustedIdentityException) {
+                        logger.debug("Keeping message with untrusted identity in message cache");
+                        final var address = ((UntrustedIdentityException) exception).getSender();
+                        if (!envelope.hasSourceServiceId() && address.uuid().isPresent()) {
+                            final var recipientId = account.getRecipientResolver()
+                                    .resolveRecipient(ACI.from(address.uuid().get()));
+                            try {
+                                cachedMessage[0] = account.getMessageCache()
+                                        .replaceSender(cachedMessage[0], recipientId);
+                            } catch (IOException ioException) {
+                                logger.warn("Failed to move cached message to recipient folder: {}",
+                                        ioException.getMessage(),
+                                        ioException);
+                            }
+                        }
+                    } else {
+                        cachedMessage[0].delete();
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Unknown error when handling messages", e);
             }
         }
     }
