@@ -6,8 +6,9 @@ signal-cli uses a [patched libsignal-service-java](https://github.com/Turasa/lib
 extracted from the [Signal-Android source code](https://github.com/signalapp/Signal-Android/tree/main/libsignal/service).
 For registering you need a phone number where you can receive SMS or incoming calls.
 
-signal-cli is primarily intended to be used on servers to notify admins of important events. For this use-case, it has a daemon mode with D-BUS
-interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) and JSON-RPC interface ([documentation](https://github.com/AsamK/signal-cli/wiki/JSON-RPC-service)).
+signal-cli is primarily intended to be used on servers to notify admins of important events.
+For this use-case, it has a daemon mode with JSON-RPC interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-jsonrpc.5.adoc))
+and D-BUS interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) .
 For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
 ## Installation
@@ -39,7 +40,6 @@ sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 You can find further instructions on the Wiki:
 
 - [Quickstart](https://github.com/AsamK/signal-cli/wiki/Quickstart)
-- [DBus Service](https://github.com/AsamK/signal-cli/wiki/DBus-service)
 
 ## Usage
 
