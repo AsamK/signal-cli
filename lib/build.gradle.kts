@@ -8,8 +8,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+val libsignalClientPath = project.findProperty("libsignal_client_path")?.toString()
+
 dependencies {
-    implementation(libs.signalservice)
+    if (libsignalClientPath == null) {
+        implementation(libs.signalservice)
+    } else {
+        implementation(libs.signalservice) {
+            exclude(group = "org.signal", module = "libsignal-client")
+        }
+        implementation(files(libsignalClientPath))
+    }
     implementation(libs.jackson.databind)
     implementation(libs.protobuf)
     implementation(libs.bouncycastle)
