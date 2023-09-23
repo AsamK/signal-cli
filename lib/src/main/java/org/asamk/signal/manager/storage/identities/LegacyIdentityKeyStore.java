@@ -84,7 +84,7 @@ public class LegacyIdentityKeyStore {
             var added = storage.addedTimestamp();
 
             final var serviceId = address.serviceId().get();
-            return new IdentityInfo(serviceId, id, trustLevel, added);
+            return new IdentityInfo(serviceId.toString(), id, trustLevel, added);
         } catch (IOException | InvalidKeyException e) {
             logger.warn("Failed to load identity key: {}", e.getMessage());
             return null;

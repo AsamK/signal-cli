@@ -151,8 +151,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     @Override
     public RecipientId resolveRecipient(final String identifier) {
-        if (UuidUtil.isUuid(identifier)) {
-            return resolveRecipient(ServiceId.parseOrThrow(identifier));
+        final var serviceId = ServiceId.parseOrNull(identifier);
+        if (serviceId != null) {
+            return resolveRecipient(serviceId);
         } else {
             return resolveRecipientByNumber(identifier);
         }

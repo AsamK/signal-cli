@@ -1,10 +1,8 @@
 package org.asamk.signal.manager.storage.identities;
 
-import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.function.Supplier;
 
@@ -15,7 +13,6 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
     private final IdentityKeyStore identityKeyStore;
 
     public SignalIdentityKeyStore(
-            final RecipientResolver resolver,
             final Supplier<IdentityKeyPair> identityKeyPairSupplier,
             final int localRegistrationId,
             final IdentityKeyStore identityKeyStore
@@ -37,22 +34,17 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
 
     @Override
     public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
-        final var serviceId = ServiceId.parseOrThrow(address.getName());
-
-        return identityKeyStore.saveIdentity(serviceId, identityKey);
+        return identityKeyStore.saveIdentity(address.getName(), identityKey);
     }
 
     @Override
     public boolean isTrustedIdentity(SignalProtocolAddress address, IdentityKey identityKey, Direction direction) {
-        final var serviceId = ServiceId.parseOrThrow(address.getName());
-
-        return identityKeyStore.isTrustedIdentity(serviceId, identityKey, direction);
+        return identityKeyStore.isTrustedIdentity(address.getName(), identityKey, direction);
     }
 
     @Override
     public IdentityKey getIdentity(SignalProtocolAddress address) {
-        final var serviceId = ServiceId.parseOrThrow(address.getName());
-        final var identityInfo = identityKeyStore.getIdentityInfo(serviceId);
+        final var identityInfo = identityKeyStore.getIdentityInfo(address.getName());
         return identityInfo == null ? null : identityInfo.getIdentityKey();
     }
 }

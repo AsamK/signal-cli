@@ -37,7 +37,7 @@ public class IdentityKeyStore {
             statement.executeUpdate("""
                                     CREATE TABLE identity (
                                       _id INTEGER PRIMARY KEY,
-                                      uuid BLOB UNIQUE NOT NULL,
+                                      address TEXT UNIQUE NOT NULL,
                                       identity_key BLOB NOT NULL,
                                       added_timestamp INTEGER NOT NULL,
                                       trust_level INTEGER NOT NULL
@@ -56,18 +56,22 @@ public class IdentityKeyStore {
     }
 
     public boolean saveIdentity(final ServiceId serviceId, final IdentityKey identityKey) {
+        return saveIdentity(serviceId.toString(), identityKey);
+    }
+
+    boolean saveIdentity(final String address, final IdentityKey identityKey) {
         if (isRetryingDecryption) {
             return false;
         }
         try (final var connection = database.getConnection()) {
-            final var identityInfo = loadIdentity(connection, serviceId);
+            final var identityInfo = loadIdentity(connection, address);
             if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity already exists, not updating the trust level
-                logger.trace("Not storing new identity for recipient {}, identity already stored", serviceId);
+                logger.trace("Not storing new identity for recipient {}, identity already stored", address);
                 return false;
             }
 
-            saveNewIdentity(connection, serviceId, identityKey, identityInfo == null);
+            saveNewIdentity(connection, address, identityKey, identityInfo == null);
             return true;
         } catch (SQLException e) {
             throw new RuntimeException("Failed update identity store", e);
@@ -80,7 +84,8 @@ public class IdentityKeyStore {
 
     public boolean setIdentityTrustLevel(ServiceId serviceId, IdentityKey identityKey, TrustLevel trustLevel) {
         try (final var connection = database.getConnection()) {
-            final var identityInfo = loadIdentity(connection, serviceId);
+            final var address = serviceId.toString();
+            final var identityInfo = loadIdentity(connection, address);
             if (identityInfo == null) {
                 logger.debug("Not updating trust level for recipient {}, identity not found", serviceId);
                 return false;
@@ -95,7 +100,7 @@ public class IdentityKeyStore {
             }
 
             logger.debug("Updating trust level for recipient {} with trust {}", serviceId, trustLevel);
-            final var newIdentityInfo = new IdentityInfo(serviceId,
+            final var newIdentityInfo = new IdentityInfo(address,
                     identityKey,
                     trustLevel,
                     identityInfo.getDateAddedTimestamp());
@@ -107,31 +112,35 @@ public class IdentityKeyStore {
     }
 
     public boolean isTrustedIdentity(ServiceId serviceId, IdentityKey identityKey, Direction direction) {
+        return isTrustedIdentity(serviceId.toString(), identityKey, direction);
+    }
+
+    public boolean isTrustedIdentity(String address, IdentityKey identityKey, Direction direction) {
         if (trustNewIdentity == TrustNewIdentity.ALWAYS) {
             return true;
         }
 
         try (final var connection = database.getConnection()) {
             // TODO implement possibility for different handling of incoming/outgoing trust decisions
-            var identityInfo = loadIdentity(connection, serviceId);
+            var identityInfo = loadIdentity(connection, address);
             if (identityInfo == null) {
-                logger.debug("Initial identity found for {}, saving.", serviceId);
-                saveNewIdentity(connection, serviceId, identityKey, true);
-                identityInfo = loadIdentity(connection, serviceId);
+                logger.debug("Initial identity found for {}, saving.", address);
+                saveNewIdentity(connection, address, identityKey, true);
+                identityInfo = loadIdentity(connection, address);
             } else if (!identityInfo.getIdentityKey().equals(identityKey)) {
                 // Identity found, but different
                 if (direction == Direction.SENDING) {
-                    logger.debug("Changed identity found for {}, saving.", serviceId);
-                    saveNewIdentity(connection, serviceId, identityKey, false);
-                    identityInfo = loadIdentity(connection, serviceId);
+                    logger.debug("Changed identity found for {}, saving.", address);
+                    saveNewIdentity(connection, address, identityKey, false);
+                    identityInfo = loadIdentity(connection, address);
                 } else {
-                    logger.trace("Trusting identity for {} for {}: {}", serviceId, direction, false);
+                    logger.trace("Trusting identity for {} for {}: {}", address, direction, false);
                     return false;
                 }
             }
 
             final var isTrusted = identityInfo != null && identityInfo.isTrusted();
-            logger.trace("Trusting identity for {} for {}: {}", serviceId, direction, isTrusted);
+            logger.trace("Trusting identity for {} for {}: {}", address, direction, isTrusted);
             return isTrusted;
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from identity store", e);
@@ -139,8 +148,12 @@ public class IdentityKeyStore {
     }
 
     public IdentityInfo getIdentityInfo(ServiceId serviceId) {
+        return getIdentityInfo(serviceId.toString());
+    }
+
+    public IdentityInfo getIdentityInfo(String address) {
         try (final var connection = database.getConnection()) {
-            return loadIdentity(connection, serviceId);
+            return loadIdentity(connection, address);
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from identity store", e);
         }
@@ -150,7 +163,7 @@ public class IdentityKeyStore {
         try (final var connection = database.getConnection()) {
             final var sql = (
                     """
-                    SELECT i.uuid, i.identity_key, i.added_timestamp, i.trust_level
+                    SELECT i.address, i.identity_key, i.added_timestamp, i.trust_level
                     FROM %s AS i
                     """
             ).formatted(TABLE_IDENTITY);
@@ -166,7 +179,7 @@ public class IdentityKeyStore {
 
     public void deleteIdentity(final ServiceId serviceId) {
         try (final var connection = database.getConnection()) {
-            deleteIdentity(connection, serviceId);
+            deleteIdentity(connection, serviceId.toString());
         } catch (SQLException e) {
             throw new RuntimeException("Failed update identity store", e);
         }
@@ -188,34 +201,37 @@ public class IdentityKeyStore {
     }
 
     private IdentityInfo loadIdentity(
-            final Connection connection, final ServiceId serviceId
+            final Connection connection, final String address
     ) throws SQLException {
         final var sql = (
                 """
-                SELECT i.uuid, i.identity_key, i.added_timestamp, i.trust_level
+                SELECT i.address, i.identity_key, i.added_timestamp, i.trust_level
                 FROM %s AS i
-                WHERE i.uuid = ?
+                WHERE i.address = ?
                 """
         ).formatted(TABLE_IDENTITY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, serviceId.toByteArray());
+            statement.setString(1, address);
             return Utils.executeQueryForOptional(statement, this::getIdentityInfoFromResultSet).orElse(null);
         }
     }
 
     private void saveNewIdentity(
             final Connection connection,
-            final ServiceId serviceId,
+            final String address,
             final IdentityKey identityKey,
             final boolean firstIdentity
     ) throws SQLException {
         final var trustLevel = trustNewIdentity == TrustNewIdentity.ALWAYS || (
                 trustNewIdentity == TrustNewIdentity.ON_FIRST_USE && firstIdentity
         ) ? TrustLevel.TRUSTED_UNVERIFIED : TrustLevel.UNTRUSTED;
-        logger.debug("Storing new identity for recipient {} with trust {}", serviceId, trustLevel);
-        final var newIdentityInfo = new IdentityInfo(serviceId, identityKey, trustLevel, System.currentTimeMillis());
+        logger.debug("Storing new identity for recipient {} with trust {}", address, trustLevel);
+        final var newIdentityInfo = new IdentityInfo(address, identityKey, trustLevel, System.currentTimeMillis());
         storeIdentity(connection, newIdentityInfo);
-        identityChanges.onNext(serviceId);
+        final var serviceId = ServiceId.parseOrNull(address);
+        if (serviceId != null) {
+            identityChanges.onNext(serviceId);
+        }
     }
 
     private void storeIdentity(final Connection connection, final IdentityInfo identityInfo) throws SQLException {
@@ -225,12 +241,12 @@ public class IdentityKeyStore {
                 identityInfo.getDateAddedTimestamp());
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (uuid, identity_key, added_timestamp, trust_level)
+                INSERT OR REPLACE INTO %s (address, identity_key, added_timestamp, trust_level)
                 VALUES (?, ?, ?, ?)
                 """
         ).formatted(TABLE_IDENTITY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, identityInfo.getServiceId().toByteArray());
+            statement.setString(1, identityInfo.getAddress());
             statement.setBytes(2, identityInfo.getIdentityKey().serialize());
             statement.setLong(3, identityInfo.getDateAddedTimestamp());
             statement.setInt(4, identityInfo.getTrustLevel().ordinal());
@@ -238,27 +254,27 @@ public class IdentityKeyStore {
         }
     }
 
-    private void deleteIdentity(final Connection connection, final ServiceId serviceId) throws SQLException {
+    private void deleteIdentity(final Connection connection, final String address) throws SQLException {
         final var sql = (
                 """
                 DELETE FROM %s AS i
-                WHERE i.uuid = ?
+                WHERE i.address = ?
                 """
         ).formatted(TABLE_IDENTITY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, serviceId.toByteArray());
+            statement.setString(1, address);
             statement.executeUpdate();
         }
     }
 
     private IdentityInfo getIdentityInfoFromResultSet(ResultSet resultSet) throws SQLException {
         try {
-            final var serviceId = ServiceId.parseOrThrow(resultSet.getBytes("uuid"));
+            final var address = resultSet.getString("address");
             final var id = new IdentityKey(resultSet.getBytes("identity_key"));
             final var trustLevel = TrustLevel.fromInt(resultSet.getInt("trust_level"));
             final var added = resultSet.getLong("added_timestamp");
 
-            return new IdentityInfo(serviceId, id, trustLevel, added);
+            return new IdentityInfo(address, id, trustLevel, added);
         } catch (InvalidKeyException e) {
             logger.warn("Failed to load identity key, resetting: {}", e.getMessage());
             return null;

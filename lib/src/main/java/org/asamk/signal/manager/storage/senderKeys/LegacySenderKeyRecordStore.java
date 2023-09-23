@@ -41,7 +41,9 @@ public class LegacySenderKeyRecordStore {
             if (record == null || serviceId.isEmpty()) {
                 return null;
             }
-            return new Pair<>(new SenderKeyRecordStore.Key(serviceId.get(), key.deviceId, key.distributionId), record);
+            return new Pair<>(new SenderKeyRecordStore.Key(serviceId.get().toString(),
+                    key.deviceId,
+                    key.distributionId), record);
         }).filter(Objects::nonNull).toList();
 
         senderKeyStore.addLegacySenderKeys(senderKeys);

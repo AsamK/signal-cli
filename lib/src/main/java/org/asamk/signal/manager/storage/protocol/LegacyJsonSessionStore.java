@@ -47,7 +47,7 @@ public class LegacyJsonSessionStore {
 
                     var uuid = session.hasNonNull("uuid") ? UuidUtil.parseOrNull(session.get("uuid").asText()) : null;
                     final var address = uuid == null
-                            ? Utils.getRecipientAddressFromIdentifier(sessionName)
+                            ? Utils.getRecipientAddressFromLegacyIdentifier(sessionName)
                             : new RecipientAddress(ACI.from(uuid), sessionName);
                     final var deviceId = session.get("deviceId").asInt();
                     final var record = Base64.getDecoder().decode(session.get("record").asText());

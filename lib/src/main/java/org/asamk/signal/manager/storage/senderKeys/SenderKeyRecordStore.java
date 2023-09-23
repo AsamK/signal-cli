@@ -31,12 +31,12 @@ public class SenderKeyRecordStore implements SenderKeyStore {
             statement.executeUpdate("""
                                     CREATE TABLE sender_key (
                                       _id INTEGER PRIMARY KEY,
-                                      uuid BLOB NOT NULL,
+                                      address TEXT NOT NULL,
                                       device_id INTEGER NOT NULL,
                                       distribution_id BLOB NOT NULL,
                                       record BLOB NOT NULL,
                                       created_timestamp INTEGER NOT NULL,
-                                      UNIQUE(uuid, device_id, distribution_id)
+                                      UNIQUE(address, device_id, distribution_id)
                                     ) STRICT;
                                     """);
         }
@@ -75,12 +75,12 @@ public class SenderKeyRecordStore implements SenderKeyStore {
                 """
                 SELECT s.created_timestamp
                 FROM %s AS s
-                WHERE s.uuid = ? AND s.device_id = ? AND s.distribution_id = ?
+                WHERE s.address = ? AND s.device_id = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, selfServiceId.toByteArray());
+                statement.setString(1, selfServiceId.toString());
                 statement.setInt(2, selfDeviceId);
                 statement.setBytes(3, UuidUtil.toByteArray(distributionId));
                 return Utils.executeQueryForOptional(statement, res -> res.getLong("created_timestamp")).orElse(-1L);
@@ -94,12 +94,12 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.uuid = ? AND s.distribution_id = ?
+                WHERE s.address = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, serviceId.toByteArray());
+                statement.setString(1, serviceId.toString());
                 statement.setBytes(2, UuidUtil.toByteArray(distributionId));
                 statement.executeUpdate();
             }
@@ -145,8 +145,7 @@ public class SenderKeyRecordStore implements SenderKeyStore {
     }
 
     private Key getKey(final SignalProtocolAddress address, final UUID distributionId) {
-        final var serviceId = ServiceId.parseOrThrow(address.getName());
-        return new Key(serviceId, address.getDeviceId(), distributionId);
+        return new Key(address.getName(), address.getDeviceId(), distributionId);
     }
 
     private SenderKeyRecord loadSenderKey(final Connection connection, final Key key) throws SQLException {
@@ -154,11 +153,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
                 """
                 SELECT s.record
                 FROM %s AS s
-                WHERE s.uuid = ? AND s.device_id = ? AND s.distribution_id = ?
+                WHERE s.address = ? AND s.device_id = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, key.serviceId().toByteArray());
+            statement.setString(1, key.address());
             statement.setInt(2, key.deviceId());
             statement.setBytes(3, UuidUtil.toByteArray(key.distributionId()));
             return Utils.executeQueryForOptional(statement, this::getSenderKeyRecordFromResultSet).orElse(null);
@@ -171,11 +170,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         final var sqlUpdate = """
                               UPDATE %s
                               SET record = ?
-                              WHERE uuid = ? AND device_id = ? and distribution_id = ?
+                              WHERE address = ? AND device_id = ? and distribution_id = ?
                               """.formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlUpdate)) {
             statement.setBytes(1, senderKeyRecord.serialize());
-            statement.setBytes(2, key.serviceId().toByteArray());
+            statement.setString(2, key.address());
             statement.setLong(3, key.deviceId());
             statement.setBytes(4, UuidUtil.toByteArray(key.distributionId()));
             final var rows = statement.executeUpdate();
@@ -187,12 +186,12 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         // Record doesn't exist yet, creating a new one
         final var sqlInsert = (
                 """
-                INSERT OR REPLACE INTO %s (uuid, device_id, distribution_id, record, created_timestamp)
+                INSERT OR REPLACE INTO %s (address, device_id, distribution_id, record, created_timestamp)
                 VALUES (?, ?, ?, ?, ?)
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlInsert)) {
-            statement.setBytes(1, key.serviceId().toByteArray());
+            statement.setString(1, key.address());
             statement.setInt(2, key.deviceId());
             statement.setBytes(3, UuidUtil.toByteArray(key.distributionId()));
             statement.setBytes(4, senderKeyRecord.serialize());
@@ -205,11 +204,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.uuid = ?
+                WHERE s.address = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setBytes(1, serviceId.toByteArray());
+            statement.setString(1, serviceId.toString());
             statement.executeUpdate();
         }
     }
@@ -225,5 +224,5 @@ public class SenderKeyRecordStore implements SenderKeyStore {
         }
     }
 
-    record Key(ServiceId serviceId, int deviceId, UUID distributionId) {}
+    record Key(String address, int deviceId, UUID distributionId) {}
 }

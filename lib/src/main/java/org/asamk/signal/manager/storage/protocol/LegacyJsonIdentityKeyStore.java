@@ -100,7 +100,7 @@ public class LegacyJsonIdentityKeyStore {
                             ? UuidUtil.parseOrNull(trustedKey.get("uuid").asText())
                             : null;
                     final var address = uuid == null
-                            ? Utils.getRecipientAddressFromIdentifier(trustedKeyName)
+                            ? Utils.getRecipientAddressFromLegacyIdentifier(trustedKeyName)
                             : new RecipientAddress(ACI.from(uuid), trustedKeyName);
                     try {
                         var id = new IdentityKey(Base64.getDecoder().decode(trustedKey.get("identityKey").asText()), 0);

@@ -30,11 +30,11 @@ public class SenderKeySharedStore {
             statement.executeUpdate("""
                                     CREATE TABLE sender_key_shared (
                                       _id INTEGER PRIMARY KEY,
-                                      uuid BLOB NOT NULL,
+                                      address TEXT NOT NULL,
                                       device_id INTEGER NOT NULL,
                                       distribution_id BLOB NOT NULL,
                                       timestamp INTEGER NOT NULL,
-                                      UNIQUE(uuid, device_id, distribution_id)
+                                      UNIQUE(address, device_id, distribution_id)
                                     ) STRICT;
                                     """);
         }
@@ -48,7 +48,7 @@ public class SenderKeySharedStore {
         try (final var connection = database.getConnection()) {
             final var sql = (
                     """
-                    SELECT s.uuid, s.device_id
+                    SELECT s.address, s.device_id
                     FROM %s AS s
                     WHERE s.distribution_id = ?
                     """
@@ -56,7 +56,7 @@ public class SenderKeySharedStore {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setBytes(1, UuidUtil.toByteArray(distributionId.asUuid()));
                 return Utils.executeQueryForStream(statement, this::getSenderKeySharedEntryFromResultSet)
-                        .map(k -> k.serviceId.toProtocolAddress(k.deviceId()))
+                        .map(k -> new SignalProtocolAddress(k.address, k.deviceId()))
                         .collect(Collectors.toSet());
             }
         } catch (SQLException e) {
@@ -68,7 +68,7 @@ public class SenderKeySharedStore {
             final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
     ) {
         final var newEntries = addresses.stream()
-                .map(a -> new SenderKeySharedEntry(ServiceId.parseOrThrow(a.getName()), a.getDeviceId()))
+                .map(a -> new SenderKeySharedEntry(a.getName(), a.getDeviceId()))
                 .collect(Collectors.toSet());
 
         try (final var connection = database.getConnection()) {
@@ -82,8 +82,7 @@ public class SenderKeySharedStore {
 
     public void clearSenderKeySharedWith(final Collection<SignalProtocolAddress> addresses) {
         final var entriesToDelete = addresses.stream()
-                .filter(a -> UuidUtil.isUuid(a.getName()))
-                .map(a -> new SenderKeySharedEntry(ServiceId.parseOrThrow(a.getName()), a.getDeviceId()))
+                .map(a -> new SenderKeySharedEntry(a.getName(), a.getDeviceId()))
                 .collect(Collectors.toSet());
 
         try (final var connection = database.getConnection()) {
@@ -91,12 +90,12 @@ public class SenderKeySharedStore {
             final var sql = (
                     """
                     DELETE FROM %s AS s
-                    WHERE uuid = ? AND device_id = ?
+                    WHERE address = ? AND device_id = ?
                     """
             ).formatted(TABLE_SENDER_KEY_SHARED);
             try (final var statement = connection.prepareStatement(sql)) {
                 for (final var entry : entriesToDelete) {
-                    statement.setBytes(1, entry.serviceId().toByteArray());
+                    statement.setString(1, entry.address());
                     statement.setInt(2, entry.deviceId());
                     statement.executeUpdate();
                 }
@@ -127,11 +126,11 @@ public class SenderKeySharedStore {
             final var sql = (
                     """
                     DELETE FROM %s AS s
-                    WHERE uuid = ?
+                    WHERE address = ?
                     """
             ).formatted(TABLE_SENDER_KEY_SHARED);
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, serviceId.toByteArray());
+                statement.setString(1, serviceId.toString());
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -146,11 +145,11 @@ public class SenderKeySharedStore {
             final var sql = (
                     """
                     DELETE FROM %s AS s
-                    WHERE uuid = ? AND device_id = ? AND distribution_id = ?
+                    WHERE address = ? AND device_id = ? AND distribution_id = ?
                     """
             ).formatted(TABLE_SENDER_KEY_SHARED);
             try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, serviceId.toByteArray());
+                statement.setString(1, serviceId.toString());
                 statement.setInt(2, deviceId);
                 statement.setBytes(3, UuidUtil.toByteArray(distributionId.asUuid()));
                 statement.executeUpdate();
@@ -197,13 +196,13 @@ public class SenderKeySharedStore {
     ) throws SQLException {
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (uuid, device_id, distribution_id, timestamp)
+                INSERT OR REPLACE INTO %s (address, device_id, distribution_id, timestamp)
                 VALUES (?, ?, ?, ?)
                 """
         ).formatted(TABLE_SENDER_KEY_SHARED);
         try (final var statement = connection.prepareStatement(sql)) {
             for (final var entry : newEntries) {
-                statement.setBytes(1, entry.serviceId().toByteArray());
+                statement.setString(1, entry.toString());
                 statement.setInt(2, entry.deviceId());
                 statement.setBytes(3, UuidUtil.toByteArray(distributionId.asUuid()));
                 statement.setLong(4, System.currentTimeMillis());
@@ -213,10 +212,10 @@ public class SenderKeySharedStore {
     }
 
     private SenderKeySharedEntry getSenderKeySharedEntryFromResultSet(ResultSet resultSet) throws SQLException {
-        final var serviceId = ServiceId.parseOrThrow(resultSet.getBytes("uuid"));
+        final var address = resultSet.getString("address");
         final var deviceId = resultSet.getInt("device_id");
-        return new SenderKeySharedEntry(serviceId, deviceId);
+        return new SenderKeySharedEntry(address, deviceId);
     }
 
-    record SenderKeySharedEntry(ServiceId serviceId, int deviceId) {}
+    record SenderKeySharedEntry(String address, int deviceId) {}
 }

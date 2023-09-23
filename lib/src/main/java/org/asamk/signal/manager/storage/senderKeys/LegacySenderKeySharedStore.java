@@ -40,7 +40,7 @@ public class LegacySenderKeySharedStore {
                 if (serviceId.isEmpty()) {
                     continue;
                 }
-                final var entry = new SenderKeySharedEntry(serviceId.get(), senderKey.deviceId);
+                final var entry = new SenderKeySharedEntry(serviceId.get().toString(), senderKey.deviceId);
                 final var distributionId = DistributionId.from(senderKey.distributionId);
                 var entries = sharedSenderKeys.get(distributionId);
                 if (entries == null) {

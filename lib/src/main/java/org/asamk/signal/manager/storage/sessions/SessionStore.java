@@ -6,15 +6,12 @@ import org.asamk.signal.manager.storage.Utils;
 import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
-import org.signal.libsignal.protocol.message.CiphertextMessage;
 import org.signal.libsignal.protocol.state.SessionRecord;
-import org.signal.libsignal.protocol.util.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -45,10 +42,10 @@ public class SessionStore implements SignalServiceSessionStore {
                                     CREATE TABLE session (
                                       _id INTEGER PRIMARY KEY,
                                       account_id_type INTEGER NOT NULL,
-                                      uuid BLOB NOT NULL,
+                                      address TEXT NOT NULL,
                                       device_id INTEGER NOT NULL,
                                       record BLOB NOT NULL,
-                                      UNIQUE(account_id_type, uuid, device_id)
+                                      UNIQUE(account_id_type, address, device_id)
                                     ) STRICT;
                                     """);
         }
@@ -107,13 +104,13 @@ public class SessionStore implements SignalServiceSessionStore {
                 """
                 SELECT s.device_id
                 FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid = ? AND s.device_id != 1
+                WHERE s.account_id_type = ? AND s.address = ? AND s.device_id != 1
                 """
         ).formatted(TABLE_SESSION);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
-                statement.setBytes(2, serviceId.toByteArray());
+                statement.setString(2, serviceId.toString());
                 return Utils.executeQueryForStream(statement, res -> res.getInt("device_id")).toList();
             }
         } catch (SQLException e) {
@@ -122,7 +119,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     public boolean isCurrentRatchetKey(ServiceId serviceId, int deviceId, ECPublicKey ratchetKey) {
-        final var key = new Key(serviceId, deviceId);
+        final var key = new Key(serviceId.toString(), deviceId);
 
         try (final var connection = database.getConnection()) {
             final var session = loadSession(connection, key);
@@ -177,7 +174,7 @@ public class SessionStore implements SignalServiceSessionStore {
 
     public void deleteAllSessions(ServiceId serviceId) {
         try (final var connection = database.getConnection()) {
-            deleteAllSessions(connection, serviceId);
+            deleteAllSessions(connection, serviceId.toString());
         } catch (SQLException e) {
             throw new RuntimeException("Failed update session store", e);
         }
@@ -185,10 +182,6 @@ public class SessionStore implements SignalServiceSessionStore {
 
     @Override
     public void archiveSession(final SignalProtocolAddress address) {
-        if (!UuidUtil.isUuid(address.getName())) {
-            return;
-        }
-
         final var key = getKey(address);
 
         try (final var connection = database.getConnection()) {
@@ -207,15 +200,13 @@ public class SessionStore implements SignalServiceSessionStore {
     @Override
     public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
         final var serviceIdsCommaSeparated = addressNames.stream()
-                .map(ServiceId::parseOrThrow)
-                .map(ServiceId::toByteArray)
-                .map(uuid -> "x'" + Hex.toStringCondensed(uuid) + "'")
+                .map(address -> "'" + address.replaceAll("'", "''") + "'")
                 .collect(Collectors.joining(","));
         final var sql = (
                 """
-                SELECT s.uuid, s.device_id, s.record
+                SELECT s.address, s.device_id, s.record
                 FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid IN (%s)
+                WHERE s.account_id_type = ? AND s.address IN (%s)
                 """
         ).formatted(TABLE_SESSION, serviceIdsCommaSeparated);
         try (final var connection = database.getConnection()) {
@@ -225,7 +216,7 @@ public class SessionStore implements SignalServiceSessionStore {
                                 res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res)))
                         .filter(pair -> isActive(pair.second()))
                         .map(Pair::first)
-                        .map(key -> key.serviceId().toProtocolAddress(key.deviceId()))
+                        .map(key -> new SignalProtocolAddress(key.address(), key.deviceId()))
                         .collect(Collectors.toSet());
             }
         } catch (SQLException e) {
@@ -236,7 +227,7 @@ public class SessionStore implements SignalServiceSessionStore {
     public void archiveAllSessions() {
         final var sql = (
                 """
-                SELECT s.uuid, s.device_id, s.record
+                SELECT s.address, s.device_id, s.record
                 FROM %s AS s
                 WHERE s.account_id_type = ?
                 """
@@ -264,9 +255,9 @@ public class SessionStore implements SignalServiceSessionStore {
     public void archiveSessions(final ServiceId serviceId) {
         final var sql = (
                 """
-                SELECT s.uuid, s.device_id, s.record
+                SELECT s.address, s.device_id, s.record
                 FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid = ?
+                WHERE s.account_id_type = ? AND s.address = ?
                 """
         ).formatted(TABLE_SESSION);
         try (final var connection = database.getConnection()) {
@@ -274,7 +265,7 @@ public class SessionStore implements SignalServiceSessionStore {
             final List<Pair<Key, SessionRecord>> records;
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
-                statement.setBytes(2, serviceId.toByteArray());
+                statement.setString(2, serviceId.toString());
                 records = Utils.executeQueryForStream(statement,
                                 res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res)))
                         .filter(Objects::nonNull)
@@ -306,8 +297,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private Key getKey(final SignalProtocolAddress address) {
-        final var serviceId = ServiceId.parseOrThrow(address.getName());
-        return new Key(serviceId, address.getDeviceId());
+        return new Key(address.getName(), address.getDeviceId());
     }
 
     private SessionRecord loadSession(Connection connection, final Key key) throws SQLException {
@@ -321,21 +311,21 @@ public class SessionStore implements SignalServiceSessionStore {
                 """
                 SELECT s.record
                 FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid = ? AND s.device_id = ?
+                WHERE s.account_id_type = ? AND s.address = ? AND s.device_id = ?
                 """
         ).formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);
-            statement.setBytes(2, key.serviceId().toByteArray());
+            statement.setString(2, key.address());
             statement.setInt(3, key.deviceId());
             return Utils.executeQueryForOptional(statement, this::getSessionRecordFromResultSet).orElse(null);
         }
     }
 
     private Key getKeyFromResultSet(ResultSet resultSet) throws SQLException {
-        final var serviceId = ServiceId.parseOrThrow(resultSet.getBytes("uuid"));
+        final var address = resultSet.getString("address");
         final var deviceId = resultSet.getInt("device_id");
-        return new Key(serviceId, deviceId);
+        return new Key(address, deviceId);
     }
 
     private SessionRecord getSessionRecordFromResultSet(ResultSet resultSet) throws SQLException {
@@ -356,19 +346,19 @@ public class SessionStore implements SignalServiceSessionStore {
         }
 
         final var sql = """
-                        INSERT OR REPLACE INTO %s (account_id_type, uuid, device_id, record)
+                        INSERT OR REPLACE INTO %s (account_id_type, address, device_id, record)
                         VALUES (?, ?, ?, ?)
                         """.formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);
-            statement.setBytes(2, key.serviceId().toByteArray());
+            statement.setString(2, key.address());
             statement.setInt(3, key.deviceId());
             statement.setBytes(4, session.serialize());
             statement.executeUpdate();
         }
     }
 
-    private void deleteAllSessions(final Connection connection, final ServiceId serviceId) throws SQLException {
+    private void deleteAllSessions(final Connection connection, final String address) throws SQLException {
         synchronized (cachedSessions) {
             cachedSessions.clear();
         }
@@ -376,12 +366,12 @@ public class SessionStore implements SignalServiceSessionStore {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid = ?
+                WHERE s.account_id_type = ? AND s.address = ?
                 """
         ).formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);
-            statement.setBytes(2, serviceId.toByteArray());
+            statement.setString(2, address);
             statement.executeUpdate();
         }
     }
@@ -394,12 +384,12 @@ public class SessionStore implements SignalServiceSessionStore {
         final var sql = (
                 """
                 DELETE FROM %s AS s
-                WHERE s.account_id_type = ? AND s.uuid = ? AND s.device_id = ?
+                WHERE s.account_id_type = ? AND s.address = ? AND s.device_id = ?
                 """
         ).formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);
-            statement.setBytes(2, key.serviceId().toByteArray());
+            statement.setString(2, key.address());
             statement.setInt(3, key.deviceId());
             statement.executeUpdate();
         }
@@ -409,5 +399,5 @@ public class SessionStore implements SignalServiceSessionStore {
         return record != null && record.hasSenderChain();
     }
 
-    record Key(ServiceId serviceId, int deviceId) {}
+    record Key(String address, int deviceId) {}
 }

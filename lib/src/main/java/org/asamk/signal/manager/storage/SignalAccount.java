@@ -1841,8 +1841,7 @@ public class SignalAccount implements Closeable {
 
         public SignalIdentityKeyStore getIdentityKeyStore() {
             return getOrCreate(() -> identityKeyStore,
-                    () -> identityKeyStore = new SignalIdentityKeyStore(getRecipientResolver(),
-                            () -> identityKeyPair,
+                    () -> identityKeyStore = new SignalIdentityKeyStore(() -> identityKeyPair,
                             localRegistrationId,
                             SignalAccount.this.getIdentityKeyStore()));
         }

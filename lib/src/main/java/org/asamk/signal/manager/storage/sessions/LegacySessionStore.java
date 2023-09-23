@@ -37,7 +37,7 @@ public class LegacySessionStore {
             if (record == null || serviceId.isEmpty()) {
                 return null;
             }
-            return new Pair<>(new SessionStore.Key(serviceId.get(), key.deviceId()), record);
+            return new Pair<>(new SessionStore.Key(serviceId.get().toString(), key.deviceId()), record);
         }).filter(Objects::nonNull).toList();
         sessionStore.addLegacySessions(sessions);
         deleteAllSessions(sessionsPath);
