@@ -10,7 +10,6 @@ import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.MimeUtils;
-import org.jetbrains.annotations.NotNull;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,7 +232,6 @@ public class SyncHelper {
         context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forStickerPackOperations(stickerMessages));
     }
 
-    @NotNull
     private static StickerPackOperationMessage getStickerPackOperationMessage(
             final StickerPack s, final boolean installed
     ) {
