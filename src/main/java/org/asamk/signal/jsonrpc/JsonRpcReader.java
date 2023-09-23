@@ -95,7 +95,9 @@ public class JsonRpcReader {
                 return handleRequest(requestHandler, request);
             }).filter(Objects::nonNull).toList();
 
-            jsonRpcSender.sendBatchResponses(responseList);
+            if (responseList.size() > 0) {
+                jsonRpcSender.sendBatchResponses(responseList);
+            }
         }
     }
 
