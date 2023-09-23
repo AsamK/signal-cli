@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.helper;
 
-import com.google.protobuf.ByteString;
-
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
@@ -53,6 +51,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import okio.ByteString;
 
 public class SendHelper {
 
@@ -267,10 +267,10 @@ public class SendHelper {
 
         final var senderKeyDistributionMessage = dependencies.getMessageSender()
                 .getOrCreateNewGroupSession(group.getDistributionId());
-        final var distributionBytes = ByteString.copyFrom(senderKeyDistributionMessage.serialize());
+        final var distributionBytes = ByteString.of(senderKeyDistributionMessage.serialize());
         final var contentToSend = messageSendLogEntry.content()
-                .toBuilder()
-                .setSenderKeyDistributionMessage(distributionBytes)
+                .newBuilder()
+                .senderKeyDistributionMessage(distributionBytes)
                 .build();
 
         final var result = handleSendMessage(recipientId,

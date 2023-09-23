@@ -70,11 +70,8 @@ import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.Envelope;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
-import org.whispersystems.signalservice.internal.serialize.SignalServiceAddressProtobufSerializer;
-import org.whispersystems.signalservice.internal.serialize.SignalServiceMetadataProtobufSerializer;
-import org.whispersystems.signalservice.internal.serialize.protos.SignalServiceContentProto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,7 +210,7 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceContent validate(
-            SignalServiceProtos.Envelope envelope, SignalServiceCipherResult cipherResult, long serverDeliveredTimestamp
+            Envelope envelope, SignalServiceCipherResult cipherResult, long serverDeliveredTimestamp
     ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
@@ -236,21 +233,15 @@ public final class IncomingMessageHandler {
         final var metadata = new SignalServiceMetadata(new SignalServiceAddress(envelopeMetadata.getSourceServiceId(),
                 Optional.ofNullable(envelopeMetadata.getSourceE164())),
                 envelopeMetadata.getSourceDeviceId(),
-                envelope.getTimestamp(),
-                envelope.getServerTimestamp(),
+                envelope.timestamp,
+                envelope.serverTimestamp,
                 serverDeliveredTimestamp,
                 envelopeMetadata.getSealedSender(),
-                envelope.getServerGuid(),
+                envelope.serverGuid,
                 Optional.ofNullable(envelopeMetadata.getGroupId()),
                 envelopeMetadata.getDestinationServiceId().toString());
 
-        final var contentProto = SignalServiceContentProto.newBuilder()
-                .setLocalAddress(SignalServiceAddressProtobufSerializer.toProtobuf(localAddress))
-                .setMetadata(SignalServiceMetadataProtobufSerializer.toProtobuf(metadata))
-                .setContent(content)
-                .build();
-
-        return SignalServiceContent.createFromProto(contentProto);
+        return SignalServiceContent.createFrom(localAddress, metadata, content);
     }
 
     private List<HandleAction> checkAndHandleMessage(
@@ -635,23 +626,21 @@ public final class IncomingMessageHandler {
         if (syncMessage.getPniChangeNumber().isPresent()) {
             final var pniChangeNumber = syncMessage.getPniChangeNumber().get();
             logger.debug("Received PNI change number sync message, applying.");
-            if (pniChangeNumber.hasIdentityKeyPair()
-                    && pniChangeNumber.hasRegistrationId()
-                    && pniChangeNumber.hasSignedPreKey()
+            if (pniChangeNumber.identityKeyPair != null
+                    && pniChangeNumber.registrationId != null
+                    && pniChangeNumber.signedPreKey != null
                     && !envelope.getUpdatedPni().isEmpty()) {
                 logger.debug("New PNI: {}", envelope.getUpdatedPni());
                 try {
                     final var updatedPni = PNI.parseOrThrow(envelope.getUpdatedPni());
                     context.getAccountHelper()
                             .setPni(updatedPni,
-                                    new IdentityKeyPair(pniChangeNumber.getIdentityKeyPair().toByteArray()),
-                                    pniChangeNumber.hasNewE164() ? pniChangeNumber.getNewE164() : null,
-                                    pniChangeNumber.getRegistrationId(),
-                                    new SignedPreKeyRecord(pniChangeNumber.getSignedPreKey().toByteArray()),
-                                    pniChangeNumber.hasLastResortKyberPreKey()
-                                            ? new KyberPreKeyRecord(pniChangeNumber.getLastResortKyberPreKey()
-                                            .toByteArray())
-                                            : null);
+                                    new IdentityKeyPair(pniChangeNumber.identityKeyPair.toByteArray()),
+                                    pniChangeNumber.newE164,
+                                    pniChangeNumber.registrationId,
+                                    new SignedPreKeyRecord(pniChangeNumber.signedPreKey.toByteArray()),
+                                    pniChangeNumber.lastResortKyberPreKey != null ? new KyberPreKeyRecord(
+                                            pniChangeNumber.lastResortKyberPreKey.toByteArray()) : null);
                 } catch (Exception e) {
                     logger.warn("Failed to handle change number message", e);
                 }

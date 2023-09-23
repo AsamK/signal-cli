@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.Content;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -267,7 +267,7 @@ public class MessageSendLogStore implements AutoCloseable {
     private long insert(
             final List<RecipientDevices> recipientDevices,
             final long sentTimestamp,
-            final SignalServiceProtos.Content content,
+            final Content content,
             final ContentHint contentHint,
             final boolean urgent
     ) {
@@ -284,7 +284,7 @@ public class MessageSendLogStore implements AutoCloseable {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, sentTimestamp);
                 statement.setBytes(2, groupId);
-                statement.setBytes(3, content.toByteArray());
+                statement.setBytes(3, content.encode());
                 statement.setInt(4, contentHint.getType());
                 statement.setBoolean(5, urgent);
                 final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
@@ -308,17 +308,15 @@ public class MessageSendLogStore implements AutoCloseable {
         }
     }
 
-    private byte[] getGroupId(final SignalServiceProtos.Content content) {
+    private byte[] getGroupId(final Content content) {
         try {
-            return !content.hasDataMessage()
+            return content.dataMessage == null
                     ? null
-                    : content.getDataMessage().hasGroup()
-                            ? content.getDataMessage().getGroup().getId().toByteArray()
-                            : content.getDataMessage().hasGroupV2()
-                                    ? GroupUtils.getGroupIdV2(new GroupMasterKey(content.getDataMessage()
-                                    .getGroupV2()
-                                    .getMasterKey()
-                                    .toByteArray())).serialize()
+                    : content.dataMessage.group != null && content.dataMessage.group.id != null
+                            ? content.dataMessage.group.id.toByteArray()
+                            : content.dataMessage.groupV2 != null && content.dataMessage.groupV2.masterKey != null
+                                    ? GroupUtils.getGroupIdV2(new GroupMasterKey(content.dataMessage.groupV2.masterKey.toByteArray()))
+                                    .serialize()
                                     : null;
         } catch (InvalidInputException e) {
             logger.warn("Failed to parse groupId id from content");
@@ -385,9 +383,9 @@ public class MessageSendLogStore implements AutoCloseable {
 
     private MessageSendLogEntry getMessageSendLogEntryFromResultSet(ResultSet resultSet) throws SQLException {
         final var groupId = Optional.ofNullable(resultSet.getBytes("group_id")).map(GroupId::unknownVersion);
-        final SignalServiceProtos.Content content;
+        final Content content;
         try {
-            content = SignalServiceProtos.Content.parseFrom(resultSet.getBinaryStream("content"));
+            content = Content.ADAPTER.decode(resultSet.getBinaryStream("content"));
         } catch (IOException e) {
             logger.warn("Failed to parse content from message send log", e);
             return null;

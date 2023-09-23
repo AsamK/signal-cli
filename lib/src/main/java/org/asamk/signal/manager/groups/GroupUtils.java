@@ -28,7 +28,7 @@ public class GroupUtils {
         } else {
             final var groupInfoV2 = (GroupInfoV2) groupInfo;
             var group = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
-                    .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().getRevision())
+                    .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().revision)
                     .build();
             messageBuilder.asGroupMessage(group);
         }

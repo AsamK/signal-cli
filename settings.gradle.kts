@@ -16,8 +16,7 @@ dependencyResolutionManagement {
             library("logback", "ch.qos.logback", "logback-classic").version("1.4.11")
 
 
-            library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_80")
-            library("protobuf", "com.google.protobuf", "protobuf-javalite").version("3.24.0")
+            library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_81")
             library("sqlite", "org.xerial", "sqlite-jdbc").version("3.43.0.0")
             library("hikari", "com.zaxxer", "HikariCP").version("5.0.1")
             library("junit", "org.junit.jupiter", "junit-jupiter").version("5.10.0")

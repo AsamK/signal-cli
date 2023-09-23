@@ -21,7 +21,7 @@ public final class GroupInfoV2 extends GroupInfo {
 
     private final GroupIdV2 groupId;
     private final GroupMasterKey masterKey;
-    private DistributionId distributionId;
+    private final DistributionId distributionId;
     private boolean blocked;
     private DecryptedGroup group;
     private boolean permissionDenied;
@@ -84,7 +84,7 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return null;
         }
-        return this.group.getTitle();
+        return this.group.title;
     }
 
     @Override
@@ -92,15 +92,15 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return null;
         }
-        return this.group.getDescription();
+        return this.group.description;
     }
 
     @Override
     public GroupInviteLinkUrl getGroupInviteLink() {
-        if (this.group == null || this.group.getInviteLinkPassword().isEmpty() || (
-                this.group.getAccessControl().getAddFromInviteLink() != AccessControl.AccessRequired.ANY
-                        && this.group.getAccessControl().getAddFromInviteLink()
-                        != AccessControl.AccessRequired.ADMINISTRATOR
+        if (this.group == null || this.group.inviteLinkPassword.toByteArray().length == 0 || (
+                this.group.accessControl != null
+                        && this.group.accessControl.addFromInviteLink != AccessControl.AccessRequired.ANY
+                        && this.group.accessControl.addFromInviteLink != AccessControl.AccessRequired.ADMINISTRATOR
         )) {
             return null;
         }
@@ -113,9 +113,8 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Set.of();
         }
-        return group.getMembersList()
-                .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getAciBytes()))
+        return group.members.stream()
+                .map(m -> ServiceId.parseOrThrow(m.aciBytes))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -125,9 +124,8 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Set.of();
         }
-        return group.getBannedMembersList()
-                .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBytes()))
+        return group.bannedMembers.stream()
+                .map(m -> ServiceId.parseOrThrow(m.serviceIdBytes))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -137,9 +135,8 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Set.of();
         }
-        return group.getPendingMembersList()
-                .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getServiceIdBytes()))
+        return group.pendingMembers.stream()
+                .map(m -> ServiceId.parseOrThrow(m.serviceIdBytes))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -149,9 +146,8 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Set.of();
         }
-        return group.getRequestingMembersList()
-                .stream()
-                .map(m -> ServiceId.parseOrThrow(m.getAciBytes()))
+        return group.requestingMembers.stream()
+                .map(m -> ServiceId.parseOrThrow(m.aciBytes))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
     }
@@ -161,11 +157,10 @@ public final class GroupInfoV2 extends GroupInfo {
         if (this.group == null) {
             return Set.of();
         }
-        return group.getMembersList()
-                .stream()
-                .filter(m -> m.getRole() == Member.Role.ADMINISTRATOR)
-                .map(m -> new RecipientAddress(ServiceId.ACI.parseOrNull(m.getAciBytes()),
-                        ServiceId.PNI.parseOrNull(m.getPniBytes()),
+        return group.members.stream()
+                .filter(m -> m.role == Member.Role.ADMINISTRATOR)
+                .map(m -> new RecipientAddress(ServiceId.ACI.parseOrNull(m.aciBytes),
+                        ServiceId.PNI.parseOrNull(m.pniBytes),
                         null))
                 .map(recipientResolver::resolveRecipient)
                 .collect(Collectors.toSet());
@@ -183,26 +178,26 @@ public final class GroupInfoV2 extends GroupInfo {
 
     @Override
     public int getMessageExpirationTimer() {
-        return this.group != null && this.group.hasDisappearingMessagesTimer()
-                ? this.group.getDisappearingMessagesTimer().getDuration()
+        return this.group != null && this.group.disappearingMessagesTimer != null
+                ? this.group.disappearingMessagesTimer.duration
                 : 0;
     }
 
     @Override
     public boolean isAnnouncementGroup() {
-        return this.group != null && this.group.getIsAnnouncementGroup() == EnabledState.ENABLED;
+        return this.group != null && this.group.isAnnouncementGroup == EnabledState.ENABLED;
     }
 
     @Override
     public GroupPermission getPermissionAddMember() {
         final var accessControl = getAccessControl();
-        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.getMembers());
+        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.members);
     }
 
     @Override
     public GroupPermission getPermissionEditDetails() {
         final var accessControl = getAccessControl();
-        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.getAttributes());
+        return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.attributes);
     }
 
     @Override
@@ -219,11 +214,11 @@ public final class GroupInfoV2 extends GroupInfo {
     }
 
     private AccessControl getAccessControl() {
-        if (this.group == null || !this.group.hasAccessControl()) {
+        if (this.group == null || this.group.accessControl == null) {
             return null;
         }
 
-        return this.group.getAccessControl();
+        return this.group.accessControl;
     }
 
     private static GroupPermission toGroupPermission(final AccessControl.AccessRequired permission) {

@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.storage.groups;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.api.GroupIdV2;
@@ -19,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -295,7 +294,7 @@ public class GroupStore {
                 if (groupV2.getGroup() == null) {
                     statement.setNull(4, Types.NUMERIC);
                 } else {
-                    statement.setBytes(4, groupV2.getGroup().toByteArray());
+                    statement.setBytes(4, groupV2.getGroup().encode());
                 }
                 statement.setBytes(5, UuidUtil.toByteArray(groupV2.getDistributionId().asUuid()));
                 statement.setBoolean(6, groupV2.isBlocked());
@@ -349,12 +348,12 @@ public class GroupStore {
             final var permissionDenied = resultSet.getBoolean("permission_denied");
             return new GroupInfoV2(GroupId.v2(groupId),
                     new GroupMasterKey(masterKey),
-                    groupData == null ? null : DecryptedGroup.parseFrom(groupData),
+                    groupData == null ? null : DecryptedGroup.ADAPTER.decode(groupData),
                     DistributionId.from(UuidUtil.parseOrThrow(distributionId)),
                     blocked,
                     permissionDenied,
                     recipientResolver);
-        } catch (InvalidInputException | InvalidProtocolBufferException e) {
+        } catch (InvalidInputException | IOException e) {
             return null;
         }
     }

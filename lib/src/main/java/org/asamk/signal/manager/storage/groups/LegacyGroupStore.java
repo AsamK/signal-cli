@@ -113,7 +113,7 @@ public class LegacyGroupStore {
             return null;
         }
         try (var stream = new FileInputStream(groupFile)) {
-            return DecryptedGroup.parseFrom(stream);
+            return DecryptedGroup.ADAPTER.decode(stream);
         } catch (IOException ignored) {
             return null;
         }

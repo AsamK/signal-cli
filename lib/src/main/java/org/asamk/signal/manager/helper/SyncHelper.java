@@ -31,7 +31,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.SyncMessage;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -58,20 +58,20 @@ public class SyncHelper {
     }
 
     public void requestAllSyncData() {
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.GROUPS);
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.CONTACTS);
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.BLOCKED);
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.CONFIGURATION);
+        requestSyncData(SyncMessage.Request.Type.GROUPS);
+        requestSyncData(SyncMessage.Request.Type.CONTACTS);
+        requestSyncData(SyncMessage.Request.Type.BLOCKED);
+        requestSyncData(SyncMessage.Request.Type.CONFIGURATION);
         requestSyncKeys();
         requestSyncPniIdentity();
     }
 
     public void requestSyncKeys() {
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.KEYS);
+        requestSyncData(SyncMessage.Request.Type.KEYS);
     }
 
     public void requestSyncPniIdentity() {
-        requestSyncData(SignalServiceProtos.SyncMessage.Request.Type.PNI_IDENTITY);
+        requestSyncData(SyncMessage.Request.Type.PNI_IDENTITY);
     }
 
     public void sendSyncFetchProfileMessage() {
@@ -346,8 +346,8 @@ public class SyncHelper {
         }
     }
 
-    private void requestSyncData(final SignalServiceProtos.SyncMessage.Request.Type type) {
-        var r = SignalServiceProtos.SyncMessage.Request.newBuilder().setType(type).build();
+    private void requestSyncData(final SyncMessage.Request.Type type) {
+        var r = new SyncMessage.Request.Builder().type(type).build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
         context.getSendHelper().sendSyncMessage(message);
     }

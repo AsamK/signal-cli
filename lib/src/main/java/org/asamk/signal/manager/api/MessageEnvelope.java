@@ -39,8 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.whispersystems.signalservice.internal.push.SignalServiceProtos.BodyRange;
-
 public record MessageEnvelope(
         Optional<RecipientAddress> sourceAddress,
         int sourceDevice,
@@ -160,7 +158,7 @@ public record MessageEnvelope(
                             .map(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
                             .orElse(List.of()),
                     dataMessage.getBodyRanges()
-                            .map(a -> a.stream().filter(BodyRange::hasStyle).map(TextStyle::from).toList())
+                            .map(a -> a.stream().filter(r -> r.style != null).map(TextStyle::from).toList())
                             .orElse(List.of()));
         }
 
@@ -250,7 +248,7 @@ public record MessageEnvelope(
                                 ? List.of()
                                 : quote.getBodyRanges()
                                         .stream()
-                                        .filter(BodyRange::hasStyle)
+                                        .filter(r -> r.style != null)
                                         .map(TextStyle::from)
                                         .toList());
             }
@@ -765,13 +763,12 @@ public record MessageEnvelope(
             }
         }
 
-        public record Hangup(long id, Type type, int deviceId, boolean isLegacy) {
+        public record Hangup(long id, Type type, int deviceId) {
 
             static Hangup from(HangupMessage hangupMessage) {
                 return new Hangup(hangupMessage.getId(),
                         Type.from(hangupMessage.getType()),
-                        hangupMessage.getDeviceId(),
-                        hangupMessage.isLegacy());
+                        hangupMessage.getDeviceId());
             }
 
             public enum Type {

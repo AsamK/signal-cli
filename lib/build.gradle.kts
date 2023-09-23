@@ -20,7 +20,6 @@ dependencies {
         implementation(files(libsignalClientPath))
     }
     implementation(libs.jackson.databind)
-    implementation(libs.protobuf)
     implementation(libs.bouncycastle)
     implementation(libs.slf4j.api)
     implementation(libs.sqlite)

@@ -125,11 +125,11 @@ public class GroupHelper {
             groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, account.getRecipientResolver());
         }
 
-        if (groupInfoV2.getGroup() == null || groupInfoV2.getGroup().getRevision() < revision) {
+        if (groupInfoV2.getGroup() == null || groupInfoV2.getGroup().revision < revision) {
             DecryptedGroup group = null;
             if (signedGroupChange != null
                     && groupInfoV2.getGroup() != null
-                    && groupInfoV2.getGroup().getRevision() + 1 == revision) {
+                    && groupInfoV2.getGroup().revision + 1 == revision) {
                 final var decryptedGroupChange = context.getGroupV2Helper()
                         .getDecryptedGroupChange(signedGroupChange, groupMasterKey);
 
@@ -151,8 +151,8 @@ public class GroupHelper {
             }
             if (group != null) {
                 storeProfileKeysFromMembers(group);
-                final var avatar = group.getAvatar();
-                if (avatar != null && !avatar.isEmpty()) {
+                final var avatar = group.avatar;
+                if (!avatar.isEmpty()) {
                     downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
@@ -300,14 +300,14 @@ public class GroupHelper {
         } catch (GroupLinkNotActiveException e) {
             throw new InactiveGroupLinkException("Group link inactive (reason: " + e.getReason() + ")", e);
         }
-        if (groupJoinInfo.getPendingAdminApproval()) {
+        if (groupJoinInfo.pendingAdminApproval) {
             throw new PendingAdminApprovalException("You have already requested to join the group.");
         }
         final var groupChange = context.getGroupV2Helper()
                 .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);
         final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
-                groupJoinInfo.getRevision() + 1,
-                groupChange.toByteArray());
+                groupJoinInfo.revision + 1,
+                groupChange.encode());
 
         if (group.getGroup() == null) {
             // Only requested member, can't send update to group members
@@ -400,8 +400,8 @@ public class GroupHelper {
                     } catch (NotAGroupMemberException ignored) {
                     }
                     storeProfileKeysFromMembers(decryptedGroup);
-                    final var avatar = decryptedGroup.getAvatar();
-                    if (avatar != null && !avatar.isEmpty()) {
+                    final var avatar = decryptedGroup.avatar;
+                    if (!avatar.isEmpty()) {
                         downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
                     }
                 }
@@ -446,8 +446,8 @@ public class GroupHelper {
     }
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
-        for (var member : group.getMembersList()) {
-            final var serviceId = ServiceId.parseOrThrow(member.getAciBytes());
+        for (var member : group.members) {
+            final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
             final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
             final var profileStore = account.getProfileStore();
             if (profileStore.getProfileKey(recipientId) != null) {
@@ -455,7 +455,7 @@ public class GroupHelper {
                 continue;
             }
             try {
-                profileStore.storeProfileKey(recipientId, new ProfileKey(member.getProfileKey().toByteArray()));
+                profileStore.storeProfileKey(recipientId, new ProfileKey(member.profileKey.toByteArray()));
             } catch (InvalidInputException ignored) {
             }
         }
@@ -479,7 +479,7 @@ public class GroupHelper {
             final DecryptedGroup newDecryptedGroup
     ) throws NotAGroupMemberException {
         final var revisionWeWereAdded = context.getGroupV2Helper().findRevisionWeWereAdded(newDecryptedGroup);
-        final var localRevision = localGroup.getGroup() == null ? 0 : localGroup.getGroup().getRevision();
+        final var localRevision = localGroup.getGroup() == null ? 0 : localGroup.getGroup().revision;
         var fromRevision = Math.max(revisionWeWereAdded, localRevision);
         final var newProfileKeys = new HashMap<RecipientId, ProfileKey>();
         while (true) {
@@ -753,7 +753,7 @@ public class GroupHelper {
         groupInfoV2.setGroup(groupGroupChangePair.first());
         account.getGroupStore().updateGroup(groupInfoV2);
 
-        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().toByteArray());
+        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupGroupChangePair.second().encode());
         return sendGroupMessage(messageBuilder,
                 groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
                 groupInfoV2.getDistributionId());
@@ -782,7 +782,7 @@ public class GroupHelper {
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV2 g, byte[] signedGroupChange) {
         var group = SignalServiceGroupV2.newBuilder(g.getMasterKey())
-                .withRevision(g.getGroup().getRevision())
+                .withRevision(g.getGroup().revision)
                 .withSignedGroupChange(signedGroupChange);
         return SignalServiceDataMessage.newBuilder()
                 .asGroupMessage(group.build())
@@ -798,7 +798,7 @@ public class GroupHelper {
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
         account.getGroupStore().updateGroup(group);
 
-        final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.toByteArray());
+        final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.encode());
         return sendGroupMessage(messageBuilder, members, group.getDistributionId());
     }
 

@@ -101,55 +101,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.google.protobuf.AbstractProtobufList",
+  "name":"com.squareup.wire.internal.ImmutableList",
   "allDeclaredFields":true,
-  "allDeclaredMethods":true
-},
-{
-  "name":"com.google.protobuf.ByteString"
-},
-{
-  "name":"com.google.protobuf.DescriptorMessageInfoFactory"
-},
-{
-  "name":"com.google.protobuf.ExtensionRegistry"
-},
-{
-  "name":"com.google.protobuf.ExtensionSchemaFull"
-},
-{
-  "name":"com.google.protobuf.GeneratedMessageLite",
-  "fields":[{"name":"unknownFields"}]
-},
-{
-  "name":"com.google.protobuf.GeneratedMessageV3"
-},
-{
-  "name":"com.google.protobuf.Internal$LongList",
-  "allDeclaredMethods":true
-},
-{
-  "name":"com.google.protobuf.Internal$ProtobufList",
-  "allDeclaredMethods":true
-},
-{
-  "name":"com.google.protobuf.LongArrayList",
-  "allDeclaredFields":true,
-  "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
-},
-{
-  "name":"com.google.protobuf.MapFieldSchemaFull"
-},
-{
-  "name":"com.google.protobuf.NewInstanceSchemaFull"
-},
-{
-  "name":"com.google.protobuf.PrimitiveNonBoxingCollection",
-  "allDeclaredMethods":true
-},
-{
-  "name":"com.google.protobuf.UnknownFieldSetSchema"
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"com.sun.crypto.provider.AESCipher$General",
@@ -535,6 +490,16 @@
   "name":"kotlin.String"
 },
 {
+  "name":"kotlin.collections.AbstractCollection",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"kotlin.collections.AbstractList",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"kotlin.collections.List"
 },
 {
@@ -546,6 +511,10 @@
 },
 {
   "name":"kotlin.jvm.internal.DefaultConstructorMarker"
+},
+{
+  "name":"kotlin.jvm.internal.markers.KMappedMarker",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
@@ -844,31 +813,36 @@
   "name":"org.asamk.signal.json.JsonContactAddress",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"city","parameterTypes":[] }, {"name":"country","parameterTypes":[] }, {"name":"label","parameterTypes":[] }, {"name":"neighborhood","parameterTypes":[] }, {"name":"pobox","parameterTypes":[] }, {"name":"postcode","parameterTypes":[] }, {"name":"region","parameterTypes":[] }, {"name":"street","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactAvatar",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"attachment","parameterTypes":[] }, {"name":"isProfile","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactEmail",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"label","parameterTypes":[] }, {"name":"type","parameterTypes":[] }, {"name":"value","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactName",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"display","parameterTypes":[] }, {"name":"family","parameterTypes":[] }, {"name":"given","parameterTypes":[] }, {"name":"middle","parameterTypes":[] }, {"name":"prefix","parameterTypes":[] }, {"name":"suffix","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactPhone",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"label","parameterTypes":[] }, {"name":"type","parameterTypes":[] }, {"name":"value","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonDataMessage",
@@ -984,7 +958,8 @@
   "name":"org.asamk.signal.json.JsonSharedContact",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"address","parameterTypes":[] }, {"name":"avatar","parameterTypes":[] }, {"name":"email","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"organization","parameterTypes":[] }, {"name":"phone","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonSticker",
@@ -2131,13 +2106,6 @@
   "name":"org.whispersystems.signalservice.api.push.ServiceId$ACI"
 },
 {
-  "name":"org.whispersystems.signalservice.api.push.ServiceId$Companion",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"fromLibSignal","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"parseOrNull","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"parseOrNull","parameterTypes":["java.lang.String"] }, {"name":"parseOrNull","parameterTypes":["byte[]"] }, {"name":"parseOrThrow","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"parseOrThrow","parameterTypes":["java.lang.String"] }, {"name":"parseOrThrow","parameterTypes":["byte[]"] }]
-},
-{
   "name":"org.whispersystems.signalservice.api.push.ServiceId$PNI"
 },
 {
@@ -2533,270 +2501,6 @@
 {
   "name":"org.whispersystems.signalservice.internal.push.SenderCertificate$ByteArrayDesieralizer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$AttachmentPointer",
-  "fields":[{"name":"attachmentIdentifierCase_"}, {"name":"attachmentIdentifier_"}, {"name":"bitField0_"}, {"name":"blurHash_"}, {"name":"caption_"}, {"name":"cdnNumber_"}, {"name":"contentType_"}, {"name":"digest_"}, {"name":"fileName_"}, {"name":"flags_"}, {"name":"height_"}, {"name":"incrementalDigest_"}, {"name":"key_"}, {"name":"size_"}, {"name":"thumbnail_"}, {"name":"uploadTimestamp_"}, {"name":"width_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$BodyRange",
-  "fields":[{"name":"associatedValueCase_"}, {"name":"associatedValue_"}, {"name":"bitField0_"}, {"name":"length_"}, {"name":"start_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage",
-  "fields":[{"name":"answer_"}, {"name":"bitField0_"}, {"name":"busy_"}, {"name":"destinationDeviceId_"}, {"name":"hangup_"}, {"name":"iceUpdate_"}, {"name":"legacyHangup_"}, {"name":"multiRing_"}, {"name":"offer_"}, {"name":"opaque_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$Answer",
-  "fields":[{"name":"bitField0_"}, {"name":"id_"}, {"name":"opaque_"}, {"name":"sdp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$Hangup",
-  "fields":[{"name":"bitField0_"}, {"name":"deviceId_"}, {"name":"id_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$IceUpdate",
-  "fields":[{"name":"bitField0_"}, {"name":"id_"}, {"name":"line_"}, {"name":"mid_"}, {"name":"opaque_"}, {"name":"sdp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$Offer",
-  "fields":[{"name":"bitField0_"}, {"name":"id_"}, {"name":"opaque_"}, {"name":"sdp_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$CallMessage$Opaque",
-  "fields":[{"name":"bitField0_"}, {"name":"data_"}, {"name":"urgency_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails",
-  "fields":[{"name":"aci_"}, {"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"inboxPosition_"}, {"name":"name_"}, {"name":"number_"}, {"name":"profileKey_"}, {"name":"verified_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ContactDetails$Avatar",
-  "fields":[{"name":"bitField0_"}, {"name":"contentType_"}, {"name":"length_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Content",
-  "fields":[{"name":"bitField0_"}, {"name":"callMessage_"}, {"name":"dataMessage_"}, {"name":"decryptionErrorMessage_"}, {"name":"editMessage_"}, {"name":"nullMessage_"}, {"name":"pniSignatureMessage_"}, {"name":"receiptMessage_"}, {"name":"senderKeyDistributionMessage_"}, {"name":"storyMessage_"}, {"name":"syncMessage_"}, {"name":"typingMessage_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage",
-  "fields":[{"name":"attachments_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"body_"}, {"name":"contact_"}, {"name":"delete_"}, {"name":"expireTimer_"}, {"name":"flags_"}, {"name":"giftBadge_"}, {"name":"groupCallUpdate_"}, {"name":"groupV2_"}, {"name":"group_"}, {"name":"isViewOnce_"}, {"name":"payment_"}, {"name":"preview_"}, {"name":"profileKey_"}, {"name":"quote_"}, {"name":"reaction_"}, {"name":"requiredProtocolVersion_"}, {"name":"sticker_"}, {"name":"storyContext_"}, {"name":"timestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact",
-  "fields":[{"name":"address_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"email_"}, {"name":"name_"}, {"name":"number_"}, {"name":"organization_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Avatar",
-  "fields":[{"name":"avatar_"}, {"name":"bitField0_"}, {"name":"isProfile_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Email",
-  "fields":[{"name":"bitField0_"}, {"name":"label_"}, {"name":"type_"}, {"name":"value_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Name",
-  "fields":[{"name":"bitField0_"}, {"name":"displayName_"}, {"name":"familyName_"}, {"name":"givenName_"}, {"name":"middleName_"}, {"name":"prefix_"}, {"name":"suffix_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$Phone",
-  "fields":[{"name":"bitField0_"}, {"name":"label_"}, {"name":"type_"}, {"name":"value_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Contact$PostalAddress",
-  "fields":[{"name":"bitField0_"}, {"name":"city_"}, {"name":"country_"}, {"name":"label_"}, {"name":"neighborhood_"}, {"name":"pobox_"}, {"name":"postcode_"}, {"name":"region_"}, {"name":"street_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Delete",
-  "fields":[{"name":"bitField0_"}, {"name":"targetSentTimestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$GroupCallUpdate",
-  "fields":[{"name":"bitField0_"}, {"name":"eraId_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Payment",
-  "fields":[{"name":"itemCase_"}, {"name":"item_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Payment$Notification",
-  "fields":[{"name":"bitField0_"}, {"name":"note_"}, {"name":"transactionCase_"}, {"name":"transaction_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Payment$Notification$MobileCoin",
-  "fields":[{"name":"bitField0_"}, {"name":"receipt_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote",
-  "fields":[{"name":"attachments_"}, {"name":"authorAci_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"id_"}, {"name":"text_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Quote$QuotedAttachment",
-  "fields":[{"name":"bitField0_"}, {"name":"contentType_"}, {"name":"fileName_"}, {"name":"thumbnail_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Reaction",
-  "fields":[{"name":"bitField0_"}, {"name":"emoji_"}, {"name":"remove_"}, {"name":"targetAuthorAci_"}, {"name":"targetSentTimestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$Sticker",
-  "fields":[{"name":"bitField0_"}, {"name":"data_"}, {"name":"emoji_"}, {"name":"packId_"}, {"name":"packKey_"}, {"name":"stickerId_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$DataMessage$StoryContext",
-  "fields":[{"name":"authorAci_"}, {"name":"bitField0_"}, {"name":"sentTimestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$EditMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"dataMessage_"}, {"name":"targetSentTimestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Envelope",
-  "fields":[{"name":"bitField0_"}, {"name":"content_"}, {"name":"destinationServiceId_"}, {"name":"reportingToken_"}, {"name":"serverGuid_"}, {"name":"serverTimestamp_"}, {"name":"sourceDevice_"}, {"name":"sourceServiceId_"}, {"name":"story_"}, {"name":"timestamp_"}, {"name":"type_"}, {"name":"updatedPni_"}, {"name":"urgent_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext",
-  "fields":[{"name":"avatar_"}, {"name":"bitField0_"}, {"name":"id_"}, {"name":"membersE164_"}, {"name":"members_"}, {"name":"name_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContext$Member",
-  "fields":[{"name":"bitField0_"}, {"name":"e164_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupContextV2",
-  "fields":[{"name":"bitField0_"}, {"name":"groupChange_"}, {"name":"masterKey_"}, {"name":"revision_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails",
-  "fields":[{"name":"active_"}, {"name":"archived_"}, {"name":"avatar_"}, {"name":"bitField0_"}, {"name":"blocked_"}, {"name":"color_"}, {"name":"expireTimer_"}, {"name":"id_"}, {"name":"inboxPosition_"}, {"name":"membersE164_"}, {"name":"members_"}, {"name":"name_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails$Avatar",
-  "fields":[{"name":"bitField0_"}, {"name":"contentType_"}, {"name":"length_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$GroupDetails$Member",
-  "fields":[{"name":"bitField0_"}, {"name":"e164_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$NullMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"padding_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PaymentAddress",
-  "fields":[{"name":"addressCase_"}, {"name":"address_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PaymentAddress$MobileCoinAddress",
-  "fields":[{"name":"address_"}, {"name":"bitField0_"}, {"name":"signature_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$PniSignatureMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"pni_"}, {"name":"signature_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Preview",
-  "fields":[{"name":"bitField0_"}, {"name":"date_"}, {"name":"description_"}, {"name":"image_"}, {"name":"title_"}, {"name":"url_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$ReceiptMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"timestamp_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$StoryMessage",
-  "fields":[{"name":"allowsReplies_"}, {"name":"attachmentCase_"}, {"name":"attachment_"}, {"name":"bitField0_"}, {"name":"bodyRanges_"}, {"name":"group_"}, {"name":"profileKey_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage",
-  "fields":[{"name":"bitField0_"}, {"name":"blocked_"}, {"name":"callEvent_"}, {"name":"callLinkUpdate_"}, {"name":"callLogEvent_"}, {"name":"configuration_"}, {"name":"contacts_"}, {"name":"fetchLatest_"}, {"name":"groups_"}, {"name":"keys_"}, {"name":"messageRequestResponse_"}, {"name":"outgoingPayment_"}, {"name":"padding_"}, {"name":"pniChangeNumber_"}, {"name":"read_"}, {"name":"request_"}, {"name":"sent_"}, {"name":"stickerPackOperation_"}, {"name":"verified_"}, {"name":"viewOnceOpen_"}, {"name":"viewed_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Blocked",
-  "fields":[{"name":"acis_"}, {"name":"groupIds_"}, {"name":"numbers_"}, {"name":"uuids_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$CallEvent",
-  "fields":[{"name":"bitField0_"}, {"name":"conversationId_"}, {"name":"direction_"}, {"name":"event_"}, {"name":"id_"}, {"name":"timestamp_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Configuration",
-  "fields":[{"name":"bitField0_"}, {"name":"linkPreviews_"}, {"name":"provisioningVersion_"}, {"name":"readReceipts_"}, {"name":"typingIndicators_"}, {"name":"unidentifiedDeliveryIndicators_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Contacts",
-  "fields":[{"name":"bitField0_"}, {"name":"blob_"}, {"name":"complete_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$FetchLatest",
-  "fields":[{"name":"bitField0_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Groups",
-  "fields":[{"name":"bitField0_"}, {"name":"blob_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Keys",
-  "fields":[{"name":"bitField0_"}, {"name":"storageService_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$MessageRequestResponse",
-  "fields":[{"name":"bitField0_"}, {"name":"groupId_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment",
-  "fields":[{"name":"bitField0_"}, {"name":"note_"}, {"name":"paymentDetailCase_"}, {"name":"paymentDetail_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$OutgoingPayment$MobileCoin",
-  "fields":[{"name":"amountPicoMob_"}, {"name":"bitField0_"}, {"name":"feePicoMob_"}, {"name":"ledgerBlockIndex_"}, {"name":"ledgerBlockTimestamp_"}, {"name":"outputPublicKeys_"}, {"name":"receipt_"}, {"name":"recipientAddress_"}, {"name":"spentKeyImages_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Read",
-  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"timestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Request",
-  "fields":[{"name":"bitField0_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationE164_"}, {"name":"destinationServiceId_"}, {"name":"editMessage_"}, {"name":"expirationStartTimestamp_"}, {"name":"isRecipientUpdate_"}, {"name":"message_"}, {"name":"storyMessageRecipients_"}, {"name":"storyMessage_"}, {"name":"timestamp_"}, {"name":"unidentifiedStatus_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$StoryMessageRecipient",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"distributionListIds_"}, {"name":"isAllowedToReply_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Sent$UnidentifiedDeliveryStatus",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationServiceId_"}, {"name":"unidentified_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$StickerPackOperation",
-  "fields":[{"name":"bitField0_"}, {"name":"packId_"}, {"name":"packKey_"}, {"name":"type_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$ViewOnceOpen",
-  "fields":[{"name":"bitField0_"}, {"name":"timestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$SyncMessage$Viewed",
-  "fields":[{"name":"bitField0_"}, {"name":"senderAci_"}, {"name":"timestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TextAttachment",
-  "fields":[{"name":"backgroundCase_"}, {"name":"background_"}, {"name":"bitField0_"}, {"name":"preview_"}, {"name":"textBackgroundColor_"}, {"name":"textForegroundColor_"}, {"name":"textStyle_"}, {"name":"text_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TextAttachment$Gradient",
-  "fields":[{"name":"angle_"}, {"name":"bitField0_"}, {"name":"colors_"}, {"name":"endColor_"}, {"name":"positions_"}, {"name":"startColor_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$TypingMessage",
-  "fields":[{"name":"action_"}, {"name":"bitField0_"}, {"name":"groupId_"}, {"name":"timestamp_"}]
-},
-{
-  "name":"org.whispersystems.signalservice.internal.push.SignalServiceProtos$Verified",
-  "fields":[{"name":"bitField0_"}, {"name":"destinationAci_"}, {"name":"identityKey_"}, {"name":"nullMessage_"}, {"name":"state_"}]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.StaleDevices",

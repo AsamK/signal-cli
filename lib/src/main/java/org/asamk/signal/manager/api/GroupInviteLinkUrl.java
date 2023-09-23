@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.api;
 
-import com.google.protobuf.ByteString;
-
 import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
@@ -12,6 +10,8 @@ import org.whispersystems.util.Base64UrlSafe;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import okio.ByteString;
 
 public final class GroupInviteLinkUrl {
 
@@ -24,7 +24,7 @@ public final class GroupInviteLinkUrl {
 
     public static GroupInviteLinkUrl forGroup(GroupMasterKey groupMasterKey, DecryptedGroup group) {
         return new GroupInviteLinkUrl(groupMasterKey,
-                GroupLinkPassword.fromBytes(group.getInviteLinkPassword().toByteArray()));
+                GroupLinkPassword.fromBytes(group.inviteLinkPassword.toByteArray()));
     }
 
     /**
@@ -50,19 +50,16 @@ public final class GroupInviteLinkUrl {
             }
 
             var bytes = Base64UrlSafe.decodePaddingAgnostic(encoding);
-            var groupInviteLink = GroupInviteLink.parseFrom(bytes);
+            GroupInviteLink groupInviteLink = GroupInviteLink.ADAPTER.decode(bytes);
 
-            switch (groupInviteLink.getContentsCase()) {
-                case V1CONTENTS -> {
-                    var groupInviteLinkContentsV1 = groupInviteLink.getV1Contents();
-                    var groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.getGroupMasterKey()
-                            .toByteArray());
-                    var password = GroupLinkPassword.fromBytes(groupInviteLinkContentsV1.getInviteLinkPassword()
-                            .toByteArray());
+            if (groupInviteLink.v1Contents != null) {
+                var groupInviteLinkContentsV1 = groupInviteLink.v1Contents;
+                var groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.groupMasterKey.toByteArray());
+                var password = GroupLinkPassword.fromBytes(groupInviteLinkContentsV1.inviteLinkPassword.toByteArray());
 
-                    return new GroupInviteLinkUrl(groupMasterKey, password);
-                }
-                default -> throw new UnknownGroupLinkVersionException("Url contains no known group link content");
+                return new GroupInviteLinkUrl(groupMasterKey, password);
+            } else {
+                throw new UnknownGroupLinkVersionException("Url contains no known group link content");
             }
         } catch (InvalidInputException | IOException e) {
             throw new InvalidGroupLinkException(e);
@@ -93,13 +90,12 @@ public final class GroupInviteLinkUrl {
     }
 
     private static String createUrl(GroupMasterKey groupMasterKey, GroupLinkPassword password) {
-        var groupInviteLink = GroupInviteLink.newBuilder()
-                .setV1Contents(GroupInviteLink.GroupInviteLinkContentsV1.newBuilder()
-                        .setGroupMasterKey(ByteString.copyFrom(groupMasterKey.serialize()))
-                        .setInviteLinkPassword(ByteString.copyFrom(password.serialize())))
-                .build();
+        var groupInviteLink = new GroupInviteLink.Builder().v1Contents(new GroupInviteLink.GroupInviteLinkContentsV1.Builder().groupMasterKey(
+                        ByteString.of(groupMasterKey.serialize()))
+                .inviteLinkPassword(ByteString.of(password.serialize()))
+                .build()).build();
 
-        var encoding = Base64UrlSafe.encodeBytesWithoutPadding(groupInviteLink.toByteArray());
+        var encoding = Base64UrlSafe.encodeBytesWithoutPadding(groupInviteLink.encode());
 
         return GROUP_URL_PREFIX + encoding;
     }

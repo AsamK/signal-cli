@@ -47,10 +47,10 @@ record JsonCallMessage(
         }
     }
 
-    public record Hangup(long id, String type, int deviceId, boolean isLegacy) {
+    public record Hangup(long id, String type, int deviceId) {
 
         public static Hangup from(final MessageEnvelope.Call.Hangup hangup) {
-            return new Hangup(hangup.id(), hangup.type().name(), hangup.deviceId(), hangup.isLegacy());
+            return new Hangup(hangup.id(), hangup.type().name(), hangup.deviceId());
         }
     }
 

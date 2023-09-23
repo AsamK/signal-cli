@@ -1,7 +1,5 @@
 package org.asamk.signal.manager.util;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.Profile;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -13,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.PaymentAddress;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -117,10 +115,10 @@ public class ProfileUtils {
             return null;
         }
 
-        SignalServiceProtos.PaymentAddress paymentAddress;
+        PaymentAddress paymentAddress;
         try {
-            paymentAddress = SignalServiceProtos.PaymentAddress.parseFrom(decrypted);
-        } catch (InvalidProtocolBufferException e) {
+            paymentAddress = PaymentAddress.ADAPTER.decode(decrypted);
+        } catch (IOException e) {
             logger.debug("Failed to parse payment address", e);
             return null;
         }

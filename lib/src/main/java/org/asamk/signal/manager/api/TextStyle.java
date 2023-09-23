@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.api;
 
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.BodyRange;
 
-public record TextStyle(Style style, int start, int length) {
+public record TextStyle(Style style, Integer start, Integer length) {
 
     public enum Style {
         NONE,
@@ -12,7 +12,10 @@ public record TextStyle(Style style, int start, int length) {
         STRIKETHROUGH,
         MONOSPACE;
 
-        static Style fromInternal(SignalServiceProtos.BodyRange.Style style) {
+        static Style fromInternal(BodyRange.Style style) {
+            if (style == null) {
+                return NONE;
+            }
             return switch (style) {
                 case NONE -> NONE;
                 case BOLD -> BOLD;
@@ -35,27 +38,26 @@ public record TextStyle(Style style, int start, int length) {
             };
         }
 
-        SignalServiceProtos.BodyRange.Style toBodyRangeStyle() {
+        BodyRange.Style toBodyRangeStyle() {
             return switch (this) {
-                case NONE -> SignalServiceProtos.BodyRange.Style.NONE;
-                case BOLD -> SignalServiceProtos.BodyRange.Style.BOLD;
-                case ITALIC -> SignalServiceProtos.BodyRange.Style.ITALIC;
-                case SPOILER -> SignalServiceProtos.BodyRange.Style.SPOILER;
-                case STRIKETHROUGH -> SignalServiceProtos.BodyRange.Style.STRIKETHROUGH;
-                case MONOSPACE -> SignalServiceProtos.BodyRange.Style.MONOSPACE;
+                case NONE -> BodyRange.Style.NONE;
+                case BOLD -> BodyRange.Style.BOLD;
+                case ITALIC -> BodyRange.Style.ITALIC;
+                case SPOILER -> BodyRange.Style.SPOILER;
+                case STRIKETHROUGH -> BodyRange.Style.STRIKETHROUGH;
+                case MONOSPACE -> BodyRange.Style.MONOSPACE;
             };
         }
     }
 
-    static TextStyle from(SignalServiceProtos.BodyRange bodyRange) {
-        return new TextStyle(Style.fromInternal(bodyRange.getStyle()), bodyRange.getStart(), bodyRange.getLength());
+    static TextStyle from(BodyRange bodyRange) {
+        return new TextStyle(Style.fromInternal(bodyRange.style), bodyRange.start, bodyRange.length);
     }
 
-    public SignalServiceProtos.BodyRange toBodyRange() {
-        return SignalServiceProtos.BodyRange.newBuilder()
-                .setStart(this.start())
-                .setLength(this.length())
-                .setStyle(this.style().toBodyRangeStyle())
+    public BodyRange toBodyRange() {
+        return new BodyRange.Builder().start(this.start())
+                .length(this.length())
+                .style(this.style().toBodyRangeStyle())
                 .build();
     }
 }

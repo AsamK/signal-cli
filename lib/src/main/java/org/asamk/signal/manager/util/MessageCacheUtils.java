@@ -6,7 +6,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.util.UuidUtil;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
+import org.whispersystems.signalservice.internal.push.Envelope;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -34,7 +34,7 @@ public class MessageCacheUtils {
             }
             if (version >= 9) {
                 final var serverReceivedTimestamp = in.readLong();
-                final var envelope = SignalServiceProtos.Envelope.parseFrom(in.readAllBytes());
+                final var envelope = Envelope.ADAPTER.decode(in.readAllBytes());
                 return new SignalServiceEnvelope(envelope, serverReceivedTimestamp);
             } else {
                 var type = in.readInt();
@@ -114,7 +114,7 @@ public class MessageCacheUtils {
             try (var out = new DataOutputStream(f)) {
                 out.writeInt(CURRENT_VERSION); // version
                 out.writeLong(envelope.getServerDeliveredTimestamp());
-                envelope.getProto().writeTo(out);
+                envelope.getProto().encode(out);
             }
         }
     }
