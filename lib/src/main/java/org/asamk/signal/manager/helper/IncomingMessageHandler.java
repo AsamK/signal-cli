@@ -60,7 +60,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupContext;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
-import org.whispersystems.signalservice.api.messages.SignalServiceMetadata;
 import org.whispersystems.signalservice.api.messages.SignalServicePniSignatureMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
@@ -228,20 +227,11 @@ public final class IncomingMessageHandler {
             return null;
         }
 
-        final var localAddress = new SignalServiceAddress(envelopeMetadata.getDestinationServiceId(),
-                Optional.ofNullable(account.getNumber()));
-        final var metadata = new SignalServiceMetadata(new SignalServiceAddress(envelopeMetadata.getSourceServiceId(),
-                Optional.ofNullable(envelopeMetadata.getSourceE164())),
-                envelopeMetadata.getSourceDeviceId(),
-                envelope.timestamp,
-                envelope.serverTimestamp,
-                serverDeliveredTimestamp,
-                envelopeMetadata.getSealedSender(),
-                envelope.serverGuid,
-                Optional.ofNullable(envelopeMetadata.getGroupId()),
-                envelopeMetadata.getDestinationServiceId().toString());
-
-        return SignalServiceContent.createFrom(localAddress, metadata, content);
+        return SignalServiceContent.Companion.createFrom(account.getNumber(),
+                envelope,
+                envelopeMetadata,
+                content,
+                serverDeliveredTimestamp);
     }
 
     private List<HandleAction> checkAndHandleMessage(
