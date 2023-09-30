@@ -902,8 +902,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void installStickerPack(StickerPackUrl url) throws IOException {
-        final var packId = url.getPackId();
-        final var packKey = url.getPackKey();
+        final var packId = url.packId();
+        final var packKey = url.packKey();
         try {
             context.getStickerHelper().retrieveStickerPack(packId, packKey);
         } catch (InvalidMessageException e) {

@@ -881,10 +881,10 @@ public class SignalAccount implements Closeable {
             var profileStoreNode = rootNode.get("profileStore");
             final var legacyProfileStore = jsonProcessor.convertValue(profileStoreNode, LegacyProfileStore.class);
             for (var profileEntry : legacyProfileStore.getProfileEntries()) {
-                var recipientId = getRecipientResolver().resolveRecipient(profileEntry.getAddress());
+                var recipientId = getRecipientResolver().resolveRecipient(profileEntry.address());
                 // Not migrating profile key credential here, it was changed to expiring profile key credentials
-                getProfileStore().storeProfileKey(recipientId, profileEntry.getProfileKey());
-                final var profile = profileEntry.getProfile();
+                getProfileStore().storeProfileKey(recipientId, profileEntry.profileKey());
+                final var profile = profileEntry.profile();
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
                     if (profile.getCapabilities() != null) {
@@ -895,7 +895,7 @@ public class SignalAccount implements Closeable {
                             capabilities.add(Profile.Capability.storage);
                         }
                     }
-                    final var newProfile = new Profile(profileEntry.getLastUpdateTimestamp(),
+                    final var newProfile = new Profile(profileEntry.lastUpdateTimestamp(),
                             profile.getGivenName(),
                             profile.getFamilyName(),
                             profile.getAbout(),

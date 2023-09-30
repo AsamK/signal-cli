@@ -82,12 +82,12 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         password = KeyUtils.createPassword();
         GroupsV2Operations groupsV2Operations;
         try {
-            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration()),
                     ServiceConfig.GROUP_MAX_SIZE);
         } catch (Throwable ignored) {
             groupsV2Operations = null;
         }
-        accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+        accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
                 new DynamicCredentialsProvider(null, null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
                 userAgent,
                 groupsV2Operations,
@@ -146,7 +146,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
             account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
                     accountPath,
                     number,
-                    serviceEnvironmentConfig.getType(),
+                    serviceEnvironmentConfig.type(),
                     aci,
                     pni,
                     password,
@@ -221,7 +221,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
             }
             if (signalAccount.isRegistered()
                     && signalAccount.getServiceEnvironment() != null
-                    && signalAccount.getServiceEnvironment() != serviceEnvironmentConfig.getType()) {
+                    && signalAccount.getServiceEnvironment() != serviceEnvironmentConfig.type()) {
                 logger.debug("Account is registered in another environment: {}.",
                         signalAccount.getServiceEnvironment());
                 return false;

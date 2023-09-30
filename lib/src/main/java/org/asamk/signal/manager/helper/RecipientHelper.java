@@ -162,7 +162,7 @@ public class RecipientHelper {
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
                             useCompat,
                             Optional.empty(),
-                            serviceEnvironmentConfig.getCdsiMrenclave(),
+                            serviceEnvironmentConfig.cdsiMrenclave(),
                             null,
                             token -> {
                                 // Not storing for partial refresh

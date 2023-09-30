@@ -82,12 +82,12 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
         GroupsV2Operations groupsV2Operations;
         try {
-            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.getSignalServiceConfiguration()),
+            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration()),
                     ServiceConfig.GROUP_MAX_SIZE);
         } catch (Throwable ignored) {
             groupsV2Operations = null;
         }
-        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
                         null, null, account.getNumber(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
@@ -95,19 +95,19 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
         final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getEnclaveName(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getServiceId(),
-                serviceEnvironmentConfig.getKeyBackupConfig().getMrenclave(),
+                serviceEnvironmentConfig.keyBackupConfig().enclaveName(),
+                serviceEnvironmentConfig.keyBackupConfig().serviceId(),
+                serviceEnvironmentConfig.keyBackupConfig().mrenclave(),
                 10);
-        final var fallbackKeyBackupServices = serviceEnvironmentConfig.getFallbackKeyBackupConfigs()
+        final var fallbackKeyBackupServices = serviceEnvironmentConfig.fallbackKeyBackupConfigs()
                 .stream()
                 .map(config -> accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                        config.getEnclaveName(),
-                        config.getServiceId(),
-                        config.getMrenclave(),
+                        config.enclaveName(),
+                        config.serviceId(),
+                        config.mrenclave(),
                         10))
                 .toList();
-        final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.getSvr2Mrenclave());
+        final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.svr2Mrenclave());
         this.pinHelper = new PinHelper(keyBackupService, fallbackKeyBackupServices, secureValueRecoveryV2);
     }
 
@@ -117,7 +117,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
-                && account.getServiceEnvironment() != serviceEnvironmentConfig.getType()) {
+                && account.getServiceEnvironment() != serviceEnvironmentConfig.type()) {
             throw new IOException("Account is registered in another environment: " + account.getServiceEnvironment());
         }
 
@@ -216,7 +216,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     private boolean attemptReactivateAccount() {
         try {
-            final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.getSignalServiceConfiguration(),
+            final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
                     account.getCredentialsProvider(),
                     userAgent,
                     null,
