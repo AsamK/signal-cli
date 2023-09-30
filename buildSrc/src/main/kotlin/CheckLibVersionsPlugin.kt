@@ -36,7 +36,7 @@ class CheckLibVersionsPlugin : Plugin<Project> {
                 println("UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}")
             }
         } catch (e: Throwable) {
-            logger.debug("Unable to download or parse $metaDataUrl: $e.message")
+            logger.debug("Unable to download or parse {}: {}", metaDataUrl, e.message)
         }
     }
 }
