@@ -2,9 +2,16 @@
 
 ## [Unreleased]
 
+## [0.12.2] - 2023-09-30
+**Attention**: Now requires native libsignal-client version 0.32.1
+
 ### Added
 
 - Added `--receive-mode` parameter for `jsonRpc` command
+- Add `libsignal_client_path` build property to override libsignal-client jar file
+
+### Changed
+- `jsonRpc` command now supports multi-account mode including registering and linking
 
 ## [0.12.1] - 2023-08-26
 
