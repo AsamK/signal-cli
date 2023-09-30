@@ -1,4 +1,4 @@
-FROM docker.io/eclipse-temurin:17-jre
+FROM docker.io/azul/zulu-openjdk:21-jre-headless
 
 LABEL org.opencontainers.image.source=https://github.com/AsamK/signal-cli
 LABEL org.opencontainers.image.description="signal-cli provides an unofficial commandline, dbus and JSON-RPC interface for the Signal messenger."

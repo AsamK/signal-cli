@@ -29,6 +29,8 @@
   }, {
     "pattern":"\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper\\E"
   }, {
+    "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.message.ISocketProvider\\E"
+  }, {
     "pattern":"\\QMETA-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider\\E"
   }, {
     "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
@@ -198,6 +200,8 @@
     "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/nfc.nrm\\E"
   }, {
     "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/uprops.icu\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/nfc.nrm\\E"
   }, {
     "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/uprops.icu\\E"
   }, {
