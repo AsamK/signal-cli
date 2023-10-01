@@ -344,8 +344,10 @@ public final class IncomingMessageHandler {
             }
         }
 
-        if (content.getDataMessage().isPresent()) {
-            var message = content.getDataMessage().get();
+        if (content.getDataMessage().isPresent() || content.getEditMessage().isPresent()) {
+            var message = content.getDataMessage().isPresent()
+                    ? content.getDataMessage().get()
+                    : content.getEditMessage().get().getDataMessage();
 
             if (content.isNeedsReceipt()) {
                 actions.add(new SendReceiptAction(sender,

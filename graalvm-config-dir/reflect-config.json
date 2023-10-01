@@ -427,6 +427,9 @@
   "name":"javax.smartcardio.CardPermission"
 },
 {
+  "name":"jdk.internal.misc.Unsafe"
+},
+{
   "name":"kotlin.Any"
 },
 {
@@ -1484,6 +1487,9 @@
 {
   "name":"org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi$Std",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.keystore.bc.BcKeyStoreSpi.Std"
 },
 {
   "name":"org.bouncycastle.jcajce.provider.symmetric.AES$Mappings",
