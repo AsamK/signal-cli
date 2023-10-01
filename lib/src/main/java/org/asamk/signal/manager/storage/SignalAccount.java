@@ -622,6 +622,11 @@ public class SignalAccount implements Closeable {
         } else {
             aciAccountData.preKeyMetadata.nextSignedPreKeyId = getRandomPreKeyIdOffset();
         }
+        if (rootNode.hasNonNull("activeSignedPreKeyId")) {
+            aciAccountData.preKeyMetadata.activeSignedPreKeyId = rootNode.get("activeSignedPreKeyId").asInt(-1);
+        } else {
+            aciAccountData.preKeyMetadata.activeSignedPreKeyId = -1;
+        }
         if (rootNode.hasNonNull("pniPreKeyIdOffset")) {
             pniAccountData.preKeyMetadata.preKeyIdOffset = rootNode.get("pniPreKeyIdOffset").asInt(1);
         } else {
@@ -631,6 +636,11 @@ public class SignalAccount implements Closeable {
             pniAccountData.preKeyMetadata.nextSignedPreKeyId = rootNode.get("pniNextSignedPreKeyId").asInt(1);
         } else {
             pniAccountData.preKeyMetadata.nextSignedPreKeyId = getRandomPreKeyIdOffset();
+        }
+        if (rootNode.hasNonNull("pniActiveSignedPreKeyId")) {
+            pniAccountData.preKeyMetadata.activeSignedPreKeyId = rootNode.get("pniActiveSignedPreKeyId").asInt(-1);
+        } else {
+            pniAccountData.preKeyMetadata.activeSignedPreKeyId = -1;
         }
         if (rootNode.hasNonNull("kyberPreKeyIdOffset")) {
             aciAccountData.preKeyMetadata.kyberPreKeyIdOffset = rootNode.get("kyberPreKeyIdOffset").asInt(1);
@@ -1003,8 +1013,10 @@ public class SignalAccount implements Closeable {
                     .put("storageManifestVersion", storageManifestVersion == -1 ? null : storageManifestVersion)
                     .put("preKeyIdOffset", aciAccountData.getPreKeyMetadata().preKeyIdOffset)
                     .put("nextSignedPreKeyId", aciAccountData.getPreKeyMetadata().nextSignedPreKeyId)
+                    .put("activeSignedPreKeyId", aciAccountData.getPreKeyMetadata().activeSignedPreKeyId)
                     .put("pniPreKeyIdOffset", pniAccountData.getPreKeyMetadata().preKeyIdOffset)
                     .put("pniNextSignedPreKeyId", pniAccountData.getPreKeyMetadata().nextSignedPreKeyId)
+                    .put("pniActiveSignedPreKeyId", pniAccountData.getPreKeyMetadata().activeSignedPreKeyId)
                     .put("kyberPreKeyIdOffset", aciAccountData.getPreKeyMetadata().kyberPreKeyIdOffset)
                     .put("activeLastResortKyberPreKeyId",
                             aciAccountData.getPreKeyMetadata().activeLastResortKyberPreKeyId)
@@ -1058,6 +1070,7 @@ public class SignalAccount implements Closeable {
         final var preKeyMetadata = getAccountData(serviceIdType).getPreKeyMetadata();
         preKeyMetadata.preKeyIdOffset = getRandomPreKeyIdOffset();
         preKeyMetadata.nextSignedPreKeyId = getRandomPreKeyIdOffset();
+        preKeyMetadata.activeSignedPreKeyId = -1;
         save();
     }
 
@@ -1072,6 +1085,7 @@ public class SignalAccount implements Closeable {
                 records.size(),
                 serviceIdType,
                 preKeyMetadata.preKeyIdOffset);
+        accountData.signalProtocolStore.markAllOneTimeEcPreKeysStaleIfNecessary(System.currentTimeMillis());
         for (var record : records) {
             if (preKeyMetadata.preKeyIdOffset != record.getId()) {
                 logger.error("Invalid pre key id {}, expected {}", record.getId(), preKeyMetadata.preKeyIdOffset);
@@ -1095,6 +1109,7 @@ public class SignalAccount implements Closeable {
         }
         accountData.getSignedPreKeyStore().storeSignedPreKey(record.getId(), record);
         preKeyMetadata.nextSignedPreKeyId = (preKeyMetadata.nextSignedPreKeyId + 1) % PREKEY_MAXIMUM_ID;
+        preKeyMetadata.activeSignedPreKeyId = record.getId();
         save();
     }
 
@@ -1112,6 +1127,7 @@ public class SignalAccount implements Closeable {
                 records.size(),
                 serviceIdType,
                 preKeyMetadata.kyberPreKeyIdOffset);
+        accountData.signalProtocolStore.markAllOneTimeEcPreKeysStaleIfNecessary(System.currentTimeMillis());
         for (var record : records) {
             if (preKeyMetadata.kyberPreKeyIdOffset != record.getId()) {
                 logger.error("Invalid kyber pre key id {}, expected {}",
@@ -1745,6 +1761,7 @@ public class SignalAccount implements Closeable {
 
         private int preKeyIdOffset = 1;
         private int nextSignedPreKeyId = 1;
+        private int activeSignedPreKeyId = -1;
         private int kyberPreKeyIdOffset = 1;
         private int activeLastResortKyberPreKeyId = -1;
 
@@ -1754,6 +1771,10 @@ public class SignalAccount implements Closeable {
 
         public int getNextSignedPreKeyId() {
             return nextSignedPreKeyId;
+        }
+
+        public int getActiveSignedPreKeyId() {
+            return activeSignedPreKeyId;
         }
 
         public int getKyberPreKeyIdOffset() {
@@ -1819,17 +1840,17 @@ public class SignalAccount implements Closeable {
                             SignalAccount.this::isMultiDevice));
         }
 
-        private PreKeyStore getPreKeyStore() {
+        public PreKeyStore getPreKeyStore() {
             return getOrCreate(() -> preKeyStore,
                     () -> preKeyStore = new PreKeyStore(getAccountDatabase(), serviceIdType));
         }
 
-        private SignedPreKeyStore getSignedPreKeyStore() {
+        public SignedPreKeyStore getSignedPreKeyStore() {
             return getOrCreate(() -> signedPreKeyStore,
                     () -> signedPreKeyStore = new SignedPreKeyStore(getAccountDatabase(), serviceIdType));
         }
 
-        private KyberPreKeyStore getKyberPreKeyStore() {
+        public KyberPreKeyStore getKyberPreKeyStore() {
             return getOrCreate(() -> kyberPreKeyStore,
                     () -> kyberPreKeyStore = new KyberPreKeyStore(getAccountDatabase(), serviceIdType));
         }

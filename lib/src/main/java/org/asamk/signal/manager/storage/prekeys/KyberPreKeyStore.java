@@ -15,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_ARCHIVE_AGE;
+
 public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
 
     private static final String TABLE_KYBER_PRE_KEY = "kyber_pre_key";
@@ -33,6 +35,8 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
                                       key_id INTEGER NOT NULL,
                                       serialized BLOB NOT NULL,
                                       is_last_resort INTEGER NOT NULL,
+                                      stale_timestamp INTEGER,
+                                      timestamp INTEGER DEFAULT 0,
                                       UNIQUE(account_id_type, key_id)
                                     ) STRICT;
                                     """);
@@ -104,8 +108,8 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
     public void storeKyberPreKey(final int keyId, final KyberPreKeyRecord record, final boolean isLastResort) {
         final var sql = (
                 """
-                INSERT INTO %s (account_id_type, key_id, serialized, is_last_resort)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO %s (account_id_type, key_id, serialized, is_last_resort, timestamp)
+                VALUES (?, ?, ?, ?, ?)
                 """
         ).formatted(TABLE_KYBER_PRE_KEY);
         try (final var connection = database.getConnection()) {
@@ -114,6 +118,7 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
                 statement.setInt(2, keyId);
                 statement.setBytes(3, record.serialize());
                 statement.setBoolean(4, isLastResort);
+                statement.setLong(5, record.getTimestamp());
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -209,13 +214,86 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
         }
     }
 
+    public void removeOldLastResortKyberPreKeys(int activeLastResortKyberPreKeyId) {
+        final var sql = (
+                """
+                DELETE FROM %s AS p
+                WHERE p._id IN (
+                    SELECT p._id
+                    FROM %s AS p
+                    WHERE p.account_id_type = ?
+                        AND p.is_last_resort = TRUE
+                        AND p.key_id != ?
+                        AND p.timestamp < ?
+                    ORDER BY p.timestamp DESC
+                    LIMIT -1 OFFSET 1
+                )
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY, TABLE_KYBER_PRE_KEY);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, accountIdType);
+                statement.setInt(2, activeLastResortKyberPreKeyId);
+                statement.setLong(3, System.currentTimeMillis() - PREKEY_ARCHIVE_AGE);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update kyber_pre_key store", e);
+        }
+    }
+
     @Override
     public void deleteAllStaleOneTimeKyberPreKeys(final long threshold, final int minCount) {
-        //TODO
+        final var sql = (
+                """
+                DELETE FROM %s AS p
+                WHERE p.account_id_type = ?1
+                    AND p.stale_timestamp < ?2
+                    AND p.is_last_resort = FALSE
+                    AND p._id NOT IN (
+                        SELECT _id
+                        FROM %s p2
+                        WHERE p2.account_id_type = ?1
+                        ORDER BY
+                          CASE WHEN p2.stale_timestamp IS NULL THEN 1 ELSE 0 END DESC,
+                          p2.stale_timestamp DESC,
+                          p2._id DESC
+                        LIMIT ?3
+                    )
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY, TABLE_KYBER_PRE_KEY);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, accountIdType);
+                statement.setLong(2, threshold);
+                statement.setInt(3, minCount);
+                final var rowCount = statement.executeUpdate();
+                if (rowCount > 0) {
+                    logger.debug("Deleted {} stale one time kyber pre keys", rowCount);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update kyber_pre_key store", e);
+        }
     }
 
     @Override
     public void markAllOneTimeKyberPreKeysStaleIfNecessary(final long staleTime) {
-        //TODO
+        final var sql = (
+                """
+                UPDATE %s
+                SET stale_timestamp = ?
+                WHERE account_id_type = ? AND stale_timestamp IS NULL AND is_last_resort = FALSE
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, staleTime);
+                statement.setInt(2, accountIdType);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update kyber_pre_key store", e);
+        }
     }
 }

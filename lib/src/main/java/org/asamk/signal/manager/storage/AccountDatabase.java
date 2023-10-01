@@ -30,7 +30,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 15;
+    private static final long DATABASE_VERSION = 16;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -490,6 +490,16 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE session2 RENAME TO session;
 
                                         DROP TABLE tmp_mapping_table;
+                                        """);
+            }
+        }
+        if (oldVersion < 16) {
+            logger.debug("Updating database: Adding stale_timestamp prekey field");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE pre_key ADD COLUMN stale_timestamp INTEGER;
+                                        ALTER TABLE kyber_pre_key ADD COLUMN stale_timestamp INTEGER;
+                                        ALTER TABLE kyber_pre_key ADD COLUMN timestamp INTEGER DEFAULT 0;
                                         """);
             }
         }

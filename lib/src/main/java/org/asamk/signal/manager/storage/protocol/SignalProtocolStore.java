@@ -9,12 +9,12 @@ import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.state.IdentityKeyStore;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
-import org.signal.libsignal.protocol.state.PreKeyStore;
 import org.signal.libsignal.protocol.state.SessionRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyStore;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
 import org.whispersystems.signalservice.api.SignalServiceKyberPreKeyStore;
+import org.whispersystems.signalservice.api.SignalServicePreKeyStore;
 import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.SignalServiceSessionStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 
 public class SignalProtocolStore implements SignalServiceAccountDataStore {
 
-    private final PreKeyStore preKeyStore;
+    private final SignalServicePreKeyStore preKeyStore;
     private final SignedPreKeyStore signedPreKeyStore;
     private final SignalServiceKyberPreKeyStore kyberPreKeyStore;
     private final SignalServiceSessionStore sessionStore;
@@ -36,7 +36,7 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     private final Supplier<Boolean> isMultiDevice;
 
     public SignalProtocolStore(
-            final PreKeyStore preKeyStore,
+            final SignalServicePreKeyStore preKeyStore,
             final SignedPreKeyStore signedPreKeyStore,
             final SignalServiceKyberPreKeyStore kyberPreKeyStore,
             final SignalServiceSessionStore sessionStore,
@@ -254,12 +254,12 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     }
 
     @Override
-    public void deleteAllStaleOneTimeEcPreKeys(final long l, final int i) {
-        // TODO
+    public void deleteAllStaleOneTimeEcPreKeys(final long threshold, final int minCount) {
+        preKeyStore.deleteAllStaleOneTimeEcPreKeys(threshold, minCount);
     }
 
     @Override
-    public void markAllOneTimeEcPreKeysStaleIfNecessary(final long l) {
-        // TODO
+    public void markAllOneTimeEcPreKeysStaleIfNecessary(final long staleTime) {
+        preKeyStore.markAllOneTimeEcPreKeysStaleIfNecessary(staleTime);
     }
 }

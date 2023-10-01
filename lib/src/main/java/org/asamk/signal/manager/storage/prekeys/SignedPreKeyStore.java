@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_ARCHIVE_AGE;
+
 public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.SignedPreKeyStore {
 
     private static final String TABLE_SIGNED_PRE_KEY = "signed_pre_key";
@@ -137,6 +139,33 @@ public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.Si
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update signed_pre_key store", e);
+        }
+    }
+
+    public void removeOldSignedPreKeys(int activePreKeyId) {
+        final var sql = (
+                """
+                DELETE FROM %s AS p
+                WHERE p._id IN (
+                    SELECT p._id
+                    FROM %s AS p
+                    WHERE p.account_id_type = ?
+                        AND p.key_id != ?
+                        AND p.timestamp < ?
+                    ORDER BY p.timestamp DESC
+                    LIMIT -1 OFFSET 1
+                )
+                """
+        ).formatted(TABLE_SIGNED_PRE_KEY, TABLE_SIGNED_PRE_KEY);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, accountIdType);
+                statement.setInt(2, activePreKeyId);
+                statement.setLong(3, System.currentTimeMillis() - PREKEY_ARCHIVE_AGE);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
