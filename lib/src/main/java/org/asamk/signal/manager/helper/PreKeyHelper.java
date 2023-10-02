@@ -120,7 +120,8 @@ public class PreKeyHelper {
     }
 
     private List<PreKeyRecord> generatePreKeys(ServiceIdType serviceIdType) {
-        final var offset = account.getPreKeyIdOffset(serviceIdType);
+        final var accountData = account.getAccountData(serviceIdType);
+        final var offset = accountData.getPreKeyMetadata().getPreKeyIdOffset();
 
         var records = KeyUtils.generatePreKeyRecords(offset);
         account.addPreKeys(serviceIdType, records);
@@ -144,7 +145,8 @@ public class PreKeyHelper {
     }
 
     private SignedPreKeyRecord generateSignedPreKey(ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair) {
-        final var signedPreKeyId = account.getNextSignedPreKeyId(serviceIdType);
+        final var accountData = account.getAccountData(serviceIdType);
+        final var signedPreKeyId = accountData.getPreKeyMetadata().getNextSignedPreKeyId();
 
         var record = KeyUtils.generateSignedPreKeyRecord(signedPreKeyId, identityKeyPair);
         account.addSignedPreKey(serviceIdType, record);
@@ -155,7 +157,8 @@ public class PreKeyHelper {
     private List<KyberPreKeyRecord> generateKyberPreKeys(
             ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
     ) {
-        final var offset = account.getKyberPreKeyIdOffset(serviceIdType);
+        final var accountData = account.getAccountData(serviceIdType);
+        final var offset = accountData.getPreKeyMetadata().getKyberPreKeyIdOffset();
 
         var records = KeyUtils.generateKyberPreKeyRecords(offset, identityKeyPair.getPrivateKey());
         account.addKyberPreKeys(serviceIdType, records);
@@ -182,7 +185,8 @@ public class PreKeyHelper {
     private KyberPreKeyRecord generateLastResortKyberPreKey(
             ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair
     ) {
-        final var signedPreKeyId = account.getKyberPreKeyIdOffset(serviceIdType);
+        final var accountData = account.getAccountData(serviceIdType);
+        final var signedPreKeyId = accountData.getPreKeyMetadata().getKyberPreKeyIdOffset();
 
         var record = KeyUtils.generateKyberPreKeyRecord(signedPreKeyId, identityKeyPair.getPrivateKey());
         account.addLastResortKyberPreKey(serviceIdType, record);

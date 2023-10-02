@@ -120,25 +120,27 @@ public class SignalAccount implements Closeable {
 
     private File dataPath;
     private String accountPath;
+
     private ServiceEnvironment serviceEnvironment;
     private String number;
     private String username;
     private ACI aci;
     private PNI pni;
-    private String sessionId;
-    private String sessionNumber;
     private String encryptedDeviceName;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
-    private boolean isMultiDevice = false;
     private String password;
     private String registrationLockPin;
     private MasterKey pinMasterKey;
     private StorageKey storageKey;
-    private long storageManifestVersion = -1;
     private ProfileKey profileKey;
-    private Settings settings;
-    private long lastReceiveTimestamp = 0;
 
+    private Settings settings;
+
+    private String sessionId;
+    private String sessionNumber;
+    private long lastReceiveTimestamp = 0;
+    private long storageManifestVersion = -1;
+    private boolean isMultiDevice = false;
     private boolean registered = false;
 
     private final AccountData aciAccountData = new AccountData(ServiceIdType.ACI);
@@ -225,6 +227,57 @@ public class SignalAccount implements Closeable {
         return signalAccount;
     }
 
+    private static SignalAccount createLinkedAccount(
+            File dataPath,
+            String accountPath,
+            String number,
+            ServiceEnvironment serviceEnvironment,
+            ACI aci,
+            PNI pni,
+            String password,
+            String encryptedDeviceName,
+            int deviceId,
+            IdentityKeyPair aciIdentityKey,
+            IdentityKeyPair pniIdentityKey,
+            int registrationId,
+            int pniRegistrationId,
+            ProfileKey profileKey,
+            final Settings settings
+    ) throws IOException {
+        var fileName = getFileName(dataPath, accountPath);
+        IOUtils.createPrivateFile(fileName);
+
+        final var pair = openFileChannel(fileName, true);
+        var signalAccount = new SignalAccount(pair.first(), pair.second());
+
+        signalAccount.dataPath = dataPath;
+        signalAccount.accountPath = accountPath;
+        signalAccount.serviceEnvironment = serviceEnvironment;
+        signalAccount.aciAccountData.setLocalRegistrationId(registrationId);
+        signalAccount.pniAccountData.setLocalRegistrationId(pniRegistrationId);
+        signalAccount.settings = settings;
+        signalAccount.setProvisioningData(number,
+                aci,
+                pni,
+                password,
+                encryptedDeviceName,
+                deviceId,
+                aciIdentityKey,
+                pniIdentityKey,
+                profileKey);
+
+        signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
+
+        signalAccount.getRecipientTrustedResolver()
+                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
+        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
+        signalAccount.migrateLegacyConfigs();
+        signalAccount.clearAllPreKeys();
+        signalAccount.save();
+
+        return signalAccount;
+    }
+
     public static SignalAccount createOrUpdateLinkedAccount(
             File dataPath,
             String accountPath,
@@ -281,92 +334,6 @@ public class SignalAccount implements Closeable {
         return signalAccount;
     }
 
-    public void initDatabase() {
-        getAccountDatabase();
-    }
-
-    private void clearAllPreKeys() {
-        clearAllPreKeys(ServiceIdType.ACI);
-        clearAllPreKeys(ServiceIdType.PNI);
-    }
-
-    private void clearAllPreKeys(ServiceIdType serviceIdType) {
-        final var accountData = getAccountData(serviceIdType);
-        resetPreKeyOffsets(serviceIdType);
-        resetKyberPreKeyOffsets(serviceIdType);
-        accountData.getPreKeyStore().removeAllPreKeys();
-        accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
-        accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
-        save();
-    }
-
-    private void setPreKeys(ServiceIdType serviceIdType, PreKeyCollection preKeyCollection) {
-        final var accountData = getAccountData(serviceIdType);
-        final var preKeyMetadata = accountData.getPreKeyMetadata();
-        preKeyMetadata.nextSignedPreKeyId = preKeyCollection.getSignedPreKey().getId();
-        preKeyMetadata.kyberPreKeyIdOffset = preKeyCollection.getLastResortKyberPreKey().getId();
-
-        accountData.getPreKeyStore().removeAllPreKeys();
-        accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
-        accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
-
-        addSignedPreKey(serviceIdType, preKeyCollection.getSignedPreKey());
-        addLastResortKyberPreKey(serviceIdType, preKeyCollection.getLastResortKyberPreKey());
-
-        save();
-    }
-
-    private static SignalAccount createLinkedAccount(
-            File dataPath,
-            String accountPath,
-            String number,
-            ServiceEnvironment serviceEnvironment,
-            ACI aci,
-            PNI pni,
-            String password,
-            String encryptedDeviceName,
-            int deviceId,
-            IdentityKeyPair aciIdentityKey,
-            IdentityKeyPair pniIdentityKey,
-            int registrationId,
-            int pniRegistrationId,
-            ProfileKey profileKey,
-            final Settings settings
-    ) throws IOException {
-        var fileName = getFileName(dataPath, accountPath);
-        IOUtils.createPrivateFile(fileName);
-
-        final var pair = openFileChannel(fileName, true);
-        var signalAccount = new SignalAccount(pair.first(), pair.second());
-
-        signalAccount.dataPath = dataPath;
-        signalAccount.accountPath = accountPath;
-        signalAccount.serviceEnvironment = serviceEnvironment;
-        signalAccount.aciAccountData.setLocalRegistrationId(registrationId);
-        signalAccount.pniAccountData.setLocalRegistrationId(pniRegistrationId);
-        signalAccount.settings = settings;
-        signalAccount.setProvisioningData(number,
-                aci,
-                pni,
-                password,
-                encryptedDeviceName,
-                deviceId,
-                aciIdentityKey,
-                pniIdentityKey,
-                profileKey);
-
-        signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
-
-        signalAccount.getRecipientTrustedResolver()
-                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
-        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
-        signalAccount.migrateLegacyConfigs();
-        signalAccount.clearAllPreKeys();
-        signalAccount.save();
-
-        return signalAccount;
-    }
-
     private void setProvisioningData(
             final String number,
             final ACI aci,
@@ -397,6 +364,42 @@ public class SignalAccount implements Closeable {
         this.storageKey = null;
         trustSelfIdentity(ServiceIdType.ACI);
         trustSelfIdentity(ServiceIdType.PNI);
+    }
+
+    public void finishRegistration(
+            final ACI aci,
+            final PNI pni,
+            final MasterKey masterKey,
+            final String pin,
+            final PreKeyCollection aciPreKeys,
+            final PreKeyCollection pniPreKeys
+    ) {
+        this.pinMasterKey = masterKey;
+        this.storageManifestVersion = -1;
+        this.setStorageManifest(null);
+        this.storageKey = null;
+        this.encryptedDeviceName = null;
+        this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
+        this.isMultiDevice = false;
+        this.registered = true;
+        this.aci = aci;
+        this.pni = pni;
+        this.registrationLockPin = pin;
+        this.lastReceiveTimestamp = 0;
+        save();
+
+        setPreKeys(ServiceIdType.ACI, aciPreKeys);
+        setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        aciAccountData.getSessionStore().archiveAllSessions();
+        pniAccountData.getSessionStore().archiveAllSessions();
+        getSenderKeyStore().deleteAll();
+        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
+        trustSelfIdentity(ServiceIdType.ACI);
+        trustSelfIdentity(ServiceIdType.PNI);
+    }
+
+    public void initDatabase() {
+        getAccountDatabase();
     }
 
     private void migrateLegacyConfigs() {
@@ -1066,6 +1069,37 @@ public class SignalAccount implements Closeable {
         }
     }
 
+    private void clearAllPreKeys() {
+        clearAllPreKeys(ServiceIdType.ACI);
+        clearAllPreKeys(ServiceIdType.PNI);
+    }
+
+    private void clearAllPreKeys(ServiceIdType serviceIdType) {
+        final var accountData = getAccountData(serviceIdType);
+        resetPreKeyOffsets(serviceIdType);
+        resetKyberPreKeyOffsets(serviceIdType);
+        accountData.getPreKeyStore().removeAllPreKeys();
+        accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
+        accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
+        save();
+    }
+
+    private void setPreKeys(ServiceIdType serviceIdType, PreKeyCollection preKeyCollection) {
+        final var accountData = getAccountData(serviceIdType);
+        final var preKeyMetadata = accountData.getPreKeyMetadata();
+        preKeyMetadata.nextSignedPreKeyId = preKeyCollection.getSignedPreKey().getId();
+        preKeyMetadata.kyberPreKeyIdOffset = preKeyCollection.getLastResortKyberPreKey().getId();
+
+        accountData.getPreKeyStore().removeAllPreKeys();
+        accountData.getSignedPreKeyStore().removeAllSignedPreKeys();
+        accountData.getKyberPreKeyStore().removeAllKyberPreKeys();
+
+        addSignedPreKey(serviceIdType, preKeyCollection.getSignedPreKey());
+        addLastResortKyberPreKey(serviceIdType, preKeyCollection.getLastResortKyberPreKey());
+
+        save();
+    }
+
     public void resetPreKeyOffsets(final ServiceIdType serviceIdType) {
         final var preKeyMetadata = getAccountData(serviceIdType).getPreKeyMetadata();
         preKeyMetadata.preKeyIdOffset = getRandomPreKeyIdOffset();
@@ -1344,7 +1378,7 @@ public class SignalAccount implements Closeable {
 
     public AccountAttributes getAccountAttributes(String registrationLock) {
         return new AccountAttributes(null,
-                getLocalRegistrationId(),
+                aciAccountData.getLocalRegistrationId(),
                 false,
                 false,
                 true,
@@ -1354,7 +1388,7 @@ public class SignalAccount implements Closeable {
                 isDiscoverableByPhoneNumber(),
                 getAccountCapabilities(),
                 encryptedDeviceName,
-                getLocalPniRegistrationId(),
+                pniAccountData.getLocalRegistrationId(),
                 null); // TODO recoveryPassword?
     }
 
@@ -1398,7 +1432,7 @@ public class SignalAccount implements Closeable {
             final int localPniRegistrationId
     ) {
         setPniIdentityKeyPair(pniIdentityKeyPair);
-        setLocalPniRegistrationId(localPniRegistrationId);
+        pniAccountData.setLocalRegistrationId(localPniRegistrationId);
 
         final var preKeyMetadata = getAccountData(ServiceIdType.PNI).getPreKeyMetadata();
         preKeyMetadata.nextSignedPreKeyId = pniSignedPreKey.getId();
@@ -1407,6 +1441,7 @@ public class SignalAccount implements Closeable {
             preKeyMetadata.kyberPreKeyIdOffset = lastResortKyberPreKey.getId();
             addLastResortKyberPreKey(ServiceIdType.PNI, lastResortKyberPreKey);
         }
+        save();
     }
 
     public SignalServiceAddress getSelfAddress() {
@@ -1462,19 +1497,6 @@ public class SignalAccount implements Closeable {
     public void setPniIdentityKeyPair(final IdentityKeyPair identityKeyPair) {
         pniAccountData.setIdentityKeyPair(identityKeyPair);
         trustSelfIdentity(ServiceIdType.PNI);
-        save();
-    }
-
-    public int getLocalRegistrationId() {
-        return aciAccountData.getLocalRegistrationId();
-    }
-
-    public int getLocalPniRegistrationId() {
-        return pniAccountData.getLocalRegistrationId();
-    }
-
-    public void setLocalPniRegistrationId(final int localPniRegistrationId) {
-        pniAccountData.setLocalRegistrationId(localPniRegistrationId);
         save();
     }
 
@@ -1604,18 +1626,6 @@ public class SignalAccount implements Closeable {
         return UnidentifiedAccess.deriveAccessKeyFrom(getProfileKey());
     }
 
-    public int getPreKeyIdOffset(ServiceIdType serviceIdType) {
-        return getAccountData(serviceIdType).getPreKeyMetadata().preKeyIdOffset;
-    }
-
-    public int getNextSignedPreKeyId(ServiceIdType serviceIdType) {
-        return getAccountData(serviceIdType).getPreKeyMetadata().nextSignedPreKeyId;
-    }
-
-    public int getKyberPreKeyIdOffset(ServiceIdType serviceIdType) {
-        return getAccountData(serviceIdType).getPreKeyMetadata().kyberPreKeyIdOffset;
-    }
-
     public boolean isRegistered() {
         return registered;
     }
@@ -1654,38 +1664,6 @@ public class SignalAccount implements Closeable {
     public boolean isDiscoverableByPhoneNumber() {
         final var phoneNumberUnlisted = configurationStore.getPhoneNumberUnlisted();
         return phoneNumberUnlisted == null || !phoneNumberUnlisted;
-    }
-
-    public void finishRegistration(
-            final ACI aci,
-            final PNI pni,
-            final MasterKey masterKey,
-            final String pin,
-            final PreKeyCollection aciPreKeys,
-            final PreKeyCollection pniPreKeys
-    ) {
-        this.pinMasterKey = masterKey;
-        this.storageManifestVersion = -1;
-        this.setStorageManifest(null);
-        this.storageKey = null;
-        this.encryptedDeviceName = null;
-        this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
-        this.isMultiDevice = false;
-        this.registered = true;
-        this.aci = aci;
-        this.pni = pni;
-        this.registrationLockPin = pin;
-        this.lastReceiveTimestamp = 0;
-        save();
-
-        setPreKeys(ServiceIdType.ACI, aciPreKeys);
-        setPreKeys(ServiceIdType.PNI, pniPreKeys);
-        aciAccountData.getSessionStore().archiveAllSessions();
-        pniAccountData.getSessionStore().archiveAllSessions();
-        getSenderKeyStore().deleteAll();
-        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
-        trustSelfIdentity(ServiceIdType.ACI);
-        trustSelfIdentity(ServiceIdType.PNI);
     }
 
     private void trustSelfIdentity(ServiceIdType serviceIdType) {
