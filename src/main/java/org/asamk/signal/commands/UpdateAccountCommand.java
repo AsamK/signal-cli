@@ -1,5 +1,7 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
@@ -71,6 +73,6 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     }
 
     private record JsonAccountResponse(
-            String username
+            @JsonInclude(JsonInclude.Include.NON_NULL) String username
     ) {}
 }
