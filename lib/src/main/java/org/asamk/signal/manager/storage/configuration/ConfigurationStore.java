@@ -1,106 +1,75 @@
 package org.asamk.signal.manager.storage.configuration;
 
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
+import org.asamk.signal.manager.storage.keyValue.KeyValueEntry;
+import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
 
 public class ConfigurationStore {
 
-    private final Saver saver;
+    private final KeyValueStore keyValueStore;
 
-    private Boolean readReceipts;
-    private Boolean unidentifiedDeliveryIndicators;
-    private Boolean typingIndicators;
-    private Boolean linkPreviews;
-    private Boolean phoneNumberUnlisted;
-    private PhoneNumberSharingMode phoneNumberSharingMode;
+    private final KeyValueEntry<Boolean> readReceipts = new KeyValueEntry<>("config-read-receipts", Boolean.class);
+    private final KeyValueEntry<Boolean> unidentifiedDeliveryIndicators = new KeyValueEntry<>(
+            "config-unidentified-delivery-indicators",
+            Boolean.class);
+    private final KeyValueEntry<Boolean> typingIndicators = new KeyValueEntry<>("config-typing-indicators",
+            Boolean.class);
+    private final KeyValueEntry<Boolean> linkPreviews = new KeyValueEntry<>("config-link-previews", Boolean.class);
+    private final KeyValueEntry<Boolean> phoneNumberUnlisted = new KeyValueEntry<>("config-phone-number-unlisted",
+            Boolean.class);
+    private final KeyValueEntry<PhoneNumberSharingMode> phoneNumberSharingMode = new KeyValueEntry<>(
+            "config-phone-number-sharing-mode",
+            PhoneNumberSharingMode.class);
 
-    public ConfigurationStore(final Saver saver) {
-        this.saver = saver;
-    }
-
-    public static ConfigurationStore fromStorage(Storage storage, Saver saver) {
-        final var store = new ConfigurationStore(saver);
-        store.readReceipts = storage.readReceipts;
-        store.unidentifiedDeliveryIndicators = storage.unidentifiedDeliveryIndicators;
-        store.typingIndicators = storage.typingIndicators;
-        store.linkPreviews = storage.linkPreviews;
-        store.phoneNumberSharingMode = storage.phoneNumberSharingMode;
-        return store;
+    public ConfigurationStore(final KeyValueStore keyValueStore) {
+        this.keyValueStore = keyValueStore;
     }
 
     public Boolean getReadReceipts() {
-        return readReceipts;
+        return keyValueStore.getEntry(readReceipts);
     }
 
-    public void setReadReceipts(final boolean readReceipts) {
-        this.readReceipts = readReceipts;
-        saver.save(toStorage());
+    public void setReadReceipts(final boolean value) {
+        keyValueStore.storeEntry(readReceipts, value);
     }
 
     public Boolean getUnidentifiedDeliveryIndicators() {
-        return unidentifiedDeliveryIndicators;
+        return keyValueStore.getEntry(unidentifiedDeliveryIndicators);
     }
 
-    public void setUnidentifiedDeliveryIndicators(final boolean unidentifiedDeliveryIndicators) {
-        this.unidentifiedDeliveryIndicators = unidentifiedDeliveryIndicators;
-        saver.save(toStorage());
+    public void setUnidentifiedDeliveryIndicators(final boolean value) {
+        keyValueStore.storeEntry(unidentifiedDeliveryIndicators, value);
     }
 
     public Boolean getTypingIndicators() {
-        return typingIndicators;
+        return keyValueStore.getEntry(typingIndicators);
     }
 
-    public void setTypingIndicators(final boolean typingIndicators) {
-        this.typingIndicators = typingIndicators;
-        saver.save(toStorage());
+    public void setTypingIndicators(final boolean value) {
+        keyValueStore.storeEntry(typingIndicators, value);
     }
 
     public Boolean getLinkPreviews() {
-        return linkPreviews;
+        return keyValueStore.getEntry(linkPreviews);
     }
 
-    public void setLinkPreviews(final boolean linkPreviews) {
-        this.linkPreviews = linkPreviews;
-        saver.save(toStorage());
+    public void setLinkPreviews(final boolean value) {
+        keyValueStore.storeEntry(linkPreviews, value);
     }
 
     public Boolean getPhoneNumberUnlisted() {
-        return phoneNumberUnlisted;
+        return keyValueStore.getEntry(phoneNumberUnlisted);
     }
 
-    public void setPhoneNumberUnlisted(final boolean phoneNumberUnlisted) {
-        this.phoneNumberUnlisted = phoneNumberUnlisted;
-        saver.save(toStorage());
+    public void setPhoneNumberUnlisted(final boolean value) {
+        keyValueStore.storeEntry(phoneNumberUnlisted, value);
     }
 
     public PhoneNumberSharingMode getPhoneNumberSharingMode() {
-        return phoneNumberSharingMode;
+        return keyValueStore.getEntry(phoneNumberSharingMode);
     }
 
-    public void setPhoneNumberSharingMode(final PhoneNumberSharingMode phoneNumberSharingMode) {
-        this.phoneNumberSharingMode = phoneNumberSharingMode;
-        saver.save(toStorage());
-    }
-
-    private Storage toStorage() {
-        return new Storage(readReceipts,
-                unidentifiedDeliveryIndicators,
-                typingIndicators,
-                linkPreviews,
-                phoneNumberUnlisted,
-                phoneNumberSharingMode);
-    }
-
-    public record Storage(
-            Boolean readReceipts,
-            Boolean unidentifiedDeliveryIndicators,
-            Boolean typingIndicators,
-            Boolean linkPreviews,
-            Boolean phoneNumberUnlisted,
-            PhoneNumberSharingMode phoneNumberSharingMode
-    ) {}
-
-    public interface Saver {
-
-        void save(Storage storage);
+    public void setPhoneNumberSharingMode(final PhoneNumberSharingMode value) {
+        keyValueStore.storeEntry(phoneNumberSharingMode, value);
     }
 }

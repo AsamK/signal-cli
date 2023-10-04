@@ -30,7 +30,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 16;
+    private static final long DATABASE_VERSION = 17;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -500,6 +500,18 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE pre_key ADD COLUMN stale_timestamp INTEGER;
                                         ALTER TABLE kyber_pre_key ADD COLUMN stale_timestamp INTEGER;
                                         ALTER TABLE kyber_pre_key ADD COLUMN timestamp INTEGER DEFAULT 0;
+                                        """);
+            }
+        }
+        if (oldVersion < 17) {
+            logger.debug("Updating database: Adding key_value table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE key_value (
+                                                _id INTEGER PRIMARY KEY,
+                                                key TEXT UNIQUE NOT NULL,
+                                                value ANY
+                                        ) STRICT;
                                         """);
             }
         }

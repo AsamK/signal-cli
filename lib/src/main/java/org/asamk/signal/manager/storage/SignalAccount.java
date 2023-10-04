@@ -12,6 +12,7 @@ import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
+import org.asamk.signal.manager.storage.configuration.LegacyConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -20,6 +21,7 @@ import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
+import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.LegacyPreKeyStore;
@@ -151,7 +153,7 @@ public class SignalAccount implements Closeable {
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
     private ConfigurationStore configurationStore;
-    private ConfigurationStore.Storage configurationStoreStorage;
+    private KeyValueStore keyValueStore;
 
     private MessageCache messageCache;
     private MessageSendLogStore messageSendLogStore;
@@ -216,7 +218,6 @@ public class SignalAccount implements Closeable {
         signalAccount.aciAccountData.setLocalRegistrationId(registrationId);
         signalAccount.pniAccountData.setLocalRegistrationId(pniRegistrationId);
         signalAccount.settings = settings;
-        signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.registered = false;
 
@@ -265,8 +266,6 @@ public class SignalAccount implements Closeable {
                 aciIdentityKey,
                 pniIdentityKey,
                 profileKey);
-
-        signalAccount.configurationStore = new ConfigurationStore(signalAccount::saveConfigurationStore);
 
         signalAccount.getRecipientTrustedResolver()
                 .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
@@ -774,12 +773,10 @@ public class SignalAccount implements Closeable {
         }
 
         if (rootNode.hasNonNull("configurationStore")) {
-            configurationStoreStorage = jsonProcessor.convertValue(rootNode.get("configurationStore"),
-                    ConfigurationStore.Storage.class);
-            configurationStore = ConfigurationStore.fromStorage(configurationStoreStorage,
-                    this::saveConfigurationStore);
-        } else {
-            configurationStore = new ConfigurationStore(this::saveConfigurationStore);
+            final var configurationStoreStorage = jsonProcessor.convertValue(rootNode.get("configurationStore"),
+                    LegacyConfigurationStore.Storage.class);
+            LegacyConfigurationStore.migrate(configurationStoreStorage, getConfigurationStore());
+            migratedLegacyConfig = true;
         }
 
         migratedLegacyConfig = loadLegacyThreadStore(rootNode) || migratedLegacyConfig;
@@ -965,11 +962,6 @@ public class SignalAccount implements Closeable {
         return false;
     }
 
-    private void saveConfigurationStore(ConfigurationStore.Storage storage) {
-        this.configurationStoreStorage = storage;
-        save();
-    }
-
     private void save() {
         synchronized (fileChannel) {
             var rootNode = jsonProcessor.createObjectNode();
@@ -1028,8 +1020,7 @@ public class SignalAccount implements Closeable {
                             pniAccountData.getPreKeyMetadata().activeLastResortKyberPreKeyId)
                     .put("profileKey",
                             profileKey == null ? null : Base64.getEncoder().encodeToString(profileKey.serialize()))
-                    .put("registered", registered)
-                    .putPOJO("configurationStore", configurationStoreStorage);
+                    .put("registered", registered);
             try {
                 try (var output = new ByteArrayOutputStream()) {
                     // Write to memory first to prevent corrupting the file in case of serialization errors
@@ -1295,8 +1286,13 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> senderKeyStore, () -> senderKeyStore = new SenderKeyStore(getAccountDatabase()));
     }
 
+    private KeyValueStore getKeyValueStore() {
+        return getOrCreate(() -> keyValueStore, () -> keyValueStore = new KeyValueStore(getAccountDatabase()));
+    }
+
     public ConfigurationStore getConfigurationStore() {
-        return configurationStore;
+        return getOrCreate(() -> configurationStore,
+                () -> configurationStore = new ConfigurationStore(getKeyValueStore()));
     }
 
     public MessageCache getMessageCache() {
@@ -1662,7 +1658,7 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isDiscoverableByPhoneNumber() {
-        final var phoneNumberUnlisted = configurationStore.getPhoneNumberUnlisted();
+        final var phoneNumberUnlisted = getConfigurationStore().getPhoneNumberUnlisted();
         return phoneNumberUnlisted == null || !phoneNumberUnlisted;
     }
 

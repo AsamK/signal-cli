@@ -1112,6 +1112,13 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }, {"name":"linkPreviews","parameterTypes":[] }, {"name":"phoneNumberSharingMode","parameterTypes":[] }, {"name":"phoneNumberUnlisted","parameterTypes":[] }, {"name":"readReceipts","parameterTypes":[] }, {"name":"typingIndicators","parameterTypes":[] }, {"name":"unidentifiedDeliveryIndicators","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.manager.storage.configuration.LegacyConfigurationStore$Storage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","java.lang.Boolean","org.asamk.signal.manager.api.PhoneNumberSharingMode"] }]
+},
+{
   "name":"org.asamk.signal.manager.storage.contacts.LegacyContactInfo",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
