@@ -21,6 +21,7 @@ import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.LegacyIdentityKeyStore;
 import org.asamk.signal.manager.storage.identities.SignalIdentityKeyStore;
+import org.asamk.signal.manager.storage.keyValue.KeyValueEntry;
 import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
 import org.asamk.signal.manager.storage.messageCache.MessageCache;
 import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
@@ -138,10 +139,16 @@ public class SignalAccount implements Closeable {
 
     private Settings settings;
 
-    private String sessionId;
-    private String sessionNumber;
-    private long lastReceiveTimestamp = 0;
-    private long storageManifestVersion = -1;
+    private final KeyValueEntry<String> verificationSessionId = new KeyValueEntry<>("verification-session-id",
+            String.class);
+    private final KeyValueEntry<String> verificationSessionNumber = new KeyValueEntry<>("verification-session-number",
+            String.class);
+    private final KeyValueEntry<Long> lastReceiveTimestamp = new KeyValueEntry<>("last-receive-timestamp",
+            long.class,
+            0L);
+    private final KeyValueEntry<Long> storageManifestVersion = new KeyValueEntry<>("storage-manifest-version",
+            long.class,
+            -1L);
     private boolean isMultiDevice = false;
     private boolean registered = false;
 
@@ -356,9 +363,9 @@ public class SignalAccount implements Closeable {
         this.pniAccountData.setIdentityKeyPair(pniIdentity);
         this.registered = true;
         this.isMultiDevice = true;
-        this.lastReceiveTimestamp = 0;
+        getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
         this.pinMasterKey = null;
-        this.storageManifestVersion = -1;
+        getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;
         trustSelfIdentity(ServiceIdType.ACI);
@@ -374,7 +381,7 @@ public class SignalAccount implements Closeable {
             final PreKeyCollection pniPreKeys
     ) {
         this.pinMasterKey = masterKey;
-        this.storageManifestVersion = -1;
+        getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;
         this.encryptedDeviceName = null;
@@ -384,7 +391,7 @@ public class SignalAccount implements Closeable {
         this.aci = aci;
         this.pni = pni;
         this.registrationLockPin = pin;
-        this.lastReceiveTimestamp = 0;
+        getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
         save();
 
         setPreKeys(ServiceIdType.ACI, aciPreKeys);
@@ -564,10 +571,12 @@ public class SignalAccount implements Closeable {
             }
         }
         if (rootNode.hasNonNull("sessionId")) {
-            sessionId = rootNode.get("sessionId").asText();
+            getKeyValueStore().storeEntry(verificationSessionId, rootNode.get("sessionId").asText());
+            migratedLegacyConfig = true;
         }
         if (rootNode.hasNonNull("sessionNumber")) {
-            sessionNumber = rootNode.get("sessionNumber").asText();
+            getKeyValueStore().storeEntry(verificationSessionNumber, rootNode.get("sessionNumber").asText());
+            migratedLegacyConfig = true;
         }
         if (rootNode.hasNonNull("deviceName")) {
             encryptedDeviceName = rootNode.get("deviceName").asText();
@@ -579,7 +588,8 @@ public class SignalAccount implements Closeable {
             isMultiDevice = rootNode.get("isMultiDevice").asBoolean();
         }
         if (rootNode.hasNonNull("lastReceiveTimestamp")) {
-            lastReceiveTimestamp = rootNode.get("lastReceiveTimestamp").asLong();
+            getKeyValueStore().storeEntry(lastReceiveTimestamp, rootNode.get("lastReceiveTimestamp").asLong());
+            migratedLegacyConfig = true;
         }
         int registrationId = 0;
         if (rootNode.hasNonNull("registrationId")) {
@@ -612,7 +622,8 @@ public class SignalAccount implements Closeable {
             storageKey = new StorageKey(Base64.getDecoder().decode(rootNode.get("storageKey").asText()));
         }
         if (rootNode.hasNonNull("storageManifestVersion")) {
-            storageManifestVersion = rootNode.get("storageManifestVersion").asLong();
+            getKeyValueStore().storeEntry(storageManifestVersion, rootNode.get("storageManifestVersion").asLong());
+            migratedLegacyConfig = true;
         }
         if (rootNode.hasNonNull("preKeyIdOffset")) {
             aciAccountData.preKeyMetadata.preKeyIdOffset = rootNode.get("preKeyIdOffset").asInt(1);
@@ -971,12 +982,9 @@ public class SignalAccount implements Closeable {
                     .put("usernameIdentifier", username)
                     .put("uuid", aci == null ? null : aci.toString())
                     .put("pni", pni == null ? null : pni.toStringWithoutPrefix())
-                    .put("sessionId", sessionId)
-                    .put("sessionNumber", sessionNumber)
                     .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
-                    .put("lastReceiveTimestamp", lastReceiveTimestamp)
                     .put("password", password)
                     .put("registrationId", aciAccountData.getLocalRegistrationId())
                     .put("pniRegistrationId", pniAccountData.getLocalRegistrationId())
@@ -1005,7 +1013,6 @@ public class SignalAccount implements Closeable {
                             pinMasterKey == null ? null : Base64.getEncoder().encodeToString(pinMasterKey.serialize()))
                     .put("storageKey",
                             storageKey == null ? null : Base64.getEncoder().encodeToString(storageKey.serialize()))
-                    .put("storageManifestVersion", storageManifestVersion == -1 ? null : storageManifestVersion)
                     .put("preKeyIdOffset", aciAccountData.getPreKeyMetadata().preKeyIdOffset)
                     .put("nextSignedPreKeyId", aciAccountData.getPreKeyMetadata().nextSignedPreKeyId)
                     .put("activeSignedPreKeyId", aciAccountData.getPreKeyMetadata().activeSignedPreKeyId)
@@ -1453,16 +1460,18 @@ public class SignalAccount implements Closeable {
     }
 
     public String getSessionId(final String forNumber) {
+        final var keyValueStore = getKeyValueStore();
+        final var sessionNumber = keyValueStore.getEntry(verificationSessionNumber);
         if (!forNumber.equals(sessionNumber)) {
             return null;
         }
-        return sessionId;
+        return keyValueStore.getEntry(verificationSessionId);
     }
 
     public void setSessionId(final String sessionNumber, final String sessionId) {
-        this.sessionNumber = sessionNumber;
-        this.sessionId = sessionId;
-        save();
+        final var keyValueStore = getKeyValueStore();
+        keyValueStore.storeEntry(verificationSessionNumber, sessionNumber);
+        keyValueStore.storeEntry(verificationSessionId, sessionId);
     }
 
     public void setEncryptedDeviceName(final String encryptedDeviceName) {
@@ -1560,15 +1569,11 @@ public class SignalAccount implements Closeable {
     }
 
     public long getStorageManifestVersion() {
-        return this.storageManifestVersion;
+        return getKeyValueStore().getEntry(storageManifestVersion);
     }
 
-    public void setStorageManifestVersion(final long storageManifestVersion) {
-        if (storageManifestVersion == this.storageManifestVersion) {
-            return;
-        }
-        this.storageManifestVersion = storageManifestVersion;
-        save();
+    public void setStorageManifestVersion(final long value) {
+        getKeyValueStore().storeEntry(storageManifestVersion, value);
     }
 
     public Optional<SignalStorageManifest> getStorageManifest() {
@@ -1644,12 +1649,11 @@ public class SignalAccount implements Closeable {
     }
 
     public long getLastReceiveTimestamp() {
-        return lastReceiveTimestamp;
+        return getKeyValueStore().getEntry(lastReceiveTimestamp);
     }
 
-    public void setLastReceiveTimestamp(final long lastReceiveTimestamp) {
-        this.lastReceiveTimestamp = lastReceiveTimestamp;
-        save();
+    public void setLastReceiveTimestamp(final long value) {
+        getKeyValueStore().storeEntry(lastReceiveTimestamp, value);
     }
 
     public boolean isUnrestrictedUnidentifiedAccess() {
