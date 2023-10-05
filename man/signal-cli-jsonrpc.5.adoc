@@ -13,7 +13,7 @@ signal-cli-jsonrpc - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket] [--tcp] [--http]
+*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket[=SOCKET_PATH]] [--tcp[=HOST:PORT]] [--http[=HOST:PORT]]
 
 *signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] jsonRpc
 
@@ -31,6 +31,12 @@ This is intended to make it easier to embed signal-cli in other applications.
 - `daemon` command provides a UNIX, TCP socket or HTTP endpoint and can handle requests from multiple clients.
 
   `signal-cli -a _ACCOUNT_ daemon --socket` or for multi-account mode `signal-cli daemon --socket`
+
+With `--http` signal-cli exposes three endpoints;
+
+* POST /api/v1/rpc : Expects a single or batch JSON-RPC request
+* GET /api/v1/events : Returns a Server-Sent Events (SSE) stream of incoming messages
+* GET /api/v1/check : Responds with 200 OK if daemon is running
 
 == Basic usage
 
