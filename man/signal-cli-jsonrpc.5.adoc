@@ -150,6 +150,33 @@ REQUEST: `{"jsonrpc":"2.0"}`
 
 RESPONSE: `{"jsonrpc":"2.0","error":{"code":-32600,"message":"method field must be set","data":null},"id":null}`
 
+=== Python examples
+
+==== HTTP
+
+Let's suppose, the daemon was started like that: `signal-cli -a ACCOUNT daemon --http 'localhost:8000'`
+
+Then minimal example to interact with it will be:
+```python
+import requests
+import random
+
+# 'id' must be or you'll get '201' answer
+x = {"jsonrpc": "2.0", "method": "listGroups", "id": random.randint(1, 999)}
+
+# '/api/v1/rpc' is a undocumented but obligatory part of path to API
+response = requests.post("http://localhost:8000/api/v1/rpc", json=x)
+response.json()
+```
+
+==== Websockets
+
+I failed to achieve any kind of responce with `websockets`
+
+==== TCP
+
+I failed to achieve any kind of responce with `socket` and connection always brakes with `zmq`
+
 == Authors
 
 Maintained by AsamK <asamk@gmx.de>, who is assisted by other open source contributors.
