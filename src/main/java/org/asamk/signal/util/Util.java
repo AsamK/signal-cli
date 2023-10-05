@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -13,9 +16,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Util {
+
+    private final static Logger logger = LoggerFactory.getLogger(Util.class);
 
     private Util() {
     }
@@ -80,4 +87,18 @@ public class Util {
         return map;
     }
 
+    public static void closeExecutorService(ExecutorService executor) {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
+                executor.shutdownNow();
+                if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                    logger.warn("Failed to shutdown executor service");
+                }
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 }
