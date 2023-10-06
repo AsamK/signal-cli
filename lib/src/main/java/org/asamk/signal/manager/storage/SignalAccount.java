@@ -127,8 +127,6 @@ public class SignalAccount implements Closeable {
     private ServiceEnvironment serviceEnvironment;
     private String number;
     private String username;
-    private ACI aci;
-    private PNI pni;
     private String encryptedDeviceName;
     private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
     private String password;
@@ -152,8 +150,8 @@ public class SignalAccount implements Closeable {
     private boolean isMultiDevice = false;
     private boolean registered = false;
 
-    private final AccountData aciAccountData = new AccountData(ServiceIdType.ACI);
-    private final AccountData pniAccountData = new AccountData(ServiceIdType.PNI);
+    private final AccountData<ACI> aciAccountData = new AccountData<>(ServiceIdType.ACI);
+    private final AccountData<PNI> pniAccountData = new AccountData<>(ServiceIdType.PNI);
     private IdentityKeyStore identityKeyStore;
     private SenderKeyStore senderKeyStore;
     private GroupStore groupStore;
@@ -352,8 +350,8 @@ public class SignalAccount implements Closeable {
             final ProfileKey profileKey
     ) {
         this.number = number;
-        this.aci = aci;
-        this.pni = pni;
+        this.aciAccountData.setServiceId(aci);
+        this.pniAccountData.setServiceId(pni);
         this.password = password;
         this.profileKey = profileKey;
         getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
@@ -388,8 +386,8 @@ public class SignalAccount implements Closeable {
         this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
         this.isMultiDevice = false;
         this.registered = true;
-        this.aci = aci;
-        this.pni = pni;
+        this.aciAccountData.setServiceId(aci);
+        this.pniAccountData.setServiceId(pni);
         this.registrationLockPin = pin;
         getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
         save();
@@ -558,14 +556,14 @@ public class SignalAccount implements Closeable {
         }
         if (rootNode.hasNonNull("uuid")) {
             try {
-                aci = ACI.parseOrThrow(rootNode.get("uuid").asText());
+                aciAccountData.setServiceId(ACI.parseOrThrow(rootNode.get("uuid").asText()));
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid aci/uuid, needs to be a valid UUID", e);
             }
         }
         if (rootNode.hasNonNull("pni")) {
             try {
-                pni = PNI.parseOrThrow(rootNode.get("pni").asText());
+                pniAccountData.setServiceId(PNI.parseOrThrow(rootNode.get("pni").asText()));
             } catch (IllegalArgumentException e) {
                 throw new IOException("Config file contains an invalid pni, needs to be a valid UUID", e);
             }
@@ -980,8 +978,8 @@ public class SignalAccount implements Closeable {
                     .put("username", number)
                     .put("serviceEnvironment", serviceEnvironment == null ? null : serviceEnvironment.name())
                     .put("usernameIdentifier", username)
-                    .put("uuid", aci == null ? null : aci.toString())
-                    .put("pni", pni == null ? null : pni.toStringWithoutPrefix())
+                    .put("uuid", getAci() == null ? null : getAci().toString())
+                    .put("pni", getPni() == null ? null : getPni().toStringWithoutPrefix())
                     .put("deviceName", encryptedDeviceName)
                     .put("deviceId", deviceId)
                     .put("isMultiDevice", isMultiDevice)
@@ -1195,17 +1193,17 @@ public class SignalAccount implements Closeable {
         return previousStorageVersion;
     }
 
-    public AccountData getAccountData(ServiceIdType serviceIdType) {
+    public AccountData<? extends ServiceId> getAccountData(ServiceIdType serviceIdType) {
         return switch (serviceIdType) {
             case ACI -> aciAccountData;
             case PNI -> pniAccountData;
         };
     }
 
-    public AccountData getAccountData(ServiceId accountIdentifier) {
-        if (accountIdentifier.equals(aci)) {
+    public AccountData<? extends ServiceId> getAccountData(ServiceId accountIdentifier) {
+        if (accountIdentifier.equals(aciAccountData.getServiceId())) {
             return aciAccountData;
-        } else if (accountIdentifier.equals(pni)) {
+        } else if (accountIdentifier.equals(pniAccountData.getServiceId())) {
             return pniAccountData;
         } else {
             throw new IllegalArgumentException("No matching account data found for " + accountIdentifier);
@@ -1216,13 +1214,7 @@ public class SignalAccount implements Closeable {
         return new SignalServiceDataStore() {
             @Override
             public SignalServiceAccountDataStore get(final ServiceId accountIdentifier) {
-                if (accountIdentifier.equals(aci)) {
-                    return aci();
-                } else if (accountIdentifier.equals(pni)) {
-                    return pni();
-                } else {
-                    throw new IllegalArgumentException("No matching store found for " + accountIdentifier);
-                }
+                return getAccountData(accountIdentifier).getSignalServiceAccountDataStore();
             }
 
             @Override
@@ -1327,12 +1319,12 @@ public class SignalAccount implements Closeable {
         return new CredentialsProvider() {
             @Override
             public ACI getAci() {
-                return aci;
+                return aciAccountData.getServiceId();
             }
 
             @Override
             public PNI getPni() {
-                return pni;
+                return pniAccountData.getServiceId();
             }
 
             @Override
@@ -1400,30 +1392,31 @@ public class SignalAccount implements Closeable {
     }
 
     public ServiceId getAccountId(ServiceIdType serviceIdType) {
-        return serviceIdType.equals(ServiceIdType.ACI) ? aci : pni;
+        return getAccountData(serviceIdType).getServiceId();
     }
 
     public ACI getAci() {
-        return aci;
+        return aciAccountData.getServiceId();
     }
 
     public void setAci(final ACI aci) {
-        this.aci = aci;
+        this.aciAccountData.setServiceId(aci);
         save();
     }
 
     public PNI getPni() {
-        return pni;
+        return pniAccountData.getServiceId();
     }
 
     public void setPni(final PNI updatedPni) {
-        if (this.pni != null && !this.pni.equals(updatedPni)) {
+        final var oldPni = pniAccountData.getServiceId();
+        if (oldPni != null && !oldPni.equals(updatedPni)) {
             // Clear data for old PNI
-            identityKeyStore.deleteIdentity(this.pni);
+            identityKeyStore.deleteIdentity(oldPni);
             clearAllPreKeys(ServiceIdType.PNI);
         }
 
-        this.pni = updatedPni;
+        this.pniAccountData.setServiceId(updatedPni);
         trustSelfIdentity(ServiceIdType.PNI);
         save();
     }
@@ -1448,11 +1441,11 @@ public class SignalAccount implements Closeable {
     }
 
     public SignalServiceAddress getSelfAddress() {
-        return new SignalServiceAddress(aci, number);
+        return new SignalServiceAddress(getAci(), number);
     }
 
     public RecipientAddress getSelfRecipientAddress() {
-        return new RecipientAddress(aci, pni, number, username);
+        return new RecipientAddress(getAci(), getPni(), number, username);
     }
 
     public RecipientId getSelfRecipientId() {
@@ -1764,9 +1757,10 @@ public class SignalAccount implements Closeable {
         }
     }
 
-    public class AccountData {
+    public class AccountData<SERVICE_ID extends ServiceId> {
 
         private final ServiceIdType serviceIdType;
+        private SERVICE_ID serviceId;
         private IdentityKeyPair identityKeyPair;
         private int localRegistrationId;
         private final PreKeyMetadata preKeyMetadata = new PreKeyMetadata();
@@ -1778,12 +1772,16 @@ public class SignalAccount implements Closeable {
         private SessionStore sessionStore;
         private SignalIdentityKeyStore identityKeyStore;
 
-        public AccountData(final ServiceIdType serviceIdType) {
+        private AccountData(final ServiceIdType serviceIdType) {
             this.serviceIdType = serviceIdType;
         }
 
-        public ServiceId getServiceId() {
-            return getAccountId(serviceIdType);
+        public SERVICE_ID getServiceId() {
+            return serviceId;
+        }
+
+        private void setServiceId(final SERVICE_ID serviceId) {
+            this.serviceId = serviceId;
         }
 
         public IdentityKeyPair getIdentityKeyPair() {
