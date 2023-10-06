@@ -46,28 +46,28 @@ jobs:
           tree .
           ARCHIVE_DIR=$(ls signal-cli-archive-*/ -d | tail -n1)
           tar -xzf ./"${ARCHIVE_DIR}"/*.tar.gz
-          mv ./"${ARCHIVE_DIR}"/*.tar.gz signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
+          mv ./"${ARCHIVE_DIR}"/*.tar.gz signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
           rm -rf signal-cli-archive-*/
 
-      - name: Get signal-client jar version
-        id: lib_ver
-        run: |
-          JAR_PREFIX=libsignal-client-
-          jar_file=$(find ./signal-cli-*/lib/ -name "$JAR_PREFIX*.jar")
-          jar_version=$(echo "$jar_file" | xargs basename | sed "s/$JAR_PREFIX//; s/.jar//")
-          echo "$jar_version"
-          echo "signal_client_version=${jar_version}" >> $GITHUB_OUTPUT
-
-      - name: Download signal-client builds
-        env:
-          RELEASES_URL: https://github.com/signalapp/libsignal/releases/download/
-          FILE_NAMES: signal_jni.dll libsignal_jni.dylib
-          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-        run: |
-          for file_name in $FILE_NAMES; do
-            curl -sOL "${RELEASES_URL}/v${SIGNAL_CLIENT_VER}/${file_name}"  # note: added v
-          done
-          tree .
+#      - name: Get signal-client jar version
+#        id: lib_ver
+#        run: |
+#          JAR_PREFIX=libsignal-client-
+#          jar_file=$(find ./signal-cli-*/lib/ -name "$JAR_PREFIX*.jar")
+#          jar_version=$(echo "$jar_file" | xargs basename | sed "s/$JAR_PREFIX//; s/.jar//")
+#          echo "$jar_version"
+#          echo "signal_client_version=${jar_version}" >> $GITHUB_OUTPUT
+#
+#      - name: Download signal-client builds
+#        env:
+#          RELEASES_URL: https://github.com/signalapp/libsignal/releases/download/
+#          FILE_NAMES: signal_jni.dll libsignal_jni.dylib
+#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+#        run: |
+#          for file_name in $FILE_NAMES; do
+#            curl -sOL "${RELEASES_URL}/v${SIGNAL_CLIENT_VER}/${file_name}"  # note: added v
+#          done
+#          tree .
 
       - name: Compress native app
         env:
@@ -77,24 +77,24 @@ jobs:
           tar -czf signal-cli-${SIGNAL_CLI_VER}-Linux-native.tar.gz -C signal-cli-native signal-cli
           rm -rf signal-cli-native/
 
-      - name: Replace Windows lib
-        env:
-          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-        run: |
-          mv signal_jni.dll libsignal_jni.so
-          zip -u ./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
-          tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-*/
-
-      - name: Replace macOS lib
-        env:
-          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-        run: |
-          jar_file=./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar
-          zip -d $jar_file libsignal_jni.so
-          zip $jar_file libsignal_jni.dylib
-          tar -czf signal-cli-${SIGNAL_CLI_VER}-macOS.tar.gz signal-cli-*/
+#      - name: Replace Windows lib
+#        env:
+#          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
+#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+#        run: |
+#          mv signal_jni.dll libsignal_jni.so
+#          zip -u ./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
+#          tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-*/
+#
+#      - name: Replace macOS lib
+#        env:
+#          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
+#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
+#        run: |
+#          jar_file=./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar
+#          zip -d $jar_file libsignal_jni.so
+#          zip $jar_file libsignal_jni.dylib
+#          tar -czf signal-cli-${SIGNAL_CLI_VER}-macOS.tar.gz signal-cli-*/
 
       - name: Create release
         id: create_release
@@ -106,15 +106,25 @@ jobs:
           release_name: v${{ steps.cli_ver.outputs.version }}  # note: added `v`
           draft: true
 
-      - name: Upload Linux archive
+      - name: Upload archive
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
+          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
+          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
+
+#      - name: Upload Linux archive
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
+#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
+#          asset_content_type: application/x-compressed-tar  # .tar.gz
 
       - name: Upload Linux native archive
         uses: actions/upload-release-asset@v1
@@ -126,25 +136,25 @@ jobs:
           asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux-native.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
 
-      - name: Upload windows archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
-          asset_content_type: application/x-compressed-tar  # .tar.gz
-
-      - name: Upload macos archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
-          asset_content_type: application/x-compressed-tar  # .tar.gz
+#      - name: Upload windows archive
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
+#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
+#          asset_content_type: application/x-compressed-tar  # .tar.gz
+#
+#      - name: Upload macos archive
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
+#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
+#          asset_content_type: application/x-compressed-tar  # .tar.gz
 
   build-container:
     needs: ci_wf
