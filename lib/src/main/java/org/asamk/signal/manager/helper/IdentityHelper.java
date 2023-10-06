@@ -58,22 +58,25 @@ public class IdentityHelper {
     }
 
     public String computeSafetyNumber(ServiceId serviceId, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey);
+        final var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, false);
         return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
     public ScannableFingerprint computeSafetyNumberForScanning(ServiceId serviceId, IdentityKey theirIdentityKey) {
-        final Fingerprint fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey);
+        var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, false);
+        if (fingerprint == null) {
+            fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, true);
+        }
         return fingerprint == null ? null : fingerprint.getScannableFingerprint();
     }
 
     private Fingerprint computeSafetyNumberFingerprint(
-            final ServiceId serviceId, final IdentityKey theirIdentityKey
+            final ServiceId serviceId, final IdentityKey theirIdentityKey, boolean useServiceId
     ) {
         final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
 
-        if (false) {
+        if (useServiceId) {
             if (serviceId.isUnknown()) {
                 return null;
             }
