@@ -539,6 +539,9 @@
   "name":"long[]"
 },
 {
+  "name":"okio.ByteString"
+},
+{
   "name":"org.asamk.Signal",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true
@@ -2117,6 +2120,13 @@
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId$ACI"
+},
+{
+  "name":"org.whispersystems.signalservice.api.push.ServiceId$Companion",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"fromLibSignal","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"parseOrNull","parameterTypes":["java.lang.String"] }, {"name":"parseOrNull","parameterTypes":["okio.ByteString"] }, {"name":"parseOrNull","parameterTypes":["byte[]"] }, {"name":"parseOrThrow","parameterTypes":["java.lang.String"] }, {"name":"parseOrThrow","parameterTypes":["okio.ByteString"] }, {"name":"parseOrThrow","parameterTypes":["byte[]"] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId$PNI"
