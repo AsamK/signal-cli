@@ -1094,6 +1094,20 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"org.asamk.signal.manager.storage.SignalAccount$Storage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"aciAccountData","parameterTypes":[] }, {"name":"deviceId","parameterTypes":[] }, {"name":"encryptedDeviceName","parameterTypes":[] }, {"name":"isMultiDevice","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"password","parameterTypes":[] }, {"name":"pinMasterKey","parameterTypes":[] }, {"name":"pniAccountData","parameterTypes":[] }, {"name":"profileKey","parameterTypes":[] }, {"name":"registered","parameterTypes":[] }, {"name":"registrationLockPin","parameterTypes":[] }, {"name":"serviceEnvironment","parameterTypes":[] }, {"name":"storageKey","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","int","java.lang.String","java.lang.String","int","int","int","int","int"] }, {"name":"activeLastResortKyberPreKeyId","parameterTypes":[] }, {"name":"activeSignedPreKeyId","parameterTypes":[] }, {"name":"identityPrivateKey","parameterTypes":[] }, {"name":"identityPublicKey","parameterTypes":[] }, {"name":"nextKyberPreKeyId","parameterTypes":[] }, {"name":"nextPreKeyId","parameterTypes":[] }, {"name":"nextSignedPreKeyId","parameterTypes":[] }, {"name":"registrationId","parameterTypes":[] }, {"name":"serviceId","parameterTypes":[] }]
+},
+{
   "name":"org.asamk.signal.manager.storage.accounts.AccountsStorage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
