@@ -424,6 +424,9 @@ public class SignalAccount implements Closeable {
 
     public void removeRecipient(final RecipientId recipientId) {
         final var recipientAddress = getRecipientStore().resolveRecipientAddress(recipientId);
+        if (recipientAddress.matches(getSelfRecipientAddress())) {
+            throw new RuntimeException("Can't delete self recipient");
+        }
         getRecipientStore().deleteRecipientData(recipientId);
         getMessageCache().deleteMessages(recipientId);
         if (recipientAddress.serviceId().isPresent()) {
