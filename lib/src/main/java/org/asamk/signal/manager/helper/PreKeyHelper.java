@@ -121,7 +121,7 @@ public class PreKeyHelper {
 
     private List<PreKeyRecord> generatePreKeys(ServiceIdType serviceIdType) {
         final var accountData = account.getAccountData(serviceIdType);
-        final var offset = accountData.getPreKeyMetadata().getPreKeyIdOffset();
+        final var offset = accountData.getPreKeyMetadata().getNextPreKeyId();
 
         var records = KeyUtils.generatePreKeyRecords(offset);
         account.addPreKeys(serviceIdType, records);
@@ -158,7 +158,7 @@ public class PreKeyHelper {
             ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
     ) {
         final var accountData = account.getAccountData(serviceIdType);
-        final var offset = accountData.getPreKeyMetadata().getKyberPreKeyIdOffset();
+        final var offset = accountData.getPreKeyMetadata().getNextKyberPreKeyId();
 
         var records = KeyUtils.generateKyberPreKeyRecords(offset, identityKeyPair.getPrivateKey());
         account.addKyberPreKeys(serviceIdType, records);
@@ -186,7 +186,7 @@ public class PreKeyHelper {
             ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair
     ) {
         final var accountData = account.getAccountData(serviceIdType);
-        final var signedPreKeyId = accountData.getPreKeyMetadata().getKyberPreKeyIdOffset();
+        final var signedPreKeyId = accountData.getPreKeyMetadata().getNextKyberPreKeyId();
 
         var record = KeyUtils.generateKyberPreKeyRecord(signedPreKeyId, identityKeyPair.getPrivateKey());
         account.addLastResortKyberPreKey(serviceIdType, record);
