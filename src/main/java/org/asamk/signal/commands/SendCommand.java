@@ -78,6 +78,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--quote-mention")
                 .nargs("*")
                 .help("Quote with mention of another group member (syntax: start:length:recipientNumber)");
+        subparser.addArgument("--quote-attachment")
+                .nargs("*")
+                .help("Specify the attachments of the original message (syntax: contentType[:filename[:previewFile]], e.g. 'audio/aac' or 'image/png:test.png:/tmp/preview.jpg'.");
         subparser.addArgument("--quote-text-style")
                 .nargs("*")
                 .help("Quote with style parts of the message text (syntax: start:length:STYLE)");
@@ -145,19 +148,19 @@ public class SendCommand implements JsonRpcLocalCommand {
             messageText = "";
         }
 
-        List<String> attachments = ns.getList("attachment");
+        var attachments = ns.<String>getList("attachment");
         if (attachments == null) {
             attachments = List.of();
         }
 
         final var selfNumber = m.getSelfNumber();
 
-        List<String> mentionStrings = ns.getList("mention");
+        final var mentionStrings = ns.<String>getList("mention");
         final var mentions = mentionStrings == null
                 ? List.<Message.Mention>of()
                 : parseMentions(selfNumber, mentionStrings);
 
-        List<String> textStyleStrings = ns.getList("text-style");
+        final var textStyleStrings = ns.<String>getList("text-style");
         final var textStyles = textStyleStrings == null ? List.<TextStyle>of() : parseTextStyles(textStyleStrings);
 
         final Message.Quote quote;
@@ -165,29 +168,34 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (quoteTimestamp != null) {
             final var quoteAuthor = ns.getString("quote-author");
             final var quoteMessage = ns.getString("quote-message");
-            List<String> quoteMentionStrings = ns.getList("quote-mention");
+            final var quoteMentionStrings = ns.<String>getList("quote-mention");
             final var quoteMentions = quoteMentionStrings == null
                     ? List.<Message.Mention>of()
                     : parseMentions(selfNumber, quoteMentionStrings);
-            List<String> quoteTextStyleStrings = ns.getList("quote-text-style");
+            final var quoteTextStyleStrings = ns.<String>getList("quote-text-style");
+            final var quoteAttachmentStrings = ns.<String>getList("quote-attachment");
             final var quoteTextStyles = quoteTextStyleStrings == null
                     ? List.<TextStyle>of()
                     : parseTextStyles(quoteTextStyleStrings);
+            final var quoteAttachments = quoteAttachmentStrings == null
+                    ? List.<Message.Quote.Attachment>of()
+                    : parseQuoteAttachments(quoteAttachmentStrings);
             quote = new Message.Quote(quoteTimestamp,
                     CommandUtil.getSingleRecipientIdentifier(quoteAuthor, selfNumber),
                     quoteMessage == null ? "" : quoteMessage,
                     quoteMentions,
-                    quoteTextStyles);
+                    quoteTextStyles,
+                    quoteAttachments);
         } else {
             quote = null;
         }
 
         final List<Message.Preview> previews;
-        String previewUrl = ns.getString("preview-url");
+        final var previewUrl = ns.getString("preview-url");
         if (previewUrl != null) {
-            String previewTitle = ns.getString("preview-title");
-            String previewDescription = ns.getString("preview-description");
-            String previewImage = ns.getString("preview-image");
+            final var previewTitle = ns.getString("preview-title");
+            final var previewDescription = ns.getString("preview-description");
+            final var previewImage = ns.getString("preview-image");
             previews = List.of(new Message.Preview(previewUrl,
                     Optional.ofNullable(previewTitle).orElse(""),
                     Optional.ofNullable(previewDescription).orElse(""),
@@ -241,9 +249,8 @@ public class SendCommand implements JsonRpcLocalCommand {
     private List<Message.Mention> parseMentions(
             final String selfNumber, final List<String> mentionStrings
     ) throws UserErrorException {
-        List<Message.Mention> mentions;
-        final Pattern mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
-        mentions = new ArrayList<>();
+        final var mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
+        final var mentions = new ArrayList<Message.Mention>();
         for (final var mention : mentionStrings) {
             final var matcher = mentionPattern.matcher(mention);
             if (!matcher.matches()) {
@@ -261,9 +268,8 @@ public class SendCommand implements JsonRpcLocalCommand {
     private List<TextStyle> parseTextStyles(
             final List<String> textStylesStrings
     ) throws UserErrorException {
-        List<TextStyle> textStyles;
-        final Pattern textStylePattern = Pattern.compile("(\\d+):(\\d+):(.+)");
-        textStyles = new ArrayList<>();
+        final var textStylePattern = Pattern.compile("(\\d+):(\\d+):(.+)");
+        final var textStyles = new ArrayList<TextStyle>();
         for (final var textStyle : textStylesStrings) {
             final var matcher = textStylePattern.matcher(textStyle);
             if (!matcher.matches()) {
@@ -283,7 +289,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private Message.Sticker parseSticker(final String stickerString) throws UserErrorException {
-        final Pattern stickerPattern = Pattern.compile("([\\da-f]+):(\\d+)");
+        final var stickerPattern = Pattern.compile("([\\da-f]+):(\\d+)");
         final var matcher = stickerPattern.matcher(stickerString);
         if (!matcher.matches() || matcher.group(1).length() % 2 != 0) {
             throw new UserErrorException("Invalid sticker syntax ("
@@ -291,5 +297,22 @@ public class SendCommand implements JsonRpcLocalCommand {
                     + ") expected 'stickerPackId:stickerId'");
         }
         return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+    }
+
+    private List<Message.Quote.Attachment> parseQuoteAttachments(
+            final List<String> attachmentStrings
+    ) throws UserErrorException {
+        final var attachmentPattern = Pattern.compile("([^:]+)(:([^:]+)(:(.+))?)?");
+        final var attachments = new ArrayList<Message.Quote.Attachment>();
+        for (final var attachment : attachmentStrings) {
+            final var matcher = attachmentPattern.matcher(attachment);
+            if (!matcher.matches()) {
+                throw new UserErrorException("Invalid attachment syntax ("
+                        + attachment
+                        + ") expected 'contentType[:filename[:previewFile]]'");
+            }
+            attachments.add(new Message.Quote.Attachment(matcher.group(1), matcher.group(3), matcher.group(5)));
+        }
+        return attachments;
     }
 }

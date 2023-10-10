@@ -21,8 +21,12 @@ public record Message(
             RecipientIdentifier.Single author,
             String message,
             List<Mention> mentions,
-            List<TextStyle> textStyles
-    ) {}
+            List<TextStyle> textStyles,
+            List<Attachment> attachments
+    ) {
+
+        public record Attachment(String contentType, String filename, String preview) {}
+    }
 
     public record Sticker(byte[] packId, int stickerId) {}
 

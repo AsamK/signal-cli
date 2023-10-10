@@ -143,6 +143,7 @@ pub trait Rpc {
         #[allow(non_snake_case)] quoteAuthor: Option<String>,
         #[allow(non_snake_case)] quoteMessage: Option<String>,
         #[allow(non_snake_case)] quoteMention: Vec<String>,
+        #[allow(non_snake_case)] quoteAttachment: Vec<String>,
         sticker: Option<String>,
         #[allow(non_snake_case)] storyTimestamp: Option<u64>,
         #[allow(non_snake_case)] storyAuthor: Option<String>,

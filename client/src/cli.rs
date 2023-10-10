@@ -165,6 +165,9 @@ pub enum CliCommands {
         quote_mention: Vec<String>,
 
         #[arg(long)]
+        quote_attachment: Vec<String>,
+
+        #[arg(long)]
         sticker: Option<String>,
 
         #[arg(long)]

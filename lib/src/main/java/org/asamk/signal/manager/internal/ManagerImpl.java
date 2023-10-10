@@ -627,12 +627,19 @@ public class ManagerImpl implements Manager {
         }
         if (message.quote().isPresent()) {
             final var quote = message.quote().get();
+            final var quotedAttachments = new ArrayList<SignalServiceDataMessage.Quote.QuotedAttachment>();
+            for (final var a : quote.attachments()) {
+                final var quotedAttachment = new SignalServiceDataMessage.Quote.QuotedAttachment(a.contentType(),
+                        a.filename(),
+                        a.preview() == null ? null : context.getAttachmentHelper().uploadAttachment(a.preview()));
+                quotedAttachments.add(quotedAttachment);
+            }
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
                     context.getRecipientHelper()
                             .resolveSignalServiceAddress(context.getRecipientHelper().resolveRecipient(quote.author()))
                             .getServiceId(),
                     quote.message(),
-                    List.of(),
+                    quotedAttachments,
                     resolveMentions(quote.mentions()),
                     SignalServiceDataMessage.Quote.Type.NORMAL,
                     quote.textStyles().stream().map(TextStyle::toBodyRange).toList()));
