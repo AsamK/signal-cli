@@ -545,7 +545,7 @@
   "name":"org.asamk.Signal",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"getSelfNumber","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }]
+  "methods":[{"name":"getSelfNumber","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.Signal$Configuration",
@@ -556,6 +556,11 @@
   "name":"org.asamk.Signal$Device",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true
+},
+{
+  "name":"org.asamk.Signal$EditMessageReceived",
+  "queryAllDeclaredConstructors":true,
+  "queryAllPublicConstructors":true
 },
 {
   "name":"org.asamk.Signal$Error$AttachmentInvalid",

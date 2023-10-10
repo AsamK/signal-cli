@@ -74,6 +74,27 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
                         getMessageExtras(message)));
             }
         }
+        if (envelope.edit().isPresent()) {
+            var editMessage = envelope.edit().get();
+            var message = editMessage.dataMessage();
+
+            var groupId = message.groupContext()
+                    .map(MessageEnvelope.Data.GroupContext::groupId)
+                    .map(GroupId::serialize)
+                    .orElseGet(() -> new byte[0]);
+            var isGroupUpdate = message.groupContext()
+                    .map(MessageEnvelope.Data.GroupContext::isGroupUpdate)
+                    .orElse(false);
+            if (!message.isEndSession() && !isGroupUpdate) {
+                conn.sendMessage(new Signal.EditMessageReceived(objectPath,
+                        message.timestamp(),
+                        editMessage.targetSentTimestamp(),
+                        senderString,
+                        groupId,
+                        message.body().orElse(""),
+                        getMessageExtras(message)));
+            }
+        }
         if (envelope.sync().isPresent()) {
             var syncMessage = envelope.sync().get();
             if (syncMessage.sent().isPresent()) {

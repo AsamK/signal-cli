@@ -83,6 +83,7 @@ public class DbusManagerImpl implements Manager {
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
     private DBusSigHandler<Signal.MessageReceivedV2> dbusMsgHandler;
+    private DBusSigHandler<Signal.EditMessageReceived> dbusEditMsgHandler;
     private DBusSigHandler<Signal.ReceiptReceivedV2> dbusRcptHandler;
     private DBusSigHandler<Signal.SyncMessageReceivedV2> dbusSyncHandler;
 
@@ -799,6 +800,49 @@ public class DbusManagerImpl implements Manager {
                 notifyMessageHandlers(envelope);
             };
             connection.addSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
+            this.dbusEditMsgHandler = messageReceived -> {
+                final var extras = messageReceived.getExtras();
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
+                        messageReceived.getSender())),
+                        0,
+                        messageReceived.getTimestamp(),
+                        0,
+                        0,
+                        false,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new MessageEnvelope.Edit(messageReceived.getTargetSentTimestamp(),
+                                new MessageEnvelope.Data(messageReceived.getTimestamp(),
+                                        messageReceived.getGroupId().length > 0
+                                                ? Optional.of(new MessageEnvelope.Data.GroupContext(GroupId.unknownVersion(
+                                                messageReceived.getGroupId()), false, 0))
+                                                : Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.of(messageReceived.getMessage()),
+                                        0,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        getAttachments(extras),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        List.of(),
+                                        List.of(),
+                                        List.of(),
+                                        List.of()))),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty());
+                notifyMessageHandlers(envelope);
+            };
+            connection.addSigHandler(Signal.EditMessageReceived.class, signal, this.dbusEditMsgHandler);
 
             this.dbusRcptHandler = receiptReceived -> {
                 final var type = switch (receiptReceived.getReceiptType()) {
@@ -901,6 +945,7 @@ public class DbusManagerImpl implements Manager {
         try {
             signal.unsubscribeReceive();
             connection.removeSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
+            connection.removeSigHandler(Signal.EditMessageReceived.class, signal, this.dbusEditMsgHandler);
             connection.removeSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
             connection.removeSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
         } catch (DBusException e) {
