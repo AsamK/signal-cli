@@ -148,7 +148,7 @@ public class PreKeyHelper {
         final var accountData = account.getAccountData(serviceIdType);
         final var signedPreKeyId = accountData.getPreKeyMetadata().getNextSignedPreKeyId();
 
-        var record = KeyUtils.generateSignedPreKeyRecord(signedPreKeyId, identityKeyPair);
+        var record = KeyUtils.generateSignedPreKeyRecord(signedPreKeyId, identityKeyPair.getPrivateKey());
         account.addSignedPreKey(serviceIdType, record);
 
         return record;

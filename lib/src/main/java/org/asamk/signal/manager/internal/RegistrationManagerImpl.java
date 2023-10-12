@@ -267,7 +267,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
         final var preKeyMetadata = accountData.getPreKeyMetadata();
 
         final var nextSignedPreKeyId = preKeyMetadata.getNextSignedPreKeyId();
-        final var signedPreKey = KeyUtils.generateSignedPreKeyRecord(nextSignedPreKeyId, keyPair);
+        final var signedPreKey = KeyUtils.generateSignedPreKeyRecord(nextSignedPreKeyId, keyPair.getPrivateKey());
 
         final var privateKey = keyPair.getPrivateKey();
         final var kyberPreKeyIdOffset = preKeyMetadata.getNextKyberPreKeyId();

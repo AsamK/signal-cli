@@ -61,12 +61,12 @@ public class KeyUtils {
     }
 
     public static SignedPreKeyRecord generateSignedPreKeyRecord(
-            final int signedPreKeyId, final IdentityKeyPair identityKeyPair
+            final int signedPreKeyId, final ECPrivateKey privateKey
     ) {
         var keyPair = Curve.generateKeyPair();
         byte[] signature;
         try {
-            signature = Curve.calculateSignature(identityKeyPair.getPrivateKey(), keyPair.getPublicKey().serialize());
+            signature = Curve.calculateSignature(privateKey, keyPair.getPublicKey().serialize());
         } catch (InvalidKeyException e) {
             throw new AssertionError(e);
         }
