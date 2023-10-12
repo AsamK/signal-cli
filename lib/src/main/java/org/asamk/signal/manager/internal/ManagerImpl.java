@@ -19,6 +19,7 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
@@ -30,17 +31,21 @@ import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
+import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.LastGroupAdminException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
+import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.Profile;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.Recipient;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -315,6 +320,26 @@ public class ManagerImpl implements Manager {
     @Override
     public void deleteUsername() throws IOException {
         context.getAccountHelper().deleteUsername();
+    }
+
+    @Override
+    public void startChangeNumber(
+            String newNumber, boolean voiceVerification, String captcha
+    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
+        }
+        context.getAccountHelper().startChangeNumber(newNumber, voiceVerification, captcha);
+    }
+
+    @Override
+    public void finishChangeNumber(
+            String newNumber, String verificationCode, String pin
+    ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
+        }
+        context.getAccountHelper().finishChangeNumber(newNumber, verificationCode, pin);
     }
 
     @Override

@@ -25,6 +25,8 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -120,6 +122,10 @@ public class Utils {
                 return lefts.tryAdvance(left -> rights.tryAdvance(right -> action.accept(combiner.apply(left, right))));
             }
         }, leftStream.isParallel() || rightStream.isParallel());
+    }
+
+    public static <OK, NK, V> Map<NK, V> mapKeys(Map<OK, V> map, Function<OK, NK> keyMapper) {
+        return map.entrySet().stream().collect(Collectors.toMap(e -> keyMapper.apply(e.getKey()), Map.Entry::getValue));
     }
 
     public static Map<String, String> getQueryMap(String query) {

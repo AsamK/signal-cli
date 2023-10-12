@@ -2,9 +2,11 @@ package org.asamk.signal.util;
 
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupIdFormatException;
 import org.asamk.signal.manager.api.InvalidNumberException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 
 import java.util.Collection;
@@ -95,5 +97,30 @@ public class CommandUtil {
         } catch (InvalidNumberException e) {
             throw new UserErrorException("Invalid phone number '" + recipientString + "': " + e.getMessage(), e);
         }
+    }
+
+    public static String getCaptchaRequiredMessage(final CaptchaRequiredException e, final boolean captchaProvided) {
+        String message;
+        if (!captchaProvided) {
+            message = """
+                      Captcha required for verification, use --captcha CAPTCHA
+                      To get the token, go to https://signalcaptchas.org/registration/generate.html
+                      Check the developer tools (F12) console for a failed redirect to signalcaptcha://
+                      Everything after signalcaptcha:// is the captcha token.""";
+        } else {
+            message = "Invalid captcha given.";
+        }
+        if (e.getNextAttemptTimestamp() > 0) {
+            message += "\nNext Captcha may be provided at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
+        }
+        return message;
+    }
+
+    public static String getRateLimitMessage(final RateLimitException e) {
+        String message = "Rate limit reached";
+        if (e.getNextAttemptTimestamp() > 0) {
+            message += "\nNext attempt may be tried at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
+        }
+        return message;
     }
 }

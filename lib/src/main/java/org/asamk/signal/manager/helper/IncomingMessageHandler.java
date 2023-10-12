@@ -40,12 +40,9 @@ import org.signal.libsignal.metadata.ProtocolInvalidMessageException;
 import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
-import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.groups.GroupSessionBuilder;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
-import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
-import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
@@ -67,7 +64,6 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.Envelope;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
@@ -618,24 +614,10 @@ public final class IncomingMessageHandler {
         if (syncMessage.getPniChangeNumber().isPresent()) {
             final var pniChangeNumber = syncMessage.getPniChangeNumber().get();
             logger.debug("Received PNI change number sync message, applying.");
-            if (pniChangeNumber.identityKeyPair != null
-                    && pniChangeNumber.registrationId != null
-                    && pniChangeNumber.signedPreKey != null
-                    && !envelope.getUpdatedPni().isEmpty()) {
-                logger.debug("New PNI: {}", envelope.getUpdatedPni());
-                try {
-                    final var updatedPni = PNI.parseOrThrow(envelope.getUpdatedPni());
-                    context.getAccountHelper()
-                            .setPni(updatedPni,
-                                    new IdentityKeyPair(pniChangeNumber.identityKeyPair.toByteArray()),
-                                    pniChangeNumber.newE164,
-                                    pniChangeNumber.registrationId,
-                                    new SignedPreKeyRecord(pniChangeNumber.signedPreKey.toByteArray()),
-                                    pniChangeNumber.lastResortKyberPreKey != null ? new KyberPreKeyRecord(
-                                            pniChangeNumber.lastResortKyberPreKey.toByteArray()) : null);
-                } catch (Exception e) {
-                    logger.warn("Failed to handle change number message", e);
-                }
+            final var updatedPniString = envelope.getUpdatedPni();
+            if (updatedPniString != null && !updatedPniString.isEmpty()) {
+                final var updatedPni = ServiceId.PNI.parseOrThrow(updatedPniString);
+                context.getAccountHelper().handlePniChangeNumberMessage(pniChangeNumber, updatedPni);
             }
         }
         return actions;

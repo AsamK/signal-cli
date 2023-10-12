@@ -14,16 +14,20 @@ import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
+import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
+import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -31,16 +35,21 @@ import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionExc
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
+import org.whispersystems.signalservice.internal.push.SyncMessage;
+import org.whispersystems.signalservice.internal.push.exceptions.MismatchedDevicesException;
 import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import okio.ByteString;
+
+import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_MAXIMUM_ID;
 import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public class AccountHelper {
@@ -139,7 +148,7 @@ public class AccountHelper {
     }
 
     public void startChangeNumber(
-            String newNumber, String captcha, boolean voiceVerification
+            String newNumber, boolean voiceVerification, String captcha
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
         String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
@@ -153,12 +162,92 @@ public class AccountHelper {
     public void finishChangeNumber(
             String newNumber, String verificationCode, String pin
     ) throws IncorrectPinException, PinLockedException, IOException {
-        // TODO create new PNI identity key
-        final List<OutgoingPushMessage> deviceMessages = null;
-        final Map<String, SignedPreKeyEntity> devicePniSignedPreKeys = null;
-        final Map<String, KyberPreKeyEntity> devicePniLastResortKyberPrekeys = null;
-        final Map<String, Integer> pniRegistrationIds = null;
-        var sessionId = account.getSessionId(account.getNumber());
+        for (var attempts = 0; attempts < 5; attempts++) {
+            try {
+                finishChangeNumberInternal(newNumber, verificationCode, pin);
+                break;
+            } catch (MismatchedDevicesException e) {
+                logger.debug("Change number failed with mismatched devices, retrying.");
+                try {
+                    dependencies.getMessageSender().handleChangeNumberMismatchDevices(e.getMismatchedDevices());
+                } catch (UntrustedIdentityException ex) {
+                    throw new AssertionError(ex);
+                }
+            }
+        }
+    }
+
+    private void finishChangeNumberInternal(
+            String newNumber, String verificationCode, String pin
+    ) throws IncorrectPinException, PinLockedException, IOException {
+        final var pniIdentity = KeyUtils.generateIdentityKeyPair();
+        final var encryptedDeviceMessages = new ArrayList<OutgoingPushMessage>();
+        final var devicePniSignedPreKeys = new HashMap<Integer, SignedPreKeyEntity>();
+        final var devicePniLastResortKyberPreKeys = new HashMap<Integer, KyberPreKeyEntity>();
+        final var pniRegistrationIds = new HashMap<Integer, Integer>();
+
+        final var selfDeviceId = account.getDeviceId();
+        SyncMessage.PniChangeNumber selfChangeNumber = null;
+
+        final var deviceIds = new ArrayList<Integer>();
+        deviceIds.add(SignalServiceAddress.DEFAULT_DEVICE_ID);
+        final var aci = account.getAci();
+        final var accountDataStore = account.getSignalServiceDataStore().aci();
+        final var subDeviceSessions = accountDataStore.getSubDeviceSessions(aci.toString())
+                .stream()
+                .filter(deviceId -> accountDataStore.containsSession(new SignalProtocolAddress(aci.toString(),
+                        deviceId)))
+                .toList();
+        deviceIds.addAll(subDeviceSessions);
+
+        final var messageSender = dependencies.getMessageSender();
+        for (final var deviceId : deviceIds) {
+            // Signed Prekey
+            final var signedPreKeyRecord = KeyUtils.generateSignedPreKeyRecord(KeyUtils.getRandomInt(PREKEY_MAXIMUM_ID),
+                    pniIdentity.getPrivateKey());
+            final var signedPreKeyEntity = new SignedPreKeyEntity(signedPreKeyRecord.getId(),
+                    signedPreKeyRecord.getKeyPair().getPublicKey(),
+                    signedPreKeyRecord.getSignature());
+            devicePniSignedPreKeys.put(deviceId, signedPreKeyEntity);
+
+            // Last-resort kyber prekey
+            final var lastResortKyberPreKeyRecord = KeyUtils.generateKyberPreKeyRecord(KeyUtils.getRandomInt(
+                    PREKEY_MAXIMUM_ID), pniIdentity.getPrivateKey());
+            final var kyberPreKeyEntity = new KyberPreKeyEntity(lastResortKyberPreKeyRecord.getId(),
+                    lastResortKyberPreKeyRecord.getKeyPair().getPublicKey(),
+                    lastResortKyberPreKeyRecord.getSignature());
+            devicePniLastResortKyberPreKeys.put(deviceId, kyberPreKeyEntity);
+
+            // Registration Id
+            var pniRegistrationId = -1;
+            while (pniRegistrationId < 0 || pniRegistrationIds.containsValue(pniRegistrationId)) {
+                pniRegistrationId = KeyHelper.generateRegistrationId(false);
+            }
+            pniRegistrationIds.put(deviceId, pniRegistrationId);
+
+            // Device Message
+            final var pniChangeNumber = new SyncMessage.PniChangeNumber.Builder().identityKeyPair(ByteString.of(
+                            pniIdentity.serialize()))
+                    .signedPreKey(ByteString.of(signedPreKeyRecord.serialize()))
+                    .lastResortKyberPreKey(ByteString.of(lastResortKyberPreKeyRecord.serialize()))
+                    .registrationId(pniRegistrationId)
+                    .newE164(newNumber)
+                    .build();
+
+            if (deviceId == selfDeviceId) {
+                selfChangeNumber = pniChangeNumber;
+            } else {
+                try {
+                    final var message = messageSender.getEncryptedSyncPniInitializeDeviceMessage(deviceId,
+                            pniChangeNumber);
+                    encryptedDeviceMessages.add(message);
+                } catch (UntrustedIdentityException | IOException | InvalidKeyException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        final var sessionId = account.getSessionId(newNumber);
         final var result = NumberVerificationUtils.verifyNumber(sessionId,
                 verificationCode,
                 pin,
@@ -166,7 +255,7 @@ public class AccountHelper {
                 (sessionId1, verificationCode1, registrationLock) -> {
                     final var accountManager = dependencies.getAccountManager();
                     try {
-                        Utils.handleResponseException(accountManager.verifyAccount(verificationCode, sessionId1));
+                        Utils.handleResponseException(accountManager.verifyAccount(verificationCode1, sessionId1));
                     } catch (AlreadyVerifiedException e) {
                         // Already verified so can continue changing number
                     }
@@ -175,14 +264,42 @@ public class AccountHelper {
                             null,
                             newNumber,
                             registrationLock,
-                            account.getPniIdentityKeyPair().getPublicKey(),
-                            deviceMessages,
-                            devicePniSignedPreKeys,
-                            devicePniLastResortKyberPrekeys,
-                            pniRegistrationIds)));
+                            pniIdentity.getPublicKey(),
+                            encryptedDeviceMessages,
+                            Utils.mapKeys(devicePniSignedPreKeys, Object::toString),
+                            Utils.mapKeys(devicePniLastResortKyberPreKeys, Object::toString),
+                            Utils.mapKeys(pniRegistrationIds, Object::toString))));
                 });
-        // TODO handle response
-        updateSelfIdentifiers(newNumber, account.getAci(), PNI.parseOrThrow(result.first().getPni()));
+
+        final var updatePni = PNI.parseOrThrow(result.first().getPni());
+        if (updatePni.equals(account.getPni())) {
+            logger.debug("PNI is unchanged after change number");
+            return;
+        }
+
+        handlePniChangeNumberMessage(selfChangeNumber, updatePni);
+    }
+
+    public void handlePniChangeNumberMessage(
+            final SyncMessage.PniChangeNumber pniChangeNumber, final PNI updatedPni
+    ) {
+        if (pniChangeNumber.identityKeyPair != null
+                && pniChangeNumber.registrationId != null
+                && pniChangeNumber.signedPreKey != null) {
+            logger.debug("New PNI: {}", updatedPni);
+            try {
+                setPni(updatedPni,
+                        new IdentityKeyPair(pniChangeNumber.identityKeyPair.toByteArray()),
+                        pniChangeNumber.newE164,
+                        pniChangeNumber.registrationId,
+                        new SignedPreKeyRecord(pniChangeNumber.signedPreKey.toByteArray()),
+                        pniChangeNumber.lastResortKyberPreKey != null
+                                ? new KyberPreKeyRecord(pniChangeNumber.lastResortKyberPreKey.toByteArray())
+                                : null);
+            } catch (Exception e) {
+                logger.warn("Failed to handle change number message", e);
+            }
+        }
     }
 
     public static final int USERNAME_MIN_LENGTH = 3;

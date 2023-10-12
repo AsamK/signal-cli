@@ -381,6 +381,9 @@
   "methods":[{"name":"getUnicodeLocaleType","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"java.util.Map"
+},
+{
   "name":"java.util.Optional",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -506,7 +509,13 @@
   "name":"kotlin.collections.List"
 },
 {
+  "name":"kotlin.collections.Map"
+},
+{
   "name":"kotlin.collections.MutableList"
+},
+{
+  "name":"kotlin.collections.MutableMap"
 },
 {
   "name":"kotlin.jvm.JvmStatic",
@@ -545,7 +554,7 @@
   "name":"org.asamk.Signal",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"getSelfNumber","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }]
+  "methods":[{"name":"getContactName","parameterTypes":["java.lang.String"] }, {"name":"getSelfNumber","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.Signal$Configuration",
@@ -2049,9 +2058,10 @@
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
   "allDeclaredFields":true,
+  "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"getNumber","parameterTypes":[] }, {"name":"getRegistrationLock","parameterTypes":[] }]
+  "methods":[{"name":"getDeviceMessages","parameterTypes":[] }, {"name":"getDevicePniSignedPrekeys","parameterTypes":[] }, {"name":"getNumber","parameterTypes":[] }, {"name":"getPniIdentityKey","parameterTypes":[] }, {"name":"getPniRegistrationIds","parameterTypes":[] }, {"name":"getRegistrationLock","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.CredentialResponse",

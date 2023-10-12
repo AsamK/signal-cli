@@ -14,6 +14,7 @@ public class Commands {
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
         addCommand(new DeleteLocalAccountDataCommand());
+        addCommand(new FinishChangeNumberCommand());
         addCommand(new FinishLinkCommand());
         addCommand(new GetAttachmentCommand());
         addCommand(new GetUserStatusCommand());
@@ -43,6 +44,7 @@ public class Commands {
         addCommand(new SendTypingCommand());
         addCommand(new SetPinCommand());
         addCommand(new SubmitRateLimitChallengeCommand());
+        addCommand(new StartChangeNumberCommand());
         addCommand(new StartLinkCommand());
         addCommand(new TrustCommand());
         addCommand(new UnblockCommand());

@@ -16,7 +16,7 @@ import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.output.JsonWriter;
-import org.asamk.signal.util.DateUtils;
+import org.asamk.signal.util.CommandUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -69,26 +69,10 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         try {
             m.register(voiceVerification, captcha);
         } catch (RateLimitException e) {
-            String message = "Rate limit reached";
-            if (e.getNextAttemptTimestamp() > 0) {
-                message += "\nNext attempt may be tried at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
-            }
+            final var message = CommandUtil.getRateLimitMessage(e);
             throw new RateLimitErrorException(message, e);
         } catch (CaptchaRequiredException e) {
-            String message;
-            if (captcha == null) {
-                message = """
-                          Captcha required for verification, use --captcha CAPTCHA
-                          To get the token, go to https://signalcaptchas.org/registration/generate.html
-                          Check the developer tools (F12) console for a failed redirect to signalcaptcha://
-                          Everything after signalcaptcha:// is the captcha token.""";
-            } else {
-                message = "Invalid captcha given.";
-            }
-            if (e.getNextAttemptTimestamp() > 0) {
-                message += "\nNext Captcha may be provided at "
-                        + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
-            }
+            final var message = CommandUtil.getCaptchaRequiredMessage(e, captcha != null);
             throw new UserErrorException(message);
         } catch (NonNormalizedPhoneNumberException e) {
             throw new UserErrorException("Failed to register: " + e.getMessage(), e);

@@ -112,7 +112,12 @@ public class PreKeyHelper {
                     preKeyRecords,
                     lastResortKyberPreKeyRecord,
                     kyberPreKeyRecords);
-            dependencies.getAccountManager().setPreKeys(preKeyUpload);
+            try {
+                dependencies.getAccountManager().setPreKeys(preKeyUpload);
+            } catch (AuthorizationFailedException e) {
+                // This can happen when the primary device has changed phone number
+                logger.warn("Failed to updated pre keys: {}", e.getMessage());
+            }
         }
 
         cleanSignedPreKeys((serviceIdType));

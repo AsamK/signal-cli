@@ -1383,7 +1383,6 @@ public class SignalAccount implements Closeable {
         if (oldPni != null && !oldPni.equals(updatedPni)) {
             // Clear data for old PNI
             identityKeyStore.deleteIdentity(oldPni);
-            clearAllPreKeys(ServiceIdType.PNI);
         }
 
         this.pniAccountData.setServiceId(updatedPni);
@@ -1400,11 +1399,14 @@ public class SignalAccount implements Closeable {
         setPniIdentityKeyPair(pniIdentityKeyPair);
         pniAccountData.setLocalRegistrationId(localPniRegistrationId);
 
-        final var preKeyMetadata = getAccountData(ServiceIdType.PNI).getPreKeyMetadata();
+        final AccountData<? extends ServiceId> accountData = getAccountData(ServiceIdType.PNI);
+        final var preKeyMetadata = accountData.getPreKeyMetadata();
         preKeyMetadata.nextSignedPreKeyId = pniSignedPreKey.getId();
+        accountData.getSignedPreKeyStore().removeSignedPreKey(pniSignedPreKey.getId());
         addSignedPreKey(ServiceIdType.PNI, pniSignedPreKey);
         if (lastResortKyberPreKey != null) {
             preKeyMetadata.nextKyberPreKeyId = lastResortKyberPreKey.getId();
+            accountData.getKyberPreKeyStore().removeKyberPreKey(lastResortKyberPreKey.getId());
             addLastResortKyberPreKey(ServiceIdType.PNI, lastResortKyberPreKey);
         }
         save();
