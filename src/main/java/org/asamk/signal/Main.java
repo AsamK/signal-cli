@@ -24,6 +24,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.RateLimitErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -116,6 +117,8 @@ public class Main {
             return 3;
         } else if (e instanceof UntrustedKeyErrorException) {
             return 4;
+        } else if (e instanceof RateLimitErrorException) {
+            return 5;
         } else {
             return 2;
         }

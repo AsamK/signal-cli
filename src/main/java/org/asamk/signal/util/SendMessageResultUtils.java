@@ -1,10 +1,12 @@
 package org.asamk.signal.util;
 
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.RateLimitErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.json.JsonSendMessageResult;
 import org.asamk.signal.manager.api.ProofRequiredException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResult;
@@ -51,6 +53,9 @@ public class SendMessageResultUtils {
         if (!sendMessageResults.hasSuccess()) {
             if (sendMessageResults.hasOnlyUntrustedIdentity()) {
                 throw new UntrustedKeyErrorException("Failed to send message due to untrusted identities");
+            } else if (sendMessageResults.hasOnlyRateLimitFailure()) {
+                throw new RateLimitErrorException("Failed to send message due to rate limiting",
+                        new RateLimitException(0));
             } else {
                 throw new UserErrorException("Failed to send message");
             }
@@ -111,7 +116,7 @@ public class SendMessageResultUtils {
     }
 
     public static void printSendMessageResultErrors(PlainTextWriter writer, List<String> errors) {
-        if (errors.size() == 0) {
+        if (errors.isEmpty()) {
             return;
         }
         writer.println("Failed to send (some) messages:");

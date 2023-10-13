@@ -9,6 +9,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.RateLimitErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
@@ -64,7 +65,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
 
     private void register(
             final RegistrationManager m, final boolean voiceVerification, final String captcha
-    ) throws UserErrorException, IOErrorException {
+    ) throws CommandException {
         try {
             m.register(voiceVerification, captcha);
         } catch (RateLimitException e) {
@@ -72,7 +73,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             if (e.getNextAttemptTimestamp() > 0) {
                 message += "\nNext attempt may be tried at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
             }
-            throw new UserErrorException(message);
+            throw new RateLimitErrorException(message, e);
         } catch (CaptchaRequiredException e) {
             String message;
             if (captcha == null) {

@@ -19,4 +19,11 @@ public record SendMessageResults(long timestamp, Map<RecipientIdentifier, List<S
                 .allMatch(identityFailure -> identityFailure)
                 && results.values().stream().mapToInt(List::size).sum() > 0;
     }
+
+    public boolean hasOnlyRateLimitFailure() {
+        return results.values()
+                .stream()
+                .flatMap(res -> res.stream().map(SendMessageResult::isRateLimitFailure))
+                .allMatch(r -> r) && results.values().stream().mapToInt(List::size).sum() > 0;
+    }
 }
