@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
+import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
 import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
@@ -53,6 +54,7 @@ public class AccountDatabase extends Database {
         IdentityKeyStore.createSql(connection);
         SenderKeyRecordStore.createSql(connection);
         SenderKeySharedStore.createSql(connection);
+        KeyValueStore.createSql(connection);
     }
 
     @Override
