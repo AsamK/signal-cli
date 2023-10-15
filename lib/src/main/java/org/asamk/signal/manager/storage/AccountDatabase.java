@@ -9,6 +9,7 @@ import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
 import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
+import org.asamk.signal.manager.storage.recipients.CdsiStore;
 import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeyRecordStore;
@@ -31,7 +32,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 17;
+    private static final long DATABASE_VERSION = 18;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -55,6 +56,7 @@ public class AccountDatabase extends Database {
         SenderKeyRecordStore.createSql(connection);
         SenderKeySharedStore.createSql(connection);
         KeyValueStore.createSql(connection);
+        CdsiStore.createSql(connection);
     }
 
     @Override
@@ -513,6 +515,18 @@ public class AccountDatabase extends Database {
                                                 _id INTEGER PRIMARY KEY,
                                                 key TEXT UNIQUE NOT NULL,
                                                 value ANY
+                                        ) STRICT;
+                                        """);
+            }
+        }
+        if (oldVersion < 18) {
+            logger.debug("Updating database: Adding cdsi table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE cdsi (
+                                          _id INTEGER PRIMARY KEY,
+                                          number TEXT NOT NULL UNIQUE,
+                                          last_seen_at INTEGER NOT NULL
                                         ) STRICT;
                                         """);
             }

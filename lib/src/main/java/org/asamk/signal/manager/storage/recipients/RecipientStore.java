@@ -383,6 +383,25 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         }
     }
 
+    public Set<String> getAllNumbers() {
+        final var sql = (
+                """
+                SELECT r.number
+                FROM %s r
+                WHERE r.number IS NOT NULL
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var connection = database.getConnection()) {
+            try (final var statement = connection.prepareStatement(sql)) {
+                return Utils.executeQueryForStream(statement, resultSet -> resultSet.getString("number"))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from recipient store", e);
+        }
+    }
+
     public Map<ServiceId, ProfileKey> getServiceIdToProfileKeyMap() {
         final var sql = (
                 """

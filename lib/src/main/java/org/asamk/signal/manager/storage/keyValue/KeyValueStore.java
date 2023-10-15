@@ -90,6 +90,8 @@ public class KeyValueStore {
             value = resultSet.getLong("value");
         } else if (clazz == boolean.class || clazz == Boolean.class) {
             value = resultSet.getBoolean("value");
+        } else if (clazz == byte[].class || clazz == Byte[].class) {
+            value = resultSet.getBytes("value");
         } else if (clazz == String.class) {
             value = resultSet.getString("value");
         } else if (Enum.class.isAssignableFrom(clazz)) {
@@ -133,6 +135,12 @@ public class KeyValueStore {
                 statement.setNull(parameterIndex, Types.BOOLEAN);
             } else {
                 statement.setBoolean(parameterIndex, (boolean) value);
+            }
+        } else if (clazz == byte[].class || clazz == Byte[].class) {
+            if (value == null) {
+                statement.setNull(parameterIndex, Types.BLOB);
+            } else {
+                statement.setBytes(parameterIndex, (byte[]) value);
             }
         } else if (clazz == String.class) {
             if (value == null) {

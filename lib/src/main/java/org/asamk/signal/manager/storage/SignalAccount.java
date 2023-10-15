@@ -33,6 +33,7 @@ import org.asamk.signal.manager.storage.profiles.LegacyProfileStore;
 import org.asamk.signal.manager.storage.profiles.ProfileStore;
 import org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore;
 import org.asamk.signal.manager.storage.protocol.SignalProtocolStore;
+import org.asamk.signal.manager.storage.recipients.CdsiStore;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore;
 import org.asamk.signal.manager.storage.recipients.LegacyRecipientStore2;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -145,6 +146,7 @@ public class SignalAccount implements Closeable {
     private final KeyValueEntry<Long> lastReceiveTimestamp = new KeyValueEntry<>("last-receive-timestamp",
             long.class,
             0L);
+    private final KeyValueEntry<byte[]> cdsiToken = new KeyValueEntry<>("cdsi-token", byte[].class);
     private final KeyValueEntry<Long> storageManifestVersion = new KeyValueEntry<>("storage-manifest-version",
             long.class,
             -1L);
@@ -160,6 +162,7 @@ public class SignalAccount implements Closeable {
     private StickerStore stickerStore;
     private ConfigurationStore configurationStore;
     private KeyValueStore keyValueStore;
+    private CdsiStore cdsiStore;
 
     private MessageCache messageCache;
     private MessageSendLogStore messageSendLogStore;
@@ -1220,6 +1223,10 @@ public class SignalAccount implements Closeable {
         return getRecipientStore();
     }
 
+    public CdsiStore getCdsiStore() {
+        return getOrCreate(() -> cdsiStore, () -> cdsiStore = new CdsiStore(getAccountDatabase()));
+    }
+
     private RecipientIdCreator getRecipientIdCreator() {
         return recipientId -> getRecipientStore().create(recipientId);
     }
@@ -1569,6 +1576,14 @@ public class SignalAccount implements Closeable {
         } catch (IOException e) {
             logger.error("Failed to store local storage manifest.", e);
         }
+    }
+
+    public byte[] getCdsiToken() {
+        return getKeyValueStore().getEntry(cdsiToken);
+    }
+
+    public void setCdsiToken(final byte[] value) {
+        getKeyValueStore().storeEntry(cdsiToken, value);
     }
 
     public ProfileKey getProfileKey() {
