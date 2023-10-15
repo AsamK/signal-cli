@@ -1386,6 +1386,7 @@ public class SignalAccount implements Closeable {
         }
 
         this.pniAccountData.setServiceId(updatedPni);
+        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         trustSelfIdentity(ServiceIdType.PNI);
         save();
     }
