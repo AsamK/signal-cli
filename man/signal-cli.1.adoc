@@ -96,6 +96,7 @@ If the account was deleted (with --delete-account) it cannot be reactivated.
 
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
+Voice verification only works if an SMS verification has been attempted before.
 
 *--captcha*::
 The captcha token, required if registration failed with a captcha required error.
@@ -145,6 +146,38 @@ Can fix problems with receiving messages.
 
 *-n* NAME, *--device-name* NAME::
 Set a new device name for the primary or linked device
+
+=== startChangeNumber
+
+Change an account to a new phone number with SMS or voice verification.
+Use the finishChangeNumber command to complete the verification.
+
+NUMBER::
+The new phone number.
+
+*-v*, *--voice*::
+The verification should be done over voice, not SMS.
+Voice verification only works if an SMS verification has been attempted before.
+
+*--captcha*::
+The captcha token, required if registration failed with a captcha required error.
+To get the token, go to https://signalcaptchas.org/registration/generate.html
+For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
+Check the developer tools for a redirect starting with signalcaptcha:// Everything after signalcaptcha:// is the captcha token.
+
+=== finishChangeNumber
+
+Verify the number using the code received via SMS or voice.
+
+NUMBER::
+The new phone number.
+
+*-v*, *--verification-code*::
+The verification code.
+
+*-p* PIN, *--pin* PIN::
+The registration lock PIN, that was set by the user.
+Only required if a PIN was set.
 
 === updateConfiguration
 
@@ -271,6 +304,9 @@ Specify the mentions of the original message (same format as `--mention`).
 
 *--quote-text-style*::
 Style parts of the original message text (same format as `--text-style`).
+
+*--quote-attachment*::
+Specify the attachments of the original message (syntax: contentType[:filename[:previewFile]]), e.g. 'audio/aac' or 'image/png:test.png:/tmp/preview.jpg'.
 
 *--preview-url*::
 Specify the url for the link preview.

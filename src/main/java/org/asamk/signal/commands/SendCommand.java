@@ -80,7 +80,7 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .help("Quote with mention of another group member (syntax: start:length:recipientNumber)");
         subparser.addArgument("--quote-attachment")
                 .nargs("*")
-                .help("Specify the attachments of the original message (syntax: contentType[:filename[:previewFile]], e.g. 'audio/aac' or 'image/png:test.png:/tmp/preview.jpg'.");
+                .help("Specify the attachments of the original message (syntax: contentType[:filename[:previewFile]]), e.g. 'audio/aac' or 'image/png:test.png:/tmp/preview.jpg'.");
         subparser.addArgument("--quote-text-style")
                 .nargs("*")
                 .help("Quote with style parts of the message text (syntax: start:length:STYLE)");

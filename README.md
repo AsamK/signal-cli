@@ -32,8 +32,8 @@ See [latest version](https://github.com/AsamK/signal-cli/releases).
 
 ```sh
 export VERSION=<latest version, format "x.y.z">
-wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux.tar.gz
-sudo tar xf signal-cli-"${VERSION}"-Linux.tar.gz -C /opt
+wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
+sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
 sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
 
