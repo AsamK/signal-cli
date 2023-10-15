@@ -64,6 +64,7 @@ import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
+import org.asamk.signal.manager.helper.RecipientHelper.RegisteredUser;
 import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -89,6 +90,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
+import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -216,7 +218,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException {
+    public Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException, RateLimitException {
         final var canonicalizedNumbers = numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             try {
                 final var canonicalizedNumber = PhoneNumberFormatter.formatNumber(n, account.getNumber());
@@ -234,7 +236,14 @@ public class ManagerImpl implements Manager {
                 .stream()
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
-        final var registeredUsers = context.getRecipientHelper().getRegisteredUsers(canonicalizedNumbersSet);
+
+        final Map<String, RegisteredUser> registeredUsers;
+        try {
+            registeredUsers = context.getRecipientHelper().getRegisteredUsers(canonicalizedNumbersSet);
+        } catch (CdsiResourceExhaustedException e) {
+            logger.debug("CDSI resource exhausted: {}", e.getMessage());
+            throw new RateLimitException(System.currentTimeMillis() + e.getRetryAfterSeconds() * 1000L);
+        }
 
         return numbers.stream().collect(Collectors.toMap(n -> n, n -> {
             final var number = canonicalizedNumbers.get(n);

@@ -86,7 +86,7 @@ public interface Manager extends Closeable {
      * @return A map of numbers to canonicalized number and uuid. If a number is not registered the uuid is null.
      * @throws IOException if it's unable to get the contacts to check if they're registered
      */
-    Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException;
+    Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException, RateLimitException;
 
     void updateAccountAttributes(String deviceName) throws IOException;
 

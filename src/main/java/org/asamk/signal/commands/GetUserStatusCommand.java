@@ -5,11 +5,14 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.RateLimitErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
+import org.asamk.signal.util.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +43,9 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         Map<String, UserStatus> registered;
         try {
             registered = m.getUserStatus(new HashSet<>(ns.getList("recipient")));
+        } catch (RateLimitException e) {
+            final var message = CommandUtil.getRateLimitMessage(e);
+            throw new RateLimitErrorException(message, e);
         } catch (IOException e) {
             throw new IOErrorException("Unable to check if users are registered: "
                     + e.getMessage()

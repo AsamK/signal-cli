@@ -21,6 +21,7 @@ import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
+import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.RecipientAddress;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendMessageResult;
@@ -31,6 +32,7 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.util.DateUtils;
 import org.asamk.signal.util.SendMessageResultUtils;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -681,6 +683,10 @@ public class DbusSignalImpl implements Signal {
             registered = m.getUserStatus(new HashSet<>(numbers));
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
+        } catch (RateLimitException e) {
+            throw new Error.Failure(e.getMessage()
+                    + ", retry at "
+                    + DateUtils.formatTimestamp(e.getNextAttemptTimestamp()));
         }
 
         return numbers.stream().map(number -> registered.get(number).uuid() != null).toList();
@@ -893,7 +899,7 @@ public class DbusSignalImpl implements Signal {
         }
 
         var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results);
-        if (errors.size() == 0 || errors.size() < results.size()) {
+        if (errors.isEmpty() || errors.size() < results.size()) {
             return;
         }
 
