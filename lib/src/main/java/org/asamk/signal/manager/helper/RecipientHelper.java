@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.asamk.signal.manager.config.ServiceConfig.MAXIMUM_ONE_OFF_REQUEST_SIZE;
+
 public class RecipientHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(RecipientHelper.class);
@@ -134,7 +136,14 @@ public class RecipientHelper {
     public Map<String, RegisteredUser> getRegisteredUsers(
             final Set<String> numbers
     ) throws IOException {
-        return getRegisteredUsers(numbers, true);
+        if (numbers.size() > MAXIMUM_ONE_OFF_REQUEST_SIZE) {
+            final var allNumbers = new HashSet<>(account.getRecipientStore().getAllNumbers()) {{
+                addAll(numbers);
+            }};
+            return getRegisteredUsers(allNumbers, false);
+        } else {
+            return getRegisteredUsers(numbers, true);
+        }
     }
 
     private Map<String, RegisteredUser> getRegisteredUsers(
@@ -174,7 +183,10 @@ public class RecipientHelper {
             logger.debug("No new numbers to query.");
             return Map.of();
         }
-        logger.trace("Querying CDSI for {} new numbers ({} previous)", newNumbers.size(), previousNumbers.size());
+        logger.trace("Querying CDSI for {} new numbers ({} previous), isPartialRefresh={}",
+                newNumbers.size(),
+                previousNumbers.size(),
+                isPartialRefresh);
         final var token = previousNumbers.isEmpty()
                 ? Optional.<byte[]>empty()
                 : Optional.ofNullable(account.getCdsiToken());

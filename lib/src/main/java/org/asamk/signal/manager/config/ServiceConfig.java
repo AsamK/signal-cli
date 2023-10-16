@@ -29,6 +29,7 @@ public class ServiceConfig {
     public final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
     public final static boolean AUTOMATIC_NETWORK_RETRY = true;
     public final static int GROUP_MAX_SIZE = 1001;
+    public final static int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
 
     private final static KeyStore iasKeyStore;
 
