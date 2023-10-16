@@ -130,7 +130,7 @@ public class SignalAccount implements Closeable {
     private String number;
     private String username;
     private String encryptedDeviceName;
-    private int deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
+    private int deviceId = 0;
     private String password;
     private String registrationLockPin;
     private MasterKey pinMasterKey;
@@ -204,8 +204,6 @@ public class SignalAccount implements Closeable {
             ServiceEnvironment serviceEnvironment,
             IdentityKeyPair aciIdentityKey,
             IdentityKeyPair pniIdentityKey,
-            int registrationId,
-            int pniRegistrationId,
             ProfileKey profileKey,
             final Settings settings
     ) throws IOException {
@@ -223,160 +221,91 @@ public class SignalAccount implements Closeable {
         signalAccount.serviceEnvironment = serviceEnvironment;
         signalAccount.profileKey = profileKey;
         signalAccount.password = KeyUtils.createPassword();
+        signalAccount.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
 
         signalAccount.dataPath = dataPath;
         signalAccount.aciAccountData.setIdentityKeyPair(aciIdentityKey);
         signalAccount.pniAccountData.setIdentityKeyPair(pniIdentityKey);
-        signalAccount.aciAccountData.setLocalRegistrationId(registrationId);
-        signalAccount.pniAccountData.setLocalRegistrationId(pniRegistrationId);
+        signalAccount.aciAccountData.setLocalRegistrationId(KeyHelper.generateRegistrationId(false));
+        signalAccount.pniAccountData.setLocalRegistrationId(KeyHelper.generateRegistrationId(false));
         signalAccount.settings = settings;
 
         signalAccount.registered = false;
 
         signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
         signalAccount.migrateLegacyConfigs();
-        signalAccount.clearAllPreKeys();
         signalAccount.save();
 
         return signalAccount;
     }
 
-    private static SignalAccount createLinkedAccount(
-            File dataPath,
-            String accountPath,
-            String number,
-            ServiceEnvironment serviceEnvironment,
-            ACI aci,
-            PNI pni,
-            String password,
-            String encryptedDeviceName,
-            int deviceId,
-            IdentityKeyPair aciIdentityKey,
-            IdentityKeyPair pniIdentityKey,
-            int registrationId,
-            int pniRegistrationId,
-            ProfileKey profileKey,
-            final Settings settings
-    ) throws IOException {
-        var fileName = getFileName(dataPath, accountPath);
-        IOUtils.createPrivateFile(fileName);
-
-        final var pair = openFileChannel(fileName, true);
-        var signalAccount = new SignalAccount(pair.first(), pair.second());
-
-        signalAccount.dataPath = dataPath;
-        signalAccount.accountPath = accountPath;
-        signalAccount.serviceEnvironment = serviceEnvironment;
-        signalAccount.aciAccountData.setLocalRegistrationId(registrationId);
-        signalAccount.pniAccountData.setLocalRegistrationId(pniRegistrationId);
-        signalAccount.settings = settings;
-        signalAccount.setProvisioningData(number,
-                aci,
-                pni,
-                password,
-                encryptedDeviceName,
-                deviceId,
-                aciIdentityKey,
-                pniIdentityKey,
-                profileKey);
-
-        signalAccount.getRecipientTrustedResolver()
-                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
-        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
-        signalAccount.migrateLegacyConfigs();
-        signalAccount.clearAllPreKeys();
-        signalAccount.save();
-
-        return signalAccount;
-    }
-
-    public static SignalAccount createOrUpdateLinkedAccount(
-            File dataPath,
-            String accountPath,
-            String number,
-            ServiceEnvironment serviceEnvironment,
-            ACI aci,
-            PNI pni,
-            String password,
-            String encryptedDeviceName,
-            int deviceId,
-            IdentityKeyPair aciIdentityKey,
-            IdentityKeyPair pniIdentityKey,
-            int registrationId,
-            int pniRegistrationId,
-            ProfileKey profileKey,
+    public static SignalAccount createLinkedAccount(
+            final File dataPath,
+            final String accountPath,
+            final ServiceEnvironment serviceEnvironment,
             final Settings settings
     ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getFileName(dataPath, accountPath);
-        if (!fileName.exists()) {
-            return createLinkedAccount(dataPath,
-                    accountPath,
-                    number,
-                    serviceEnvironment,
-                    aci,
-                    pni,
-                    password,
-                    encryptedDeviceName,
-                    deviceId,
-                    aciIdentityKey,
-                    pniIdentityKey,
-                    registrationId,
-                    pniRegistrationId,
-                    profileKey,
-                    settings);
-        }
+        IOUtils.createPrivateFile(fileName);
 
-        final var signalAccount = load(dataPath, accountPath, true, settings);
-        signalAccount.setProvisioningData(number,
-                aci,
-                pni,
-                password,
-                encryptedDeviceName,
-                deviceId,
-                aciIdentityKey,
-                pniIdentityKey,
-                profileKey);
-        signalAccount.getRecipientTrustedResolver()
-                .resolveSelfRecipientTrusted(signalAccount.getSelfRecipientAddress());
-        signalAccount.aciAccountData.getSessionStore().archiveAllSessions();
-        signalAccount.pniAccountData.getSessionStore().archiveAllSessions();
-        signalAccount.getSenderKeyStore().deleteAll();
-        signalAccount.clearAllPreKeys();
+        final var pair = openFileChannel(fileName, true);
+        final var signalAccount = new SignalAccount(pair.first(), pair.second());
+
+        signalAccount.dataPath = dataPath;
+        signalAccount.accountPath = accountPath;
+        signalAccount.serviceEnvironment = serviceEnvironment;
+        signalAccount.aciAccountData.setLocalRegistrationId(KeyHelper.generateRegistrationId(false));
+        signalAccount.pniAccountData.setLocalRegistrationId(KeyHelper.generateRegistrationId(false));
+        signalAccount.settings = settings;
+
+        signalAccount.previousStorageVersion = CURRENT_STORAGE_VERSION;
+
         return signalAccount;
     }
 
-    private void setProvisioningData(
+    public void setProvisioningData(
             final String number,
             final ACI aci,
             final PNI pni,
             final String password,
             final String encryptedDeviceName,
-            final int deviceId,
             final IdentityKeyPair aciIdentity,
             final IdentityKeyPair pniIdentity,
             final ProfileKey profileKey
     ) {
+        this.deviceId = 0;
         this.number = number;
         this.aciAccountData.setServiceId(aci);
         this.pniAccountData.setServiceId(pni);
+        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         this.password = password;
         this.profileKey = profileKey;
         getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
         this.encryptedDeviceName = encryptedDeviceName;
-        this.deviceId = deviceId;
         this.aciAccountData.setIdentityKeyPair(aciIdentity);
         this.pniAccountData.setIdentityKeyPair(pniIdentity);
-        this.registered = true;
+        this.registered = false;
         this.isMultiDevice = true;
         getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
         this.pinMasterKey = null;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;
+        getSenderKeyStore().deleteAll();
         trustSelfIdentity(ServiceIdType.ACI);
         trustSelfIdentity(ServiceIdType.PNI);
+        aciAccountData.getSessionStore().archiveAllSessions();
+        pniAccountData.getSessionStore().archiveAllSessions();
+        clearAllPreKeys();
         getKeyValueStore().storeEntry(lastRecipientsRefresh, null);
+        save();
+    }
+
+    public void finishLinking(final int deviceId) {
+        this.registered = true;
+        this.deviceId = deviceId;
+        save();
     }
 
     public void finishRegistration(
@@ -476,7 +405,7 @@ public class SignalAccount implements Closeable {
             return false;
         }
         var f = getFileName(dataPath, account);
-        return !(!f.exists() || f.isDirectory());
+        return f.exists() && !f.isDirectory() && f.length() > 0L;
     }
 
     private void load(

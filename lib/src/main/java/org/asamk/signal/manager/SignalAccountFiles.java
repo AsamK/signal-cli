@@ -14,7 +14,6 @@ import org.asamk.signal.manager.internal.RegistrationManagerImpl;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.accounts.AccountsStore;
 import org.asamk.signal.manager.util.KeyUtils;
-import org.signal.libsignal.protocol.util.KeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
@@ -160,8 +159,6 @@ public class SignalAccountFiles {
             final var newAccountPath = accountPath == null ? accountsStore.addAccount(number, null) : accountPath;
             var aciIdentityKey = KeyUtils.generateIdentityKeyPair();
             var pniIdentityKey = KeyUtils.generateIdentityKeyPair();
-            var registrationId = KeyHelper.generateRegistrationId(false);
-            var pniRegistrationId = KeyHelper.generateRegistrationId(false);
 
             var profileKey = KeyUtils.createProfileKey();
             var account = SignalAccount.create(pathConfig.dataPath(),
@@ -170,8 +167,6 @@ public class SignalAccountFiles {
                     serviceEnvironment,
                     aciIdentityKey,
                     pniIdentityKey,
-                    registrationId,
-                    pniRegistrationId,
                     profileKey,
                     settings);
 

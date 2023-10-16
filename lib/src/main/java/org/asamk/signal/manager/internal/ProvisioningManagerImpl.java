@@ -27,12 +27,12 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.accounts.AccountsStore;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
-import org.signal.libsignal.protocol.util.KeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -59,8 +59,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
 
     private final SignalServiceAccountManager accountManager;
     private final IdentityKeyPair tempIdentityKey;
-    private final int registrationId;
-    private final int pniRegistrationId;
     private final String password;
 
     public ProvisioningManagerImpl(
@@ -77,8 +75,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         this.accountsStore = accountsStore;
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
-        registrationId = KeyHelper.generateRegistrationId(false);
-        pniRegistrationId = KeyHelper.generateRegistrationId(false);
         password = KeyUtils.createPassword();
         GroupsV2Operations groupsV2Operations;
         try {
@@ -114,9 +110,9 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         if (accountPath == null) {
             accountPath = accountsStore.getPathByNumber(number);
         }
-        if (accountPath != null
-                && SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)
-                && !canRelinkExistingAccount(accountPath)) {
+        final var accountExists = accountPath != null && SignalAccount.accountFileExists(pathConfig.dataPath(),
+                accountPath);
+        if (accountExists && !canRelinkExistingAccount(accountPath)) {
             throw new UserAlreadyExistsException(number, SignalAccount.getFileName(pathConfig.dataPath(), accountPath));
         }
         if (accountPath == null) {
@@ -128,37 +124,41 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         var encryptedDeviceName = deviceName == null
                 ? null
                 : DeviceNameUtil.encryptDeviceName(deviceName, ret.getAciIdentity().getPrivateKey());
-
-        logger.debug("Finishing new device registration");
-        var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
-                new ConfirmCodeMessage(false,
-                        true,
-                        registrationId,
-                        pniRegistrationId,
-                        encryptedDeviceName,
-                        getCapabilities(false)));
-
         // Create new account with the synced identity
         var profileKey = ret.getProfileKey() == null ? KeyUtils.createProfileKey() : ret.getProfileKey();
 
         SignalAccount account = null;
         try {
-            account = SignalAccount.createOrUpdateLinkedAccount(pathConfig.dataPath(),
-                    accountPath,
-                    number,
-                    serviceEnvironmentConfig.type(),
+            if (!accountExists) {
+                account = SignalAccount.createLinkedAccount(pathConfig.dataPath(),
+                        accountPath,
+                        serviceEnvironmentConfig.type(),
+                        Settings.DEFAULT);
+            } else {
+                account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, Settings.DEFAULT);
+            }
+
+            account.setProvisioningData(number,
                     aci,
                     pni,
                     password,
                     encryptedDeviceName,
-                    deviceId,
                     ret.getAciIdentity(),
                     ret.getPniIdentity(),
-                    registrationId,
-                    pniRegistrationId,
-                    profileKey,
-                    Settings.DEFAULT);
+                    profileKey);
+
             account.getConfigurationStore().setReadReceipts(ret.isReadReceipts());
+
+            logger.debug("Finishing new device registration");
+            var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
+                    new ConfirmCodeMessage(false,
+                            true,
+                            account.getAccountData(ServiceIdType.ACI).getLocalRegistrationId(),
+                            account.getAccountData(ServiceIdType.PNI).getLocalRegistrationId(),
+                            encryptedDeviceName,
+                            getCapabilities(false)));
+
+            account.finishLinking(deviceId);
 
             ManagerImpl m = null;
             try {
