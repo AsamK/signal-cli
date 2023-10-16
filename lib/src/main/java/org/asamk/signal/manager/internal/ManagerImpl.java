@@ -115,6 +115,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -215,6 +216,18 @@ public class ManagerImpl implements Manager {
 
     public void checkAccountState() throws IOException {
         context.getAccountHelper().checkAccountState();
+        final var lastRecipientsRefresh = account.getLastRecipientsRefresh();
+        if (lastRecipientsRefresh == null
+                || lastRecipientsRefresh < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)) {
+            try {
+                context.getRecipientHelper().refreshUsers();
+            } catch (Exception e) {
+                logger.warn("Full CDSI recipients refresh failed, ignoring: {} ({})",
+                        e.getMessage(),
+                        e.getClass().getSimpleName());
+                logger.debug("Full CDSI refresh failed", e);
+            }
+        }
     }
 
     @Override

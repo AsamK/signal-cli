@@ -214,6 +214,7 @@ public class RecipientHelper {
                                     }};
                                     account.getCdsiStore().updateAfterFullCdsQuery(fullNumbers, seenNumbers);
                                     account.setCdsiToken(newToken);
+                                    account.setLastRecipientsRefresh(System.currentTimeMillis());
                                 }
                             });
         } catch (CdsiInvalidTokenException e) {

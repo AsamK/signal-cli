@@ -147,6 +147,8 @@ public class SignalAccount implements Closeable {
             long.class,
             0L);
     private final KeyValueEntry<byte[]> cdsiToken = new KeyValueEntry<>("cdsi-token", byte[].class);
+    private final KeyValueEntry<Long> lastRecipientsRefresh = new KeyValueEntry<>("last-recipients-refresh",
+            long.class);
     private final KeyValueEntry<Long> storageManifestVersion = new KeyValueEntry<>("storage-manifest-version",
             long.class,
             -1L);
@@ -374,6 +376,7 @@ public class SignalAccount implements Closeable {
         this.storageKey = null;
         trustSelfIdentity(ServiceIdType.ACI);
         trustSelfIdentity(ServiceIdType.PNI);
+        getKeyValueStore().storeEntry(lastRecipientsRefresh, null);
     }
 
     public void finishRegistration(
@@ -406,6 +409,7 @@ public class SignalAccount implements Closeable {
         getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         trustSelfIdentity(ServiceIdType.ACI);
         trustSelfIdentity(ServiceIdType.PNI);
+        getKeyValueStore().storeEntry(lastRecipientsRefresh, null);
     }
 
     public void initDatabase() {
@@ -1584,6 +1588,14 @@ public class SignalAccount implements Closeable {
 
     public void setCdsiToken(final byte[] value) {
         getKeyValueStore().storeEntry(cdsiToken, value);
+    }
+
+    public Long getLastRecipientsRefresh() {
+        return getKeyValueStore().getEntry(lastRecipientsRefresh);
+    }
+
+    public void setLastRecipientsRefresh(final Long value) {
+        getKeyValueStore().storeEntry(lastRecipientsRefresh, value);
     }
 
     public ProfileKey getProfileKey() {
