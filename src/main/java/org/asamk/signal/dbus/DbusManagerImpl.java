@@ -244,7 +244,7 @@ public class DbusManagerImpl implements Manager {
     public SendGroupMessageResults quitGroup(
             final GroupId groupId, final Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException {
-        if (groupAdmins.size() > 0) {
+        if (!groupAdmins.isEmpty()) {
             throw new UnsupportedOperationException();
         }
         final var group = getRemoteObject(signal.getGroup(groupId.serialize()), Signal.Group.class);
@@ -522,7 +522,7 @@ public class DbusManagerImpl implements Manager {
             if (isWeakListener) {
                 weakHandlers.add(handler);
             } else {
-                if (messageHandlers.size() == 0) {
+                if (messageHandlers.isEmpty()) {
                     installMessageHandlers();
                 }
                 messageHandlers.add(handler);
@@ -535,7 +535,7 @@ public class DbusManagerImpl implements Manager {
         synchronized (messageHandlers) {
             weakHandlers.remove(handler);
             messageHandlers.remove(handler);
-            if (messageHandlers.size() == 0) {
+            if (messageHandlers.isEmpty()) {
                 uninstallMessageHandlers();
             }
         }
@@ -544,7 +544,7 @@ public class DbusManagerImpl implements Manager {
     @Override
     public boolean isReceiving() {
         synchronized (messageHandlers) {
-            return messageHandlers.size() > 0;
+            return !messageHandlers.isEmpty();
         }
     }
 
@@ -622,7 +622,7 @@ public class DbusManagerImpl implements Manager {
                 return null;
             }
             final var contactName = signal.getContactName(n);
-            if (onlyContacts && contactName.length() == 0) {
+            if (onlyContacts && contactName.isEmpty()) {
                 return null;
             }
             if (name.isPresent() && !name.get().equals(contactName)) {
@@ -721,7 +721,7 @@ public class DbusManagerImpl implements Manager {
             this.notify();
         }
         synchronized (messageHandlers) {
-            if (messageHandlers.size() > 0) {
+            if (!messageHandlers.isEmpty()) {
                 uninstallMessageHandlers();
             }
             weakHandlers.clear();
@@ -745,7 +745,7 @@ public class DbusManagerImpl implements Manager {
                 .map(RecipientIdentifier.Single.class::cast)
                 .map(RecipientIdentifier.Single::getIdentifier)
                 .toList();
-        if (singleRecipients.size() > 0) {
+        if (!singleRecipients.isEmpty()) {
             timestamp = recipientsHandler.apply(singleRecipients);
         }
 

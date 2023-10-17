@@ -127,7 +127,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final var groupCallUpdate = message.groupCallUpdate().get();
             writer.indentedWriter().println("Era id: {}", groupCallUpdate.eraId());
         }
-        if (message.previews().size() > 0) {
+        if (!message.previews().isEmpty()) {
             writer.println("Previews:");
             final var previews = message.previews();
             for (var preview : previews) {
@@ -135,7 +135,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 printPreview(writer.indentedWriter(), preview);
             }
         }
-        if (message.sharedContacts().size() > 0) {
+        if (!message.sharedContacts().isEmpty()) {
             writer.println("Contacts:");
             for (var contact : message.sharedContacts()) {
                 writer.println("- Contact:");
@@ -176,19 +176,19 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             final var remoteDelete = message.remoteDeleteId().get();
             writer.println("Remote delete message: timestamp = {}", remoteDelete);
         }
-        if (message.mentions().size() > 0) {
+        if (!message.mentions().isEmpty()) {
             writer.println("Mentions:");
             for (var mention : message.mentions()) {
                 printMention(writer, mention);
             }
         }
-        if (message.textStyles().size() > 0) {
+        if (!message.textStyles().isEmpty()) {
             writer.println("Text styles:");
             for (var textStyle : message.textStyles()) {
                 printTextStyle(writer, textStyle);
             }
         }
-        if (message.attachments().size() > 0) {
+        if (!message.attachments().isEmpty()) {
             writer.println("Attachments:");
             for (var attachment : message.attachments()) {
                 writer.println("- Attachment:");
@@ -283,7 +283,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             var hangupMessage = callMessage.hangup().get();
             writer.println("Hangup message: {}", hangupMessage.id());
         }
-        if (callMessage.iceUpdate().size() > 0) {
+        if (!callMessage.iceUpdate().isEmpty()) {
             writer.println("Ice update messages:");
             var iceUpdateMessages = callMessage.iceUpdate();
             for (var iceUpdateMessage : iceUpdateMessages) {
@@ -313,7 +313,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (syncMessage.groups().isPresent()) {
             writer.println("Received sync groups.");
         }
-        if (syncMessage.read().size() > 0) {
+        if (!syncMessage.read().isEmpty()) {
             writer.println("Received sync read messages list");
             for (var rm : syncMessage.read()) {
                 writer.println("- From: {} Message timestamp: {}",
@@ -321,7 +321,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                         DateUtils.formatTimestamp(rm.timestamp()));
             }
         }
-        if (syncMessage.viewed().size() > 0) {
+        if (!syncMessage.viewed().isEmpty()) {
             writer.println("Received sync viewed messages list");
             for (var vm : syncMessage.viewed()) {
                 writer.println("- From: {} Message timestamp: {}",
@@ -335,7 +335,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             String to;
             if (sentTranscriptMessage.destination().isPresent()) {
                 to = formatContact(sentTranscriptMessage.destination().get());
-            } else if (sentTranscriptMessage.recipients().size() > 0) {
+            } else if (!sentTranscriptMessage.recipients().isEmpty()) {
                 to = sentTranscriptMessage.recipients()
                         .stream()
                         .map(this::formatContact)
@@ -429,13 +429,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (quote.text().isPresent()) {
             writer.println("Text: {}", quote.text().get());
         }
-        if (quote.mentions() != null && quote.mentions().size() > 0) {
+        if (quote.mentions() != null && !quote.mentions().isEmpty()) {
             writer.println("Mentions:");
             for (var mention : quote.mentions()) {
                 printMention(writer, mention);
             }
         }
-        if (quote.attachments().size() > 0) {
+        if (!quote.attachments().isEmpty()) {
             writer.println("Attachments:");
             for (var attachment : quote.attachments()) {
                 writer.println("- Attachment:");
@@ -478,7 +478,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Organisation: {}", contact.organization().get());
         }
 
-        if (contact.phone().size() > 0) {
+        if (!contact.phone().isEmpty()) {
             writer.println("Phone details:");
             for (var phone : contact.phone()) {
                 writer.println("- Phone:");
@@ -492,7 +492,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
         }
 
-        if (contact.email().size() > 0) {
+        if (!contact.email().isEmpty()) {
             writer.println("Email details:");
             for (var email : contact.email()) {
                 writer.println("- Email:");
@@ -506,7 +506,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
         }
 
-        if (contact.address().size() > 0) {
+        if (!contact.address().isEmpty()) {
             writer.println("Address details:");
             for (var address : contact.address()) {
                 writer.println("- Address:");
@@ -615,7 +615,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (attachment.isGif()) {
             flags.add("video gif");
         }
-        if (flags.size() > 0) {
+        if (!flags.isEmpty()) {
             writer.println("Flags: {}", String.join(", ", flags));
         }
         if (attachment.width().isPresent() || attachment.height().isPresent()) {

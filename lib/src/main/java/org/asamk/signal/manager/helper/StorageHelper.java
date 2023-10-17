@@ -298,7 +298,7 @@ public class StorageHelper {
             logger.warn("Failed to read storage records, ignoring.");
             return null;
         }
-        return records.size() > 0 ? records.get(0) : null;
+        return !records.isEmpty() ? records.get(0) : null;
     }
 
     private List<SignalStorageRecord> getSignalStorageRecords(final Collection<StorageId> storageIds) throws IOException {

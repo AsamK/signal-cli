@@ -38,27 +38,27 @@ record JsonDataMessage(
         final var reaction = dataMessage.reaction().map(JsonReaction::from).orElse(null);
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
         final var payment = dataMessage.payment().isPresent() ? JsonPayment.from(dataMessage.payment().get()) : null;
-        final var mentions = dataMessage.mentions().size() > 0 ? dataMessage.mentions()
+        final var mentions = !dataMessage.mentions().isEmpty() ? dataMessage.mentions()
                 .stream()
                 .map(JsonMention::from)
                 .toList() : null;
-        final var previews = dataMessage.previews().size() > 0 ? dataMessage.previews()
+        final var previews = !dataMessage.previews().isEmpty() ? dataMessage.previews()
                 .stream()
                 .map(JsonPreview::from)
                 .toList() : null;
         final var remoteDelete = dataMessage.remoteDeleteId().isPresent()
                 ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get())
                 : null;
-        final var attachments = dataMessage.attachments().size() > 0 ? dataMessage.attachments()
+        final var attachments = !dataMessage.attachments().isEmpty() ? dataMessage.attachments()
                 .stream()
                 .map(JsonAttachment::from)
                 .toList() : null;
         final var sticker = dataMessage.sticker().isPresent() ? JsonSticker.from(dataMessage.sticker().get()) : null;
-        final var contacts = dataMessage.sharedContacts().size() > 0 ? dataMessage.sharedContacts()
+        final var contacts = !dataMessage.sharedContacts().isEmpty() ? dataMessage.sharedContacts()
                 .stream()
                 .map(JsonSharedContact::from)
                 .toList() : null;
-        final var textStyles = dataMessage.textStyles().size() > 0 ? dataMessage.textStyles()
+        final var textStyles = !dataMessage.textStyles().isEmpty() ? dataMessage.textStyles()
                 .stream()
                 .map(JsonTextStyle::from)
                 .toList() : null;

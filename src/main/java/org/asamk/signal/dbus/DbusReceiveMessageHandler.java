@@ -131,7 +131,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
 
     private List<String> getAttachments(MessageEnvelope.Data message) {
         var attachments = new ArrayList<String>();
-        if (message.attachments().size() > 0) {
+        if (!message.attachments().isEmpty()) {
             for (var attachment : message.attachments()) {
                 if (attachment.file().isPresent()) {
                     attachments.add(attachment.file().get().getAbsolutePath());
@@ -143,7 +143,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
 
     private HashMap<String, Variant<?>> getMessageExtras(MessageEnvelope.Data message) {
         var extras = new HashMap<String, Variant<?>>();
-        if (message.attachments().size() > 0) {
+        if (!message.attachments().isEmpty()) {
             var attachments = message.attachments()
                     .stream()
                     .filter(a -> a.id().isPresent())
@@ -151,7 +151,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
                     .toList();
             extras.put("attachments", new Variant<>(attachments, "aa{sv}"));
         }
-        if (message.mentions().size() > 0) {
+        if (!message.mentions().isEmpty()) {
             var mentions = message.mentions().stream().map(this::getMentionMap).toList();
             extras.put("mentions", new Variant<>(mentions, "aa{sv}"));
         }

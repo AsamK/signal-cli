@@ -39,13 +39,13 @@ public final class GroupInviteLinkUrl {
         }
 
         try {
-            if (!"/".equals(uri.getPath()) && uri.getPath().length() > 0) {
+            if (!"/".equals(uri.getPath()) && !uri.getPath().isEmpty()) {
                 throw new InvalidGroupLinkException("No path was expected in uri");
             }
 
             var encoding = uri.getFragment();
 
-            if (encoding == null || encoding.length() == 0) {
+            if (encoding == null || encoding.isEmpty()) {
                 throw new InvalidGroupLinkException("No reference was in the uri");
             }
 

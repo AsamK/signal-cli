@@ -35,7 +35,7 @@ public class ServerSentEventSender {
             writer.write(event);
             writer.write("\n");
         }
-        if (data.size() == 0) {
+        if (data.isEmpty()) {
             writer.write("data\n");
         } else {
             for (final var d : data) {

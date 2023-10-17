@@ -663,13 +663,13 @@ public class ManagerImpl implements Manager {
         } else {
             messageBuilder.withBody(message.messageText());
         }
-        if (message.attachments().size() > 0) {
+        if (!message.attachments().isEmpty()) {
             messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
         }
-        if (message.mentions().size() > 0) {
+        if (!message.mentions().isEmpty()) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));
         }
-        if (message.textStyles().size() > 0) {
+        if (!message.textStyles().isEmpty()) {
             messageBuilder.withBodyRanges(message.textStyles().stream().map(TextStyle::toBodyRange).toList());
         }
         if (message.quote().isPresent()) {
@@ -715,7 +715,7 @@ public class ManagerImpl implements Manager {
                     manifestSticker.emoji(),
                     AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty())));
         }
-        if (message.previews().size() > 0) {
+        if (!message.previews().isEmpty()) {
             final var previews = new ArrayList<SignalServicePreview>(message.previews().size());
             for (final var p : message.previews()) {
                 final var image = p.image().isPresent() ? context.getAttachmentHelper()
@@ -874,7 +874,7 @@ public class ManagerImpl implements Manager {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }
-        if (recipients.size() == 0) {
+        if (recipients.isEmpty()) {
             return;
         }
         final var recipientIds = context.getRecipientHelper().resolveRecipients(recipients);
@@ -906,7 +906,7 @@ public class ManagerImpl implements Manager {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }
-        if (groupIds.size() == 0) {
+        if (groupIds.isEmpty()) {
             return;
         }
         boolean shouldRotateProfileKey = false;
@@ -1083,7 +1083,7 @@ public class ManagerImpl implements Manager {
             return true;
         }
         synchronized (messageHandlers) {
-            return messageHandlers.size() > 0;
+            return !messageHandlers.isEmpty();
         }
     }
 
@@ -1113,7 +1113,7 @@ public class ManagerImpl implements Manager {
             synchronized (messageHandlers) {
                 receiveThread = null;
                 isReceivingSynchronous = false;
-                if (messageHandlers.size() > 0) {
+                if (!messageHandlers.isEmpty()) {
                     startReceiveThreadIfRequired();
                 }
             }

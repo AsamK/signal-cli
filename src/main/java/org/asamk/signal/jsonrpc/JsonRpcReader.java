@@ -127,7 +127,7 @@ public class JsonRpcReader {
                 Util.closeExecutorService(executor);
             }
 
-            if (responseList.size() > 0) {
+            if (!responseList.isEmpty()) {
                 jsonRpcSender.sendBatchResponses(responseList);
             }
         }
@@ -193,7 +193,7 @@ public class JsonRpcReader {
                     null), null));
             return null;
         } else if (jsonNode.isArray()) {
-            if (jsonNode.size() == 0) {
+            if (jsonNode.isEmpty()) {
                 jsonRpcSender.sendResponse(JsonRpcResponse.forError(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
                         "invalid request",
                         null), null));

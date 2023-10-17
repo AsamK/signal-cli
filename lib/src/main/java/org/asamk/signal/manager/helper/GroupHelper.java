@@ -594,14 +594,14 @@ public class GroupHelper {
         if (members != null) {
             final var requestingMembers = new HashSet<>(members);
             requestingMembers.retainAll(group.getRequestingMembers());
-            if (requestingMembers.size() > 0) {
+            if (!requestingMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.approveJoinRequestMembers(group, requestingMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
             final var newMembers = new HashSet<>(members);
             newMembers.removeAll(group.getMembers());
             newMembers.removeAll(group.getRequestingMembers());
-            if (newMembers.size() > 0) {
+            if (!newMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.addMembers(group, newMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
@@ -617,20 +617,20 @@ public class GroupHelper {
                 existingRemoveMembers.removeAll(members);
             }
             existingRemoveMembers.remove(account.getSelfRecipientId());// self can be removed with sendQuitGroupMessage
-            if (existingRemoveMembers.size() > 0) {
+            if (!existingRemoveMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.removeMembers(group, existingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
 
             var pendingRemoveMembers = new HashSet<>(removeMembers);
             pendingRemoveMembers.retainAll(group.getPendingMembers());
-            if (pendingRemoveMembers.size() > 0) {
+            if (!pendingRemoveMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.revokeInvitedMembers(group, pendingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
             var requestingRemoveMembers = new HashSet<>(removeMembers);
             requestingRemoveMembers.retainAll(group.getRequestingMembers());
-            if (requestingRemoveMembers.size() > 0) {
+            if (!requestingRemoveMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.refuseJoinRequestMembers(group, requestingRemoveMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
@@ -640,7 +640,7 @@ public class GroupHelper {
             final var newAdmins = new HashSet<>(admins);
             newAdmins.retainAll(group.getMembers());
             newAdmins.removeAll(group.getAdminMembers());
-            if (newAdmins.size() > 0) {
+            if (!newAdmins.isEmpty()) {
                 for (var admin : newAdmins) {
                     var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, true);
                     result = sendUpdateGroupV2Message(group,
@@ -653,7 +653,7 @@ public class GroupHelper {
         if (removeAdmins != null) {
             final var existingRemoveAdmins = new HashSet<>(removeAdmins);
             existingRemoveAdmins.retainAll(group.getAdminMembers());
-            if (existingRemoveAdmins.size() > 0) {
+            if (!existingRemoveAdmins.isEmpty()) {
                 for (var admin : existingRemoveAdmins) {
                     var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, false);
                     result = sendUpdateGroupV2Message(group,
@@ -666,7 +666,7 @@ public class GroupHelper {
         if (banMembers != null) {
             final var newlyBannedMembers = new HashSet<>(banMembers);
             newlyBannedMembers.removeAll(group.getBannedMembers());
-            if (newlyBannedMembers.size() > 0) {
+            if (!newlyBannedMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.banMembers(group, newlyBannedMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
@@ -675,7 +675,7 @@ public class GroupHelper {
         if (unbanMembers != null) {
             var existingUnbanMembers = new HashSet<>(unbanMembers);
             existingUnbanMembers.retainAll(group.getBannedMembers());
-            if (existingUnbanMembers.size() > 0) {
+            if (!existingUnbanMembers.isEmpty()) {
                 var groupGroupChangePair = groupV2Helper.unbanMembers(group, existingUnbanMembers);
                 result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
             }
@@ -745,7 +745,7 @@ public class GroupHelper {
         if (currentAdmins.contains(account.getSelfRecipientId())
                 && currentAdmins.size() == 1
                 && groupInfoV2.getMembers().size() > 1
-                && newAdmins.size() == 0) {
+                && newAdmins.isEmpty()) {
             // Last admin can't leave the group, unless she's also the last member
             throw new LastGroupAdminException(groupInfoV2.getGroupId(), groupInfoV2.getTitle());
         }

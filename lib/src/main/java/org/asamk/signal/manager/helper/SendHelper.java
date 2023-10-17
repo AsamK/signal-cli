@@ -465,7 +465,7 @@ public class SendHelper {
                 : getSenderKeyCapableRecipientIds(recipientIds);
         final var allResults = new ArrayList<SendMessageResult>(recipientIds.size());
 
-        if (senderKeyTargets.size() > 0) {
+        if (!senderKeyTargets.isEmpty()) {
             final var results = sendGroupMessageInternalWithSenderKey(senderKeySender,
                     senderKeyTargets,
                     distributionId,
@@ -479,7 +479,7 @@ public class SendHelper {
                         .filter(r -> !r.isSuccess())
                         .map(r -> context.getRecipientHelper().resolveRecipient(r.getAddress()))
                         .toList();
-                if (failedTargets.size() > 0) {
+                if (!failedTargets.isEmpty()) {
                     senderKeyTargets = new HashSet<>(senderKeyTargets);
                     failedTargets.forEach(senderKeyTargets::remove);
                 }
@@ -490,8 +490,8 @@ public class SendHelper {
         legacyTargets.removeAll(senderKeyTargets);
         final boolean onlyTargetIsSelfWithLinkedDevice = recipientIds.isEmpty() && account.isMultiDevice();
 
-        if (legacyTargets.size() > 0 || onlyTargetIsSelfWithLinkedDevice) {
-            if (legacyTargets.size() > 0) {
+        if (!legacyTargets.isEmpty() || onlyTargetIsSelfWithLinkedDevice) {
+            if (!legacyTargets.isEmpty()) {
                 logger.debug("Need to do {} legacy sends.", legacyTargets.size());
             } else {
                 logger.debug("Need to do a legacy send to send a sync message for a group of only ourselves.");
@@ -499,7 +499,7 @@ public class SendHelper {
 
             final List<SendMessageResult> results = sendGroupMessageInternalWithLegacy(legacySender,
                     legacyTargets,
-                    isRecipientUpdate || allResults.size() > 0);
+                    isRecipientUpdate || !allResults.isEmpty());
             allResults.addAll(results);
         }
         final var duration = Duration.ofMillis(System.currentTimeMillis() - startTime);

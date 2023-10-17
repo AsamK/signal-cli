@@ -26,16 +26,16 @@ public record JsonQuote(
         final var authorUuid = address.uuid().map(UUID::toString).orElse(null);
         final var text = quote.text().orElse(null);
 
-        final var mentions = quote.mentions().size() > 0
+        final var mentions = !quote.mentions().isEmpty()
                 ? quote.mentions().stream().map(JsonMention::from).toList()
                 : null;
 
-        final var attachments = quote.attachments().size() > 0 ? quote.attachments()
+        final var attachments = !quote.attachments().isEmpty() ? quote.attachments()
                 .stream()
                 .map(JsonQuotedAttachment::from)
                 .toList() : List.<JsonQuotedAttachment>of();
 
-        final var textStyles = quote.textStyles().size() > 0 ? quote.textStyles()
+        final var textStyles = !quote.textStyles().isEmpty() ? quote.textStyles()
                 .stream()
                 .map(JsonTextStyle::from)
                 .toList() : null;

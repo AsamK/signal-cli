@@ -85,7 +85,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
 
         final var groupIdStrings = ns.<String>getList("group-id");
         final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
-        if (groupIds.size() > 0) {
+        if (!groupIds.isEmpty()) {
             groups = groups.stream().filter(g -> groupIds.contains(g.groupId())).toList();
         }
 

@@ -45,7 +45,7 @@ record JsonSyncMessage(
             blockedGroupIds = null;
         }
 
-        final var readMessages = syncMessage.read().size() > 0 ? syncMessage.read()
+        final var readMessages = !syncMessage.read().isEmpty() ? syncMessage.read()
                 .stream()
                 .map(JsonSyncReadMessage::from)
                 .toList() : null;

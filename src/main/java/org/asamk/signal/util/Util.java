@@ -41,12 +41,12 @@ public class Util {
     }
 
     private static String toCamelCaseString(List<String> strings) {
-        if (strings.size() == 0) {
+        if (strings.isEmpty()) {
             return "";
         }
         return strings.get(0) + strings.stream()
                 .skip(1)
-                .filter(s -> s.length() > 0)
+                .filter(s -> !s.isEmpty())
                 .map(s -> Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT))
                 .collect(Collectors.joining());
     }

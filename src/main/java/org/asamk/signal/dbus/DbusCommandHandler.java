@@ -65,7 +65,7 @@ public class DbusCommandHandler {
                 SignalControl.class);
         try {
             final var accounts = control.listAccounts();
-            if (accounts.size() == 0) {
+            if (accounts.isEmpty()) {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
                 throw new UserErrorException(
