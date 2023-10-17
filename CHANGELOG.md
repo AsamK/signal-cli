@@ -2,7 +2,28 @@
 
 ## [Unreleased]
 
+## [0.12.3] - 2023-10-17
+
+### Added
+
+- Added `startChangeNumber` and `finishChangeNumber` commands to switch to another phone number
+- Added `--quote-attachment` paramter to `send` command
+- Added support for scannable safety numbers based on serviceId
+- Added `EditMessageReceived` signal for D-Bus interface
+- Added new exit code `5` for rate limit failures
+- Added full CDSI refresh to get current ACI/PNIs for known numbers regularly
+
+### Fixed
+
+- Correctly respond with delivery receipts for edit messages
+
+### Changed
+
+- JSON-RPC requests are now executed in parallel.
+  Clients should make sure to use the `id` field to get the correct response for a request.
+
 ## [0.12.2] - 2023-09-30
+
 **Attention**: Now requires native libsignal-client version 0.32.1
 
 ### Added
