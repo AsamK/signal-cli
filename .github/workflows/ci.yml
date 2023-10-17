@@ -8,7 +8,7 @@ on:
   workflow_call:
 
 permissions:
-  contents: read # to fetch code (actions/checkout)
+  contents: write # to fetch code (actions/checkout) and submit dependency graph (gradle/gradle-build-action)
 
 jobs:
   build:
