@@ -229,7 +229,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     public RecipientId resolveRecipientByUsername(
-            final String username, Supplier<ServiceId> serviceIdSupplier
+            final String username, Supplier<ACI> aciSupplier
     ) throws UnregisteredRecipientException {
         final Optional<RecipientWithAddress> byUsername;
         try (final var connection = database.getConnection()) {
@@ -238,14 +238,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             throw new RuntimeException("Failed read from recipient store", e);
         }
         if (byUsername.isEmpty() || byUsername.get().address().serviceId().isEmpty()) {
-            final var serviceId = serviceIdSupplier.get();
-            if (serviceId == null) {
+            final var aci = aciSupplier.get();
+            if (aci == null) {
                 throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
                         null,
                         username));
             }
 
-            return resolveRecipient(serviceId);
+            return resolveRecipientTrusted(aci, username);
         }
         return byUsername.get().id();
     }
@@ -287,17 +287,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     @Override
-    public RecipientId resolveRecipientTrusted(final ServiceId serviceId, final String username) {
-        return resolveRecipientTrusted(new RecipientAddress(serviceId, null, null, username), false);
-    }
-
-    public RecipientId resolveRecipientTrusted(
-            final ACI aci, final String username
-    ) {
-        return resolveRecipientTrusted(new RecipientAddress(Optional.of(aci),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(username)), false);
+    public RecipientId resolveRecipientTrusted(final ACI aci, final String username) {
+        return resolveRecipientTrusted(new RecipientAddress(aci, null, null, username), false);
     }
 
     @Override
