@@ -395,6 +395,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             try (final var statement = connection.prepareStatement(sql)) {
                 return Utils.executeQueryForStream(statement, resultSet -> resultSet.getString("number"))
                         .filter(Objects::nonNull)
+                        .filter(n -> {
+                            try {
+                                Long.parseLong(n);
+                                return true;
+                            } catch (NumberFormatException e) {
+                                return false;
+                            }
+                        })
                         .collect(Collectors.toSet());
             }
         } catch (SQLException e) {
