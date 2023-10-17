@@ -252,18 +252,14 @@ public class AccountsStore {
     }
 
     private void saveAccountsLocked(FileChannel fileChannel, AccountsStorage accountsStorage) throws IOException {
-        try {
-            try (var output = new ByteArrayOutputStream()) {
-                // Write to memory first to prevent corrupting the file in case of serialization errors
-                objectMapper.writeValue(output, accountsStorage);
-                var input = new ByteArrayInputStream(output.toByteArray());
-                fileChannel.position(0);
-                input.transferTo(Channels.newOutputStream(fileChannel));
-                fileChannel.truncate(fileChannel.position());
-                fileChannel.force(false);
-            }
-        } catch (Exception e) {
-            logger.error("Error saving accounts file: {}", e.getMessage(), e);
+        try (var output = new ByteArrayOutputStream()) {
+            // Write to memory first to prevent corrupting the file in case of serialization errors
+            objectMapper.writeValue(output, accountsStorage);
+            var input = new ByteArrayInputStream(output.toByteArray());
+            fileChannel.position(0);
+            input.transferTo(Channels.newOutputStream(fileChannel));
+            fileChannel.truncate(fileChannel.position());
+            fileChannel.force(false);
         }
     }
 

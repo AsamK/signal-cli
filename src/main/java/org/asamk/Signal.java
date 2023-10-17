@@ -138,9 +138,9 @@ public interface Signal extends DBusInterface {
 
     DBusPath getDevice(long deviceId);
 
-    public DBusPath getIdentity(String number);
+    DBusPath getIdentity(String number);
 
-    public List<StructIdentity> listIdentities();
+    List<StructIdentity> listIdentities();
 
     List<StructDevice> listDevices() throws Error.Failure;
 
@@ -497,13 +497,13 @@ public interface Signal extends DBusInterface {
     class StructDevice extends Struct {
 
         @Position(0)
-        DBusPath objectPath;
+        final DBusPath objectPath;
 
         @Position(1)
-        Long id;
+        final Long id;
 
         @Position(2)
-        String name;
+        final String name;
 
         public StructDevice(final DBusPath objectPath, final Long id, final String name) {
             this.objectPath = objectPath;
@@ -542,13 +542,13 @@ public interface Signal extends DBusInterface {
     class StructGroup extends Struct {
 
         @Position(0)
-        DBusPath objectPath;
+        final DBusPath objectPath;
 
         @Position(1)
-        byte[] id;
+        final byte[] id;
 
         @Position(2)
-        String name;
+        final String name;
 
         public StructGroup(final DBusPath objectPath, final byte[] id, final String name) {
             this.objectPath = objectPath;
@@ -610,13 +610,13 @@ public interface Signal extends DBusInterface {
     class StructIdentity extends Struct {
 
         @Position(0)
-        DBusPath objectPath;
+        final DBusPath objectPath;
 
         @Position(1)
-        String uuid;
+        final String uuid;
 
         @Position(2)
-        String number;
+        final String number;
 
         public StructIdentity(final DBusPath objectPath, final String uuid, final String number) {
             this.objectPath = objectPath;

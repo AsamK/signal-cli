@@ -34,6 +34,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMes
 import org.whispersystems.signalservice.api.messages.multidevice.ViewedMessage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -234,7 +235,7 @@ public record MessageEnvelope(
                 return new Quote(quote.getId(),
                         addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
                                 .toApiRecipientAddress(),
-                        Optional.ofNullable(quote.getText()),
+                        Optional.of(quote.getText()),
                         quote.getMentions() == null
                                 ? List.of()
                                 : quote.getMentions()
@@ -291,9 +292,9 @@ public record MessageEnvelope(
                 boolean isBorderless
         ) {
 
-            static Attachment from(SignalServiceAttachment attachment, AttachmentFileProvider fileProvider) {
-                if (attachment.isPointer()) {
-                    final var a = attachment.asPointer();
+            static Attachment from(SignalServiceAttachment signalAttachment, AttachmentFileProvider fileProvider) {
+                if (signalAttachment.isPointer()) {
+                    final var a = signalAttachment.asPointer();
                     final var attachmentFile = fileProvider.getFile(a);
                     return new Attachment(Optional.of(attachmentFile.getName()),
                             Optional.of(attachmentFile),
@@ -310,21 +311,26 @@ public record MessageEnvelope(
                             a.isGif(),
                             a.isBorderless());
                 } else {
-                    final var a = attachment.asStream();
-                    return new Attachment(Optional.empty(),
-                            Optional.empty(),
-                            a.getFileName(),
-                            a.getContentType(),
-                            a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
-                            Optional.of(a.getLength()),
-                            a.getPreview(),
-                            Optional.empty(),
-                            a.getCaption(),
-                            a.getWidth() == 0 ? Optional.empty() : Optional.of(a.getWidth()),
-                            a.getHeight() == 0 ? Optional.empty() : Optional.of(a.getHeight()),
-                            a.getVoiceNote(),
-                            a.isGif(),
-                            a.isBorderless());
+                    Attachment attachment = null;
+                    try (final var a = signalAttachment.asStream()) {
+                        attachment = new Attachment(Optional.empty(),
+                                Optional.empty(),
+                                a.getFileName(),
+                                a.getContentType(),
+                                a.getUploadTimestamp() == 0 ? Optional.empty() : Optional.of(a.getUploadTimestamp()),
+                                Optional.of(a.getLength()),
+                                a.getPreview(),
+                                Optional.empty(),
+                                a.getCaption(),
+                                a.getWidth() == 0 ? Optional.empty() : Optional.of(a.getWidth()),
+                                a.getHeight() == 0 ? Optional.empty() : Optional.of(a.getHeight()),
+                                a.getVoiceNote(),
+                                a.isGif(),
+                                a.isBorderless());
+                        return attachment;
+                    } catch (IOException e) {
+                        return attachment;
+                    }
                 }
             }
 

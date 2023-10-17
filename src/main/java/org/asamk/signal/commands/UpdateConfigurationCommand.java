@@ -4,14 +4,12 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.commands.exceptions.CommandException;
-import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.output.OutputWriter;
 
-import java.io.IOException;
 import java.util.Optional;
 
 public class UpdateConfigurationCommand implements JsonRpcLocalCommand {
@@ -51,8 +49,6 @@ public class UpdateConfigurationCommand implements JsonRpcLocalCommand {
                     Optional.ofNullable(unidentifiedDeliveryIndicators),
                     Optional.ofNullable(typingIndicators),
                     Optional.ofNullable(linkPreviews)));
-        } catch (IOException e) {
-            throw new IOErrorException("UpdateAccount error: " + e.getMessage(), e);
         } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         }

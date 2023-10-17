@@ -9,9 +9,9 @@ import java.util.Date;
 public class LegacyIdentityInfo {
 
     RecipientAddress address;
-    IdentityKey identityKey;
-    TrustLevel trustLevel;
-    Date added;
+    final IdentityKey identityKey;
+    final TrustLevel trustLevel;
+    final Date added;
 
     LegacyIdentityInfo(RecipientAddress address, IdentityKey identityKey, TrustLevel trustLevel, Date added) {
         this.address = address;

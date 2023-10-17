@@ -13,6 +13,7 @@ import org.asamk.signal.manager.util.MimeUtils;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
@@ -73,8 +74,8 @@ public class SyncHelper {
         requestSyncData(SyncMessage.Request.Type.PNI_IDENTITY);
     }
 
-    public void sendSyncFetchProfileMessage() {
-        context.getSendHelper()
+    public SendMessageResult sendSyncFetchProfileMessage() {
+        return context.getSendHelper()
                 .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.LOCAL_PROFILE));
     }
 
@@ -193,7 +194,7 @@ public class SyncHelper {
         }
     }
 
-    public void sendBlockedList() {
+    public SendMessageResult sendBlockedList() {
         var addresses = new ArrayList<SignalServiceAddress>();
         for (var record : account.getContactStore().getContacts()) {
             if (record.second().isBlocked()) {
@@ -206,30 +207,33 @@ public class SyncHelper {
                 groupIds.add(record.getGroupId().serialize());
             }
         }
-        context.getSendHelper()
+        return context.getSendHelper()
                 .sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
     }
 
-    public void sendVerifiedMessage(
+    public SendMessageResult sendVerifiedMessage(
             SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel
-    ) throws IOException {
+    ) {
         var verifiedMessage = new VerifiedMessage(destination,
                 identityKey,
                 trustLevel.toVerifiedState(),
                 System.currentTimeMillis());
-        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forVerified(verifiedMessage));
     }
 
-    public void sendKeysMessage() {
+    public SendMessageResult sendKeysMessage() {
         var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()));
-        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 
-    public void sendStickerOperationsMessage(List<StickerPack> installStickers, List<StickerPack> removeStickers) {
+    public SendMessageResult sendStickerOperationsMessage(
+            List<StickerPack> installStickers, List<StickerPack> removeStickers
+    ) {
         var installStickerMessages = installStickers.stream().map(s -> getStickerPackOperationMessage(s, true));
         var removeStickerMessages = removeStickers.stream().map(s -> getStickerPackOperationMessage(s, false));
         var stickerMessages = Stream.concat(installStickerMessages, removeStickerMessages).toList();
-        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forStickerPackOperations(stickerMessages));
+        return context.getSendHelper()
+                .sendSyncMessage(SignalServiceSyncMessage.forStickerPackOperations(stickerMessages));
     }
 
     private static StickerPackOperationMessage getStickerPackOperationMessage(
@@ -240,13 +244,13 @@ public class SyncHelper {
                 installed ? StickerPackOperationMessage.Type.INSTALL : StickerPackOperationMessage.Type.REMOVE);
     }
 
-    public void sendConfigurationMessage() {
+    public SendMessageResult sendConfigurationMessage() {
         final var config = account.getConfigurationStore();
         var configurationMessage = new ConfigurationMessage(Optional.ofNullable(config.getReadReceipts()),
                 Optional.ofNullable(config.getUnidentifiedDeliveryIndicators()),
                 Optional.ofNullable(config.getTypingIndicators()),
                 Optional.ofNullable(config.getLinkPreviews()));
-        context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
     public void handleSyncDeviceGroups(final InputStream input) {
@@ -344,10 +348,10 @@ public class SyncHelper {
         }
     }
 
-    private void requestSyncData(final SyncMessage.Request.Type type) {
+    private SendMessageResult requestSyncData(final SyncMessage.Request.Type type) {
         var r = new SyncMessage.Request.Builder().type(type).build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
-        context.getSendHelper().sendSyncMessage(message);
+        return context.getSendHelper().sendSyncMessage(message);
     }
 
     private Optional<SignalServiceAttachmentStream> createContactAvatarAttachment(RecipientAddress address) throws IOException {

@@ -69,7 +69,7 @@ public class MessageCacheUtils {
                 if (version >= 2) {
                     serverReceivedTimestamp = in.readLong();
                     uuid = in.readUTF();
-                    if ("".equals(uuid)) {
+                    if (uuid.isEmpty()) {
                         uuid = null;
                     }
                 }

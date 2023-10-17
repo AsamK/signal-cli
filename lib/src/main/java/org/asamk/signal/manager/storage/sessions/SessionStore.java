@@ -328,7 +328,7 @@ public class SessionStore implements SignalServiceSessionStore {
         return new Key(address, deviceId);
     }
 
-    private SessionRecord getSessionRecordFromResultSet(ResultSet resultSet) throws SQLException {
+    private SessionRecord getSessionRecordFromResultSet(ResultSet resultSet) {
         try {
             final var record = resultSet.getBytes("record");
             return new SessionRecord(record);

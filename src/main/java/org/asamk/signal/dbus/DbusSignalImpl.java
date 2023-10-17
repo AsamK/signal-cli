@@ -351,26 +351,16 @@ public class DbusSignalImpl implements Signal {
     public void sendReadReceipt(
             final String recipient, final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
-        try {
-            final var results = m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
-                    messageIds);
-            checkSendMessageResults(results);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        }
+        final var results = m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
+        checkSendMessageResults(results);
     }
 
     @Override
     public void sendViewedReceipt(
             final String recipient, final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
-        try {
-            final var results = m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()),
-                    messageIds);
-            checkSendMessageResults(results);
-        } catch (IOException e) {
-            throw new Error.Failure(e.getMessage());
-        }
+        final var results = m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
+        checkSendMessageResults(results);
     }
 
     @Override
@@ -532,8 +522,6 @@ public class DbusSignalImpl implements Signal {
             m.setContactName(getSingleRecipientIdentifier(number, m.getSelfNumber()), name, "");
         } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
-        } catch (IOException e) {
-            throw new Error.Failure("Contact is not registered.");
         } catch (UnregisteredRecipientException e) {
             throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
         }
@@ -1238,8 +1226,6 @@ public class DbusSignalImpl implements Signal {
                         Optional.ofNullable(unidentifiedDeliveryIndicators),
                         Optional.ofNullable(typingIndicators),
                         Optional.ofNullable(linkPreviews)));
-            } catch (IOException e) {
-                throw new Error.Failure("UpdateAccount error: " + e.getMessage());
             } catch (NotPrimaryDeviceException e) {
                 throw new Error.Failure("This command doesn't work on linked devices.");
             }

@@ -822,8 +822,8 @@ public class GroupHelper {
         if (avatarFile == null) {
             return null;
         }
-        try (final var avatar = Utils.createStreamDetails(avatarFile).first().getStream()) {
-            return IOUtils.readFully(avatar);
+        try (final var avatar = Utils.createStreamDetails(avatarFile).first()) {
+            return IOUtils.readFully(avatar.getStream());
         }
     }
 }

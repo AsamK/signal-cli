@@ -212,10 +212,11 @@ public final class ProfileHelper {
 
         if (avatar != null) {
             if (avatar.isPresent()) {
-                final var streamDetails = Utils.createStreamDetails(avatar.get()).first();
-                context.getAvatarStore()
-                        .storeProfileAvatar(account.getSelfRecipientAddress(),
-                                outputStream -> IOUtils.copyStream(streamDetails.getStream(), outputStream));
+                try (final var streamDetails = Utils.createStreamDetails(avatar.get()).first()) {
+                    context.getAvatarStore()
+                            .storeProfileAvatar(account.getSelfRecipientAddress(),
+                                    outputStream -> IOUtils.copyStream(streamDetails.getStream(), outputStream));
+                }
             } else {
                 context.getAvatarStore().deleteProfileAvatar(account.getSelfRecipientAddress());
             }

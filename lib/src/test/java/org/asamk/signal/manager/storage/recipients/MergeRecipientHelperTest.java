@@ -27,14 +27,14 @@ class MergeRecipientHelperTest {
     static final PartialAddresses ADDR_A = new PartialAddresses(SERVICE_ID_A, PNI_A, NUMBER_A);
     static final PartialAddresses ADDR_B = new PartialAddresses(SERVICE_ID_B, PNI_B, NUMBER_B);
 
-    static T[] testInstancesNone = new T[]{
+    static final T[] testInstancesNone = new T[]{
             new T(Set.of(), ADDR_A.FULL, Set.of(rec(1000000, ADDR_A.FULL))),
             new T(Set.of(), ADDR_A.ACI_NUM, Set.of(rec(1000000, ADDR_A.ACI_NUM))),
             new T(Set.of(), ADDR_A.ACI_PNI, Set.of(rec(1000000, ADDR_A.ACI_PNI))),
             new T(Set.of(), ADDR_A.PNI_NUM, Set.of(rec(1000000, ADDR_A.PNI_NUM))),
     };
 
-    static T[] testInstancesSingle = new T[]{
+    static final T[] testInstancesSingle = new T[]{
             new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.ACI)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.PNI)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
@@ -74,7 +74,7 @@ class MergeRecipientHelperTest {
             new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_B.FULL, Set.of(rec(1, ADDR_A.FULL), rec(1000000, ADDR_B.FULL))),
     };
 
-    static T[] testInstancesTwo = new T[]{
+    static final T[] testInstancesTwo = new T[]{
             new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI_NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
@@ -100,7 +100,7 @@ class MergeRecipientHelperTest {
             new T(Set.of(rec(1, ADDR_A.PNI), rec(2, ADDR_A.ACI_NUM)), ADDR_A.ACI_PNI, Set.of(rec(2, ADDR_A.FULL))),
     };
 
-    static T[] testInstancesThree = new T[]{
+    static final T[] testInstancesThree = new T[]{
             new T(Set.of(rec(1, ADDR_A.ACI), rec(2, ADDR_A.PNI), rec(3, ADDR_A.NUM)),
                     ADDR_A.FULL,
                     Set.of(rec(1, ADDR_A.FULL))),

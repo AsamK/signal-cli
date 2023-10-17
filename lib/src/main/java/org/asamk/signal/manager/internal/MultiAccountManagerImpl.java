@@ -125,11 +125,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     public void close() {
         synchronized (managers) {
             for (var m : new ArrayList<>(managers)) {
-                try {
-                    m.close();
-                } catch (IOException e) {
-                    logger.warn("Cleanup failed", e);
-                }
+                m.close();
             }
             managers.clear();
         }

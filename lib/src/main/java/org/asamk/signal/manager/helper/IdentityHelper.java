@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.push.ServiceId;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
@@ -112,12 +111,8 @@ public class IdentityHelper {
         }
 
         account.getIdentityKeyStore().setIdentityTrustLevel(serviceId, identity.getIdentityKey(), trustLevel);
-        try {
-            context.getSyncHelper()
-                    .sendVerifiedMessage(address.toSignalServiceAddress(), identity.getIdentityKey(), trustLevel);
-        } catch (IOException e) {
-            logger.warn("Failed to send verification sync message: {}", e.getMessage());
-        }
+        context.getSyncHelper()
+                .sendVerifiedMessage(address.toSignalServiceAddress(), identity.getIdentityKey(), trustLevel);
 
         return true;
     }

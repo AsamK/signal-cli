@@ -136,7 +136,7 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void updateConfiguration(Configuration newConfiguration) throws IOException {
+    public void updateConfiguration(Configuration newConfiguration) {
         final var configuration = getRemoteObject(new DBusPath(signal.getObjectPath() + "/Configuration"),
                 Signal.Configuration.class);
         newConfiguration.readReceipts()

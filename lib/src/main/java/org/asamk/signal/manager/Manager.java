@@ -92,7 +92,7 @@ public interface Manager extends Closeable {
 
     Configuration getConfiguration();
 
-    void updateConfiguration(Configuration configuration) throws IOException, NotPrimaryDeviceException;
+    void updateConfiguration(Configuration configuration) throws NotPrimaryDeviceException;
 
     /**
      * Update the user's profile.
@@ -160,11 +160,11 @@ public interface Manager extends Closeable {
 
     SendMessageResults sendReadReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException;
+    );
 
     SendMessageResults sendViewedReceipt(
             RecipientIdentifier.Single sender, List<Long> messageIds
-    ) throws IOException;
+    );
 
     SendMessageResults sendMessage(
             Message message, Set<RecipientIdentifier> recipients
@@ -199,7 +199,7 @@ public interface Manager extends Closeable {
 
     void setContactName(
             RecipientIdentifier.Single recipient, String givenName, final String familyName
-    ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException;
+    ) throws NotPrimaryDeviceException, UnregisteredRecipientException;
 
     void setContactsBlocked(
             Collection<RecipientIdentifier.Single> recipient, boolean blocked
@@ -299,7 +299,7 @@ public interface Manager extends Closeable {
     InputStream retrieveAttachment(final String id) throws IOException;
 
     @Override
-    void close() throws IOException;
+    void close();
 
     interface ReceiveMessageHandler {
 

@@ -4,11 +4,11 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 
 public class LegacySessionInfo {
 
-    public RecipientAddress address;
+    public final RecipientAddress address;
 
-    public int deviceId;
+    public final int deviceId;
 
-    public byte[] sessionRecord;
+    public final byte[] sessionRecord;
 
     LegacySessionInfo(final RecipientAddress address, final int deviceId, final byte[] sessionRecord) {
         this.address = address;

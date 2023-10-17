@@ -165,20 +165,7 @@ public class App {
                 return;
             }
 
-            Set<String> accounts;
-            try {
-                accounts = signalAccountFiles.getAllLocalAccountNumbers();
-            } catch (IOException e) {
-                throw new IOErrorException("Failed to load local accounts file", e);
-            }
-            if (accounts.size() == 0) {
-                throw new UserErrorException("No local users found, you first need to register or link an account");
-            } else if (accounts.size() > 1) {
-                throw new UserErrorException(
-                        "Multiple users found, you need to specify an account (phone number) with -a");
-            }
-
-            account = accounts.stream().findFirst().get();
+            account = getAccountIfOnlyOne(signalAccountFiles);
         } else if (!Manager.isValidNumber(account, null)) {
             throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
         }
@@ -194,6 +181,21 @@ public class App {
         }
 
         throw new UserErrorException("Command only works in multi-account mode");
+    }
+
+    private static String getAccountIfOnlyOne(final SignalAccountFiles signalAccountFiles) throws IOErrorException, UserErrorException {
+        Set<String> accounts;
+        try {
+            accounts = signalAccountFiles.getAllLocalAccountNumbers();
+        } catch (IOException e) {
+            throw new IOErrorException("Failed to load local accounts file", e);
+        }
+        if (accounts.isEmpty()) {
+            throw new UserErrorException("No local users found, you first need to register or link an account");
+        } else if (accounts.size() > 1) {
+            throw new UserErrorException("Multiple users found, you need to specify an account (phone number) with -a");
+        }
+        return accounts.stream().findFirst().get();
     }
 
     private OutputWriter getOutputWriter(final Command command) throws UserErrorException {
@@ -274,8 +276,6 @@ public class App {
     ) throws CommandException {
         try (var m = loadManager(account, signalAccountFiles)) {
             commandHandler.handleLocalCommand(command, m);
-        } catch (IOException e) {
-            logger.warn("Cleanup failed", e);
         }
     }
 

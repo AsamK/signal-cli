@@ -1610,11 +1610,7 @@ public class SignalAccount implements Closeable {
     public void close() {
         synchronized (fileChannel) {
             if (accountDatabase != null) {
-                try {
-                    accountDatabase.close();
-                } catch (SQLException e) {
-                    logger.warn("Failed to close account database: {}", e.getMessage(), e);
-                }
+                accountDatabase.close();
             }
             if (messageSendLogStore != null) {
                 messageSendLogStore.close();

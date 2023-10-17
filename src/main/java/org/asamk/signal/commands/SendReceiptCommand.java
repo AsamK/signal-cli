@@ -10,8 +10,6 @@ import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
 
-import java.io.IOException;
-
 import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
 public class SendReceiptCommand implements JsonRpcLocalCommand {
@@ -45,19 +43,14 @@ public class SendReceiptCommand implements JsonRpcLocalCommand {
         final var targetTimestamps = ns.<Long>getList("target-timestamp");
         final var type = ns.getString("type");
 
-        try {
-            final SendMessageResults results;
-            if (type == null || "read".equals(type)) {
-                results = m.sendReadReceipt(recipient, targetTimestamps);
-            } else if ("viewed".equals(type)) {
-                results = m.sendViewedReceipt(recipient, targetTimestamps);
-            } else {
-                throw new UserErrorException("Unknown receipt type: " + type);
-            }
-            outputResult(outputWriter, results);
-        } catch (IOException e) {
-            throw new UserErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")");
+        final SendMessageResults results;
+        if (type == null || "read".equals(type)) {
+            results = m.sendReadReceipt(recipient, targetTimestamps);
+        } else if ("viewed".equals(type)) {
+            results = m.sendViewedReceipt(recipient, targetTimestamps);
+        } else {
+            throw new UserErrorException("Unknown receipt type: " + type);
         }
+        outputResult(outputWriter, results);
     }
 }

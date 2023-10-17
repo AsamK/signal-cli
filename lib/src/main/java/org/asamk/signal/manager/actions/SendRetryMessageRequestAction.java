@@ -50,7 +50,9 @@ public class SendRetryMessageRequestAction implements HandleAction {
             envelopeType = messageContent.getType();
         } else {
             originalContent = envelope.getContent();
-            envelopeType = envelopeTypeToCiphertextMessageType(envelope.getType());
+            envelopeType = envelope.getType() == null
+                    ? CiphertextMessage.WHISPER_TYPE
+                    : envelopeTypeToCiphertextMessageType(envelope.getType());
         }
 
         DecryptionErrorMessage decryptionErrorMessage = DecryptionErrorMessage.forOriginalMessage(originalContent,
