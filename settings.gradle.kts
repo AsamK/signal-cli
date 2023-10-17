@@ -7,9 +7,9 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             library("bouncycastle", "org.bouncycastle", "bcprov-jdk15on").version("1.70")
-            library("jackson.databind", "com.fasterxml.jackson.core", "jackson-databind").version("2.15.2")
+            library("jackson.databind", "com.fasterxml.jackson.core", "jackson-databind").version("2.15.3")
             library("argparse4j", "net.sourceforge.argparse4j", "argparse4j").version("0.9.0")
-            library("dbusjava", "com.github.hypfvieh", "dbus-java-transport-native-unixsocket").version("4.3.0")
+            library("dbusjava", "com.github.hypfvieh", "dbus-java-transport-native-unixsocket").version("4.3.1")
             version("slf4j", "2.0.9")
             library("slf4j.api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j.jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
@@ -17,7 +17,7 @@ dependencyResolutionManagement {
 
 
             library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_85")
-            library("sqlite", "org.xerial", "sqlite-jdbc").version("3.43.0.0")
+            library("sqlite", "org.xerial", "sqlite-jdbc").version("3.43.2.0")
             library("hikari", "com.zaxxer", "HikariCP").version("5.0.1")
             library("junit", "org.junit.jupiter", "junit-jupiter").version("5.10.0")
         }
