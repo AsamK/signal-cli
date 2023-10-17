@@ -164,7 +164,7 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v3
 
@@ -214,7 +214,7 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v3
 
