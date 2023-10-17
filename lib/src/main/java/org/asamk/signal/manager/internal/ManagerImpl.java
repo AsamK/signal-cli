@@ -1019,7 +1019,7 @@ public class ManagerImpl implements Manager {
         if (receiveThread != null || isReceivingSynchronous) {
             return;
         }
-        receiveThread = new Thread(() -> {
+        receiveThread = Thread.ofPlatform().name("receive-" + threadNumber.getAndIncrement()).start(() -> {
             logger.debug("Starting receiving messages");
             context.getReceiveHelper().receiveMessagesContinuously(this::passReceivedMessageToHandlers);
             logger.debug("Finished receiving messages");
@@ -1033,9 +1033,6 @@ public class ManagerImpl implements Manager {
                 }
             }
         });
-        receiveThread.setName("receive-" + threadNumber.getAndIncrement());
-
-        receiveThread.start();
     }
 
     private void passReceivedMessageToHandlers(MessageEnvelope envelope, Throwable e) {
@@ -1310,7 +1307,7 @@ public class ManagerImpl implements Manager {
         if (thread != null) {
             stopReceiveThread(thread);
         }
-        executor.shutdown();
+        executor.close();
 
         dependencies.getSignalWebSocket().disconnect();
         disposable.dispose();

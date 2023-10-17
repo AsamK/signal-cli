@@ -55,8 +55,7 @@ public class JsonRpcReader {
             return;
         }
 
-        final var executor = Executors.newFixedThreadPool(10);
-        try {
+        try (final var executor = Executors.newCachedThreadPool()) {
             while (!Thread.interrupted()) {
                 final var input = lineSupplier.get();
                 if (input == null) {
@@ -72,8 +71,6 @@ public class JsonRpcReader {
 
                 executor.submit(() -> handleMessage(message, requestHandler, responseHandler));
             }
-        } finally {
-            Util.closeExecutorService(executor);
         }
     }
 
@@ -94,8 +91,7 @@ public class JsonRpcReader {
             case JsonRpcBatchMessage jsonRpcBatchMessage -> {
                 final var messages = jsonRpcBatchMessage.getMessages();
                 final var responseList = new ArrayList<JsonRpcResponse>(messages.size());
-                final var executor = Executors.newFixedThreadPool(10);
-                try {
+                try (final var executor = Executors.newCachedThreadPool()) {
                     final var lock = new ReentrantLock();
                     messages.forEach(jsonNode -> {
                         final JsonRpcRequest request;
@@ -124,8 +120,6 @@ public class JsonRpcReader {
                             }
                         });
                     });
-                } finally {
-                    Util.closeExecutorService(executor);
                 }
 
                 if (!responseList.isEmpty()) {

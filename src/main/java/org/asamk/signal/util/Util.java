@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Util {
@@ -85,20 +83,5 @@ public class Util {
             map.put(name, value);
         }
         return map;
-    }
-
-    public static void closeExecutorService(ExecutorService executor) {
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
-                executor.shutdownNow();
-                if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
-                    logger.warn("Failed to shutdown executor service");
-                }
-            }
-        } catch (InterruptedException e) {
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
     }
 }

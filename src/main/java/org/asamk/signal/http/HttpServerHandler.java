@@ -54,7 +54,7 @@ public class HttpServerHandler {
         logger.info("Starting server on " + address.toString());
 
         final var server = HttpServer.create(address, 0);
-        server.setExecutor(Executors.newFixedThreadPool(10));
+        server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/api/v1/rpc", this::handleRpcEndpoint);
         server.createContext("/api/v1/events", this::handleEventsEndpoint);
