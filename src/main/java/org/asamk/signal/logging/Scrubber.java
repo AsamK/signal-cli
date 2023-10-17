@@ -50,7 +50,7 @@ public final class Scrubber {
      * The middle group will be censored.
      */
     private static final Pattern UUID_PATTERN = Pattern.compile(
-            "(JOB::)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{10})([0-9a-f]{2})",
+            "(JOB::)?([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{10})([0-9a-f]{2})",
             Pattern.CASE_INSENSITIVE);
     private static final String UUID_CENSOR = "********-****-****-****-**********";
 
