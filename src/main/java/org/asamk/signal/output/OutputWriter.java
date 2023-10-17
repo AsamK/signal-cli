@@ -1,5 +1,3 @@
 package org.asamk.signal.output;
 
-public interface OutputWriter {
-
-}
+public sealed interface OutputWriter permits JsonWriter, PlainTextWriter {}

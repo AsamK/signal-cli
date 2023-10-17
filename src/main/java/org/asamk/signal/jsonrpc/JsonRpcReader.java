@@ -82,53 +82,55 @@ public class JsonRpcReader {
             final RequestHandler requestHandler,
             final Consumer<JsonRpcResponse> responseHandler
     ) {
-        if (message instanceof final JsonRpcRequest jsonRpcRequest) {
-            logger.debug("Received json rpc request, method: " + jsonRpcRequest.getMethod());
-            final var response = handleRequest(requestHandler, jsonRpcRequest);
-            if (response != null) {
-                jsonRpcSender.sendResponse(response);
+        switch (message) {
+            case JsonRpcRequest jsonRpcRequest -> {
+                logger.debug("Received json rpc request, method: " + jsonRpcRequest.getMethod());
+                final var response = handleRequest(requestHandler, jsonRpcRequest);
+                if (response != null) {
+                    jsonRpcSender.sendResponse(response);
+                }
             }
-        } else if (message instanceof JsonRpcResponse jsonRpcResponse) {
-            responseHandler.accept(jsonRpcResponse);
-        } else {
-            final var messages = ((JsonRpcBatchMessage) message).getMessages();
-            final var responseList = new ArrayList<JsonRpcResponse>(messages.size());
-            final var executor = Executors.newFixedThreadPool(10);
-            try {
-                final var lock = new ReentrantLock();
-                messages.forEach(jsonNode -> {
-                    final JsonRpcRequest request;
-                    try {
-                        request = parseJsonRpcRequest(jsonNode);
-                    } catch (JsonRpcException e) {
-                        final var response = JsonRpcResponse.forError(e.getError(), getId(jsonNode));
-                        lock.lock();
+            case JsonRpcResponse jsonRpcResponse -> responseHandler.accept(jsonRpcResponse);
+            case JsonRpcBatchMessage jsonRpcBatchMessage -> {
+                final var messages = jsonRpcBatchMessage.getMessages();
+                final var responseList = new ArrayList<JsonRpcResponse>(messages.size());
+                final var executor = Executors.newFixedThreadPool(10);
+                try {
+                    final var lock = new ReentrantLock();
+                    messages.forEach(jsonNode -> {
+                        final JsonRpcRequest request;
                         try {
-                            responseList.add(response);
-                        } finally {
-                            lock.unlock();
-                        }
-                        return;
-                    }
-
-                    executor.submit(() -> {
-                        final var response = handleRequest(requestHandler, request);
-                        if (response != null) {
+                            request = parseJsonRpcRequest(jsonNode);
+                        } catch (JsonRpcException e) {
+                            final var response = JsonRpcResponse.forError(e.getError(), getId(jsonNode));
                             lock.lock();
                             try {
                                 responseList.add(response);
                             } finally {
                                 lock.unlock();
                             }
+                            return;
                         }
-                    });
-                });
-            } finally {
-                Util.closeExecutorService(executor);
-            }
 
-            if (!responseList.isEmpty()) {
-                jsonRpcSender.sendBatchResponses(responseList);
+                        executor.submit(() -> {
+                            final var response = handleRequest(requestHandler, request);
+                            if (response != null) {
+                                lock.lock();
+                                try {
+                                    responseList.add(response);
+                                } finally {
+                                    lock.unlock();
+                                }
+                            }
+                        });
+                    });
+                } finally {
+                    Util.closeExecutorService(executor);
+                }
+
+                if (!responseList.isEmpty()) {
+                    jsonRpcSender.sendBatchResponses(responseList);
+                }
             }
         }
     }
@@ -221,7 +223,7 @@ public class JsonRpcReader {
 
     private ValueNode getId(JsonNode jsonNode) {
         final var id = jsonNode.get("id");
-        return id instanceof ValueNode ? (ValueNode) id : null;
+        return id instanceof ValueNode value ? value : null;
     }
 
     private JsonRpcRequest parseJsonRpcRequest(final JsonNode input) throws JsonRpcException {

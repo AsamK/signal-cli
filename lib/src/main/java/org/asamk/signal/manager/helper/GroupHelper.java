@@ -224,52 +224,55 @@ public class GroupHelper {
         var group = getGroupForUpdating(groupId);
         final var avatarBytes = readAvatarBytes(avatarFile);
 
-        if (group instanceof GroupInfoV2) {
-            try {
-                return updateGroupV2((GroupInfoV2) group,
-                        name,
-                        description,
-                        members,
-                        removeMembers,
-                        admins,
-                        removeAdmins,
-                        banMembers,
-                        unbanMembers,
-                        resetGroupLink,
-                        groupLinkState,
-                        addMemberPermission,
-                        editDetailsPermission,
-                        avatarBytes,
-                        expirationTimer,
-                        isAnnouncementGroup);
-            } catch (ConflictException e) {
-                // Detected conflicting update, refreshing group and trying again
-                group = getGroup(groupId, true);
-                return updateGroupV2((GroupInfoV2) group,
-                        name,
-                        description,
-                        members,
-                        removeMembers,
-                        admins,
-                        removeAdmins,
-                        banMembers,
-                        unbanMembers,
-                        resetGroupLink,
-                        groupLinkState,
-                        addMemberPermission,
-                        editDetailsPermission,
-                        avatarBytes,
-                        expirationTimer,
-                        isAnnouncementGroup);
+        switch (group) {
+            case GroupInfoV2 gv2 -> {
+                try {
+                    return updateGroupV2(gv2,
+                            name,
+                            description,
+                            members,
+                            removeMembers,
+                            admins,
+                            removeAdmins,
+                            banMembers,
+                            unbanMembers,
+                            resetGroupLink,
+                            groupLinkState,
+                            addMemberPermission,
+                            editDetailsPermission,
+                            avatarBytes,
+                            expirationTimer,
+                            isAnnouncementGroup);
+                } catch (ConflictException e) {
+                    // Detected conflicting update, refreshing group and trying again
+                    group = getGroup(groupId, true);
+                    return updateGroupV2((GroupInfoV2) group,
+                            name,
+                            description,
+                            members,
+                            removeMembers,
+                            admins,
+                            removeAdmins,
+                            banMembers,
+                            unbanMembers,
+                            resetGroupLink,
+                            groupLinkState,
+                            addMemberPermission,
+                            editDetailsPermission,
+                            avatarBytes,
+                            expirationTimer,
+                            isAnnouncementGroup);
+                }
+            }
+
+            case GroupInfoV1 gv1 -> {
+                final var result = updateGroupV1(gv1, name, members, avatarBytes);
+                if (expirationTimer != null) {
+                    setExpirationTimer(gv1, expirationTimer);
+                }
+                return result;
             }
         }
-
-        final var gv1 = (GroupInfoV1) group;
-        final var result = updateGroupV1(gv1, name, members, avatarBytes);
-        if (expirationTimer != null) {
-            setExpirationTimer(gv1, expirationTimer);
-        }
-        return result;
     }
 
     public void updateGroupProfileKey(GroupIdV2 groupId) throws GroupNotFoundException, NotAGroupMemberException, IOException {

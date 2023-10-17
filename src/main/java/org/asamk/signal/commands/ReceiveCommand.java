@@ -74,8 +74,10 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
         final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
         m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts));
         try {
-            final var handler = outputWriter instanceof JsonWriter ? new JsonReceiveMessageHandler(m,
-                    (JsonWriter) outputWriter) : new ReceiveMessageHandler(m, (PlainTextWriter) outputWriter);
+            final var handler = switch (outputWriter) {
+                case JsonWriter writer -> new JsonReceiveMessageHandler(m, writer);
+                case PlainTextWriter writer -> new ReceiveMessageHandler(m, writer);
+            };
             final var duration = timeout < 0 ? null : Duration.ofMillis((long) (timeout * 1000));
             final var maxMessages = maxMessagesRaw < 0 ? null : maxMessagesRaw;
             m.receiveMessages(Optional.ofNullable(duration), Optional.ofNullable(maxMessages), handler);

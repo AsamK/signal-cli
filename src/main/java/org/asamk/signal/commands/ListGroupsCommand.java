@@ -89,34 +89,34 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             groups = groups.stream().filter(g -> groupIds.contains(g.groupId())).toList();
         }
 
-        if (outputWriter instanceof JsonWriter jsonWriter) {
+        switch (outputWriter) {
+            case JsonWriter jsonWriter -> {
+                var jsonGroups = groups.stream().map(group -> {
+                    final var groupInviteLink = group.groupInviteLinkUrl();
 
-            var jsonGroups = groups.stream().map(group -> {
-                final var groupInviteLink = group.groupInviteLinkUrl();
-
-                return new JsonGroup(group.groupId().toBase64(),
-                        group.title(),
-                        group.description(),
-                        group.isMember(),
-                        group.isBlocked(),
-                        group.messageExpirationTimer(),
-                        resolveJsonMembers(group.members()),
-                        resolveJsonMembers(group.pendingMembers()),
-                        resolveJsonMembers(group.requestingMembers()),
-                        resolveJsonMembers(group.adminMembers()),
-                        resolveJsonMembers(group.bannedMembers()),
-                        group.permissionAddMember().name(),
-                        group.permissionEditDetails().name(),
-                        group.permissionSendMessage().name(),
-                        groupInviteLink == null ? null : groupInviteLink.getUrl());
-            }).toList();
-
-            jsonWriter.write(jsonGroups);
-        } else {
-            final var writer = (PlainTextWriter) outputWriter;
-            boolean detailed = Boolean.TRUE.equals(ns.getBoolean("detailed"));
-            for (var group : groups) {
-                printGroupPlainText(writer, group, detailed);
+                    return new JsonGroup(group.groupId().toBase64(),
+                            group.title(),
+                            group.description(),
+                            group.isMember(),
+                            group.isBlocked(),
+                            group.messageExpirationTimer(),
+                            resolveJsonMembers(group.members()),
+                            resolveJsonMembers(group.pendingMembers()),
+                            resolveJsonMembers(group.requestingMembers()),
+                            resolveJsonMembers(group.adminMembers()),
+                            resolveJsonMembers(group.bannedMembers()),
+                            group.permissionAddMember().name(),
+                            group.permissionEditDetails().name(),
+                            group.permissionSendMessage().name(),
+                            groupInviteLink == null ? null : groupInviteLink.getUrl());
+                }).toList();
+                jsonWriter.write(jsonGroups);
+            }
+            case PlainTextWriter writer -> {
+                boolean detailed = Boolean.TRUE.equals(ns.getBoolean("detailed"));
+                for (var group : groups) {
+                    printGroupPlainText(writer, group, detailed);
+                }
             }
         }
     }

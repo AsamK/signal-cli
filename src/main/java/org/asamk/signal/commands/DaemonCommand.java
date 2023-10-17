@@ -249,11 +249,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     }
 
     private void addDefaultReceiveHandler(Manager m, OutputWriter outputWriter, final boolean isWeakListener) {
-        final var handler = outputWriter instanceof JsonWriter o
-                ? new JsonReceiveMessageHandler(m, o)
-                : outputWriter instanceof PlainTextWriter o
-                        ? new ReceiveMessageHandler(m, o)
-                        : Manager.ReceiveMessageHandler.EMPTY;
+        final var handler = switch (outputWriter) {
+            case PlainTextWriter writer -> new ReceiveMessageHandler(m, writer);
+            case JsonWriter writer -> new JsonReceiveMessageHandler(m, writer);
+            case null -> Manager.ReceiveMessageHandler.EMPTY;
+        };
         m.addReceiveHandler(handler, isWeakListener);
     }
 

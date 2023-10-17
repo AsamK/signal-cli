@@ -2,7 +2,7 @@ package org.asamk.signal.output;
 
 import java.util.function.Consumer;
 
-public interface PlainTextWriter extends OutputWriter {
+public non-sealed interface PlainTextWriter extends OutputWriter {
 
     void println(String format, Object... args);
 

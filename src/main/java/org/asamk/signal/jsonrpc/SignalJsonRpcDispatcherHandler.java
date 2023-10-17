@@ -223,13 +223,11 @@ public class SignalJsonRpcDispatcherHandler {
         }
 
         private Integer getSubscriptionId(final JsonNode request) {
-            if (request instanceof ArrayNode req) {
-                return req.get(0).asInt();
-            } else if (request instanceof ObjectNode req) {
-                return req.get("subscription").asInt();
-            } else {
-                return null;
-            }
+            return switch (request) {
+                case ArrayNode req -> req.get(0).asInt();
+                case ObjectNode req -> req.get("subscription").asInt();
+                case null, default -> null;
+            };
         }
     }
 }

@@ -72,8 +72,8 @@ public class Commands {
 
     private static void addCommand(Command command) {
         commands.put(command.getName(), command);
-        if (command instanceof CliCommand) {
-            commandSubparserAttacher.put(command.getName(), ((CliCommand) command)::attachToSubparser);
+        if (command instanceof CliCommand cliCommand) {
+            commandSubparserAttacher.put(command.getName(), cliCommand::attachToSubparser);
         }
     }
 }

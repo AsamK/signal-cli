@@ -42,11 +42,11 @@ public class UploadStickerPackCommand implements JsonRpcLocalCommand {
 
         try {
             var url = m.uploadStickerPack(path);
-            if (outputWriter instanceof PlainTextWriter writer) {
-                writer.println("{}", url.getUrl());
-            } else {
-                final var writer = (JsonWriter) outputWriter;
-                writer.write(Map.of("url", url.getUrl()));
+            switch (outputWriter) {
+                case PlainTextWriter writer -> writer.println("{}", url.getUrl());
+                case JsonWriter writer -> {
+                    writer.write(Map.of("url", url.getUrl()));
+                }
             }
         } catch (IOException e) {
             throw new IOErrorException("Upload error (maybe image size too large):" + e.getMessage(), e);

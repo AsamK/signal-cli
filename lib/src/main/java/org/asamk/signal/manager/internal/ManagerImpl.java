@@ -1252,18 +1252,15 @@ public class ManagerImpl implements Manager {
     public boolean trustIdentityVerified(
             RecipientIdentifier.Single recipient, IdentityVerificationCode verificationCode
     ) throws UnregisteredRecipientException {
-        if (verificationCode instanceof IdentityVerificationCode.Fingerprint fingerprint) {
-            return trustIdentity(recipient,
+        return switch (verificationCode) {
+            case IdentityVerificationCode.Fingerprint fingerprint -> trustIdentity(recipient,
                     r -> context.getIdentityHelper().trustIdentityVerified(r, fingerprint.fingerprint()));
-        } else if (verificationCode instanceof IdentityVerificationCode.SafetyNumber safetyNumber) {
-            return trustIdentity(recipient,
+            case IdentityVerificationCode.SafetyNumber safetyNumber -> trustIdentity(recipient,
                     r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber.safetyNumber()));
-        } else if (verificationCode instanceof IdentityVerificationCode.ScannableSafetyNumber safetyNumber) {
-            return trustIdentity(recipient,
+            case IdentityVerificationCode.ScannableSafetyNumber safetyNumber -> trustIdentity(recipient,
                     r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber.safetyNumber()));
-        } else {
-            throw new AssertionError("Invalid verification code type");
-        }
+            case null, default -> throw new AssertionError("Invalid verification code type");
+        };
     }
 
     @Override

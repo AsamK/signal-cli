@@ -30,17 +30,20 @@ public class ListStickerPacksCommand implements JsonRpcLocalCommand {
             final Namespace ns, final Manager c, final OutputWriter outputWriter
     ) throws CommandException {
         final var stickerPacks = c.getStickerPacks();
-        if (outputWriter instanceof JsonWriter jsonWriter) {
-            final var jsonStickerPacks = stickerPacks.stream().map(JsonStickerPack::new).toList();
-            jsonWriter.write(jsonStickerPacks);
-        } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
-            for (final var sticker : stickerPacks) {
-                plainTextWriter.println("Pack {}: “{}” by “{}” has {} stickers. {}",
-                        Hex.toStringCondensed(sticker.packId().serialize()),
-                        sticker.title(),
-                        sticker.author(),
-                        sticker.stickers().size(),
-                        sticker.url().getUrl());
+        switch (outputWriter) {
+            case JsonWriter jsonWriter -> {
+                final var jsonStickerPacks = stickerPacks.stream().map(JsonStickerPack::new).toList();
+                jsonWriter.write(jsonStickerPacks);
+            }
+            case PlainTextWriter plainTextWriter -> {
+                for (final var sticker : stickerPacks) {
+                    plainTextWriter.println("Pack {}: “{}” by “{}” has {} stickers. {}",
+                            Hex.toStringCondensed(sticker.packId().serialize()),
+                            sticker.title(),
+                            sticker.author(),
+                            sticker.stickers().size(),
+                            sticker.url().getUrl());
+                }
             }
         }
     }

@@ -55,24 +55,26 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
 
         // Output
-        if (outputWriter instanceof JsonWriter jsonWriter) {
-
-            var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
-                final var number = entry.getValue().number();
-                final var uuid = entry.getValue().uuid();
-                return new JsonUserStatus(entry.getKey(), number, uuid == null ? null : uuid.toString(), uuid != null);
-            }).toList();
-
-            jsonWriter.write(jsonUserStatuses);
-        } else {
-            final var writer = (PlainTextWriter) outputWriter;
-
-            for (var entry : registered.entrySet()) {
-                final var userStatus = entry.getValue();
-                writer.println("{}: {}{}",
-                        entry.getKey(),
-                        userStatus.uuid() != null,
-                        userStatus.unrestrictedUnidentifiedAccess() ? " (unrestricted sealed sender)" : "");
+        switch (outputWriter) {
+            case JsonWriter writer -> {
+                var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
+                    final var number = entry.getValue().number();
+                    final var uuid = entry.getValue().uuid();
+                    return new JsonUserStatus(entry.getKey(),
+                            number,
+                            uuid == null ? null : uuid.toString(),
+                            uuid != null);
+                }).toList();
+                writer.write(jsonUserStatuses);
+            }
+            case PlainTextWriter writer -> {
+                for (var entry : registered.entrySet()) {
+                    final var userStatus = entry.getValue();
+                    writer.println("{}: {}{}",
+                            entry.getKey(),
+                            userStatus.uuid() != null,
+                            userStatus.unrestrictedUnidentifiedAccess() ? " (unrestricted sealed sender)" : "");
+                }
             }
         }
     }

@@ -65,7 +65,7 @@ public abstract class DbusProperties implements Properties {
                 .filter(p -> p.getGetter() != null)
                 .collect(Collectors.toMap(DbusProperty::getName, p -> {
                     final Object o = p.getGetter().get();
-                    return o instanceof Variant ? (Variant<Object>) o : new Variant<>(o);
+                    return o instanceof Variant<?> variant ? variant : new Variant<>(o);
                 }));
     }
 }

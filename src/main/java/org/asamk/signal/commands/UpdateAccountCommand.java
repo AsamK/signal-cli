@@ -50,10 +50,9 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
         if (username != null) {
             try {
                 final var newUsername = m.setUsername(username);
-                if (outputWriter instanceof PlainTextWriter w) {
-                    w.println("Your new username: {}", newUsername);
-                } else if (outputWriter instanceof JsonWriter w) {
-                    w.write(new JsonAccountResponse(newUsername));
+                switch (outputWriter) {
+                    case PlainTextWriter w -> w.println("Your new username: {}", newUsername);
+                    case JsonWriter w -> w.write(new JsonAccountResponse(newUsername));
                 }
             } catch (IOException e) {
                 throw new IOErrorException("Failed to set username: " + e.getMessage(), e);

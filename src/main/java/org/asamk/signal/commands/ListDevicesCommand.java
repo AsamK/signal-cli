@@ -42,21 +42,23 @@ public class ListDevicesCommand implements JsonRpcLocalCommand {
             throw new IOErrorException("Failed to get linked devices: " + e.getMessage(), e);
         }
 
-        if (outputWriter instanceof PlainTextWriter writer) {
-            for (var d : devices) {
-                writer.println("- Device {}{}:", d.id(), (d.isThisDevice() ? " (this device)" : ""));
-                writer.indent(w -> {
-                    w.println("Name: {}", d.name());
-                    w.println("Created: {}", DateUtils.formatTimestamp(d.created()));
-                    w.println("Last seen: {}", DateUtils.formatTimestamp(d.lastSeen()));
-                });
+        switch (outputWriter) {
+            case PlainTextWriter writer -> {
+                for (var d : devices) {
+                    writer.println("- Device {}{}:", d.id(), (d.isThisDevice() ? " (this device)" : ""));
+                    writer.indent(w -> {
+                        w.println("Name: {}", d.name());
+                        w.println("Created: {}", DateUtils.formatTimestamp(d.created()));
+                        w.println("Last seen: {}", DateUtils.formatTimestamp(d.lastSeen()));
+                    });
+                }
             }
-        } else {
-            final var writer = (JsonWriter) outputWriter;
-            final var jsonDevices = devices.stream()
-                    .map(d -> new JsonDevice(d.id(), d.name(), d.created(), d.lastSeen()))
-                    .toList();
-            writer.write(jsonDevices);
+            case JsonWriter writer -> {
+                final var jsonDevices = devices.stream()
+                        .map(d -> new JsonDevice(d.id(), d.name(), d.created(), d.lastSeen()))
+                        .toList();
+                writer.write(jsonDevices);
+            }
         }
     }
 

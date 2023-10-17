@@ -182,27 +182,29 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
     private void outputResult(
             final OutputWriter outputWriter, final SendGroupMessageResults results, final GroupId groupId
     ) {
-        if (outputWriter instanceof PlainTextWriter writer) {
-            if (groupId != null) {
-                writer.println("Created new group: \"{}\"", groupId.toBase64());
+        switch (outputWriter) {
+            case PlainTextWriter writer -> {
+                if (groupId != null) {
+                    writer.println("Created new group: \"{}\"", groupId.toBase64());
+                }
+                if (results != null) {
+                    var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results.results());
+                    SendMessageResultUtils.printSendMessageResultErrors(writer, errors);
+                    writer.println("{}", results.timestamp());
+                }
             }
-            if (results != null) {
-                var errors = SendMessageResultUtils.getErrorMessagesFromSendMessageResults(results.results());
-                SendMessageResultUtils.printSendMessageResultErrors(writer, errors);
-                writer.println("{}", results.timestamp());
+            case JsonWriter writer -> {
+                final var response = new HashMap<>();
+                if (results != null) {
+                    response.put("timestamp", results.timestamp());
+                    var jsonResults = SendMessageResultUtils.getJsonSendMessageResults(results.results());
+                    response.put("results", jsonResults);
+                }
+                if (groupId != null) {
+                    response.put("groupId", groupId.toBase64());
+                }
+                writer.write(response);
             }
-        } else {
-            final var writer = (JsonWriter) outputWriter;
-            final var response = new HashMap<>();
-            if (results != null) {
-                response.put("timestamp", results.timestamp());
-                var jsonResults = SendMessageResultUtils.getJsonSendMessageResults(results.results());
-                response.put("results", jsonResults);
-            }
-            if (groupId != null) {
-                response.put("groupId", groupId.toBase64());
-            }
-            writer.write(response);
         }
     }
 }

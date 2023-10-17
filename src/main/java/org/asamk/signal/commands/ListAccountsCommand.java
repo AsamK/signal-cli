@@ -26,12 +26,15 @@ public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
             final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
     ) throws CommandException {
         final var accountNumbers = c.getAccountNumbers();
-        if (outputWriter instanceof JsonWriter jsonWriter) {
-            final var jsonAccounts = accountNumbers.stream().map(JsonAccount::new).toList();
-            jsonWriter.write(jsonAccounts);
-        } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
-            for (final var number : accountNumbers) {
-                plainTextWriter.println("Number: {}", number);
+        switch (outputWriter) {
+            case JsonWriter jsonWriter -> {
+                final var jsonAccounts = accountNumbers.stream().map(JsonAccount::new).toList();
+                jsonWriter.write(jsonAccounts);
+            }
+            case PlainTextWriter plainTextWriter -> {
+                for (final var number : accountNumbers) {
+                    plainTextWriter.println("Number: {}", number);
+                }
             }
         }
     }

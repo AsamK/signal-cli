@@ -56,10 +56,9 @@ public class VersionCommand implements JsonRpcLocalCommand, JsonRpcMultiLocalCom
         final var projectName = BaseConfig.PROJECT_NAME == null ? "signal-cli" : BaseConfig.PROJECT_NAME;
         final var version = BaseConfig.PROJECT_VERSION == null ? "unknown" : BaseConfig.PROJECT_VERSION;
 
-        if (outputWriter instanceof JsonWriter jsonWriter) {
-            jsonWriter.write(Map.of("version", version));
-        } else if (outputWriter instanceof PlainTextWriter plainTextWriter) {
-            plainTextWriter.println("{} {}", projectName, version);
+        switch (outputWriter) {
+            case JsonWriter jsonWriter -> jsonWriter.write(Map.of("version", version));
+            case PlainTextWriter plainTextWriter -> plainTextWriter.println("{} {}", projectName, version);
         }
     }
 }
