@@ -45,6 +45,7 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
+import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV1;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -108,7 +109,9 @@ public class RegistrationManagerImpl implements RegistrationManager {
                         10))
                 .toList();
         final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.svr2Mrenclave());
-        this.pinHelper = new PinHelper(keyBackupService, fallbackKeyBackupServices, secureValueRecoveryV2);
+        this.pinHelper = new PinHelper(new SecureValueRecoveryV1(keyBackupService),
+                secureValueRecoveryV2,
+                fallbackKeyBackupServices);
     }
 
     @Override

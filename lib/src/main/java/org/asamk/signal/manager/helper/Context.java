@@ -6,6 +6,7 @@ import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
+import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV1;
 
 import java.util.function.Supplier;
 
@@ -115,9 +116,9 @@ public class Context {
 
     PinHelper getPinHelper() {
         return getOrCreate(() -> pinHelper,
-                () -> pinHelper = new PinHelper(dependencies.getKeyBackupService(),
-                        dependencies.getFallbackKeyBackupServices(),
-                        dependencies.getSecureValueRecoveryV2()));
+                () -> pinHelper = new PinHelper(new SecureValueRecoveryV1(dependencies.getKeyBackupService()),
+                        dependencies.getSecureValueRecoveryV2(),
+                        dependencies.getFallbackKeyBackupServices()));
     }
 
     public PreKeyHelper getPreKeyHelper() {

@@ -5,11 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
-import org.whispersystems.signalservice.api.kbs.PinHashUtil;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV1;
 import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
-import org.whispersystems.signalservice.internal.contacts.crypto.UnauthenticatedResponseException;
 import org.whispersystems.signalservice.internal.push.AuthCredentials;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
@@ -20,35 +18,24 @@ public class PinHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(PinHelper.class);
 
-    private final KeyBackupService keyBackupService;
     private final SecureValueRecoveryV1 secureValueRecoveryV1;
     private final SecureValueRecoveryV2 secureValueRecoveryV2;
     private final Collection<KeyBackupService> fallbackKeyBackupServices;
 
     public PinHelper(
-            final KeyBackupService keyBackupService,
-            final Collection<KeyBackupService> fallbackKeyBackupServices,
-            SecureValueRecoveryV2 secureValueRecoveryV2
+            final SecureValueRecoveryV1 secureValueRecoveryV1,
+            final SecureValueRecoveryV2 secureValueRecoveryV2,
+            final Collection<KeyBackupService> fallbackKeyBackupServices
     ) {
-        this.keyBackupService = keyBackupService;
         this.fallbackKeyBackupServices = fallbackKeyBackupServices;
-        this.secureValueRecoveryV1 = new SecureValueRecoveryV1(keyBackupService);
+        this.secureValueRecoveryV1 = secureValueRecoveryV1;
         this.secureValueRecoveryV2 = secureValueRecoveryV2;
     }
 
     public void setRegistrationLockPin(
             String pin, MasterKey masterKey
     ) throws IOException {
-        final var pinChangeSession = keyBackupService.newPinChangeSession();
-        final var hashedPin = PinHashUtil.hashPin(pin, pinChangeSession.hashSalt());
-
-        try {
-            pinChangeSession.setPin(hashedPin, masterKey);
-        } catch (UnauthenticatedResponseException e) {
-            throw new IOException(e);
-        }
-        pinChangeSession.enableRegistrationLock(masterKey);
-
+        secureValueRecoveryV1.setPin(pin, masterKey).execute();
         final var backupResponse = secureValueRecoveryV2.setPin(pin, masterKey).execute();
         if (backupResponse instanceof SecureValueRecovery.BackupResponse.Success) {
         } else if (backupResponse instanceof SecureValueRecovery.BackupResponse.ServerRejected) {
@@ -80,14 +67,7 @@ public class PinHelper {
     }
 
     public void removeRegistrationLockPin() throws IOException {
-        final var pinChangeSession = keyBackupService.newPinChangeSession();
-        pinChangeSession.disableRegistrationLock();
-        try {
-            pinChangeSession.removePin();
-        } catch (UnauthenticatedResponseException e) {
-            throw new IOException(e);
-        }
-
+        secureValueRecoveryV1.deleteData();
         final var deleteResponse = secureValueRecoveryV2.deleteData();
         if (deleteResponse instanceof SecureValueRecovery.DeleteResponse.Success) {
         } else if (deleteResponse instanceof SecureValueRecovery.DeleteResponse.ServerRejected) {

@@ -416,12 +416,14 @@ public class AccountHelper {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().migrateRegistrationLockPin(account.getRegistrationLockPin(), masterKey);
+        dependencies.getAccountManager().enableRegistrationLock(masterKey);
     }
 
     public void setRegistrationPin(String pin) throws IOException {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().setRegistrationLockPin(pin, masterKey);
+        dependencies.getAccountManager().enableRegistrationLock(masterKey);
 
         account.setRegistrationLockPin(pin);
     }
@@ -429,6 +431,7 @@ public class AccountHelper {
     public void removeRegistrationPin() throws IOException {
         // Remove KBS Pin
         context.getPinHelper().removeRegistrationLockPin();
+        dependencies.getAccountManager().disableRegistrationLock();
 
         account.setRegistrationLockPin(null);
     }
