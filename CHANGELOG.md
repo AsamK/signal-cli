@@ -661,7 +661,7 @@ Bug fixes and small improvements
 - Fix linking of new devices
 
 ## [0.5.3] - 2017-01-29
-* New commandline paramter for receive: --ignore-attachments
+* New commandline parameter for receive: --ignore-attachments
 * Updated dependencies
 
 ## [0.5.2] - 2016-12-16
