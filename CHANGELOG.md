@@ -7,7 +7,7 @@
 ### Added
 
 - Added `startChangeNumber` and `finishChangeNumber` commands to switch to another phone number
-- Added `--quote-attachment` paramter to `send` command
+- Added `--quote-attachment` parameter to `send` command
 - Added support for scannable safety numbers based on serviceId
 - Added `EditMessageReceived` signal for D-Bus interface
 - Added new exit code `5` for rate limit failures
