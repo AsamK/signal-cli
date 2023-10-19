@@ -6,6 +6,7 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.signal.core.util.Base64;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidTokenException;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
-import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -235,7 +235,7 @@ public class RecipientHelper {
 
     private ACI getRegisteredUserByUsername(String username) throws IOException, BaseUsernameException {
         return dependencies.getAccountManager()
-                .getAciByUsernameHash(Base64UrlSafe.encodeBytesWithoutPadding(new Username(username).getHash()));
+                .getAciByUsernameHash(Base64.encodeUrlSafeWithoutPadding(new Username(username).getHash()));
     }
 
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {

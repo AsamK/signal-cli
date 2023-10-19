@@ -12,6 +12,7 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
 import org.asamk.signal.manager.util.Utils;
+import org.signal.core.util.Base64;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
@@ -37,7 +38,6 @@ import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.signalservice.internal.push.SyncMessage;
 import org.whispersystems.signalservice.internal.push.exceptions.MismatchedDevicesException;
-import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -318,7 +318,7 @@ public class AccountHelper {
         final var candidates = Username.candidatesFrom(nickname, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
         final var candidateHashes = new ArrayList<String>();
         for (final var candidate : candidates) {
-            candidateHashes.add(Base64UrlSafe.encodeBytesWithoutPadding(candidate.getHash()));
+            candidateHashes.add(Base64.encodeUrlSafeWithoutPadding(candidate.getHash()));
         }
 
         final var response = dependencies.getAccountManager().reserveUsername(candidateHashes);
@@ -348,7 +348,7 @@ public class AccountHelper {
         final var whoAmIResponse = dependencies.getAccountManager().getWhoAmI();
         final var serverUsernameHash = whoAmIResponse.getUsernameHash();
         final var hasServerUsername = !isEmpty(serverUsernameHash);
-        final var localUsernameHash = Base64UrlSafe.encodeBytesWithoutPadding(new Username(localUsername).getHash());
+        final var localUsernameHash = Base64.encodeUrlSafeWithoutPadding(new Username(localUsername).getHash());
 
         if (!hasServerUsername) {
             logger.debug("No remote username is set.");

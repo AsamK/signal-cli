@@ -45,7 +45,6 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
-import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV1;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -95,23 +94,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-        final var keyBackupService = accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                serviceEnvironmentConfig.keyBackupConfig().enclaveName(),
-                serviceEnvironmentConfig.keyBackupConfig().serviceId(),
-                serviceEnvironmentConfig.keyBackupConfig().mrenclave(),
-                10);
-        final var fallbackKeyBackupServices = serviceEnvironmentConfig.fallbackKeyBackupConfigs()
-                .stream()
-                .map(config -> accountManager.getKeyBackupService(ServiceConfig.getIasKeyStore(),
-                        config.enclaveName(),
-                        config.serviceId(),
-                        config.mrenclave(),
-                        10))
-                .toList();
         final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.svr2Mrenclave());
-        this.pinHelper = new PinHelper(new SecureValueRecoveryV1(keyBackupService),
-                secureValueRecoveryV2,
-                fallbackKeyBackupServices);
+        this.pinHelper = new PinHelper(secureValueRecoveryV2);
     }
 
     @Override

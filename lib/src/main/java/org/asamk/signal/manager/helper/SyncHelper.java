@@ -222,7 +222,8 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendKeysMessage() {
-        var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()));
+        var keysMessage = new KeysMessage(Optional.ofNullable(account.getStorageKey()),
+                Optional.ofNullable(account.getOrCreatePinMasterKey()));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 

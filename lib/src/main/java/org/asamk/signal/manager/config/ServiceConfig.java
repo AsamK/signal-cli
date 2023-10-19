@@ -3,13 +3,7 @@ package org.asamk.signal.manager.config;
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.signal.libsignal.protocol.util.Medium;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
-import org.whispersystems.signalservice.api.push.TrustStore;
 
-import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -31,29 +25,9 @@ public class ServiceConfig {
     public final static int GROUP_MAX_SIZE = 1001;
     public final static int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
 
-    private final static KeyStore iasKeyStore;
-
-    static {
-        try {
-            TrustStore contactTrustStore = new IasTrustStore();
-
-            var keyStore = KeyStore.getInstance("BKS");
-            keyStore.load(contactTrustStore.getKeyStoreInputStream(),
-                    contactTrustStore.getKeyStorePassword().toCharArray());
-
-            iasKeyStore = keyStore;
-        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
-            throw new AssertionError(e);
-        }
-    }
-
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var giftBadges = !isPrimaryDevice;
         return new AccountAttributes.Capabilities(false, true, true, true, true, giftBadges, false, false);
-    }
-
-    public static KeyStore getIasKeyStore() {
-        return iasKeyStore;
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(
@@ -70,15 +44,11 @@ public class ServiceConfig {
             case LIVE -> new ServiceEnvironmentConfig(serviceEnvironment,
                     LiveConfig.createDefaultServiceConfiguration(interceptors),
                     LiveConfig.getUnidentifiedSenderTrustRoot(),
-                    LiveConfig.createKeyBackupConfig(),
-                    LiveConfig.createFallbackKeyBackupConfigs(),
                     LiveConfig.getCdsiMrenclave(),
                     LiveConfig.getSvr2Mrenclave());
             case STAGING -> new ServiceEnvironmentConfig(serviceEnvironment,
                     StagingConfig.createDefaultServiceConfiguration(interceptors),
                     StagingConfig.getUnidentifiedSenderTrustRoot(),
-                    StagingConfig.createKeyBackupConfig(),
-                    StagingConfig.createFallbackKeyBackupConfigs(),
                     StagingConfig.getCdsiMrenclave(),
                     StagingConfig.getSvr2Mrenclave());
         };

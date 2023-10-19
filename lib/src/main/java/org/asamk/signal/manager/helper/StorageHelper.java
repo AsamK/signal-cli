@@ -257,8 +257,7 @@ public class StorageHelper {
         account.getConfigurationStore().setLinkPreviews(accountRecord.isLinkPreviewsEnabled());
         account.getConfigurationStore().setPhoneNumberSharingMode(switch (accountRecord.getPhoneNumberSharingMode()) {
             case EVERYBODY -> PhoneNumberSharingMode.EVERYBODY;
-            case NOBODY -> PhoneNumberSharingMode.NOBODY;
-            case CONTACTS_ONLY -> PhoneNumberSharingMode.CONTACTS;
+            case NOBODY, UNKNOWN -> PhoneNumberSharingMode.NOBODY;
         });
         account.getConfigurationStore().setPhoneNumberUnlisted(accountRecord.isPhoneNumberUnlisted());
         account.setUsername(accountRecord.getUsername());

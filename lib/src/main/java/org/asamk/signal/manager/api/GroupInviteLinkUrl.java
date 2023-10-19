@@ -1,11 +1,11 @@
 package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.groups.GroupLinkPassword;
+import org.signal.core.util.Base64;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.protos.groups.GroupInviteLink;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
-import org.whispersystems.util.Base64UrlSafe;
 
 import java.io.IOException;
 import java.net.URI;
@@ -49,7 +49,7 @@ public final class GroupInviteLinkUrl {
                 throw new InvalidGroupLinkException("No reference was in the uri");
             }
 
-            var bytes = Base64UrlSafe.decodePaddingAgnostic(encoding);
+            var bytes = Base64.decode(encoding);
             GroupInviteLink groupInviteLink = GroupInviteLink.ADAPTER.decode(bytes);
 
             if (groupInviteLink.v1Contents != null) {
@@ -95,7 +95,7 @@ public final class GroupInviteLinkUrl {
                 .inviteLinkPassword(ByteString.of(password.serialize()))
                 .build()).build();
 
-        var encoding = Base64UrlSafe.encodeBytesWithoutPadding(groupInviteLink.encode());
+        var encoding = Base64.encodeUrlSafeWithoutPadding(groupInviteLink.encode());
 
         return GROUP_URL_PREFIX + encoding;
     }

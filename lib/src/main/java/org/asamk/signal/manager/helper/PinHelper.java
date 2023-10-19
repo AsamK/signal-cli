@@ -3,39 +3,27 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.KeyBackupService;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
-import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV1;
 import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
 import org.whispersystems.signalservice.internal.push.AuthCredentials;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
-import java.util.Collection;
 
 public class PinHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(PinHelper.class);
 
-    private final SecureValueRecoveryV1 secureValueRecoveryV1;
     private final SecureValueRecoveryV2 secureValueRecoveryV2;
-    private final Collection<KeyBackupService> fallbackKeyBackupServices;
 
-    public PinHelper(
-            final SecureValueRecoveryV1 secureValueRecoveryV1,
-            final SecureValueRecoveryV2 secureValueRecoveryV2,
-            final Collection<KeyBackupService> fallbackKeyBackupServices
-    ) {
-        this.fallbackKeyBackupServices = fallbackKeyBackupServices;
-        this.secureValueRecoveryV1 = secureValueRecoveryV1;
+    public PinHelper(final SecureValueRecoveryV2 secureValueRecoveryV2) {
         this.secureValueRecoveryV2 = secureValueRecoveryV2;
     }
 
     public void setRegistrationLockPin(
             String pin, MasterKey masterKey
     ) throws IOException {
-        secureValueRecoveryV1.setPin(pin, masterKey).execute();
         final var backupResponse = secureValueRecoveryV2.setPin(pin, masterKey).execute();
         if (backupResponse instanceof SecureValueRecovery.BackupResponse.Success) {
         } else if (backupResponse instanceof SecureValueRecovery.BackupResponse.ServerRejected) {
@@ -55,19 +43,9 @@ public class PinHelper {
 
     public void migrateRegistrationLockPin(String pin, MasterKey masterKey) throws IOException {
         setRegistrationLockPin(pin, masterKey);
-
-        for (final var keyBackupService : fallbackKeyBackupServices) {
-            try {
-                final var pinChangeSession = keyBackupService.newPinChangeSession();
-                pinChangeSession.removePin();
-            } catch (Exception e) {
-                logger.warn("Failed to remove PIN from fallback KBS: {}", e.getMessage());
-            }
-        }
     }
 
     public void removeRegistrationLockPin() throws IOException {
-        secureValueRecoveryV1.deleteData();
         final var deleteResponse = secureValueRecoveryV2.deleteData();
         if (deleteResponse instanceof SecureValueRecovery.DeleteResponse.Success) {
         } else if (deleteResponse instanceof SecureValueRecovery.DeleteResponse.ServerRejected) {
@@ -86,14 +64,6 @@ public class PinHelper {
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
             String pin, LockedException e
     ) throws IOException, IncorrectPinException {
-        var svr1Credentials = e.getSvr1Credentials();
-        if (svr1Credentials != null) {
-            final var registrationLockData = getRegistrationLockData(secureValueRecoveryV1, svr1Credentials, pin);
-            if (registrationLockData != null) {
-                return registrationLockData;
-            }
-        }
-
         var svr2Credentials = e.getSvr2Credentials();
         if (svr2Credentials != null) {
             return getRegistrationLockData(secureValueRecoveryV2, svr2Credentials, pin);
