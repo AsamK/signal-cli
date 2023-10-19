@@ -2502,6 +2502,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.ProofRequiredResponse",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.ProvisioningMessage",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
