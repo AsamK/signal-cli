@@ -435,10 +435,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public void deleteRecipientData(RecipientId recipientId) {
         logger.debug("Deleting recipient data for {}", recipientId);
         synchronized (recipientsLock) {
-            recipientAddressCache.entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().id().equals(recipientId))
-                    .forEach(e -> recipientAddressCache.remove(e.getKey()));
+            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
             try (final var connection = database.getConnection()) {
                 connection.setAutoCommit(false);
                 storeContact(connection, recipientId, null);
@@ -708,10 +705,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                     recipientMergeHandler.mergeRecipients(connection, pair.first(), toBeMergedRecipientId);
                     deleteRecipient(connection, toBeMergedRecipientId);
                     synchronized (recipientsLock) {
-                        recipientAddressCache.entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().id().equals(toBeMergedRecipientId))
-                                .forEach(e -> recipientAddressCache.remove(e.getKey()));
+                        recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(toBeMergedRecipientId));
                     }
                 }
             } catch (SQLException e) {
@@ -807,10 +801,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     private void removeRecipientAddress(Connection connection, RecipientId recipientId) throws SQLException {
         synchronized (recipientsLock) {
-            recipientAddressCache.entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().id().equals(recipientId))
-                    .forEach(e -> recipientAddressCache.remove(e.getKey()));
+            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
             final var sql = (
                     """
                     UPDATE %s
@@ -829,10 +820,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             Connection connection, RecipientId recipientId, final RecipientAddress address
     ) throws SQLException {
         synchronized (recipientsLock) {
-            recipientAddressCache.entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().id().equals(recipientId))
-                    .forEach(e -> recipientAddressCache.remove(e.getKey()));
+            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
             final var sql = (
                     """
                     UPDATE %s
