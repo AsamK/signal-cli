@@ -79,6 +79,7 @@ public class KeyValueStore {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T readValueFromResultSet(
             final KeyValueEntry<T> key, final ResultSet resultSet
     ) throws SQLException {

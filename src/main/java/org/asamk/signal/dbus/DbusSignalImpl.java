@@ -552,6 +552,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public void setGroupBlocked(final byte[] groupId, final boolean blocked) {
         try {
             m.setGroupsBlocked(List.of(getGroupId(groupId)), blocked);
@@ -565,6 +566,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public List<byte[]> getGroupIds() {
         var groups = m.getGroups();
         return groups.stream().map(g -> g.groupId().serialize()).toList();
@@ -587,6 +589,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public String getGroupName(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
         if (group == null || group.title() == null) {
@@ -597,6 +600,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public List<String> getGroupMembers(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
         if (group == null) {
@@ -611,11 +615,16 @@ public class DbusSignalImpl implements Signal {
     public byte[] createGroup(
             final String name, final List<String> members, final String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber {
-        return updateGroup(new byte[0], name, members, avatar);
+        return updateGroupInternal(new byte[0], name, members, avatar);
     }
 
     @Override
+    @Deprecated
     public byte[] updateGroup(byte[] groupId, String name, List<String> members, String avatar) {
+        return updateGroupInternal(groupId, name, members, avatar);
+    }
+
+    public byte[] updateGroupInternal(byte[] groupId, String name, List<String> members, String avatar) {
         try {
             groupId = nullIfEmpty(groupId);
             name = nullIfEmpty(name);
@@ -650,6 +659,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public boolean isRegistered() {
         return true;
     }
@@ -770,6 +780,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public void quitGroup(final byte[] groupId) {
         var group = getGroupId(groupId);
         try {
@@ -809,6 +820,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public boolean isGroupBlocked(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
         if (group == null) {
@@ -819,6 +831,7 @@ public class DbusSignalImpl implements Signal {
     }
 
     @Override
+    @Deprecated
     public boolean isMember(final byte[] groupId) {
         var group = m.getGroup(getGroupId(groupId));
         if (group == null) {
