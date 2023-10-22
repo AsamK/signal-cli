@@ -190,7 +190,7 @@ run_main -a "$NUMBER_1" receive
 run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" block -g "$GROUP_ID"
 run_main -a "$NUMBER_1" unblock -g "$GROUP_ID"
-run_main -a "$NUMBER_1" submitRateLimitChallenge --challenge 8xxxxxx8-0xx2-4xx9-9xx2-4xxxxxxxxxx7 --captcha signal-hcaptcha
+run_main -a "$NUMBER_1" submitRateLimitChallenge --challenge 8xxxxxx8-0xx2-4xx9-9xx2-4xxxxxxxxxx7 --captcha signalcaptcha://signal-hcaptcha.5fa.registration.P.h.-K || true
 
 ## Basic send/receive
 for OUTPUT in "plain-text" "json"; do
