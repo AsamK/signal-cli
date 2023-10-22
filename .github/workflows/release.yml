@@ -17,6 +17,8 @@ env:
 jobs:
 
   ci_wf:
+    permissions:
+      contents: write
     uses: AsamK/signal-cli/.github/workflows/ci.yml@master
     # ${{ github.repository }} not accepted here
 
