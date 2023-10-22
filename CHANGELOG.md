@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.12.4] - 2023-10-22
+
+### Fixes
+- Prevent ConcurrentModificationException
+- Update captcha help text
+
 ## [0.12.3] - 2023-10-17
 
 ### Added
