@@ -90,8 +90,7 @@ public class SendMessageResultUtils {
                             failure.getOptions().contains(ProofRequiredException.Option.RECAPTCHA)
                                     ? """
                                       To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html
-                                      Check the developer tools (F12) console for a failed redirect to signalcaptcha://
-                                      Everything after signalcaptcha:// is the captcha token.
+                                      After solving the captcha, right-click on the "Open Signal" link and copy the link.
                                       Use the following command to submit the captcha token:
                                       signal-cli submitRateLimitChallenge --challenge CHALLENGE_TOKEN --captcha CAPTCHA_TOKEN"""
                                     : ""

@@ -105,8 +105,7 @@ public class CommandUtil {
             message = """
                       Captcha required for verification, use --captcha CAPTCHA
                       To get the token, go to https://signalcaptchas.org/registration/generate.html
-                      Check the developer tools (F12) console for a failed redirect to signalcaptcha://
-                      Everything after signalcaptcha:// is the captcha token.""";
+                      After solving the captcha, right-click on the "Open Signal" link and copy the link.""";
         } else {
             message = "Invalid captcha given.";
         }
