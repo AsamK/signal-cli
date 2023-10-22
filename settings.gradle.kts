@@ -17,7 +17,7 @@ dependencyResolutionManagement {
 
 
             library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_86")
-            library("sqlite", "org.xerial", "sqlite-jdbc").version("3.43.2.0")
+            library("sqlite", "org.xerial", "sqlite-jdbc").version("3.43.2.1")
             library("hikari", "com.zaxxer", "HikariCP").version("5.0.1")
             library("junit", "org.junit.jupiter", "junit-jupiter").version("5.10.0")
         }
