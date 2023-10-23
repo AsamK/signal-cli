@@ -50,7 +50,6 @@ jobs:
           version: 'latest'
           java-version: '17'
           cache: 'gradle'
-          components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build with Gradle
         run: ./gradlew --no-daemon nativeCompile
