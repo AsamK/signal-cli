@@ -50,7 +50,8 @@ public class Main {
         final var verboseLevel = nsLog == null ? 0 : nsLog.getInt("verbose");
         final var logFile = nsLog == null ? null : nsLog.<File>get("log-file");
         final var scrubLog = nsLog != null && nsLog.getBoolean("scrub-log");
-        configureLogging(verboseLevel, logFile, scrubLog);
+        final var outputType = nsLog == null ? OutputType.PLAIN_TEXT : nsLog.<OutputType>get("output");
+        configureLogging(verboseLevel, logFile, scrubLog, outputType);
 
         var parser = App.buildArgumentParser();
 
@@ -86,6 +87,7 @@ public class Main {
         parser.addArgument("-v", "--verbose").action(Arguments.count());
         parser.addArgument("--log-file").type(File.class);
         parser.addArgument("--scrub-log").action(Arguments.storeTrue());
+        parser.addArgument("-o", "--output").type(Arguments.enumStringType(OutputType.class));
 
         try {
             return parser.parseKnownArgs(args, null);
@@ -94,10 +96,11 @@ public class Main {
         }
     }
 
-    private static void configureLogging(final int verboseLevel, final File logFile, final boolean scrubLog) {
+    private static void configureLogging(final int verboseLevel, final File logFile, final boolean scrubLog, final OutputType outputType) {
         LogConfigurator.setVerboseLevel(verboseLevel);
         LogConfigurator.setLogFile(logFile);
         LogConfigurator.setScrubSensitiveInformation(scrubLog);
+        LogConfigurator.setOutputType(outputType == null ? OutputType.PLAIN_TEXT : outputType);
 
         if (verboseLevel > 0) {
             java.util.logging.Logger.getLogger("")

@@ -1,5 +1,7 @@
 package org.asamk.signal.logging;
 
+import org.asamk.signal.OutputType;
+
 import java.io.File;
 
 import ch.qos.logback.classic.Level;
@@ -21,6 +23,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     private static int verboseLevel = 0;
     private static File logFile = null;
     private static boolean scrubSensitiveInformation = false;
+    private static OutputType outputType = OutputType.PLAIN_TEXT;
 
     public static void setVerboseLevel(int verboseLevel) {
         LogConfigurator.verboseLevel = verboseLevel;
@@ -34,6 +37,10 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         LogConfigurator.scrubSensitiveInformation = scrubSensitiveInformation;
     }
 
+    public static void setOutputType(final OutputType outputType) {
+        LogConfigurator.outputType = outputType;
+    }
+
     @Override
     public ExecutionStatus configure(LoggerContext lc) {
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -45,7 +52,10 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
                 ? createSimpleLoggingLayout(lc)
                 : createDetailedLoggingLayout(lc);
         final var consoleAppender = createLoggingConsoleAppender(lc, createLayoutWrappingEncoder(consoleLayout));
-        rootLogger.addAppender(consoleAppender);
+
+        if(outputType == OutputType.PLAIN_TEXT) {
+            rootLogger.addAppender(consoleAppender);
+        }
 
         lc.getLogger("org.asamk").setLevel(verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO);
         lc.getLogger("com.zaxxer.hikari.pool.PoolBase")
@@ -53,7 +63,7 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         lc.getLogger("org.sqlite.core.NativeDB")
                 .setLevel(verboseLevel > 3 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
 
-        if (logFile != null) {
+        if (logFile != null && outputType != OutputType.PLAIN_TEXT) {
             consoleAppender.addFilter(new Filter<>() {
                 @Override
                 public FilterReply decide(final ILoggingEvent event) {
