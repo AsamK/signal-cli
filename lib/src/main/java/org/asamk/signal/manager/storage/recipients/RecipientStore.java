@@ -387,10 +387,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 WHERE r.number IS NOT NULL
                 """
         ).formatted(TABLE_RECIPIENT);
+        final var selfNumber = selfAddressProvider.getSelfAddress().number().orElse(null);
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
                 return Utils.executeQueryForStream(statement, resultSet -> resultSet.getString("number"))
                         .filter(Objects::nonNull)
+                        .filter(n -> !n.equals(selfNumber))
                         .filter(n -> {
                             try {
                                 Long.parseLong(n);
