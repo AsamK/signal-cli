@@ -169,6 +169,7 @@ public class SignalAccountFiles {
                     pniIdentityKey,
                     profileKey,
                     settings);
+            account.initDatabase();
 
             return new RegistrationManagerImpl(account,
                     pathConfig,
@@ -183,6 +184,7 @@ public class SignalAccountFiles {
             account.close();
             throw new IOException("Number in account file doesn't match expected number: " + account.getNumber());
         }
+        account.initDatabase();
 
         return new RegistrationManagerImpl(account,
                 pathConfig,
