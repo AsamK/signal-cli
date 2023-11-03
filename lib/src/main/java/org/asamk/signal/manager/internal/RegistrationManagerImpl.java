@@ -129,6 +129,10 @@ public class RegistrationManagerImpl implements RegistrationManager {
     public void verifyAccount(
             String verificationCode, String pin
     ) throws IOException, PinLockedException, IncorrectPinException {
+        if (account.isRegistered()) {
+            throw new IOException("Account is already registered");
+        }
+
         if (account.getPniIdentityKeyPair() == null) {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
