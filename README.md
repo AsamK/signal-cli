@@ -128,8 +128,7 @@ It is possible to build a native binary with [GraalVM](https://www.graalvm.org).
 work in all situations.
 
 1. [Install GraalVM and setup the enviroment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
-2. [Install prerequisites](https://www.graalvm.org/reference-manual/native-image/#prerequisites)
-3. Execute Gradle:
+2. Execute Gradle:
 
        ./gradlew nativeCompile
 
