@@ -115,7 +115,7 @@ public class Main {
             case IOErrorException ioErrorException -> 3;
             case UntrustedKeyErrorException untrustedKeyErrorException -> 4;
             case RateLimitErrorException rateLimitErrorException -> 5;
-            case null, default -> 2;
+            case null -> 2;
         };
     }
 }

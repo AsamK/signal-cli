@@ -14,6 +14,8 @@ import org.asamk.signal.commands.JsonRpcRegistrationCommand;
 import org.asamk.signal.commands.JsonRpcSingleCommand;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.RateLimitErrorException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UntrustedKeyErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
@@ -35,6 +37,7 @@ public class SignalJsonRpcCommandHandler {
     private static final int USER_ERROR = -1;
     private static final int IO_ERROR = -3;
     private static final int UNTRUSTED_KEY_ERROR = -4;
+    private static final int RATELIMIT_ERROR = -5;
 
     private final Manager m;
     private final MultiAccountManager c;
@@ -211,18 +214,26 @@ public class SignalJsonRpcCommandHandler {
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_REQUEST,
                     e.getMessage(),
                     null));
-        } catch (UserErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(USER_ERROR,
-                    e.getMessage(),
-                    getErrorDataNode(objectMapper, result)));
-        } catch (IOErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(IO_ERROR,
-                    e.getMessage(),
-                    getErrorDataNode(objectMapper, result)));
-        } catch (UntrustedKeyErrorException e) {
-            throw new JsonRpcException(new JsonRpcResponse.Error(UNTRUSTED_KEY_ERROR,
-                    e.getMessage(),
-                    getErrorDataNode(objectMapper, result)));
+        } catch (CommandException ce) {
+            switch (ce) {
+                case UserErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(USER_ERROR,
+                        e.getMessage(),
+                        getErrorDataNode(objectMapper, result)));
+                case IOErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(IO_ERROR,
+                        e.getMessage(),
+                        getErrorDataNode(objectMapper, result)));
+                case UntrustedKeyErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(
+                        UNTRUSTED_KEY_ERROR,
+                        e.getMessage(),
+                        getErrorDataNode(objectMapper, result)));
+                case RateLimitErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(RATELIMIT_ERROR,
+                        e.getMessage(),
+                        getErrorDataNode(objectMapper, result)));
+                case UnexpectedErrorException e ->
+                        throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
+                                e.getMessage(),
+                                getErrorDataNode(objectMapper, result)));
+            }
         } catch (Throwable e) {
             logger.error("Command execution failed", e);
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
