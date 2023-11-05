@@ -57,33 +57,28 @@ public class IdentityHelper {
     }
 
     public String computeSafetyNumber(ServiceId serviceId, IdentityKey theirIdentityKey) {
-        final var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, false);
+        final var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getDisplayableFingerprint().getDisplayText();
     }
 
     public ScannableFingerprint computeSafetyNumberForScanning(ServiceId serviceId, IdentityKey theirIdentityKey) {
-        var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, false);
-        if (fingerprint == null) {
-            fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey, true);
-        }
+        var fingerprint = computeSafetyNumberFingerprint(serviceId, theirIdentityKey);
         return fingerprint == null ? null : fingerprint.getScannableFingerprint();
     }
 
     private Fingerprint computeSafetyNumberFingerprint(
-            final ServiceId serviceId, final IdentityKey theirIdentityKey, boolean useServiceId
+            final ServiceId serviceId, final IdentityKey theirIdentityKey
     ) {
-        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
-        final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
-
-        if (useServiceId) {
-            if (serviceId.isUnknown()) {
-                return null;
-            }
+        if (!serviceId.isUnknown()) {
             return Utils.computeSafetyNumberForUuid(account.getAci(),
                     account.getAciIdentityKeyPair().getPublicKey(),
                     serviceId,
                     theirIdentityKey);
         }
+
+        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
+        final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
+
         if (address.number().isEmpty()) {
             return null;
         }
