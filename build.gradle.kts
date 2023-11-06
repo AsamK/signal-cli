@@ -24,6 +24,7 @@ application {
 graalvmNative {
     binaries {
         this["main"].run {
+            buildArgs.add("--install-exit-handlers")
             resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
             if (System.getenv("GRAALVM_HOME") == null) {
