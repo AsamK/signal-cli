@@ -1,5 +1,7 @@
 package org.asamk.signal.util;
 
+import net.sourceforge.argparse4j.inf.Namespace;
+
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
@@ -7,6 +9,7 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupIdFormatException;
 import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 
 import java.util.Collection;
@@ -121,5 +124,13 @@ public class CommandUtil {
             message += "\nNext attempt may be tried at " + DateUtils.formatTimestamp(e.getNextAttemptTimestamp());
         }
         return message;
+    }
+
+    public static ReceiveConfig getReceiveConfig(final Namespace ns) {
+        final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
+        final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
+        final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
+
+        return new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts);
     }
 }

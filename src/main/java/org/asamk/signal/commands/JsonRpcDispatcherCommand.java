@@ -9,7 +9,6 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.jsonrpc.SignalJsonRpcDispatcherHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
-import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.IOUtils;
@@ -19,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
 
 public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand {
 
@@ -85,13 +86,6 @@ public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand
                 lineSupplier,
                 receiveMode == ReceiveMode.MANUAL);
         handler.handleConnection(c);
-    }
-
-    private static ReceiveConfig getReceiveConfig(final Namespace ns) {
-        final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
-        final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
-        final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
-        return new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts);
     }
 
     private static Supplier<String> getLineSupplier() {
