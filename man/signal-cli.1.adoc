@@ -288,7 +288,7 @@ e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 Style parts of the message text (syntax: start:length:STYLE).
 Where STYLE is one of: BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE
 
-e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"`
+e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"` or for a mixed text style `-m "Something BIG!" --text-style "0:9:ITALIC" "10:3:BOLD"`
 
 *--quote-timestamp*::
 Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.
