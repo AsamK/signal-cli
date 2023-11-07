@@ -29,7 +29,8 @@ dependencies {
     implementation(libs.sqlite)
     implementation(libs.hikari)
 
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
 }
 
 tasks.named<Test>("test") {
