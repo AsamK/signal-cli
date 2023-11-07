@@ -30,7 +30,7 @@ public class DbusReceiveMessageHandler implements Manager.ReceiveMessageHandler 
         try {
             sendDbusMessages(envelope);
         } catch (DBusException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

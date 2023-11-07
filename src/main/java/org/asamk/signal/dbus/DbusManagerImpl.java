@@ -948,7 +948,7 @@ public class DbusManagerImpl implements Manager {
             };
             connection.addSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
         } catch (DBusException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         signal.subscribeReceive();
     }
@@ -968,7 +968,7 @@ public class DbusManagerImpl implements Manager {
             connection.removeSigHandler(Signal.ReceiptReceivedV2.class, signal, this.dbusRcptHandler);
             connection.removeSigHandler(Signal.SyncMessageReceivedV2.class, signal, this.dbusSyncHandler);
         } catch (DBusException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

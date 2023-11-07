@@ -62,11 +62,11 @@ public class Main {
         } catch (CommandException e) {
             System.err.println(e.getMessage());
             if (verboseLevel > 0 && e.getCause() != null) {
-                e.getCause().printStackTrace();
+                e.getCause().printStackTrace(System.err);
             }
             status = getStatusForError(e);
         } catch (Throwable e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             status = 2;
         }
         System.exit(status);
