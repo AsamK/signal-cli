@@ -6,6 +6,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
+import ch.qos.logback.classic.jul.LevelChangePropagator;
 import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
@@ -36,6 +37,9 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
 
     @Override
     public ExecutionStatus configure(LoggerContext lc) {
+        lc.addListener(new LevelChangePropagator() {{
+            setContext(lc);
+        }});
         final var rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME);
 
         final var defaultLevel = verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.INFO : Level.WARN;
