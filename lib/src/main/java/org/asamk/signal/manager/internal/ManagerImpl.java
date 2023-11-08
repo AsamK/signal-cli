@@ -1316,6 +1316,7 @@ public class ManagerImpl implements Manager {
         executor.shutdown();
 
         dependencies.getSignalWebSocket().disconnect();
+        dependencies.getPushServiceSocket().close();
         disposable.dispose();
 
         if (account != null) {
