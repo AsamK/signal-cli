@@ -140,7 +140,9 @@ public record MessageEnvelope(
                     dataMessage.isProfileKeyUpdate(),
                     dataMessage.getProfileKey().isPresent(),
                     dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
-                    dataMessage.getQuote().map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
+                    dataMessage.getQuote()
+                            .filter(q -> q.getAuthor() != null && q.getAuthor().isValid())
+                            .map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
                     dataMessage.getPayment().map(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null),
                     dataMessage.getAttachments()
                             .map(a -> a.stream().map(as -> Attachment.from(as, fileProvider)).toList())
