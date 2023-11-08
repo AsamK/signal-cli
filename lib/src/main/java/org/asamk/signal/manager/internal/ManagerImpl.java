@@ -1310,6 +1310,7 @@ public class ManagerImpl implements Manager {
         executor.close();
 
         dependencies.getSignalWebSocket().disconnect();
+        dependencies.getPushServiceSocket().close();
         disposable.dispose();
 
         if (account != null) {

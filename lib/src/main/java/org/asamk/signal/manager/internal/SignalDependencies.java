@@ -20,6 +20,7 @@ import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
+import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
 import java.util.Optional;
@@ -44,6 +45,7 @@ public class SignalDependencies {
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
 
+    private PushServiceSocket pushServiceSocket;
     private SignalWebSocket signalWebSocket;
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
@@ -69,6 +71,10 @@ public class SignalDependencies {
     }
 
     public void resetAfterAddressChange() {
+        if (this.pushServiceSocket != null) {
+            this.pushServiceSocket.close();
+            this.pushServiceSocket = null;
+        }
         this.messageSender = null;
         this.cipher = null;
         getSignalWebSocket().forceNewWebSockets();
@@ -89,13 +95,22 @@ public class SignalDependencies {
         return sessionLock;
     }
 
-    public SignalServiceAccountManager getAccountManager() {
-        return getOrCreate(() -> accountManager,
-                () -> accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
+    public PushServiceSocket getPushServiceSocket() {
+        return getOrCreate(() -> pushServiceSocket,
+                () -> pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
                         credentialsProvider,
                         userAgent,
-                        getGroupsV2Operations(),
+                        getClientZkProfileOperations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+    }
+
+    public SignalServiceAccountManager getAccountManager() {
+        return getOrCreate(() -> accountManager,
+                () -> accountManager = new SignalServiceAccountManager(getPushServiceSocket(),
+                        null,
+                        serviceEnvironmentConfig.signalServiceConfiguration(),
+                        credentialsProvider,
+                        getGroupsV2Operations()));
     }
 
     public SignalServiceAccountManager createUnauthenticatedAccountManager(String number, String password) {
@@ -162,26 +177,19 @@ public class SignalDependencies {
 
     public SignalServiceMessageReceiver getMessageReceiver() {
         return getOrCreate(() -> messageReceiver,
-                () -> messageReceiver = new SignalServiceMessageReceiver(serviceEnvironmentConfig.signalServiceConfiguration(),
-                        credentialsProvider,
-                        userAgent,
-                        getClientZkProfileOperations(),
-                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+                () -> messageReceiver = new SignalServiceMessageReceiver(pushServiceSocket));
     }
 
     public SignalServiceMessageSender getMessageSender() {
         return getOrCreate(() -> messageSender,
-                () -> messageSender = new SignalServiceMessageSender(serviceEnvironmentConfig.signalServiceConfiguration(),
-                        credentialsProvider,
+                () -> messageSender = new SignalServiceMessageSender(credentialsProvider,
                         dataStore,
                         sessionLock,
-                        userAgent,
                         getSignalWebSocket(),
                         Optional.empty(),
-                        getClientZkProfileOperations(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
-                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+                        pushServiceSocket));
     }
 
     public SecureValueRecoveryV2 getSecureValueRecoveryV2() {
