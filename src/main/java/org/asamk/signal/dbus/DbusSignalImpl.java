@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.asamk.signal.dbus.DbusUtils.makeValidObjectPathElement;
 
-public class DbusSignalImpl implements Signal {
+public class DbusSignalImpl implements Signal, AutoCloseable {
 
     private final Manager m;
     private final DBusConnection connection;
@@ -108,6 +108,7 @@ public class DbusSignalImpl implements Signal {
         updateIdentities();
     }
 
+    @Override
     public void close() {
         if (dbusMessageHandler != null) {
             m.removeReceiveHandler(dbusMessageHandler);

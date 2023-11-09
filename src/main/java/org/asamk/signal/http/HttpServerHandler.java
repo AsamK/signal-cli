@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class HttpServerHandler {
+public class HttpServerHandler implements AutoCloseable {
 
     private final static Logger logger = LoggerFactory.getLogger(HttpServerHandler.class);
 
@@ -35,6 +35,8 @@ public class HttpServerHandler {
     private final SignalJsonRpcCommandHandler commandHandler;
     private final MultiAccountManager c;
     private final Manager m;
+    private HttpServer server;
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     public HttpServerHandler(final InetSocketAddress address, final Manager m) {
         this.address = address;
@@ -51,9 +53,12 @@ public class HttpServerHandler {
     }
 
     public void init() throws IOException {
+        if (server != null) {
+            throw new AssertionError("HttpServerHandler already initialized");
+        }
         logger.info("Starting server on " + address.toString());
 
-        final var server = HttpServer.create(address, 0);
+        server = HttpServer.create(address, 0);
         server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/api/v1/rpc", this::handleRpcEndpoint);
@@ -153,7 +158,7 @@ public class HttpServerHandler {
             final var handlers = subscribeReceiveHandlers(managers, sender, () -> {
                 shouldStop.set(true);
                 synchronized (this) {
-                    this.notify();
+                    this.notifyAll();
                 }
             });
 
@@ -162,7 +167,7 @@ public class HttpServerHandler {
                     synchronized (this) {
                         wait(15_000);
                     }
-                    if (shouldStop.get()) {
+                    if (shouldStop.get() || shutdown.get()) {
                         break;
                     }
 
@@ -239,6 +244,20 @@ public class HttpServerHandler {
         final var m = pair.first();
         final var handler = pair.second();
         m.removeReceiveHandler(handler);
+    }
+
+    @Override
+    public void close() {
+        if (server != null) {
+            shutdown.set(true);
+            synchronized (this) {
+                this.notifyAll();
+            }
+            // Increase this delay when https://bugs.openjdk.org/browse/JDK-8304065 is fixed
+            server.stop(2);
+            server = null;
+            shutdown.set(false);
+        }
     }
 
     private interface Callable {
