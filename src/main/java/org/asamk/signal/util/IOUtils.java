@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
@@ -93,6 +94,9 @@ public class IOUtils {
         return () -> {
             try {
                 return bufferedReader.readLine();
+            } catch (ClosedChannelException ignored) {
+                logger.trace("Line supplier has been interrupted.");
+                return null;
             } catch (IOException e) {
                 logger.error("Error occurred while reading line", e);
                 return null;
