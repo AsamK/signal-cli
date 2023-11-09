@@ -373,7 +373,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 connection.exportObject(signalControl);
 
                 c.addOnManagerAddedHandler(m -> {
-                    final var thread = exportMultiAccountManager(connection, m);
+                    final var thread = exportManager(connection, m);
                     try {
                         thread.join();
                     } catch (InterruptedException ignored) {
@@ -390,10 +390,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                     }
                 });
 
-                final var initThreads = c.getManagers()
-                        .stream()
-                        .map(m -> exportMultiAccountManager(connection, m))
-                        .toList();
+                final var initThreads = c.getManagers().stream().map(m -> exportManager(connection, m)).toList();
 
                 for (var t : initThreads) {
                     try {
@@ -414,7 +411,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
             }
         }
 
-        private Thread exportMultiAccountManager(
+        private Thread exportManager(
                 final DBusConnection conn, final Manager m
         ) {
             final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
