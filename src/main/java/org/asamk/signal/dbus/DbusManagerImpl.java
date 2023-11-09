@@ -3,6 +3,7 @@ package org.asamk.signal.dbus;
 import org.asamk.Signal;
 import org.asamk.signal.DbusConfig;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
@@ -548,10 +549,17 @@ public class DbusManagerImpl implements Manager {
         }
     }
 
+    private Thread receiveThread;
+
     @Override
     public void receiveMessages(
             Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
-    ) throws IOException {
+    ) throws IOException, AlreadyReceivingException {
+        if (receiveThread != null) {
+            throw new AlreadyReceivingException("Already receiving message.");
+        }
+        receiveThread = Thread.currentThread();
+
         final var remainingMessages = new AtomicInteger(maxMessages.orElse(-1));
         final var lastMessage = new AtomicLong(System.currentTimeMillis());
         final var thread = Thread.currentThread();
@@ -577,6 +585,7 @@ public class DbusManagerImpl implements Manager {
                     }
                     Thread.sleep(sleepTimeRemaining);
                 } catch (InterruptedException ignored) {
+                    break;
                 }
             }
         } else {
@@ -589,6 +598,14 @@ public class DbusManagerImpl implements Manager {
         }
 
         removeReceiveHandler(receiveHandler);
+        receiveThread = null;
+    }
+
+    @Override
+    public void stopReceiveMessages() {
+        if (receiveThread != null) {
+            receiveThread.interrupt();
+        }
     }
 
     @Override

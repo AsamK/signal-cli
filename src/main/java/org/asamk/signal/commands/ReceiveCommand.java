@@ -8,6 +8,7 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.OutputType;
 import org.asamk.signal.ReceiveMessageHandler;
+import org.asamk.signal.Shutdown;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -67,6 +68,7 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        Shutdown.installHandler();
         final var timeout = ns.getDouble("timeout");
         final var maxMessagesRaw = ns.getInt("max-messages");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
@@ -80,6 +82,7 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
             };
             final var duration = timeout < 0 ? null : Duration.ofMillis((long) (timeout * 1000));
             final var maxMessages = maxMessagesRaw < 0 ? null : maxMessagesRaw;
+            Shutdown.registerShutdownListener(m::stopReceiveMessages);
             m.receiveMessages(Optional.ofNullable(duration), Optional.ofNullable(maxMessages), handler);
         } catch (IOException e) {
             throw new IOErrorException("Error while receiving messages: " + e.getMessage(), e);

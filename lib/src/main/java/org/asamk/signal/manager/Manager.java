@@ -255,6 +255,8 @@ public interface Manager extends Closeable {
             Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException;
 
+    void stopReceiveMessages();
+
     void setReceiveConfig(ReceiveConfig receiveConfig);
 
     boolean isContactBlocked(RecipientIdentifier.Single recipient);

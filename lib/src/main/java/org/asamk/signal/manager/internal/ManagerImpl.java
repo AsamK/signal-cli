@@ -1091,6 +1091,20 @@ public class ManagerImpl implements Manager {
         receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
     }
 
+    @Override
+    public void stopReceiveMessages() {
+        Thread thread = null;
+        synchronized (messageHandlers) {
+            if (isReceivingSynchronous) {
+                thread = receiveThread;
+                receiveThread = null;
+            }
+        }
+        if (thread != null) {
+            stopReceiveThread(thread);
+        }
+    }
+
     private void receiveMessages(
             Duration timeout, boolean returnOnTimeout, Integer maxMessages, ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
