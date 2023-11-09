@@ -45,23 +45,18 @@ public class Main {
         installSecurityProviderWorkaround();
 
         // Configuring the logger needs to happen before any logger is initialized
+        final var loggingConfig = parseLoggingConfig(args);
+        configureLogging(loggingConfig);
 
-        final var nsLog = parseArgs(args);
-        final var verboseLevel = nsLog == null ? 0 : nsLog.getInt("verbose");
-        final var logFile = nsLog == null ? null : nsLog.<File>get("log-file");
-        final var scrubLog = nsLog != null && nsLog.getBoolean("scrub-log");
-        configureLogging(verboseLevel, logFile, scrubLog);
-
-        var parser = App.buildArgumentParser();
-
-        var ns = parser.parseArgsOrFail(args);
+        final var parser = App.buildArgumentParser();
+        final var ns = parser.parseArgsOrFail(args);
 
         int status = 0;
         try {
             new App(ns).init();
         } catch (CommandException e) {
             System.err.println(e.getMessage());
-            if (verboseLevel > 0 && e.getCause() != null) {
+            if (loggingConfig.verboseLevel > 0 && e.getCause() != null) {
                 e.getCause().printStackTrace(System.err);
             }
             status = getStatusForError(e);
@@ -78,6 +73,21 @@ public class Main {
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    private static LoggingConfig parseLoggingConfig(final String[] args) {
+        final var nsLog = parseArgs(args);
+        if (nsLog == null) {
+            return new LoggingConfig(0, null, false);
+        }
+
+        final var verboseLevel = nsLog.getInt("verbose");
+        final var logFile = nsLog.<File>get("log-file");
+        final var scrubLog = nsLog.getBoolean("scrub-log");
+        return new LoggingConfig(verboseLevel, logFile, scrubLog);
+    }
+
+    /**
+     * This method only parses commandline args relevant for logging configuration.
+     */
     private static Namespace parseArgs(String[] args) {
         var parser = ArgumentParsers.newFor("signal-cli", DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS)
                 .includeArgumentNamesAsKeysInResult(true)
@@ -94,14 +104,16 @@ public class Main {
         }
     }
 
-    private static void configureLogging(final int verboseLevel, final File logFile, final boolean scrubLog) {
-        LogConfigurator.setVerboseLevel(verboseLevel);
-        LogConfigurator.setLogFile(logFile);
-        LogConfigurator.setScrubSensitiveInformation(scrubLog);
+    private static void configureLogging(final LoggingConfig loggingConfig) {
+        LogConfigurator.setVerboseLevel(loggingConfig.verboseLevel);
+        LogConfigurator.setLogFile(loggingConfig.logFile);
+        LogConfigurator.setScrubSensitiveInformation(loggingConfig.scrubLog);
 
-        if (verboseLevel > 0) {
+        if (loggingConfig.verboseLevel > 0) {
             java.util.logging.Logger.getLogger("")
-                    .setLevel(verboseLevel > 2 ? java.util.logging.Level.FINEST : java.util.logging.Level.INFO);
+                    .setLevel(loggingConfig.verboseLevel > 2
+                            ? java.util.logging.Level.FINEST
+                            : java.util.logging.Level.INFO);
             ManagerLogger.initLogger();
         }
         SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -118,4 +130,6 @@ public class Main {
             case null -> 2;
         };
     }
+
+    private record LoggingConfig(int verboseLevel, File logFile, boolean scrubLog) {}
 }
