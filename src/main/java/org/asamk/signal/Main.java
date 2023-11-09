@@ -64,6 +64,7 @@ public class Main {
             e.printStackTrace(System.err);
             status = 2;
         }
+        Shutdown.shutdownComplete();
         System.exit(status);
     }
 
