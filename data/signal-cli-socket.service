@@ -32,8 +32,6 @@ RestrictAddressFamilies=AF_INET AF_INET6
 RestrictNamespaces=true
 RestrictRealtime=true
 RestrictSUIDSGID=true
-# JVM always exits with 143 in reaction to SIGTERM signal
-SuccessExitStatus=143
 StandardInput=socket
 StandardOutput=journal
 StandardError=journal
