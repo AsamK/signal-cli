@@ -201,22 +201,22 @@ public class HttpServerHandler {
     }
 
     private List<Manager> getManagerFromQuery(final Map<String, String> query) {
-        List<Manager> managers;
         if (m != null) {
-            managers = List.of(m);
-        } else {
+            return List.of(m);
+        }
+        if (c != null) {
             final var account = query.get("account");
             if (account == null || account.isEmpty()) {
-                managers = c.getManagers();
+                return c.getManagers();
             } else {
                 final var manager = c.getManager(account);
                 if (manager == null) {
                     return null;
                 }
-                managers = List.of(manager);
+                return List.of(manager);
             }
         }
-        return managers;
+        return List.of();
     }
 
     private List<Pair<Manager, Manager.ReceiveMessageHandler>> subscribeReceiveHandlers(
