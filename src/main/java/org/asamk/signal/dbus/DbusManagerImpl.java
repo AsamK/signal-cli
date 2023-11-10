@@ -50,6 +50,7 @@ import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.interfaces.DBusSigHandler;
 import org.freedesktop.dbus.types.Variant;
@@ -342,8 +343,13 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public Pair<GroupId, SendGroupMessageResults> joinGroup(final GroupInviteLinkUrl inviteLinkUrl) throws IOException, InactiveGroupLinkException {
-        final var newGroupId = signal.joinGroup(inviteLinkUrl.getUrl());
-        return new Pair<>(GroupId.unknownVersion(newGroupId), new SendGroupMessageResults(0, List.of()));
+        try {
+            final var newGroupId = signal.joinGroup(inviteLinkUrl.getUrl());
+            return new Pair<>(GroupId.unknownVersion(newGroupId), new SendGroupMessageResults(0, List.of()));
+        } catch (DBusExecutionException e) {
+            throw new IOException("Failed to join group: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")",
+                    e);
+        }
     }
 
     @Override

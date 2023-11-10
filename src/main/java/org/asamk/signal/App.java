@@ -16,7 +16,6 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
-import org.asamk.signal.dbus.DbusCommandHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.Settings;
@@ -29,11 +28,6 @@ import org.asamk.signal.output.JsonWriterImpl;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriterImpl;
 import org.asamk.signal.util.IOUtils;
-import org.freedesktop.dbus.connections.impl.DBusConnection;
-import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
-import org.freedesktop.dbus.errors.ServiceUnknown;
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +38,7 @@ import java.io.OutputStreamWriter;
 import java.util.Set;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
+import static org.asamk.signal.dbus.DbusCommandHandler.initDbusClient;
 
 public class App {
 
@@ -328,24 +323,6 @@ public class App {
                     + " ("
                     + e.getClass().getSimpleName()
                     + ")", e);
-        }
-    }
-
-    private void initDbusClient(
-            final Command command, final String account, final boolean systemBus, final CommandHandler commandHandler
-    ) throws CommandException {
-        try {
-            final var busType = systemBus ? DBusConnection.DBusBusType.SYSTEM : DBusConnection.DBusBusType.SESSION;
-            try (var dBusConn = DBusConnectionBuilder.forType(busType).build()) {
-                DbusCommandHandler.handleCommand(command, account, dBusConn, commandHandler);
-            }
-        } catch (ServiceUnknown e) {
-            throw new UserErrorException("signal-cli DBus daemon not running on "
-                    + (systemBus ? "system" : "session")
-                    + " bus: "
-                    + e.getMessage(), e);
-        } catch (DBusExecutionException | DBusException | IOException e) {
-            throw new UnexpectedErrorException("Dbus client failed: " + e.getMessage(), e);
         }
     }
 

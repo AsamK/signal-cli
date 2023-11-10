@@ -13,11 +13,33 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
+import org.freedesktop.dbus.errors.ServiceUnknown;
 import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
+import java.io.IOException;
+
 public class DbusCommandHandler {
+
+    public static void initDbusClient(
+            final Command command, final String account, final boolean systemBus, final CommandHandler commandHandler
+    ) throws CommandException {
+        try {
+            final var busType = systemBus ? DBusConnection.DBusBusType.SYSTEM : DBusConnection.DBusBusType.SESSION;
+            try (var dBusConn = DBusConnectionBuilder.forType(busType).build()) {
+                handleCommand(command, account, dBusConn, commandHandler);
+            }
+        } catch (ServiceUnknown e) {
+            throw new UserErrorException("signal-cli DBus daemon not running on "
+                    + (systemBus ? "system" : "session")
+                    + " bus: "
+                    + e.getMessage(), e);
+        } catch (DBusExecutionException | DBusException | IOException e) {
+            throw new UnexpectedErrorException("Dbus client failed: " + e.getMessage(), e);
+        }
+    }
 
     public static void handleCommand(
             final Command command,

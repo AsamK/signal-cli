@@ -5,7 +5,6 @@ import net.sourceforge.argparse4j.inf.Subparser;
 
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
-import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -15,7 +14,6 @@ import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
 import org.asamk.signal.util.SendMessageResultUtils;
-import org.freedesktop.dbus.exceptions.DBusExecutionException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -93,9 +91,6 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
                     + " ("
                     + e.getClass().getSimpleName()
                     + ")", e);
-        } catch (DBusExecutionException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
         } catch (InactiveGroupLinkException e) {
             throw new UserErrorException("Group link is not valid: " + e.getMessage());
         } catch (PendingAdminApprovalException e) {
