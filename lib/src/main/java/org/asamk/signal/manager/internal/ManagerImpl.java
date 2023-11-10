@@ -126,7 +126,7 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class ManagerImpl implements Manager {
 
-    private final static Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ManagerImpl.class);
 
     private SignalAccount account;
     private final SignalDependencies dependencies;

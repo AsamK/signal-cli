@@ -32,7 +32,7 @@ import java.util.stream.StreamSupport;
 
 public class Utils {
 
-    private final static Logger logger = LoggerFactory.getLogger(Utils.class);
+    private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     public static Pair<StreamDetails, Optional<String>> createStreamDetailsFromDataURI(final String dataURI) {
         final DataURI uri = DataURI.of(dataURI);

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class LibSignalLogger implements SignalProtocolLogger {
 
-    private final static Logger logger = LoggerFactory.getLogger("LibSignal");
+    private static final Logger logger = LoggerFactory.getLogger("LibSignal");
 
     public static void initLogger() {
         SignalProtocolLoggerProvider.setProvider(new LibSignalLogger());

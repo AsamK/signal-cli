@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 public class LegacyIdentityKeyStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacyIdentityKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyIdentityKeyStore.class);
     private static final ObjectMapper objectMapper = org.asamk.signal.manager.storage.Utils.createStorageObjectMapper();
 
     public static void migrate(

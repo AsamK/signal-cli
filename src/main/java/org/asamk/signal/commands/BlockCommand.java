@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class BlockCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(BlockCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(BlockCommand.class);
 
     @Override
     public String getName() {

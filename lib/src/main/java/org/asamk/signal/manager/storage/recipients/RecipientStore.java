@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 public class RecipientStore implements RecipientIdCreator, RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(RecipientStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecipientStore.class);
     private static final String TABLE_RECIPIENT = "recipient";
     private static final String SQL_IS_CONTACT = "r.given_name IS NOT NULL OR r.family_name IS NOT NULL OR r.expiration_time > 0 OR r.profile_sharing = TRUE OR r.color IS NOT NULL OR r.blocked = TRUE OR r.archived = TRUE";
 

@@ -20,7 +20,7 @@ import java.util.Collection;
 public class PreKeyStore implements SignalServicePreKeyStore {
 
     private static final String TABLE_PRE_KEY = "pre_key";
-    private final static Logger logger = LoggerFactory.getLogger(PreKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(PreKeyStore.class);
 
     private final Database database;
     private final int accountIdType;

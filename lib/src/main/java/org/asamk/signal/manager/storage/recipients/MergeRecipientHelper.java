@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class MergeRecipientHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(MergeRecipientHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(MergeRecipientHelper.class);
 
     static Pair<RecipientId, List<RecipientId>> resolveRecipientTrustedLocked(
             Store store, RecipientAddress address

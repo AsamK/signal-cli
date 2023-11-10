@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 public class SignalJsonRpcDispatcherHandler {
 
-    private final static Logger logger = LoggerFactory.getLogger(SignalJsonRpcDispatcherHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignalJsonRpcDispatcherHandler.class);
 
     private final ObjectMapper objectMapper;
     private final JsonRpcSender jsonRpcSender;

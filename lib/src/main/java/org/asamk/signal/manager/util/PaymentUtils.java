@@ -12,7 +12,7 @@ import okio.ByteString;
 
 public class PaymentUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(PaymentUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(PaymentUtils.class);
 
     private PaymentUtils() {
     }

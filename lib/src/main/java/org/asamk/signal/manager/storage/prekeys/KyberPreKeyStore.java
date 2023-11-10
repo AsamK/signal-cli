@@ -20,7 +20,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_ARCHIVE_AGE;
 public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
 
     private static final String TABLE_KYBER_PRE_KEY = "kyber_pre_key";
-    private final static Logger logger = LoggerFactory.getLogger(KyberPreKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(KyberPreKeyStore.class);
 
     private final Database database;
     private final int accountIdType;

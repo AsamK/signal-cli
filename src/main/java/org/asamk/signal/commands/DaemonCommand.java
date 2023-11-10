@@ -50,7 +50,7 @@ import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
 
 public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(DaemonCommand.class);
 
     @Override
     public String getName() {

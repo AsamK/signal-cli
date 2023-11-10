@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 
 public class AddDeviceCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(AddDeviceCommand.class);
 
     @Override
     public String getName() {

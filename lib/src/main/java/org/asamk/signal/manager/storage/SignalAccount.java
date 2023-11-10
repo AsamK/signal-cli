@@ -109,7 +109,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
 
 public class SignalAccount implements Closeable {
 
-    private final static Logger logger = LoggerFactory.getLogger(SignalAccount.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
     private static final int CURRENT_STORAGE_VERSION = 8;

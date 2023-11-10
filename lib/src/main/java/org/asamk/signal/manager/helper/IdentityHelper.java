@@ -19,7 +19,7 @@ import java.util.function.BiFunction;
 
 public class IdentityHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(IdentityHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(IdentityHelper.class);
 
     private final SignalAccount account;
     private final Context context;

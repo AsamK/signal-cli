@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 public class LegacyJsonIdentityKeyStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacyJsonIdentityKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyJsonIdentityKeyStore.class);
 
     private final List<LegacyIdentityInfo> identities;
     private final IdentityKeyPair identityKeyPair;

@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 public class GroupStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(GroupStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(GroupStore.class);
     private static final String TABLE_GROUP_V2 = "group_v2";
     private static final String TABLE_GROUP_V1 = "group_v1";
     private static final String TABLE_GROUP_V1_MEMBER = "group_v1_member";

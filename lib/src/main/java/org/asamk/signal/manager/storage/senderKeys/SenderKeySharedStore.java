@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 
 public class SenderKeySharedStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(SenderKeySharedStore.class);
-    private final static String TABLE_SENDER_KEY_SHARED = "sender_key_shared";
+    private static final Logger logger = LoggerFactory.getLogger(SenderKeySharedStore.class);
+    private static final String TABLE_SENDER_KEY_SHARED = "sender_key_shared";
 
     private final Database database;
 

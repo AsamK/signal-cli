@@ -35,7 +35,7 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
 public class IOUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(IOUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(IOUtils.class);
 
     private IOUtils() {
     }

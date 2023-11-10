@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class PinHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(PinHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(PinHelper.class);
 
     private final SecureValueRecoveryV2 secureValueRecoveryV2;
 

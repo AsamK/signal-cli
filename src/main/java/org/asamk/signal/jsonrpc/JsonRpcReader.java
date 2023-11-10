@@ -23,7 +23,7 @@ import java.util.stream.StreamSupport;
 
 public class JsonRpcReader {
 
-    private final static Logger logger = LoggerFactory.getLogger(JsonRpcReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(JsonRpcReader.class);
 
     private final JsonRpcSender jsonRpcSender;
     private final ObjectMapper objectMapper;

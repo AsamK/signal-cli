@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class UploadStickerPackCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(UploadStickerPackCommand.class);
 
     @Override
     public String getName() {

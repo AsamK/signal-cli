@@ -76,7 +76,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     private DbusReceiveMessageHandler dbusMessageHandler;
     private int subscriberCount;
 
-    private final static Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
     public DbusSignalImpl(
             final Manager m, DBusConnection connection, final String objectPath, final boolean noReceiveOnStart

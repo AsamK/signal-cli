@@ -26,7 +26,7 @@ import java.util.concurrent.TimeoutException;
 
 public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
-    private final static Logger logger = LoggerFactory.getLogger(DbusSignalControlImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(DbusSignalControlImpl.class);
     private final MultiAccountManager c;
 
     private final String objectPath;

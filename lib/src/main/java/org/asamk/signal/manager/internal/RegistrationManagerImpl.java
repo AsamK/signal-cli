@@ -53,7 +53,7 @@ import java.util.function.Consumer;
 
 public class RegistrationManagerImpl implements RegistrationManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
 
     private SignalAccount account;
     private final PathConfig pathConfig;

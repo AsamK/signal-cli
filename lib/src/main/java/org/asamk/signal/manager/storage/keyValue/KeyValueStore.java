@@ -14,7 +14,7 @@ import java.sql.Types;
 public class KeyValueStore {
 
     private static final String TABLE_KEY_VALUE = "key_value";
-    private final static Logger logger = LoggerFactory.getLogger(KeyValueStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeyValueStore.class);
 
     private final Database database;
 

@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 public class NumberVerificationUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(NumberVerificationUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(NumberVerificationUtils.class);
 
     public static String handleVerificationSession(
             SignalServiceAccountManager accountManager,

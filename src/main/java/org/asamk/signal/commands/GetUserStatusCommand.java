@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetUserStatusCommand.class);
 
     @Override
     public String getName() {

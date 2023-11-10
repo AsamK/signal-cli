@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 public class MultiAccountManagerImpl implements MultiAccountManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(MultiAccountManagerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(MultiAccountManagerImpl.class);
 
     private final Set<Consumer<Manager>> onManagerAddedHandlers = new HashSet<>();
     private final Set<Consumer<Manager>> onManagerRemovedHandlers = new HashSet<>();

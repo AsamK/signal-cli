@@ -24,7 +24,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.SIGNED_PREKEY_ROTATE
 
 public class PreKeyHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(PreKeyHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(PreKeyHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

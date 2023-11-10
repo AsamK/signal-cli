@@ -18,9 +18,9 @@ import java.util.Optional;
 
 public class MessageCacheUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(MessageCacheUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageCacheUtils.class);
 
-    final static int CURRENT_VERSION = 9;
+    static final int CURRENT_VERSION = 9;
 
     public static SignalServiceEnvelope loadEnvelope(File file) throws IOException {
         try (var f = new FileInputStream(file)) {

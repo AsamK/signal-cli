@@ -47,7 +47,7 @@ import io.reactivex.rxjava3.core.Single;
 
 public final class ProfileHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(ProfileHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProfileHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

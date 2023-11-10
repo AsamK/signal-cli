@@ -17,7 +17,7 @@ import java.util.HashSet;
 
 public class StickerHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(StickerHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(StickerHelper.class);
 
     private final Context context;
     private final SignalAccount account;

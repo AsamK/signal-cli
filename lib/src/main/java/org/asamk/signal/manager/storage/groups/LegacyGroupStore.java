@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class LegacyGroupStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacyGroupStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyGroupStore.class);
 
     public static void migrate(
             final Storage storage,

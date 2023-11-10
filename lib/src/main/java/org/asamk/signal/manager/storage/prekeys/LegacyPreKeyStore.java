@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class LegacyPreKeyStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacyPreKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyPreKeyStore.class);
     static final Pattern preKeyFileNamePattern = Pattern.compile("(\\d+)");
 
     public static void migrate(File preKeysPath, PreKeyStore preKeyStore) {

@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class UnblockCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(UnblockCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(UnblockCommand.class);
 
     @Override
     public String getName() {

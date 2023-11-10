@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 public class UnidentifiedAccessHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
-    private final static long CERTIFICATE_EXPIRATION_BUFFER = TimeUnit.DAYS.toMillis(1);
+    private static final Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
+    private static final long CERTIFICATE_EXPIRATION_BUFFER = TimeUnit.DAYS.toMillis(1);
     private static final byte[] UNRESTRICTED_KEY = new byte[16];
 
     private final SignalAccount account;

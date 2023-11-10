@@ -19,7 +19,7 @@ import java.util.List;
 
 public class ListDevicesCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(ListDevicesCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(ListDevicesCommand.class);
 
     @Override
     public String getName() {

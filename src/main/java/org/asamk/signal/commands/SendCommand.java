@@ -35,7 +35,7 @@ import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
 public class SendCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(SendCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(SendCommand.class);
 
     @Override
     public String getName() {

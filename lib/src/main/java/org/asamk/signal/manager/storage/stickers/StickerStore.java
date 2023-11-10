@@ -14,7 +14,7 @@ import java.util.List;
 
 public class StickerStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(StickerStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(StickerStore.class);
     private static final String TABLE_STICKER = "sticker";
 
     private final Database database;

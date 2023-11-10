@@ -11,19 +11,19 @@ import okhttp3.Interceptor;
 
 public class ServiceConfig {
 
-    public final static int PREKEY_MINIMUM_COUNT = 10;
-    public final static int PREKEY_BATCH_SIZE = 100;
-    public final static int PREKEY_MAXIMUM_ID = Medium.MAX_VALUE;
+    public static final int PREKEY_MINIMUM_COUNT = 10;
+    public static final int PREKEY_BATCH_SIZE = 100;
+    public static final int PREKEY_MAXIMUM_ID = Medium.MAX_VALUE;
     public static final long PREKEY_ARCHIVE_AGE = TimeUnit.DAYS.toMillis(30);
     public static final long PREKEY_STALE_AGE = TimeUnit.DAYS.toMillis(90);
     public static final long SIGNED_PREKEY_ROTATE_AGE = TimeUnit.DAYS.toMillis(2);
 
-    public final static int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
-    public final static long MAX_ENVELOPE_SIZE = 0;
-    public final static long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
-    public final static boolean AUTOMATIC_NETWORK_RETRY = true;
-    public final static int GROUP_MAX_SIZE = 1001;
-    public final static int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
+    public static final int MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
+    public static final long MAX_ENVELOPE_SIZE = 0;
+    public static final long AVATAR_DOWNLOAD_FAILSAFE_MAX_SIZE = 10 * 1024 * 1024;
+    public static final boolean AUTOMATIC_NETWORK_RETRY = true;
+    public static final int GROUP_MAX_SIZE = 1001;
+    public static final int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var giftBadges = !isPrimaryDevice;

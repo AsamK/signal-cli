@@ -21,7 +21,7 @@ import java.util.List;
 
 public class VerifyCommand implements RegistrationCommand, JsonRpcRegistrationCommand<VerifyCommand.VerifyParams> {
 
-    private final static Logger logger = LoggerFactory.getLogger(VerifyCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(VerifyCommand.class);
 
     @Override
     public String getName() {

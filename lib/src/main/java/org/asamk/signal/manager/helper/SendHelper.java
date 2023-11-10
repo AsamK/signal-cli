@@ -56,7 +56,7 @@ import okio.ByteString;
 
 public class SendHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(SendHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(SendHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 public class LegacySenderKeyRecordStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacySenderKeyRecordStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacySenderKeyRecordStore.class);
 
     public static void migrate(
             final File senderKeysPath,
@@ -70,7 +70,7 @@ public class LegacySenderKeyRecordStore {
         }
     }
 
-    final static Pattern senderKeyFileNamePattern = Pattern.compile("(\\d+)_(\\d+)_([\\da-z\\-]+)");
+    static final Pattern senderKeyFileNamePattern = Pattern.compile("(\\d+)_(\\d+)_([\\da-z\\-]+)");
 
     private static List<Key> parseFileNames(final File[] files, final RecipientResolver resolver) {
         return Arrays.stream(files)

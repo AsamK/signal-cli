@@ -20,8 +20,8 @@ import java.util.UUID;
 
 public class SenderKeyRecordStore implements SenderKeyStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(SenderKeyRecordStore.class);
-    private final static String TABLE_SENDER_KEY = "sender_key";
+    private static final Logger logger = LoggerFactory.getLogger(SenderKeyRecordStore.class);
+    private static final String TABLE_SENDER_KEY = "sender_key";
 
     private final Database database;
 

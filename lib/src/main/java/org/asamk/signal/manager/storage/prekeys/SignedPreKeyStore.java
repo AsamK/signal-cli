@@ -23,7 +23,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_ARCHIVE_AGE;
 public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.SignedPreKeyStore {
 
     private static final String TABLE_SIGNED_PRE_KEY = "signed_pre_key";
-    private final static Logger logger = LoggerFactory.getLogger(SignedPreKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignedPreKeyStore.class);
 
     private final Database database;
     private final int accountIdType;

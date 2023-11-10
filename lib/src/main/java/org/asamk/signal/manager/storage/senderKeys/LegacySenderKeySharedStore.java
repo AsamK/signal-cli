@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class LegacySenderKeySharedStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacySenderKeySharedStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacySenderKeySharedStore.class);
 
     public static void migrate(
             final File file,

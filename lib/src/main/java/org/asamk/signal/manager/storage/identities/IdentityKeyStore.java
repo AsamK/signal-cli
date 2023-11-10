@@ -23,7 +23,7 @@ import io.reactivex.rxjava3.subjects.PublishSubject;
 
 public class IdentityKeyStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(IdentityKeyStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(IdentityKeyStore.class);
     private static final String TABLE_IDENTITY = "identity";
     private final Database database;
     private final TrustNewIdentity trustNewIdentity;

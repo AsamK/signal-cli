@@ -27,7 +27,7 @@ import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
 
 public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(JsonRpcDispatcherCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(JsonRpcDispatcherCommand.class);
 
     @Override
     public String getName() {

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 public class StorageHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(StorageHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(StorageHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 
 public class LinkCommand implements ProvisioningCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(LinkCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(LinkCommand.class);
 
     @Override
     public String getName() {

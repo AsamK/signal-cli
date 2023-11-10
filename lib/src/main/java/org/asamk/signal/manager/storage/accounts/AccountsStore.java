@@ -33,7 +33,7 @@ public class AccountsStore {
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
     private static final int CURRENT_STORAGE_VERSION = 2;
-    private final static Logger logger = LoggerFactory.getLogger(AccountsStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountsStore.class);
     private final ObjectMapper objectMapper = Utils.createStorageObjectMapper();
 
     private final File dataPath;

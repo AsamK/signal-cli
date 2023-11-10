@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class ListGroupsCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(ListGroupsCommand.class);
 
     @Override
     public String getName() {

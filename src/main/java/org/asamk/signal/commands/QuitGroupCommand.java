@@ -23,7 +23,7 @@ import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
 public class QuitGroupCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(QuitGroupCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuitGroupCommand.class);
 
     @Override
     public String getName() {

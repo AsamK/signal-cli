@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 public class LegacySessionStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(LegacySessionStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacySessionStore.class);
 
     public static void migrate(
             final File sessionsPath,

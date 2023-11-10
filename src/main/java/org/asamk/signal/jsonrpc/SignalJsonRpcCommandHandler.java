@@ -32,7 +32,7 @@ import java.util.function.Function;
 
 public class SignalJsonRpcCommandHandler {
 
-    private final static Logger logger = LoggerFactory.getLogger(SignalJsonRpcDispatcherHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignalJsonRpcDispatcherHandler.class);
 
     private static final int USER_ERROR = -1;
     private static final int IO_ERROR = -3;

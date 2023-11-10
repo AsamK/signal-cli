@@ -29,7 +29,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.MAXIMUM_ONE_OFF_REQU
 
 public class RecipientHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(RecipientHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecipientHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

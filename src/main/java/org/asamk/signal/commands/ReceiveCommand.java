@@ -30,7 +30,7 @@ import java.util.Optional;
 
 public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<ReceiveCommand.ReceiveParams> {
 
-    private final static Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReceiveCommand.class);
 
     @Override
     public String getName() {

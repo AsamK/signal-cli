@@ -75,7 +75,7 @@ import java.util.stream.Collectors;
 
 public final class IncomingMessageHandler {
 
-    private final static Logger logger = LoggerFactory.getLogger(IncomingMessageHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(IncomingMessageHandler.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

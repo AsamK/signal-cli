@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
-    private final static Logger logger = LoggerFactory.getLogger(JsonReceiveMessageHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(JsonReceiveMessageHandler.class);
 
     private final Manager m;
     private final JsonWriter jsonWriter;

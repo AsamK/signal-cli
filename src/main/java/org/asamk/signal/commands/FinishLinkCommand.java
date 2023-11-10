@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 
 public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.FinishLinkParams> {
 
-    private final static Logger logger = LoggerFactory.getLogger(FinishLinkCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(FinishLinkCommand.class);
 
     @Override
     public String getName() {

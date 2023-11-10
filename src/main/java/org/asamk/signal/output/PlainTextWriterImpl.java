@@ -38,7 +38,7 @@ public final class PlainTextWriterImpl implements PlainTextWriter {
 
     private static final class IndentedPlainTextWriter implements PlainTextWriter {
 
-        private final static int INDENTATION = 2;
+        private static final int INDENTATION = 2;
 
         private final String spaces = " ".repeat(INDENTATION);
         private final PlainTextWriter plainTextWriter;

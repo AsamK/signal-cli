@@ -59,7 +59,7 @@ public record StickerPackUrl(StickerPackId packId, byte[] packKey) {
         }
     }
 
-    public final static class InvalidStickerPackLinkException extends Exception {
+    public static final class InvalidStickerPackLinkException extends Exception {
 
         public InvalidStickerPackLinkException(String message) {
             super(message);

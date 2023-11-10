@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class SessionStore implements SignalServiceSessionStore {
 
     private static final String TABLE_SESSION = "session";
-    private final static Logger logger = LoggerFactory.getLogger(SessionStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(SessionStore.class);
 
     private final Map<Key, SessionRecord> cachedSessions = new HashMap<>();
 

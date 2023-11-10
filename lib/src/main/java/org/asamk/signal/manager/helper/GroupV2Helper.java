@@ -59,7 +59,7 @@ import okio.ByteString;
 
 class GroupV2Helper {
 
-    private final static Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
+    private static final Logger logger = LoggerFactory.getLogger(GroupV2Helper.class);
 
     private final SignalDependencies dependencies;
     private final Context context;

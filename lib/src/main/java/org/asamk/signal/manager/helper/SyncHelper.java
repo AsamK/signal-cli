@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 public class SyncHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(SyncHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(SyncHelper.class);
 
     private final Context context;
     private final SignalAccount account;

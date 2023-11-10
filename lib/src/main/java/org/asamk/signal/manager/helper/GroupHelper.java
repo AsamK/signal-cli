@@ -62,7 +62,7 @@ import java.util.Set;
 
 public class GroupHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(GroupHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(GroupHelper.class);
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;

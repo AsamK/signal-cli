@@ -112,7 +112,7 @@ public final class GroupInviteLinkUrl {
         return password;
     }
 
-    public final static class InvalidGroupLinkException extends Exception {
+    public static final class InvalidGroupLinkException extends Exception {
 
         public InvalidGroupLinkException(String message) {
             super(message);
@@ -123,7 +123,7 @@ public final class GroupInviteLinkUrl {
         }
     }
 
-    public final static class UnknownGroupLinkVersionException extends Exception {
+    public static final class UnknownGroupLinkVersionException extends Exception {
 
         public UnknownGroupLinkVersionException(String message) {
             super(message);

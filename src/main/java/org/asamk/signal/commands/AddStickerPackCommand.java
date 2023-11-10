@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 
 public class AddStickerPackCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(AddStickerPackCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(AddStickerPackCommand.class);
 
     @Override
     public String getName() {

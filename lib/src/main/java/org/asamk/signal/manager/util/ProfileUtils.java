@@ -19,7 +19,7 @@ import java.util.HashSet;
 
 public class ProfileUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(ProfileUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProfileUtils.class);
 
     public static Profile decryptProfile(
             final ProfileKey profileKey, final SignalServiceProfile encryptedProfile

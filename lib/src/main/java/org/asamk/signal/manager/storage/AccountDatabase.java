@@ -31,7 +31,7 @@ import java.util.UUID;
 
 public class AccountDatabase extends Database {
 
-    private final static Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
     private static final long DATABASE_VERSION = 18;
 
     private AccountDatabase(final HikariDataSource dataSource) {

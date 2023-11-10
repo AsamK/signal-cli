@@ -25,7 +25,7 @@ import java.util.List;
 
 public class AttachmentHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(AttachmentHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(AttachmentHelper.class);
 
     private final SignalDependencies dependencies;
     private final AttachmentStore attachmentStore;

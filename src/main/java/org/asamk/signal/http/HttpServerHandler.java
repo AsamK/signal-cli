@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HttpServerHandler implements AutoCloseable {
 
-    private final static Logger logger = LoggerFactory.getLogger(HttpServerHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpServerHandler.class);
 
     private final ObjectMapper objectMapper = Util.createJsonObjectMapper();
 

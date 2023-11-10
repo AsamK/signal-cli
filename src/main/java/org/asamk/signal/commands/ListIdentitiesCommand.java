@@ -22,7 +22,7 @@ import java.util.UUID;
 
 public class ListIdentitiesCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(ListIdentitiesCommand.class);
 
     @Override
     public String getName() {

@@ -49,7 +49,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
 
 public class ProvisioningManagerImpl implements ProvisioningManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(ProvisioningManagerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProvisioningManagerImpl.class);
 
     private final PathConfig pathConfig;
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;

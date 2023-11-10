@@ -54,7 +54,7 @@ import static org.whispersystems.signalservice.internal.util.Util.isEmpty;
 
 public class AccountHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(AccountHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountHelper.class);
 
     private final Context context;
     private final SignalAccount account;

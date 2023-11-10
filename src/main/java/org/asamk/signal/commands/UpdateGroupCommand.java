@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 public class UpdateGroupCommand implements JsonRpcLocalCommand {
 
-    private final static Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdateGroupCommand.class);
 
     @Override
     public String getName() {

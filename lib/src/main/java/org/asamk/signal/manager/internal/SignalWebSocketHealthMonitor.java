@@ -23,7 +23,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  */
 final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
-    private final static Logger logger = LoggerFactory.getLogger(SignalWebSocketHealthMonitor.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignalWebSocketHealthMonitor.class);
 
     private static final long KEEP_ALIVE_SEND_CADENCE = TimeUnit.SECONDS.toMillis(WebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS);
     private static final long MAX_TIME_SINCE_SUCCESSFUL_KEEP_ALIVE = KEEP_ALIVE_SEND_CADENCE * 3;
@@ -157,7 +157,7 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
         }
     }
 
-    private final static class HttpErrorTracker {
+    private static final class HttpErrorTracker {
 
         private final long[] timestamps;
         private final long errorTimeRange;

@@ -47,7 +47,7 @@ import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_S
 
 public class App {
 
-    private final static Logger logger = LoggerFactory.getLogger(App.class);
+    private static final Logger logger = LoggerFactory.getLogger(App.class);
 
     private final Namespace ns;
 
