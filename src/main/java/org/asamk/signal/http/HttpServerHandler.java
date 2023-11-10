@@ -56,7 +56,7 @@ public class HttpServerHandler implements AutoCloseable {
         if (server != null) {
             throw new AssertionError("HttpServerHandler already initialized");
         }
-        logger.info("Starting server on " + address.toString());
+        logger.debug("Starting HTTP server on {}", address);
 
         server = HttpServer.create(address, 0);
         server.setExecutor(Executors.newCachedThreadPool());
@@ -66,6 +66,21 @@ public class HttpServerHandler implements AutoCloseable {
         server.createContext("/api/v1/check", this::handleCheckEndpoint);
 
         server.start();
+        logger.info("Started HTTP server on {}", address);
+    }
+
+    @Override
+    public void close() {
+        if (server != null) {
+            shutdown.set(true);
+            synchronized (this) {
+                this.notifyAll();
+            }
+            // Increase this delay when https://bugs.openjdk.org/browse/JDK-8304065 is fixed
+            server.stop(2);
+            server = null;
+            shutdown.set(false);
+        }
     }
 
     private void sendResponse(int status, Object response, HttpExchange httpExchange) throws IOException {
@@ -221,7 +236,7 @@ public class HttpServerHandler implements AutoCloseable {
                 return List.of(manager);
             }
         }
-        return List.of();
+        throw new AssertionError("Unreachable state");
     }
 
     private List<Pair<Manager, Manager.ReceiveMessageHandler>> subscribeReceiveHandlers(
@@ -244,20 +259,6 @@ public class HttpServerHandler implements AutoCloseable {
         final var m = pair.first();
         final var handler = pair.second();
         m.removeReceiveHandler(handler);
-    }
-
-    @Override
-    public void close() {
-        if (server != null) {
-            shutdown.set(true);
-            synchronized (this) {
-                this.notifyAll();
-            }
-            // Increase this delay when https://bugs.openjdk.org/browse/JDK-8304065 is fixed
-            server.stop(2);
-            server = null;
-            shutdown.set(false);
-        }
     }
 
     private interface Callable {

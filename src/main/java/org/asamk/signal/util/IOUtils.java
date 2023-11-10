@@ -142,7 +142,7 @@ public class IOUtils {
                     ? ServerSocketChannel.open(StandardProtocolFamily.UNIX)
                     : ServerSocketChannel.open();
             serverChannel.bind(address);
-            logger.info("Listening on socket: " + address);
+            logger.debug("Listening on socket: " + address);
             postBind(address);
         } catch (IOException e) {
             throw new IOErrorException("Failed to bind socket " + address + ": " + e.getMessage(), e);
