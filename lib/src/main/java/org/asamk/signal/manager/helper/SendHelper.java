@@ -84,7 +84,7 @@ public class SendHelper {
             account.getContactStore().storeContact(recipientId, contact);
         }
 
-        final var expirationTime = contact.getMessageExpirationTime();
+        final var expirationTime = contact.messageExpirationTime();
         messageBuilder.withExpiration(expirationTime);
 
         if (!contact.isBlocked()) {
@@ -177,7 +177,7 @@ public class SendHelper {
     ) {
         final var recipientId = account.getSelfRecipientId();
         final var contact = account.getContactStore().getContact(recipientId);
-        final var expirationTime = contact != null ? contact.getMessageExpirationTime() : 0;
+        final var expirationTime = contact != null ? contact.messageExpirationTime() : 0;
         messageBuilder.withExpiration(expirationTime);
 
         var message = messageBuilder.build();

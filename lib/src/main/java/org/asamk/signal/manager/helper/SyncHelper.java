@@ -148,11 +148,11 @@ public class SyncHelper {
                     out.write(new DeviceContact(address,
                             Optional.ofNullable(contact.getName()),
                             createContactAvatarAttachment(new RecipientAddress(address)),
-                            Optional.ofNullable(contact.getColor()),
+                            Optional.ofNullable(contact.color()),
                             Optional.ofNullable(verifiedMessage),
                             Optional.ofNullable(profileKey),
                             contact.isBlocked(),
-                            Optional.of(contact.getMessageExpirationTime()),
+                            Optional.of(contact.messageExpirationTime()),
                             Optional.empty(),
                             contact.isArchived()));
                 }

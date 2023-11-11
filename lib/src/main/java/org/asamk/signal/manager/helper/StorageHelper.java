@@ -116,8 +116,8 @@ public class StorageHelper {
         final var blocked = contact != null && contact.isBlocked();
         final var profileShared = contact != null && contact.isProfileSharingEnabled();
         final var archived = contact != null && contact.isArchived();
-        final var contactGivenName = contact == null ? null : contact.getGivenName();
-        final var contactFamilyName = contact == null ? null : contact.getFamilyName();
+        final var contactGivenName = contact == null ? null : contact.givenName();
+        final var contactFamilyName = contact == null ? null : contact.familyName();
         if (blocked != contactRecord.isBlocked()
                 || profileShared != contactRecord.isProfileSharingEnabled()
                 || archived != contactRecord.isArchived()

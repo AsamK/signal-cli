@@ -31,7 +31,7 @@ public class ContactHelper {
 
     public void setExpirationTimer(RecipientId recipientId, int messageExpirationTimer) {
         var contact = account.getContactStore().getContact(recipientId);
-        if (contact != null && contact.getMessageExpirationTime() == messageExpirationTimer) {
+        if (contact != null && contact.messageExpirationTime() == messageExpirationTimer) {
             return;
         }
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);

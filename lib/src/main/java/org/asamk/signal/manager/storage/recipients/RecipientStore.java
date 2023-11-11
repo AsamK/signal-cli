@@ -589,11 +589,11 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setString(1, contact == null ? null : contact.getGivenName());
-            statement.setString(2, contact == null ? null : contact.getFamilyName());
-            statement.setInt(3, contact == null ? 0 : contact.getMessageExpirationTime());
+            statement.setString(1, contact == null ? null : contact.givenName());
+            statement.setString(2, contact == null ? null : contact.familyName());
+            statement.setInt(3, contact == null ? 0 : contact.messageExpirationTime());
             statement.setBoolean(4, contact != null && contact.isProfileSharingEnabled());
-            statement.setString(5, contact == null ? null : contact.getColor());
+            statement.setString(5, contact == null ? null : contact.color());
             statement.setBoolean(6, contact != null && contact.isBlocked());
             statement.setBoolean(7, contact != null && contact.isArchived());
             statement.setLong(8, recipientId.id());

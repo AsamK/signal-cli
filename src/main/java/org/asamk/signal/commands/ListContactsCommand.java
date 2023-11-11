@@ -62,11 +62,9 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                             contact.getName(),
                             profile.getDisplayName(),
                             r.getAddress().username().orElse(""),
-                            contact.getColor(),
+                            contact.color(),
                             contact.isBlocked(),
-                            contact.getMessageExpirationTime() == 0
-                                    ? "disabled"
-                                    : contact.getMessageExpirationTime() + "s");
+                            contact.messageExpirationTime() == 0 ? "disabled" : contact.messageExpirationTime() + "s");
                 }
             }
             case JsonWriter writer -> {
@@ -77,9 +75,9 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                             address.uuid().map(UUID::toString).orElse(null),
                             address.username().orElse(null),
                             contact.getName(),
-                            contact.getColor(),
+                            contact.color(),
                             contact.isBlocked(),
-                            contact.getMessageExpirationTime(),
+                            contact.messageExpirationTime(),
                             r.getProfile() == null
                                     ? null
                                     : new JsonContact.JsonProfile(r.getProfile().getLastUpdateTimestamp(),
