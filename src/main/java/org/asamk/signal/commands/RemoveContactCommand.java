@@ -20,7 +20,11 @@ public class RemoveContactCommand implements JsonRpcLocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Remove the details of a given contact");
         subparser.addArgument("recipient").help("Contact number");
-        subparser.addArgument("--forget")
+        final var mut = subparser.addMutuallyExclusiveGroup();
+        mut.addArgument("--hide")
+                .action(Arguments.storeTrue())
+                .help("Hide the contact in the contact list, but keep the data.");
+        mut.addArgument("--forget")
                 .action(Arguments.storeTrue())
                 .help("Delete all data associated with this contact, including identity keys and sessions.");
     }
@@ -32,8 +36,11 @@ public class RemoveContactCommand implements JsonRpcLocalCommand {
         var recipientString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
 
+        var hide = Boolean.TRUE == ns.getBoolean("hide");
         var forget = Boolean.TRUE == ns.getBoolean("forget");
-        if (forget) {
+        if (hide) {
+            m.hideRecipient(recipient);
+        } else if (forget) {
             m.deleteRecipient(recipient);
         } else {
             m.deleteContact(recipient);

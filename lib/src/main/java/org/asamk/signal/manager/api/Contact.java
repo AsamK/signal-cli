@@ -9,7 +9,8 @@ public record Contact(
         int messageExpirationTime,
         boolean isBlocked,
         boolean isArchived,
-        boolean isProfileSharingEnabled
+        boolean isProfileSharingEnabled,
+        boolean isHidden
 ) {
 
     private Contact(final Builder builder) {
@@ -17,9 +18,10 @@ public record Contact(
                 builder.familyName,
                 builder.color,
                 builder.messageExpirationTime,
-                builder.blocked,
-                builder.archived,
-                builder.profileSharingEnabled);
+                builder.isBlocked,
+                builder.isArchived,
+                builder.isProfileSharingEnabled,
+                builder.isHidden);
     }
 
     public static Builder newBuilder() {
@@ -32,9 +34,10 @@ public record Contact(
         builder.familyName = copy.familyName();
         builder.color = copy.color();
         builder.messageExpirationTime = copy.messageExpirationTime();
-        builder.blocked = copy.isBlocked();
-        builder.archived = copy.isArchived();
-        builder.profileSharingEnabled = copy.isProfileSharingEnabled();
+        builder.isBlocked = copy.isBlocked();
+        builder.isArchived = copy.isArchived();
+        builder.isProfileSharingEnabled = copy.isProfileSharingEnabled();
+        builder.isHidden = copy.isHidden();
         return builder;
     }
 
@@ -59,11 +62,16 @@ public record Contact(
         private String familyName;
         private String color;
         private int messageExpirationTime;
-        private boolean blocked;
-        private boolean archived;
-        private boolean profileSharingEnabled;
+        private boolean isBlocked;
+        private boolean isArchived;
+        private boolean isProfileSharingEnabled;
+        private boolean isHidden;
 
         private Builder() {
+        }
+
+        public static Builder newBuilder() {
+            return new Builder();
         }
 
         public Builder withGivenName(final String val) {
@@ -86,18 +94,23 @@ public record Contact(
             return this;
         }
 
-        public Builder withBlocked(final boolean val) {
-            blocked = val;
+        public Builder withIsBlocked(final boolean val) {
+            isBlocked = val;
             return this;
         }
 
-        public Builder withArchived(final boolean val) {
-            archived = val;
+        public Builder withIsArchived(final boolean val) {
+            isArchived = val;
             return this;
         }
 
-        public Builder withProfileSharingEnabled(final boolean val) {
-            profileSharingEnabled = val;
+        public Builder withIsProfileSharingEnabled(final boolean val) {
+            isProfileSharingEnabled = val;
+            return this;
+        }
+
+        public Builder withIsHidden(final boolean val) {
+            isHidden = val;
             return this;
         }
 

@@ -826,6 +826,7 @@ public class SignalAccount implements Closeable {
                                 contact.messageExpirationTime,
                                 contact.blocked,
                                 contact.archived,
+                                false,
                                 false));
 
                 // Store profile keys only in profile store

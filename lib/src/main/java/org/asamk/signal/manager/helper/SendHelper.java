@@ -78,9 +78,9 @@ public class SendHelper {
             Optional<Long> editTargetTimestamp
     ) {
         var contact = account.getContactStore().getContact(recipientId);
-        if (contact == null || !contact.isProfileSharingEnabled()) {
+        if (contact == null || !contact.isProfileSharingEnabled() || contact.isHidden()) {
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            contact = contactBuilder.withProfileSharingEnabled(true).build();
+            contact = contactBuilder.withIsProfileSharingEnabled(true).withIsHidden(false).build();
             account.getContactStore().storeContact(recipientId, contact);
         }
 

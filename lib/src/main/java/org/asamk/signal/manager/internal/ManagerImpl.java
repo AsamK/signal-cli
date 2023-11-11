@@ -841,6 +841,15 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public void hideRecipient(final RecipientIdentifier.Single recipient) {
+        final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
+        if (recipientIdOptional.isPresent()) {
+            context.getContactHelper().setContactHidden(recipientIdOptional.get(), true);
+            account.removeRecipient(recipientIdOptional.get());
+        }
+    }
+
+    @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) {
         final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
         if (recipientIdOptional.isPresent()) {

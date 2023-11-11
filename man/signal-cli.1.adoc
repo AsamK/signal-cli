@@ -613,6 +613,9 @@ Remove the info of a given contact
 NUMBER::
 Specify the contact phone number.
 
+*--hide*::
+Hide the contact in the contact list, but keep the data.
+
 *--forget*::
 Delete all data associated with this contact, including identity keys and sessions.
 

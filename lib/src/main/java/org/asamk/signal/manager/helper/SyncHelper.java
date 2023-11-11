@@ -339,8 +339,8 @@ public class SyncHelper {
             if (c.getExpirationTimer().isPresent()) {
                 builder.withMessageExpirationTime(c.getExpirationTimer().get());
             }
-            builder.withBlocked(c.isBlocked());
-            builder.withArchived(c.isArchived());
+            builder.withIsBlocked(c.isBlocked());
+            builder.withIsArchived(c.isArchived());
             account.getContactStore().storeContact(recipientId, builder.build());
 
             if (c.getAvatar().isPresent()) {

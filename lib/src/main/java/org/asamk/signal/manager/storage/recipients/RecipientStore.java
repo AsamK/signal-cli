@@ -70,6 +70,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
                                       archived INTEGER NOT NULL DEFAULT FALSE,
                                       profile_sharing INTEGER NOT NULL DEFAULT FALSE,
+                                      hidden INTEGER NOT NULL DEFAULT FALSE,
 
                                       profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                       profile_given_name TEXT,
@@ -318,9 +319,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public List<Pair<RecipientId, Contact>> getContacts() {
         final var sql = (
                 """
-                SELECT r._id, r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived
+                SELECT r._id, r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden
                 FROM %s r
-                WHERE (r.number IS NOT NULL OR r.uuid IS NOT NULL) AND %s
+                WHERE (r.number IS NOT NULL OR r.uuid IS NOT NULL) AND %s AND r.hidden = FALSE
                 """
         ).formatted(TABLE_RECIPIENT, SQL_IS_CONTACT);
         try (final var connection = database.getConnection()) {
@@ -342,6 +343,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sqlWhere = new ArrayList<String>();
         if (onlyContacts) {
             sqlWhere.add("(" + SQL_IS_CONTACT + ")");
+            sqlWhere.add("r.hidden = FALSE");
         }
         if (blocked.isPresent()) {
             sqlWhere.add("r.blocked = ?");
@@ -357,7 +359,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 SELECT r._id,
                        r.number, r.uuid, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
-                       r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived,
+                       r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden,
                        r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities
                 FROM %s r
                 WHERE (r.number IS NOT NULL OR r.uuid IS NOT NULL) AND %s
@@ -962,7 +964,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     private Contact getContact(final Connection connection, final RecipientId recipientId) throws SQLException {
         final var sql = (
                 """
-                SELECT r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived
+                SELECT r.given_name, r.family_name, r.expiration_time, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden
                 FROM %s r
                 WHERE r._id = ? AND (%s)
                 """
@@ -1053,7 +1055,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 resultSet.getInt("expiration_time"),
                 resultSet.getBoolean("blocked"),
                 resultSet.getBoolean("archived"),
-                resultSet.getBoolean("profile_sharing"));
+                resultSet.getBoolean("profile_sharing"),
+                resultSet.getBoolean("hidden"));
     }
 
     private Profile getProfileFromResultSet(ResultSet resultSet) throws SQLException {

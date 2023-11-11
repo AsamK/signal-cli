@@ -452,6 +452,10 @@ public class DbusManagerImpl implements Manager {
         return new SendMessageResults(0, Map.of());
     }
 
+    public void hideRecipient(final RecipientIdentifier.Single recipient) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public void deleteRecipient(final RecipientIdentifier.Single recipient) {
         signal.deleteRecipient(recipient.getIdentifier());
@@ -653,7 +657,7 @@ public class DbusManagerImpl implements Manager {
             }
             return Recipient.newBuilder()
                     .withAddress(new RecipientAddress(null, n))
-                    .withContact(new Contact(contactName, null, null, 0, contactBlocked, false, false))
+                    .withContact(new Contact(contactName, null, null, 0, contactBlocked, false, false, false))
                     .build();
         }).filter(Objects::nonNull).toList();
     }
