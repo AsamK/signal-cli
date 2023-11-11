@@ -11,6 +11,8 @@ public interface RecipientTrustedResolver {
 
     RecipientId resolveSelfRecipientTrusted(RecipientAddress address);
 
+    RecipientId resolveRecipientTrusted(RecipientAddress address);
+
     RecipientId resolveRecipientTrusted(SignalServiceAddress address);
 
     RecipientId resolveRecipientTrusted(Optional<ACI> aci, Optional<PNI> pni, Optional<String> number);
@@ -28,6 +30,11 @@ public interface RecipientTrustedResolver {
         @Override
         public RecipientId resolveSelfRecipientTrusted(final RecipientAddress address) {
             return recipientTrustedResolverSupplier.get().resolveSelfRecipientTrusted(address);
+        }
+
+        @Override
+        public RecipientId resolveRecipientTrusted(final RecipientAddress address) {
+            return recipientTrustedResolverSupplier.get().resolveRecipientTrusted(address);
         }
 
         @Override

@@ -275,13 +275,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         return resolveRecipientTrusted(address, true);
     }
 
+    @Override
     public RecipientId resolveRecipientTrusted(RecipientAddress address) {
         return resolveRecipientTrusted(address, false);
     }
 
     @Override
     public RecipientId resolveRecipientTrusted(SignalServiceAddress address) {
-        return resolveRecipientTrusted(new RecipientAddress(address), false);
+        return resolveRecipientTrusted(new RecipientAddress(address));
     }
 
     @Override
@@ -289,12 +290,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
     ) {
         final var serviceId = aci.map(a -> (ServiceId) a).or(() -> pni);
-        return resolveRecipientTrusted(new RecipientAddress(serviceId, pni, number, Optional.empty()), false);
+        return resolveRecipientTrusted(new RecipientAddress(serviceId, pni, number, Optional.empty()));
     }
 
     @Override
     public RecipientId resolveRecipientTrusted(final ACI aci, final String username) {
-        return resolveRecipientTrusted(new RecipientAddress(aci, null, null, username), false);
+        return resolveRecipientTrusted(new RecipientAddress(aci, null, null, username));
     }
 
     @Override
