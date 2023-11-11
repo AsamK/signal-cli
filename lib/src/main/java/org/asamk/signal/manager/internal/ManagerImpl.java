@@ -227,6 +227,7 @@ public class ManagerImpl implements Manager {
                         e.getClass().getSimpleName());
                 logger.debug("Full CDSI refresh failed", e);
             }
+            context.getAccountHelper().checkWhoAmiI();
         }
     }
 
