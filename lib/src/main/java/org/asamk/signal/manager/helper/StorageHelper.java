@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.jobs.DownloadProfileAvatarJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -276,7 +277,7 @@ public class StorageHelper {
             if (profileKey != null) {
                 account.setProfileKey(profileKey);
                 final var avatarPath = accountRecord.getAvatarUrlPath().orElse(null);
-                context.getProfileHelper().downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, profileKey);
+                context.getJobExecutor().enqueueJob(new DownloadProfileAvatarJob(avatarPath));
             }
         }
 
