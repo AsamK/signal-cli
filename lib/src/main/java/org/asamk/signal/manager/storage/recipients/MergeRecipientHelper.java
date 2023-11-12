@@ -17,12 +17,12 @@ public class MergeRecipientHelper {
     static Pair<RecipientId, List<RecipientId>> resolveRecipientTrustedLocked(
             Store store, RecipientAddress address
     ) throws SQLException {
-        // address has serviceId and number, optionally also pni
+        // address has at least one of serviceId/pni and optionally number/username
 
         final var recipients = store.findAllByAddress(address);
 
         if (recipients.isEmpty()) {
-            logger.debug("Got new recipient, serviceId, PNI and number are unknown");
+            logger.debug("Got new recipient, serviceId, PNI, number, username are unknown");
             return new Pair<>(store.addNewRecipient(address), List.of());
         }
 
@@ -47,7 +47,7 @@ public class MergeRecipientHelper {
             }
 
             logger.debug(
-                    "Got recipient {} existing with number/pni, but different serviceId, so stripping its number and adding new recipient",
+                    "Got recipient {} existing with number/pni/username, but different serviceId, so stripping its number and adding new recipient",
                     recipient.id());
             store.updateRecipientAddress(recipient.id(), recipient.address().removeIdentifiersFrom(address));
 

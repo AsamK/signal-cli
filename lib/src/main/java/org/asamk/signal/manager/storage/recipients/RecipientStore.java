@@ -790,8 +790,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     ) throws SQLException {
         final var sql = (
                 """
-                INSERT INTO %s (number, uuid, pni)
-                VALUES (?, ?, ?)
+                INSERT INTO %s (number, uuid, pni, username)
+                VALUES (?, ?, ?, ?)
                 RETURNING _id
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -800,6 +800,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.setBytes(2,
                     address.serviceId().map(ServiceId::getRawUuid).map(UuidUtil::toByteArray).orElse(null));
             statement.setBytes(3, address.pni().map(PNI::getRawUuid).map(UuidUtil::toByteArray).orElse(null));
+            statement.setString(4, address.username().orElse(null));
             final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
             if (generatedKey.isPresent()) {
                 final var recipientId = new RecipientId(generatedKey.get(), this);
@@ -817,7 +818,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final var sql = (
                     """
                     UPDATE %s
-                    SET number = NULL, uuid = NULL, pni = NULL
+                    SET number = NULL, uuid = NULL, pni = NULL, username = NULL
                     WHERE _id = ?
                     """
             ).formatted(TABLE_RECIPIENT);

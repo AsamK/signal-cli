@@ -23,19 +23,24 @@ class MergeRecipientHelperTest {
     static final PNI PNI_B = PNI.from(UUID.randomUUID());
     static final String NUMBER_A = "+AAA";
     static final String NUMBER_B = "+BBB";
+    static final String USERNAME_A = "USER.1";
+    static final String USERNAME_B = "USER.2";
 
-    static final PartialAddresses ADDR_A = new PartialAddresses(SERVICE_ID_A, PNI_A, NUMBER_A);
-    static final PartialAddresses ADDR_B = new PartialAddresses(SERVICE_ID_B, PNI_B, NUMBER_B);
+    static final PartialAddresses ADDR_A = new PartialAddresses(SERVICE_ID_A, PNI_A, NUMBER_A, USERNAME_A);
+    static final PartialAddresses ADDR_B = new PartialAddresses(SERVICE_ID_B, PNI_B, NUMBER_B, USERNAME_B);
 
     static final T[] testInstancesNone = new T[]{
             new T(Set.of(), ADDR_A.FULL, Set.of(rec(1000000, ADDR_A.FULL))),
             new T(Set.of(), ADDR_A.ACI_NUM, Set.of(rec(1000000, ADDR_A.ACI_NUM))),
             new T(Set.of(), ADDR_A.ACI_PNI, Set.of(rec(1000000, ADDR_A.ACI_PNI))),
             new T(Set.of(), ADDR_A.PNI_NUM, Set.of(rec(1000000, ADDR_A.PNI_NUM))),
+            new T(Set.of(), ADDR_A.ACI_USERNAME, Set.of(rec(1000000, ADDR_A.ACI_USERNAME))),
+            new T(Set.of(), ADDR_A.FULL_USERNAME, Set.of(rec(1000000, ADDR_A.FULL_USERNAME))),
     };
 
     static final T[] testInstancesSingle = new T[]{
             new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
+            new T(Set.of(rec(1, ADDR_A.FULL_USERNAME)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL_USERNAME))),
             new T(Set.of(rec(1, ADDR_A.ACI)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.PNI)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.NUM)), ADDR_A.FULL, Set.of(rec(1, ADDR_A.FULL))),
@@ -72,6 +77,10 @@ class MergeRecipientHelperTest {
             new T(Set.of(rec(1, ADDR_A.ACI_PNI)), ADDR_A.ACI_PNI, Set.of(rec(1, ADDR_A.ACI_PNI))),
 
             new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_B.FULL, Set.of(rec(1, ADDR_A.FULL), rec(1000000, ADDR_B.FULL))),
+
+            new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_A.ACI_USERNAME, Set.of(rec(1, ADDR_A.FULL_USERNAME))),
+            new T(Set.of(rec(1, ADDR_A.ACI)), ADDR_A.ACI_USERNAME, Set.of(rec(1, ADDR_A.ACI_USERNAME))),
+            new T(Set.of(rec(1, ADDR_A.ACI_NUM)), ADDR_A.ACI_USERNAME, Set.of(rec(1, ADDR_A.ACI_NUM_USERNAME))),
     };
 
     static final T[] testInstancesTwo = new T[]{
@@ -225,22 +234,28 @@ class MergeRecipientHelperTest {
 
     private record PartialAddresses(
             RecipientAddress FULL,
+            RecipientAddress FULL_USERNAME,
             RecipientAddress ACI,
             RecipientAddress PNI,
             RecipientAddress NUM,
             RecipientAddress ACI_NUM,
+            RecipientAddress ACI_NUM_USERNAME,
             RecipientAddress PNI_NUM,
-            RecipientAddress ACI_PNI
+            RecipientAddress ACI_PNI,
+            RecipientAddress ACI_USERNAME
     ) {
 
-        PartialAddresses(ServiceId serviceId, PNI pni, String number) {
+        PartialAddresses(ServiceId serviceId, PNI pni, String number, String username) {
             this(new RecipientAddress(serviceId, pni, number),
+                    new RecipientAddress(serviceId, pni, number, username),
                     new RecipientAddress(serviceId, null, null),
                     new RecipientAddress(null, pni, null),
                     new RecipientAddress(null, null, number),
                     new RecipientAddress(serviceId, null, number),
+                    new RecipientAddress(serviceId, null, number, username),
                     new RecipientAddress(null, pni, number),
-                    new RecipientAddress(serviceId, pni, null));
+                    new RecipientAddress(serviceId, pni, null),
+                    new RecipientAddress(serviceId, null, null, username));
         }
     }
 }
