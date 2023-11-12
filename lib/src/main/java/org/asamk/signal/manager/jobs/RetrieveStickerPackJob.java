@@ -23,6 +23,7 @@ public class RetrieveStickerPackJob implements Job {
 
     @Override
     public void run(Context context) {
+        logger.trace("Downloading sticker pack {}", packId);
         try {
             context.getStickerHelper().retrieveStickerPack(packId, packKey);
         } catch (IOException e) {

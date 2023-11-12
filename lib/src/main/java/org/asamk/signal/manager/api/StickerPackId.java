@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.api;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 public class StickerPackId {
 
@@ -31,5 +32,10 @@ public class StickerPackId {
     @Override
     public int hashCode() {
         return Arrays.hashCode(id);
+    }
+
+    @Override
+    public String toString() {
+        return "StickerPackId{" + Base64.getUrlEncoder().encodeToString(id) + '}';
     }
 }

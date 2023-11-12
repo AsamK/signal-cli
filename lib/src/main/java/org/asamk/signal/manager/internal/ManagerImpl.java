@@ -1332,6 +1332,7 @@ public class ManagerImpl implements Manager {
             stopReceiveThread(thread);
         }
         executor.close();
+        context.close();
 
         dependencies.getSignalWebSocket().disconnect();
         dependencies.getPushServiceSocket().close();
