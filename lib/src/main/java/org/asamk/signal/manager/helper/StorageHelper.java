@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.internal.SignalDependencies;
+import org.asamk.signal.manager.jobs.CheckWhoAmIJob;
 import org.asamk.signal.manager.jobs.DownloadProfileAvatarJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
@@ -251,7 +252,7 @@ public class StorageHelper {
         }
 
         if (!accountRecord.getE164().equals(account.getNumber())) {
-            context.getAccountHelper().checkWhoAmiI();
+            context.getJobExecutor().enqueueJob(new CheckWhoAmIJob());
         }
 
         account.getConfigurationStore().setReadReceipts(accountRecord.isReadReceiptsEnabled());
