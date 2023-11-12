@@ -107,23 +107,8 @@ public class GroupHelper {
     ) {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
-        var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
-        var groupInfo = getGroup(groupId);
-        final GroupInfoV2 groupInfoV2;
-        if (groupInfo instanceof GroupInfoV1) {
-            // Received a v2 group message for a v1 group, we need to locally migrate the group
-            account.getGroupStore().deleteGroup(((GroupInfoV1) groupInfo).getGroupId());
-            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, account.getRecipientResolver());
-            groupInfoV2.setBlocked(groupInfo.isBlocked());
-            account.getGroupStore().updateGroup(groupInfoV2);
-            logger.info("Locally migrated group {} to group v2, id: {}",
-                    groupInfo.getGroupId().toBase64(),
-                    groupInfoV2.getGroupId().toBase64());
-        } else if (groupInfo instanceof GroupInfoV2) {
-            groupInfoV2 = (GroupInfoV2) groupInfo;
-        } else {
-            groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, account.getRecipientResolver());
-        }
+        final var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
+        final var groupInfoV2 = account.getGroupStore().getGroupOrPartialMigrate(groupMasterKey, groupId);
 
         if (groupInfoV2.getGroup() == null || groupInfoV2.getGroup().revision < revision) {
             DecryptedGroup group = null;

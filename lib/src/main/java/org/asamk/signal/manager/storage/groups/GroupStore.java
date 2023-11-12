@@ -11,6 +11,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientIdCreator;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
+import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,23 +88,27 @@ public class GroupStore {
     public void updateGroup(GroupInfo group) {
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
-            final Long internalId;
-            final var sql = (
-                    """
-                    SELECT g._id
-                    FROM %s g
-                    WHERE g.group_id = ?
-                    """
-            ).formatted(group instanceof GroupInfoV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2);
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, group.getGroupId().serialize());
-                internalId = Utils.executeQueryForOptional(statement, res -> res.getLong("_id")).orElse(null);
-            }
-            insertOrReplaceGroup(connection, internalId, group);
+            updateGroup(connection, group);
             connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed update recipient store", e);
         }
+    }
+
+    public void updateGroup(final Connection connection, final GroupInfo group) throws SQLException {
+        final Long internalId;
+        final var sql = (
+                """
+                SELECT g._id
+                FROM %s g
+                WHERE g.group_id = ?
+                """
+        ).formatted(group instanceof GroupInfoV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, group.getGroupId().serialize());
+            internalId = Utils.executeQueryForOptional(statement, res -> res.getLong("_id")).orElse(null);
+        }
+        insertOrReplaceGroup(connection, internalId, group);
     }
 
     public void deleteGroup(GroupId groupId) {
@@ -115,30 +120,34 @@ public class GroupStore {
     }
 
     public void deleteGroup(GroupIdV1 groupIdV1) {
+        try (final var connection = database.getConnection()) {
+            deleteGroup(connection, groupIdV1);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update group store", e);
+        }
+    }
+
+    private void deleteGroup(final Connection connection, final GroupIdV1 groupIdV1) throws SQLException {
         final var sql = (
                 """
                 DELETE FROM %s
                 WHERE group_id = ?
                 """
         ).formatted(TABLE_GROUP_V1);
-        try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, groupIdV1.serialize());
-                statement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed update group store", e);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, groupIdV1.serialize());
+            statement.executeUpdate();
         }
     }
 
     public void deleteGroup(GroupIdV2 groupIdV2) {
-        final var sql = (
-                """
-                DELETE FROM %s
-                WHERE group_id = ?
-                """
-        ).formatted(TABLE_GROUP_V2);
         try (final var connection = database.getConnection()) {
+            final var sql = (
+                    """
+                    DELETE FROM %s
+                    WHERE group_id = ?
+                    """
+            ).formatted(TABLE_GROUP_V2);
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setBytes(1, groupIdV2.serialize());
                 statement.executeUpdate();
@@ -193,6 +202,49 @@ public class GroupStore {
         }
     }
 
+    public GroupInfoV2 getGroupOrPartialMigrate(
+            Connection connection, final GroupMasterKey groupMasterKey
+    ) throws SQLException {
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+        final var groupId = GroupUtils.getGroupIdV2(groupSecretParams);
+
+        return getGroupOrPartialMigrate(connection, groupMasterKey, groupId);
+    }
+
+    public GroupInfoV2 getGroupOrPartialMigrate(
+            final GroupMasterKey groupMasterKey, final GroupIdV2 groupId
+    ) {
+        try (final var connection = database.getConnection()) {
+            return getGroupOrPartialMigrate(connection, groupMasterKey, groupId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
+
+    private GroupInfoV2 getGroupOrPartialMigrate(
+            Connection connection, final GroupMasterKey groupMasterKey, final GroupIdV2 groupId
+    ) throws SQLException {
+        switch (getGroup(groupId)) {
+            case GroupInfoV1 groupInfoV1 -> {
+                // Received a v2 group message for a v1 group, we need to locally migrate the group
+                deleteGroup(connection, groupInfoV1.getGroupId());
+                final var groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, recipientResolver);
+                groupInfoV2.setBlocked(groupInfoV1.isBlocked());
+                updateGroup(connection, groupInfoV2);
+                logger.debug("Locally migrated group {} to group v2, id: {}",
+                        groupInfoV1.getGroupId().toBase64(),
+                        groupInfoV2.getGroupId().toBase64());
+                return groupInfoV2;
+            }
+            case GroupInfoV2 groupInfoV2 -> {
+                return groupInfoV2;
+            }
+            case null -> {
+                return new GroupInfoV2(groupId, groupMasterKey, recipientResolver);
+            }
+        }
+    }
+
     public List<GroupInfo> getGroups() {
         return Stream.concat(getGroupsV2().stream(), getGroupsV1().stream()).toList();
     }
@@ -212,7 +264,7 @@ public class GroupStore {
             statement.setLong(2, toBeMergedRecipientId.id());
             final var updatedRows = statement.executeUpdate();
             if (updatedRows > 0) {
-                logger.info("Updated {} group members when merging recipients", updatedRows);
+                logger.debug("Updated {} group members when merging recipients", updatedRows);
             }
         }
     }
