@@ -150,23 +150,29 @@ public class GroupStore {
 
     public GroupInfo getGroup(GroupId groupId) {
         try (final var connection = database.getConnection()) {
-            if (groupId instanceof GroupIdV1 groupIdV1) {
+            return getGroup(connection, groupId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read from group store", e);
+        }
+    }
+
+    public GroupInfo getGroup(final Connection connection, final GroupId groupId) throws SQLException {
+        switch (groupId) {
+            case GroupIdV1 groupIdV1 -> {
                 final var group = getGroup(connection, groupIdV1);
                 if (group != null) {
                     return group;
                 }
                 return getGroupV2ByV1Id(connection, groupIdV1);
-            } else if (groupId instanceof GroupIdV2 groupIdV2) {
+            }
+            case GroupIdV2 groupIdV2 -> {
                 final var group = getGroup(connection, groupIdV2);
                 if (group != null) {
                     return group;
                 }
                 return getGroupV1ByV2Id(connection, groupIdV2);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed read from group store", e);
         }
-        throw new AssertionError("Invalid group id type");
     }
 
     public GroupInfoV1 getOrCreateGroupV1(GroupIdV1 groupId) {
