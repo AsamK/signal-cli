@@ -282,7 +282,6 @@ public class SignalAccount implements Closeable {
         getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
         this.password = password;
         this.profileKey = profileKey;
-        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
         this.encryptedDeviceName = encryptedDeviceName;
         this.aciAccountData.setIdentityKeyPair(aciIdentity);
         this.pniAccountData.setIdentityKeyPair(pniIdentity);
@@ -654,14 +653,11 @@ public class SignalAccount implements Closeable {
             // Old config file, creating new profile key
             setProfileKey(KeyUtils.createProfileKey());
         }
-        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
 
         if (previousStorageVersion < 5) {
             final var legacyRecipientsStoreFile = new File(userPath, "recipients-store");
             if (legacyRecipientsStoreFile.exists()) {
                 LegacyRecipientStore2.migrate(legacyRecipientsStoreFile, getRecipientStore());
-                // Ensure our profile key is stored in profile store
-                getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
             }
         }
         if (previousStorageVersion < 6) {
@@ -1185,12 +1181,11 @@ public class SignalAccount implements Closeable {
     }
 
     public RecipientStore getRecipientStore() {
-        return getOrCreate(() -> recipientStore, () -> {
-            recipientStore = new RecipientStore(this::mergeRecipients,
-                    this::getSelfRecipientAddress,
-                    getAccountDatabase());
-            getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
-        });
+        return getOrCreate(() -> recipientStore,
+                () -> recipientStore = new RecipientStore(this::mergeRecipients,
+                        this::getSelfRecipientAddress,
+                        this::getProfileKey,
+                        getAccountDatabase()));
     }
 
     public ProfileStore getProfileStore() {
@@ -1547,7 +1542,6 @@ public class SignalAccount implements Closeable {
         }
         this.profileKey = profileKey;
         save();
-        getProfileStore().storeSelfProfileKey(getSelfRecipientId(), getProfileKey());
     }
 
     public byte[] getSelfUnidentifiedAccessKey() {
