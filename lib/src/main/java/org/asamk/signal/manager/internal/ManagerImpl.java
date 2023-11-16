@@ -61,6 +61,7 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
@@ -332,9 +333,19 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public String setUsername(final String username) throws IOException, InvalidUsernameException {
+    public String getUsername() {
+        return account.getUsername();
+    }
+
+    @Override
+    public UsernameLinkUrl getUsernameLink() {
+        return new UsernameLinkUrl(account.getUsernameLink());
+    }
+
+    @Override
+    public void setUsername(final String username) throws IOException, InvalidUsernameException {
         try {
-            return context.getAccountHelper().reserveUsername(username);
+            context.getAccountHelper().reserveUsername(username);
         } catch (BaseUsernameException e) {
             throw new InvalidUsernameException(e.getMessage() + " (" + e.getClass().getSimpleName() + ")", e);
         }

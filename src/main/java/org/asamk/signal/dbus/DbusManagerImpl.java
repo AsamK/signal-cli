@@ -46,6 +46,7 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -164,7 +165,17 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public String setUsername(final String username) throws IOException, InvalidUsernameException {
+    public String getUsername() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public UsernameLinkUrl getUsernameLink() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setUsername(final String username) throws IOException, InvalidUsernameException {
         throw new UnsupportedOperationException();
     }
 

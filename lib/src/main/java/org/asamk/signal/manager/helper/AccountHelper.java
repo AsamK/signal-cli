@@ -33,6 +33,9 @@ import org.whispersystems.signalservice.api.push.SignedPreKeyEntity;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
+import org.whispersystems.signalservice.api.push.exceptions.UsernameIsNotReservedException;
+import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
+import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
@@ -97,6 +100,13 @@ public class AccountHelper {
                     && account.isPrimaryDevice()
                     && account.getRegistrationLockPin() != null) {
                 migrateRegistrationPin();
+            }
+            if (account.getUsername() != null && account.getUsernameLink() == null) {
+                try {
+                    tryToSetUsernameLink(new Username(account.getUsername()));
+                } catch (BaseUsernameException e) {
+                    logger.debug("Invalid local username");
+                }
             }
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
@@ -305,13 +315,13 @@ public class AccountHelper {
     public static final int USERNAME_MIN_LENGTH = 3;
     public static final int USERNAME_MAX_LENGTH = 32;
 
-    public String reserveUsername(String nickname) throws IOException, BaseUsernameException {
+    public void reserveUsername(String nickname) throws IOException, BaseUsernameException {
         final var currentUsername = account.getUsername();
         if (currentUsername != null) {
             final var currentNickname = currentUsername.substring(0, currentUsername.indexOf('.'));
             if (currentNickname.equals(nickname)) {
                 refreshCurrentUsername();
-                return currentUsername;
+                return;
             }
         }
 
@@ -329,14 +339,13 @@ public class AccountHelper {
         }
 
         logger.debug("[reserveUsername] Successfully reserved username.");
-        final var username = candidates.get(hashIndex).getUsername();
+        final var username = candidates.get(hashIndex);
 
-        dependencies.getAccountManager().confirmUsername(username, response);
-        account.setUsername(username);
+        dependencies.getAccountManager().confirmUsername(username.getUsername(), response);
+        account.setUsername(username.getUsername());
         account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
         logger.debug("[confirmUsername] Successfully confirmed username.");
-
-        return username;
+        tryToSetUsernameLink(username);
     }
 
     public void refreshCurrentUsername() throws IOException, BaseUsernameException {
@@ -348,7 +357,8 @@ public class AccountHelper {
         final var whoAmIResponse = dependencies.getAccountManager().getWhoAmI();
         final var serverUsernameHash = whoAmIResponse.getUsernameHash();
         final var hasServerUsername = !isEmpty(serverUsernameHash);
-        final var localUsernameHash = Base64.encodeUrlSafeWithoutPadding(new Username(localUsername).getHash());
+        final var username = new Username(localUsername);
+        final var localUsernameHash = Base64.encodeUrlSafeWithoutPadding(username.getHash());
 
         if (!hasServerUsername) {
             logger.debug("No remote username is set.");
@@ -360,17 +370,40 @@ public class AccountHelper {
 
         if (!hasServerUsername || !Objects.equals(localUsernameHash, serverUsernameHash)) {
             logger.debug("Attempting to resynchronize username.");
-            tryReserveConfirmUsername(localUsername, localUsernameHash);
+            try {
+                tryReserveConfirmUsername(username);
+            } catch (UsernameMalformedException | UsernameTakenException | UsernameIsNotReservedException e) {
+                logger.debug("[confirmUsername] Failed to reserve confirm username: {} ({})",
+                        e.getMessage(),
+                        e.getClass().getSimpleName());
+                account.setUsername(null);
+                account.setUsernameLink(null);
+                throw e;
+            }
         } else {
             logger.debug("Username already set, not refreshing.");
         }
     }
 
-    private void tryReserveConfirmUsername(final String username, String localUsernameHash) throws IOException {
-        final var response = dependencies.getAccountManager().reserveUsername(List.of(localUsernameHash));
+    private void tryReserveConfirmUsername(final Username username) throws IOException {
+        final var response = dependencies.getAccountManager()
+                .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash())));
         logger.debug("[reserveUsername] Successfully reserved existing username.");
-        dependencies.getAccountManager().confirmUsername(username, response);
+        dependencies.getAccountManager().confirmUsername(username.getUsername(), response);
         logger.debug("[confirmUsername] Successfully confirmed existing username.");
+        tryToSetUsernameLink(username);
+    }
+
+    private void tryToSetUsernameLink(Username username) {
+        for (var i = 1; i < 4; i++) {
+            try {
+                final var linkComponents = dependencies.getAccountManager().createUsernameLink(username);
+                account.setUsernameLink(linkComponents);
+                break;
+            } catch (IOException e) {
+                logger.debug("[tryToSetUsernameLink] Failed with IOException on attempt {}/3", i, e);
+            }
+        }
     }
 
     public void deleteUsername() throws IOException {

@@ -768,7 +768,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"username","parameterTypes":[] }]
+  "methods":[{"name":"username","parameterTypes":[] }, {"name":"usernameLink","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.VerifyCommand$VerifyParams",
@@ -2593,6 +2593,20 @@
 {
   "name":"org.whispersystems.signalservice.internal.push.SenderCertificate$ByteArrayDesieralizer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SetUsernameLinkRequestBody",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }, {"name":"getUsernameLinkEncryptedValue","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.SetUsernameLinkResponseBody",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.UUID"] }, {"name":"<init>","parameterTypes":["java.util.UUID","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.StaleDevices",

@@ -76,6 +76,7 @@ import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.StorageKey;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
@@ -129,6 +130,7 @@ public class SignalAccount implements Closeable {
     private ServiceEnvironment serviceEnvironment;
     private String number;
     private String username;
+    private UsernameLinkComponents usernameLink;
     private String encryptedDeviceName;
     private int deviceId = 0;
     private String password;
@@ -1276,6 +1278,14 @@ public class SignalAccount implements Closeable {
     public void setUsername(final String username) {
         this.username = username;
         save();
+    }
+
+    public UsernameLinkComponents getUsernameLink() {
+        return usernameLink;
+    }
+
+    public void setUsernameLink(final UsernameLinkComponents usernameLink) {
+        this.usernameLink = usernameLink;
     }
 
     public ServiceEnvironment getServiceEnvironment() {

@@ -41,6 +41,7 @@ import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -100,11 +101,15 @@ public interface Manager extends Closeable {
      */
     void updateProfile(UpdateProfile updateProfile) throws IOException;
 
+    String getUsername();
+
+    UsernameLinkUrl getUsernameLink();
+
     /**
      * Set a username for the account.
      * If the username is null, it will be deleted.
      */
-    String setUsername(String username) throws IOException, InvalidUsernameException;
+    void setUsername(String username) throws IOException, InvalidUsernameException;
 
     /**
      * Set a username for the account.

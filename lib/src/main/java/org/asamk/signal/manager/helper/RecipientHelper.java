@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
+import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -93,10 +94,23 @@ public class RecipientHelper {
                 }
             });
         } else if (recipient instanceof RecipientIdentifier.Username usernameRecipient) {
-            final var username = usernameRecipient.username();
-            return account.getRecipientStore().resolveRecipientByUsername(username, () -> {
+            var username = usernameRecipient.username();
+            try {
+                UsernameLinkUrl usernameLinkUrl = UsernameLinkUrl.fromUri(username);
+                final var components = usernameLinkUrl.getComponents();
+                final var encryptedUsername = dependencies.getAccountManager()
+                        .getEncryptedUsernameFromLinkServerId(components.getServerId());
+                final var link = new Username.UsernameLink(components.getEntropy(), encryptedUsername);
+
+                username = Username.fromLink(link).getUsername();
+            } catch (UsernameLinkUrl.InvalidUsernameLinkException e) {
+            } catch (IOException | BaseUsernameException e) {
+                throw new RuntimeException(e);
+            }
+            final String finalUsername = username;
+            return account.getRecipientStore().resolveRecipientByUsername(finalUsername, () -> {
                 try {
-                    return getRegisteredUserByUsername(username);
+                    return getRegisteredUserByUsername(finalUsername);
                 } catch (Exception e) {
                     return null;
                 }

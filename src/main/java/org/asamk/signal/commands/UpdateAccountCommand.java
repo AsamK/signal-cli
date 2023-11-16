@@ -49,10 +49,15 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
         var username = ns.getString("username");
         if (username != null) {
             try {
-                final var newUsername = m.setUsername(username);
+                m.setUsername(username);
+                final var newUsername = m.getUsername();
+                final var newUsernameLink = m.getUsernameLink();
                 switch (outputWriter) {
-                    case PlainTextWriter w -> w.println("Your new username: {}", newUsername);
-                    case JsonWriter w -> w.write(new JsonAccountResponse(newUsername));
+                    case PlainTextWriter w -> w.println("Your new username: {} ({})",
+                            newUsername,
+                            newUsernameLink == null ? "-" : newUsernameLink.getUrl());
+                    case JsonWriter w -> w.write(new JsonAccountResponse(newUsername,
+                            newUsernameLink == null ? null : newUsernameLink.getUrl()));
                 }
             } catch (IOException e) {
                 throw new IOErrorException("Failed to set username: " + e.getMessage(), e);
@@ -72,6 +77,7 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     }
 
     private record JsonAccountResponse(
-            @JsonInclude(JsonInclude.Include.NON_NULL) String username
+            @JsonInclude(JsonInclude.Include.NON_NULL) String username,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String usernameLink
     ) {}
 }
