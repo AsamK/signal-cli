@@ -31,6 +31,7 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         subparser.help("Send reaction to a previously received or sent message.");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
+        subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
         subparser.addArgument("--note-to-self")
                 .help("Send the reaction to self without notification.")
                 .action(Arguments.storeTrue());
@@ -57,11 +58,13 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
+        final var usernameStrings = ns.<String>getList("username");
 
         final var recipientIdentifiers = CommandUtil.getRecipientIdentifiers(m,
                 isNoteToSelf,
                 recipientStrings,
-                groupIdStrings);
+                groupIdStrings,
+                usernameStrings);
 
         final var emoji = ns.getString("emoji");
         final var isRemove = Boolean.TRUE.equals(ns.getBoolean("remove"));

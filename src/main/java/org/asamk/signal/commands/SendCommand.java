@@ -47,6 +47,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.help("Send a message to another user or group.");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
+        subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
         subparser.addArgument("--note-to-self")
                 .help("Send the message to self without notification.")
                 .action(Arguments.storeTrue());
@@ -56,6 +57,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         mut.addArgument("--message-from-stdin")
                 .action(Arguments.storeTrue())
                 .help("Read the message from standard input.");
+
         subparser.addArgument("-a", "--attachment")
                 .nargs("*")
                 .help("Add an attachment. "
@@ -106,11 +108,13 @@ public class SendCommand implements JsonRpcLocalCommand {
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
+        final var usernameStrings = ns.<String>getList("username");
 
         final var recipientIdentifiers = CommandUtil.getRecipientIdentifiers(m,
                 isNoteToSelf,
                 recipientStrings,
-                groupIdStrings);
+                groupIdStrings,
+                usernameStrings);
 
         final var isEndSession = Boolean.TRUE.equals(ns.getBoolean("end-session"));
         if (isEndSession) {

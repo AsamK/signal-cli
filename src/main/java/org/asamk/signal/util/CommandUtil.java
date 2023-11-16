@@ -26,7 +26,8 @@ public class CommandUtil {
             final Manager m,
             final boolean isNoteToSelf,
             final List<String> recipientStrings,
-            final List<String> groupIdStrings
+            final List<String> groupIdStrings,
+            final List<String> usernameStrings
     ) throws UserErrorException {
         final var recipientIdentifiers = new HashSet<RecipientIdentifier>();
         if (isNoteToSelf) {
@@ -38,6 +39,9 @@ public class CommandUtil {
         }
         if (groupIdStrings != null) {
             recipientIdentifiers.addAll(CommandUtil.getGroupIdentifiers(groupIdStrings));
+        }
+        if (usernameStrings != null) {
+            recipientIdentifiers.addAll(CommandUtil.getUsernameIdentifiers(usernameStrings));
         }
 
         if (recipientIdentifiers.isEmpty()) {
@@ -100,6 +104,17 @@ public class CommandUtil {
         } catch (InvalidNumberException e) {
             throw new UserErrorException("Invalid phone number '" + recipientString + "': " + e.getMessage(), e);
         }
+    }
+
+    public static Set<RecipientIdentifier.Username> getUsernameIdentifiers(Collection<String> usernameIdStrings) {
+        if (usernameIdStrings == null) {
+            return Set.of();
+        }
+        final var usernameIds = new HashSet<RecipientIdentifier.Username>();
+        for (final var usernameIdString : usernameIdStrings) {
+            usernameIds.add(new RecipientIdentifier.Username(usernameIdString));
+        }
+        return usernameIds;
     }
 
     public static String getCaptchaRequiredMessage(final CaptchaRequiredException e, final boolean captchaProvided) {

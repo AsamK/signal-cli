@@ -34,6 +34,7 @@ public class RemoteDeleteCommand implements JsonRpcLocalCommand {
                 .help("Specify the timestamp of the message to delete.");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
+        subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
         subparser.addArgument("--note-to-self").action(Arguments.storeTrue());
     }
 
@@ -43,12 +44,14 @@ public class RemoteDeleteCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
+        final var usernameStrings = ns.<String>getList("username");
         final var groupIdStrings = ns.<String>getList("group-id");
 
         final var recipientIdentifiers = CommandUtil.getRecipientIdentifiers(m,
                 isNoteToSelf,
                 recipientStrings,
-                groupIdStrings);
+                groupIdStrings,
+                usernameStrings);
 
         final long targetTimestamp = ns.getLong("target-timestamp");
 
