@@ -60,6 +60,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
     private final Consumer<Manager> newManagerListener;
+    private final GroupsV2Operations groupsV2Operations;
 
     private final SignalServiceAccountManager accountManager;
     private final PinHelper pinHelper;
@@ -80,13 +81,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
         this.userAgent = userAgent;
         this.newManagerListener = newManagerListener;
 
-        GroupsV2Operations groupsV2Operations;
-        try {
-            groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration()),
-                    ServiceConfig.GROUP_MAX_SIZE);
-        } catch (Throwable ignored) {
-            groupsV2Operations = null;
-        }
+        groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration()),
+                ServiceConfig.GROUP_MAX_SIZE);
         this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
                 new DynamicCredentialsProvider(
                         // Using empty UUID, because registering doesn't work otherwise
@@ -210,7 +206,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
                     account.getCredentialsProvider(),
                     userAgent,
-                    null,
+                    groupsV2Operations,
                     ServiceConfig.AUTOMATIC_NETWORK_RETRY);
             accountManager.setAccountAttributes(account.getAccountAttributes(null));
             account.setRegistered(true);

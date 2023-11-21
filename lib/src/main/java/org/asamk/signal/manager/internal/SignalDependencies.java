@@ -142,7 +142,7 @@ public class SignalDependencies {
 
     private ClientZkProfileOperations getClientZkProfileOperations() {
         final var clientZkOperations = getClientZkOperations();
-        return clientZkOperations == null ? null : clientZkOperations.getProfileOperations();
+        return clientZkOperations.getProfileOperations();
     }
 
     public SignalWebSocket getSignalWebSocket() {
