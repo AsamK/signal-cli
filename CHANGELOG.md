@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.12.5] - 2023-10-22
+## [0.12.5] - 2023-11-21
 
 ### Fixes
 - Fix issue with joining groups by group link for new accounts
