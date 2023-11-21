@@ -201,7 +201,7 @@
 },
 {
   "name":"java.lang.Class",
-  "methods":[{"name":"getRecordComponents","parameterTypes":[] }]
+  "methods":[{"name":"getPermittedSubclasses","parameterTypes":[] }, {"name":"getRecordComponents","parameterTypes":[] }, {"name":"isRecord","parameterTypes":[] }, {"name":"isSealed","parameterTypes":[] }]
 },
 {
   "name":"java.lang.Comparable",
@@ -267,6 +267,16 @@
   "name":"java.lang.Throwable",
   "queryAllPublicMethods":true,
   "methods":[{"name":"addSuppressed","parameterTypes":["java.lang.Throwable"] }, {"name":"getSuppressed","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.annotation.Retention",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"value","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.annotation.Target",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"value","parameterTypes":[] }]
 },
 {
   "name":"java.lang.constant.Constable",
