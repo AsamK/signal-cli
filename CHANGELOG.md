@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.12.5] - 2023-10-22
 
 ### Fixes
