@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.12.5] - 2023-10-22
+
+### Fixes
+- Fix issue with joining groups by group link for new accounts
+- Fix receiving address of shared contact
+- Fix receiving sync edit messages in groups
+
+### Changed
+- Create safety numbers based on ACI instead of phone number
 
 ## [0.12.4] - 2023-10-22
 
