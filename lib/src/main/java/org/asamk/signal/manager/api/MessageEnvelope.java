@@ -482,13 +482,13 @@ public record MessageEnvelope(
                 static Address from(org.whispersystems.signalservice.api.messages.shared.SharedContact.PostalAddress address) {
                     return new Address(Address.Type.from(address.getType()),
                             address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel(),
-                            address.getLabel());
+                            address.getStreet(),
+                            address.getPobox(),
+                            address.getNeighborhood(),
+                            address.getCity(),
+                            address.getRegion(),
+                            address.getPostcode(),
+                            address.getCountry());
                 }
 
                 public enum Type {
