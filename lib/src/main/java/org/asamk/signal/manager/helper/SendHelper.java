@@ -475,9 +475,10 @@ public class SendHelper {
                 senderKeyTargets = Set.of();
             } else {
                 results.stream().filter(SendMessageResult::isSuccess).forEach(allResults::add);
+                final var recipientResolver = account.getRecipientResolver();
                 final var failedTargets = results.stream()
                         .filter(r -> !r.isSuccess())
-                        .map(r -> context.getRecipientHelper().resolveRecipient(r.getAddress()))
+                        .map(r -> recipientResolver.resolveRecipient(r.getAddress()))
                         .toList();
                 if (!failedTargets.isEmpty()) {
                     senderKeyTargets = new HashSet<>(senderKeyTargets);
@@ -724,7 +725,7 @@ public class SendHelper {
 
     private void handleSendMessageResult(final SendMessageResult r) {
         if (r.isSuccess() && !r.getSuccess().isUnidentified()) {
-            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
+            final var recipientId = account.getRecipientResolver().resolveRecipient(r.getAddress());
             final var profile = account.getProfileStore().getProfile(recipientId);
             if (profile != null && (
                     profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
@@ -738,7 +739,7 @@ public class SendHelper {
             }
         }
         if (r.isUnregisteredFailure()) {
-            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
+            final var recipientId = account.getRecipientResolver().resolveRecipient(r.getAddress());
             final var profile = account.getProfileStore().getProfile(recipientId);
             if (profile != null && (
                     profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.ENABLED
@@ -752,7 +753,7 @@ public class SendHelper {
             }
         }
         if (r.getIdentityFailure() != null) {
-            final var recipientId = context.getRecipientHelper().resolveRecipient(r.getAddress());
+            final var recipientId = account.getRecipientResolver().resolveRecipient(r.getAddress());
             context.getIdentityHelper()
                     .handleIdentityFailure(recipientId, r.getAddress().getServiceId(), r.getIdentityFailure());
         }
