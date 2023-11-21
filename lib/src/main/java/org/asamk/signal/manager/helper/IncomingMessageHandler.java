@@ -131,15 +131,10 @@ public final class IncomingMessageHandler {
         final var actions = new ArrayList<HandleAction>();
         SignalServiceContent content = null;
         Exception exception = null;
-        try {
-            if (envelope.hasSourceServiceId()) {
+        envelope.getSourceServiceId().map(ServiceId::parseOrNull)
                 // Store uuid if we don't have it already
                 // uuid in envelope is sent by server
-                account.getRecipientTrustedResolver().resolveRecipientTrusted(envelope.getSourceAddress());
-            }
-        } catch (Exception e) {
-            exception = e;
-        }
+                .ifPresent(serviceId -> account.getRecipientResolver().resolveRecipient(serviceId));
         if (!envelope.isReceipt()) {
             try {
                 final var cipherResult = dependencies.getCipher()
@@ -488,7 +483,7 @@ public final class IncomingMessageHandler {
                         sender,
                         destination == null
                                 ? null
-                                : new DeviceAddress(context.getRecipientHelper().resolveRecipient(destination),
+                                : new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),
                                         destination.getServiceId(),
                                         0),
                         ignoreAttachments));
@@ -530,7 +525,7 @@ public final class IncomingMessageHandler {
             final var blockedListMessage = syncMessage.getBlockedList().get();
             for (var address : blockedListMessage.getAddresses()) {
                 context.getContactHelper()
-                        .setContactBlocked(context.getRecipientHelper().resolveRecipient(address), true);
+                        .setContactBlocked(account.getRecipientResolver().resolveRecipient(address), true);
             }
             for (var groupId : blockedListMessage.getGroupIds()
                     .stream()
@@ -654,7 +649,7 @@ public final class IncomingMessageHandler {
         if (source == null) {
             return false;
         }
-        final var recipientId = context.getRecipientHelper().resolveRecipient(source);
+        final var recipientId = account.getRecipientResolver().resolveRecipient(source);
         if (context.getContactHelper().isContactBlocked(recipientId)) {
             return true;
         }
@@ -694,7 +689,7 @@ public final class IncomingMessageHandler {
 
         final var message = content.getDataMessage().orElse(null);
 
-        final var recipientId = context.getRecipientHelper().resolveRecipient(source);
+        final var recipientId = account.getRecipientResolver().resolveRecipient(source);
         if (!group.isMember(recipientId) && !(
                 group.isPendingMember(recipientId) && message != null && message.isGroupV2Update()
         )) {
@@ -745,10 +740,11 @@ public final class IncomingMessageHandler {
                             }
 
                             if (groupInfo.getMembers().isPresent()) {
+                                final var recipientResolver = account.getRecipientResolver();
                                 groupV1.addMembers(groupInfo.getMembers()
                                         .get()
                                         .stream()
-                                        .map(context.getRecipientHelper()::resolveRecipient)
+                                        .map(recipientResolver::resolveRecipient)
                                         .collect(Collectors.toSet()));
                             }
 
@@ -921,8 +917,9 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()) {
-            return envelope.getSourceAddress();
+        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        if (!envelope.isUnidentifiedSender() && serviceId != null) {
+            return new SignalServiceAddress(serviceId);
         } else if (content != null) {
             return content.getSender();
         } else {
@@ -931,12 +928,13 @@ public final class IncomingMessageHandler {
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        if (!envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()) {
-            return new DeviceAddress(context.getRecipientHelper().resolveRecipient(envelope.getSourceAddress()),
-                    envelope.getSourceAddress().getServiceId(),
+        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        if (!envelope.isUnidentifiedSender() && serviceId != null) {
+            return new DeviceAddress(account.getRecipientResolver().resolveRecipient(serviceId),
+                    serviceId,
                     envelope.getSourceDevice());
         } else {
-            return new DeviceAddress(context.getRecipientHelper().resolveRecipient(content.getSender()),
+            return new DeviceAddress(account.getRecipientResolver().resolveRecipient(content.getSender()),
                     content.getSender().getServiceId(),
                     content.getSenderDevice());
         }
@@ -951,7 +949,7 @@ public final class IncomingMessageHandler {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
         final var address = addressOptional.get();
-        return new DeviceAddress(context.getRecipientHelper().resolveRecipient(address),
+        return new DeviceAddress(account.getRecipientResolver().resolveRecipient(address),
                 address.getServiceId(),
                 account.getDeviceId());
     }

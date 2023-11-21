@@ -68,10 +68,6 @@ public class RecipientHelper {
                 .toSignalServiceAddress();
     }
 
-    public RecipientId resolveRecipient(final SignalServiceAddress address) {
-        return account.getRecipientResolver().resolveRecipient(address);
-    }
-
     public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredRecipientException {
         final var recipientIds = new HashSet<RecipientId>(recipients.size());
         for (var number : recipients) {

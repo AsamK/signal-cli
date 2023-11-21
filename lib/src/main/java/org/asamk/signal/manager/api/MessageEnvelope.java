@@ -32,6 +32,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptM
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ViewOnceOpenMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ViewedMessage;
+import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.IOException;
@@ -904,8 +905,9 @@ public record MessageEnvelope(
             final AttachmentFileProvider fileProvider,
             Exception exception
     ) {
-        final var source = !envelope.isUnidentifiedSender() && envelope.hasSourceServiceId()
-                ? recipientResolver.resolveRecipient(envelope.getSourceAddress())
+        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        final var source = !envelope.isUnidentifiedSender() && serviceId != null
+                ? recipientResolver.resolveRecipient(serviceId)
                 : envelope.isUnidentifiedSender() && content != null
                         ? recipientResolver.resolveRecipient(content.getSender())
                         : exception instanceof ProtocolException e

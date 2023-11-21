@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalWebSocket;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
 import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableException;
@@ -147,8 +148,10 @@ public class ReceiveHelper {
                     for (final var it : batch) {
                         SignalServiceEnvelope envelope1 = new SignalServiceEnvelope(it.getEnvelope(),
                                 it.getServerDeliveredTimestamp());
-                        final var recipientId = envelope1.hasSourceServiceId() ? account.getRecipientResolver()
-                                .resolveRecipient(envelope1.getSourceAddress()) : null;
+                        final var recipientId = envelope1.getSourceServiceId()
+                                .map(ServiceId::parseOrNull)
+                                .map(s -> account.getRecipientResolver().resolveRecipient(s))
+                                .orElse(null);
                         logger.trace("Storing new message from {}", recipientId);
                         // store message on disk, before acknowledging receipt to the server
                         cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
@@ -230,7 +233,7 @@ public class ReceiveHelper {
                     if (exception instanceof UntrustedIdentityException) {
                         logger.debug("Keeping message with untrusted identity in message cache");
                         final var address = ((UntrustedIdentityException) exception).getSender();
-                        if (!envelope.hasSourceServiceId() && address.uuid().isPresent()) {
+                        if (envelope.getSourceServiceId().isEmpty() && address.uuid().isPresent()) {
                             final var recipientId = account.getRecipientResolver()
                                     .resolveRecipient(ACI.from(address.uuid().get()));
                             try {
@@ -282,7 +285,7 @@ public class ReceiveHelper {
                 cachedMessage.delete();
                 return null;
             }
-            if (!envelope.hasSourceServiceId()) {
+            if (envelope.getSourceServiceId().isEmpty()) {
                 final var identifier = ((UntrustedIdentityException) exception).getSender();
                 final var recipientId = account.getRecipientResolver()
                         .resolveRecipient(new RecipientAddress(identifier));
