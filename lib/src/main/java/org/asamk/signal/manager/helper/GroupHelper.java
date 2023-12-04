@@ -209,54 +209,52 @@ public class GroupHelper {
         var group = getGroupForUpdating(groupId);
         final var avatarBytes = readAvatarBytes(avatarFile);
 
-        switch (group) {
-            case GroupInfoV2 gv2 -> {
-                try {
-                    return updateGroupV2(gv2,
-                            name,
-                            description,
-                            members,
-                            removeMembers,
-                            admins,
-                            removeAdmins,
-                            banMembers,
-                            unbanMembers,
-                            resetGroupLink,
-                            groupLinkState,
-                            addMemberPermission,
-                            editDetailsPermission,
-                            avatarBytes,
-                            expirationTimer,
-                            isAnnouncementGroup);
-                } catch (ConflictException e) {
-                    // Detected conflicting update, refreshing group and trying again
-                    group = getGroup(groupId, true);
-                    return updateGroupV2((GroupInfoV2) group,
-                            name,
-                            description,
-                            members,
-                            removeMembers,
-                            admins,
-                            removeAdmins,
-                            banMembers,
-                            unbanMembers,
-                            resetGroupLink,
-                            groupLinkState,
-                            addMemberPermission,
-                            editDetailsPermission,
-                            avatarBytes,
-                            expirationTimer,
-                            isAnnouncementGroup);
-                }
+        if(group instanceof GroupInfoV2) {
+            GroupInfoV2 gv2 = (GroupInfoV2) group;
+            try {
+                return updateGroupV2(gv2,
+                        name,
+                        description,
+                        members,
+                        removeMembers,
+                        admins,
+                        removeAdmins,
+                        banMembers,
+                        unbanMembers,
+                        resetGroupLink,
+                        groupLinkState,
+                        addMemberPermission,
+                        editDetailsPermission,
+                        avatarBytes,
+                        expirationTimer,
+                        isAnnouncementGroup);
+            } catch (ConflictException e) {
+                // Detected conflicting update, refreshing group and trying again
+                group = getGroup(groupId, true);
+                return updateGroupV2((GroupInfoV2) group,
+                        name,
+                        description,
+                        members,
+                        removeMembers,
+                        admins,
+                        removeAdmins,
+                        banMembers,
+                        unbanMembers,
+                        resetGroupLink,
+                        groupLinkState,
+                        addMemberPermission,
+                        editDetailsPermission,
+                        avatarBytes,
+                        expirationTimer,
+                        isAnnouncementGroup);
             }
-
-            case GroupInfoV1 gv1 -> {
-                final var result = updateGroupV1(gv1, name, members, avatarBytes);
-                if (expirationTimer != null) {
-                    setExpirationTimer(gv1, expirationTimer);
-                }
-                return result;
+        } else if (group instanceof GroupInfoV1) {
+            GroupInfoV1 gv1 = (GroupInfoV1) group;
+            final var result = updateGroupV1(gv1, name, members, avatarBytes);
+            if (expirationTimer != null) {
+                setExpirationTimer(gv1, expirationTimer);
             }
+            return result;
         }
     }
 
