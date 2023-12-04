@@ -9,12 +9,8 @@ plugins {
 version = "0.12.7"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 application {
@@ -30,7 +26,7 @@ graalvmNative {
             if (System.getenv("GRAALVM_HOME") == null) {
                 toolchainDetection.set(true)
                 javaLauncher.set(javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(21))
+                    languageVersion.set(JavaLanguageVersion.of(17))
                 })
             } else {
                 toolchainDetection.set(false)

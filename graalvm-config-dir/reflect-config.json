@@ -49,9 +49,6 @@
   "name":"[Lorg.whispersystems.signalservice.internal.push.GroupStaleDevices;"
 },
 {
-  "name":"android.os.Build$VERSION"
-},
-{
   "name":"byte[]",
   "allDeclaredMethods":true,
   "allPublicMethods":true
