@@ -1294,7 +1294,7 @@ public class ManagerImpl implements Manager {
           return trustIdentity(recipient,
                     r -> context.getIdentityHelper().trustIdentityVerifiedSafetyNumber(r, safetyNumber.safetyNumber()));
         } else {
-          throw new AssertionError("Invalid verification code type")
+          throw new AssertionError("Invalid verification code type");
         }
     }
 
