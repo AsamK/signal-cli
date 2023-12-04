@@ -25,19 +25,20 @@ public class PinHelper {
             String pin, MasterKey masterKey
     ) throws IOException {
         final var backupResponse = secureValueRecoveryV2.setPin(pin, masterKey).execute();
-        switch (backupResponse) {
-            case SecureValueRecovery.BackupResponse.Success success -> {
-            }
-            case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
-                    logger.warn("Backup svr2 failed: ServerRejected");
-            case SecureValueRecovery.BackupResponse.EnclaveNotFound enclaveNotFound ->
-                    logger.warn("Backup svr2 failed: EnclaveNotFound");
-            case SecureValueRecovery.BackupResponse.ExposeFailure exposeFailure ->
-                    logger.warn("Backup svr2 failed: ExposeFailure");
-            case SecureValueRecovery.BackupResponse.ApplicationError error ->
-                    throw new IOException(error.getException());
-            case SecureValueRecovery.BackupResponse.NetworkError error -> throw error.getException();
-            case null, default -> throw new AssertionError("Unexpected response");
+
+        if (backupResponse == SecureValueRecovery.BackupResponse.Success) {
+        } else if (backupResponse == SecureValueRecovery.BackupResponse.ServerRejected) {
+            logger.warn("Backup svr2 failed: ServerRejected");
+        } else if (backupResponse == SecureValueRecovery.BackupResponse.EnclaveNotFound) {
+            logger.warn("Backup svr2 failed: EnclaveNotFound");
+        } else if (backupResponse == SecureValueRecovery.BackupResponse.ExposeFailure) {
+            logger.warn("Backup svr2 failed: ExposeFailure");
+        } else if (backupResponse == SecureValueRecovery.BackupResponse.ApplicationError) {
+            throw new IOException(error.getException());
+        } else if (backupResponse == SecureValueRecovery.BackupResponse.NetworkError) {
+            throw new RuntimeException("network error");
+        } else {
+            throw new AssertionError("Unexpected response");
         }
     }
 
