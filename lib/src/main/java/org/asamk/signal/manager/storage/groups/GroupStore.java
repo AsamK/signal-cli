@@ -166,21 +166,18 @@ public class GroupStore {
     }
 
     public GroupInfo getGroup(final Connection connection, final GroupId groupId) throws SQLException {
-        switch (groupId) {
-            case GroupIdV1 groupIdV1 -> {
-                final var group = getGroup(connection, groupIdV1);
+        if (groupId instanceof GroupIdV1) {
+            final var group = getGroup(connection, groupIdV1);
                 if (group != null) {
                     return group;
                 }
                 return getGroupV2ByV1Id(connection, groupIdV1);
-            }
-            case GroupIdV2 groupIdV2 -> {
-                final var group = getGroup(connection, groupIdV2);
+        } else if (groupId instanceOf GroupIdV2) {
+            final var group = getGroup(connection, groupIdV2);
                 if (group != null) {
                     return group;
                 }
                 return getGroupV1ByV2Id(connection, groupIdV2);
-            }
         }
     }
 
