@@ -481,10 +481,6 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     @Override
     public ProfileKey getProfileKey(final RecipientId recipientId) {
-        final var selfRecipientId = resolveRecipient(selfAddressProvider.getSelfAddress());
-        if (recipientId.equals(selfRecipientId)) {
-            return selfProfileKeyProvider.getSelfProfileKey();
-        }
         try (final var connection = database.getConnection()) {
             return getProfileKey(connection, recipientId);
         } catch (SQLException e) {
@@ -665,9 +661,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             Connection connection, RecipientId recipientId, final ProfileKey profileKey, boolean resetProfile
     ) throws SQLException {
         if (profileKey != null) {
-            final var recipientProfileKey = getProfileKey(recipientId);
+            final var recipientProfileKey = getProfileKey(connection, recipientId);
             if (profileKey.equals(recipientProfileKey)) {
-                final var recipientProfile = getProfile(recipientId);
+                final var recipientProfile = getProfile(connection, recipientId);
                 if (recipientProfile == null || (
                         recipientProfile.getUnidentifiedAccessMode() != Profile.UnidentifiedAccessMode.UNKNOWN
                                 && recipientProfile.getUnidentifiedAccessMode()
@@ -988,6 +984,10 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private ProfileKey getProfileKey(final Connection connection, final RecipientId recipientId) throws SQLException {
+        final var selfRecipientId = resolveRecipientLocked(connection, selfAddressProvider.getSelfAddress());
+        if (recipientId.equals(selfRecipientId)) {
+            return selfProfileKeyProvider.getSelfProfileKey();
+        }
         final var sql = (
                 """
                 SELECT r.profile_key
