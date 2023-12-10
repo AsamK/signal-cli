@@ -5,39 +5,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
-import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
 import org.whispersystems.signalservice.internal.push.AuthCredentials;
 import org.whispersystems.signalservice.internal.push.LockedException;
 
 import java.io.IOException;
+import java.util.List;
 
 public class PinHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(PinHelper.class);
 
-    private final SecureValueRecoveryV2 secureValueRecoveryV2;
+    private final List<SecureValueRecovery> secureValueRecoveries;
 
-    public PinHelper(final SecureValueRecoveryV2 secureValueRecoveryV2) {
-        this.secureValueRecoveryV2 = secureValueRecoveryV2;
+    public PinHelper(final List<SecureValueRecovery> secureValueRecoveries) {
+        this.secureValueRecoveries = secureValueRecoveries;
     }
 
     public void setRegistrationLockPin(
             String pin, MasterKey masterKey
     ) throws IOException {
-        final var backupResponse = secureValueRecoveryV2.setPin(pin, masterKey).execute();
-        switch (backupResponse) {
-            case SecureValueRecovery.BackupResponse.Success success -> {
+        IOException exception = null;
+        for (final var secureValueRecovery : secureValueRecoveries) {
+            try {
+                final var backupResponse = secureValueRecovery.setPin(pin, masterKey).execute();
+                switch (backupResponse) {
+                    case SecureValueRecovery.BackupResponse.Success success -> {
+                    }
+                    case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
+                            logger.warn("Backup svr2 failed: ServerRejected");
+                    case SecureValueRecovery.BackupResponse.EnclaveNotFound enclaveNotFound ->
+                            logger.warn("Backup svr2 failed: EnclaveNotFound");
+                    case SecureValueRecovery.BackupResponse.ExposeFailure exposeFailure ->
+                            logger.warn("Backup svr2 failed: ExposeFailure");
+                    case SecureValueRecovery.BackupResponse.ApplicationError error ->
+                            throw new IOException(error.getException());
+                    case SecureValueRecovery.BackupResponse.NetworkError error -> throw error.getException();
+                    case null, default -> throw new AssertionError("Unexpected response");
+                }
+            } catch (IOException e) {
+                exception = e;
             }
-            case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
-                    logger.warn("Backup svr2 failed: ServerRejected");
-            case SecureValueRecovery.BackupResponse.EnclaveNotFound enclaveNotFound ->
-                    logger.warn("Backup svr2 failed: EnclaveNotFound");
-            case SecureValueRecovery.BackupResponse.ExposeFailure exposeFailure ->
-                    logger.warn("Backup svr2 failed: ExposeFailure");
-            case SecureValueRecovery.BackupResponse.ApplicationError error ->
-                    throw new IOException(error.getException());
-            case SecureValueRecovery.BackupResponse.NetworkError error -> throw error.getException();
-            case null, default -> throw new AssertionError("Unexpected response");
+        }
+        if (exception != null) {
+            throw exception;
         }
     }
 
@@ -46,27 +56,47 @@ public class PinHelper {
     }
 
     public void removeRegistrationLockPin() throws IOException {
-        final var deleteResponse = secureValueRecoveryV2.deleteData();
-        switch (deleteResponse) {
-            case SecureValueRecovery.DeleteResponse.Success success -> {
+        IOException exception = null;
+        for (final var secureValueRecovery : secureValueRecoveries) {
+            try {
+                final var deleteResponse = secureValueRecovery.deleteData();
+                switch (deleteResponse) {
+                    case SecureValueRecovery.DeleteResponse.Success success -> {
+                    }
+                    case SecureValueRecovery.DeleteResponse.ServerRejected serverRejected ->
+                            logger.warn("Delete svr2 failed: ServerRejected");
+                    case SecureValueRecovery.DeleteResponse.EnclaveNotFound enclaveNotFound ->
+                            logger.warn("Delete svr2 failed: EnclaveNotFound");
+                    case SecureValueRecovery.DeleteResponse.ApplicationError error ->
+                            throw new IOException(error.getException());
+                    case SecureValueRecovery.DeleteResponse.NetworkError error -> throw error.getException();
+                    case null, default -> throw new AssertionError("Unexpected response");
+                }
+            } catch (IOException e) {
+                exception = e;
             }
-            case SecureValueRecovery.DeleteResponse.ServerRejected serverRejected ->
-                    logger.warn("Delete svr2 failed: ServerRejected");
-            case SecureValueRecovery.DeleteResponse.EnclaveNotFound enclaveNotFound ->
-                    logger.warn("Delete svr2 failed: EnclaveNotFound");
-            case SecureValueRecovery.DeleteResponse.ApplicationError error ->
-                    throw new IOException(error.getException());
-            case SecureValueRecovery.DeleteResponse.NetworkError error -> throw error.getException();
-            case null, default -> throw new AssertionError("Unexpected response");
+        }
+        if (exception != null) {
+            throw exception;
         }
     }
 
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
-            String pin, LockedException e
+            String pin, LockedException lockedException
     ) throws IOException, IncorrectPinException {
-        var svr2Credentials = e.getSvr2Credentials();
+        var svr2Credentials = lockedException.getSvr2Credentials();
         if (svr2Credentials != null) {
-            return getRegistrationLockData(secureValueRecoveryV2, svr2Credentials, pin);
+            IOException exception = null;
+            for (final var secureValueRecovery : secureValueRecoveries) {
+                try {
+                    return getRegistrationLockData(secureValueRecovery, svr2Credentials, pin);
+                } catch (IOException e) {
+                    exception = e;
+                }
+            }
+            if (exception != null) {
+                throw exception;
+            }
         }
 
         return null;

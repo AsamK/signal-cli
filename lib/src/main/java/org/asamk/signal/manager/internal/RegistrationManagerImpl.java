@@ -45,6 +45,7 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
+import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
@@ -90,7 +91,10 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 userAgent,
                 groupsV2Operations,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-        final var secureValueRecoveryV2 = accountManager.getSecureValueRecoveryV2(serviceEnvironmentConfig.svr2Mrenclave());
+        final var secureValueRecoveryV2 = serviceEnvironmentConfig.svr2Mrenclaves()
+                .stream()
+                .map(mr -> (SecureValueRecovery) accountManager.getSecureValueRecoveryV2(mr))
+                .toList();
         this.pinHelper = new PinHelper(secureValueRecoveryV2);
     }
 

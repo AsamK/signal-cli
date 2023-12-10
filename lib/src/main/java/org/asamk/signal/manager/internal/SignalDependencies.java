@@ -16,13 +16,14 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.ProfileService;
-import org.whispersystems.signalservice.api.svr.SecureValueRecoveryV2;
+import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -50,7 +51,7 @@ public class SignalDependencies {
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
 
-    private SecureValueRecoveryV2 secureValueRecoveryV2;
+    private List<SecureValueRecovery> secureValueRecoveryV2;
     private ProfileService profileService;
     private SignalServiceCipher cipher;
 
@@ -192,9 +193,12 @@ public class SignalDependencies {
                         pushServiceSocket));
     }
 
-    public SecureValueRecoveryV2 getSecureValueRecoveryV2() {
+    public List<SecureValueRecovery> getSecureValueRecoveryV2() {
         return getOrCreate(() -> secureValueRecoveryV2,
-                () -> secureValueRecoveryV2 = getAccountManager().getSecureValueRecoveryV2(serviceEnvironmentConfig.svr2Mrenclave()));
+                () -> secureValueRecoveryV2 = serviceEnvironmentConfig.svr2Mrenclaves()
+                        .stream()
+                        .map(mr -> (SecureValueRecovery) getAccountManager().getSecureValueRecoveryV2(mr))
+                        .toList());
     }
 
     public ProfileService getProfileService() {

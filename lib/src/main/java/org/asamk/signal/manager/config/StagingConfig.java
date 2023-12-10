@@ -20,12 +20,15 @@ import java.util.Optional;
 import okhttp3.Dns;
 import okhttp3.Interceptor;
 
+import static org.asamk.signal.manager.api.ServiceEnvironment.STAGING;
+
 class StagingConfig {
 
     private static final byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BbqY1DzohE4NUZoVF+L18oUPrK3kILllLEJh2UnPSsEx");
     private static final String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
-    private static final String SVR2_MRENCLAVE = "a8a261420a6bb9b61aa25bf8a79e8bd20d7652531feb3381cbffd446d270be95";
+    private static final String SVR2_MRENCLAVE = "acb1973aa0bbbd14b3b4e06f145497d948fd4a98efc500fcce363b3b743ec482";
+    private static final String SVR2_MRENCLAVE_DEPRECATED = "a8a261420a6bb9b61aa25bf8a79e8bd20d7652531feb3381cbffd446d270be95";
 
     private static final String URL = "https://chat.staging.signal.org";
     private static final String CDN_URL = "https://cdn-staging.signal.org";
@@ -69,12 +72,12 @@ class StagingConfig {
         }
     }
 
-    static String getCdsiMrenclave() {
-        return CDSI_MRENCLAVE;
-    }
-
-    static String getSvr2Mrenclave() {
-        return SVR2_MRENCLAVE;
+    static ServiceEnvironmentConfig getServiceEnvironmentConfig(List<Interceptor> interceptors) {
+        return new ServiceEnvironmentConfig(STAGING,
+                createDefaultServiceConfiguration(interceptors),
+                getUnidentifiedSenderTrustRoot(),
+                CDSI_MRENCLAVE,
+                List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_DEPRECATED));
     }
 
     private StagingConfig() {
