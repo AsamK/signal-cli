@@ -21,6 +21,7 @@ import org.whispersystems.signalservice.api.push.DistributionId;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -140,7 +141,7 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     }
 
     @Override
-    public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
+    public Map<SignalProtocolAddress, SessionRecord> getAllAddressesWithActiveSessions(final List<String> addressNames) {
         return sessionStore.getAllAddressesWithActiveSessions(addressNames);
     }
 

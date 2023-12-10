@@ -399,6 +399,7 @@ public class AccountHelper {
                             account.getAciIdentityKeyPair(),
                             account.getPniIdentityKeyPair(),
                             account.getProfileKey(),
+                            account.getOrCreatePinMasterKey(),
                             verificationCode);
         } catch (InvalidKeyException e) {
             throw new InvalidDeviceLinkException("Invalid device link", e);
