@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SessionStore implements SignalServiceSessionStore {
@@ -198,7 +197,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     @Override
-    public Set<SignalProtocolAddress> getAllAddressesWithActiveSessions(final List<String> addressNames) {
+    public Map<SignalProtocolAddress, SessionRecord> getAllAddressesWithActiveSessions(final List<String> addressNames) {
         final var serviceIdsCommaSeparated = addressNames.stream()
                 .map(address -> "'" + address.replaceAll("'", "''") + "'")
                 .collect(Collectors.joining(","));
@@ -215,9 +214,8 @@ public class SessionStore implements SignalServiceSessionStore {
                 return Utils.executeQueryForStream(statement,
                                 res -> new Pair<>(getKeyFromResultSet(res), getSessionRecordFromResultSet(res)))
                         .filter(pair -> isActive(pair.second()))
-                        .map(Pair::first)
-                        .map(key -> new SignalProtocolAddress(key.address(), key.deviceId()))
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toMap(pair -> new SignalProtocolAddress(pair.first().address(),
+                                pair.first().deviceId()), Pair::second));
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from session store", e);
