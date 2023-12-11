@@ -6,7 +6,7 @@ on:
       - v*
 
 permissions:
-  contents: read # to fetch code (actions/checkout)
+  contents: write # to fetch code (actions/checkout) and create release
 
 env:
   IMAGE_NAME: signal-cli
