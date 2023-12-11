@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.12.6] - 2023-12-11
+
+### Fixes
+- Fix linking to an existing account
+- Fix migration from old account data
+
 ## [0.12.5] - 2023-11-21
 
 ### Fixes
