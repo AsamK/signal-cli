@@ -52,6 +52,8 @@ import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static org.asamk.signal.manager.util.KeyUtils.generatePreKeysForType;
+
 public class RegistrationManagerImpl implements RegistrationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
@@ -137,8 +139,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
 
-        final var aciPreKeys = generatePreKeysForType(ServiceIdType.ACI);
-        final var pniPreKeys = generatePreKeysForType(ServiceIdType.PNI);
+        final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
+        final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
         final var result = NumberVerificationUtils.verifyNumber(account.getSessionId(account.getNumber()),
                 verificationCode,
                 pin,
@@ -250,21 +252,6 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 pniPreKeys,
                 null,
                 true));
-    }
-
-    private PreKeyCollection generatePreKeysForType(ServiceIdType serviceIdType) {
-        final var accountData = account.getAccountData(serviceIdType);
-        final var keyPair = accountData.getIdentityKeyPair();
-        final var preKeyMetadata = accountData.getPreKeyMetadata();
-
-        final var nextSignedPreKeyId = preKeyMetadata.getNextSignedPreKeyId();
-        final var signedPreKey = KeyUtils.generateSignedPreKeyRecord(nextSignedPreKeyId, keyPair.getPrivateKey());
-
-        final var privateKey = keyPair.getPrivateKey();
-        final var kyberPreKeyIdOffset = preKeyMetadata.getNextKyberPreKeyId();
-        final var lastResortKyberPreKey = KeyUtils.generateKyberPreKeyRecord(kyberPreKeyIdOffset, privateKey);
-
-        return new PreKeyCollection(keyPair.getPublicKey(), signedPreKey, lastResortKyberPreKey);
     }
 
     @Override

@@ -250,6 +250,7 @@
 {
   "name":"java.lang.Record",
   "allDeclaredFields":true,
+  "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true
 },
 {
@@ -300,7 +301,7 @@
 },
 {
   "name":"java.lang.reflect.RecordComponent",
-  "methods":[{"name":"getName","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
+  "methods":[{"name":"getAccessor","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
 },
 {
   "name":"java.net.NetPermission"
@@ -2438,6 +2439,13 @@
 {
   "name":"org.whispersystems.signalservice.internal.push.KyberPreKeyEntity$KEMPublicKeySerializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.LinkDeviceRequest",
+  "allDeclaredFields":true,
+  "allDeclaredClasses":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"accountAttributes","parameterTypes":[] }, {"name":"aciPqLastResortPreKey","parameterTypes":[] }, {"name":"aciSignedPreKey","parameterTypes":[] }, {"name":"pniPqLastResortPreKey","parameterTypes":[] }, {"name":"pniSignedPreKey","parameterTypes":[] }, {"name":"verificationCode","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.MismatchedDevices",

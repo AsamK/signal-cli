@@ -36,7 +36,6 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
-import org.whispersystems.signalservice.internal.push.ConfirmCodeMessage;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.IOException;
@@ -45,7 +44,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import static org.asamk.signal.manager.config.ServiceConfig.getCapabilities;
+import static org.asamk.signal.manager.util.KeyUtils.generatePreKeysForType;
 
 public class ProvisioningManagerImpl implements ProvisioningManager {
 
@@ -140,20 +139,21 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
                     encryptedDeviceName,
                     ret.getAciIdentity(),
                     ret.getPniIdentity(),
-                    profileKey);
+                    profileKey,
+                    ret.getMasterKey());
 
             account.getConfigurationStore().setReadReceipts(ret.isReadReceipts());
 
+            final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
+            final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
+
             logger.debug("Finishing new device registration");
             var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
-                    new ConfirmCodeMessage(false,
-                            true,
-                            account.getAccountData(ServiceIdType.ACI).getLocalRegistrationId(),
-                            account.getAccountData(ServiceIdType.PNI).getLocalRegistrationId(),
-                            encryptedDeviceName,
-                            getCapabilities(false)));
+                    account.getAccountAttributes(null),
+                    aciPreKeys,
+                    pniPreKeys);
 
-            account.finishLinking(deviceId);
+            account.finishLinking(deviceId, aciPreKeys, pniPreKeys);
 
             ManagerImpl m = null;
             try {

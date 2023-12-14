@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
@@ -12,6 +13,7 @@ import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
+import org.whispersystems.signalservice.api.account.PreKeyCollection;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 
 import java.security.SecureRandom;
@@ -124,5 +126,19 @@ public class KeyUtils {
 
     public static int getRandomInt(int bound) {
         return secureRandom.nextInt(bound);
+    }
+
+    public static PreKeyCollection generatePreKeysForType(final SignalAccount.AccountData<?> accountData) {
+        final var keyPair = accountData.getIdentityKeyPair();
+        final var preKeyMetadata = accountData.getPreKeyMetadata();
+
+        final var nextSignedPreKeyId = preKeyMetadata.getNextSignedPreKeyId();
+        final var signedPreKey = generateSignedPreKeyRecord(nextSignedPreKeyId, keyPair.getPrivateKey());
+
+        final var privateKey = keyPair.getPrivateKey();
+        final var kyberPreKeyIdOffset = preKeyMetadata.getNextKyberPreKeyId();
+        final var lastResortKyberPreKey = generateKyberPreKeyRecord(kyberPreKeyIdOffset, privateKey);
+
+        return new PreKeyCollection(keyPair.getPublicKey(), signedPreKey, lastResortKyberPreKey);
     }
 }

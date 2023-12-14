@@ -275,7 +275,8 @@ public class SignalAccount implements Closeable {
             final String encryptedDeviceName,
             final IdentityKeyPair aciIdentity,
             final IdentityKeyPair pniIdentity,
-            final ProfileKey profileKey
+            final ProfileKey profileKey,
+            final MasterKey masterKey
     ) {
         this.deviceId = 0;
         this.number = number;
@@ -290,7 +291,7 @@ public class SignalAccount implements Closeable {
         this.registered = false;
         this.isMultiDevice = true;
         getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
-        this.pinMasterKey = null;
+        this.pinMasterKey = masterKey;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;
@@ -304,9 +305,13 @@ public class SignalAccount implements Closeable {
         save();
     }
 
-    public void finishLinking(final int deviceId) {
+    public void finishLinking(
+            final int deviceId, final PreKeyCollection aciPreKeys, final PreKeyCollection pniPreKeys
+    ) {
         this.registered = true;
         this.deviceId = deviceId;
+        setPreKeys(ServiceIdType.ACI, aciPreKeys);
+        setPreKeys(ServiceIdType.PNI, pniPreKeys);
         save();
     }
 
