@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+**Attention**: Now requires Java 21
+
+### Added
+- New --hidden parameter for removeContact command
+
+### Improved
+- Better shutdown handling after Ctrl+C and SIGTERM
+
 ## [0.12.6] - 2023-12-11
 
 ### Fixes
