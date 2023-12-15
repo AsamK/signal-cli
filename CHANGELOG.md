@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.7] - 2023-12-15
+
+### Fixes
+- Fix linking to an existing account
+
 ## [0.12.6] - 2023-12-11
 
 ### Fixes
