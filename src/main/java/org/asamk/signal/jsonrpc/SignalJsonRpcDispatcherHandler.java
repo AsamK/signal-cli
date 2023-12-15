@@ -126,7 +126,7 @@ public class SignalJsonRpcDispatcherHandler {
     private void unsubscribeReceive(final Manager m) {
         final var subscriptionId = receiveHandlers.entrySet()
                 .stream()
-                .filter(e -> e.getValue().size() == 1 && e.getValue().get(0).first().equals(m))
+                .filter(e -> e.getValue().size() == 1 && e.getValue().getFirst().first().equals(m))
                 .map(Map.Entry::getKey)
                 .findFirst();
         subscriptionId.ifPresent(this::unsubscribeReceive);

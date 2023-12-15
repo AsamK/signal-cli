@@ -94,7 +94,7 @@ public class SignalJsonRpcCommandHandler {
             if (manager == null) {
                 final var managers = c.getManagers();
                 if (managers.size() == 1) {
-                    manager = managers.get(0);
+                    manager = managers.getFirst();
                 }
             }
             if (manager != null) {

@@ -668,7 +668,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     @Override
     public boolean isRegistered(String number) {
         var result = isRegistered(List.of(number));
-        return result.get(0);
+        return result.getFirst();
     }
 
     @Override

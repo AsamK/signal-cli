@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ValueNode;
 
 /**
  * Represents a JSON-RPC response.
- * https://www.jsonrpc.org/specification#response_object
+ * <a href="https://www.jsonrpc.org/specification#response_object">https://www.jsonrpc.org/specification#response_object</a>
  */
 public final class JsonRpcResponse extends JsonRpcMessage {
 

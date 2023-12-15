@@ -94,7 +94,7 @@ public class DbusCommandHandler {
                         "Multiple users found, you need to specify an account (phone number) with -a");
             }
 
-            return accounts.get(0).getPath();
+            return accounts.getFirst().getPath();
         } catch (UnknownMethod e) {
             // dbus daemon not running in multi-account mode
             return null;

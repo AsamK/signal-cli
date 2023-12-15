@@ -52,7 +52,6 @@ public abstract class DbusProperties implements Properties {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, Variant<?>> GetAll(final String interface_name) {
         final var handler = getHandlerOptional(interface_name);
         if (handler.isEmpty()) {

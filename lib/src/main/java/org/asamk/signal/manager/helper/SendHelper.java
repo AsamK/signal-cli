@@ -220,7 +220,7 @@ public class SendHelper {
                 (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(List.of(address),
                         List.of(unidentifiedAccess),
                         message,
-                        null).get(0));
+                        null).getFirst());
         handleSendMessageResult(result);
         return result;
     }

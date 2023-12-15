@@ -2,8 +2,6 @@ package org.asamk.signal.jsonrpc;
 
 /**
  * Represents a JSON-RPC (batch) request or (batch) response.
- * https://www.jsonrpc.org/specification
+ * <a href="https://www.jsonrpc.org/specification">https://www.jsonrpc.org/specification</a>
  */
-public sealed abstract class JsonRpcMessage permits JsonRpcBatchMessage, JsonRpcRequest, JsonRpcResponse {
-
-}
+public sealed abstract class JsonRpcMessage permits JsonRpcBatchMessage, JsonRpcRequest, JsonRpcResponse {}

@@ -42,7 +42,7 @@ public class Util {
         if (strings.isEmpty()) {
             return "";
         }
-        return strings.get(0) + strings.stream()
+        return strings.getFirst() + strings.stream()
                 .skip(1)
                 .filter(s -> !s.isEmpty())
                 .map(s -> Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT))
