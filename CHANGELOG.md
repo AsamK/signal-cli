@@ -12,6 +12,8 @@
 
 ## [0.12.7] - 2023-12-15
 
+**Attention**: Now requires native libsignal-client version 0.36.1
+
 ### Fixes
 - Fix linking to an existing account
 
