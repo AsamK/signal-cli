@@ -25,6 +25,8 @@ graalvmNative {
     binaries {
         this["main"].run {
             buildArgs.add("--install-exit-handlers")
+            buildArgs.add("-Dfile.encoding=UTF-8")
+            buildArgs.add("-J-Dfile.encoding=UTF-8")
             resources.autodetect()
             configurationFileDirectories.from(file("graalvm-config-dir"))
             if (System.getenv("GRAALVM_HOME") == null) {
