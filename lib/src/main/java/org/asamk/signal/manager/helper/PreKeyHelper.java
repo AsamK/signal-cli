@@ -107,7 +107,6 @@ public class PreKeyHelper {
                 || lastResortKyberPreKeyRecord != null
                 || kyberPreKeyRecords != null) {
             final var preKeyUpload = new PreKeyUpload(serviceIdType,
-                    identityKeyPair.getPublicKey(),
                     signedPreKeyRecord,
                     preKeyRecords,
                     lastResortKyberPreKeyRecord,

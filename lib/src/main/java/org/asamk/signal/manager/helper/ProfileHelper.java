@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
@@ -202,7 +203,9 @@ public final class ProfileHelper {
                                 newProfile.getAboutEmoji() == null ? "" : newProfile.getAboutEmoji(),
                                 paymentsAddress,
                                 avatarUploadParams,
-                                List.of(/* TODO implement support for badges */));
+                                List.of(/* TODO implement support for badges */),
+                                account.getConfigurationStore().getPhoneNumberSharingMode()
+                                        == PhoneNumberSharingMode.EVERYBODY);
                 if (!avatarUploadParams.keepTheSame) {
                     builder.withAvatarUrlPath(avatarPath.orElse(null));
                 }
