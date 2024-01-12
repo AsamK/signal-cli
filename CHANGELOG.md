@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
-**Attention**: Now requires Java 21
+**Attention**: Now requires Java 21 and libsignal-client version 0.37
 
 ### Added
 - New --hidden parameter for removeContact command
+- New --notify-self parameter for send command, for sending a non-sync message when self is part of the recipients or groups.
+  With this parameter sending to the self number (+XXXX) now behaves the same as the --note-to-self parameter.
 
 ### Improved
 - Better shutdown handling after Ctrl+C and SIGTERM

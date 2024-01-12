@@ -172,7 +172,7 @@ public interface Manager extends Closeable {
     );
 
     SendMessageResults sendMessage(
-            Message message, Set<RecipientIdentifier> recipients
+            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
     SendMessageResults sendEditMessage(

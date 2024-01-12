@@ -71,6 +71,7 @@ import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
@@ -528,21 +529,31 @@ public class ManagerImpl implements Manager {
     }
 
     private SendMessageResults sendMessage(
-            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients
+            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients, boolean notifySelf
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        return sendMessage(messageBuilder, recipients, Optional.empty());
+        return sendMessage(messageBuilder, recipients, notifySelf, Optional.empty());
     }
 
     private SendMessageResults sendMessage(
             SignalServiceDataMessage.Builder messageBuilder,
             Set<RecipientIdentifier> recipients,
+            boolean notifySelf,
             Optional<Long> editTargetTimestamp
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         long timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Single single) {
+            if (recipient instanceof RecipientIdentifier.NoteToSelf || (
+                    recipient instanceof RecipientIdentifier.Single single
+                            && new RecipientAddress(single.toPartialRecipientAddress()).matches(account.getSelfRecipientAddress())
+            )) {
+                final var result = notifySelf
+                        ? context.getSendHelper()
+                        .sendMessage(messageBuilder, account.getSelfRecipientId(), editTargetTimestamp)
+                        : context.getSendHelper().sendSelfMessage(messageBuilder, editTargetTimestamp);
+                results.put(recipient, List.of(toSendMessageResult(result)));
+            } else if (recipient instanceof RecipientIdentifier.Single single) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(single);
                     final var result = context.getSendHelper()
@@ -552,12 +563,9 @@ public class ManagerImpl implements Manager {
                     results.put(recipient,
                             List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
                 }
-            } else if (recipient instanceof RecipientIdentifier.NoteToSelf) {
-                final var result = context.getSendHelper().sendSelfMessage(messageBuilder, editTargetTimestamp);
-                results.put(recipient, List.of(toSendMessageResult(result)));
             } else if (recipient instanceof RecipientIdentifier.Group group) {
                 final var result = context.getSendHelper()
-                        .sendAsGroupMessage(messageBuilder, group.groupId(), editTargetTimestamp);
+                        .sendAsGroupMessage(messageBuilder, group.groupId(), notifySelf, editTargetTimestamp);
                 results.put(recipient, result.stream().map(this::toSendMessageResult).toList());
             }
         }
@@ -642,7 +650,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendMessage(
-            Message message, Set<RecipientIdentifier> recipients
+            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var selfProfile = context.getProfileHelper().getSelfProfile();
         if (selfProfile == null || selfProfile.getDisplayName().isEmpty()) {
@@ -651,7 +659,7 @@ public class ManagerImpl implements Manager {
         }
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
-        return sendMessage(messageBuilder, recipients);
+        return sendMessage(messageBuilder, recipients, notifySelf);
     }
 
     @Override
@@ -660,7 +668,7 @@ public class ManagerImpl implements Manager {
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
-        return sendMessage(messageBuilder, recipients, Optional.of(editTargetTimestamp));
+        return sendMessage(messageBuilder, recipients, false, Optional.of(editTargetTimestamp));
     }
 
     private void applyMessage(
@@ -785,7 +793,7 @@ public class ManagerImpl implements Manager {
                 account.getMessageSendLogStore().deleteEntryForGroup(targetSentTimestamp, r.groupId());
             }
         }
-        return sendMessage(messageBuilder, recipients);
+        return sendMessage(messageBuilder, recipients, false);
     }
 
     @Override
@@ -807,7 +815,7 @@ public class ManagerImpl implements Manager {
             messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
                     targetSentTimestamp));
         }
-        return sendMessage(messageBuilder, recipients);
+        return sendMessage(messageBuilder, recipients, false);
     }
 
     @Override
@@ -818,7 +826,7 @@ public class ManagerImpl implements Manager {
         final var payment = new SignalServiceDataMessage.Payment(paymentNotification, null);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withPayment(payment);
         try {
-            return sendMessage(messageBuilder, Set.of(recipient));
+            return sendMessage(messageBuilder, Set.of(recipient), false);
         } catch (NotAGroupMemberException | GroupNotFoundException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         }
@@ -830,7 +838,8 @@ public class ManagerImpl implements Manager {
 
         try {
             return sendMessage(messageBuilder,
-                    recipients.stream().map(RecipientIdentifier.class::cast).collect(Collectors.toSet()));
+                    recipients.stream().map(RecipientIdentifier.class::cast).collect(Collectors.toSet()),
+                    false);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         } finally {
@@ -952,7 +961,7 @@ public class ManagerImpl implements Manager {
         context.getContactHelper().setExpirationTimer(recipientId, messageExpirationTimer);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
         try {
-            sendMessage(messageBuilder, Set.of(recipient));
+            sendMessage(messageBuilder, Set.of(recipient), false);
         } catch (NotAGroupMemberException | GroupNotFoundException | GroupSendingNotAllowedException e) {
             throw new AssertionError(e);
         }

@@ -397,7 +397,7 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendMessage(
-            final Message message, final Set<RecipientIdentifier> recipients
+            final Message message, final Set<RecipientIdentifier> recipients, final boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
                 numbers -> signal.sendMessage(message.messageText(), message.attachments(), numbers),

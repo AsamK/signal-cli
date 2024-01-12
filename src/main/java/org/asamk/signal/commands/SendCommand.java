@@ -51,6 +51,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--note-to-self")
                 .help("Send the message to self without notification.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--notify-self")
+                .help("If self is part of recipients/groups send a normal message, not a sync message.")
+                .action(Arguments.storeTrue());
 
         var mut = subparser.addMutuallyExclusiveGroup();
         mut.addArgument("-m", "--message").help("Specify the message to be sent.");
@@ -105,6 +108,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
+        final var notifySelf = Boolean.TRUE.equals(ns.getBoolean("notify-self"));
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
@@ -236,7 +240,7 @@ public class SendCommand implements JsonRpcLocalCommand {
                     textStyles);
             var results = editTimestamp != null
                     ? m.sendEditMessage(message, recipientIdentifiers, editTimestamp)
-                    : m.sendMessage(message, recipientIdentifiers);
+                    : m.sendMessage(message, recipientIdentifiers, notifySelf);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
