@@ -154,6 +154,10 @@ public class SignalAccount implements Closeable {
     private final KeyValueEntry<Long> storageManifestVersion = new KeyValueEntry<>("storage-manifest-version",
             long.class,
             -1L);
+    private final KeyValueEntry<Boolean> unrestrictedUnidentifiedAccess = new KeyValueEntry<>(
+            "unrestricted-unidentified-access",
+            Boolean.class,
+            false);
     private boolean isMultiDevice = false;
     private boolean registered = false;
 
@@ -1594,8 +1598,11 @@ public class SignalAccount implements Closeable {
     }
 
     public boolean isUnrestrictedUnidentifiedAccess() {
-        final var profile = getProfileStore().getProfile(getSelfRecipientId());
-        return profile != null && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED;
+        return Boolean.TRUE.equals(getKeyValueStore().getEntry(unrestrictedUnidentifiedAccess));
+    }
+
+    public void setUnrestrictedUnidentifiedAccess(boolean value) {
+        getKeyValueStore().storeEntry(unrestrictedUnidentifiedAccess, value);
     }
 
     public boolean isDiscoverableByPhoneNumber() {

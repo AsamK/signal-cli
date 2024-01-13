@@ -121,7 +121,9 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
-    public void updateAccountAttributes(final String deviceName) throws IOException {
+    public void updateAccountAttributes(
+            final String deviceName, final Boolean unrestrictedUnidentifiedSender
+    ) throws IOException {
         if (deviceName != null) {
             final var devicePath = signal.getThisDevice();
             getRemoteObject(devicePath, Signal.Device.class).Set("org.asamk.Signal.Device", "Name", deviceName);

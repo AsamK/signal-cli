@@ -1187,7 +1187,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                 throw new Error.Failure("Only the name of this device can be changed");
             }
             try {
-                m.updateAccountAttributes(name);
+                m.updateAccountAttributes(name, null);
                 // update device list
                 updateDevices();
             } catch (IOException e) {

@@ -277,9 +277,12 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void updateAccountAttributes(String deviceName) throws IOException {
+    public void updateAccountAttributes(String deviceName, Boolean unrestrictedUnidentifiedSender) throws IOException {
         if (deviceName != null) {
             context.getAccountHelper().setDeviceName(deviceName);
+        }
+        if (unrestrictedUnidentifiedSender != null) {
+            account.setUnrestrictedUnidentifiedAccess(unrestrictedUnidentifiedSender);
         }
         context.getAccountHelper().updateAccountAttributes();
         context.getAccountHelper().checkWhoAmiI();

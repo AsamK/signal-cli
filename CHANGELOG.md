@@ -8,6 +8,7 @@
 - New --hidden parameter for removeContact command
 - New --notify-self parameter for send command, for sending a non-sync message when self is part of the recipients or groups.
   With this parameter sending to the self number (+XXXX) now behaves the same as the --note-to-self parameter.
+- New --unrestricted-unidentified-sender parameter for updateAccount command
 
 ### Improved
 - Better shutdown handling after Ctrl+C and SIGTERM

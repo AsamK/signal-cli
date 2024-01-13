@@ -28,6 +28,10 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Update the account attributes on the signal server.");
         subparser.addArgument("-n", "--device-name").help("Specify a name to describe this device.");
+        subparser.addArgument("--unrestricted-unidentified-sender")
+                .type(Boolean.class)
+                .help("Enable if anyone should be able to send you unidentified sender messages.");
+
         var mut = subparser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username").help("Specify a username that can then be used to contact this account.");
         mut.addArgument("--delete-username")
@@ -39,14 +43,15 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var deviceName = ns.getString("device-name");
+        final var deviceName = ns.getString("device-name");
+        final var unrestrictedUnidentifiedSender = ns.getBoolean("unrestricted-unidentified-sender");
         try {
-            m.updateAccountAttributes(deviceName);
+            m.updateAccountAttributes(deviceName, unrestrictedUnidentifiedSender);
         } catch (IOException e) {
             throw new IOErrorException("UpdateAccount error: " + e.getMessage(), e);
         }
 
-        var username = ns.getString("username");
+        final var username = ns.getString("username");
         if (username != null) {
             try {
                 m.setUsername(username);
@@ -66,7 +71,7 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
             }
         }
 
-        var deleteUsername = Boolean.TRUE.equals(ns.getBoolean("delete-username"));
+        final var deleteUsername = Boolean.TRUE.equals(ns.getBoolean("delete-username"));
         if (deleteUsername) {
             try {
                 m.deleteUsername();

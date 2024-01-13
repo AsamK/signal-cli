@@ -147,6 +147,9 @@ Can fix problems with receiving messages.
 *-n* NAME, *--device-name* NAME::
 Set a new device name for the primary or linked device
 
+*--unrestricted-unidentified-sender* {true,false}::
+Enable if anyone should be able to send you unidentified sender messages.
+
 === startChangeNumber
 
 Change an account to a new phone number with SMS or voice verification.

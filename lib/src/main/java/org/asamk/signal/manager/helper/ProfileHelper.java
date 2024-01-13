@@ -328,6 +328,13 @@ public final class ProfileHelper {
 
             final var profile = account.getProfileStore().getProfile(recipientId);
 
+            if (recipientId.equals(account.getSelfRecipientId())) {
+                final var isUnrestricted = encryptedProfile.isUnrestrictedUnidentifiedAccess();
+                if (account.isUnrestrictedUnidentifiedAccess() != isUnrestricted) {
+                    account.setUnrestrictedUnidentifiedAccess(isUnrestricted);
+                }
+            }
+
             Profile newProfile = null;
             if (profileKey.isPresent()) {
                 logger.trace("Decrypting profile");
