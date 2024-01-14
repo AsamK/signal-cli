@@ -23,20 +23,17 @@ record JsonCallMessage(
                 callMessage.iceUpdate().stream().map(IceUpdate::from).toList());
     }
 
-    record Offer(long id, String sdp, String type, String opaque) {
+    record Offer(long id, String type, String opaque) {
 
         public static Offer from(final MessageEnvelope.Call.Offer offer) {
-            return new Offer(offer.id(),
-                    offer.sdp(),
-                    offer.type().name(),
-                    Base64.getEncoder().encodeToString(offer.opaque()));
+            return new Offer(offer.id(), offer.type().name(), Base64.getEncoder().encodeToString(offer.opaque()));
         }
     }
 
-    public record Answer(long id, String sdp, String opaque) {
+    public record Answer(long id, String opaque) {
 
         public static Answer from(final MessageEnvelope.Call.Answer answer) {
-            return new Answer(answer.id(), answer.sdp(), Base64.getEncoder().encodeToString(answer.opaque()));
+            return new Answer(answer.id(), Base64.getEncoder().encodeToString(answer.opaque()));
         }
     }
 
@@ -54,12 +51,10 @@ record JsonCallMessage(
         }
     }
 
-    public record IceUpdate(long id, String sdp, String opaque) {
+    public record IceUpdate(long id, String opaque) {
 
         public static IceUpdate from(final MessageEnvelope.Call.IceUpdate iceUpdate) {
-            return new IceUpdate(iceUpdate.id(),
-                    iceUpdate.sdp(),
-                    Base64.getEncoder().encodeToString(iceUpdate.opaque()));
+            return new IceUpdate(iceUpdate.id(), Base64.getEncoder().encodeToString(iceUpdate.opaque()));
         }
     }
 }

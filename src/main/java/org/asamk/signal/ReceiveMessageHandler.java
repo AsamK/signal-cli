@@ -273,7 +273,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (callMessage.answer().isPresent()) {
             var answerMessage = callMessage.answer().get();
-            writer.println("Answer message: {}, sdp: {})", answerMessage.id(), answerMessage.sdp());
+            writer.println("Answer message: {}, opaque length: {})", answerMessage.id(), answerMessage.opaque().length);
         }
         if (callMessage.busy().isPresent()) {
             var busyMessage = callMessage.busy().get();
@@ -287,12 +287,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Ice update messages:");
             var iceUpdateMessages = callMessage.iceUpdate();
             for (var iceUpdateMessage : iceUpdateMessages) {
-                writer.println("- {}, sdp: {}", iceUpdateMessage.id(), iceUpdateMessage.sdp());
+                writer.println("- {}, opaque length: {}", iceUpdateMessage.id(), iceUpdateMessage.opaque().length);
             }
         }
         if (callMessage.offer().isPresent()) {
             var offerMessage = callMessage.offer().get();
-            writer.println("Offer message: {}, sdp: {}", offerMessage.id(), offerMessage.sdp());
+            writer.println("Offer message: {}, opaque length: {}", offerMessage.id(), offerMessage.opaque().length);
         }
         if (callMessage.opaque().isPresent()) {
             final var opaqueMessage = callMessage.opaque().get();

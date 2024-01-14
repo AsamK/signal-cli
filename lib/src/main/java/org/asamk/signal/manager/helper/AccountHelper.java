@@ -320,7 +320,11 @@ public class AccountHelper {
         if (currentUsername != null) {
             final var currentNickname = currentUsername.substring(0, currentUsername.indexOf('.'));
             if (currentNickname.equals(nickname)) {
-                refreshCurrentUsername();
+                try {
+                    refreshCurrentUsername();
+                } catch (IOException | BaseUsernameException e) {
+                    logger.warn("[reserveUsername] Failed to refresh current username, trying to claim new username");
+                }
                 return;
             }
         }
@@ -341,11 +345,11 @@ public class AccountHelper {
         logger.debug("[reserveUsername] Successfully reserved username.");
         final var username = candidates.get(hashIndex);
 
-        dependencies.getAccountManager().confirmUsername(username.getUsername(), response);
+        final var linkComponents = dependencies.getAccountManager().confirmUsernameAndCreateNewLink(username);
         account.setUsername(username.getUsername());
+        account.setUsernameLink(linkComponents);
         account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
         logger.debug("[confirmUsername] Successfully confirmed username.");
-        tryToSetUsernameLink(username);
     }
 
     public void refreshCurrentUsername() throws IOException, BaseUsernameException {
@@ -386,12 +390,20 @@ public class AccountHelper {
     }
 
     private void tryReserveConfirmUsername(final Username username) throws IOException {
-        final var response = dependencies.getAccountManager()
-                .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash())));
-        logger.debug("[reserveUsername] Successfully reserved existing username.");
-        dependencies.getAccountManager().confirmUsername(username.getUsername(), response);
-        logger.debug("[confirmUsername] Successfully confirmed existing username.");
-        tryToSetUsernameLink(username);
+        final var usernameLink = account.getUsernameLink();
+
+        if (usernameLink == null) {
+            dependencies.getAccountManager()
+                    .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash())));
+            logger.debug("[reserveUsername] Successfully reserved existing username.");
+            final var linkComponents = dependencies.getAccountManager().confirmUsernameAndCreateNewLink(username);
+            account.setUsernameLink(linkComponents);
+            logger.debug("[confirmUsername] Successfully confirmed existing username.");
+        } else {
+            final var linkComponents = dependencies.getAccountManager().reclaimUsernameAndLink(username, usernameLink);
+            account.setUsernameLink(linkComponents);
+            logger.debug("[confirmUsername] Successfully reclaimed existing username and link.");
+        }
     }
 
     private void tryToSetUsernameLink(Username username) {

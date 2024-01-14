@@ -716,7 +716,6 @@ public record MessageEnvelope(
             Optional<Busy> busy,
             List<IceUpdate> iceUpdate,
             Optional<Opaque> opaque,
-            boolean isMultiRing,
             boolean isUrgent
     ) {
 
@@ -732,17 +731,13 @@ public record MessageEnvelope(
                             .map(m -> m.stream().map(IceUpdate::from).toList())
                             .orElse(List.of()),
                     callMessage.getOpaqueMessage().map(Opaque::from),
-                    callMessage.isMultiRing(),
                     callMessage.isUrgent());
         }
 
-        public record Offer(long id, String sdp, Type type, byte[] opaque) {
+        public record Offer(long id, Type type, byte[] opaque) {
 
             static Offer from(OfferMessage offerMessage) {
-                return new Offer(offerMessage.getId(),
-                        offerMessage.getSdp(),
-                        Type.from(offerMessage.getType()),
-                        offerMessage.getOpaque());
+                return new Offer(offerMessage.getId(), Type.from(offerMessage.getType()), offerMessage.getOpaque());
             }
 
             public enum Type {
@@ -758,10 +753,10 @@ public record MessageEnvelope(
             }
         }
 
-        public record Answer(long id, String sdp, byte[] opaque) {
+        public record Answer(long id, byte[] opaque) {
 
             static Answer from(AnswerMessage answerMessage) {
-                return new Answer(answerMessage.getId(), answerMessage.getSdp(), answerMessage.getOpaque());
+                return new Answer(answerMessage.getId(), answerMessage.getOpaque());
             }
         }
 
@@ -799,10 +794,10 @@ public record MessageEnvelope(
             }
         }
 
-        public record IceUpdate(long id, String sdp, byte[] opaque) {
+        public record IceUpdate(long id, byte[] opaque) {
 
             static IceUpdate from(IceUpdateMessage iceUpdateMessage) {
-                return new IceUpdate(iceUpdateMessage.getId(), iceUpdateMessage.getSdp(), iceUpdateMessage.getOpaque());
+                return new IceUpdate(iceUpdateMessage.getId(), iceUpdateMessage.getOpaque());
             }
         }
 
