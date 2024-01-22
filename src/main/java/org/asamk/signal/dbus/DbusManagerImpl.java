@@ -849,7 +849,7 @@ public class DbusManagerImpl implements Manager {
                                 Optional.empty(),
                                 Optional.empty(),
                                 List.of(),
-                                List.of(),
+                                getMentions(extras),
                                 List.of(),
                                 List.of())),
                         Optional.empty(),
@@ -893,7 +893,7 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
-                                        List.of(),
+                                        getMentions(extras),
                                         List.of(),
                                         List.of()))),
                         Optional.empty(),
@@ -970,7 +970,7 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
-                                        List.of(),
+                                        getMentions(extras),
                                         List.of(),
                                         List.of())),
                                 Optional.empty(),
@@ -1037,6 +1037,19 @@ public class DbusManagerImpl implements Manager {
                     getValue(a, "isGif"),
                     getValue(a, "isBorderless"));
         }).toList();
+    }
+
+    private List<MessageEnvelope.Data.Mention> getMentions(final Map<String, Variant<?>> extras) {
+        if (!extras.containsKey("mentions")) {
+            return List.of();
+        }
+
+        final List<DBusMap<String, Variant<?>>> mentions = getValue(extras, "mentions");
+        return mentions.stream()
+                .map(a -> new MessageEnvelope.Data.Mention(new RecipientAddress(null, getValue(a, "recipient")),
+                        getValue(a, "start"),
+                        getValue(a, "length")))
+                .toList();
     }
 
     @Override
