@@ -9,7 +9,7 @@ dependencyResolutionManagement {
             library("bouncycastle", "org.bouncycastle", "bcprov-jdk18on").version("1.77")
             library("jackson.databind", "com.fasterxml.jackson.core", "jackson-databind").version("2.16.1")
             library("argparse4j", "net.sourceforge.argparse4j", "argparse4j").version("0.9.0")
-            library("dbusjava", "com.github.hypfvieh", "dbus-java-transport-native-unixsocket").version("4.3.1")
+            library("dbusjava", "com.github.hypfvieh", "dbus-java-transport-native-unixsocket").version("5.0.0")
             version("slf4j", "2.0.10")
             library("slf4j.api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j.jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
