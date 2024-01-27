@@ -24,6 +24,7 @@ public class ServiceConfig {
     public static final boolean AUTOMATIC_NETWORK_RETRY = true;
     public static final int GROUP_MAX_SIZE = 1001;
     public static final int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
+    public static final long UNREGISTERED_LIFESPAN = TimeUnit.DAYS.toMillis(30);
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var giftBadges = !isPrimaryDevice;

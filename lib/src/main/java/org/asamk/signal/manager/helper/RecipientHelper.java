@@ -164,6 +164,10 @@ public class RecipientHelper {
         registeredUsers.forEach((number, u) -> account.getRecipientTrustedResolver()
                 .resolveRecipientTrusted(u.aci, u.pni, Optional.of(number)));
 
+        final var unregisteredUsers = new HashSet<>(numbers);
+        unregisteredUsers.removeAll(registeredUsers.keySet());
+        account.getRecipientStore().markUnregistered(unregisteredUsers);
+
         return registeredUsers;
     }
 

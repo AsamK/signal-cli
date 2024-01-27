@@ -149,6 +149,17 @@ public class StorageHelper {
 
             logger.debug("Pre-Merge ID Difference :: " + idDifference);
 
+            if (!idDifference.localOnlyIds().isEmpty()) {
+                final var updated = account.getRecipientStore()
+                        .removeStorageIdsFromLocalOnlyUnregisteredRecipients(connection, idDifference.localOnlyIds());
+
+                if (updated > 0) {
+                    logger.warn(
+                            "Found {} records that were deleted remotely but only marked unregistered locally. Removed those from local store. Recalculating diff.",
+                            updated);
+                }
+            }
+
             if (!idDifference.isEmpty()) {
                 final var remoteOnlyRecords = getSignalStorageRecords(storageKey, idDifference.remoteOnlyIds());
 

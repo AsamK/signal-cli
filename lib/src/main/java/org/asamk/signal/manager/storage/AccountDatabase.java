@@ -32,7 +32,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 20;
+    private static final long DATABASE_VERSION = 21;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -555,6 +555,15 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE group_v2 ADD COLUMN storage_record BLOB;
                                         ALTER TABLE recipient ADD COLUMN storage_id BLOB;
                                         ALTER TABLE recipient ADD COLUMN storage_record BLOB;
+                                        """);
+            }
+        }
+        if (oldVersion < 21) {
+            logger.debug("Updating database: Create unregistered column");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE recipient ADD unregistered_timestamp INTEGER;
+                                        UPDATE recipient SET pni = NULL WHERE uuid IS NOT NULL;
                                         """);
             }
         }

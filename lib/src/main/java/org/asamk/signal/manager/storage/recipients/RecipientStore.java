@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.asamk.signal.manager.config.ServiceConfig.UNREGISTERED_LIFESPAN;
+
 public class RecipientStore implements RecipientIdCreator, RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
     private static final Logger logger = LoggerFactory.getLogger(RecipientStore.class);
@@ -65,6 +67,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       username TEXT UNIQUE,
                                       uuid BLOB UNIQUE,
                                       pni BLOB UNIQUE,
+                                      unregistered_timestamp INTEGER,
                                       profile_key BLOB,
                                       profile_key_credential BLOB,
 
@@ -521,7 +524,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 SELECT r._id
                 FROM %s r
-                WHERE r.storage_id IS NULL
+                WHERE r.storage_id IS NULL AND (r.unregistered_timestamp IS NULL OR r.unregistered_timestamp > ?)
                 """
         ).formatted(TABLE_RECIPIENT);
         final var updateSql = (
@@ -534,6 +537,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
             try (final var selectStmt = connection.prepareStatement(selectSql)) {
+                selectStmt.setLong(1, System.currentTimeMillis() - UNREGISTERED_LIFESPAN);
                 final var recipientIds = Utils.executeQueryForStream(selectStmt, this::getRecipientIdFromResultSet)
                         .toList();
                 try (final var updateStmt = connection.prepareStatement(updateSql)) {
@@ -835,6 +839,76 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         rotateStorageId(connection, recipientId);
     }
 
+    public int removeStorageIdsFromLocalOnlyUnregisteredRecipients(
+            final Connection connection, final List<StorageId> storageIds
+    ) throws SQLException {
+        final var sql = (
+                """
+                UPDATE %s
+                SET storage_id = NULL
+                WHERE storage_id = ? AND storage_id IS NOT NULL AND unregistered_timestamp IS NOT NULL
+                """
+        ).formatted(TABLE_RECIPIENT);
+        var count = 0;
+        try (final var statement = connection.prepareStatement(sql)) {
+            for (final var storageId : storageIds) {
+                statement.setBytes(1, storageId.getRaw());
+                count += statement.executeUpdate();
+            }
+        }
+        return count;
+    }
+
+    public void markUnregistered(final Set<String> unregisteredUsers) {
+        logger.debug("Marking {} numbers as unregistered", unregisteredUsers.size());
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            for (final var number : unregisteredUsers) {
+                final var recipient = findByNumber(connection, number);
+                if (recipient.isPresent()) {
+                    markUnregistered(connection, recipient.get().id());
+                }
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
+        }
+    }
+
+    private void markRegistered(
+            final Connection connection, final RecipientId recipientId
+    ) throws SQLException {
+        final var sql = (
+                """
+                UPDATE %s
+                SET unregistered_timestamp = ?
+                WHERE _id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setNull(1, Types.INTEGER);
+            statement.setLong(2, recipientId.id());
+            statement.executeUpdate();
+        }
+    }
+
+    private void markUnregistered(
+            final Connection connection, final RecipientId recipientId
+    ) throws SQLException {
+        final var sql = (
+                """
+                UPDATE %s
+                SET unregistered_timestamp = ?
+                WHERE _id = ? AND unregistered_timestamp IS NULL
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, System.currentTimeMillis());
+            statement.setLong(2, recipientId.id());
+            statement.executeUpdate();
+        }
+    }
+
     private void storeExpiringProfileKeyCredential(
             final Connection connection,
             final RecipientId recipientId,
@@ -948,6 +1022,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             return new Pair<>(resolveRecipientLocked(connection, address), List.of());
         } else {
             final var pair = MergeRecipientHelper.resolveRecipientTrustedLocked(new HelperStore(connection), address);
+            markRegistered(connection, pair.first());
 
             for (final var toBeMergedRecipientId : pair.second()) {
                 mergeRecipientsLocked(connection, pair.first(), toBeMergedRecipientId);
