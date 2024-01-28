@@ -42,6 +42,10 @@ public record RecipientAddress(
         this(Optional.ofNullable(aci), Optional.empty(), Optional.ofNullable(e164), Optional.empty());
     }
 
+    public RecipientAddress(PNI pni, String e164) {
+        this(Optional.empty(), Optional.ofNullable(pni), Optional.ofNullable(e164), Optional.empty());
+    }
+
     public RecipientAddress(String e164) {
         this(Optional.empty(), Optional.empty(), Optional.ofNullable(e164), Optional.empty());
     }

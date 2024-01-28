@@ -108,18 +108,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     public RecipientAddress resolveRecipientAddress(RecipientId recipientId) {
-        final var sql = (
-                """
-                SELECT r.number, r.aci, r.pni, r.username
-                FROM %s r
-                WHERE r._id = ?
-                """
-        ).formatted(TABLE_RECIPIENT);
         try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, recipientId.id());
-                return Utils.executeQuerySingleRow(statement, this::getRecipientAddressFromResultSet);
-            }
+            return resolveRecipientAddress(connection, recipientId);
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from recipient store", e);
         }
@@ -848,6 +838,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.setLong(12, recipientId.id());
             statement.executeUpdate();
         }
+        if (contact != null && contact.unregisteredTimestamp() != null) {
+            markUnregisteredAndSplitIfNecessary(connection, recipientId);
+        }
         rotateStorageId(connection, recipientId);
     }
 
@@ -878,12 +871,25 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             for (final var number : unregisteredUsers) {
                 final var recipient = findByNumber(connection, number);
                 if (recipient.isPresent()) {
-                    markUnregistered(connection, recipient.get().id());
+                    final var recipientId = recipient.get().id();
+                    markUnregisteredAndSplitIfNecessary(connection, recipientId);
                 }
             }
             connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed update recipient store", e);
+        }
+    }
+
+    private void markUnregisteredAndSplitIfNecessary(
+            final Connection connection, final RecipientId recipientId
+    ) throws SQLException {
+        markUnregistered(connection, recipientId);
+        final var address = resolveRecipientAddress(connection, recipientId);
+        if (address.aci().isPresent() && address.pni().isPresent()) {
+            final var numberAddress = new RecipientAddress(address.pni().get(), address.number().orElse(null));
+            updateRecipientAddress(connection, recipientId, address.removeIdentifiersFrom(numberAddress));
+            addNewRecipient(connection, numberAddress);
         }
     }
 
@@ -999,6 +1005,22 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.executeUpdate();
         }
         rotateStorageId(connection, recipientId);
+    }
+
+    private RecipientAddress resolveRecipientAddress(
+            final Connection connection, final RecipientId recipientId
+    ) throws SQLException {
+        final var sql = (
+                """
+                SELECT r.number, r.aci, r.pni, r.username
+                FROM %s r
+                WHERE r._id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, recipientId.id());
+            return Utils.executeQuerySingleRow(statement, this::getRecipientAddressFromResultSet);
+        }
     }
 
     private RecipientId resolveRecipientTrusted(RecipientAddress address, boolean isSelf) {
