@@ -105,8 +105,12 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
         IdentityState identityState;
         byte[] identityKey;
-        if ((remote.getIdentityState() != local.getIdentityState() && remote.getIdentityKey().isPresent())
-                || (remote.getIdentityKey().isPresent() && local.getIdentityKey().isEmpty())) {
+        if (remote.getIdentityKey().isPresent() && (
+                remote.getIdentityState() != local.getIdentityState()
+                        || local.getIdentityKey().isEmpty()
+                        || !account.isPrimaryDevice()
+
+        )) {
             identityState = remote.getIdentityState();
             identityKey = remote.getIdentityKey().get();
         } else {
@@ -114,9 +118,10 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             identityKey = local.getIdentityKey().orElse(null);
         }
 
-        if (local.getAci().isPresent() && identityKey != null && remote.getIdentityKey().isPresent() && !Arrays.equals(
-                identityKey,
-                remote.getIdentityKey().get())) {
+        if (local.getAci().isPresent()
+                && local.getIdentityKey().isPresent()
+                && remote.getIdentityKey().isPresent()
+                && !Arrays.equals(local.getIdentityKey().get(), remote.getIdentityKey().get())) {
             logger.debug("The local and remote identity keys do not match for {}. Enqueueing a profile fetch.",
                     local.getAci().orElse(null));
             final var address = getRecipientAddress(local);
@@ -141,13 +146,12 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
         PNI pni;
         String e164;
-        if (e164sMatchButPnisDont) {
-            logger.debug("Matching E164s, but the PNIs differ! Trusting our local pair.");
-            // TODO [pnp] Schedule CDS fetch?
-            pni = local.getPni().get();
-            e164 = local.getNumber().get();
-        } else if (pnisMatchButE164sDont) {
-            logger.debug("Matching PNIs, but the E164s differ! Trusting our local pair.");
+        if (!account.isPrimaryDevice() && (e164sMatchButPnisDont || pnisMatchButE164sDont)) {
+            if (e164sMatchButPnisDont) {
+                logger.debug("Matching E164s, but the PNIs differ! Trusting our local pair.");
+            } else if (pnisMatchButE164sDont) {
+                logger.debug("Matching PNIs, but the E164s differ! Trusting our local pair.");
+            }
             // TODO [pnp] Schedule CDS fetch?
             pni = local.getPni().get();
             e164 = local.getNumber().get();
@@ -235,41 +239,25 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 || profileShared != contactRecord.isProfileSharingEnabled()
                 || archived != contactRecord.isArchived()
                 || hidden != contactRecord.isHidden()
-                || (
-                contactRecord.getSystemGivenName().isPresent() && !contactRecord.getSystemGivenName()
-                        .get()
-                        .equals(contactGivenName)
-        )
-                || (
-                contactRecord.getSystemFamilyName().isPresent() && !contactRecord.getSystemFamilyName()
-                        .get()
-                        .equals(contactFamilyName)
-        )) {
+                || !Objects.equals(contactRecord.getSystemGivenName().orElse(null), contactGivenName)
+                || !Objects.equals(contactRecord.getSystemFamilyName().orElse(null), contactFamilyName)) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withIsBlocked(contactRecord.isBlocked())
                     .withIsProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
                     .withIsArchived(contactRecord.isArchived())
-                    .withIsHidden(contactRecord.isHidden());
-            if (contactRecord.getSystemGivenName().isPresent() || contactRecord.getSystemFamilyName().isPresent()) {
-                newContact.withGivenName(contactRecord.getSystemGivenName().orElse(null))
-                        .withFamilyName(contactRecord.getSystemFamilyName().orElse(null));
-            }
+                    .withIsHidden(contactRecord.isHidden())
+                    .withGivenName(contactRecord.getSystemGivenName().orElse(null))
+                    .withFamilyName(contactRecord.getSystemFamilyName().orElse(null));
             account.getRecipientStore().storeContact(connection, recipientId, newContact.build());
         }
 
         final var profile = recipient.getProfile();
         final var profileGivenName = profile == null ? null : profile.getGivenName();
         final var profileFamilyName = profile == null ? null : profile.getFamilyName();
-        if ((
-                contactRecord.getProfileGivenName().isPresent() && !contactRecord.getProfileGivenName()
-                        .get()
-                        .equals(profileGivenName)
-        ) || (
-                contactRecord.getProfileFamilyName().isPresent() && !contactRecord.getProfileFamilyName()
-                        .get()
-                        .equals(profileFamilyName)
-        )) {
+        if (!Objects.equals(contactRecord.getProfileGivenName().orElse(null), profileGivenName) || !Objects.equals(
+                contactRecord.getProfileFamilyName().orElse(null),
+                profileFamilyName)) {
             final var profileBuilder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
             final var newProfile = profileBuilder.withGivenName(contactRecord.getProfileGivenName().orElse(null))
                     .withFamilyName(contactRecord.getProfileFamilyName().orElse(null))
@@ -285,7 +273,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 logger.warn("Received invalid contact profile key from storage");
             }
         }
-        if (contactRecord.getIdentityKey().isPresent() && contactRecord.getAci().orElse(null) != null) {
+        if (contactRecord.getIdentityKey().isPresent() && contactRecord.getAci().isPresent()) {
             try {
                 logger.trace("Storing identity key {}", recipientId);
                 final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());

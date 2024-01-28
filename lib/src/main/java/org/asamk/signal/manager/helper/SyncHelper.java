@@ -324,7 +324,12 @@ public class SyncHelper {
             final var recipientId = account.getRecipientTrustedResolver().resolveRecipientTrusted(c.getAddress());
             var contact = account.getContactStore().getContact(recipientId);
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            if (c.getName().isPresent()) {
+            if (c.getName().isPresent() && (
+                    contact == null || (
+                            contact.givenName() == null
+                                    && contact.familyName() == null
+                    )
+            )) {
                 builder.withGivenName(c.getName().get());
                 builder.withFamilyName(null);
             }

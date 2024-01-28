@@ -37,8 +37,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.asamk.signal.manager.config.ServiceConfig.UNREGISTERED_LIFESPAN;
-
 public class RecipientStore implements RecipientIdCreator, RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
     private static final Logger logger = LoggerFactory.getLogger(RecipientStore.class);
@@ -524,7 +522,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 SELECT r._id
                 FROM %s r
-                WHERE r.storage_id IS NULL AND (r.unregistered_timestamp IS NULL OR r.unregistered_timestamp > ?)
+                WHERE r.storage_id IS NULL AND r.unregistered_timestamp IS NULL
                 """
         ).formatted(TABLE_RECIPIENT);
         final var updateSql = (
@@ -537,7 +535,6 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
             try (final var selectStmt = connection.prepareStatement(selectSql)) {
-                selectStmt.setLong(1, System.currentTimeMillis() - UNREGISTERED_LIFESPAN);
                 final var recipientIds = Utils.executeQueryForStream(selectStmt, this::getRecipientIdFromResultSet)
                         .toList();
                 try (final var updateStmt = connection.prepareStatement(updateSql)) {
@@ -735,14 +732,25 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final StorageId storageId,
             final byte[] storageRecord
     ) throws SQLException {
-        final var sql = (
+        final var deleteSql = (
+                """
+                UPDATE %s
+                SET storage_id = NULL
+                WHERE storage_id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(deleteSql)) {
+            statement.setBytes(1, storageId.getRaw());
+            statement.executeUpdate();
+        }
+        final var insertSql = (
                 """
                 UPDATE %s
                 SET storage_id = ?, storage_record = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
-        try (final var statement = connection.prepareStatement(sql)) {
+        try (final var statement = connection.prepareStatement(insertSql)) {
             statement.setBytes(1, storageId.getRaw());
             if (storageRecord == null) {
                 statement.setNull(2, Types.BLOB);
@@ -846,7 +854,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 UPDATE %s
                 SET storage_id = NULL
-                WHERE storage_id = ? AND storage_id IS NOT NULL AND unregistered_timestamp IS NOT NULL
+                WHERE storage_id = ? AND unregistered_timestamp IS NOT NULL
                 """
         ).formatted(TABLE_RECIPIENT);
         var count = 0;
@@ -1002,6 +1010,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         }
 
         if (!pair.second().isEmpty()) {
+            logger.debug("Resolved address {}, merging {} other recipients", address, pair.second().size());
             try (final var connection = database.getConnection()) {
                 connection.setAutoCommit(false);
                 mergeRecipients(connection, pair.first(), pair.second());

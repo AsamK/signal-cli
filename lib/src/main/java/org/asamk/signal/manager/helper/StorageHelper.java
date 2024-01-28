@@ -155,7 +155,7 @@ public class StorageHelper {
 
                 if (updated > 0) {
                     logger.warn(
-                            "Found {} records that were deleted remotely but only marked unregistered locally. Removed those from local store. Recalculating diff.",
+                            "Found {} records that were deleted remotely but only marked unregistered locally. Removed those from local store.",
                             updated);
                 }
             }
@@ -502,7 +502,7 @@ public class StorageHelper {
             final var remote = remoteByRawId.get(rawId);
             final var local = localByRawId.get(rawId);
 
-            if (remote.getType() != local.getType()) {
+            if (remote.getType() != local.getType() && local.getType() != 0) {
                 remoteOnlyRawIds.remove(rawId);
                 localOnlyRawIds.remove(rawId);
                 hasTypeMismatch = true;

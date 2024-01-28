@@ -55,7 +55,9 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements 
         }
 
         if (matchedRecords.contains(local.get())) {
-            debug(remote.getId(), remote, "Multiple remote records map to the same local record! Ignoring this one.");
+            debug(remote.getId(),
+                    remote,
+                    "Multiple remote records map to the same local record " + local.get() + "! Ignoring this one.");
             return;
         }
 

@@ -122,13 +122,25 @@ public class GroupStore {
     public void storeStorageRecord(
             final Connection connection, final GroupId groupId, final StorageId storageId, final byte[] storageRecord
     ) throws SQLException {
+        final var groupTable = groupId instanceof GroupIdV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2;
+        final var deleteSql = (
+                """
+                UPDATE %s
+                SET storage_id = NULL
+                WHERE storage_id = ?
+                """
+        ).formatted(groupTable);
+        try (final var statement = connection.prepareStatement(deleteSql)) {
+            statement.setBytes(1, storageId.getRaw());
+            statement.executeUpdate();
+        }
         final var sql = (
                 """
                 UPDATE %s
                 SET storage_id = ?, storage_record = ?
                 WHERE group_id = ?
                 """
-        ).formatted(groupId instanceof GroupIdV1 ? TABLE_GROUP_V1 : TABLE_GROUP_V2);
+        ).formatted(groupTable);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setBytes(1, storageId.getRaw());
             if (storageRecord == null) {

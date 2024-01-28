@@ -362,7 +362,7 @@ public class SignalAccount implements Closeable {
     }
 
     private void init() {
-        this.selfRecipientId = getRecipientResolver().resolveRecipient(getSelfRecipientAddress());
+        this.selfRecipientId = getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
     }
 
     private void migrateLegacyConfigs() {

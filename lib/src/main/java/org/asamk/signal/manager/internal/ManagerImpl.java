@@ -1355,8 +1355,8 @@ public class ManagerImpl implements Manager {
         if (thread != null) {
             stopReceiveThread(thread);
         }
-        executor.close();
         context.close();
+        executor.close();
 
         dependencies.getSignalWebSocket().disconnect();
         dependencies.getPushServiceSocket().close();
