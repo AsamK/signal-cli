@@ -670,7 +670,18 @@ public class DbusManagerImpl implements Manager {
             }
             return Recipient.newBuilder()
                     .withAddress(new RecipientAddress(null, n))
-                    .withContact(new Contact(contactName, null, null, 0, contactBlocked, false, false, false))
+                    .withContact(new Contact(contactName,
+                            null,
+                            null,
+                            null,
+                            0,
+                            0,
+                            false,
+                            contactBlocked,
+                            false,
+                            false,
+                            false,
+                            null))
                     .build();
         }).filter(Objects::nonNull).toList();
     }

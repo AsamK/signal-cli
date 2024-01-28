@@ -94,9 +94,15 @@ public final class StorageSyncModels {
         }
         if (recipient.getContact() != null) {
             builder.setSystemGivenName(recipient.getContact().givenName())
-                    .setSystemFamilyName((recipient.getContact().familyName()))
+                    .setSystemFamilyName(recipient.getContact().familyName())
+                    .setSystemNickname(recipient.getContact().nickName())
                     .setBlocked(recipient.getContact().isBlocked())
                     .setProfileSharingEnabled(recipient.getContact().isProfileSharingEnabled())
+                    .setMuteUntil(recipient.getContact().muteUntil())
+                    .setHideStory(recipient.getContact().hideStory())
+                    .setUnregisteredTimestamp(recipient.getContact().unregisteredTimestamp() == null
+                            ? 0
+                            : recipient.getContact().unregisteredTimestamp())
                     .setArchived(recipient.getContact().isArchived())
                     .setHidden(recipient.getContact().isHidden());
         }

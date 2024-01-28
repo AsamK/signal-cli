@@ -5,7 +5,6 @@ import org.signal.core.util.Base64;
 import org.signal.core.util.SetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
@@ -181,11 +180,11 @@ public final class StorageSyncValidations {
 
             if (insert.getContact().isPresent()) {
                 final var contact = insert.getContact().get();
-                final var serviceId = contact.getServiceId().map(ServiceId.class::cast);
+                final var aci = contact.getAci();
                 final var pni = contact.getPni();
                 final var number = contact.getNumber();
                 final var username = contact.getUsername();
-                final var address = new RecipientAddress(serviceId, pni, number, username);
+                final var address = new RecipientAddress(aci, pni, number, username);
                 if (self.matches(address)) {
                     throw new SelfAddedAsContactError();
                 }

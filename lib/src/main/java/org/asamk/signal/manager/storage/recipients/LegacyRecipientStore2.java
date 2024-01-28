@@ -40,12 +40,16 @@ public class LegacyRecipientStore2 {
                 if (r.contact != null) {
                     contact = new Contact(r.contact.name,
                             null,
+                            null,
                             r.contact.color,
                             r.contact.messageExpirationTime,
+                            0,
+                            false,
                             r.contact.blocked,
                             r.contact.archived,
                             r.contact.profileSharingEnabled,
-                            false);
+                            false,
+                            null);
                 }
 
                 ProfileKey profileKey = null;

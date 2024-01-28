@@ -32,22 +32,19 @@ public class MergeRecipientHelper {
                 return new Pair<>(recipient.id(), List.of());
             }
 
-            if (recipient.address().serviceId().isEmpty() || (
-                    recipient.address().serviceId().equals(address.serviceId())
-            ) || (
-                    recipient.address().pni().isPresent() && recipient.address().pni().equals(address.serviceId())
-            ) || (
-                    recipient.address().serviceId().equals(address.pni())
-            ) || (
-                    address.pni().isPresent() && address.pni().equals(recipient.address().pni())
-            )) {
+            if (recipient.address().aci().isEmpty() || (
+                    address.aci().isEmpty() && (
+                            address.pni().isEmpty()
+                                    || recipient.address().pni().equals(address.pni())
+                    )
+            ) || recipient.address().aci().equals(address.aci())) {
                 logger.debug("Got existing recipient {}, updating with high trust address", recipient.id());
                 store.updateRecipientAddress(recipient.id(), recipient.address().withIdentifiersFrom(address));
                 return new Pair<>(recipient.id(), List.of());
             }
 
             logger.debug(
-                    "Got recipient {} existing with number/pni/username, but different serviceId, so stripping its number and adding new recipient",
+                    "Got recipient {} existing with number/pni/username, but different aci, so stripping its number and adding new recipient",
                     recipient.id());
             store.updateRecipientAddress(recipient.id(), recipient.address().removeIdentifiersFrom(address));
 
@@ -55,14 +52,10 @@ public class MergeRecipientHelper {
         }
 
         var resultingRecipient = recipients.stream()
-                .filter(r -> r.address().serviceId().equals(address.serviceId()) || r.address()
-                        .pni()
-                        .equals(address.serviceId()))
+                .filter(r -> r.address().aci().isPresent() && r.address().aci().equals(address.aci()))
                 .findFirst();
         if (resultingRecipient.isEmpty() && address.pni().isPresent()) {
-            resultingRecipient = recipients.stream().filter(r -> r.address().serviceId().equals(address.pni()) || (
-                    address.serviceId().equals(address.pni()) && r.address().pni().equals(address.pni())
-            )).findFirst();
+            resultingRecipient = recipients.stream().filter(r -> r.address().pni().equals(address.pni())).findFirst();
         }
 
         final Set<RecipientWithAddress> remainingRecipients;

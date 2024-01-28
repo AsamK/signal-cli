@@ -36,7 +36,7 @@ public class LegacyRecipientStore {
             if (node.isArray()) {
                 for (var recipient : node) {
                     var recipientName = recipient.get("name").asText();
-                    var serviceId = ServiceId.parseOrThrow(recipient.get("uuid").asText());
+                    var serviceId = ServiceId.ACI.parseOrThrow(recipient.get("uuid").asText());
                     addresses.add(new RecipientAddress(serviceId, recipientName));
                 }
             }

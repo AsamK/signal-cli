@@ -43,7 +43,9 @@ public class LegacyProfileStore {
             if (node.isArray()) {
                 for (var entry : node) {
                     var name = entry.hasNonNull("name") ? entry.get("name").asText() : null;
-                    var serviceId = entry.hasNonNull("uuid") ? ServiceId.parseOrNull(entry.get("uuid").asText()) : null;
+                    var serviceId = entry.hasNonNull("uuid")
+                            ? ServiceId.ACI.parseOrNull(entry.get("uuid").asText())
+                            : null;
                     final var address = new RecipientAddress(serviceId, name);
                     ProfileKey profileKey = null;
                     try {

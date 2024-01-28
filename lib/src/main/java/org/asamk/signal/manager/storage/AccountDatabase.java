@@ -25,6 +25,7 @@ import org.whispersystems.signalservice.api.util.UuidUtil;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 21;
+    private static final long DATABASE_VERSION = 22;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -361,60 +362,7 @@ public class AccountDatabase extends Database {
         if (oldVersion < 15) {
             logger.debug("Updating database: Store serviceId as TEXT");
             try (final var statement = connection.createStatement()) {
-                statement.executeUpdate("""
-                                        CREATE TABLE tmp_mapping_table (
-                                          uuid BLOB NOT NULL,
-                                          address TEXT NOT NULL
-                                        ) STRICT;
-                                        """);
-
-                final var sql = (
-                        """
-                        SELECT r.uuid, r.pni
-                        FROM recipient r
-                        """
-                );
-                final var uuidAddressMapping = new HashMap<UUID, ServiceId>();
-                try (final var preparedStatement = connection.prepareStatement(sql)) {
-                    try (var result = Utils.executeQueryForStream(preparedStatement, (resultSet) -> {
-                        final var pni = Optional.ofNullable(resultSet.getBytes("pni"))
-                                .map(UuidUtil::parseOrNull)
-                                .map(ServiceId.PNI::from);
-                        final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid"))
-                                .map(UuidUtil::parseOrNull);
-                        final var serviceId = serviceIdUuid.isPresent() && pni.isPresent() && serviceIdUuid.get()
-                                .equals(pni.get().getRawUuid())
-                                ? pni.<ServiceId>map(p -> p)
-                                : serviceIdUuid.<ServiceId>map(ACI::from);
-
-                        return new Pair<>(serviceId, pni);
-                    })) {
-                        result.forEach(p -> {
-                            final var serviceId = p.first();
-                            final var pni = p.second();
-                            if (serviceId.isPresent()) {
-                                uuidAddressMapping.put(serviceId.get().getRawUuid(), serviceId.get());
-                            }
-                            if (pni.isPresent()) {
-                                uuidAddressMapping.put(pni.get().getRawUuid(), pni.get());
-                            }
-                        });
-                    }
-                }
-
-                final var insertSql = """
-                                      INSERT INTO tmp_mapping_table (uuid, address)
-                                      VALUES (?,?)
-                                      """;
-                try (final var insertStatement = connection.prepareStatement(insertSql)) {
-                    for (final var entry : uuidAddressMapping.entrySet()) {
-                        final var uuid = entry.getKey();
-                        final var serviceId = entry.getValue();
-                        insertStatement.setBytes(1, UuidUtil.toByteArray(uuid));
-                        insertStatement.setString(2, serviceId.toString());
-                        insertStatement.execute();
-                    }
-                }
+                createUuidMappingTable(connection, statement);
 
                 statement.executeUpdate("""
                                         CREATE TABLE identity2 (
@@ -563,8 +511,119 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD unregistered_timestamp INTEGER;
-                                        UPDATE recipient SET pni = NULL WHERE uuid IS NOT NULL;
                                         """);
+            }
+        }
+        if (oldVersion < 22) {
+            logger.debug("Updating database: Store recipient aci/pni as TEXT");
+            try (final var statement = connection.createStatement()) {
+                createUuidMappingTable(connection, statement);
+
+                statement.executeUpdate("""
+                                        CREATE TABLE recipient2 (
+                                          _id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                          storage_id BLOB UNIQUE,
+                                          storage_record BLOB,
+                                          number TEXT UNIQUE,
+                                          username TEXT UNIQUE,
+                                          aci TEXT UNIQUE,
+                                          pni TEXT UNIQUE,
+                                          unregistered_timestamp INTEGER,
+                                          profile_key BLOB,
+                                          profile_key_credential BLOB,
+
+                                          given_name TEXT,
+                                          family_name TEXT,
+                                          nick_name TEXT,
+                                          color TEXT,
+
+                                          expiration_time INTEGER NOT NULL DEFAULT 0,
+                                          mute_until INTEGER NOT NULL DEFAULT 0,
+                                          blocked INTEGER NOT NULL DEFAULT FALSE,
+                                          archived INTEGER NOT NULL DEFAULT FALSE,
+                                          profile_sharing INTEGER NOT NULL DEFAULT FALSE,
+                                          hide_story INTEGER NOT NULL DEFAULT FALSE,
+                                          hidden INTEGER NOT NULL DEFAULT FALSE,
+
+                                          profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
+                                          profile_given_name TEXT,
+                                          profile_family_name TEXT,
+                                          profile_about TEXT,
+                                          profile_about_emoji TEXT,
+                                          profile_avatar_url_path TEXT,
+                                          profile_mobile_coin_address BLOB,
+                                          profile_unidentified_access_mode TEXT,
+                                          profile_capabilities TEXT
+                                        ) STRICT;
+                                        INSERT INTO recipient2 (_id, aci, pni, storage_id, storage_record, number, username, unregistered_timestamp, profile_key, profile_key_credential, given_name, family_name, color, expiration_time, blocked, archived, profile_sharing, hidden, profile_last_update_timestamp, profile_given_name, profile_family_name, profile_about, profile_about_emoji, profile_avatar_url_path, profile_mobile_coin_address, profile_unidentified_access_mode, profile_capabilities)
+                                          SELECT r._id, (SELECT t.address FROM tmp_mapping_table t WHERE t.uuid = r.uuid AND t.address not like 'PNI:%') aci, (SELECT t.address FROM tmp_mapping_table t WHERE t.uuid = r.pni AND t.address like 'PNI:%') pni, storage_id, storage_record, number, username, unregistered_timestamp, profile_key, profile_key_credential, given_name, family_name, color, expiration_time, blocked, archived, profile_sharing, hidden, profile_last_update_timestamp, profile_given_name, profile_family_name, profile_about, profile_about_emoji, profile_avatar_url_path, profile_mobile_coin_address, profile_unidentified_access_mode, profile_capabilities
+                                          FROM recipient r;
+                                        DROP TABLE recipient;
+                                        ALTER TABLE recipient2 RENAME TO recipient;
+
+                                        DROP TABLE tmp_mapping_table;
+                                        """);
+            }
+        }
+    }
+
+    private static void createUuidMappingTable(
+            final Connection connection, final Statement statement
+    ) throws SQLException {
+        statement.executeUpdate("""
+                                CREATE TABLE tmp_mapping_table (
+                                  uuid BLOB NOT NULL,
+                                  address TEXT NOT NULL
+                                ) STRICT;
+                                """);
+
+        final var sql = (
+                """
+                SELECT r.uuid, r.pni
+                FROM recipient r
+                """
+        );
+        final var uuidAddressMapping = new HashMap<UUID, ServiceId>();
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
+            try (var result = Utils.executeQueryForStream(preparedStatement, (resultSet) -> {
+                final var pni = Optional.ofNullable(resultSet.getBytes("pni"))
+                        .map(UuidUtil::parseOrNull)
+                        .map(ServiceId.PNI::from);
+                final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid")).map(UuidUtil::parseOrNull);
+                final var serviceId = serviceIdUuid.isPresent() && pni.isPresent() && serviceIdUuid.get()
+                        .equals(pni.get().getRawUuid())
+                        ? pni.<ServiceId>map(p -> p)
+                        : serviceIdUuid.<ServiceId>map(ACI::from);
+
+                return new Pair<>(serviceId, pni);
+            })) {
+                result.forEach(p -> {
+                    final var serviceId = p.first();
+                    final var pni = p.second();
+                    if (serviceId.isPresent()) {
+                        final var rawUuid = serviceId.get().getRawUuid();
+                        if (!uuidAddressMapping.containsKey(rawUuid)) {
+                            uuidAddressMapping.put(rawUuid, serviceId.get());
+                        }
+                    }
+                    if (pni.isPresent()) {
+                        uuidAddressMapping.put(pni.get().getRawUuid(), pni.get());
+                    }
+                });
+            }
+        }
+
+        final var insertSql = """
+                              INSERT INTO tmp_mapping_table (uuid, address)
+                              VALUES (?,?)
+                              """;
+        try (final var insertStatement = connection.prepareStatement(insertSql)) {
+            for (final var entry : uuidAddressMapping.entrySet()) {
+                final var uuid = entry.getKey();
+                final var serviceId = entry.getValue();
+                insertStatement.setBytes(1, UuidUtil.toByteArray(uuid));
+                insertStatement.setString(2, serviceId.toString());
+                insertStatement.execute();
             }
         }
     }

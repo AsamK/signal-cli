@@ -215,6 +215,6 @@
   }]},
   "bundles":[{
     "name":"net.sourceforge.argparse4j.internal.ArgumentParserImpl",
-    "locales":["", "en", "und"]
+    "locales":["", "de", "en", "und"]
   }]
 }

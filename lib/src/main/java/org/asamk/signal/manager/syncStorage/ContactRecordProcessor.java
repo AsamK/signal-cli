@@ -233,22 +233,38 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var profileShared = contact != null && contact.isProfileSharingEnabled();
         final var archived = contact != null && contact.isArchived();
         final var hidden = contact != null && contact.isHidden();
+        final var hideStory = contact != null && contact.hideStory();
+        final var muteUntil = contact == null ? 0 : contact.muteUntil();
+        final var unregisteredTimestamp = contact == null || contact.unregisteredTimestamp() == null
+                ? 0
+                : contact.unregisteredTimestamp();
         final var contactGivenName = contact == null ? null : contact.givenName();
         final var contactFamilyName = contact == null ? null : contact.familyName();
+        final var contactNickName = contact == null ? null : contact.nickName();
         if (blocked != contactRecord.isBlocked()
                 || profileShared != contactRecord.isProfileSharingEnabled()
                 || archived != contactRecord.isArchived()
                 || hidden != contactRecord.isHidden()
+                || hideStory != contactRecord.shouldHideStory()
+                || muteUntil != contactRecord.getMuteUntil()
+                || unregisteredTimestamp != contactRecord.getUnregisteredTimestamp()
                 || !Objects.equals(contactRecord.getSystemGivenName().orElse(null), contactGivenName)
-                || !Objects.equals(contactRecord.getSystemFamilyName().orElse(null), contactFamilyName)) {
+                || !Objects.equals(contactRecord.getSystemFamilyName().orElse(null), contactFamilyName)
+                || !Objects.equals(contactRecord.getSystemNickname().orElse(null), contactNickName)) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withIsBlocked(contactRecord.isBlocked())
                     .withIsProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
                     .withIsArchived(contactRecord.isArchived())
                     .withIsHidden(contactRecord.isHidden())
+                    .withMuteUntil(contactRecord.getMuteUntil())
+                    .withHideStory(contactRecord.shouldHideStory())
                     .withGivenName(contactRecord.getSystemGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getSystemFamilyName().orElse(null));
+                    .withFamilyName(contactRecord.getSystemFamilyName().orElse(null))
+                    .withNickName(contactRecord.getSystemNickname().orElse(null))
+                    .withUnregisteredTimestamp(contactRecord.getUnregisteredTimestamp() == 0
+                            ? null
+                            : contactRecord.getUnregisteredTimestamp());
             account.getRecipientStore().storeContact(connection, recipientId, newContact.build());
         }
 

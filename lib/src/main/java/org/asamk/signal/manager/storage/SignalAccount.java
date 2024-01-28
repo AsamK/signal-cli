@@ -385,8 +385,15 @@ public class SignalAccount implements Closeable {
         }
         getRecipientStore().deleteRecipientData(recipientId);
         getMessageCache().deleteMessages(recipientId);
-        if (recipientAddress.serviceId().isPresent()) {
-            final var serviceId = recipientAddress.serviceId().get();
+        if (recipientAddress.aci().isPresent()) {
+            final var serviceId = recipientAddress.aci().get();
+            aciAccountData.getSessionStore().deleteAllSessions(serviceId);
+            pniAccountData.getSessionStore().deleteAllSessions(serviceId);
+            getIdentityKeyStore().deleteIdentity(serviceId);
+            getSenderKeyStore().deleteAll(serviceId);
+        }
+        if (recipientAddress.pni().isPresent()) {
+            final var serviceId = recipientAddress.pni().get();
             aciAccountData.getSessionStore().deleteAllSessions(serviceId);
             pniAccountData.getSessionStore().deleteAllSessions(serviceId);
             getIdentityKeyStore().deleteIdentity(serviceId);
@@ -838,12 +845,16 @@ public class SignalAccount implements Closeable {
                 getContactStore().storeContact(recipientId,
                         new Contact(contact.name,
                                 null,
+                                null,
                                 contact.color,
                                 contact.messageExpirationTime,
+                                0,
+                                false,
                                 contact.blocked,
                                 contact.archived,
                                 false,
-                                false));
+                                false,
+                                null));
 
                 // Store profile keys only in profile store
                 var profileKeyString = contact.profileKey;

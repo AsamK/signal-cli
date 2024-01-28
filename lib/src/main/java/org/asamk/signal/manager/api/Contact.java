@@ -5,23 +5,31 @@ import org.whispersystems.signalservice.internal.util.Util;
 public record Contact(
         String givenName,
         String familyName,
+        String nickName,
         String color,
         int messageExpirationTime,
+        long muteUntil,
+        boolean hideStory,
         boolean isBlocked,
         boolean isArchived,
         boolean isProfileSharingEnabled,
-        boolean isHidden
+        boolean isHidden,
+        Long unregisteredTimestamp
 ) {
 
     private Contact(final Builder builder) {
         this(builder.givenName,
                 builder.familyName,
+                builder.nickName,
                 builder.color,
                 builder.messageExpirationTime,
+                builder.muteUntil,
+                builder.hideStory,
                 builder.isBlocked,
                 builder.isArchived,
                 builder.isProfileSharingEnabled,
-                builder.isHidden);
+                builder.isHidden,
+                builder.unregisteredTimestamp);
     }
 
     public static Builder newBuilder() {
@@ -32,12 +40,16 @@ public record Contact(
         Builder builder = new Builder();
         builder.givenName = copy.givenName();
         builder.familyName = copy.familyName();
+        builder.nickName = copy.nickName();
         builder.color = copy.color();
         builder.messageExpirationTime = copy.messageExpirationTime();
+        builder.muteUntil = copy.muteUntil();
+        builder.hideStory = copy.hideStory();
         builder.isBlocked = copy.isBlocked();
         builder.isArchived = copy.isArchived();
         builder.isProfileSharingEnabled = copy.isProfileSharingEnabled();
         builder.isHidden = copy.isHidden();
+        builder.unregisteredTimestamp = copy.unregisteredTimestamp();
         return builder;
     }
 
@@ -60,12 +72,16 @@ public record Contact(
 
         private String givenName;
         private String familyName;
+        private String nickName;
         private String color;
         private int messageExpirationTime;
+        private long muteUntil;
+        private boolean hideStory;
         private boolean isBlocked;
         private boolean isArchived;
         private boolean isProfileSharingEnabled;
         private boolean isHidden;
+        private Long unregisteredTimestamp;
 
         private Builder() {
         }
@@ -84,6 +100,11 @@ public record Contact(
             return this;
         }
 
+        public Builder withNickName(final String val) {
+            nickName = val;
+            return this;
+        }
+
         public Builder withColor(final String val) {
             color = val;
             return this;
@@ -91,6 +112,16 @@ public record Contact(
 
         public Builder withMessageExpirationTime(final int val) {
             messageExpirationTime = val;
+            return this;
+        }
+
+        public Builder withMuteUntil(final long val) {
+            muteUntil = val;
+            return this;
+        }
+
+        public Builder withHideStory(final boolean val) {
+            hideStory = val;
             return this;
         }
 
@@ -111,6 +142,11 @@ public record Contact(
 
         public Builder withIsHidden(final boolean val) {
             isHidden = val;
+            return this;
+        }
+
+        public Builder withUnregisteredTimestamp(final Long val) {
+            unregisteredTimestamp = val;
             return this;
         }
 

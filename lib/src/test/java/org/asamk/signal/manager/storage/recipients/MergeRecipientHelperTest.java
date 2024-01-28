@@ -3,7 +3,7 @@ package org.asamk.signal.manager.storage.recipients;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 
 import java.util.Arrays;
@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MergeRecipientHelperTest {
 
-    static final ServiceId SERVICE_ID_A = ServiceId.ACI.from(UUID.randomUUID());
-    static final ServiceId SERVICE_ID_B = ServiceId.ACI.from(UUID.randomUUID());
+    static final ACI ACI_A = ACI.from(UUID.randomUUID());
+    static final ACI ACI_B = ACI.from(UUID.randomUUID());
     static final PNI PNI_A = PNI.from(UUID.randomUUID());
     static final PNI PNI_B = PNI.from(UUID.randomUUID());
     static final String NUMBER_A = "+AAA";
@@ -26,8 +26,8 @@ class MergeRecipientHelperTest {
     static final String USERNAME_A = "USER.1";
     static final String USERNAME_B = "USER.2";
 
-    static final PartialAddresses ADDR_A = new PartialAddresses(SERVICE_ID_A, PNI_A, NUMBER_A, USERNAME_A);
-    static final PartialAddresses ADDR_B = new PartialAddresses(SERVICE_ID_B, PNI_B, NUMBER_B, USERNAME_B);
+    static final PartialAddresses ADDR_A = new PartialAddresses(ACI_A, PNI_A, NUMBER_A, USERNAME_A);
+    static final PartialAddresses ADDR_B = new PartialAddresses(ACI_B, PNI_B, NUMBER_B, USERNAME_B);
 
     static final T[] testInstancesNone = new T[]{
             new T(Set.of(), ADDR_A.FULL, Set.of(rec(1000000, ADDR_A.FULL))),
@@ -53,9 +53,7 @@ class MergeRecipientHelperTest {
             new T(Set.of(rec(1, ADDR_A.PNI)), ADDR_A.ACI_NUM, Set.of(rec(1, ADDR_A.PNI), rec(1000000, ADDR_A.ACI_NUM))),
             new T(Set.of(rec(1, ADDR_A.NUM)), ADDR_A.ACI_NUM, Set.of(rec(1, ADDR_A.ACI_NUM))),
             new T(Set.of(rec(1, ADDR_A.ACI_NUM)), ADDR_A.ACI_NUM, Set.of(rec(1, ADDR_A.ACI_NUM))),
-            new T(Set.of(rec(1, ADDR_A.PNI_NUM)),
-                    ADDR_A.ACI_NUM,
-                    Set.of(rec(1, ADDR_A.PNI), rec(1000000, ADDR_A.ACI_NUM))),
+            new T(Set.of(rec(1, ADDR_A.PNI_NUM)), ADDR_A.ACI_NUM, Set.of(rec(1, ADDR_A.FULL))),
             new T(Set.of(rec(1, ADDR_A.ACI_PNI)), ADDR_A.ACI_NUM, Set.of(rec(1, ADDR_A.FULL))),
 
             new T(Set.of(rec(1, ADDR_A.FULL)), ADDR_A.PNI_NUM, Set.of(rec(1, ADDR_A.FULL))),
@@ -186,7 +184,7 @@ class MergeRecipientHelperTest {
         @Override
         public String toString() {
             return "T{#input=%s, request=%s_%s_%s, #output=%s}".formatted(input.size(),
-                    request.serviceId().isPresent() ? "SVI" : "",
+                    request.aci().isPresent() ? "ACI" : "",
                     request.pni().isPresent() ? "PNI" : "",
                     request.number().isPresent() ? "NUM" : "",
                     output.size());
@@ -245,17 +243,17 @@ class MergeRecipientHelperTest {
             RecipientAddress ACI_USERNAME
     ) {
 
-        PartialAddresses(ServiceId serviceId, PNI pni, String number, String username) {
-            this(new RecipientAddress(serviceId, pni, number),
-                    new RecipientAddress(serviceId, pni, number, username),
-                    new RecipientAddress(serviceId, null, null),
+        PartialAddresses(ACI aci, PNI pni, String number, String username) {
+            this(new RecipientAddress(aci, pni, number),
+                    new RecipientAddress(aci, pni, number, username),
+                    new RecipientAddress(aci, null, null),
                     new RecipientAddress(null, pni, null),
                     new RecipientAddress(null, null, number),
-                    new RecipientAddress(serviceId, null, number),
-                    new RecipientAddress(serviceId, null, number, username),
+                    new RecipientAddress(aci, null, number),
+                    new RecipientAddress(aci, null, number, username),
                     new RecipientAddress(null, pni, number),
-                    new RecipientAddress(serviceId, pni, null),
-                    new RecipientAddress(serviceId, null, null, username));
+                    new RecipientAddress(aci, pni, null),
+                    new RecipientAddress(aci, null, null, username));
         }
     }
 }

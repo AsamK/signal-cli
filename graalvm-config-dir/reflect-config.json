@@ -2619,7 +2619,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }, {"name":"getUsernameLinkEncryptedValue","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.String","boolean"] }, {"name":"getKeepLinkHandle","parameterTypes":[] }, {"name":"getUsernameLinkEncryptedValue","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.SetUsernameLinkResponseBody",
@@ -2647,6 +2647,13 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"getCaptcha","parameterTypes":[] }, {"name":"getMcc","parameterTypes":[] }, {"name":"getMnc","parameterTypes":[] }, {"name":"getPushChallenge","parameterTypes":[] }, {"name":"getPushToken","parameterTypes":[] }, {"name":"getPushTokenType","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.VerificationCodeFailureResponseBody",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["boolean","java.lang.String"] }, {"name":"<init>","parameterTypes":["boolean","java.lang.String","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.push.VerificationSessionMetadataRequestBody",

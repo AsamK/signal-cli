@@ -45,7 +45,7 @@ public class LegacyGroupStore {
             if (g instanceof Storage.GroupV1 g1) {
                 final var members = g1.members.stream().map(m -> {
                     if (m.recipientId == null) {
-                        return recipientResolver.resolveRecipient(new RecipientAddress(ServiceId.parseOrNull(m.uuid),
+                        return recipientResolver.resolveRecipient(new RecipientAddress(ServiceId.ACI.parseOrNull(m.uuid),
                                 m.number));
                     }
 
