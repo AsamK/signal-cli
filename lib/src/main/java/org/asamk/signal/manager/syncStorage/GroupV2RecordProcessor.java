@@ -92,6 +92,7 @@ public final class GroupV2RecordProcessor extends DefaultStorageRecordProcessor<
 
         final var group = account.getGroupStore().getGroupOrPartialMigrate(connection, groupMasterKey);
         group.setBlocked(groupV2Record.isBlocked());
+        group.setProfileSharingEnabled(groupV2Record.isProfileSharingEnabled());
         account.getGroupStore().updateGroup(connection, group);
         account.getGroupStore()
                 .storeStorageRecord(connection,

@@ -166,6 +166,7 @@ public class GroupHelper {
         if (gv2Pair == null) {
             // Failed to create v2 group, creating v1 group instead
             var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
+            gv1.setProfileSharingEnabled(true);
             gv1.addMembers(List.of(selfRecipientId));
             final var result = updateGroupV1(gv1, name, members, avatarBytes);
             return new Pair<>(gv1.getGroupId(), result);
@@ -175,6 +176,7 @@ public class GroupHelper {
         final var decryptedGroup = gv2Pair.second();
 
         gv2.setGroup(decryptedGroup);
+        gv2.setProfileSharingEnabled(true);
         if (avatarBytes != null) {
             context.getAvatarStore()
                     .storeGroupAvatar(gv2.getGroupId(), outputStream -> outputStream.write(avatarBytes));

@@ -95,6 +95,15 @@ public final class GroupInfoV1 extends GroupInfo {
     }
 
     @Override
+    public boolean isProfileSharingEnabled() {
+        return true;
+    }
+
+    @Override
+    public void setProfileSharingEnabled(final boolean profileSharingEnabled) {
+    }
+
+    @Override
     public int getMessageExpirationTimer() {
         return messageExpirationTime;
     }

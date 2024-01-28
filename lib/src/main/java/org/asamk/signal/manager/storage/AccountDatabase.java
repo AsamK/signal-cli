@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 22;
+    private static final long DATABASE_VERSION = 23;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -562,6 +562,14 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE recipient2 RENAME TO recipient;
 
                                         DROP TABLE tmp_mapping_table;
+                                        """);
+            }
+        }
+        if (oldVersion < 23) {
+            logger.debug("Updating database: Create group profile sharing column");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE group_v2 ADD profile_sharing INTEGER NOT NULL DEFAULT TRUE;
                                         """);
             }
         }

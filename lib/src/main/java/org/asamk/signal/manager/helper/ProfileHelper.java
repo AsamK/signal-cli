@@ -80,7 +80,7 @@ public final class ProfileHelper {
         final var activeGroupIds = account.getGroupStore()
                 .getGroups()
                 .stream()
-                .filter(g -> g instanceof GroupInfoV2 && g.isMember(selfRecipientId))
+                .filter(g -> g instanceof GroupInfoV2 && g.isMember(selfRecipientId) && g.isProfileSharingEnabled())
                 .map(g -> (GroupInfoV2) g)
                 .map(GroupInfoV2::getGroupId)
                 .toList();

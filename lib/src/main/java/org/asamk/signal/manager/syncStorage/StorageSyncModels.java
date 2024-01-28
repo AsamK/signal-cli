@@ -119,7 +119,9 @@ public final class StorageSyncModels {
         final var builder = new SignalGroupV1Record.Builder(rawStorageId,
                 group.getGroupId().serialize(),
                 group.getStorageRecord());
-        builder.setBlocked(group.isBlocked()).setArchived(group.archived);
+        builder.setBlocked(group.isBlocked());
+        builder.setArchived(group.archived);
+        builder.setProfileSharingEnabled(true);
         return SignalStorageRecord.forGroupV1(builder.build());
     }
 
@@ -130,6 +132,7 @@ public final class StorageSyncModels {
                 group.getMasterKey(),
                 group.getStorageRecord());
         builder.setBlocked(group.isBlocked());
+        builder.setProfileSharingEnabled(group.isProfileSharingEnabled());
         return SignalStorageRecord.forGroupV2(builder.build());
     }
 

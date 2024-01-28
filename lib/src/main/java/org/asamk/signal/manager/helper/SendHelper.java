@@ -454,6 +454,10 @@ public class SendHelper {
         if (!g.isMember(account.getSelfRecipientId())) {
             throw new NotAGroupMemberException(groupId, g.getTitle());
         }
+        if (!g.isProfileSharingEnabled()) {
+            g.setProfileSharingEnabled(true);
+            account.getGroupStore().updateGroup(g);
+        }
         return g;
     }
 

@@ -77,6 +77,7 @@ public class LegacyGroupStore {
                     loadDecryptedGroupLocked(groupId, groupCachePath),
                     g2.distributionId == null ? DistributionId.create() : DistributionId.from(g2.distributionId),
                     g2.blocked,
+                    true,
                     g2.permissionDenied,
                     null,
                     recipientResolver);

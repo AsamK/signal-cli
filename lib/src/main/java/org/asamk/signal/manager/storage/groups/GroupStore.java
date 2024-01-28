@@ -59,6 +59,7 @@ public class GroupStore {
                                       group_data BLOB,
                                       distribution_id BLOB UNIQUE NOT NULL,
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      profile_sharing INTEGER NOT NULL DEFAULT FALSE,
                                       permission_denied INTEGER NOT NULL DEFAULT FALSE
                                     ) STRICT;
                                     CREATE TABLE group_v1 (
@@ -508,8 +509,8 @@ public class GroupStore {
         } else if (group instanceof GroupInfoV2 groupV2) {
             final var sql = (
                     """
-                    INSERT OR REPLACE INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, distribution_id, storage_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR REPLACE INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, permission_denied, storage_id, profile_sharing)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """
             ).formatted(TABLE_GROUP_V2);
             try (final var statement = connection.prepareStatement(sql)) {
@@ -529,6 +530,7 @@ public class GroupStore {
                 statement.setBoolean(6, groupV2.isBlocked());
                 statement.setBoolean(7, groupV2.isPermissionDenied());
                 statement.setBytes(8, KeyUtils.createRawStorageId());
+                statement.setBoolean(9, groupV2.isProfileSharingEnabled());
                 statement.executeUpdate();
             }
         } else {
@@ -539,7 +541,7 @@ public class GroupStore {
     private List<GroupInfoV2> getGroupsV2() {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 """
         ).formatted(TABLE_GROUP_V2);
@@ -557,7 +559,7 @@ public class GroupStore {
     public GroupInfoV2 getGroup(Connection connection, GroupIdV2 groupIdV2) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 WHERE g.group_id = ?
                 """
@@ -591,7 +593,7 @@ public class GroupStore {
     public GroupInfoV2 getGroupV2(Connection connection, StorageId storageId) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 WHERE g.storage_id = ?
                 """
@@ -614,6 +616,7 @@ public class GroupStore {
             final var groupData = resultSet.getBytes("group_data");
             final var distributionId = resultSet.getBytes("distribution_id");
             final var blocked = resultSet.getBoolean("blocked");
+            final var profileSharingEnabled = resultSet.getBoolean("profile_sharing");
             final var permissionDenied = resultSet.getBoolean("permission_denied");
             final var storageRecord = resultSet.getBytes("storage_record");
             return new GroupInfoV2(GroupId.v2(groupId),
@@ -621,6 +624,7 @@ public class GroupStore {
                     groupData == null ? null : DecryptedGroup.ADAPTER.decode(groupData),
                     DistributionId.from(UuidUtil.parseOrThrow(distributionId)),
                     blocked,
+                    profileSharingEnabled,
                     permissionDenied,
                     storageRecord,
                     recipientResolver);
