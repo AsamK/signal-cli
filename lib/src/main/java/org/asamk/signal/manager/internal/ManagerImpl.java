@@ -66,6 +66,7 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
 import org.asamk.signal.manager.helper.RecipientHelper.RegisteredUser;
+import org.asamk.signal.manager.jobs.RefreshRecipientsJob;
 import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
@@ -226,14 +227,7 @@ public class ManagerImpl implements Manager {
         final var lastRecipientsRefresh = account.getLastRecipientsRefresh();
         if (lastRecipientsRefresh == null
                 || lastRecipientsRefresh < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)) {
-            try {
-                context.getRecipientHelper().refreshUsers();
-            } catch (Exception e) {
-                logger.warn("Full CDSI recipients refresh failed, ignoring: {} ({})",
-                        e.getMessage(),
-                        e.getClass().getSimpleName());
-                logger.debug("Full CDSI refresh failed", e);
-            }
+            context.getJobExecutor().enqueueJob(new RefreshRecipientsJob());
             context.getAccountHelper().checkWhoAmiI();
         }
     }

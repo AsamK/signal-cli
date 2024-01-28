@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.internal.JobExecutor;
 import org.asamk.signal.manager.jobs.DownloadProfileJob;
+import org.asamk.signal.manager.jobs.RefreshRecipientsJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -152,7 +153,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             } else if (pnisMatchButE164sDont) {
                 logger.debug("Matching PNIs, but the E164s differ! Trusting our local pair.");
             }
-            // TODO [pnp] Schedule CDS fetch?
+            jobExecutor.enqueueJob(new RefreshRecipientsJob());
             pni = local.getPni().get();
             e164 = local.getNumber().get();
         } else {
