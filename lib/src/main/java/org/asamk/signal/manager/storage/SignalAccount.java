@@ -192,9 +192,7 @@ public class SignalAccount implements Closeable {
         final var pair = openFileChannel(fileName, waitForLock);
         try {
             var signalAccount = new SignalAccount(pair.first(), pair.second());
-            logger.trace("Loading account file");
             signalAccount.load(dataPath, accountPath, settings);
-            logger.trace("Migrating legacy parts of account file");
             signalAccount.migrateLegacyConfigs();
             signalAccount.init();
 
@@ -367,6 +365,7 @@ public class SignalAccount implements Closeable {
 
     private void migrateLegacyConfigs() {
         if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
+            logger.trace("Migrating legacy parts of account file");
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
     }
@@ -438,6 +437,7 @@ public class SignalAccount implements Closeable {
     private void load(
             File dataPath, String accountPath, final Settings settings
     ) throws IOException {
+        logger.trace("Loading account file {}", accountPath);
         this.dataPath = dataPath;
         this.accountPath = accountPath;
         this.settings = settings;
