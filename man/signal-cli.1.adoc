@@ -700,7 +700,7 @@ Install a sticker pack for this account.
 
 *--uri* [URI]::
 Specify the uri of the sticker pack.
-e.g. https://signal.art/addstickers/#pack_id=XXX&pack_key=XXX)"
+e.g. https://signal.art/addstickers/#pack_id=XXX&pack_key=XXX
 
 === getAttachment
 
