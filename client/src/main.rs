@@ -1,13 +1,14 @@
 use std::{path::PathBuf, time::Duration};
 
 use clap::Parser;
-use cli::Cli;
 use jsonrpsee::core::client::{Subscription, SubscriptionClientT};
 use jsonrpsee::core::Error as RpcError;
 use serde_json::Value;
 use tokio::{select, time::sleep};
 
-use crate::cli::{GroupPermission, LinkState};
+use cli::Cli;
+
+use crate::cli::{CliCommands, GroupPermission, LinkState};
 use crate::jsonrpc::RpcClient;
 
 mod cli;
@@ -38,7 +39,7 @@ async fn handle_command(
     client: impl SubscriptionClientT + Sync,
 ) -> Result<Value, RpcError> {
     match cli.command {
-        cli::CliCommands::Receive { timeout } => {
+        CliCommands::Receive { timeout } => {
             let mut stream = client.subscribe_receive(cli.account).await?;
 
             {
@@ -50,21 +51,21 @@ async fn handle_command(
             stream.unsubscribe().await?;
             Ok(Value::Null)
         }
-        cli::CliCommands::AddDevice { uri } => client.add_device(cli.account, uri).await,
-        cli::CliCommands::Block {
+        CliCommands::AddDevice { uri } => client.add_device(cli.account, uri).await,
+        CliCommands::Block {
             recipient,
             group_id,
         } => client.block(cli.account, recipient, group_id).await,
-        cli::CliCommands::DeleteLocalAccountData { ignore_registered } => {
+        CliCommands::DeleteLocalAccountData { ignore_registered } => {
             client
                 .delete_local_account_data(cli.account, ignore_registered)
                 .await
         }
-        cli::CliCommands::GetUserStatus { recipient } => {
+        CliCommands::GetUserStatus { recipient } => {
             client.get_user_status(cli.account, recipient).await
         }
-        cli::CliCommands::JoinGroup { uri } => client.join_group(cli.account, uri).await,
-        cli::CliCommands::Link { name } => {
+        CliCommands::JoinGroup { uri } => client.join_group(cli.account, uri).await,
+        CliCommands::Link { name } => {
             let url = client
                 .start_link(cli.account)
                 .await
@@ -73,8 +74,8 @@ async fn handle_command(
             println!("{}", url);
             client.finish_link(url, name).await
         }
-        cli::CliCommands::ListAccounts => client.list_accounts().await,
-        cli::CliCommands::ListContacts {
+        CliCommands::ListAccounts => client.list_accounts().await,
+        CliCommands::ListContacts {
             recipient,
             all_recipients,
             blocked,
@@ -84,16 +85,14 @@ async fn handle_command(
                 .list_contacts(cli.account, recipient, all_recipients, blocked, name)
                 .await
         }
-        cli::CliCommands::ListDevices => client.list_devices(cli.account).await,
-        cli::CliCommands::ListGroups {
+        CliCommands::ListDevices => client.list_devices(cli.account).await,
+        CliCommands::ListGroups {
             detailed: _,
             group_id,
         } => client.list_groups(cli.account, group_id).await,
-        cli::CliCommands::ListIdentities { number } => {
-            client.list_identities(cli.account, number).await
-        }
-        cli::CliCommands::ListStickerPacks => client.list_sticker_packs(cli.account).await,
-        cli::CliCommands::QuitGroup {
+        CliCommands::ListIdentities { number } => client.list_identities(cli.account, number).await,
+        CliCommands::ListStickerPacks => client.list_sticker_packs(cli.account).await,
+        CliCommands::QuitGroup {
             group_id,
             delete,
             admin,
@@ -102,17 +101,23 @@ async fn handle_command(
                 .quit_group(cli.account, group_id, delete, admin)
                 .await
         }
-        cli::CliCommands::Register { voice, captcha } => {
+        CliCommands::Register { voice, captcha } => {
             client.register(cli.account, voice, captcha).await
         }
-        cli::CliCommands::RemoveContact { recipient, forget } => {
-            client.remove_contact(cli.account, recipient, forget).await
+        CliCommands::RemoveContact {
+            recipient,
+            forget,
+            hide,
+        } => {
+            client
+                .remove_contact(cli.account, recipient, forget, hide)
+                .await
         }
-        cli::CliCommands::RemoveDevice { device_id } => {
+        CliCommands::RemoveDevice { device_id } => {
             client.remove_device(cli.account, device_id).await
         }
-        cli::CliCommands::RemovePin => client.remove_pin(cli.account).await,
-        cli::CliCommands::RemoteDelete {
+        CliCommands::RemovePin => client.remove_pin(cli.account).await,
+        CliCommands::RemoteDelete {
             target_timestamp,
             recipient,
             group_id,
@@ -128,7 +133,7 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::Send {
+        CliCommands::Send {
             recipient,
             group_id,
             note_to_self,
@@ -136,14 +141,21 @@ async fn handle_command(
             message,
             attachment,
             mention,
+            text_style,
             quote_timestamp,
             quote_author,
             quote_message,
             quote_mention,
+            quote_text_style,
             quote_attachment,
+            preview_url,
+            preview_title,
+            preview_description,
+            preview_image,
             sticker,
             story_timestamp,
             story_author,
+            edit_timestamp,
         } => {
             client
                 .send(
@@ -155,19 +167,26 @@ async fn handle_command(
                     message.unwrap_or_default(),
                     attachment,
                     mention,
+                    text_style,
                     quote_timestamp,
                     quote_author,
                     quote_message,
                     quote_mention,
+                    quote_text_style,
                     quote_attachment,
+                    preview_url,
+                    preview_title,
+                    preview_description,
+                    preview_image,
                     sticker,
                     story_timestamp,
                     story_author,
+                    edit_timestamp,
                 )
                 .await
         }
-        cli::CliCommands::SendContacts => client.send_contacts(cli.account).await,
-        cli::CliCommands::SendPaymentNotification {
+        CliCommands::SendContacts => client.send_contacts(cli.account).await,
+        CliCommands::SendPaymentNotification {
             recipient,
             receipt,
             note,
@@ -176,7 +195,7 @@ async fn handle_command(
                 .send_payment_notification(cli.account, recipient, receipt, note)
                 .await
         }
-        cli::CliCommands::SendReaction {
+        CliCommands::SendReaction {
             recipient,
             group_id,
             note_to_self,
@@ -200,7 +219,7 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::SendReceipt {
+        CliCommands::SendReceipt {
             recipient,
             target_timestamp,
             r#type,
@@ -217,8 +236,8 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::SendSyncRequest => client.send_sync_request(cli.account).await,
-        cli::CliCommands::SendTyping {
+        CliCommands::SendSyncRequest => client.send_sync_request(cli.account).await,
+        CliCommands::SendTyping {
             recipient,
             group_id,
             stop,
@@ -227,13 +246,13 @@ async fn handle_command(
                 .send_typing(cli.account, recipient, group_id, stop)
                 .await
         }
-        cli::CliCommands::SetPin { pin } => client.set_pin(cli.account, pin).await,
-        cli::CliCommands::SubmitRateLimitChallenge { challenge, captcha } => {
+        CliCommands::SetPin { pin } => client.set_pin(cli.account, pin).await,
+        CliCommands::SubmitRateLimitChallenge { challenge, captcha } => {
             client
                 .submit_rate_limit_challenge(cli.account, challenge, captcha)
                 .await
         }
-        cli::CliCommands::Trust {
+        CliCommands::Trust {
             recipient,
             trust_all_known_keys,
             verified_safety_number,
@@ -247,17 +266,22 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::Unblock {
+        CliCommands::Unblock {
             recipient,
             group_id,
         } => client.unblock(cli.account, recipient, group_id).await,
-        cli::CliCommands::Unregister { delete_account } => {
+        CliCommands::Unregister { delete_account } => {
             client.unregister(cli.account, delete_account).await
         }
-        cli::CliCommands::UpdateAccount { device_name } => {
-            client.update_account(cli.account, device_name).await
+        CliCommands::UpdateAccount {
+            device_name,
+            unrestricted_unidentified_sender,
+        } => {
+            client
+                .update_account(cli.account, device_name, unrestricted_unidentified_sender)
+                .await
         }
-        cli::CliCommands::UpdateConfiguration {
+        CliCommands::UpdateConfiguration {
             read_receipts,
             unidentified_delivery_indicators,
             typing_indicators,
@@ -273,7 +297,7 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::UpdateContact {
+        CliCommands::UpdateContact {
             recipient,
             expiration,
             name,
@@ -282,7 +306,7 @@ async fn handle_command(
                 .update_contact(cli.account, recipient, name, expiration)
                 .await
         }
-        cli::CliCommands::UpdateGroup {
+        CliCommands::UpdateGroup {
             group_id,
             name,
             description,
@@ -335,7 +359,7 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::UpdateProfile {
+        CliCommands::UpdateProfile {
             given_name,
             family_name,
             about,
@@ -357,14 +381,42 @@ async fn handle_command(
                 )
                 .await
         }
-        cli::CliCommands::UploadStickerPack { path } => {
+        CliCommands::UploadStickerPack { path } => {
             client.upload_sticker_pack(cli.account, path).await
         }
-        cli::CliCommands::Verify {
+        CliCommands::Verify {
             verification_code,
             pin,
         } => client.verify(cli.account, verification_code, pin).await,
-        cli::CliCommands::Version => client.version().await,
+        CliCommands::Version => client.version().await,
+        CliCommands::AddStickerPack { uri } => client.add_sticker_pack(cli.account, uri).await,
+        CliCommands::FinishChangeNumber {
+            number,
+            verification_code,
+            pin,
+        } => {
+            client
+                .finish_change_number(cli.account, number, verification_code, pin)
+                .await
+        }
+        CliCommands::GetAttachment {
+            id,
+            recipient,
+            group_id,
+        } => {
+            client
+                .get_attachment(cli.account, id, recipient, group_id)
+                .await
+        }
+        CliCommands::StartChangeNumber {
+            number,
+            voice,
+            captcha,
+        } => {
+            client
+                .start_change_number(cli.account, number, voice, captcha)
+                .await
+        }
     }
 }
 

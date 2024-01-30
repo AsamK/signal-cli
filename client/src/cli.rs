@@ -1,9 +1,10 @@
-use clap::{crate_version, Parser, Subcommand, ValueEnum};
 use std::{ffi::OsString, net::SocketAddr};
+
+use clap::{crate_version, Parser, Subcommand, ValueEnum};
 
 /// JSON-RPC client for signal-cli
 #[derive(Parser, Debug)]
-#[command(rename_all = "kebab-case", version=crate_version!())]
+#[command(rename_all = "kebab-case", version = crate_version!())]
 pub struct Cli {
     /// Account to use (for daemon in multi-account mode)
     #[arg(short = 'a', long)]
@@ -21,9 +22,6 @@ pub struct Cli {
     #[arg(long, conflicts_with = "json_rpc_socket")]
     pub json_rpc_http: Option<Option<String>>,
 
-    #[arg(value_enum, long, default_value_t = OutputTypes::Json)]
-    pub output: OutputTypes,
-
     #[arg(long)]
     pub verbose: bool,
 
@@ -31,18 +29,15 @@ pub struct Cli {
     pub command: CliCommands,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-#[value(rename_all = "kebab-case")]
-pub enum OutputTypes {
-    PlainText,
-    Json,
-}
-
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
-#[command(rename_all = "camelCase", version=crate_version!())]
+#[command(rename_all = "camelCase", version = crate_version!())]
 pub enum CliCommands {
     AddDevice {
+        #[arg(long)]
+        uri: String,
+    },
+    AddStickerPack {
         #[arg(long)]
         uri: String,
     },
@@ -56,6 +51,22 @@ pub enum CliCommands {
     DeleteLocalAccountData {
         #[arg(long = "ignore-registered")]
         ignore_registered: Option<bool>,
+    },
+    FinishChangeNumber {
+        number: String,
+        #[arg(short = 'v', long = "verification-code")]
+        verification_code: String,
+
+        #[arg(short = 'p', long)]
+        pin: Option<String>,
+    },
+    GetAttachment {
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        recipient: Option<String>,
+        #[arg(short = 'g', long = "group-id")]
+        group_id: Option<String>,
     },
     GetUserStatus {
         recipient: Vec<String>,
@@ -112,6 +123,8 @@ pub enum CliCommands {
         recipient: String,
         #[arg(long)]
         forget: bool,
+        #[arg(long)]
+        hide: bool,
     },
     RemoveDevice {
         #[arg(short = 'd', long = "device-id")]
@@ -153,6 +166,9 @@ pub enum CliCommands {
         mention: Vec<String>,
 
         #[arg(long)]
+        text_style: Vec<String>,
+
+        #[arg(long)]
         quote_timestamp: Option<u64>,
 
         #[arg(long)]
@@ -165,7 +181,22 @@ pub enum CliCommands {
         quote_mention: Vec<String>,
 
         #[arg(long)]
+        quote_text_style: Vec<String>,
+
+        #[arg(long)]
         quote_attachment: Vec<String>,
+
+        #[arg(long)]
+        preview_url: Option<String>,
+
+        #[arg(long)]
+        preview_title: Option<String>,
+
+        #[arg(long)]
+        preview_description: Option<String>,
+
+        #[arg(long)]
+        preview_image: Option<String>,
 
         #[arg(long)]
         sticker: Option<String>,
@@ -175,6 +206,9 @@ pub enum CliCommands {
 
         #[arg(long)]
         story_author: Option<String>,
+
+        #[arg(long)]
+        edit_timestamp: Option<u64>,
     },
     SendContacts,
     SendPaymentNotification {
@@ -232,6 +266,13 @@ pub enum CliCommands {
     SetPin {
         pin: String,
     },
+    StartChangeNumber {
+        number: String,
+        #[arg(short = 'v', long)]
+        voice: bool,
+        #[arg(long)]
+        captcha: Option<String>,
+    },
     SubmitRateLimitChallenge {
         challenge: String,
         captcha: String,
@@ -259,6 +300,8 @@ pub enum CliCommands {
     UpdateAccount {
         #[arg(short = 'n', long = "device-name")]
         device_name: Option<String>,
+        #[arg(long = "unrestricted-unidentified-sender")]
+        unrestricted_unidentified_sender: Option<bool>,
     },
     UpdateConfiguration {
         #[arg(long = "read-receipts")]
