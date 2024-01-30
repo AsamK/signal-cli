@@ -118,8 +118,15 @@ public class PreKeyHelper {
                 logger.warn("Failed to updated pre keys: {}", e.getMessage());
             }
         }
+    }
 
-        cleanSignedPreKeys((serviceIdType));
+    public void cleanOldPreKeys() {
+        cleanOldPreKeys(ServiceIdType.ACI);
+        cleanOldPreKeys(ServiceIdType.PNI);
+    }
+
+    private void cleanOldPreKeys(final ServiceIdType serviceIdType) {
+        cleanSignedPreKeys(serviceIdType);
         cleanOneTimePreKeys(serviceIdType);
     }
 
