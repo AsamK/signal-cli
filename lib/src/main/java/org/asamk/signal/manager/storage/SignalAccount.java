@@ -473,6 +473,9 @@ public class SignalAccount implements Closeable {
             registered = storage.registered;
             number = storage.number;
             username = storage.username;
+            if ("".equals(username)) {
+                username = null;
+            }
             encryptedDeviceName = storage.encryptedDeviceName;
             deviceId = storage.deviceId;
             isMultiDevice = storage.isMultiDevice;
@@ -549,6 +552,9 @@ public class SignalAccount implements Closeable {
         registered = Utils.getNotNullNode(rootNode, "registered").asBoolean();
         if (rootNode.hasNonNull("usernameIdentifier")) {
             username = rootNode.get("usernameIdentifier").asText();
+            if ("".equals(username)) {
+                username = null;
+            }
         }
         if (rootNode.hasNonNull("uuid")) {
             try {
