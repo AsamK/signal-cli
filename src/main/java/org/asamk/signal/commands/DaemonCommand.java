@@ -46,9 +46,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     public void attachToSubparser(final Subparser subparser) {
         final var defaultSocketPath = new File(new File(IOUtils.getRuntimeDir(), "signal-cli"), "socket");
         subparser.help("Run in daemon mode and provide a JSON-RPC or an experimental dbus interface.");
-        subparser.addArgument("--dbus")
-                .action(Arguments.storeTrue())
-                .help("Expose a DBus interface on the user bus (the default, if no other options are given).");
+        subparser.addArgument("--dbus").action(Arguments.storeTrue()).help("Expose a DBus interface on the user bus.");
         subparser.addArgument("--dbus-system", "--system")
                 .action(Arguments.storeTrue())
                 .help("Expose a DBus interface on the system bus.");
@@ -190,6 +188,8 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                         && httpAddress == null
                         && inheritedChannel == null
         )) {
+            logger.warn(
+                    "Running daemon command without explicit mode is deprecated. Use --dbus to use the dbus interface.");
             daemonHandler.runDbus(false);
         }
     }

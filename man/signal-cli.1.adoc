@@ -25,7 +25,7 @@ For this use-case, it has a dbus and a JSON-RPC interface, that can be used to s
 
 For some functionality the Signal protocol requires that all messages have been received from the server.
 The `receive` command should be regularly executed.
-In daemon mode messages are continuously received.
+In daemon mode messages are by default continuously received.
 
 == Options
 
@@ -720,16 +720,9 @@ Alternatively, specify the group IDs for which to get the attachment.
 
 === daemon
 
-signal-cli can run in daemon mode and provides an experimental dbus or JSON-RPC interface.
-If no `-a` account is given, all local accounts will be exported as separate dbus objects under the same bus name.
-
-*--dbus*::
-Export DBus interface on user bus. +
-See **signal-cli-dbus**(5) for info on the dbus interface.
-
-*--dbus-system*::
-Export DBus interface on system bus. +
-See **signal-cli-dbus**(5) for info on the dbus interface.
+signal-cli can run in daemon mode and provides JSON-RPC or an experimental dbus interface.
+If no `-a` account is given, all local accounts will be loaded.
+Multiple interfaces can be used at the same time, e.g. `daemon --socket --dbus`
 
 *--socket [SOCKET]*::
 Export a JSON-RPC interface on a UNIX socket (default $XDG_RUNTIME_DIR/signal-cli/socket). +
@@ -743,6 +736,14 @@ See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
 Expose a JSON-RPC interface as http endpoint (default localhost:8080).
 The JSON-RPC endpoint is `/api/v1/rpc`. +
 See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--dbus*::
+Export DBus interface on user bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
+
+*--dbus-system*::
+Export DBus interface on system bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.
