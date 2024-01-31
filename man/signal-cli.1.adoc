@@ -44,6 +44,7 @@ If `--verbose` is also given, the detailed logs will only be written to the log 
 
 *--scrub-log*::
 Scrub possibly sensitive information from the log, like phone numbers and UUIDs.
+Doesn't work reliably on dbus logs with very verbose logging (`-vvv`)
 
 *--config* CONFIG::
 Set the path, where to store the config.

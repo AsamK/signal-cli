@@ -37,8 +37,16 @@ public final class Scrubber {
      * Supposedly, the shortest international phone numbers in use contain seven digits.
      * Handles URL encoded +, %2B
      */
-    private static final Pattern E164_PATTERN = Pattern.compile("(\\+|%2B|/org/asamk/Signal/_)(\\d{5,13})(\\d{2})");
+    private static final Pattern E164_PATTERN = Pattern.compile("(\\+|%2B|_)(\\d{5,13})(\\d{2})");
     private static final String E164_CENSOR = "*************";
+
+    private static final Pattern GROUP_V1_ID_PATTERN = Pattern.compile(
+            "(/org/asamk/Signal/.*Groups/[a-zA-Z0-9/_+-]{2}|[a-zA-Z0-9/_+-]{2})([a-zA-Z0-9/_+-]{18})([a-zA-Z0-9/_+-]{2})(==|__)");
+    private static final String GROUP_V1_ID_CENSOR = "*".repeat(18);
+
+    private static final Pattern GROUP_V2_ID_PATTERN = Pattern.compile(
+            "(/org/asamk/Signal/.*Groups/[a-zA-Z0-9/_+-]{2}|[a-zA-Z0-9/_+-]{2})([a-zA-Z0-9/_+-]{39})([a-zA-Z0-9/_+-]{2})([=_])");
+    private static final String GROUP_V2_ID_CENSOR = "*".repeat(39);
 
     /**
      * The second group will be censored.
@@ -172,9 +180,11 @@ public final class Scrubber {
 
     public static CharSequence scrub(CharSequence in) {
 
+        in = scrubUuids(in);
         in = scrubE164(in);
         in = scrubEmail(in);
-        in = scrubUuids(in);
+        in = scrubGroupV2Ids(in);
+        in = scrubGroupV1Ids(in);
         in = scrubDomains(in);
         in = scrubIpv4(in);
 
@@ -186,6 +196,22 @@ public final class Scrubber {
                 E164_PATTERN,
                 (matcher, output) -> output.append(matcher.group(1))
                         .append(E164_CENSOR, 0, matcher.group(2).length())
+                        .append(matcher.group(3)));
+    }
+
+    private static CharSequence scrubGroupV1Ids(CharSequence in) {
+        return scrub(in,
+                GROUP_V1_ID_PATTERN,
+                (matcher, output) -> output.append(matcher.group(1))
+                        .append(GROUP_V1_ID_CENSOR, 0, matcher.group(2).length())
+                        .append(matcher.group(3)));
+    }
+
+    private static CharSequence scrubGroupV2Ids(CharSequence in) {
+        return scrub(in,
+                GROUP_V2_ID_PATTERN,
+                (matcher, output) -> output.append(matcher.group(1))
+                        .append(GROUP_V2_ID_CENSOR, 0, matcher.group(2).length())
                         .append(matcher.group(3)));
     }
 

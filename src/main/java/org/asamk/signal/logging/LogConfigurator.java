@@ -52,6 +52,8 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
         rootLogger.addAppender(consoleAppender);
 
         lc.getLogger("org.asamk").setLevel(verboseLevel > 1 ? Level.ALL : verboseLevel > 0 ? Level.DEBUG : Level.INFO);
+        lc.getLogger("org.asamk.Signal")
+                .setLevel(verboseLevel > 2 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
         lc.getLogger("com.zaxxer.hikari.pool.PoolBase")
                 .setLevel(verboseLevel > 2 ? Level.ALL : verboseLevel > 1 ? Level.INFO : Level.WARN);
         lc.getLogger("org.sqlite.core.NativeDB")
