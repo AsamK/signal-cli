@@ -1,6 +1,7 @@
+use std::io::Error;
+
 use futures_util::stream::StreamExt;
 use jsonrpsee::core::client::{TransportReceiverT, TransportSenderT};
-use jsonrpsee::core::Error;
 use tokio::net::{TcpStream, ToSocketAddrs};
 use tokio_util::codec::Decoder;
 

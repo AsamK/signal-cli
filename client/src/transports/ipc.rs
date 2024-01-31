@@ -1,8 +1,8 @@
+use std::io::Error;
 use std::path::Path;
 
 use futures_util::stream::StreamExt;
 use jsonrpsee::core::client::{TransportReceiverT, TransportSenderT};
-use jsonrpsee::core::Error;
 use tokio::net::UnixStream;
 use tokio_util::codec::Decoder;
 

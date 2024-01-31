@@ -1,8 +1,7 @@
 use std::path::Path;
 
 use jsonrpsee::async_client::ClientBuilder;
-use jsonrpsee::core::client::SubscriptionClientT;
-use jsonrpsee::core::Error;
+use jsonrpsee::core::client::{Error, SubscriptionClientT};
 use jsonrpsee::http_client::HttpClientBuilder;
 use jsonrpsee::proc_macros::rpc;
 use serde::Deserialize;
@@ -374,7 +373,9 @@ pub struct JsonLink {
     pub device_link_uri: String,
 }
 
-pub async fn connect_tcp(tcp: impl ToSocketAddrs) -> Result<impl SubscriptionClientT, Error> {
+pub async fn connect_tcp(
+    tcp: impl ToSocketAddrs,
+) -> Result<impl SubscriptionClientT, std::io::Error> {
     let (sender, receiver) = super::transports::tcp::connect(tcp).await?;
 
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
@@ -382,7 +383,7 @@ pub async fn connect_tcp(tcp: impl ToSocketAddrs) -> Result<impl SubscriptionCli
 
 pub async fn connect_unix(
     socket_path: impl AsRef<Path>,
-) -> Result<impl SubscriptionClientT, Error> {
+) -> Result<impl SubscriptionClientT, std::io::Error> {
     let (sender, receiver) = super::transports::ipc::connect(socket_path).await?;
 
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))

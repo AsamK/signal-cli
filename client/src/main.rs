@@ -1,8 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use clap::Parser;
-use jsonrpsee::core::client::{Subscription, SubscriptionClientT};
-use jsonrpsee::core::Error as RpcError;
+use jsonrpsee::core::client::{Error as RpcError, Subscription, SubscriptionClientT};
 use serde_json::Value;
 use tokio::{select, time::sleep};
 
