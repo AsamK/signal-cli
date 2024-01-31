@@ -393,6 +393,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     ) {
         final var sqlWhere = new ArrayList<String>();
         if (onlyContacts) {
+            sqlWhere.add("r.unregistered_timestamp IS NULL");
             sqlWhere.add("(" + SQL_IS_CONTACT + ")");
             sqlWhere.add("r.hidden = FALSE");
         }
