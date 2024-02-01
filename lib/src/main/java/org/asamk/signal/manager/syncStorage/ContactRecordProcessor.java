@@ -180,6 +180,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 ? local.getSystemFamilyName().orElse("")
                 : remote.getSystemFamilyName().orElse("");
         final var systemNickname = remote.getSystemNickname().orElse("");
+        final var pniSignatureVerified = remote.isPniSignatureVerified() || local.isPniSignatureVerified();
 
         final var mergedBuilder = new SignalContactRecord.Builder(remote.getId().getRaw(), aci, unknownFields).setE164(
                         e164)
@@ -200,7 +201,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .setMuteUntil(muteUntil)
                 .setHideStory(hideStory)
                 .setUnregisteredTimestamp(unregisteredTimestamp)
-                .setHidden(hidden);
+                .setHidden(hidden)
+                .setPniSignatureVerified(pniSignatureVerified);
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);

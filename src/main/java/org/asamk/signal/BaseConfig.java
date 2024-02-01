@@ -5,7 +5,7 @@ public class BaseConfig {
     public static final String PROJECT_NAME = BaseConfig.class.getPackage().getImplementationTitle();
     public static final String PROJECT_VERSION = BaseConfig.class.getPackage().getImplementationVersion();
 
-    static final String USER_AGENT_SIGNAL_ANDROID = "Signal-Android/6.39.1";
+    static final String USER_AGENT_SIGNAL_ANDROID = "Signal-Android/6.46.0";
     static final String USER_AGENT_SIGNAL_CLI = PROJECT_NAME == null
             ? "signal-cli"
             : PROJECT_NAME + "/" + PROJECT_VERSION;
