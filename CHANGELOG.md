@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.8] - 2024-02-06
+
+### Fixes
+- Update user agent
+
 ## [0.12.7] - 2023-12-15
 
 ### Fixes
