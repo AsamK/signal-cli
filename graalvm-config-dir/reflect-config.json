@@ -568,7 +568,7 @@
   "name":"org.asamk.Signal",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"getContactName","parameterTypes":["java.lang.String"] }, {"name":"getGroup","parameterTypes":["byte[]"] }, {"name":"getSelfNumber","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.util.List"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }]
+  "methods":[{"name":"getContactName","parameterTypes":["java.lang.String"] }, {"name":"getDevice","parameterTypes":["long"] }, {"name":"getGroup","parameterTypes":["byte[]"] }, {"name":"getSelfNumber","parameterTypes":[] }, {"name":"getThisDevice","parameterTypes":[] }, {"name":"listDevices","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.util.List"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.Signal$Configuration",
@@ -1169,14 +1169,16 @@
   "name":"org.asamk.signal.manager.storage.contacts.LegacyContactInfo",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "fields":[{"name":"contacts", "allowWrite":true}]
+  "fields":[{"name":"contacts", "allowWrite":true}],
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.groups.GroupInfo",
@@ -1271,7 +1273,8 @@
   "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonSignalProtocolStore",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.protocol.LegacyJsonSignedPreKeyStore$JsonSignedPreKeyStoreDeserializer",
@@ -1357,6 +1360,17 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","boolean"] }, {"name":"installed","parameterTypes":[] }, {"name":"packId","parameterTypes":[] }, {"name":"packKey","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore$ThreadsDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.util.SecurityProvider$DefaultRandom",
@@ -1817,7 +1831,7 @@
   "name":"org.freedesktop.dbus.interfaces.Properties",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"GetAll","parameterTypes":["java.lang.String"] }]
+  "methods":[{"name":"Get","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"GetAll","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.freedesktop.dbus.interfaces.Properties$PropertiesChanged",
