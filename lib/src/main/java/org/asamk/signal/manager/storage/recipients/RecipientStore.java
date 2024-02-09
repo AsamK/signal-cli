@@ -47,7 +47,6 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     private final SelfProfileKeyProvider selfProfileKeyProvider;
     private final Database database;
 
-    private final Object recipientsLock = new Object();
     private final Map<Long, Long> recipientsMerged = new HashMap<>();
 
     private final Map<ServiceId, RecipientWithAddress> recipientAddressCache = new HashMap<>();
@@ -164,34 +163,30 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private RecipientId resolveRecipientByNumber(final String number) {
-        synchronized (recipientsLock) {
-            final RecipientId recipientId;
-            try (final var connection = database.getConnection()) {
-                connection.setAutoCommit(false);
-                recipientId = resolveRecipientLocked(connection, number);
-                connection.commit();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed read recipient store", e);
-            }
-            return recipientId;
+        final RecipientId recipientId;
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            recipientId = resolveRecipientLocked(connection, number);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read recipient store", e);
         }
+        return recipientId;
     }
 
     @Override
     public RecipientId resolveRecipient(final ServiceId serviceId) {
-        synchronized (recipientsLock) {
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
             final var recipientWithAddress = recipientAddressCache.get(serviceId);
             if (recipientWithAddress != null) {
                 return recipientWithAddress.id();
             }
-            try (final var connection = database.getConnection()) {
-                connection.setAutoCommit(false);
-                final var recipientId = resolveRecipientLocked(connection, serviceId);
-                connection.commit();
-                return recipientId;
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed read recipient store", e);
-            }
+            final var recipientId = resolveRecipientLocked(connection, serviceId);
+            connection.commit();
+            return recipientId;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read recipient store", e);
         }
     }
 
@@ -258,17 +253,15 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     public RecipientId resolveRecipient(RecipientAddress address) {
-        synchronized (recipientsLock) {
-            final RecipientId recipientId;
-            try (final var connection = database.getConnection()) {
-                connection.setAutoCommit(false);
-                recipientId = resolveRecipientLocked(connection, address);
-                connection.commit();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed read recipient store", e);
-            }
-            return recipientId;
+        final RecipientId recipientId;
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            recipientId = resolveRecipientLocked(connection, address);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read recipient store", e);
         }
+        return recipientId;
     }
 
     public RecipientId resolveRecipient(Connection connection, RecipientAddress address) throws SQLException {
@@ -550,19 +543,17 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     public void deleteRecipientData(RecipientId recipientId) {
         logger.debug("Deleting recipient data for {}", recipientId);
-        synchronized (recipientsLock) {
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
             recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
-            try (final var connection = database.getConnection()) {
-                connection.setAutoCommit(false);
-                storeContact(connection, recipientId, null);
-                storeProfile(connection, recipientId, null);
-                storeProfileKey(connection, recipientId, null, false);
-                storeExpiringProfileKeyCredential(connection, recipientId, null);
-                deleteRecipient(connection, recipientId);
-                connection.commit();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed update recipient store", e);
-            }
+            storeContact(connection, recipientId, null);
+            storeProfile(connection, recipientId, null);
+            storeProfileKey(connection, recipientId, null, false);
+            storeExpiringProfileKeyCredential(connection, recipientId, null);
+            deleteRecipient(connection, recipientId);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
         }
     }
 
@@ -1026,14 +1017,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     private RecipientId resolveRecipientTrusted(RecipientAddress address, boolean isSelf) {
         final Pair<RecipientId, List<RecipientId>> pair;
-        synchronized (recipientsLock) {
-            try (final var connection = database.getConnection()) {
-                connection.setAutoCommit(false);
-                pair = resolveRecipientTrustedLocked(connection, address, isSelf);
-                connection.commit();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed update recipient store", e);
-            }
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            pair = resolveRecipientTrustedLocked(connection, address, isSelf);
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
         }
 
         if (!pair.second().isEmpty()) {
@@ -1073,9 +1062,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         for (final var toBeMergedRecipientId : toBeMergedRecipientIds) {
             recipientMergeHandler.mergeRecipients(connection, recipientId, toBeMergedRecipientId);
             deleteRecipient(connection, toBeMergedRecipientId);
-            synchronized (recipientsLock) {
-                recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(toBeMergedRecipientId));
-            }
+            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(toBeMergedRecipientId));
         }
     }
 
@@ -1164,44 +1151,40 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private void removeRecipientAddress(Connection connection, RecipientId recipientId) throws SQLException {
-        synchronized (recipientsLock) {
-            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
-            final var sql = (
-                    """
-                    UPDATE %s
-                    SET number = NULL, aci = NULL, pni = NULL, username = NULL, storage_id = NULL
-                    WHERE _id = ?
-                    """
-            ).formatted(TABLE_RECIPIENT);
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, recipientId.id());
-                statement.executeUpdate();
-            }
+        recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
+        final var sql = (
+                """
+                UPDATE %s
+                SET number = NULL, aci = NULL, pni = NULL, username = NULL, storage_id = NULL
+                WHERE _id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, recipientId.id());
+            statement.executeUpdate();
         }
     }
 
     private void updateRecipientAddress(
             Connection connection, RecipientId recipientId, final RecipientAddress address
     ) throws SQLException {
-        synchronized (recipientsLock) {
-            recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
-            final var sql = (
-                    """
-                    UPDATE %s
-                    SET number = ?, aci = ?, pni = ?, username = ?
-                    WHERE _id = ?
-                    """
-            ).formatted(TABLE_RECIPIENT);
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setString(1, address.number().orElse(null));
-                statement.setString(2, address.aci().map(ACI::toString).orElse(null));
-                statement.setString(3, address.pni().map(PNI::toString).orElse(null));
-                statement.setString(4, address.username().orElse(null));
-                statement.setLong(5, recipientId.id());
-                statement.executeUpdate();
-            }
-            rotateStorageId(connection, recipientId);
+        recipientAddressCache.entrySet().removeIf(e -> e.getValue().id().equals(recipientId));
+        final var sql = (
+                """
+                UPDATE %s
+                SET number = ?, aci = ?, pni = ?, username = ?
+                WHERE _id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, address.number().orElse(null));
+            statement.setString(2, address.aci().map(ACI::toString).orElse(null));
+            statement.setString(3, address.pni().map(PNI::toString).orElse(null));
+            statement.setString(4, address.username().orElse(null));
+            statement.setLong(5, recipientId.id());
+            statement.executeUpdate();
         }
+        rotateStorageId(connection, recipientId);
     }
 
     private void deleteRecipient(final Connection connection, final RecipientId recipientId) throws SQLException {
