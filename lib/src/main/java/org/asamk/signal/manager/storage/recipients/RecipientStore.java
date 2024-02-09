@@ -1367,8 +1367,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     private RecipientAddress getRecipientAddressFromResultSet(ResultSet resultSet) throws SQLException {
-        final var aci = Optional.ofNullable(resultSet.getString("aci")).map(ACI::parseOrThrow);
-        final var pni = Optional.ofNullable(resultSet.getString("pni")).map(PNI::parseOrThrow);
+        final var aci = Optional.ofNullable(resultSet.getString("aci")).map(ACI::parseOrNull);
+        final var pni = Optional.ofNullable(resultSet.getString("pni")).map(PNI::parseOrNull);
         final var number = Optional.ofNullable(resultSet.getString("number"));
         final var username = Optional.ofNullable(resultSet.getString("username"));
         return new RecipientAddress(aci, pni, number, username);
