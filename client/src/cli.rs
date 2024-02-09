@@ -68,6 +68,20 @@ pub enum CliCommands {
         #[arg(short = 'g', long = "group-id")]
         group_id: Option<String>,
     },
+    GetAvatar {
+        #[arg(long)]
+        contact: Option<String>,
+        #[arg(long)]
+        profile: Option<String>,
+        #[arg(short = 'g', long = "group-id")]
+        group_id: Option<String>,
+    },
+    GetSticker {
+        #[arg(long = "pack-id")]
+        pack_id: String,
+        #[arg(long = "sticker-id")]
+        sticker_id: u32,
+    },
     GetUserStatus {
         recipient: Vec<String>,
     },

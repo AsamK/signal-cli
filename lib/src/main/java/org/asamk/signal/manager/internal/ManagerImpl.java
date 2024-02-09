@@ -104,6 +104,7 @@ import org.whispersystems.signalservice.internal.util.Util;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -1335,6 +1336,58 @@ public class ManagerImpl implements Manager {
     @Override
     public InputStream retrieveAttachment(final String id) throws IOException {
         return context.getAttachmentHelper().retrieveAttachment(id).getStream();
+    }
+
+    @Override
+    public InputStream retrieveContactAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
+        final var streamDetails = context.getAvatarStore().retrieveContactAvatar(address);
+        if (streamDetails == null) {
+            throw new FileNotFoundException();
+        }
+        return streamDetails.getStream();
+    }
+
+    @Override
+    public InputStream retrieveProfileAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        context.getProfileHelper().getRecipientProfile(recipientId);
+        final var address = account.getRecipientStore().resolveRecipientAddress(recipientId);
+        final var streamDetails = context.getAvatarStore().retrieveProfileAvatar(address);
+        if (streamDetails == null) {
+            throw new FileNotFoundException();
+        }
+        return streamDetails.getStream();
+    }
+
+    @Override
+    public InputStream retrieveGroupAvatar(final GroupId groupId) throws IOException {
+        final var streamDetails = context.getAvatarStore().retrieveGroupAvatar(groupId);
+        context.getGroupHelper().getGroup(groupId);
+        if (streamDetails == null) {
+            throw new FileNotFoundException();
+        }
+        return streamDetails.getStream();
+    }
+
+    @Override
+    public InputStream retrieveSticker(final StickerPackId stickerPackId, final int stickerId) throws IOException {
+        var streamDetails = context.getStickerPackStore().retrieveSticker(stickerPackId, stickerId);
+        if (streamDetails == null) {
+            final var pack = account.getStickerStore().getStickerPack(stickerPackId);
+            if (pack != null) {
+                try {
+                    context.getStickerHelper().retrieveStickerPack(stickerPackId, pack.packKey());
+                } catch (InvalidMessageException e) {
+                    logger.warn("Failed to download sticker pack");
+                }
+            }
+        }
+        if (streamDetails == null) {
+            throw new FileNotFoundException();
+        }
+        return streamDetails.getStream();
     }
 
     @Override

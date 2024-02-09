@@ -1,7 +1,8 @@
 package org.asamk.signal.manager.api;
 
+import org.whispersystems.signalservice.internal.util.Hex;
+
 import java.util.Arrays;
-import java.util.Base64;
 
 public class StickerPackId {
 
@@ -36,6 +37,6 @@ public class StickerPackId {
 
     @Override
     public String toString() {
-        return "StickerPackId{" + Base64.getUrlEncoder().encodeToString(id) + '}';
+        return "StickerPackId{" + Hex.toStringCondensed(id) + '}';
     }
 }

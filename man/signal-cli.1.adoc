@@ -722,6 +722,31 @@ Referred to generally as recipient.
 *-g* [GROUP], *--group-id* [GROUP]::
 Alternatively, specify the group IDs for which to get the attachment.
 
+=== getAvatar
+
+Gets the raw data for a specified contact, contact's profile or group avatar.
+The attachment data is returned as a Base64 String.
+
+*--contact* [RECIPIENT]::
+Specify the number of a recipient.
+
+*--profile* [RECIPIENT]::
+Specify the number of a recipient.
+
+*-g* [GROUP], *--group-id* [GROUP]::
+Alternatively, specify the group ID for which to get the avatar.
+
+=== getSticker
+
+Gets the raw data for a specified sticker.
+The attachment data is returned as a Base64 String.
+
+*--pack-id* [PACK_ID]::
+Specify the id of a sticker pack (hex encoded).
+
+*--sticker-id* [STICKER_ID]::
+Specify the index of a sticker in the sticker pack.
+
 === daemon
 
 signal-cli can run in daemon mode and provides JSON-RPC or an experimental dbus interface.

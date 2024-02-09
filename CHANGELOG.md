@@ -14,6 +14,7 @@
   behavior, the `--notify-self` parameter can be added
 - New `--unrestricted-unidentified-sender` parameter for `updateAccount command`
 - New `--bus-name` parameter for `daemon` command to use another D-Bus bus name
+- New `getAvatar` and `getSticker` commands to get avatar and sticker images
 
 ### Improved
 

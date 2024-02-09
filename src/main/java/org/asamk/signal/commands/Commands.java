@@ -17,6 +17,8 @@ public class Commands {
         addCommand(new FinishChangeNumberCommand());
         addCommand(new FinishLinkCommand());
         addCommand(new GetAttachmentCommand());
+        addCommand(new GetAvatarCommand());
+        addCommand(new GetStickerCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new AddStickerPackCommand());
         addCommand(new JoinGroupCommand());

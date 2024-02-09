@@ -38,6 +38,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
@@ -1066,6 +1067,26 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public InputStream retrieveAttachment(final String id) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InputStream retrieveContactAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InputStream retrieveProfileAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InputStream retrieveGroupAvatar(final GroupId groupId) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InputStream retrieveSticker(final StickerPackId stickerPackId, final int stickerId) throws IOException {
         throw new UnsupportedOperationException();
     }
 

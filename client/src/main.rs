@@ -407,6 +407,19 @@ async fn handle_command(
                 .get_attachment(cli.account, id, recipient, group_id)
                 .await
         }
+        CliCommands::GetAvatar {
+            contact,
+            profile,
+            group_id,
+        } => {
+            client
+                .get_avatar(cli.account, contact, profile, group_id)
+                .await
+        }
+        CliCommands::GetSticker {
+            pack_id,
+            sticker_id,
+        } => client.get_sticker(cli.account, pack_id, sticker_id).await,
         CliCommands::StartChangeNumber {
             number,
             voice,

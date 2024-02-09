@@ -34,6 +34,7 @@ import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
+import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TypingAction;
@@ -306,6 +307,14 @@ public interface Manager extends Closeable {
     void addClosedListener(Runnable listener);
 
     InputStream retrieveAttachment(final String id) throws IOException;
+
+    InputStream retrieveContactAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
+
+    InputStream retrieveProfileAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
+
+    InputStream retrieveGroupAvatar(final GroupId groupId) throws IOException;
+
+    InputStream retrieveSticker(final StickerPackId stickerPackId, final int stickerId) throws IOException;
 
     @Override
     void close();
